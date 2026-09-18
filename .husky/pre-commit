@@ -1,0 +1,5 @@
+# Auto-format and auto-fix only what is staged.
+npx lint-staged
+
+cd backend && npx lint-staged
+cd ../frontend && npx lint-staged

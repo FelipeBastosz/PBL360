@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: pbl360-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-pbl360}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pbl360}
+      POSTGRES_DB: ${DB_NAME:-pbl360}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - pbl360-postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-pbl360} -d ${DB_NAME:-pbl360}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pbl360
+
+  adminer:
+    image: adminer:5
+    container_name: pbl360-adminer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '${ADMINER_PORT:-8080}:8080'
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - pbl360
+
+volumes:
+  pbl360-postgres-data:
+    name: pbl360-postgres-data
+
+networks:
+  pbl360:
+    name: pbl360
