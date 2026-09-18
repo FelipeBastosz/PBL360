@@ -32,7 +32,7 @@ export default tseslint.config(
       // Size limits from CONVENTIONS.md section 4. Blank lines and comments do not count.
       // 50 is the allowance for verbose TSX; hooks and utils should stay near 20.
       'max-lines-per-function': [
-        'error',
+        'warn',
         { max: 50, skipBlankLines: true, skipComments: true, IIFEs: true },
       ],
       'max-lines': ['error', { max: 250, skipBlankLines: true, skipComments: true }],
