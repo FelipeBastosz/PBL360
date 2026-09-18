@@ -64,6 +64,7 @@ backend/
 │   │   ├── filters/             #   exception filters
 │   │   ├── guards/              #   autenticação e autorização
 │   │   ├── interceptors/        #   logging, serialização, timeout
+│   │   ├── middlewares/         #   o que roda antes do roteamento (log de requisição)
 │   │   ├── pipes/
 │   │   └── constants/
 │   │
@@ -88,6 +89,32 @@ backend/
 
 > `src/example/` existe como **molde**. Ao criar o primeiro módulo real, copie a estrutura
 > de pastas e renomeie. Quando não fizer mais sentido, apague a pasta `example/`.
+
+### O log de requisições
+
+`shared/middlewares/http-logger.middleware.ts` registra **uma linha por requisição** —
+método, rota, status, duração, tamanho da resposta e IP de origem — e o `app.module.ts` o
+aplica a **todas as rotas**:
+
+```ts
+// app.module.ts — '{*splat}' é o curinga do Express 5.
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(HttpLoggerMiddleware).forRoutes('{*splat}');
+  }
+}
+```
+
+```
+[Nest] 12345  - 18/09/2026, 20:04:11   LOG [HTTP] GET /api/alunos 200 - 12.4ms - 145b - ::1
+[Nest] 12345  - 18/09/2026, 20:04:19  WARN [HTTP] POST /api/alunos 400 - 3.1ms - 92b - ::1
+```
+
+**Middleware** porque ele roda antes do roteamento: assim uma requisição
+que não casa com controller nenhum (404) também aparece no log. O nível acompanha o status
+(5xx `error`, 4xx `warn`, o resto `log`), a linha sai no `finish` da resposta — antes disso
+o status ainda pode mudar — e **corpo e cabeçalhos ficam de fora**, porque carregam
+credenciais e dado pessoal. Um módulo de feature não precisa fazer nada para ser logado.
 
 ---
 
@@ -239,6 +266,7 @@ A ordem importa: começar pelo domínio evita que decisões de banco vazem para 
 | Controller       | `users.controller.ts`          | `UsersController`       |
 | Módulo           | `users.module.ts`              | `UsersModule`           |
 | Migration        | `1712345678901-CreateUsers.ts` | `CreateUsers...`        |
+| Middleware       | `http-logger.middleware.ts`    | `HttpLoggerMiddleware`  |
 | Teste unitário   | `create-user.use-case.spec.ts` | —                       |
 | Teste e2e        | `users.e2e-spec.ts`            | —                       |
 
@@ -398,14 +426,14 @@ tenta subir o banco, e o e2e nunca roda por engano em watch mode.
 
 ### 6.2 Qual dos dois escrever
 
-| Você mexeu em...                             | Escreva                                         |
-| -------------------------------------------- | ----------------------------------------------- |
-| Regra numa entidade (`domain/entities/`)     | **Unitário** — é o teste mais barato que existe |
-| Ramificação num caso de uso                  | **Unitário**, com repositório dublê             |
-| Endpoint novo, status HTTP, validação de DTO | **E2E**                                         |
-| Repositório TypeORM (query, join, filtro)    | **E2E** — testar SQL com dublê não prova nada   |
-| Guard, interceptor, filtro de exceção        | **E2E**                                         |
-| Controller que só delega                     | Nada a mais; o e2e do endpoint já cobre         |
+| Você mexeu em...                                  | Escreva                                         |
+| ------------------------------------------------- | ----------------------------------------------- |
+| Regra numa entidade (`domain/entities/`)          | **Unitário** — é o teste mais barato que existe |
+| Ramificação num caso de uso                       | **Unitário**, com repositório dublê             |
+| Endpoint novo, status HTTP, validação de DTO      | **E2E**                                         |
+| Repositório TypeORM (query, join, filtro)         | **E2E** — testar SQL com dublê não prova nada   |
+| Guard, interceptor, middleware, filtro de exceção | **E2E**                                         |
+| Controller que só delega                          | Nada a mais; o e2e do endpoint já cobre         |
 
 Na dúvida: se o valor do código está na **decisão** que ele toma, teste unitário; se está na
 **integração** entre peças, teste e2e.
