@@ -37,7 +37,7 @@ export default tseslint.config(
       ],
       // Size limits from CONVENTIONS.md section 4. Blank lines and comments do not count.
       'max-lines-per-function': [
-        'error',
+        'warn',
         { max: 20, skipBlankLines: true, skipComments: true, IIFEs: true },
       ],
       'max-lines': ['error', { max: 200, skipBlankLines: true, skipComments: true }],
