@@ -1,0 +1,12 @@
+# Gate the push: nothing unformatted or lint-broken reaches the remote.
+set -e
+
+echo "▶ backend: eslint + prettier check"
+npm --prefix backend run lint
+npm --prefix backend run format:check
+
+echo "▶ frontend: eslint + prettier check"
+npm --prefix frontend run lint
+npm --prefix frontend run format:check
+
+echo "✔ push checks passed"
