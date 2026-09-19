@@ -19,6 +19,7 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
+    "types": ["jest", "node"],
     "paths": {
       "@/*": ["src/*"]
     }
