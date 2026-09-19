@@ -1,0 +1,69 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  IsUrl,
+  Length,
+  Matches,
+  MaxLength,
+  MinLength,
+  ValidateIf,
+} from 'class-validator';
+import { UserTypePayload } from './user-type-payload.enum';
+
+const INSTITUTIONAL_EMAIL = /^[^@\s]+@(discente\.)?uefs\.br$/i;
+const REGISTRATION_NUMBER = /^\d{8}$/;
+
+export class RegisterUserDto {
+  @ApiProperty({ minLength: 3, maxLength: 120, example: 'Ana Souza' })
+  @IsString({ message: 'O nome é obrigatório.' })
+  @Length(3, 120, { message: 'O nome deve ter entre 3 e 120 caracteres.' })
+  nome!: string;
+
+  @ApiProperty({
+    format: 'email',
+    maxLength: 160,
+    description: 'Somente e-mails institucionais: @uefs.br ou @discente.uefs.br.',
+    example: 'ana@discente.uefs.br',
+  })
+  @IsEmail({}, { message: 'Informe um e-mail válido.' })
+  @MaxLength(160, { message: 'O e-mail deve ter no máximo 160 caracteres.' })
+  @Matches(INSTITUTIONAL_EMAIL, {
+    message: 'O e-mail deve ser institucional (@uefs.br ou @discente.uefs.br).',
+  })
+  email!: string;
+
+  @ApiProperty({ minLength: 8, maxLength: 72, format: 'password', example: 'senha-secreta' })
+  @IsString({ message: 'A senha é obrigatória.' })
+  @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
+  @MaxLength(72, { message: 'A senha deve ter no máximo 72 caracteres.' })
+  senha!: string;
+
+  @ApiProperty({ enum: UserTypePayload, example: UserTypePayload.ALUNO })
+  @IsEnum(UserTypePayload, { message: 'O tipo deve ser PROFESSOR ou ALUNO.' })
+  tipo!: UserTypePayload;
+
+  @ApiPropertyOptional({
+    pattern: '^\\d{8}$',
+    description: 'Obrigatória para ALUNO, opcional para PROFESSOR.',
+    example: '20240001',
+  })
+  @ValidateIf((dto: RegisterUserDto) => dto.tipo === UserTypePayload.ALUNO || dto.matricula != null)
+  @IsNotEmpty({ message: 'A matrícula é obrigatória para alunos.' })
+  @Matches(REGISTRATION_NUMBER, { message: 'A matrícula deve conter exatamente 8 dígitos.' })
+  matricula?: string;
+
+  @ApiPropertyOptional({
+    format: 'url',
+    maxLength: 255,
+    description: 'Obrigatória para ALUNO, opcional para PROFESSOR.',
+    example: 'https://uefs.br/fotos/ana.png',
+  })
+  @ValidateIf((dto: RegisterUserDto) => dto.tipo === UserTypePayload.ALUNO || dto.fotoUrl != null)
+  @IsNotEmpty({ message: 'A foto é obrigatória para alunos.' })
+  @IsUrl({}, { message: 'A foto deve ser uma URL válida.' })
+  @MaxLength(255, { message: 'A URL da foto deve ter no máximo 255 caracteres.' })
+  fotoUrl?: string;
+}
