@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import type { DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { User } from '../domain/entities/user.entity';
 import { UserType } from '../domain/enums/user-type.enum';
-import { IUserRepository } from '../domain/repositories/user.repository.interface';
+import type { IUserRepository } from '../domain/repositories/user.repository.interface';
 
 interface UserDbRow {
   id: string;
@@ -18,7 +19,7 @@ interface UserDbRow {
 
 @Injectable()
 export class PgUserRepository implements IUserRepository {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   private mapToDomain(row: UserDbRow): User {
     return new User({
