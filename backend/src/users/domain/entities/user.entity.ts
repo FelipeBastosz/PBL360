@@ -1,5 +1,11 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { UserType } from '../enums/user-type.enum';
+import { InvalidUserError } from '../errors/invalid-user.error';
+import type { NewUser } from './new-user';
+
+const INSTITUTIONAL_EMAIL = /^[^@\s]+@(discente\.)?uefs\.br$/i;
+
+const REGISTRATION_NUMBER = /^\d{8}$/;
 
 @Entity('users')
 export class User {
@@ -35,6 +41,46 @@ export class User {
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
+
+  static create(props: NewUser): User {
+    const user = new User();
+    user.name = props.name.trim();
+    user.email = props.email.trim().toLowerCase();
+    user.passwordHash = props.passwordHash;
+    user.type = props.type;
+    user.registrationNumber = props.registrationNumber?.trim() || null;
+    user.photoUrl = props.photoUrl?.trim() || null;
+    user.active = true;
+    user.assertIsValid();
+
+    return user;
+  }
+
+  private assertIsValid(): void {
+    if (!INSTITUTIONAL_EMAIL.test(this.email)) {
+      throw new InvalidUserError(
+        'O e-mail deve ser institucional (@uefs.br ou @discente.uefs.br).',
+      );
+    }
+
+    if (this.registrationNumber !== null && !REGISTRATION_NUMBER.test(this.registrationNumber)) {
+      throw new InvalidUserError('A matrícula deve conter exatamente 8 dígitos.');
+    }
+
+    if (this.isStudent()) {
+      this.assertStudentProfileIsComplete();
+    }
+  }
+
+  private assertStudentProfileIsComplete(): void {
+    if (this.registrationNumber === null) {
+      throw new InvalidUserError('A matrícula é obrigatória para alunos.');
+    }
+
+    if (this.photoUrl === null) {
+      throw new InvalidUserError('A foto é obrigatória para alunos.');
+    }
+  }
 
   isTutor(): boolean {
     return this.type === UserType.TUTOR;
