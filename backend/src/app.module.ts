@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { appConfig, databaseConfig } from './config/env.config';
 import { buildTypeOrmOptions } from './config/typeorm.config';
 import { HttpLoggerMiddleware } from './shared/middlewares/http-logger.middleware';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { HttpLoggerMiddleware } from './shared/middlewares/http-logger.middlewar
       inject: [ConfigService],
       useFactory: buildTypeOrmOptions,
     }),
+    UsersModule,
     // Feature modules go here (one per bounded context).
   ],
 })
