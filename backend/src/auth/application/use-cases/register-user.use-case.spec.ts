@@ -4,8 +4,8 @@ import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { InvalidUserError } from '@/users/domain/errors/invalid-user.error';
 import {
-  UserRepositoryToken,
-  type IUserRepository,
+  USER_REPOSITORY,
+  type UserRepository,
 } from '@/users/domain/repositories/user.repository.interface';
 import {
   ACCESS_TOKEN_ISSUER,
@@ -21,14 +21,14 @@ import { RegisterUserUseCase, type RegisterUserInput } from './register-user.use
 describe('RegisterUserUseCase', () => {
   let useCase: RegisterUserUseCase;
 
-  const findByEmail: jest.MockedFunction<IUserRepository['findByEmail']> = jest.fn();
-  const save: jest.MockedFunction<IUserRepository['save']> = jest.fn();
+  const findByEmail: jest.MockedFunction<UserRepository['findByEmail']> = jest.fn();
+  const save: jest.MockedFunction<UserRepository['save']> = jest.fn();
   const hash: jest.MockedFunction<PasswordHasher['hash']> = jest.fn();
   const issueFor: jest.MockedFunction<AccessTokenIssuer['issueFor']> = jest.fn();
   const sendVerificationCode: jest.MockedFunction<EmailVerificationSender['sendVerificationCode']> =
     jest.fn();
 
-  const users: IUserRepository = { findByEmail, findById: jest.fn(), save };
+  const users: UserRepository = { findByEmail, findById: jest.fn(), save };
   const passwords: PasswordHasher = { hash, matches: jest.fn() };
   const tokens: AccessTokenIssuer = { issueFor };
   const verification: EmailVerificationSender = { sendVerificationCode };
@@ -60,7 +60,7 @@ describe('RegisterUserUseCase', () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         RegisterUserUseCase,
-        { provide: UserRepositoryToken, useValue: users },
+        { provide: USER_REPOSITORY, useValue: users },
         { provide: PASSWORD_HASHER, useValue: passwords },
         { provide: ACCESS_TOKEN_ISSUER, useValue: tokens },
         { provide: EMAIL_VERIFICATION_SENDER, useValue: verification },

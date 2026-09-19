@@ -1,8 +1,8 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { User } from '@/users/domain/entities/user.entity';
 import {
-  UserRepositoryToken,
-  type IUserRepository,
+  USER_REPOSITORY,
+  type UserRepository,
 } from '@/users/domain/repositories/user.repository.interface';
 import type { AuthenticatedSession } from '../authenticated-session';
 import {
@@ -21,7 +21,7 @@ const INVALID_CREDENTIALS = 'E-mail ou senha inválidos.';
 @Injectable()
 export class LoginUseCase {
   constructor(
-    @Inject(UserRepositoryToken) private readonly users: IUserRepository,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly passwords: PasswordHasher,
     @Inject(ACCESS_TOKEN_ISSUER) private readonly tokens: AccessTokenIssuer,
   ) {}
