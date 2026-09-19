@@ -2,8 +2,8 @@ import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 import { User } from '@/users/domain/entities/user.entity';
 import type { UserType } from '@/users/domain/enums/user-type.enum';
 import {
-  UserRepositoryToken,
-  type IUserRepository,
+  USER_REPOSITORY,
+  type UserRepository,
 } from '@/users/domain/repositories/user.repository.interface';
 import type { AuthenticatedSession } from '../authenticated-session';
 import {
@@ -30,7 +30,7 @@ export class RegisterUserUseCase {
   private readonly logger = new Logger(RegisterUserUseCase.name);
 
   constructor(
-    @Inject(UserRepositoryToken) private readonly users: IUserRepository,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly passwords: PasswordHasher,
     @Inject(ACCESS_TOKEN_ISSUER) private readonly tokens: AccessTokenIssuer,
     @Inject(EMAIL_VERIFICATION_SENDER) private readonly verification: EmailVerificationSender,

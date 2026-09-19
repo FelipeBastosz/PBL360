@@ -1,7 +1,7 @@
 import type { Repository } from 'typeorm';
 import { PgUserRepository } from './pg-user.repository';
-import { User } from '../domain/entities/user.entity';
-import { UserType } from '../domain/enums/user-type.enum';
+import { User } from '../../domain/entities/user.entity';
+import { UserType } from '../../domain/enums/user-type.enum';
 
 describe('PgUserRepository', () => {
   let repository: PgUserRepository;
