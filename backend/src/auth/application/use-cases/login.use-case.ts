@@ -1,0 +1,46 @@
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import type { User } from '@/users/domain/entities/user.entity';
+import {
+  UserRepositoryToken,
+  type IUserRepository,
+} from '@/users/domain/repositories/user.repository.interface';
+import type { AuthenticatedSession } from '../authenticated-session';
+import {
+  ACCESS_TOKEN_ISSUER,
+  type AccessTokenIssuer,
+} from '../../domain/services/access-token-issuer';
+import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+const INVALID_CREDENTIALS = 'E-mail ou senha inválidos.';
+
+@Injectable()
+export class LoginUseCase {
+  constructor(
+    @Inject(UserRepositoryToken) private readonly users: IUserRepository,
+    @Inject(PASSWORD_HASHER) private readonly passwords: PasswordHasher,
+    @Inject(ACCESS_TOKEN_ISSUER) private readonly tokens: AccessTokenIssuer,
+  ) {}
+
+  async execute(input: LoginInput): Promise<AuthenticatedSession> {
+    const user = await this.users.findByEmail(input.email.trim().toLowerCase());
+
+    if (!user || !(await this.passwords.matches(input.password, user.passwordHash))) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
+
+    this.assertIsActive(user);
+
+    return { user, accessToken: await this.tokens.issueFor(user) };
+  }
+
+  private assertIsActive(user: User): void {
+    if (!user.active) {
+      throw new UnauthorizedException('Esta conta está desativada.');
+    }
+  }
+}

@@ -19,6 +19,7 @@ inglês, contrato da API em português, **20 linhas por função** e **200 por a
 | TypeORM    | 0.3.31 | ORM e migrations                         |
 | PostgreSQL | 17     | Banco de dados                           |
 | TypeScript | 5.9    | Linguagem                                |
+| Swagger    | 11.2   | Documentação OpenAPI da API              |
 | Jest       | 30     | Testes unitários e e2e                   |
 | ESLint     | 10     | Análise estática                         |
 | Prettier   | 3.9    | Formatação                               |
@@ -98,6 +99,11 @@ npm run start:dev
 
 A API fica em <http://localhost:3000/api>, com recarga automática a cada arquivo salvo.
 
+A documentação interativa (Swagger UI) fica em <http://localhost:3000/api/docs>, e o
+OpenAPI em JSON em <http://localhost:3000/api/docs/json>. Ela é gerada a partir dos
+decoradores dos controllers e dos DTOs — endpoint novo sem `@Api*` entra no documento
+sem descrição, sem exemplo e sem os status que ele responde.
+
 ### 7. Verifique que está tudo de pé
 
 ```bash
@@ -153,6 +159,9 @@ Todas estão documentadas em [`.env.example`](.env.example). O carregamento é f
 | `DB_HOST` / `DB_PORT`                     | `localhost` / `5432`    | Conexão com o PostgreSQL                                    |
 | `DB_USERNAME` / `DB_PASSWORD` / `DB_NAME` | `pbl360`                | Credenciais                                                 |
 | `DB_SYNCHRONIZE`                          | `false`                 | **Mantenha `false`** — o schema é versionado por migrations |
+| `JWT_SECRET`                              | —                       | **Obrigatória**: a API não sobe sem ela                     |
+| `JWT_EXPIRES_IN`                          | `1d`                    | Validade do token (`30m`, `1d`, ou segundos)                |
+| `BCRYPT_ROUNDS`                           | `12`                    | Custo do hash da senha                                      |
 | `CORS_ORIGIN`                             | `http://localhost:5173` | Origem permitida para o frontend                            |
 
 ## Migrations
