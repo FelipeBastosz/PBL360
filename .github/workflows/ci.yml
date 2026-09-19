@@ -66,6 +66,12 @@ jobs:
       - name: Run migrations
         run: npm run migration:run
 
+      - name: Check entity/migration drift
+        run: |
+          output=$(npm run typeorm -- schema:log)
+          echo "$output"
+          echo "$output" | grep -q 'up to date'
+
       - name: E2E tests
         run: npm run test:e2e
 

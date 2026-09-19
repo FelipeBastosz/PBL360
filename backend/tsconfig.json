@@ -7,6 +7,9 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "target": "ES2023",
+    // TypeORM entities declare columns without initializers; ES2022 class fields
+    // would define them as `undefined` on every instance and break its tracking.
+    "useDefineForClassFields": false,
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
