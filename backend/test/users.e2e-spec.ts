@@ -4,15 +4,15 @@ import { AppModule } from '@/app.module';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import {
-  type IUserRepository,
-  UserRepositoryToken,
+  type UserRepository,
+  USER_REPOSITORY,
 } from '@/users/domain/repositories/user.repository.interface';
 
 const MISSING_ID = '00000000-0000-0000-0000-000000000000';
 
 describe('User repository (e2e)', () => {
   let moduleRef: TestingModule;
-  let repository: IUserRepository;
+  let repository: UserRepository;
   let dataSource: DataSource;
 
   const buildUser = (): User => {
@@ -35,7 +35,7 @@ describe('User repository (e2e)', () => {
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     await moduleRef.init();
-    repository = moduleRef.get<IUserRepository>(UserRepositoryToken);
+    repository = moduleRef.get<UserRepository>(USER_REPOSITORY);
     dataSource = moduleRef.get(DataSource);
   });
 

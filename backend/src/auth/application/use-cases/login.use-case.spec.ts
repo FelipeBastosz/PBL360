@@ -3,8 +3,8 @@ import { Test } from '@nestjs/testing';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import {
-  UserRepositoryToken,
-  type IUserRepository,
+  USER_REPOSITORY,
+  type UserRepository,
 } from '@/users/domain/repositories/user.repository.interface';
 import {
   ACCESS_TOKEN_ISSUER,
@@ -16,11 +16,11 @@ import { LoginUseCase } from './login.use-case';
 describe('LoginUseCase', () => {
   let useCase: LoginUseCase;
 
-  const findByEmail: jest.MockedFunction<IUserRepository['findByEmail']> = jest.fn();
+  const findByEmail: jest.MockedFunction<UserRepository['findByEmail']> = jest.fn();
   const matches: jest.MockedFunction<PasswordHasher['matches']> = jest.fn();
   const issueFor: jest.MockedFunction<AccessTokenIssuer['issueFor']> = jest.fn();
 
-  const users: IUserRepository = { findByEmail, findById: jest.fn(), save: jest.fn() };
+  const users: UserRepository = { findByEmail, findById: jest.fn(), save: jest.fn() };
   const passwords: PasswordHasher = { hash: jest.fn(), matches };
   const tokens: AccessTokenIssuer = { issueFor };
 
@@ -45,7 +45,7 @@ describe('LoginUseCase', () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         LoginUseCase,
-        { provide: UserRepositoryToken, useValue: users },
+        { provide: USER_REPOSITORY, useValue: users },
         { provide: PASSWORD_HASHER, useValue: passwords },
         { provide: ACCESS_TOKEN_ISSUER, useValue: tokens },
       ],

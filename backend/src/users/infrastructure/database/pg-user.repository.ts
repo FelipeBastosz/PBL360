@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../domain/entities/user.entity';
-import type { IUserRepository } from '../domain/repositories/user.repository.interface';
+import { User } from '../../domain/entities/user.entity';
+import type { UserRepository } from '../../domain/repositories/user.repository.interface';
 
 type UserRow = Omit<User, 'isTutor' | 'isStudent' | 'activate' | 'deactivate'>;
 
@@ -20,7 +20,7 @@ const USER_COLUMNS = `
 const WRITABLE_COLUMNS = `name, email, password_hash, registration_number, photo_url, type, active`;
 
 @Injectable()
-export class PgUserRepository implements IUserRepository {
+export class PgUserRepository implements UserRepository {
   constructor(@InjectRepository(User) private readonly users: Repository<User>) {}
 
   async findByEmail(email: string): Promise<User | null> {
