@@ -18,15 +18,11 @@ export class NodemailerEmailVerificationSender implements EmailVerificationSende
 
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
-      auth: {
-        user: this.userEmail,
-        pass: pass,
-      },
+      auth: { user: this.userEmail, pass },
     });
   }
 
   async sendVerificationCode(recipient: EmailVerificationRecipient): Promise<void> {
-    const fakeCode = '123456';
     const from = `PBL360 <${this.userEmail}>`;
 
     try {
@@ -34,8 +30,8 @@ export class NodemailerEmailVerificationSender implements EmailVerificationSende
         from,
         to: recipient.email,
         subject: 'Código de Verificação - PBL360',
-        text: `Olá ${recipient.name}, o seu código de verificação é: ${fakeCode}`,
-        html: `<p>Olá ${recipient.name},</p><p>O seu código de verificação é: <strong>${fakeCode}</strong></p>`,
+        text: `Olá ${recipient.name}, o seu código de verificação é: ${recipient.code}`,
+        html: `<p>Olá ${recipient.name},</p><p>O seu código de verificação é: <strong>${recipient.code}</strong></p><p>Este código expira em 15 minutos.</p>`,
       });
 
       this.logger.log(`E-mail enviado para ${recipient.email}. Message ID: ${info.messageId}`);

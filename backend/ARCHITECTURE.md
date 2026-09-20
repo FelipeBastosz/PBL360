@@ -223,6 +223,39 @@ export class UsersController {
 **`infrastructure/database/`** — as implementações concretas dos repositórios, usando
 TypeORM. É o único lugar do módulo onde `Repository`, `QueryBuilder` e SQL aparecem.
 
+**Mapeamento e Repositórios com SQL Puro**
+
+Quando a implementação do repositório utilizar queries puras (`repository.query`) em vez do ORM, o arquivo deve manter a separação de tipos por meio de uma interface `Raw` privada ou exportada no próprio arquivo, seguida de uma função mapper. Isso elimina o uso de `any` e garante a tipagem estrita exigida pelo projeto:
+
+```ts
+// infrastructure/database/typeorm-email-verification-code.repository.ts
+interface EmailVerificationCodeRaw {
+  id: string;
+  email: string;
+  code: string;
+  expiresAt: string | Date;
+  createdAt: string | Date;
+  usedAt: string | Date | null;
+}
+
+@Injectable()
+export class TypeOrmEmailVerificationCodeRepository implements EmailVerificationCodeRepository {
+  // ... métodos do repositório ...
+
+  private mapToEntity(raw: EmailVerificationCodeRaw): EmailVerificationCode {
+    const entity = new EmailVerificationCode();
+    entity.id = raw.id;
+    entity.email = raw.email;
+    entity.code = raw.code;
+    entity.expiresAt = new Date(raw.expiresAt);
+    entity.createdAt = new Date(raw.createdAt);
+    entity.usedAt = raw.usedAt ? new Date(raw.usedAt) : null;
+
+    return entity;
+  }
+}
+```
+
 ### 3.4 O módulo — onde as pontas se encontram
 
 A inversão de dependência acontece no `*.module.ts`, ligando a abstração do domínio à
@@ -248,6 +281,43 @@ Esse `provide/useClass` é o ponto em que toda a arquitetura se sustenta: o caso
 `USER_REPOSITORY` e recebe o que o módulo decidir — a implementação real em produção, um
 dublê em teste. O `implements UserRepository` garante em tempo de compilação que o dublê e a
 implementação real cumprem o mesmo contrato.
+
+3.4 Segurança na Borda (Autenticação e Autorização)
+
+A segurança (validação de tokens e verificação de perfis) ocorre exclusivamente na camada de infraestrutura (infrastructure/http), protegendo o acesso aos controllers. As regras de negócio não lidam com cabeçalhos HTTP ou extração de JWT.
+
+Utilizamos um sistema baseado em Guards e Decorators (localizados em src/shared/) para encadear as verificações:
+
+AuthGuard e @Public(): O AuthGuard intercepta a requisição, verifica a validade do JWT e injeta o payload no request.user. Para rotas que devem ser acessíveis sem token (como login e registro), aplicamos o decorator @Public(), que instrui o AuthGuard a liberar a requisição.
+
+RolesGuard e @Roles(): Executado após o AuthGuard, ele verifica se a propriedade type do usuário autenticado condiz com as roles exigidas para a rota. O decorator @Roles(UserType.TUTOR, UserType.STUDENT) dita quais perfis têm acesso.
+
+A ordem de injeção importa: o AuthGuard deve preceder o RolesGuard.
+
+```ts
+
+import { Controller, Post, Get, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@/shared/guards/auth.guard';
+import { RolesGuard } from '@/shared/guards/roles.guard';
+import { Public } from '@/shared/decorators/public.decorator';
+import { Roles } from '@/shared/decorators/roles.decorator';
+import { UserType } from '@/users/domain/enums/user-type.enum';
+
+@UseGuards(AuthGuard) // Protege todas as rotas deste controller por padrão
+@Controller('recursos')
+export class RecursosController {
+
+  @Public() // Ignora o AuthGuard
+  @Post('registro')
+  registrar() { ... }
+
+  @Get('apenas-tutores')
+  @UseGuards(RolesGuard) // Adiciona a exigência de perfil (o AuthGuard já rodou)
+  @Roles(UserType.TUTOR)
+  buscarAlgoTutor() { ... }
+}
+
+```
 
 ---
 

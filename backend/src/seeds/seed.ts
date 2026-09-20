@@ -43,7 +43,7 @@ export const SEED_USERS: SeedUserData[] = [
 ];
 
 function buildSeedUser(data: SeedUserData, pwdHash: string): User {
-  return User.create({
+  const user = User.create({
     name: data.name,
     email: data.email,
     passwordHash: pwdHash,
@@ -51,6 +51,9 @@ function buildSeedUser(data: SeedUserData, pwdHash: string): User {
     registrationNumber: data.registrationNumber ?? null,
     photoUrl: data.photoUrl ?? null,
   });
+  user.activate();
+
+  return user;
 }
 
 export async function seedUser(

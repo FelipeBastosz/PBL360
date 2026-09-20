@@ -111,7 +111,7 @@ describe('PgUserRepository', () => {
       await repository.save(buildUser());
 
       const [sql, params] = lastCall();
-      expect(sql).toContain('COALESCE($7, TRUE)');
+      expect(sql).toContain('COALESCE($7, FALSE)');
       expect(params[6]).toBeUndefined();
     });
 

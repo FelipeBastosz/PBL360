@@ -10,6 +10,7 @@ import {
   type AccessTokenIssuer,
 } from '../../domain/services/access-token-issuer';
 import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
+import { PendingVerificationException } from '../errors/pending-verification.exception';
 
 export interface LoginInput {
   email: string;
@@ -39,8 +40,8 @@ export class LoginUseCase {
   }
 
   private assertIsActive(user: User): void {
-    if (!user.active) {
-      throw new UnauthorizedException('Esta conta está desativada.');
+    if (user.isPendingVerification()) {
+      throw new PendingVerificationException(user);
     }
   }
 }

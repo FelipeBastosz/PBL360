@@ -79,8 +79,18 @@ describe('User (Domain)', () => {
       expect(() => User.create(newTutor({ email: 'carlos@naouefs.br' }))).toThrow(InvalidUserError);
     });
 
-    it('starts every account active', () => {
-      expect(User.create(newTutor()).active).toBe(true);
+    it('starts every account pending e-mail verification', () => {
+      const user = User.create(newTutor());
+
+      expect(user.active).toBe(false);
+      expect(user.isPendingVerification()).toBe(true);
+    });
+
+    it('is no longer pending once activated', () => {
+      const user = User.create(newTutor());
+      user.activate();
+
+      expect(user.isPendingVerification()).toBe(false);
     });
 
     it('leaves the tutor registration number and photo null', () => {
