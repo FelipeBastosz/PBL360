@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { UsersModule } from '@/users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from '@/auth/auth.module';
@@ -12,7 +13,7 @@ import { PgRoomRepository } from './infrastructure/database/pg-room.repository';
 import { RoomsController } from './infrastructure/http/rooms.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Room]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Room]), AuthModule, UsersModule],
   controllers: [RoomsController],
   providers: [
     CreateRoomUseCase,

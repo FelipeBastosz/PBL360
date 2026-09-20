@@ -1,6 +1,14 @@
 import type { NewRoom } from './new-room';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { InvalidRoomError } from '../errors/invalid-room.error';
+import { User } from '@/users/domain/entities/user.entity';
 
 @Entity('rooms')
 export class Room {
@@ -9,6 +17,14 @@ export class Room {
 
   @Column({ name: 'tutor_id', type: 'uuid' })
   tutorId: string;
+
+  @ManyToOne(() => User, { nullable: false })
+  @JoinColumn({
+    name: 'tutor_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_rooms_tutor',
+  })
+  tutor: User;
 
   @Column({ type: 'varchar', length: 120 })
   name: string;
