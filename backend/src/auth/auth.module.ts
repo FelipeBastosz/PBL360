@@ -51,5 +51,7 @@ type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
       useClass: TypeOrmEmailVerificationCodeRepository,
     },
   ],
+
+  exports: [JwtModule],
 })
 export class AuthModule {}

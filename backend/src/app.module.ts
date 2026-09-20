@@ -6,6 +6,7 @@ import { buildTypeOrmOptions } from './config/typeorm.config';
 import { HttpLoggerMiddleware } from './shared/middlewares/http-logger.middleware';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { RoomsModule } from './rooms/rooms.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UsersModule } from './users/users.module';
     }),
     UsersModule,
     AuthModule,
+    RoomsModule,
   ],
 })
 export class AppModule implements NestModule {
