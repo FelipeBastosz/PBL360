@@ -1,21 +1,22 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('email_verification_codes')
 export class EmailVerificationCode {
   @PrimaryColumn('uuid')
-  id: string;
+  id!: string;
 
+  @Index('IDX_email_verification_codes_email')
   @Column({ type: 'varchar', length: 160 })
-  email: string;
+  email!: string;
 
   @Column({ type: 'varchar', length: 6 })
-  code: string;
+  code!: string;
 
   @Column({ name: 'expires_at', type: 'timestamptz' })
-  expiresAt: Date;
+  expiresAt!: Date;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @Column({ name: 'used_at', type: 'timestamptz', nullable: true })
   usedAt?: Date | null;

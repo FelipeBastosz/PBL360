@@ -31,7 +31,7 @@ export class CreateEmailVerificationCodes1726798800000 implements MigrationInter
           {
             name: 'created_at',
             type: 'timestamptz',
-            default: 'CURRENT_TIMESTAMP',
+            default: 'now()',
             isNullable: false,
           },
           {
