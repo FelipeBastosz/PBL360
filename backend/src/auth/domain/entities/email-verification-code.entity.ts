@@ -1,5 +1,14 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryColumn,
+  CreateDateColumn,
+  Index,
+  JoinColumn,
+  ManyToOne,
+} from 'typeorm';
 import { randomUUID } from 'node:crypto';
+import { User } from '@/users/domain/entities/user.entity';
 
 export interface NewEmailVerificationCode {
   userId: string;
@@ -16,6 +25,13 @@ export class EmailVerificationCode {
   @Index('IDX_email_verification_codes_user_id')
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({
+    name: 'user_id',
+    foreignKeyConstraintName: 'fk_email_verification_codes_user',
+  })
+  user!: User;
 
   @Index('IDX_email_verification_codes_email')
   @Column({ type: 'varchar', length: 160 })
