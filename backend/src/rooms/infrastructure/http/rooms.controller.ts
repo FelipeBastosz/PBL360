@@ -2,15 +2,9 @@ import {
   Body,
   Controller,
   ForbiddenException,
-<<<<<<< HEAD
-  Param,
-  Patch,
-  Post,
-=======
   Post,
   Patch,
   Param,
->>>>>>> 8c514a9a2c4246350c86c610b949378e0035d94b
   UseGuards,
 } from '@nestjs/common';
 
@@ -23,23 +17,14 @@ import { UserType } from '@/users/domain/enums/user-type.enum';
 import { CreateRoomDto } from '../../application/dtos/create-room.dto';
 import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 import { CreateRoomUseCase } from '../../application/use-cases/create-room.use-case';
-<<<<<<< HEAD
-import { UpdateRoomDto } from '@/rooms/application/dtos/update-room.dto';
-import { UpdateRoomUseCase } from '@/rooms/application/use-cases/update-room.use-case';
-=======
 import { UpdateRoomUseCase } from '../../application/use-cases/update-room.use-case';
->>>>>>> 8c514a9a2c4246350c86c610b949378e0035d94b
 
 @Controller('salas')
 @UseGuards(AuthGuard, RolesGuard)
 export class RoomsController {
   constructor(
     private readonly createRoomUseCase: CreateRoomUseCase,
-<<<<<<< HEAD
-    private readonly editRoomUseCase: UpdateRoomUseCase,
-=======
     private readonly updateRoomUseCase: UpdateRoomUseCase,
->>>>>>> 8c514a9a2c4246350c86c610b949378e0035d94b
   ) {}
 
   @Post()
@@ -57,16 +42,6 @@ export class RoomsController {
   }
 
   @Patch(':id')
-<<<<<<< HEAD
-  @UseGuards(AuthGuard)
-  async edit(
-    @Param('id') roomId: string,
-    @Body() editRoomDto: UpdateRoomDto,
-    @AuthenticatedUserId() tutorId: string,
-  ) {
-    // Repassa o ID da sala, o ID do tutor autenticado e os dados (nome, semestre, ativo)
-    const updatedRoom = await this.editRoomUseCase.execute(roomId, tutorId, editRoomDto);
-=======
   @Roles(UserType.TUTOR)
   async edit(
     @Param('id') roomId: string,
@@ -75,7 +50,6 @@ export class RoomsController {
   ) {
     // Passes the room ID, the authenticated tutor's ID, and the data (name, semester, active status)
     const updatedRoom = await this.updateRoomUseCase.execute(roomId, tutorId, updateRoomDto);
->>>>>>> 8c514a9a2c4246350c86c610b949378e0035d94b
 
     return {
       message: 'Sala atualizada com sucesso',
