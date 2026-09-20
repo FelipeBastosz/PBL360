@@ -135,6 +135,7 @@ Para começar do zero, apagando os dados: na raiz, `npm run db:reset`.
 | `npm run start:dev`          | Sobe a API em watch mode                         |
 | `npm run start:prod`         | Executa o build de `dist/`                       |
 | `npm run build`              | Compila para `dist/`                             |
+| `npm run seed`               | Popula o banco com dados iniciais de dev         |
 | `npm run lint`               | ESLint (com regras type-aware)                   |
 | `npm run lint:fix`           | ESLint com correção automática                   |
 | `npm run format`             | Prettier em `src/` e `test/`                     |
@@ -146,6 +147,19 @@ Para começar do zero, apagando os dados: na raiz, `npm run db:reset`.
 | `npm run migration:generate` | Gera migration a partir do diff das entidades    |
 | `npm run migration:run`      | Aplica as migrations pendentes                   |
 | `npm run migration:revert`   | Reverte a última migration                       |
+
+## Seed de ambiente de desenvolvimento
+
+O comando `npm run seed` (ou `npm run db:seed` na raiz) insere usuários de teste com credenciais padrão (`senha-secreta`):
+
+- **Professores (`TUTOR`)**:
+  - `carlos@uefs.br`
+  - `maria@uefs.br`
+- **Alunos (`STUDENT`)**:
+  - `ana@discente.uefs.br` (Matrícula: `20240001`)
+  - `joao@discente.uefs.br` (Matrícula: `20240002`)
+
+O script é idempotente: e-mails já existentes no banco são ignorados sem gerar duplicação ou erro.
 
 ## Variáveis de ambiente
 
