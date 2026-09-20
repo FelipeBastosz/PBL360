@@ -33,12 +33,22 @@ export class PgRoomRepository implements RoomRepository {
     private readonly rooms: Repository<Room>,
   ) {}
 
+  findById(id: string): Promise<Room | null> {
+    return this.queryOne(
+      `SELECT ${ROOM_COLUMNS}
+    FROM rooms
+    WHERE id = $1
+    LIMIT 1;`,
+      [id],
+    );
+  }
+
   findByCode(code: string): Promise<Room | null> {
     return this.queryOne(
       `SELECT ${ROOM_COLUMNS}
-      FROM rooms
-      WHERE code = $1
-      LIMIT 1;`,
+        FROM rooms
+        WHERE code = $1
+        LIMIT 1;`,
       [code],
     );
   }
@@ -80,7 +90,53 @@ export class PgRoomRepository implements RoomRepository {
     return this.toEntity(rows[0]);
   }
 
+  async update(room: Room): Promise<Room> {
+    const rows = await this.rooms.query<RoomRow[]>(
+      `UPDATE rooms
+       SET name = $1
+       WHERE id = $2
+       RETURNING ${ROOM_COLUMNS};`,
+      [room.name, room.id],
+    );
+
+    if (rows.length === 0) {
+      throw new Error('Sala não encontrada para edição.');
+    }
+
+    return this.toEntity(rows[0]);
+  }
+
   private toEntity(row: RoomRow): Room {
     return this.rooms.create(row);
+  }
+
+  async findById(roomId: string): Promise<Room | null> {
+    const rows = await this.rooms.query<RoomRow[]>(
+      `SELECT ${ROOM_COLUMNS}
+      FROM rooms
+      WHERE id = $1
+      LIMIT 1;`,
+      [roomId],
+    );
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    return this.toEntity(rows[0]);
+  }
+
+  async update(room: Room): Promise<void> {
+    await this.rooms.query(
+      `UPDATE rooms
+      SET tutor_id = $1,
+          name = $2,
+          code = $3,
+          access_token = $4,
+          semester = $5,
+          active = $6
+      WHERE id = $7;`,
+      [room.tutorId, room.name, room.code, room.accessToken, room.semester, room.active, room.id],
+    );
   }
 }
