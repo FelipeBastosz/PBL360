@@ -52,6 +52,18 @@ pare: é sinal de que falta uma abstração no `domain`.
 ```
 backend/
 ├── src/
+│   ├── auth/                       # Módulo de autenticação
+│   │   ├── application/
+│   │   │   ├── dtos/
+│   │   │   └── use-cases/
+│   │   ├── domain/
+│   │   │   ├── entities/
+│   │   │   └── services/           # Interfaces de serviços externos (EmailVerificationSender)
+│   │   ├── infrastructure/
+│   │   │   ├── email/              # Implementações concretas de envio (Nodemailer)
+│   │   │   ├── security/           # Implementações de criptografia (Bcrypt, JWT)
+│   │   │   └── http/               # Controllers
+│   │   └── auth.module.ts
 │   ├── config/                  # configuração da aplicação e do TypeORM
 │   │   ├── env.config.ts        #   variáveis de ambiente tipadas
 │   │   ├── typeorm.config.ts    #   opções de conexão usadas pelo Nest
@@ -137,6 +149,8 @@ user.entity.spec.ts   # os testes das regras, ao lado
 Decoradores do TypeORM (`@Entity`, `@Column`) **podem** ficar na entidade de domínio — é o
 custo aceito por não manter dois modelos paralelos num projeto deste porte. O que não pode é
 a entidade conter consultas, HTTP ou qualquer chamada a serviço externo.
+
+**`domain/services/`** — contratos de serviços externos à aplicação (ex.: envio de e-mails, emissão de tokens). Assim como os repositórios, os serviços declaram apenas interfaces puras em TypeScript acompanhadas do seu respectivo injection token (`Symbol`). O domínio desconhece bibliotecas como Nodemailer ou APIs externas.
 
 **`domain/repositories/`** — apenas **interfaces**. O domínio declara _o que_ precisa da
 persistência; a infraestrutura decide _como_.
@@ -255,20 +269,23 @@ A ordem importa: começar pelo domínio evita que decisões de banco vazem para 
 
 ### Nomenclatura
 
-| Tipo             | Arquivo                        | Identificador           |
-| ---------------- | ------------------------------ | ----------------------- |
-| Entidade         | `user.entity.ts`               | `User`                  |
-| Contrato de repo | `user.repository.ts`           | `UserRepository`        |
-| Token de injeção | (no mesmo arquivo do contrato) | `USER_REPOSITORY`       |
-| Repo TypeORM     | `typeorm-user.repository.ts`   | `TypeOrmUserRepository` |
-| Caso de uso      | `create-user.use-case.ts`      | `CreateUserUseCase`     |
-| DTO              | `create-user.dto.ts`           | `CreateUserDto`         |
-| Controller       | `users.controller.ts`          | `UsersController`       |
-| Módulo           | `users.module.ts`              | `UsersModule`           |
-| Migration        | `1712345678901-CreateUsers.ts` | `CreateUsers...`        |
-| Middleware       | `http-logger.middleware.ts`    | `HttpLoggerMiddleware`  |
-| Teste unitário   | `create-user.use-case.spec.ts` | —                       |
-| Teste e2e        | `users.e2e-spec.ts`            | —                       |
+| Tipo                | Arquivo                                   | Identificador                       |
+| ------------------- | ----------------------------------------- | ----------------------------------- |
+| Entidade            | `user.entity.ts`                          | `User`                              |
+| Contrato de repo    | `user.repository.ts`                      | `UserRepository`                    |
+| Token de injeção    | (no mesmo arquivo do contrato)            | `USER_REPOSITORY`                   |
+| Repo TypeORM        | `typeorm-user.repository.ts`              | `TypeOrmUserRepository`             |
+| Caso de uso         | `create-user.use-case.ts`                 | `CreateUserUseCase`                 |
+| DTO                 | `create-user.dto.ts`                      | `CreateUserDto`                     |
+| Controller          | `users.controller.ts`                     | `UsersController`                   |
+| Módulo              | `users.module.ts`                         | `UsersModule`                       |
+| Migration           | `1712345678901-CreateUsers.ts`            | `CreateUsers...`                    |
+| Middleware          | `http-logger.middleware.ts`               | `HttpLoggerMiddleware`              |
+| Teste unitário      | `create-user.use-case.spec.ts`            | —                                   |
+| Teste e2e           | `users.e2e-spec.ts`                       | —                                   |
+| Contrato de serviço | `email-verification-sender.ts`            | `EmailVerificationSender`           |
+| Token de serviço    | `email-verification-sender.ts`            | `EMAIL_VERIFICATION_SENDER`         |
+| Serviço concreto    | `nodemailer-email-verification-sender.ts` | `NodemailerEmailVerificationSender` |
 
 Arquivos em `kebab-case`, classes e interfaces em `PascalCase`, tokens em
 `SCREAMING_SNAKE_CASE`, pastas no plural quando agrupam itens (`entities/`, `use-cases/`).
