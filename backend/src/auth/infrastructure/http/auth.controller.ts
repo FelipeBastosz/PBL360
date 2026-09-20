@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -29,6 +29,8 @@ import {
   toSessionResponse,
   toVerifyEmailCodeInput,
 } from './auth.mapper';
+import { AuthGuard } from '@/shared/guards/auth.guard';
+import { Public } from '@/shared/decorators/public.decorator';
 
 const VERIFICATION_SENT =
   'Cadastro realizado. Enviamos um código de verificação para o seu e-mail institucional.';
@@ -40,6 +42,7 @@ const CODE_RESENT =
 
 @ApiTags('Autenticação')
 @Controller('autenticacao')
+@UseGuards(AuthGuard)
 export class AuthController {
   constructor(
     private readonly registerUser: RegisterUserUseCase,
@@ -48,6 +51,7 @@ export class AuthController {
     private readonly resendVerificationCode: ResendVerificationCodeUseCase,
   ) {}
 
+  @Public()
   @Post('registro')
   @ApiOperation({
     summary: 'Cadastra um usuário',
@@ -68,6 +72,7 @@ export class AuthController {
     return toRegisterResponse(user, VERIFICATION_SENT);
   }
 
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Autentica um usuário', description: 'Devolve o token JWT da sessão.' })
@@ -84,6 +89,7 @@ export class AuthController {
     return toSessionResponse(await this.login.execute({ email: dto.email, password: dto.senha }));
   }
 
+  @Public()
   @Post('verificar-codigo')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -101,6 +107,7 @@ export class AuthController {
     return { mensagem: ACCOUNT_ACTIVATED, ...toSessionResponse(session) };
   }
 
+  @Public()
   @Post('reenviar-codigo')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
