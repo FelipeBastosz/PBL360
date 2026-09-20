@@ -58,7 +58,7 @@ describe('User repository (e2e)', () => {
     it('lets the column defaults fill what the entity leaves unset', async () => {
       const saved = await repository.save(buildUser());
 
-      expect(saved.active).toBe(true);
+      expect(saved.active).toBe(false);
       expect(saved.createdAt).toBeInstanceOf(Date);
       expect(saved.photoUrl).toBeNull();
     });

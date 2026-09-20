@@ -223,6 +223,39 @@ export class UsersController {
 **`infrastructure/database/`** — as implementações concretas dos repositórios, usando
 TypeORM. É o único lugar do módulo onde `Repository`, `QueryBuilder` e SQL aparecem.
 
+**Mapeamento e Repositórios com SQL Puro**
+
+Quando a implementação do repositório utilizar queries puras (`repository.query`) em vez do ORM, o arquivo deve manter a separação de tipos por meio de uma interface `Raw` privada ou exportada no próprio arquivo, seguida de uma função mapper. Isso elimina o uso de `any` e garante a tipagem estrita exigida pelo projeto:
+
+```ts
+// infrastructure/database/typeorm-email-verification-code.repository.ts
+interface EmailVerificationCodeRaw {
+  id: string;
+  email: string;
+  code: string;
+  expiresAt: string | Date;
+  createdAt: string | Date;
+  usedAt: string | Date | null;
+}
+
+@Injectable()
+export class TypeOrmEmailVerificationCodeRepository implements EmailVerificationCodeRepository {
+  // ... métodos do repositório ...
+
+  private mapToEntity(raw: EmailVerificationCodeRaw): EmailVerificationCode {
+    const entity = new EmailVerificationCode();
+    entity.id = raw.id;
+    entity.email = raw.email;
+    entity.code = raw.code;
+    entity.expiresAt = new Date(raw.expiresAt);
+    entity.createdAt = new Date(raw.createdAt);
+    entity.usedAt = raw.usedAt ? new Date(raw.usedAt) : null;
+
+    return entity;
+  }
+}
+```
+
 ### 3.4 O módulo — onde as pontas se encontram
 
 A inversão de dependência acontece no `*.module.ts`, ligando a abstração do domínio à

@@ -3,7 +3,9 @@ import type { EmailVerificationCode } from '../entities/email-verification-code.
 export interface EmailVerificationCodeRepository {
   save(code: EmailVerificationCode): Promise<void>;
 
-  findPendingByEmail(email: string): Promise<EmailVerificationCode | null>;
+  findPendingByUserId(userId: string): Promise<EmailVerificationCode | null>;
+
+  invalidatePendingFor(userId: string): Promise<void>;
 
   markAsUsed(id: string): Promise<void>;
 }

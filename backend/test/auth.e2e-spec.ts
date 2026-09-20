@@ -9,23 +9,39 @@ import { EMAIL_VERIFICATION_SENDER } from '@/auth/domain/services/email-verifica
 
 const REGISTER = '/api/autenticacao/registro';
 const LOGIN = '/api/autenticacao/login';
+const VERIFY = '/api/autenticacao/verificar-codigo';
+const RESEND = '/api/autenticacao/reenviar-codigo';
+
+const CODE_RESENT =
+  'Se houver uma conta pendente de verificação com este e-mail, enviamos um novo código.';
+
+const PENDING_VERIFICATION =
+  'Confirme o código enviado para o seu e-mail institucional para ativar a conta.';
 
 jest.setTimeout(30000);
+
+interface UserResponse {
+  id: string;
+  nome: string;
+  email: string;
+  tipo: string;
+  matricula: string | null;
+  fotoUrl: string | null;
+  ativo: boolean;
+  criadoEm: string;
+}
 
 interface SessionResponse {
   mensagem?: string;
   token: string;
   expiraEm: string;
-  usuario: {
-    id: string;
-    nome: string;
-    email: string;
-    tipo: string;
-    matricula: string | null;
-    fotoUrl: string | null;
-    ativo: boolean;
-    criadoEm: string;
-  };
+  usuario: UserResponse;
+}
+
+interface RegisterResponse {
+  mensagem: string;
+  usuarioId: string;
+  usuario: UserResponse;
 }
 
 interface ErrorResponse {
@@ -60,9 +76,49 @@ describe('Auth (e2e)', () => {
       .post(path)
       .send(payload);
 
-  const register = async (payload: object, status = 201): Promise<SessionResponse> => {
+  const register = async (payload: object, status = 201): Promise<RegisterResponse> => {
     const response = await post(REGISTER, payload).expect(status);
-    return response.body as SessionResponse;
+    return response.body as RegisterResponse;
+  };
+
+  const ageCodesOf = async (userId: string, seconds: number): Promise<void> => {
+    await dataSource.query(
+      `UPDATE email_verification_codes
+        SET created_at = NOW() - ($2 || ' seconds')::interval
+        WHERE user_id = $1;`,
+      [userId, seconds],
+    );
+  };
+
+  const countPendingCodes = async (userId: string): Promise<number> => {
+    const [{ total }] = await dataSource.query<[{ total: number }]>(
+      `SELECT COUNT(*)::int AS total FROM email_verification_codes
+        WHERE user_id = $1 AND used_at IS NULL;`,
+      [userId],
+    );
+    return total;
+  };
+
+  const pendingCodeOf = async (userId: string): Promise<string> => {
+    const [row] = await dataSource.query<[{ code: string }]>(
+      `SELECT code FROM email_verification_codes
+        WHERE user_id = $1 AND used_at IS NULL
+        ORDER BY created_at DESC LIMIT 1;`,
+      [userId],
+    );
+    return row.code;
+  };
+
+  const registerAndActivate = async (payload: object): Promise<RegisterResponse> => {
+    const registered = await register(payload);
+
+    await post(VERIFY, {
+      usuarioId: registered.usuarioId,
+      email: registered.usuario.email,
+      codigo: await pendingCodeOf(registered.usuarioId),
+    }).expect(200);
+
+    return registered;
   };
 
   const errorOf = async (path: string, payload: object, status: number): Promise<ErrorResponse> => {
@@ -99,12 +155,31 @@ describe('Auth (e2e)', () => {
   });
 
   describe(`POST ${REGISTER}`, () => {
-    it('registers a student and answers with a token', async () => {
+    it('registers a student pending verification and answers with the user id', async () => {
       const body = await register(studentPayload());
 
-      expect(body.token).toEqual(expect.any(String));
-      expect(body.expiraEm).toEqual(expect.any(String));
+      expect(body.usuarioId).toHaveLength(36);
+      expect(body.usuarioId).toBe(body.usuario.id);
       expect(body.mensagem).toContain('código de verificação');
+    });
+
+    it('hands back no session token before the account is verified', async () => {
+      const body = await register(studentPayload());
+
+      expect(body).not.toHaveProperty('token');
+      expect(body.usuario.ativo).toBe(false);
+    });
+
+    it('stores a pending code bound to the created user', async () => {
+      const body = await register(studentPayload());
+
+      const [row] = await dataSource.query<[{ userId: string; code: string }]>(
+        `SELECT user_id AS "userId", code FROM email_verification_codes WHERE user_id = $1;`,
+        [body.usuarioId],
+      );
+
+      expect(row.userId).toBe(body.usuarioId);
+      expect(row.code).toMatch(/^\d{6}$/);
     });
 
     it('answers with the Portuguese contract and never the password', async () => {
@@ -116,7 +191,7 @@ describe('Auth (e2e)', () => {
         tipo: 'ALUNO',
         matricula: '20240001',
         fotoUrl: 'https://example.com/ana.png',
-        ativo: true,
+        ativo: false,
       });
       expect(JSON.stringify(body)).not.toContain('senha-secreta');
     });
@@ -169,7 +244,7 @@ describe('Auth (e2e)', () => {
 
   describe(`POST ${LOGIN}`, () => {
     beforeEach(async () => {
-      await register(studentPayload());
+      await registerAndActivate(studentPayload());
     });
 
     it('answers 200 with a token for valid credentials', async () => {
@@ -201,6 +276,256 @@ describe('Auth (e2e)', () => {
 
     it('rejects a payload missing the password', async () => {
       await errorOf(LOGIN, { email: 'ana@discente.uefs.br' }, 400);
+    });
+
+    it('rejects an account that never confirmed its code', async () => {
+      await register(tutorPayload());
+
+      const body = await errorOf(LOGIN, { email: 'carlos@uefs.br', senha: 'senha-secreta' }, 403);
+
+      expect(body.message).toBe(PENDING_VERIFICATION);
+    });
+
+    it('hands the pending account everything it needs to verify', async () => {
+      const pending = await register(tutorPayload());
+
+      const response = await post(LOGIN, {
+        email: 'carlos@uefs.br',
+        senha: 'senha-secreta',
+      }).expect(403);
+
+      expect(response.body).toMatchObject({
+        statusCode: 403,
+        motivo: 'CONTA_NAO_VERIFICADA',
+        usuarioId: pending.usuarioId,
+        email: 'carlos@uefs.br',
+      });
+    });
+
+    it('lets the client finish the flow straight from the login answer', async () => {
+      await register(tutorPayload());
+
+      const blocked = await post(LOGIN, { email: 'carlos@uefs.br', senha: 'senha-secreta' }).expect(
+        403,
+      );
+      const { usuarioId, email } = blocked.body as { usuarioId: string; email: string };
+
+      await post(VERIFY, { usuarioId, email, codigo: await pendingCodeOf(usuarioId) }).expect(200);
+      await post(LOGIN, { email: 'carlos@uefs.br', senha: 'senha-secreta' }).expect(200);
+    });
+
+    it('answers 401, not 403, when the password is wrong on a pending account', async () => {
+      await register(tutorPayload());
+
+      const body = await errorOf(LOGIN, { email: 'carlos@uefs.br', senha: 'errada' }, 401);
+
+      expect(body.message).toBe('E-mail ou senha inválidos.');
+    });
+  });
+
+  describe(`POST ${VERIFY}`, () => {
+    let registered: RegisterResponse;
+    let codigo: string;
+
+    const verify = (overrides: object = {}) =>
+      post(VERIFY, {
+        usuarioId: registered.usuarioId,
+        email: registered.usuario.email,
+        codigo,
+        ...overrides,
+      });
+
+    const activeFlagOf = async (id: string): Promise<boolean> => {
+      const [row] = await dataSource.query<[{ active: boolean }]>(
+        'SELECT active FROM users WHERE id = $1;',
+        [id],
+      );
+      return row.active;
+    };
+
+    beforeEach(async () => {
+      registered = await register(studentPayload());
+      codigo = await pendingCodeOf(registered.usuarioId);
+    });
+
+    it('activates the account in the users table', async () => {
+      await verify().expect(200);
+
+      expect(await activeFlagOf(registered.usuarioId)).toBe(true);
+    });
+
+    it('answers with the session token of the activated account', async () => {
+      const response = await verify().expect(200);
+      const body = response.body as SessionResponse;
+
+      expect(body.mensagem).toBe('Conta ativada com sucesso.');
+      expect(body.token).toEqual(expect.any(String));
+      expect(body.usuario).toMatchObject({ id: registered.usuarioId, ativo: true });
+    });
+
+    it('lets the activated account log in', async () => {
+      await verify().expect(200);
+
+      await post(LOGIN, { email: 'ana@discente.uefs.br', senha: 'senha-secreta' }).expect(200);
+    });
+
+    it('burns the code so it cannot be replayed', async () => {
+      await verify().expect(200);
+
+      const body = await errorOf(
+        VERIFY,
+        { usuarioId: registered.usuarioId, email: registered.usuario.email, codigo },
+        400,
+      );
+
+      expect(body.message).toBe('Esta conta já foi verificada.');
+    });
+
+    it('rejects a code that does not match', async () => {
+      const wrong = codigo === '000000' ? '999999' : '000000';
+
+      const response = await verify({ codigo: wrong }).expect(400);
+
+      expect((response.body as ErrorResponse).message).toBe(
+        'Código de verificação inválido ou expirado.',
+      );
+      expect(await activeFlagOf(registered.usuarioId)).toBe(false);
+    });
+
+    it('rejects an expired code', async () => {
+      await dataSource.query(
+        `UPDATE email_verification_codes SET expires_at = NOW() - INTERVAL '1 minute'
+          WHERE user_id = $1;`,
+        [registered.usuarioId],
+      );
+
+      await verify().expect(400);
+      expect(await activeFlagOf(registered.usuarioId)).toBe(false);
+    });
+
+    it('rejects an e-mail that does not belong to the user id', async () => {
+      await verify({ email: 'carlos@uefs.br' }).expect(400);
+
+      expect(await activeFlagOf(registered.usuarioId)).toBe(false);
+    });
+
+    it('rejects an unknown user id', async () => {
+      await verify({ usuarioId: '00000000-0000-4000-8000-000000000000' }).expect(400);
+
+      expect(await activeFlagOf(registered.usuarioId)).toBe(false);
+    });
+
+    it('rejects a user id that is not a uuid', async () => {
+      const body = await errorOf(
+        VERIFY,
+        { usuarioId: 'nao-e-uuid', email: registered.usuario.email, codigo },
+        400,
+      );
+
+      expect(body.message).toContain('Informe um identificador de usuário válido.');
+    });
+
+    it('rejects a code that is not six digits', async () => {
+      const body = await errorOf(
+        VERIFY,
+        { usuarioId: registered.usuarioId, email: registered.usuario.email, codigo: '12a456' },
+        400,
+      );
+
+      expect(body.message).toContain('O código deve conter exatamente 6 dígitos.');
+    });
+  });
+
+  describe(`POST ${RESEND}`, () => {
+    let registered: RegisterResponse;
+
+    const resend = (email: string) => post(RESEND, { email });
+
+    beforeEach(async () => {
+      registered = await register(studentPayload());
+      await ageCodesOf(registered.usuarioId, 120);
+    });
+
+    it('sends a fresh code and burns the previous one', async () => {
+      const previous = await pendingCodeOf(registered.usuarioId);
+
+      const response = await resend('ana@discente.uefs.br').expect(200);
+
+      expect((response.body as { mensagem: string }).mensagem).toBe(CODE_RESENT);
+      expect(await countPendingCodes(registered.usuarioId)).toBe(1);
+      expect(await pendingCodeOf(registered.usuarioId)).not.toBe(previous);
+    });
+
+    it('refuses the code it just replaced', async () => {
+      const previous = await pendingCodeOf(registered.usuarioId);
+
+      await resend('ana@discente.uefs.br').expect(200);
+
+      await post(VERIFY, {
+        usuarioId: registered.usuarioId,
+        email: 'ana@discente.uefs.br',
+        codigo: previous,
+      }).expect(400);
+    });
+
+    it('activates the account with the resent code', async () => {
+      await resend('ana@discente.uefs.br').expect(200);
+
+      await post(VERIFY, {
+        usuarioId: registered.usuarioId,
+        email: 'ana@discente.uefs.br',
+        codigo: await pendingCodeOf(registered.usuarioId),
+      }).expect(200);
+
+      await post(LOGIN, { email: 'ana@discente.uefs.br', senha: 'senha-secreta' }).expect(200);
+    });
+
+    it('accepts the e-mail in any casing', async () => {
+      const previous = await pendingCodeOf(registered.usuarioId);
+
+      await resend('ANA@Discente.UEFS.br').expect(200);
+
+      expect(await pendingCodeOf(registered.usuarioId)).not.toBe(previous);
+    });
+
+    it('stays inside the cooldown without sending a second code', async () => {
+      await resend('ana@discente.uefs.br').expect(200);
+      const fresh = await pendingCodeOf(registered.usuarioId);
+
+      const response = await resend('ana@discente.uefs.br').expect(200);
+
+      expect((response.body as { mensagem: string }).mensagem).toBe(CODE_RESENT);
+      expect(await pendingCodeOf(registered.usuarioId)).toBe(fresh);
+      expect(await countPendingCodes(registered.usuarioId)).toBe(1);
+    });
+
+    it('answers the same way for an e-mail nobody registered', async () => {
+      const response = await resend('ninguem@uefs.br').expect(200);
+
+      expect((response.body as { mensagem: string }).mensagem).toBe(CODE_RESENT);
+    });
+
+    it('answers the same way for an account already verified', async () => {
+      await post(VERIFY, {
+        usuarioId: registered.usuarioId,
+        email: 'ana@discente.uefs.br',
+        codigo: await pendingCodeOf(registered.usuarioId),
+      }).expect(200);
+
+      const response = await resend('ana@discente.uefs.br').expect(200);
+
+      expect((response.body as { mensagem: string }).mensagem).toBe(CODE_RESENT);
+      expect(await countPendingCodes(registered.usuarioId)).toBe(0);
+    });
+
+    it('rejects a payload that is not an e-mail', async () => {
+      const body = await errorOf(RESEND, { email: 'nao-e-email' }, 400);
+
+      expect(body.message).toContain('Informe um e-mail válido.');
+    });
+
+    it('rejects an unknown field', async () => {
+      await errorOf(RESEND, { email: 'ana@discente.uefs.br', extra: 1 }, 400);
     });
   });
 });

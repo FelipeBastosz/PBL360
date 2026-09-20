@@ -11,6 +11,11 @@ import {
   type AccessTokenIssuer,
 } from '../../domain/services/access-token-issuer';
 import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
+import {
+  PENDING_VERIFICATION_MESSAGE,
+  PENDING_VERIFICATION_REASON,
+  PendingVerificationException,
+} from '../errors/pending-verification.exception';
 import { LoginUseCase } from './login.use-case';
 
 describe('LoginUseCase', () => {
@@ -24,8 +29,8 @@ describe('LoginUseCase', () => {
   const passwords: PasswordHasher = { hash: jest.fn(), matches };
   const tokens: AccessTokenIssuer = { issueFor };
 
-  const registeredUser = (): User =>
-    User.create({
+  const registeredUser = (): User => {
+    const user = User.create({
       name: 'Ana Souza',
       email: 'ana@discente.uefs.br',
       passwordHash: 'hashed',
@@ -33,6 +38,24 @@ describe('LoginUseCase', () => {
       registrationNumber: '20240001',
       photoUrl: 'https://example.com/ana.png',
     });
+    user.activate();
+
+    return user;
+  };
+
+  const pendingUser = (): User => {
+    const user = User.create({
+      name: 'Ana Souza',
+      email: 'ana@discente.uefs.br',
+      passwordHash: 'hashed',
+      type: UserType.STUDENT,
+      registrationNumber: '20240001',
+      photoUrl: 'https://example.com/ana.png',
+    });
+    user.id = 'user-1';
+
+    return user;
+  };
 
   const credentials = { email: ' Ana@Discente.UEFS.br ', password: 'senha-secreta' };
 
@@ -91,11 +114,38 @@ describe('LoginUseCase', () => {
     expect(wrongPassword).toBe(unknownEmail);
   });
 
+  it('rejects an account that has not verified its e-mail yet', async () => {
+    findByEmail.mockResolvedValue(pendingUser());
+
+    await expect(useCase.execute(credentials)).rejects.toBeInstanceOf(PendingVerificationException);
+    expect(issueFor).not.toHaveBeenCalled();
+  });
+
+  it('tells the pending account how to finish the verification', async () => {
+    findByEmail.mockResolvedValue(pendingUser());
+
+    const error = await useCase
+      .execute(credentials)
+      .catch((thrown: PendingVerificationException) => thrown);
+
+    expect(error).toBeInstanceOf(PendingVerificationException);
+    expect((error as PendingVerificationException).getStatus()).toBe(403);
+    expect((error as PendingVerificationException).getResponse()).toEqual({
+      statusCode: 403,
+      error: 'Forbidden',
+      message: PENDING_VERIFICATION_MESSAGE,
+      motivo: PENDING_VERIFICATION_REASON,
+      usuarioId: 'user-1',
+      email: 'ana@discente.uefs.br',
+    });
+  });
+
   it('rejects a deactivated account', async () => {
     const user = registeredUser();
     user.deactivate();
     findByEmail.mockResolvedValue(user);
 
-    await expect(useCase.execute(credentials)).rejects.toThrow('Esta conta está desativada.');
+    await expect(useCase.execute(credentials)).rejects.toBeInstanceOf(PendingVerificationException);
+    expect(issueFor).not.toHaveBeenCalled();
   });
 });

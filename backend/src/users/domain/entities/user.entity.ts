@@ -36,7 +36,7 @@ export class User {
   @Column({ type: 'enum', enum: UserType, enumName: 'user_type' })
   type: UserType;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', default: false })
   active: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
@@ -50,7 +50,7 @@ export class User {
     user.type = props.type;
     user.registrationNumber = props.registrationNumber?.trim() || null;
     user.photoUrl = props.photoUrl?.trim() || null;
-    user.active = true;
+    user.active = false;
     user.assertIsValid();
 
     return user;
@@ -88,6 +88,10 @@ export class User {
 
   isStudent(): boolean {
     return this.type === UserType.STUDENT;
+  }
+
+  isPendingVerification(): boolean {
+    return !this.active;
   }
 
   activate(): void {

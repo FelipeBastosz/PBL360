@@ -1,10 +1,13 @@
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import type { User } from '@/users/domain/entities/user.entity';
 import type { AuthenticatedSession } from '../../application/authenticated-session';
+import type { RegisterResponseDto } from '../../application/dtos/register-response.dto';
 import type { RegisterUserDto } from '../../application/dtos/register-user.dto';
 import type { SessionResponseDto } from '../../application/dtos/session-response.dto';
 import type { UserResponseDto } from '../../application/dtos/user-response.dto';
 import { UserTypePayload } from '../../application/dtos/user-type-payload.enum';
+import type { VerifyEmailCodeDto } from '../../application/dtos/verify-email-code.dto';
+import type { VerifyEmailCodeInput } from '../../application/use-cases/verify-email-code.use-case';
 
 const DOMAIN_TYPE: Record<UserTypePayload, UserType> = {
   [UserTypePayload.PROFESSOR]: UserType.TUTOR,
@@ -25,6 +28,12 @@ export const toRegisterUserInput = (dto: RegisterUserDto) => ({
   photoUrl: dto.fotoUrl ?? null,
 });
 
+export const toVerifyEmailCodeInput = (dto: VerifyEmailCodeDto): VerifyEmailCodeInput => ({
+  userId: dto.usuarioId,
+  email: dto.email,
+  code: dto.codigo,
+});
+
 export const toUserResponse = (user: User): UserResponseDto => ({
   id: user.id,
   nome: user.name,
@@ -40,4 +49,10 @@ export const toSessionResponse = (session: AuthenticatedSession): SessionRespons
   token: session.accessToken.value,
   expiraEm: session.accessToken.expiresAt,
   usuario: toUserResponse(session.user),
+});
+
+export const toRegisterResponse = (user: User, mensagem: string): RegisterResponseDto => ({
+  mensagem,
+  usuarioId: user.id,
+  usuario: toUserResponse(user),
 });
