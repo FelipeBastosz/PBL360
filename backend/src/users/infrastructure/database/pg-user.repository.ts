@@ -50,7 +50,7 @@ export class PgUserRepository implements UserRepository {
   private async insertNew(user: User): Promise<User> {
     const rows = await this.users.query<UserRow[]>(
       `INSERT INTO users (${WRITABLE_COLUMNS})
-        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, TRUE))
+        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, FALSE))
         RETURNING ${USER_COLUMNS};`,
       this.writableValues(user),
     );

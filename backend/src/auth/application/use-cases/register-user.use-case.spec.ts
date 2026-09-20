@@ -1,4 +1,4 @@
-import { ConflictException, Logger } from '@nestjs/common';
+import { ConflictException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -7,20 +7,9 @@ import {
   USER_REPOSITORY,
   type UserRepository,
 } from '@/users/domain/repositories/user.repository.interface';
-import {
-  ACCESS_TOKEN_ISSUER,
-  type AccessTokenIssuer,
-} from '../../domain/services/access-token-issuer';
-import {
-  EMAIL_VERIFICATION_SENDER,
-  type EmailVerificationSender,
-} from '../../domain/services/email-verification-sender';
 import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
+import { VerificationCodeIssuer } from '../services/verification-code-issuer';
 import { RegisterUserUseCase, type RegisterUserInput } from './register-user.use-case';
-import {
-  EMAIL_VERIFICATION_CODE_REPOSITORY,
-  type EmailVerificationCodeRepository,
-} from '../../domain/repositories/email-verification-code.repository';
 
 describe('RegisterUserUseCase', () => {
   let useCase: RegisterUserUseCase;
@@ -28,25 +17,11 @@ describe('RegisterUserUseCase', () => {
   const findByEmail: jest.MockedFunction<UserRepository['findByEmail']> = jest.fn();
   const save: jest.MockedFunction<UserRepository['save']> = jest.fn();
   const hash: jest.MockedFunction<PasswordHasher['hash']> = jest.fn();
-  const issueFor: jest.MockedFunction<AccessTokenIssuer['issueFor']> = jest.fn();
-  const sendVerificationCode: jest.MockedFunction<EmailVerificationSender['sendVerificationCode']> =
-    jest.fn();
-
-  const saveCode: jest.MockedFunction<EmailVerificationCodeRepository['save']> = jest.fn();
-  const findPendingByEmail: jest.MockedFunction<
-    EmailVerificationCodeRepository['findPendingByEmail']
-  > = jest.fn();
-  const markAsUsed: jest.MockedFunction<EmailVerificationCodeRepository['markAsUsed']> = jest.fn();
+  const issueFor: jest.MockedFunction<VerificationCodeIssuer['issueFor']> = jest.fn();
 
   const users: UserRepository = { findByEmail, findById: jest.fn(), save };
   const passwords: PasswordHasher = { hash, matches: jest.fn() };
-  const tokens: AccessTokenIssuer = { issueFor };
-  const verification: EmailVerificationSender = { sendVerificationCode };
-  const codes: EmailVerificationCodeRepository = {
-    save: saveCode,
-    findPendingByEmail,
-    markAsUsed,
-  };
+  const issuer = { issueFor } as unknown as VerificationCodeIssuer;
 
   const tutorInput = (): RegisterUserInput => ({
     name: 'Carlos Mendes',
@@ -69,18 +44,14 @@ describe('RegisterUserUseCase', () => {
     findByEmail.mockResolvedValue(null);
     save.mockImplementation((user) => Promise.resolve(Object.assign(user, { id: 'user-1' })));
     hash.mockResolvedValue('hashed');
-    issueFor.mockResolvedValue({ value: 'jwt-token', expiresAt: new Date() });
-    sendVerificationCode.mockResolvedValue(undefined);
-    saveCode.mockResolvedValue(undefined);
+    issueFor.mockResolvedValue(undefined);
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         RegisterUserUseCase,
         { provide: USER_REPOSITORY, useValue: users },
         { provide: PASSWORD_HASHER, useValue: passwords },
-        { provide: ACCESS_TOKEN_ISSUER, useValue: tokens },
-        { provide: EMAIL_VERIFICATION_SENDER, useValue: verification },
-        { provide: EMAIL_VERIFICATION_CODE_REPOSITORY, useValue: codes },
+        { provide: VerificationCodeIssuer, useValue: issuer },
       ],
     }).compile();
 
@@ -132,40 +103,17 @@ describe('RegisterUserUseCase', () => {
   });
 
   it('asks for a verification code for the persisted user', async () => {
-    await useCase.execute(studentInput());
+    const user = await useCase.execute(studentInput());
 
-    expect(saveCode).toHaveBeenCalledWith(
-      expect.objectContaining({
-        email: 'ana@discente.uefs.br',
-        code: expect.stringMatching(/^\d{6}$/) as string,
-      }),
-    );
-
-    expect(sendVerificationCode).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'user-1',
-        name: 'Ana Souza',
-        email: 'ana@discente.uefs.br',
-        code: expect.stringMatching(/^\d{6}$/) as string,
-      }),
-    );
+    expect(issueFor).toHaveBeenCalledWith(user);
+    expect(issueFor.mock.calls[0][0].id).toBe('user-1');
   });
 
-  it('still registers the account when the verification e-mail fails', async () => {
-    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
-    sendVerificationCode.mockRejectedValue(new Error('smtp is down'));
+  it('creates the account pending verification and hands back no token', async () => {
+    const user = await useCase.execute(tutorInput());
 
-    await expect(useCase.execute(studentInput())).resolves.toMatchObject({
-      accessToken: { value: 'jwt-token' },
-    });
-
-    jest.restoreAllMocks();
-  });
-
-  it('issues a token for the persisted user', async () => {
-    const session = await useCase.execute(tutorInput());
-
-    expect(issueFor).toHaveBeenCalledWith(session.user);
-    expect(session.accessToken.value).toBe('jwt-token');
+    expect(save.mock.calls[0][0].active).toBe(false);
+    expect(user.isPendingVerification()).toBe(true);
+    expect(user).not.toHaveProperty('accessToken');
   });
 });

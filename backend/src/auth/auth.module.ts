@@ -16,6 +16,8 @@ import { EmailVerificationCode } from './domain/entities/email-verification-code
 import { EMAIL_VERIFICATION_CODE_REPOSITORY } from './domain/repositories/email-verification-code.repository';
 import { TypeOrmEmailVerificationCodeRepository } from './infrastructure/database/typeorm-email-verification-code.repository';
 import { VerifyEmailCodeUseCase } from './application/use-cases/verify-email-code.use-case';
+import { ResendVerificationCodeUseCase } from './application/use-cases/resend-verification-code.use-case';
+import { VerificationCodeIssuer } from './application/services/verification-code-issuer';
 
 type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
 
@@ -39,6 +41,8 @@ type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
     RegisterUserUseCase,
     LoginUseCase,
     VerifyEmailCodeUseCase,
+    ResendVerificationCodeUseCase,
+    VerificationCodeIssuer,
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
     { provide: ACCESS_TOKEN_ISSUER, useClass: JwtAccessTokenIssuer },
     { provide: EMAIL_VERIFICATION_SENDER, useClass: NodemailerEmailVerificationSender },

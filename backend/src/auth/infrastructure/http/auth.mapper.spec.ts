@@ -2,11 +2,18 @@ import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { UserTypePayload } from '../../application/dtos/user-type-payload.enum';
 import type { RegisterUserDto } from '../../application/dtos/register-user.dto';
-import { toRegisterUserInput, toSessionResponse, toUserResponse } from './auth.mapper';
+import type { VerifyEmailCodeDto } from '../../application/dtos/verify-email-code.dto';
+import {
+  toRegisterResponse,
+  toRegisterUserInput,
+  toSessionResponse,
+  toUserResponse,
+  toVerifyEmailCodeInput,
+} from './auth.mapper';
 
 describe('auth.mapper', () => {
-  const student = (): User =>
-    User.create({
+  const student = (): User => {
+    const user = User.create({
       name: 'Ana Souza',
       email: 'ana@discente.uefs.br',
       passwordHash: 'hashed',
@@ -14,6 +21,10 @@ describe('auth.mapper', () => {
       registrationNumber: '20240001',
       photoUrl: 'https://example.com/ana.png',
     });
+    user.activate();
+
+    return user;
+  };
 
   it('translates the Portuguese payload into the domain input', () => {
     const dto: RegisterUserDto = {
@@ -50,6 +61,20 @@ describe('auth.mapper', () => {
     });
   });
 
+  it('translates the verification payload into the domain input', () => {
+    const dto: VerifyEmailCodeDto = {
+      usuarioId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+      email: 'ana@discente.uefs.br',
+      codigo: '123456',
+    };
+
+    expect(toVerifyEmailCodeInput(dto)).toEqual({
+      userId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+      email: 'ana@discente.uefs.br',
+      code: '123456',
+    });
+  });
+
   it('never exposes the password hash', () => {
     expect(toUserResponse(student())).not.toHaveProperty('passwordHash');
   });
@@ -75,5 +100,26 @@ describe('auth.mapper', () => {
         criadoEm: undefined,
       },
     });
+  });
+
+  it('answers the registration with the id needed by the verification route', () => {
+    const pending = User.create({
+      name: 'Ana Souza',
+      email: 'ana@discente.uefs.br',
+      passwordHash: 'hashed',
+      type: UserType.STUDENT,
+      registrationNumber: '20240001',
+      photoUrl: 'https://example.com/ana.png',
+    });
+    pending.id = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
+    const response = toRegisterResponse(pending, 'Cadastro realizado.');
+
+    expect(response).toMatchObject({
+      mensagem: 'Cadastro realizado.',
+      usuarioId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+      usuario: { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', ativo: false },
+    });
+    expect(response).not.toHaveProperty('token');
   });
 });
