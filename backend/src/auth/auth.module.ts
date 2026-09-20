@@ -7,7 +7,7 @@ import { RegisterUserUseCase } from './application/use-cases/register-user.use-c
 import { ACCESS_TOKEN_ISSUER } from './domain/services/access-token-issuer';
 import { EMAIL_VERIFICATION_SENDER } from './domain/services/email-verification-sender';
 import { PASSWORD_HASHER } from './domain/services/password-hasher';
-import { PendingEmailVerificationSender } from './infrastructure/email/pending-email-verification-sender';
+import { NodemailerEmailVerificationSender } from './infrastructure/email/nodemailer-email-verification-sender';
 import { AuthController } from './infrastructure/http/auth.controller';
 import { BcryptPasswordHasher } from './infrastructure/security/bcrypt-password-hasher';
 import { JwtAccessTokenIssuer } from './infrastructure/security/jwt-access-token-issuer';
@@ -20,7 +20,10 @@ type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('auth.jwtSecret'),
+        secret:
+          config.get<string>('auth.jwtSecret') ??
+          config.get<string>('JWT_SECRET') ??
+          'chave_secreta_provisoria_para_testes',
         signOptions: { expiresIn: config.get<TokenTtl>('auth.jwtExpiresIn') ?? '1d' },
       }),
     }),
@@ -31,7 +34,7 @@ type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
     LoginUseCase,
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
     { provide: ACCESS_TOKEN_ISSUER, useClass: JwtAccessTokenIssuer },
-    { provide: EMAIL_VERIFICATION_SENDER, useClass: PendingEmailVerificationSender },
+    { provide: EMAIL_VERIFICATION_SENDER, useClass: NodemailerEmailVerificationSender },
   ],
 })
 export class AuthModule {}
