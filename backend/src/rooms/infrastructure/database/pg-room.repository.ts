@@ -36,9 +36,9 @@ export class PgRoomRepository implements RoomRepository {
   findById(id: string): Promise<Room | null> {
     return this.queryOne(
       `SELECT ${ROOM_COLUMNS}
-    FROM rooms
-    WHERE id = $1
-    LIMIT 1;`,
+        FROM rooms
+        WHERE id = $1
+        LIMIT 1;`,
       [id],
     );
   }
@@ -108,35 +108,5 @@ export class PgRoomRepository implements RoomRepository {
 
   private toEntity(row: RoomRow): Room {
     return this.rooms.create(row);
-  }
-
-  async findById(roomId: string): Promise<Room | null> {
-    const rows = await this.rooms.query<RoomRow[]>(
-      `SELECT ${ROOM_COLUMNS}
-      FROM rooms
-      WHERE id = $1
-      LIMIT 1;`,
-      [roomId],
-    );
-
-    if (rows.length === 0) {
-      return null;
-    }
-
-    return this.toEntity(rows[0]);
-  }
-
-  async update(room: Room): Promise<void> {
-    await this.rooms.query(
-      `UPDATE rooms
-      SET tutor_id = $1,
-          name = $2,
-          code = $3,
-          access_token = $4,
-          semester = $5,
-          active = $6
-      WHERE id = $7;`,
-      [room.tutorId, room.name, room.code, room.accessToken, room.semester, room.active, room.id],
-    );
   }
 }
