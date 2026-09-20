@@ -1,0 +1,106 @@
+import type { DataSource, Repository } from 'typeorm';
+import { DEFAULT_PASSWORD, runSeed, SEED_USERS, seedUser } from './seed';
+import { User } from '@/users/domain/entities/user.entity';
+import { UserType } from '@/users/domain/enums/user-type.enum';
+
+describe('seed.ts', () => {
+  let mockUserRepo: jest.Mocked<Pick<Repository<User>, 'findOneBy' | 'save'>>;
+  let mockDataSource: jest.Mocked<Pick<DataSource, 'getRepository' | 'initialize' | 'destroy'>> & {
+    isInitialized: boolean;
+  };
+
+  beforeEach(() => {
+    mockUserRepo = {
+      findOneBy: jest.fn(),
+      save: jest.fn(),
+    };
+
+    mockDataSource = {
+      isInitialized: false,
+      getRepository: jest.fn().mockReturnValue(mockUserRepo),
+      initialize: jest.fn().mockImplementation(() => {
+        mockDataSource.isInitialized = true;
+        return Promise.resolve();
+      }),
+      destroy: jest.fn().mockImplementation(() => {
+        mockDataSource.isInitialized = false;
+        return Promise.resolve();
+      }),
+    };
+  });
+
+  describe('seedUser', () => {
+    it('creates a new user when email is not present in database', async () => {
+      mockUserRepo.findOneBy.mockResolvedValueOnce(null);
+      mockUserRepo.save.mockResolvedValueOnce(new User());
+
+      const data = SEED_USERS[0];
+      const result = await seedUser(
+        data,
+        'hashed-password',
+        mockDataSource as unknown as DataSource,
+      );
+
+      expect(result).toBe(true);
+      expect(mockUserRepo.findOneBy).toHaveBeenCalledWith({ email: data.email });
+      expect(mockUserRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: data.name,
+          email: data.email,
+          type: UserType.TUTOR,
+        }),
+      );
+    });
+
+    it('skips creation when email is already registered', async () => {
+      mockUserRepo.findOneBy.mockResolvedValueOnce(new User());
+
+      const data = SEED_USERS[2];
+      const result = await seedUser(
+        data,
+        'hashed-password',
+        mockDataSource as unknown as DataSource,
+      );
+
+      expect(result).toBe(false);
+      expect(mockUserRepo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('runSeed', () => {
+    it('initializes data source, seeds all users, and destroys connection', async () => {
+      mockUserRepo.findOneBy.mockResolvedValue(null);
+      mockUserRepo.save.mockResolvedValue(new User());
+
+      await runSeed(mockDataSource as unknown as DataSource);
+
+      expect(mockDataSource.initialize).toHaveBeenCalled();
+      expect(mockUserRepo.save).toHaveBeenCalledTimes(SEED_USERS.length);
+      expect(mockDataSource.destroy).toHaveBeenCalled();
+    });
+
+    it('does not re-initialize or destroy if data source is already initialized', async () => {
+      mockDataSource.isInitialized = true;
+      mockUserRepo.findOneBy.mockResolvedValue(null);
+      mockUserRepo.save.mockResolvedValue(new User());
+
+      await runSeed(mockDataSource as unknown as DataSource);
+
+      expect(mockDataSource.initialize).not.toHaveBeenCalled();
+      expect(mockDataSource.destroy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('SEED_USERS constants', () => {
+    it('contains default password and initial users for tutors and students', () => {
+      expect(DEFAULT_PASSWORD).toBe('senha-secreta');
+      expect(SEED_USERS.length).toBeGreaterThanOrEqual(4);
+
+      const tutors = SEED_USERS.filter((u) => u.type === UserType.TUTOR);
+      const students = SEED_USERS.filter((u) => u.type === UserType.STUDENT);
+
+      expect(tutors.length).toBeGreaterThan(0);
+      expect(students.length).toBeGreaterThan(0);
+    });
+  });
+});
