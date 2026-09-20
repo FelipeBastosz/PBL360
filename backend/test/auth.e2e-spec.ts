@@ -2,11 +2,15 @@ import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
+import { type Server } from 'node:http';
 import { AppModule } from '@/app.module';
 import { DomainExceptionFilter } from '@/shared/filters/domain-exception.filter';
+import { EMAIL_VERIFICATION_SENDER } from '@/auth/domain/services/email-verification-sender';
 
 const REGISTER = '/api/autenticacao/registro';
 const LOGIN = '/api/autenticacao/login';
+
+jest.setTimeout(30000);
 
 interface SessionResponse {
   mensagem?: string;
@@ -52,7 +56,9 @@ describe('Auth (e2e)', () => {
   let dataSource: DataSource;
 
   const post = (path: string, payload: object) =>
-    request(app.getHttpServer()).post(path).send(payload);
+    request(app.getHttpServer() as Server)
+      .post(path)
+      .send(payload);
 
   const register = async (payload: object, status = 201): Promise<SessionResponse> => {
     const response = await post(REGISTER, payload).expect(status);
@@ -65,7 +71,13 @@ describe('Auth (e2e)', () => {
   };
 
   beforeAll(async () => {
-    moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(EMAIL_VERIFICATION_SENDER)
+      .useValue({
+        sendVerificationCode: jest.fn().mockResolvedValue(undefined),
+      })
+      .compile();
+
     app = moduleRef.createNestApplication();
     app.setGlobalPrefix('api');
     app.useGlobalPipes(
@@ -82,6 +94,7 @@ describe('Auth (e2e)', () => {
   });
 
   beforeEach(async () => {
+    await dataSource.query('DELETE FROM email_verification_codes;');
     await dataSource.query('DELETE FROM users;');
   });
 

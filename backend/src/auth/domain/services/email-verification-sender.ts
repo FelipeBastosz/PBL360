@@ -2,6 +2,7 @@ export interface EmailVerificationRecipient {
   userId: string;
   name: string;
   email: string;
+  code: string;
 }
 
 export interface EmailVerificationSender {

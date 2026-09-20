@@ -17,6 +17,10 @@ import {
 } from '../../domain/services/email-verification-sender';
 import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
 import { RegisterUserUseCase, type RegisterUserInput } from './register-user.use-case';
+import {
+  EMAIL_VERIFICATION_CODE_REPOSITORY,
+  type EmailVerificationCodeRepository,
+} from '../../domain/repositories/email-verification-code.repository';
 
 describe('RegisterUserUseCase', () => {
   let useCase: RegisterUserUseCase;
@@ -28,10 +32,21 @@ describe('RegisterUserUseCase', () => {
   const sendVerificationCode: jest.MockedFunction<EmailVerificationSender['sendVerificationCode']> =
     jest.fn();
 
+  const saveCode: jest.MockedFunction<EmailVerificationCodeRepository['save']> = jest.fn();
+  const findPendingByEmail: jest.MockedFunction<
+    EmailVerificationCodeRepository['findPendingByEmail']
+  > = jest.fn();
+  const markAsUsed: jest.MockedFunction<EmailVerificationCodeRepository['markAsUsed']> = jest.fn();
+
   const users: UserRepository = { findByEmail, findById: jest.fn(), save };
   const passwords: PasswordHasher = { hash, matches: jest.fn() };
   const tokens: AccessTokenIssuer = { issueFor };
   const verification: EmailVerificationSender = { sendVerificationCode };
+  const codes: EmailVerificationCodeRepository = {
+    save: saveCode,
+    findPendingByEmail,
+    markAsUsed,
+  };
 
   const tutorInput = (): RegisterUserInput => ({
     name: 'Carlos Mendes',
@@ -56,6 +71,7 @@ describe('RegisterUserUseCase', () => {
     hash.mockResolvedValue('hashed');
     issueFor.mockResolvedValue({ value: 'jwt-token', expiresAt: new Date() });
     sendVerificationCode.mockResolvedValue(undefined);
+    saveCode.mockResolvedValue(undefined);
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -64,6 +80,7 @@ describe('RegisterUserUseCase', () => {
         { provide: PASSWORD_HASHER, useValue: passwords },
         { provide: ACCESS_TOKEN_ISSUER, useValue: tokens },
         { provide: EMAIL_VERIFICATION_SENDER, useValue: verification },
+        { provide: EMAIL_VERIFICATION_CODE_REPOSITORY, useValue: codes },
       ],
     }).compile();
 
@@ -117,11 +134,21 @@ describe('RegisterUserUseCase', () => {
   it('asks for a verification code for the persisted user', async () => {
     await useCase.execute(studentInput());
 
-    expect(sendVerificationCode).toHaveBeenCalledWith({
-      userId: 'user-1',
-      name: 'Ana Souza',
-      email: 'ana@discente.uefs.br',
-    });
+    expect(saveCode).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'ana@discente.uefs.br',
+        code: expect.stringMatching(/^\d{6}$/) as string,
+      }),
+    );
+
+    expect(sendVerificationCode).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        name: 'Ana Souza',
+        email: 'ana@discente.uefs.br',
+        code: expect.stringMatching(/^\d{6}$/) as string,
+      }),
+    );
   });
 
   it('still registers the account when the verification e-mail fails', async () => {
