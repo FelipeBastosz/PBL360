@@ -9,12 +9,14 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
+import { VerifyEmailCodeDto } from '../../application/dtos/verify-email-code.dto';
 import { LoginDto } from '../../application/dtos/login.dto';
 import { RegisterResponseDto } from '../../application/dtos/register-response.dto';
 import { RegisterUserDto } from '../../application/dtos/register-user.dto';
 import { SessionResponseDto } from '../../application/dtos/session-response.dto';
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { RegisterUserUseCase } from '../../application/use-cases/register-user.use-case';
+import { VerifyEmailCodeUseCase } from '../../application/use-cases/verify-email-code.use-case';
 import { toRegisterUserInput, toSessionResponse } from './auth.mapper';
 
 const VERIFICATION_SENT =
@@ -26,6 +28,7 @@ export class AuthController {
   constructor(
     private readonly registerUser: RegisterUserUseCase,
     private readonly login: LoginUseCase,
+    private readonly verifyEmailCode: VerifyEmailCodeUseCase,
   ) {}
 
   @Post('registro')
@@ -55,5 +58,15 @@ export class AuthController {
   })
   async signIn(@Body() dto: LoginDto): Promise<SessionResponseDto> {
     return toSessionResponse(await this.login.execute({ email: dto.email, password: dto.senha }));
+  }
+
+  @Post('verificar-codigo')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Valida o código de verificação recebido por e-mail' })
+  @ApiOkResponse({ description: 'Código validado com sucesso.' })
+  @ApiBadRequestResponse({ description: 'Código inválido ou expirado.', type: ErrorResponseDto })
+  async verifyCode(@Body() dto: VerifyEmailCodeDto): Promise<{ mensagem: string }> {
+    await this.verifyEmailCode.execute({ email: dto.email, code: dto.codigo });
+    return { mensagem: 'Código validado com sucesso.' };
   }
 }

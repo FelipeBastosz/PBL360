@@ -40,6 +40,7 @@ describe('NodemailerEmailVerificationSender', () => {
       userId: 'usr-1',
       name: 'Aluno Teste',
       email: 'aluno@uefs.br',
+      code: '123456',
     };
 
     await sender.sendVerificationCode(recipient);
@@ -57,6 +58,7 @@ describe('NodemailerEmailVerificationSender', () => {
       userId: 'usr-1',
       name: 'Aluno Teste',
       email: 'aluno@uefs.br',
+      code: '123456',
     };
 
     sendMailMock.mockRejectedValue(new Error('SMTP Failure'));

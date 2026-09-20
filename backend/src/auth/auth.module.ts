@@ -11,11 +11,17 @@ import { NodemailerEmailVerificationSender } from './infrastructure/email/nodema
 import { AuthController } from './infrastructure/http/auth.controller';
 import { BcryptPasswordHasher } from './infrastructure/security/bcrypt-password-hasher';
 import { JwtAccessTokenIssuer } from './infrastructure/security/jwt-access-token-issuer';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { EmailVerificationCode } from './domain/entities/email-verification-code.entity';
+import { EMAIL_VERIFICATION_CODE_REPOSITORY } from './domain/repositories/email-verification-code.repository';
+import { TypeOrmEmailVerificationCodeRepository } from './infrastructure/database/typeorm-email-verification-code.repository';
+import { VerifyEmailCodeUseCase } from './application/use-cases/verify-email-code.use-case';
 
 type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([EmailVerificationCode]),
     UsersModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -32,9 +38,14 @@ type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
   providers: [
     RegisterUserUseCase,
     LoginUseCase,
+    VerifyEmailCodeUseCase,
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
     { provide: ACCESS_TOKEN_ISSUER, useClass: JwtAccessTokenIssuer },
     { provide: EMAIL_VERIFICATION_SENDER, useClass: NodemailerEmailVerificationSender },
+    {
+      provide: EMAIL_VERIFICATION_CODE_REPOSITORY,
+      useClass: TypeOrmEmailVerificationCodeRepository,
+    },
   ],
 })
 export class AuthModule {}
