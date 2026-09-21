@@ -18,12 +18,19 @@ import { TypeOrmEmailVerificationCodeRepository } from './infrastructure/databas
 import { VerifyEmailCodeUseCase } from './application/use-cases/verify-email-code.use-case';
 import { ResendVerificationCodeUseCase } from './application/use-cases/resend-verification-code.use-case';
 import { VerificationCodeIssuer } from './application/services/verification-code-issuer';
+import { PasswordResetCode } from './domain/entities/password-reset-code.entity';
+import { PASSWORD_RESET_CODE_REPOSITORY } from './domain/repositories/password-reset-code.repository';
+import { PASSWORD_RESET_SENDER } from './domain/services/password-reset-sender';
+import { TypeOrmPasswordResetCodeRepository } from './infrastructure/database/typeorm-password-reset-code.repository';
+import { NodemailerPasswordResetSender } from './infrastructure/email/nodemailer-password-reset-sender';
+import { PasswordResetCodeIssuer } from './application/services/password-reset-code-issuer';
+import { RequestPasswordResetUseCase } from './application/use-cases/request-password-reset.use-case';
 
 type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([EmailVerificationCode]),
+    TypeOrmModule.forFeature([EmailVerificationCode, PasswordResetCode]),
     UsersModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -43,12 +50,19 @@ type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
     VerifyEmailCodeUseCase,
     ResendVerificationCodeUseCase,
     VerificationCodeIssuer,
+    RequestPasswordResetUseCase,
+    PasswordResetCodeIssuer,
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
     { provide: ACCESS_TOKEN_ISSUER, useClass: JwtAccessTokenIssuer },
     { provide: EMAIL_VERIFICATION_SENDER, useClass: NodemailerEmailVerificationSender },
     {
       provide: EMAIL_VERIFICATION_CODE_REPOSITORY,
       useClass: TypeOrmEmailVerificationCodeRepository,
+    },
+    { provide: PASSWORD_RESET_SENDER, useClass: NodemailerPasswordResetSender },
+    {
+      provide: PASSWORD_RESET_CODE_REPOSITORY,
+      useClass: TypeOrmPasswordResetCodeRepository,
     },
   ],
 

@@ -6,14 +6,19 @@ import { type Server } from 'node:http';
 import { AppModule } from '@/app.module';
 import { DomainExceptionFilter } from '@/shared/filters/domain-exception.filter';
 import { EMAIL_VERIFICATION_SENDER } from '@/auth/domain/services/email-verification-sender';
+import { PASSWORD_RESET_SENDER } from '@/auth/domain/services/password-reset-sender';
 
 const REGISTER = '/api/autenticacao/registro';
 const LOGIN = '/api/autenticacao/login';
 const VERIFY = '/api/autenticacao/verificar-codigo';
 const RESEND = '/api/autenticacao/reenviar-codigo';
+const RESET_REQUEST = '/api/autenticacao/recuperacao-senha';
 
 const CODE_RESENT =
   'Se houver uma conta pendente de verificação com este e-mail, enviamos um novo código.';
+
+const PASSWORD_RESET_REQUESTED =
+  'Se houver uma conta com este e-mail, enviamos um código de recuperação de senha.';
 
 const PENDING_VERIFICATION =
   'Confirme o código enviado para o seu e-mail institucional para ativar a conta.';
@@ -109,6 +114,34 @@ describe('Auth (e2e)', () => {
     return row.code;
   };
 
+  const ageResetCodesOf = async (userId: string, seconds: number): Promise<void> => {
+    await dataSource.query(
+      `UPDATE password_reset_codes
+        SET created_at = NOW() - ($2 || ' seconds')::interval
+        WHERE user_id = $1;`,
+      [userId, seconds],
+    );
+  };
+
+  const countPendingResetCodes = async (userId: string): Promise<number> => {
+    const [{ total }] = await dataSource.query<[{ total: number }]>(
+      `SELECT COUNT(*)::int AS total FROM password_reset_codes
+        WHERE user_id = $1 AND used_at IS NULL;`,
+      [userId],
+    );
+    return total;
+  };
+
+  const pendingResetCodeOf = async (userId: string): Promise<string> => {
+    const [row] = await dataSource.query<[{ code: string }]>(
+      `SELECT code FROM password_reset_codes
+        WHERE user_id = $1 AND used_at IS NULL
+        ORDER BY created_at DESC LIMIT 1;`,
+      [userId],
+    );
+    return row.code;
+  };
+
   const registerAndActivate = async (payload: object): Promise<RegisterResponse> => {
     const registered = await register(payload);
 
@@ -132,6 +165,10 @@ describe('Auth (e2e)', () => {
       .useValue({
         sendVerificationCode: jest.fn().mockResolvedValue(undefined),
       })
+      .overrideProvider(PASSWORD_RESET_SENDER)
+      .useValue({
+        sendResetCode: jest.fn().mockResolvedValue(undefined),
+      })
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -151,6 +188,7 @@ describe('Auth (e2e)', () => {
 
   beforeEach(async () => {
     await dataSource.query('DELETE FROM email_verification_codes;');
+    await dataSource.query('DELETE FROM password_reset_codes;');
     await dataSource.query('DELETE FROM users;');
   });
 
@@ -526,6 +564,66 @@ describe('Auth (e2e)', () => {
 
     it('rejects an unknown field', async () => {
       await errorOf(RESEND, { email: 'ana@discente.uefs.br', extra: 1 }, 400);
+    });
+  });
+
+  describe(`POST ${RESET_REQUEST}`, () => {
+    let registered: RegisterResponse;
+
+    const requestReset = (email: string) => post(RESET_REQUEST, { email });
+
+    beforeEach(async () => {
+      registered = await registerAndActivate(studentPayload());
+    });
+
+    it('issues a reset code for a registered account', async () => {
+      const response = await requestReset('ana@discente.uefs.br').expect(200);
+
+      expect((response.body as { mensagem: string }).mensagem).toBe(PASSWORD_RESET_REQUESTED);
+      expect(await countPendingResetCodes(registered.usuarioId)).toBe(1);
+    });
+
+    it('accepts the e-mail in any casing', async () => {
+      await requestReset('ANA@Discente.UEFS.br').expect(200);
+
+      expect(await countPendingResetCodes(registered.usuarioId)).toBe(1);
+    });
+
+    it('stays inside the cooldown without issuing a second code', async () => {
+      await requestReset('ana@discente.uefs.br').expect(200);
+      const fresh = await pendingResetCodeOf(registered.usuarioId);
+
+      await requestReset('ana@discente.uefs.br').expect(200);
+
+      expect(await pendingResetCodeOf(registered.usuarioId)).toBe(fresh);
+      expect(await countPendingResetCodes(registered.usuarioId)).toBe(1);
+    });
+
+    it('issues a fresh code once the cooldown has elapsed', async () => {
+      await requestReset('ana@discente.uefs.br').expect(200);
+      const previous = await pendingResetCodeOf(registered.usuarioId);
+      await ageResetCodesOf(registered.usuarioId, 120);
+
+      await requestReset('ana@discente.uefs.br').expect(200);
+
+      expect(await pendingResetCodeOf(registered.usuarioId)).not.toBe(previous);
+      expect(await countPendingResetCodes(registered.usuarioId)).toBe(1);
+    });
+
+    it('answers the same way for an e-mail nobody registered', async () => {
+      const response = await requestReset('ninguem@uefs.br').expect(200);
+
+      expect((response.body as { mensagem: string }).mensagem).toBe(PASSWORD_RESET_REQUESTED);
+    });
+
+    it('rejects a payload that is not an e-mail', async () => {
+      const body = await errorOf(RESET_REQUEST, { email: 'nao-e-email' }, 400);
+
+      expect(body.message).toContain('Informe um e-mail válido.');
+    });
+
+    it('rejects an unknown field', async () => {
+      await errorOf(RESET_REQUEST, { email: 'ana@discente.uefs.br', extra: 1 }, 400);
     });
   });
 });

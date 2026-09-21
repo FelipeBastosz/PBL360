@@ -12,6 +12,7 @@ import {
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
 import { PendingVerificationResponseDto } from '../../application/dtos/pending-verification-response.dto';
+import { RequestPasswordResetDto } from '../../application/dtos/request-password-reset.dto';
 import { ResendVerificationCodeDto } from '../../application/dtos/resend-verification-code.dto';
 import { VerifyEmailCodeDto } from '../../application/dtos/verify-email-code.dto';
 import { LoginDto } from '../../application/dtos/login.dto';
@@ -21,6 +22,7 @@ import { SessionResponseDto } from '../../application/dtos/session-response.dto'
 import { VerificationResponseDto } from '../../application/dtos/verification-response.dto';
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { RegisterUserUseCase } from '../../application/use-cases/register-user.use-case';
+import { RequestPasswordResetUseCase } from '../../application/use-cases/request-password-reset.use-case';
 import { ResendVerificationCodeUseCase } from '../../application/use-cases/resend-verification-code.use-case';
 import { VerifyEmailCodeUseCase } from '../../application/use-cases/verify-email-code.use-case';
 import {
@@ -40,6 +42,9 @@ const ACCOUNT_ACTIVATED = 'Conta ativada com sucesso.';
 const CODE_RESENT =
   'Se houver uma conta pendente de verificação com este e-mail, enviamos um novo código.';
 
+const PASSWORD_RESET_REQUESTED =
+  'Se houver uma conta com este e-mail, enviamos um código de recuperação de senha.';
+
 @ApiTags('Autenticação')
 @Controller('autenticacao')
 @UseGuards(AuthGuard)
@@ -49,6 +54,7 @@ export class AuthController {
     private readonly login: LoginUseCase,
     private readonly verifyEmailCode: VerifyEmailCodeUseCase,
     private readonly resendVerificationCode: ResendVerificationCodeUseCase,
+    private readonly requestPasswordReset: RequestPasswordResetUseCase,
   ) {}
 
   @Public()
@@ -123,5 +129,25 @@ export class AuthController {
     await this.resendVerificationCode.execute({ email: dto.email });
 
     return { mensagem: CODE_RESENT };
+  }
+
+  @Public()
+  @Post('recuperacao-senha')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Solicita a recuperação de senha',
+    description:
+      'Gera um código de recuperação e envia para o e-mail informado. A resposta é sempre a ' +
+      'mesma, exista ou não uma conta com esse e-mail, para não revelar quem está cadastrado. ' +
+      'Pedidos repetidos dentro de 60 segundos não disparam um novo e-mail.',
+  })
+  @ApiOkResponse({ description: 'Pedido recebido.', type: MessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Payload inválido.', type: ErrorResponseDto })
+  async requestPasswordResetCode(
+    @Body() dto: RequestPasswordResetDto,
+  ): Promise<MessageResponseDto> {
+    await this.requestPasswordReset.execute({ email: dto.email });
+
+    return { mensagem: PASSWORD_RESET_REQUESTED };
   }
 }
