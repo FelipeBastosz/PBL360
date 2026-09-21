@@ -14,11 +14,9 @@ export class UpdateRoomUseCase {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async execute(
-    roomId: string,
-    tutorId: string,
-    data: UpdateRoomDto,
-  ): Promise<UpdateRoomResponseDto> {
+  async execute(roomId: string, data: UpdateRoomDto): Promise<UpdateRoomResponseDto> {
+    const { tutorId } = data;
+
     const tutor = await this.userRepository.findById(tutorId);
 
     if (!tutor) {

@@ -1,6 +1,9 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsUUID } from 'class-validator';
 
 export class UpdateRoomDto {
+  @IsUUID('4', { message: 'O campo "tutorId" deve ser um UUID válido.' })
+  tutorId: string;
+
   @IsString({ message: 'O campo "nome" deve ser um texto.' })
   @IsOptional()
   nome?: string;
