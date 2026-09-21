@@ -38,11 +38,15 @@ function createRoomRepositoryMock() {
   const saveMock = jest.fn((room: Room) => Promise.resolve(room));
   const findByCodeMock = jest.fn().mockResolvedValue(null);
   const findByAccessTokenMock = jest.fn().mockResolvedValue(null);
+  const findByIdMock = jest.fn().mockResolvedValue(null);
+  const updateMock = jest.fn().mockResolvedValue(undefined);
 
   const rooms: jest.Mocked<RoomRepository> = {
     save: saveMock,
     findByCode: findByCodeMock,
     findByAccessToken: findByAccessTokenMock,
+    findById: findByIdMock,
+    update: updateMock,
   };
 
   return {
@@ -50,6 +54,8 @@ function createRoomRepositoryMock() {
     saveMock,
     findByCodeMock,
     findByAccessTokenMock,
+    findByIdMock,
+    updateMock,
   };
 }
 
@@ -61,6 +67,8 @@ describe('CreateRoomUseCase', () => {
       save: saveMock,
       findByCode: jest.fn().mockResolvedValue(null),
       findByAccessToken: jest.fn().mockResolvedValue(null),
+      findById: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockResolvedValue(undefined),
     };
 
     const { users } = createUserRepositoryMock();
