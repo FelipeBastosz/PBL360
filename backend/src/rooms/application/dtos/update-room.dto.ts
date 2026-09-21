@@ -1,15 +1,15 @@
 import { IsString, IsOptional, IsBoolean } from 'class-validator';
 
 export class UpdateRoomDto {
-  @IsString()
+  @IsString({ message: 'O campo "nome" deve ser um texto.' })
   @IsOptional()
-  name?: string;
+  nome?: string;
 
-  @IsString()
+  @IsString({ message: 'O campo "semestre" deve ser um texto (Ex: 2026.2).' })
   @IsOptional()
-  semester?: string;
+  semestre?: string;
 
-  @IsBoolean()
+  @IsBoolean({ message: 'O campo "ativo" deve ser um valor booleano (verdadeiro ou falso).' })
   @IsOptional()
-  active?: boolean;
+  ativo?: boolean;
 }

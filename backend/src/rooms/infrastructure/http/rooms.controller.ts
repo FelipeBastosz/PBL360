@@ -18,6 +18,7 @@ import { CreateRoomDto } from '../../application/dtos/create-room.dto';
 import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 import { CreateRoomUseCase } from '../../application/use-cases/create-room.use-case';
 import { UpdateRoomUseCase } from '../../application/use-cases/update-room.use-case';
+import { UpdateRoomResponseDto } from '@/rooms/application/dtos/update-room-response.dto';
 
 @Controller('salas')
 @UseGuards(AuthGuard, RolesGuard)
@@ -47,13 +48,7 @@ export class RoomsController {
     @Param('id') roomId: string,
     @Body() updateRoomDto: UpdateRoomDto,
     @AuthenticatedUserId() tutorId: string,
-  ) {
-    // Passes the room ID, the authenticated tutor's ID, and the data (name, semester, active status)
-    const updatedRoom = await this.updateRoomUseCase.execute(roomId, tutorId, updateRoomDto);
-
-    return {
-      message: 'Sala atualizada com sucesso',
-      data: updatedRoom,
-    };
+  ): Promise<UpdateRoomResponseDto> {
+    return this.updateRoomUseCase.execute(roomId, tutorId, updateRoomDto);
   }
 }

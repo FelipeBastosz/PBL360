@@ -1,36 +1,49 @@
 import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { RoomRepository } from '../../domain/repositories/room.repository';
 import { UpdateRoomDto } from '../dtos/update-room.dto';
-import { Room } from '../../domain/entities/room.entity';
+import { UpdateRoomResponseDto } from '../dtos/update-room-response.dto';
+import { UserRepository } from '@/users/domain/repositories/user.repository.interface';
 
 @Injectable()
 export class UpdateRoomUseCase {
   constructor(
     @Inject('RoomRepository')
     private readonly roomRepository: RoomRepository,
+
+    @Inject('UserRepository')
+    private readonly userRepository: UserRepository,
   ) {}
 
-  async execute(roomId: string, tutorId: string, data: UpdateRoomDto): Promise<Room> {
+  async execute(
+    roomId: string,
+    tutorId: string,
+    data: UpdateRoomDto,
+  ): Promise<UpdateRoomResponseDto> {
+    const tutor = await this.userRepository.findById(tutorId);
+
+    if (!tutor) {
+      throw new NotFoundException('Tutor não encontrado.');
+    }
+
     const room = await this.roomRepository.findById(roomId);
 
     if (!room) {
       throw new NotFoundException('Sala não encontrada.');
     }
 
-    // Validation: Only the owner of the room can edit it.
     if (room.tutorId !== tutorId) {
       throw new ForbiddenException('Você não tem permissão para editar esta sala.');
     }
 
-    // Update only the fields that were explicitly sent in the request.
-    // We use !== undefined to ensure that the value `false` in active is not ignored.
-    if (data.name !== undefined) room.name = data.name;
-    if (data.semester !== undefined) room.semester = data.semester;
-    if (data.active !== undefined) room.active = data.active;
+    room.name = data.nome ?? room.name;
+    room.semester = data.semestre ?? room.semester;
+    room.active = data.ativo ?? room.active;
 
-    // Code and link are preserved.
     await this.roomRepository.update(room);
 
-    return room;
+    return {
+      message: 'Sala atualizada com sucesso',
+      data: room,
+    };
   }
 }
