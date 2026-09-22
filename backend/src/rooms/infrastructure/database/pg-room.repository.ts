@@ -33,12 +33,22 @@ export class PgRoomRepository implements RoomRepository {
     private readonly rooms: Repository<Room>,
   ) {}
 
+  findById(id: string): Promise<Room | null> {
+    return this.queryOne(
+      `SELECT ${ROOM_COLUMNS}
+        FROM rooms
+        WHERE id = $1
+        LIMIT 1;`,
+      [id],
+    );
+  }
+
   findByCode(code: string): Promise<Room | null> {
     return this.queryOne(
       `SELECT ${ROOM_COLUMNS}
-      FROM rooms
-      WHERE code = $1
-      LIMIT 1;`,
+        FROM rooms
+        WHERE code = $1
+        LIMIT 1;`,
       [code],
     );
   }
@@ -75,6 +85,22 @@ export class PgRoomRepository implements RoomRepository {
 
     if (rows.length === 0) {
       return null;
+    }
+
+    return this.toEntity(rows[0]);
+  }
+
+  async update(room: Room): Promise<Room> {
+    const rows = await this.rooms.query<RoomRow[]>(
+      `UPDATE rooms
+       SET name = $1
+       WHERE id = $2
+       RETURNING ${ROOM_COLUMNS};`,
+      [room.name, room.id],
+    );
+
+    if (rows.length === 0) {
+      throw new Error('Sala não encontrada para edição.');
     }
 
     return this.toEntity(rows[0]);

@@ -2,6 +2,7 @@
 
 Monorepo do PBL360: API em **NestJS + TypeORM + PostgreSQL** e SPA em **React + TypeScript + TailwindCSS**.
 a
+
 ## Estrutura
 
 ```
