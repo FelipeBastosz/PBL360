@@ -26,6 +26,7 @@ describe('RequestPasswordResetUseCase', () => {
     findPendingByUserId,
     invalidatePendingFor: jest.fn(),
     markAsUsed: jest.fn(),
+    registerFailedAttempt: jest.fn(),
   };
   const issuer = { issueFor } as unknown as PasswordResetCodeIssuer;
 

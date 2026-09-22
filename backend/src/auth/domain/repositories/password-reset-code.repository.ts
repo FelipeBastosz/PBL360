@@ -8,6 +8,8 @@ export interface PasswordResetCodeRepository {
   invalidatePendingFor(userId: string): Promise<void>;
 
   markAsUsed(id: string): Promise<void>;
+
+  registerFailedAttempt(id: string): Promise<void>;
 }
 
 export const PASSWORD_RESET_CODE_REPOSITORY = Symbol('PasswordResetCodeRepository');

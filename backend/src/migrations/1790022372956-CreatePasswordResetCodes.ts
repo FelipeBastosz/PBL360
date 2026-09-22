@@ -50,6 +50,12 @@ export class CreatePasswordResetCodes1790022372956 implements MigrationInterface
             type: 'timestamptz',
             isNullable: true,
           },
+          {
+            name: 'attempts',
+            type: 'int',
+            default: 0,
+            isNullable: false,
+          },
         ],
       }),
       true,

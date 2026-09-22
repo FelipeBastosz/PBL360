@@ -13,9 +13,6 @@ export class NodemailerPasswordResetSender implements PasswordResetSender {
   private readonly userEmail: string;
 
   constructor(private readonly configService: ConfigService) {
-    // Falls back to an empty credential instead of throwing: the module must still boot
-    // (and other e2e suites with it) in environments where SMTP is not configured, e.g. CI.
-    // sendResetCode() below fails loudly and is already caught by the issuer.
     this.userEmail = this.configService.get<string>('SMTP_USER') ?? '';
     const pass = this.configService.get<string>('SMTP_PASS') ?? '';
 

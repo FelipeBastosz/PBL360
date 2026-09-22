@@ -12,6 +12,7 @@ interface PasswordResetCodeRaw {
   expiresAt: string | Date;
   createdAt: string | Date;
   usedAt: string | Date | null;
+  attempts: number;
 }
 
 const CODE_COLUMNS = `
@@ -21,7 +22,8 @@ const CODE_COLUMNS = `
     code,
     expires_at AS "expiresAt",
     created_at AS "createdAt",
-    used_at AS "usedAt"`;
+    used_at AS "usedAt",
+    attempts`;
 
 @Injectable()
 export class TypeOrmPasswordResetCodeRepository implements PasswordResetCodeRepository {
@@ -33,12 +35,13 @@ export class TypeOrmPasswordResetCodeRepository implements PasswordResetCodeRepo
   async save(code: PasswordResetCode): Promise<void> {
     await this.repository.query(
       `
-      INSERT INTO password_reset_codes (id, user_id, email, code, expires_at, created_at, used_at)
-      VALUES (COALESCE($1, gen_random_uuid()), $2, $3, $4, $5, $6, $7)
+      INSERT INTO password_reset_codes (id, user_id, email, code, expires_at, created_at, used_at, attempts)
+      VALUES (COALESCE($1, gen_random_uuid()), $2, $3, $4, $5, $6, $7, $8)
       ON CONFLICT (id) DO UPDATE SET
         code = EXCLUDED.code,
         expires_at = EXCLUDED.expires_at,
-        used_at = EXCLUDED.used_at;
+        used_at = EXCLUDED.used_at,
+        attempts = EXCLUDED.attempts;
       `,
       this.writableValues(code),
     );
@@ -84,6 +87,17 @@ export class TypeOrmPasswordResetCodeRepository implements PasswordResetCodeRepo
     );
   }
 
+  async registerFailedAttempt(id: string): Promise<void> {
+    await this.repository.query(
+      `
+      UPDATE password_reset_codes
+      SET attempts = attempts + 1
+      WHERE id = $1;
+      `,
+      [id],
+    );
+  }
+
   private writableValues(code: PasswordResetCode): unknown[] {
     return [
       code.id ?? null,
@@ -93,6 +107,7 @@ export class TypeOrmPasswordResetCodeRepository implements PasswordResetCodeRepo
       code.expiresAt,
       code.createdAt,
       code.usedAt ?? null,
+      code.attempts,
     ];
   }
 
@@ -105,6 +120,7 @@ export class TypeOrmPasswordResetCodeRepository implements PasswordResetCodeRepo
     entity.expiresAt = new Date(raw.expiresAt);
     entity.createdAt = new Date(raw.createdAt);
     entity.usedAt = raw.usedAt ? new Date(raw.usedAt) : null;
+    entity.attempts = raw.attempts;
 
     return entity;
   }

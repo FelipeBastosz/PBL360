@@ -17,6 +17,8 @@ export interface NewPasswordResetCode {
   expiresInMinutes: number;
 }
 
+export const MAX_VALIDATION_ATTEMPTS = 5;
+
 @Entity('password_reset_codes')
 export class PasswordResetCode {
   @PrimaryColumn('uuid')
@@ -48,6 +50,9 @@ export class PasswordResetCode {
   @Column({ name: 'used_at', type: 'timestamptz', nullable: true })
   usedAt?: Date | null;
 
+  @Column({ type: 'int', default: 0 })
+  attempts!: number;
+
   constructor() {}
 
   static issue(props: NewPasswordResetCode): PasswordResetCode {
@@ -60,6 +65,7 @@ export class PasswordResetCode {
     entity.expiresAt = new Date(now.getTime() + props.expiresInMinutes * 60 * 1000);
     entity.createdAt = now;
     entity.usedAt = null;
+    entity.attempts = 0;
 
     return entity;
   }
@@ -72,7 +78,13 @@ export class PasswordResetCode {
     return this.usedAt !== null && this.usedAt !== undefined;
   }
 
+  hasExceededAttempts(): boolean {
+    return this.attempts >= MAX_VALIDATION_ATTEMPTS;
+  }
+
   isValid(inputCode: string): boolean {
-    return this.code === inputCode && !this.isExpired() && !this.isUsed();
+    return (
+      this.code === inputCode && !this.isExpired() && !this.isUsed() && !this.hasExceededAttempts()
+    );
   }
 }
