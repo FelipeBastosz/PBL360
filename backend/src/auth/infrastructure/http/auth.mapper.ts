@@ -5,8 +5,12 @@ import type { RegisterResponseDto } from '../../application/dtos/register-respon
 import type { RegisterUserDto } from '../../application/dtos/register-user.dto';
 import type { SessionResponseDto } from '../../application/dtos/session-response.dto';
 import type { UserResponseDto } from '../../application/dtos/user-response.dto';
+import type { PasswordResetTokenResponseDto } from '../../application/dtos/password-reset-token-response.dto';
 import { UserTypePayload } from '../../application/dtos/user-type-payload.enum';
+import type { ValidatePasswordResetCodeDto } from '../../application/dtos/validate-password-reset-code.dto';
 import type { VerifyEmailCodeDto } from '../../application/dtos/verify-email-code.dto';
+import type { PasswordResetToken } from '../../domain/services/password-reset-token-issuer';
+import type { ValidatePasswordResetCodeInput } from '../../application/use-cases/validate-password-reset-code.use-case';
 import type { VerifyEmailCodeInput } from '../../application/use-cases/verify-email-code.use-case';
 
 const DOMAIN_TYPE: Record<UserTypePayload, UserType> = {
@@ -56,3 +60,11 @@ export const toRegisterResponse = (user: User, mensagem: string): RegisterRespon
   usuarioId: user.id,
   usuario: toUserResponse(user),
 });
+
+export const toValidatePasswordResetCodeInput = (
+  dto: ValidatePasswordResetCodeDto,
+): ValidatePasswordResetCodeInput => ({ email: dto.email, code: dto.codigo });
+
+export const toPasswordResetTokenResponse = (
+  token: PasswordResetToken,
+): PasswordResetTokenResponseDto => ({ token: token.value, expiraEm: token.expiresAt });

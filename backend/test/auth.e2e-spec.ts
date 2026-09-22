@@ -6,14 +6,22 @@ import { type Server } from 'node:http';
 import { AppModule } from '@/app.module';
 import { DomainExceptionFilter } from '@/shared/filters/domain-exception.filter';
 import { EMAIL_VERIFICATION_SENDER } from '@/auth/domain/services/email-verification-sender';
+import { PASSWORD_RESET_SENDER } from '@/auth/domain/services/password-reset-sender';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 const REGISTER = '/api/autenticacao/registro';
 const LOGIN = '/api/autenticacao/login';
 const VERIFY = '/api/autenticacao/verificar-codigo';
 const RESEND = '/api/autenticacao/reenviar-codigo';
+const RESET_REQUEST = '/api/autenticacao/recuperacao-senha';
+const RESET_VALIDATE = '/api/autenticacao/recuperacao-senha/validar-codigo';
+const RESET_PASSWORD = '/api/autenticacao/redefinir-senha';
 
 const CODE_RESENT =
   'Se houver uma conta pendente de verificação com este e-mail, enviamos um novo código.';
+
+const PASSWORD_RESET_REQUESTED =
+  'Se houver uma conta com este e-mail, enviamos um código de recuperação de senha.';
 
 const PENDING_VERIFICATION =
   'Confirme o código enviado para o seu e-mail institucional para ativar a conta.';
@@ -109,6 +117,43 @@ describe('Auth (e2e)', () => {
     return row.code;
   };
 
+  const ageResetCodesOf = async (userId: string, seconds: number): Promise<void> => {
+    await dataSource.query(
+      `UPDATE password_reset_codes
+        SET created_at = NOW() - ($2 || ' seconds')::interval
+        WHERE user_id = $1;`,
+      [userId, seconds],
+    );
+  };
+
+  const expireResetCodesOf = async (userId: string): Promise<void> => {
+    await dataSource.query(
+      `UPDATE password_reset_codes
+        SET expires_at = NOW() - interval '1 second'
+        WHERE user_id = $1;`,
+      [userId],
+    );
+  };
+
+  const countPendingResetCodes = async (userId: string): Promise<number> => {
+    const [{ total }] = await dataSource.query<[{ total: number }]>(
+      `SELECT COUNT(*)::int AS total FROM password_reset_codes
+        WHERE user_id = $1 AND used_at IS NULL;`,
+      [userId],
+    );
+    return total;
+  };
+
+  const pendingResetCodeOf = async (userId: string): Promise<string> => {
+    const [row] = await dataSource.query<[{ code: string }]>(
+      `SELECT code FROM password_reset_codes
+        WHERE user_id = $1 AND used_at IS NULL
+        ORDER BY created_at DESC LIMIT 1;`,
+      [userId],
+    );
+    return row.code;
+  };
+
   const registerAndActivate = async (payload: object): Promise<RegisterResponse> => {
     const registered = await register(payload);
 
@@ -132,6 +177,12 @@ describe('Auth (e2e)', () => {
       .useValue({
         sendVerificationCode: jest.fn().mockResolvedValue(undefined),
       })
+      .overrideProvider(PASSWORD_RESET_SENDER)
+      .useValue({
+        sendResetCode: jest.fn().mockResolvedValue(undefined),
+      })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -151,6 +202,7 @@ describe('Auth (e2e)', () => {
 
   beforeEach(async () => {
     await dataSource.query('DELETE FROM email_verification_codes;');
+    await dataSource.query('DELETE FROM password_reset_codes;');
     await dataSource.query('DELETE FROM users;');
   });
 
@@ -526,6 +578,147 @@ describe('Auth (e2e)', () => {
 
     it('rejects an unknown field', async () => {
       await errorOf(RESEND, { email: 'ana@discente.uefs.br', extra: 1 }, 400);
+    });
+  });
+
+  describe(`POST ${RESET_REQUEST}`, () => {
+    let registered: RegisterResponse;
+
+    const requestReset = (email: string) => post(RESET_REQUEST, { email });
+
+    beforeEach(async () => {
+      registered = await registerAndActivate(studentPayload());
+    });
+
+    it('issues a reset code for a registered account', async () => {
+      const response = await requestReset('ana@discente.uefs.br').expect(200);
+
+      expect((response.body as { mensagem: string }).mensagem).toBe(PASSWORD_RESET_REQUESTED);
+      expect(await countPendingResetCodes(registered.usuarioId)).toBe(1);
+    });
+
+    it('accepts the e-mail in any casing', async () => {
+      await requestReset('ANA@Discente.UEFS.br').expect(200);
+
+      expect(await countPendingResetCodes(registered.usuarioId)).toBe(1);
+    });
+
+    it('stays inside the cooldown without issuing a second code', async () => {
+      await requestReset('ana@discente.uefs.br').expect(200);
+      const fresh = await pendingResetCodeOf(registered.usuarioId);
+
+      await requestReset('ana@discente.uefs.br').expect(200);
+
+      expect(await pendingResetCodeOf(registered.usuarioId)).toBe(fresh);
+      expect(await countPendingResetCodes(registered.usuarioId)).toBe(1);
+    });
+
+    it('issues a fresh code once the cooldown has elapsed', async () => {
+      await requestReset('ana@discente.uefs.br').expect(200);
+      const previous = await pendingResetCodeOf(registered.usuarioId);
+      await ageResetCodesOf(registered.usuarioId, 120);
+
+      await requestReset('ana@discente.uefs.br').expect(200);
+
+      expect(await pendingResetCodeOf(registered.usuarioId)).not.toBe(previous);
+      expect(await countPendingResetCodes(registered.usuarioId)).toBe(1);
+    });
+
+    it('answers the same way for an e-mail nobody registered', async () => {
+      const response = await requestReset('ninguem@uefs.br').expect(200);
+
+      expect((response.body as { mensagem: string }).mensagem).toBe(PASSWORD_RESET_REQUESTED);
+    });
+
+    it('rejects a payload that is not an e-mail', async () => {
+      const body = await errorOf(RESET_REQUEST, { email: 'nao-e-email' }, 400);
+
+      expect(body.message).toContain('Informe um e-mail válido.');
+    });
+
+    it('rejects an unknown field', async () => {
+      await errorOf(RESET_REQUEST, { email: 'ana@discente.uefs.br', extra: 1 }, 400);
+    });
+  });
+
+  describe(`POST ${RESET_VALIDATE}`, () => {
+    let registered: RegisterResponse;
+
+    const requestReset = (email: string) => post(RESET_REQUEST, { email });
+    const validateCode = (email: string, codigo: string) => post(RESET_VALIDATE, { email, codigo });
+
+    beforeEach(async () => {
+      registered = await registerAndActivate(studentPayload());
+      await requestReset('ana@discente.uefs.br').expect(200);
+    });
+
+    it('issues a reset token for a valid code', async () => {
+      const code = await pendingResetCodeOf(registered.usuarioId);
+
+      const response = await validateCode('ana@discente.uefs.br', code).expect(200);
+
+      expect((response.body as { token: string }).token).toEqual(expect.any(String));
+    });
+
+    it('refuses the code it just consumed', async () => {
+      const code = await pendingResetCodeOf(registered.usuarioId);
+      await validateCode('ana@discente.uefs.br', code).expect(200);
+
+      await validateCode('ana@discente.uefs.br', code).expect(400);
+    });
+
+    it('rejects a wrong code', async () => {
+      await validateCode('ana@discente.uefs.br', '000000').expect(400);
+    });
+
+    it('rejects an expired code', async () => {
+      const code = await pendingResetCodeOf(registered.usuarioId);
+      await expireResetCodesOf(registered.usuarioId);
+
+      await validateCode('ana@discente.uefs.br', code).expect(400);
+    });
+
+    it('rejects an e-mail nobody registered', async () => {
+      await validateCode('ninguem@uefs.br', '123456').expect(400);
+    });
+
+    it('rejects a code that is not 6 digits', async () => {
+      await errorOf(RESET_VALIDATE, { email: 'ana@discente.uefs.br', codigo: '12' }, 400);
+    });
+  });
+
+  describe(`POST ${RESET_PASSWORD}`, () => {
+    const requestReset = (email: string) => post(RESET_REQUEST, { email });
+    const validateCode = (email: string, codigo: string) => post(RESET_VALIDATE, { email, codigo });
+    const resetPassword = (token: string, novaSenha: string) =>
+      post(RESET_PASSWORD, { token, novaSenha });
+
+    const issueResetToken = async (): Promise<{ registered: RegisterResponse; token: string }> => {
+      const registered = await registerAndActivate(studentPayload());
+      await requestReset('ana@discente.uefs.br').expect(200);
+      const code = await pendingResetCodeOf(registered.usuarioId);
+      const response = await validateCode('ana@discente.uefs.br', code).expect(200);
+
+      return { registered, token: (response.body as { token: string }).token };
+    };
+
+    it('changes the password so the new one logs in and the old one no longer works', async () => {
+      const { token } = await issueResetToken();
+
+      await resetPassword(token, 'nova-senha-123').expect(200);
+
+      await post(LOGIN, { email: 'ana@discente.uefs.br', senha: 'nova-senha-123' }).expect(200);
+      await post(LOGIN, { email: 'ana@discente.uefs.br', senha: 'senha-secreta' }).expect(401);
+    });
+
+    it('rejects a garbage token', async () => {
+      await resetPassword('not-a-jwt', 'nova-senha-123').expect(400);
+    });
+
+    it('rejects a password shorter than 8 characters', async () => {
+      const { token } = await issueResetToken();
+
+      await errorOf(RESET_PASSWORD, { token, novaSenha: '123' }, 400);
     });
   });
 });

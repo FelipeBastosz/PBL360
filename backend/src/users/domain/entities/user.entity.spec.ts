@@ -40,6 +40,14 @@ describe('User (Domain)', () => {
     expect(user.active).toBe(true);
   });
 
+  it('should replace the password hash on changePassword', () => {
+    const user = buildUser(UserType.STUDENT);
+
+    user.changePassword('new_hashed_password');
+
+    expect(user.passwordHash).toBe('new_hashed_password');
+  });
+
   describe('create', () => {
     const newStudent = (overrides: Partial<NewUser> = {}): NewUser => ({
       name: 'Ana Souza',
