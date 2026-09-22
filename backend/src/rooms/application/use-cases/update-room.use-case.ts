@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { RoomRepository } from '../../domain/repositories/room.repository';
+import { ROOM_REPOSITORY, RoomRepository } from '../../domain/repositories/room.repository';
 import { UpdateRoomDto } from '../dtos/update-room.dto';
 import { UpdateRoomResponseDto } from '../dtos/update-room-response.dto';
 import { UserRepository } from '@/users/domain/repositories/user.repository.interface';
@@ -7,7 +7,7 @@ import { UserRepository } from '@/users/domain/repositories/user.repository.inte
 @Injectable()
 export class UpdateRoomUseCase {
   constructor(
-    @Inject('RoomRepository')
+    @Inject(ROOM_REPOSITORY)
     private readonly roomRepository: RoomRepository,
 
     @Inject('UserRepository')
