@@ -101,4 +101,8 @@ export class User {
   deactivate(): void {
     this.active = false;
   }
+
+  changePassword(passwordHash: string): void {
+    this.passwordHash = passwordHash;
+  }
 }

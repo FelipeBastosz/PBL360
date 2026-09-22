@@ -2,7 +2,10 @@ import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nest
 import { ROOM_REPOSITORY, RoomRepository } from '../../domain/repositories/room.repository';
 import { UpdateRoomDto } from '../dtos/update-room.dto';
 import { UpdateRoomResponseDto } from '../dtos/update-room-response.dto';
-import { UserRepository } from '@/users/domain/repositories/user.repository.interface';
+import {
+  USER_REPOSITORY,
+  UserRepository,
+} from '@/users/domain/repositories/user.repository.interface';
 
 @Injectable()
 export class UpdateRoomUseCase {
@@ -10,7 +13,7 @@ export class UpdateRoomUseCase {
     @Inject(ROOM_REPOSITORY)
     private readonly roomRepository: RoomRepository,
 
-    @Inject('UserRepository')
+    @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepository,
   ) {}
 
