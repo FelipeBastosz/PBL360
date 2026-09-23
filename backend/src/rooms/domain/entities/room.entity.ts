@@ -2,6 +2,7 @@ import type { NewRoom } from './new-room';
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -64,6 +65,9 @@ export class Room {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, default: null })
+  deletedAt?: Date;
+
   static create(props: NewRoom): Room {
     const room = new Room();
 
@@ -77,6 +81,18 @@ export class Room {
     room.assertIsValid();
 
     return room;
+  }
+
+  public delete(): void {
+    if (this.isDeleted()) {
+      throw new InvalidRoomError('Esta sala já foi excluída.');
+    }
+    this.deletedAt = new Date();
+    this.active = false;
+  }
+
+  public isDeleted(): boolean {
+    return this.deletedAt != null;
   }
 
   private assertIsValid(): void {

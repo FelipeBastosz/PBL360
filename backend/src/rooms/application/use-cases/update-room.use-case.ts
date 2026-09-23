@@ -6,6 +6,8 @@ import type { UpdateRoomDto } from '../dtos/update-room.dto';
 
 import type { UpdateRoomResponseDto } from '../dtos/update-room-response.dto';
 
+import { Room } from '../../domain/entities/room.entity';
+
 @Injectable()
 export class UpdateRoomUseCase {
   constructor(
@@ -18,9 +20,26 @@ export class UpdateRoomUseCase {
     tutorId: string,
     data: UpdateRoomDto,
   ): Promise<UpdateRoomResponseDto> {
+    const room = await this.getRoomForEditing(roomId, tutorId);
+
+    Object.assign(room, {
+      name: data.nome ?? room.name,
+      semester: data.semestre ?? room.semester,
+      active: data.ativo ?? room.active,
+    });
+
+    const updatedRoom = await this.roomRepository.update(room);
+
+    return {
+      message: 'Sala atualizada com sucesso',
+      data: updatedRoom,
+    };
+  }
+
+  private async getRoomForEditing(roomId: string, tutorId: string): Promise<Room> {
     const room = await this.roomRepository.findById(roomId);
 
-    if (!room) {
+    if (!room || room.isDeleted()) {
       throw new NotFoundException('Sala não encontrada.');
     }
 
@@ -30,17 +49,6 @@ export class UpdateRoomUseCase {
       throw new ForbiddenException('Você não tem permissão para editar esta sala.');
     }
 
-    room.name = data.nome ?? room.name;
-
-    room.semester = data.semestre ?? room.semester;
-
-    room.active = data.ativo ?? room.active;
-
-    const updatedRoom = await this.roomRepository.update(room);
-
-    return {
-      message: 'Sala atualizada com sucesso',
-      data: updatedRoom,
-    };
+    return room;
   }
 }

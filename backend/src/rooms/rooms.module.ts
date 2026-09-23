@@ -10,6 +10,7 @@ import { RoomTutorsController } from './infrastructure/http/room-tutors.controll
 
 import { CreateRoomUseCase } from './application/use-cases/create-room.use-case';
 import { UpdateRoomUseCase } from './application/use-cases/update-room.use-case';
+import { DeleteRoomUseCase } from './application/use-cases/delete-room.use-case';
 import { Room } from './domain/entities/room.entity';
 import { ROOM_REPOSITORY } from './domain/repositories/room.repository';
 import { PgRoomRepository } from './infrastructure/database/pg-room.repository';
@@ -19,14 +20,19 @@ import { RemoveTutorFromRoomUseCase } from './application/use-cases/remove-tutor
 
 @Module({
   imports: [TypeOrmModule.forFeature([Room]), AuthModule, UsersModule],
+
   controllers: [RoomsController, RoomTutorsController],
+
   providers: [
     CreateRoomUseCase,
     UpdateRoomUseCase,
     AddTutorToRoomUseCase,
     RemoveTutorFromRoomUseCase,
+    DeleteRoomUseCase,
+
     AuthGuard,
     RolesGuard,
+
     {
       provide: ROOM_REPOSITORY,
       useClass: PgRoomRepository,

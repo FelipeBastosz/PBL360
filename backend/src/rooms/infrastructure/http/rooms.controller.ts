@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -14,26 +17,40 @@ import {
   ApiBody,
   ApiCreatedResponse,
   ApiForbiddenResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiTags,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
+
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
+
 import { Roles } from '@/shared/decorators/roles.decorator';
+
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
+
 import { AuthGuard } from '@/shared/guards/auth.guard';
+
 import { RolesGuard } from '@/shared/guards/roles.guard';
+
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { CreateRoomDto } from '../../application/dtos/create-room.dto';
+
 import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
+
 import { UpdateRoomResponseDto } from '../../application/dtos/update-room-response.dto';
+
+import { DeleteRoomDto } from '../../application/dtos/delete-room.dto';
+
 import { CreateRoomUseCase } from '../../application/use-cases/create-room.use-case';
+
 import { UpdateRoomUseCase } from '../../application/use-cases/update-room.use-case';
+
+import { DeleteRoomUseCase } from '../../application/use-cases/delete-room.use-case';
+
+import { DeleteRoomSwaggerDocs, EditRoomSwaggerDocs } from './room.swagger';
 
 @ApiTags('Salas')
 @Controller('salas')
@@ -42,6 +59,7 @@ export class RoomsController {
   constructor(
     private readonly createRoomUseCase: CreateRoomUseCase,
     private readonly updateRoomUseCase: UpdateRoomUseCase,
+    private readonly deleteRoomUseCase: DeleteRoomUseCase,
   ) {}
 
   @Post()
@@ -141,39 +159,20 @@ export class RoomsController {
 
   @Patch(':id')
   @Roles(UserType.TUTOR)
-  @ApiBearerAuth(JWT_SECURITY_SCHEME)
-  @ApiOperation({
-    summary: 'Atualiza os dados de uma sala',
-    description:
-      'Atualiza nome, semestre ou status de uma sala. ' +
-      'O professor deve estar associado à sala para realizar a edição. ' +
-      'Sua identidade é obtida pelo JWT.',
-  })
-  @ApiOkResponse({
-    description: 'Sala atualizada com sucesso.',
-    type: UpdateRoomResponseDto,
-  })
-  @ApiBadRequestResponse({
-    description: 'Dados inválidos fornecidos para a atualização.',
-    type: ErrorResponseDto,
-  })
-  @ApiUnauthorizedResponse({
-    description: 'JWT não informado, inválido ou expirado.',
-    type: ErrorResponseDto,
-  })
-  @ApiForbiddenResponse({
-    description: 'Acesso negado. O usuário não é professor ou não está associado à sala.',
-    type: ErrorResponseDto,
-  })
-  @ApiNotFoundResponse({
-    description: 'Sala não encontrada pelo ID fornecido.',
-    type: ErrorResponseDto,
-  })
+  @EditRoomSwaggerDocs
   async edit(
     @Param('id') roomId: string,
     @Body() updateRoomDto: UpdateRoomDto,
     @AuthenticatedUserId() authenticatedTutorId: string,
   ): Promise<UpdateRoomResponseDto> {
     return this.updateRoomUseCase.execute(roomId, authenticatedTutorId, updateRoomDto);
+  }
+
+  @Delete(':id')
+  @Roles(UserType.TUTOR)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @DeleteRoomSwaggerDocs
+  async delete(@Param('id') roomId: string, @Body() deleteRoomDto: DeleteRoomDto): Promise<void> {
+    return this.deleteRoomUseCase.execute(roomId, deleteRoomDto);
   }
 }
