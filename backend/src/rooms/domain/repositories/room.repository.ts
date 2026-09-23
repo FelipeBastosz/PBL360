@@ -6,6 +6,7 @@ export interface RoomRepository {
   findByCode(code: string): Promise<Room | null>;
   findByAccessToken(accessToken: string): Promise<Room | null>;
   update(room: Room): Promise<Room>;
+  findById(id: string): Promise<Room | null>;
 }
 
 export const ROOM_REPOSITORY = Symbol('RoomRepository');
