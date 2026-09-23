@@ -13,7 +13,6 @@ export class CreateRooms1789920951097 implements MigrationInterface {
         active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-        CONSTRAINT uq_rooms_code UNIQUE (code),
         CONSTRAINT uq_rooms_access_token UNIQUE (access_token),
         CONSTRAINT fk_rooms_tutor
           FOREIGN KEY (tutor_id)

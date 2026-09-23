@@ -11,6 +11,7 @@ import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/
 export interface CreateRoomInput {
   tutorId: string;
   name: string;
+  code: string;
   semester: string;
 }
 
@@ -26,7 +27,7 @@ export class CreateRoomUseCase {
 
   async execute(input: CreateRoomInput): Promise<Room> {
     await this.assertTutorExists(input.tutorId);
-    const code = await this.generateUniqueCode();
+    const code = input.code.trim().toUpperCase();
     const accessToken = await this.generateUniqueAccessToken();
 
     const room = Room.create({
@@ -40,23 +41,13 @@ export class CreateRoomUseCase {
     return this.rooms.save(room);
   }
 
-  private async generateUniqueCode(): Promise<string> {
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const code = randomBytes(6).toString('hex').toUpperCase();
-
-      const existingRoom = await this.rooms.findByCode(code);
-
-      if (existingRoom === null) {
-        return code;
-      }
-    }
-
-    throw new Error('Não foi possível gerar um código disponível.');
-  }
-
   private async generateUniqueAccessToken(): Promise<string> {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
     for (let attempt = 0; attempt < 5; attempt++) {
-      const token = randomBytes(16).toString('hex');
+      const token = Array.from(randomBytes(8), (byte) => characters[byte % characters.length]).join(
+        '',
+      );
 
       const existingRoom = await this.rooms.findByAccessToken(token);
 

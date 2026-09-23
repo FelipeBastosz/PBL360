@@ -6,6 +6,8 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  JoinTable,
+  ManyToMany,
 } from 'typeorm';
 import { InvalidRoomError } from '../errors/invalid-room.error';
 import { User } from '@/users/domain/entities/user.entity';
@@ -26,10 +28,28 @@ export class Room {
   })
   tutor: User;
 
+  @ManyToMany(() => User)
+  @JoinTable({
+    name: 'room_tutors',
+
+    joinColumn: {
+      name: 'room_id',
+      referencedColumnName: 'id',
+      foreignKeyConstraintName: 'fk_room_tutors_room',
+    },
+
+    inverseJoinColumn: {
+      name: 'tutor_id',
+      referencedColumnName: 'id',
+      foreignKeyConstraintName: 'fk_room_tutors_tutor',
+    },
+  })
+  tutors: User[];
+
   @Column({ type: 'varchar', length: 120 })
   name: string;
 
-  @Column({ type: 'varchar', length: 12, unique: true })
+  @Column({ type: 'varchar', length: 12 })
   code: string;
 
   @Column({ name: 'access_token', type: 'varchar', length: 64, unique: true })
@@ -49,7 +69,7 @@ export class Room {
 
     room.tutorId = props.tutorId.trim();
     room.name = props.name.trim();
-    room.code = props.code.trim();
+    room.code = props.code.trim().toUpperCase();
     room.accessToken = props.accessToken.trim();
     room.semester = props.semester.trim();
     room.active = true;
@@ -90,8 +110,8 @@ export class Room {
       throw new InvalidRoomError('O professor responsável é obrigatório.');
     }
 
-    if (!this.code || this.code.length > 12) {
-      throw new InvalidRoomError('O código da sala é inválido.');
+    if (!/^[A-Z]{3}[0-9]{3}$/.test(this.code)) {
+      throw new InvalidRoomError('O código da turma deve seguir o formato EXA123.');
     }
 
     if (!this.accessToken || this.accessToken.length > 64) {

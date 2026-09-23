@@ -1,7 +1,8 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, ManyToMany } from 'typeorm';
 import { UserType } from '../enums/user-type.enum';
 import { InvalidUserError } from '../errors/invalid-user.error';
 import type { NewUser } from './new-user';
+import { Room } from '@/rooms/domain/entities/room.entity';
 
 const INSTITUTIONAL_EMAIL = /^[^@\s]+@(discente\.)?uefs\.br$/i;
 
@@ -41,6 +42,9 @@ export class User {
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
+
+  @ManyToMany(() => Room, (room) => room.tutors)
+  rooms: Room[];
 
   static create(props: NewUser): User {
     const user = new User();
