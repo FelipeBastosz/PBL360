@@ -1,29 +1,38 @@
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
+import { toApiError } from './apiError';
+import { sessionStore } from './sessionStore';
+
+type UnauthorizedHandler = () => void;
+
+let unauthorizedHandler: UnauthorizedHandler | null = null;
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  headers: { 'Content-Type': 'application/json' },
 });
 
-api.interceptors.request.use((config) => {
-  // Retrieves the token from local storage
-  const token = localStorage.getItem('@pbl360:token');
+export function setUnauthorizedHandler(handler: UnauthorizedHandler): () => void {
+  unauthorizedHandler = handler;
+  return () => {
+    if (unauthorizedHandler === handler) unauthorizedHandler = null;
+  };
+}
 
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
+function attachToken(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
+  const token = sessionStore.getToken();
+  if (token) config.headers.set('Authorization', `Bearer ${token}`);
   return config;
-});
+}
 
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Intercepts 401 Unauthorized errors to handle session expiration globally
-    if (error.response?.status === 401) {
-      localStorage.removeItem('@pbl360:token');
-      // A full reload or redirection logic can be triggered here if necessary
-    }
+function sentToken(error: unknown): boolean {
+  return axios.isAxiosError(error) && Boolean(error.config?.headers?.Authorization);
+}
 
-    return Promise.reject(error);
-  },
-);
+function rejectAsApiError(error: unknown): Promise<never> {
+  const apiError = toApiError(error);
+  if (apiError.status === 401 && sentToken(error)) unauthorizedHandler?.();
+  return Promise.reject(apiError);
+}
+
+api.interceptors.request.use(attachToken);
+api.interceptors.response.use((response) => response, rejectAsApiError);

@@ -1,71 +1,42 @@
-import { api } from './api';
 import type {
-  LoginRequest,
-  LoginResponse,
-  RegisterRequest,
+  LoginPayload,
+  MessageResponse,
+  PasswordResetTokenResponse,
+  RegisterPayload,
   RegisterResponse,
-  ForgotPasswordRequest,
-  ForgotPasswordResponse,
-  ValidateCodeRequest,
-  ValidateCodeResponse,
-  ResetPasswordRequest,
-  ResetPasswordResponse,
-  VerifyAccountRequest,
-  VerifyAccountResponse,
-  ResendVerificationCodeRequest,
-  ResendVerificationCodeResponse,
-} from '../types/auth';
+  RequestPasswordResetPayload,
+  ResendVerificationCodePayload,
+  ResetPasswordPayload,
+  SessionResponse,
+  ValidatePasswordResetCodePayload,
+  VerificationResponse,
+  VerifyEmailCodePayload,
+} from '@/types/auth';
+import { api } from './api';
+
+const BASE = '/autenticacao';
 
 export const authService = {
-  login: async (payload: LoginRequest): Promise<LoginResponse> => {
-    const response = await api.post<LoginResponse>('/autenticacao/login', payload);
-    return response.data;
-  },
+  login: (payload: LoginPayload) =>
+    api.post<SessionResponse>(`${BASE}/login`, payload).then((r) => r.data),
 
-  register: async (payload: RegisterRequest): Promise<RegisterResponse> => {
-    const response = await api.post<RegisterResponse>('/autenticacao/registro', payload);
-    return response.data;
-  },
+  register: (payload: RegisterPayload) =>
+    api.post<RegisterResponse>(`${BASE}/registro`, payload).then((r) => r.data),
 
-  forgotPassword: async (payload: ForgotPasswordRequest): Promise<ForgotPasswordResponse> => {
-    const response = await api.post<ForgotPasswordResponse>(
-      '/autenticacao/recuperacao-senha',
-      payload,
-    );
-    return response.data;
-  },
+  verifyEmailCode: (payload: VerifyEmailCodePayload) =>
+    api.post<VerificationResponse>(`${BASE}/verificar-codigo`, payload).then((r) => r.data),
 
-  validateCode: async (payload: ValidateCodeRequest): Promise<ValidateCodeResponse> => {
-    const response = await api.post<ValidateCodeResponse>(
-      '/autenticacao/recuperacao-senha/validar-codigo',
-      payload,
-    );
-    return response.data;
-  },
+  resendVerificationCode: (payload: ResendVerificationCodePayload) =>
+    api.post<MessageResponse>(`${BASE}/reenviar-codigo`, payload).then((r) => r.data),
 
-  resetPassword: async (payload: ResetPasswordRequest): Promise<ResetPasswordResponse> => {
-    const response = await api.post<ResetPasswordResponse>(
-      '/autenticacao/redefinir-senha',
-      payload,
-    );
-    return response.data;
-  },
+  requestPasswordReset: (payload: RequestPasswordResetPayload) =>
+    api.post<MessageResponse>(`${BASE}/recuperacao-senha`, payload).then((r) => r.data),
 
-  verifyAccount: async (payload: VerifyAccountRequest): Promise<VerifyAccountResponse> => {
-    const response = await api.post<VerifyAccountResponse>(
-      '/autenticacao/verificar-codigo',
-      payload,
-    );
-    return response.data;
-  },
+  validatePasswordResetCode: (payload: ValidatePasswordResetCodePayload) =>
+    api
+      .post<PasswordResetTokenResponse>(`${BASE}/recuperacao-senha/validar-codigo`, payload)
+      .then((r) => r.data),
 
-  resendVerificationCode: async (
-    payload: ResendVerificationCodeRequest,
-  ): Promise<ResendVerificationCodeResponse> => {
-    const response = await api.post<ResendVerificationCodeResponse>(
-      '/autenticacao/reenviar-codigo',
-      payload,
-    );
-    return response.data;
-  },
+  resetPassword: (payload: ResetPasswordPayload) =>
+    api.post<MessageResponse>(`${BASE}/redefinir-senha`, payload).then((r) => r.data),
 };
