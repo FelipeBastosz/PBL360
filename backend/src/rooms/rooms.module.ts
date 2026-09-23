@@ -7,6 +7,7 @@ import { AuthGuard } from '@/shared/guards/auth.guard';
 import { RolesGuard } from '@/shared/guards/roles.guard';
 
 import { CreateRoomUseCase } from './application/use-cases/create-room.use-case';
+import { UpdateRoomUseCase } from './application/use-cases/update-room.use-case';
 import { Room } from './domain/entities/room.entity';
 import { ROOM_REPOSITORY } from './domain/repositories/room.repository';
 import { PgRoomRepository } from './infrastructure/database/pg-room.repository';
@@ -17,6 +18,7 @@ import { RoomsController } from './infrastructure/http/rooms.controller';
   controllers: [RoomsController],
   providers: [
     CreateRoomUseCase,
+    UpdateRoomUseCase,
     AuthGuard,
     RolesGuard,
     {

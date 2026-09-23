@@ -71,11 +71,13 @@ describe('VerificationCodeIssuer', () => {
 
     await issuer.issueFor(pendingUser());
 
+    const after = Date.now();
     const stored = saveCode.mock.calls[0][0];
-    const window = stored.expiresAt.getTime() - before;
+    const expiresAt = stored.expiresAt.getTime();
+    const window = EXPIRATION_MINUTES * 60 * 1000;
 
-    expect(window).toBeGreaterThan((EXPIRATION_MINUTES - 1) * 60 * 1000);
-    expect(window).toBeLessThanOrEqual(EXPIRATION_MINUTES * 60 * 1000);
+    expect(expiresAt).toBeGreaterThanOrEqual(before + window);
+    expect(expiresAt).toBeLessThanOrEqual(after + window);
   });
 
   it('sends the very code it stored', async () => {
