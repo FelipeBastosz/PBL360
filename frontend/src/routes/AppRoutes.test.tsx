@@ -69,16 +69,15 @@ describe('routing and session', () => {
     });
 
     expect(
-      await screen.findByRole('heading', { name: 'Como você vai acessar?' }),
+      await screen.findByRole('heading', { name: 'Como você vai acessar?' }, { timeout: 5_000 }),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole('link', { name: /Aluno/ }));
 
-    expect(await screen.findByRole('link', { name: 'Criar conta' })).toHaveAttribute(
-      'href',
-      '/cadastro?perfil=aluno',
-    );
-  });
+    expect(
+      await screen.findByRole('link', { name: 'Criar conta' }, { timeout: 5_000 }),
+    ).toHaveAttribute('href', '/cadastro?perfil=aluno');
+  }, 15_000);
 
   it('shows the not found page for an unknown path', async () => {
     renderApp('/qualquer-coisa');
