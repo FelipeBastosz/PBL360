@@ -45,7 +45,7 @@ export class Room {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, default: null })
   deletedAt?: Date;
 
   static create(props: NewRoom): Room {
