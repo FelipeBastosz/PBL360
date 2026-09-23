@@ -20,14 +20,17 @@ describe('DeleteRoomUseCase', () => {
       save: saveMock,
       findByCode: jest.fn(),
       findByAccessToken: jest.fn(),
-    } as unknown as jest.Mocked<RoomRepository>;
-
+      update: jest.fn(),
+      addTutor: jest.fn(),
+      hasTutor: jest.fn(),
+      removeTutor: jest.fn(),
+    };
     useCase = new DeleteRoomUseCase(roomRepositoryMock);
 
     room = Room.create({
       tutorId: 'tutor-123',
       name: 'Sala de Testes',
-      code: 'SALA1234',
+      code: 'EXA123',
       accessToken: 'token-secreto-123',
       semester: '2026.2',
     });
@@ -37,25 +40,24 @@ describe('DeleteRoomUseCase', () => {
 
   it('deve excluir a sala com sucesso e salvar as alterações', async () => {
     findByIdMock.mockResolvedValue(room);
+
     const dto: DeleteRoomDto = { tutorId: 'tutor-123' };
 
     await useCase.execute('room-123', dto);
 
     expect(findByIdMock).toHaveBeenCalledWith('room-123');
-
     expect(room.isDeleted()).toBe(true);
     expect(room.active).toBe(false);
     expect(room.deletedAt).toBeInstanceOf(Date);
-
     expect(saveMock).toHaveBeenCalledWith(room);
   });
 
   it('deve lançar NotFoundException se a sala não existir', async () => {
     findByIdMock.mockResolvedValue(null);
+
     const dto: DeleteRoomDto = { tutorId: 'tutor-123' };
 
     await expect(useCase.execute('room-123', dto)).rejects.toThrow(NotFoundException);
-
     expect(saveMock).not.toHaveBeenCalled();
   });
 
@@ -71,10 +73,10 @@ describe('DeleteRoomUseCase', () => {
 
   it('deve lançar ForbiddenException se o professor não for o dono da sala', async () => {
     findByIdMock.mockResolvedValue(room);
+
     const dto: DeleteRoomDto = { tutorId: 'tutor-intruso' };
 
     await expect(useCase.execute('room-123', dto)).rejects.toThrow(ForbiddenException);
-
     expect(room.isDeleted()).toBe(false);
     expect(room.active).toBe(true);
     expect(saveMock).not.toHaveBeenCalled();
