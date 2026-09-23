@@ -20,15 +20,12 @@ export class UpdateRoomUseCase {
   async execute(roomId: string, data: UpdateRoomDto): Promise<UpdateRoomResponseDto> {
     const { tutorId } = data;
 
-    const tutor = await this.userRepository.findById(tutorId);
-
-    if (!tutor) {
+    if (!(await this.userRepository.findById(tutorId))) {
       throw new NotFoundException('Tutor não encontrado.');
     }
 
     const room = await this.roomRepository.findById(roomId);
-
-    if (!room) {
+    if (!room || room.isDeleted()) {
       throw new NotFoundException('Sala não encontrada.');
     }
 
@@ -36,11 +33,12 @@ export class UpdateRoomUseCase {
       throw new ForbiddenException('Você não tem permissão para editar esta sala.');
     }
 
-    room.name = data.nome ?? room.name;
-    room.semester = data.semestre ?? room.semester;
-    room.active = data.ativo ?? room.active;
-
-    await this.roomRepository.update(room);
+    Object.assign(room, {
+      name: data.nome ?? room.name,
+      semester: data.semestre ?? room.semester,
+      active: data.ativo ?? room.active,
+    });
+    await this.roomRepository.save(room);
 
     return {
       message: 'Sala atualizada com sucesso',
