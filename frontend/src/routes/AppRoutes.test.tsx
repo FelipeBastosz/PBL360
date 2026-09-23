@@ -63,11 +63,16 @@ describe('routing and session', () => {
     const { user } = renderApp('/');
 
     expect(await screen.findByRole('heading', { name: 'PBL360' })).toBeInTheDocument();
+
     await act(async () => {
       vi.advanceTimersByTime(2_000);
     });
 
-    await user.click(await screen.findByRole('link', { name: /Aluno/ }));
+    expect(
+      await screen.findByRole('heading', { name: 'Como você vai acessar?' }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: /Aluno/ }));
 
     expect(await screen.findByRole('link', { name: 'Criar conta' })).toHaveAttribute(
       'href',
