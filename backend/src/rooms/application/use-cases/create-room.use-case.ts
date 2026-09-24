@@ -11,7 +11,7 @@ import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/
 export interface CreateRoomInput {
   tutorId: string;
   name: string;
-  code: string;
+  courseCode: string;
   semester: string;
 }
 
@@ -27,36 +27,37 @@ export class CreateRoomUseCase {
 
   async execute(input: CreateRoomInput): Promise<Room> {
     await this.assertTutorExists(input.tutorId);
-    const code = input.code.trim().toUpperCase();
-    const accessToken = await this.generateUniqueAccessToken();
+    const courseCode = input.courseCode.trim().toUpperCase();
+    const roomCode = await this.generateUniqueRoomCode();
 
     const room = Room.create({
       tutorId: input.tutorId,
       name: input.name,
-      code,
-      accessToken,
+      courseCode,
+      roomCode,
       semester: input.semester,
     });
 
     return this.rooms.save(room);
   }
 
-  private async generateUniqueAccessToken(): Promise<string> {
+  private async generateUniqueRoomCode(): Promise<string> {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
     for (let attempt = 0; attempt < 5; attempt++) {
-      const token = Array.from(randomBytes(8), (byte) => characters[byte % characters.length]).join(
-        '',
-      );
+      const roomCode = Array.from(
+        randomBytes(8),
+        (byte) => characters[byte % characters.length],
+      ).join('');
 
-      const existingRoom = await this.rooms.findByAccessToken(token);
+      const existingRoom = await this.rooms.findByRoomCode(roomCode);
 
       if (existingRoom === null) {
-        return token;
+        return roomCode;
       }
     }
 
-    throw new Error('Não foi possível gerar um token disponível.');
+    throw new Error('Não foi possível gerar um código de sala disponível.');
   }
 
   private async assertTutorExists(tutorId: string): Promise<void> {

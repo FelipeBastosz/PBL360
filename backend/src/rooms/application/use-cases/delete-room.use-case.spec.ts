@@ -17,9 +17,10 @@ describe('DeleteRoomUseCase', () => {
 
     roomRepositoryMock = {
       findById: findByIdMock,
+      findByTutorId: jest.fn(),
       save: saveMock,
-      findByCode: jest.fn(),
-      findByAccessToken: jest.fn(),
+      findByCourseCode: jest.fn(),
+      findByRoomCode: jest.fn(),
       update: jest.fn(),
       addTutor: jest.fn(),
       hasTutor: jest.fn(),
@@ -30,8 +31,8 @@ describe('DeleteRoomUseCase', () => {
     room = Room.create({
       tutorId: 'tutor-123',
       name: 'Sala de Testes',
-      code: 'EXA123',
-      accessToken: 'token-secreto-123',
+      courseCode: 'EXA123',
+      roomCode: 'token-secreto-123',
       semester: '2026.2',
     });
 
