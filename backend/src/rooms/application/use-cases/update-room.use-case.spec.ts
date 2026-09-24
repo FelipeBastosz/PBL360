@@ -15,8 +15,9 @@ describe('UpdateRoomUseCase', () => {
     roomRepository = {
       save: jest.fn(),
       findById: jest.fn(),
-      findByCode: jest.fn(),
-      findByAccessToken: jest.fn(),
+      findByCourseCode: jest.fn(),
+      findByRoomCode: jest.fn(),
+      findByTutorId: jest.fn(),
       update: jest.fn(),
       addTutor: jest.fn(),
       hasTutor: jest.fn(),
@@ -29,7 +30,7 @@ describe('UpdateRoomUseCase', () => {
     mockRoom.id = 'room-123';
     mockRoom.tutorId = 'tutor-123';
     mockRoom.name = 'Sala de Arquitetura';
-    mockRoom.code = 'SALA-101';
+    mockRoom.courseCode = 'SALA-101';
     mockRoom.semester = '2023.2';
     mockRoom.active = true;
 
@@ -65,25 +66,25 @@ describe('UpdateRoomUseCase', () => {
     expect(response.data.semester).toBe('2024.1');
   });
 
-  it('não deve permitir a alteração do código da sala', async () => {
-    const originalCode = mockRoom.code;
+  it('não deve permitir a alteração do código da disciplina', async () => {
+    const originalCode = mockRoom.courseCode;
 
     const dto = {
       nome: 'Novo Nome',
-      code: 'SALA-HACKEADA',
+      courseCode: 'ABC123',
     } as unknown as UpdateRoomDto;
 
     await sut.execute(mockRoom.id, 'tutor-123', dto);
 
     expect(roomRepository.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        code: originalCode,
+        courseCode: originalCode,
       }),
     );
 
     expect(roomRepository.update).not.toHaveBeenCalledWith(
       expect.objectContaining({
-        code: 'SALA-HACKEADA',
+        courseCode: 'ABC123',
       }),
     );
   });

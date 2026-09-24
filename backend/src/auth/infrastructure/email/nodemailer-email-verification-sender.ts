@@ -13,8 +13,14 @@ export class NodemailerEmailVerificationSender implements EmailVerificationSende
   private readonly userEmail: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.userEmail = this.configService.get<string>('SMTP_USER') ?? 'pbl360.ecomp@gmail.com';
-    const pass = this.configService.get<string>('SMTP_PASS') ?? 'mnvalnildpsaikkk';
+    this.userEmail =
+      this.configService.get<string>('mail.smtpUser') ??
+      this.configService.get<string>('SMTP_USER') ??
+      '';
+    const pass =
+      this.configService.get<string>('mail.smtpPass') ??
+      this.configService.get<string>('SMTP_PASS') ??
+      '';
 
     this.transporter = nodemailer.createTransport({
       service: 'gmail',

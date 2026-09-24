@@ -50,11 +50,11 @@ export class Room {
   @Column({ type: 'varchar', length: 120 })
   name: string;
 
-  @Column({ type: 'varchar', length: 12 })
-  code: string;
+  @Column({ name: 'course_code', type: 'varchar', length: 12 })
+  courseCode: string;
 
-  @Column({ name: 'access_token', type: 'varchar', length: 64, unique: true })
-  accessToken: string;
+  @Column({ name: 'room_code', type: 'varchar', length: 64, unique: true })
+  roomCode: string;
 
   @Column({ type: 'varchar', length: 10 })
   semester: string;
@@ -73,8 +73,8 @@ export class Room {
 
     room.tutorId = props.tutorId.trim();
     room.name = props.name.trim();
-    room.code = props.code.trim().toUpperCase();
-    room.accessToken = props.accessToken.trim();
+    room.courseCode = props.courseCode.trim().toUpperCase();
+    room.roomCode = props.roomCode.trim();
     room.semester = props.semester.trim();
     room.active = true;
 
@@ -126,11 +126,11 @@ export class Room {
       throw new InvalidRoomError('O professor responsável é obrigatório.');
     }
 
-    if (!/^[A-Z]{3}[0-9]{3}$/.test(this.code)) {
+    if (!/^[A-Z]{3}[0-9]{3}$/.test(this.courseCode)) {
       throw new InvalidRoomError('O código da turma deve seguir o formato EXA123.');
     }
 
-    if (!this.accessToken || this.accessToken.length > 64) {
+    if (!this.roomCode || this.roomCode.length > 64) {
       throw new InvalidRoomError('O token de acesso é inválido.');
     }
   }

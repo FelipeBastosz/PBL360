@@ -9,8 +9,8 @@ interface RoomRow {
   id: string;
   tutorId: string;
   name: string;
-  code: string;
-  accessToken: string;
+  courseCode: string;
+  roomCode: string;
   semester: string;
   active: boolean;
   createdAt: Date;
@@ -20,8 +20,8 @@ const ROOM_COLUMNS = `
   id,
   tutor_id AS "tutorId",
   name,
-  code,
-  access_token AS "accessToken",
+  course_code AS "courseCode",
+  room_code AS "roomCode",
   semester,
   active,
   created_at AS "createdAt"`;
@@ -58,6 +58,24 @@ export class PgRoomRepository implements RoomRepository {
     return rows[0]?.exists ?? false;
   }
 
+  async findByTutorId(tutorId: string): Promise<Room[]> {
+    const rows = await this.rooms.query<RoomRow[]>(
+      `SELECT ${ROOM_COLUMNS}
+      FROM rooms
+      WHERE deleted_at IS NULL
+        AND EXISTS (
+          SELECT 1
+          FROM room_tutors
+          WHERE room_tutors.room_id = rooms.id
+            AND room_tutors.tutor_id = $1
+        )
+      ORDER BY created_at ASC, id ASC;`,
+      [tutorId],
+    );
+
+    return rows.map((row) => this.toEntity(row));
+  }
+
   findById(id: string): Promise<Room | null> {
     return this.queryOne(
       `SELECT ${ROOM_COLUMNS}
@@ -68,23 +86,23 @@ export class PgRoomRepository implements RoomRepository {
     );
   }
 
-  findByCode(code: string): Promise<Room | null> {
+  findByCourseCode(courseCode: string): Promise<Room | null> {
     return this.queryOne(
       `SELECT ${ROOM_COLUMNS}
         FROM rooms
-        WHERE code = $1
+        WHERE course_code = $1
         LIMIT 1;`,
-      [code],
+      [courseCode],
     );
   }
 
-  findByAccessToken(accessToken: string): Promise<Room | null> {
+  findByRoomCode(roomCode: string): Promise<Room | null> {
     return this.queryOne(
       `SELECT ${ROOM_COLUMNS}
       FROM rooms
-      WHERE access_token = $1
+      WHERE room_code = $1
       LIMIT 1;`,
-      [accessToken],
+      [roomCode],
     );
   }
 
@@ -94,14 +112,14 @@ export class PgRoomRepository implements RoomRepository {
         `INSERT INTO rooms (
             tutor_id,
             name,
-            code,
-            access_token,
+            course_code,
+            room_code,
             semester,
             active
           )
           VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING ${ROOM_COLUMNS};`,
-        [room.tutorId, room.name, room.code, room.accessToken, room.semester, room.active],
+        [room.tutorId, room.name, room.courseCode, room.roomCode, room.semester, room.active],
       );
 
       if (rows.length === 0) {

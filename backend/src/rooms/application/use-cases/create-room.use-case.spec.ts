@@ -36,16 +36,17 @@ function createUserRepositoryMock(type: UserType = UserType.TUTOR) {
 
 function createRoomRepositoryMock() {
   const saveMock = jest.fn((room: Room) => Promise.resolve(room));
-  const findByAccessTokenMock = jest.fn().mockResolvedValue(null);
-  const findByCodeMock = jest.fn().mockResolvedValue(null);
+  const findByRoomCodeMock = jest.fn().mockResolvedValue(null);
+  const findByCourseCodeMock = jest.fn().mockResolvedValue(null);
   const findByIdMock = jest.fn().mockResolvedValue(null);
   const updateMock = jest.fn().mockResolvedValue(undefined);
 
   const rooms: jest.Mocked<RoomRepository> = {
     save: saveMock,
-    findByCode: findByCodeMock,
-    findByAccessToken: findByAccessTokenMock,
+    findByCourseCode: findByCourseCodeMock,
+    findByRoomCode: findByRoomCodeMock,
     findById: findByIdMock,
+    findByTutorId: jest.fn(),
     update: updateMock,
     addTutor: jest.fn().mockResolvedValue(undefined),
     hasTutor: jest.fn().mockResolvedValue(false),
@@ -55,29 +56,29 @@ function createRoomRepositoryMock() {
   return {
     rooms,
     saveMock,
-    findByAccessTokenMock,
-    findByCodeMock,
+    findByRoomCodeMock,
+    findByCourseCodeMock,
   };
 }
 
 describe('CreateRoomUseCase', () => {
   it('creates and saves a room with the informed code', async () => {
-    const { rooms, saveMock, findByCodeMock } = createRoomRepositoryMock();
+    const { rooms, saveMock, findByCourseCodeMock } = createRoomRepositoryMock();
     const { users } = createUserRepositoryMock();
     const useCase = new CreateRoomUseCase(rooms, users);
     const result = await useCase.execute({
       tutorId: TUTOR_ID,
       name: 'Engenharia de Software',
-      code: 'EXA123',
+      courseCode: 'EXA123',
       semester: '2026.2',
     });
 
     expect(result.name).toBe('Engenharia de Software');
     expect(result.active).toBe(true);
-    expect(result.code).toBe('EXA123');
-    expect(result.accessToken).toMatch(/^[A-Za-z0-9]{8}$/);
+    expect(result.courseCode).toBe('EXA123');
+    expect(result.roomCode).toMatch(/^[A-Za-z0-9]{8}$/);
     expect(saveMock).toHaveBeenCalledTimes(1);
-    expect(findByCodeMock).not.toHaveBeenCalled();
+    expect(findByCourseCodeMock).not.toHaveBeenCalled();
   });
 
   it('normalizes the informed code to uppercase', async () => {
@@ -87,27 +88,27 @@ describe('CreateRoomUseCase', () => {
     const result = await useCase.execute({
       tutorId: TUTOR_ID,
       name: 'Engenharia de Software',
-      code: 'exa123',
+      courseCode: 'exa123',
       semester: '2026.2',
     });
 
-    expect(result.code).toBe('EXA123');
+    expect(result.courseCode).toBe('EXA123');
 
     expect(saveMock).toHaveBeenCalledTimes(1);
   });
 
-  it('generates another access token when the first one is taken', async () => {
-    const { rooms, findByAccessTokenMock, saveMock } = createRoomRepositoryMock();
+  it('generates another room code when the first one is taken', async () => {
+    const { rooms, findByRoomCodeMock, saveMock } = createRoomRepositoryMock();
 
     const existingRoom = Room.create({
       tutorId: TUTOR_ID,
       name: 'Sala existente',
-      code: 'ABC123',
-      accessToken: 'existing-token',
+      courseCode: 'ABC123',
+      roomCode: 'existing-room-code',
       semester: '2026.2',
     });
 
-    findByAccessTokenMock.mockResolvedValueOnce(existingRoom);
+    findByRoomCodeMock.mockResolvedValueOnce(existingRoom);
 
     const { users } = createUserRepositoryMock();
 
@@ -116,28 +117,28 @@ describe('CreateRoomUseCase', () => {
     const result = await useCase.execute({
       tutorId: TUTOR_ID,
       name: 'Engenharia de Software',
-      code: 'EXA123',
+      courseCode: 'EXA123',
       semester: '2026.2',
     });
 
-    expect(findByAccessTokenMock).toHaveBeenCalledTimes(2);
-    expect(result.code).toBe('EXA123');
-    expect(result.accessToken).toMatch(/^[A-Za-z0-9]{8}$/);
+    expect(findByRoomCodeMock).toHaveBeenCalledTimes(2);
+    expect(result.courseCode).toBe('EXA123');
+    expect(result.roomCode).toMatch(/^[A-Za-z0-9]{8}$/);
     expect(saveMock).toHaveBeenCalledTimes(1);
   });
 
   it('rejects creation after five access token collisions', async () => {
-    const { rooms, findByAccessTokenMock, saveMock } = createRoomRepositoryMock();
+    const { rooms, findByRoomCodeMock, saveMock } = createRoomRepositoryMock();
 
     const existingRoom = Room.create({
       tutorId: TUTOR_ID,
       name: 'Sala existente',
-      code: 'ABC123',
-      accessToken: 'existing-token',
+      courseCode: 'ABC123',
+      roomCode: 'existing-room-code',
       semester: '2026.2',
     });
 
-    findByAccessTokenMock.mockResolvedValue(existingRoom);
+    findByRoomCodeMock.mockResolvedValue(existingRoom);
 
     const { users } = createUserRepositoryMock();
 
@@ -147,18 +148,18 @@ describe('CreateRoomUseCase', () => {
       useCase.execute({
         tutorId: TUTOR_ID,
         name: 'Engenharia de Software',
-        code: 'EXA123',
+        courseCode: 'EXA123',
         semester: '2026.2',
       }),
-    ).rejects.toThrow('Não foi possível gerar um token disponível.');
+    ).rejects.toThrow('Não foi possível gerar um código de sala disponível.');
 
-    expect(findByAccessTokenMock).toHaveBeenCalledTimes(5);
+    expect(findByRoomCodeMock).toHaveBeenCalledTimes(5);
 
     expect(saveMock).not.toHaveBeenCalled();
   });
 
   it('rejects creation when tutor does not exist', async () => {
-    const { rooms, saveMock, findByAccessTokenMock } = createRoomRepositoryMock();
+    const { rooms, saveMock, findByRoomCodeMock } = createRoomRepositoryMock();
 
     const { users, findByIdMock } = createUserRepositoryMock();
 
@@ -170,13 +171,13 @@ describe('CreateRoomUseCase', () => {
       useCase.execute({
         tutorId: TUTOR_ID,
         name: 'Engenharia de Software',
-        code: 'EXA123',
+        courseCode: 'EXA123',
         semester: '2026.2',
       }),
     ).rejects.toThrow(InvalidRoomError);
 
     expect(findByIdMock).toHaveBeenCalledWith(TUTOR_ID);
-    expect(findByAccessTokenMock).not.toHaveBeenCalled();
+    expect(findByRoomCodeMock).not.toHaveBeenCalled();
     expect(saveMock).not.toHaveBeenCalled();
   });
 });
