@@ -23,7 +23,7 @@ describe('NodemailerEmailVerificationSender', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => {
-              if (key === 'SMTP_USER') return 'pbl360.ecomp@gmail.com';
+              if (key === 'SMTP_USER') return 'test-sender@example.com';
               if (key === 'SMTP_PASS') return 'app-password-mock';
               return null;
             }),

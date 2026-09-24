@@ -319,6 +319,36 @@ export class RecursosController {
 
 ```
 
+### 3.5 Registro de Autoria e Auditoria (US43 / Task #136)
+
+Para garantir que tudo o que um professor criar ou alterar fique estritamente associado a ele — permitindo rastreabilidade e auditoria quando houver múltiplos professores na mesma sala —, todas as funcionalidades devem seguir um padrão único de identificação e persistência de autoria:
+
+1. **Obtenção Segura do Autor**: O identificador do autor NUNCA é recebido no corpo da requisição (`Body`) para evitar que um usuário forje ações em nome de outro. Ele deve ser obtido exclusivamente do token JWT autenticado no controller através do decorator `@AuthenticatedUserId()` ou `@AuthenticatedUser()` (localizados em `@/shared/decorators/`).
+2. **Campos Padrão de Autoria em Entidades**: Entidades criadas ou alteradas no sistema que demandam rastreabilidade de ações (como problemas, feedbacks, notas e configurações) devem implementar os campos padronizados descritos na interface `Auditable` (`@/shared/interfaces/auditable.interface.ts`):
+   - `createdBy` (`created_by` no banco, tipo `UUID` referenciando `users`): Usuário que criou o recurso.
+   - `createdAt` (`created_at` no banco, tipo `timestamptz`): Data/hora de criação.
+   - `updatedBy` (`updated_by` no banco, tipo `UUID` referenciando `users`, opcional): Usuário que realizou a última modificação.
+   - `updatedAt` (`updated_at` no banco, tipo `timestamptz`, opcional): Data/hora da última alteração.
+3. **Validação de Permissão e Vínculo com a Sala**: Ao realizar qualquer ação sobre uma sala ou recursos vinculados a ela, o caso de uso deve receber o `authorId` e validar a relação com a sala (por exemplo, via `roomRepository.hasTutor(roomId, authorId)`). Caso o usuário não faça parte dos professores da sala, o caso de uso deve rejeitar a ação com `ForbiddenException`.
+
+Exemplo de uso no Controller e Caso de Uso:
+
+```ts
+@Post()
+@Roles(UserType.TUTOR)
+async create(
+  @Param('roomId') roomId: string,
+  @Body() dto: CreateProblemDto,
+  @AuthenticatedUserId() authorId: string,
+) {
+  return this.createProblemUseCase.execute({
+    roomId,
+    authorId,
+    title: dto.titulo,
+  });
+}
+```
+
 ---
 
 ## 4. Criando um novo módulo — passo a passo
