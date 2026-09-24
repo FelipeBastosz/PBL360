@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -19,6 +20,7 @@ export class Problem {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index('idx_problems_room_id')
   @Column({ name: 'room_id', type: 'uuid' })
   roomId: string;
 
@@ -71,8 +73,8 @@ export class Problem {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz', nullable: true, default: null })
-  updatedAt?: Date | null;
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 
   static create(props: NewProblem): Problem {
     const problem = new Problem();

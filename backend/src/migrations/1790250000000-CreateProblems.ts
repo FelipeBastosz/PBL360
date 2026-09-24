@@ -17,7 +17,7 @@ export class CreateProblems1790250000000 implements MigrationInterface {
         self_eval_deadline TIMESTAMPTZ DEFAULT NULL,
         created_by UUID NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-        updated_at TIMESTAMPTZ DEFAULT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
         CONSTRAINT uq_problems_room_order UNIQUE (room_id, order_index),
         CONSTRAINT fk_problems_room
