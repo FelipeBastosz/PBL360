@@ -173,6 +173,8 @@ Todas estão documentadas em [`.env.example`](.env.example). O carregamento é f
 | `DB_HOST` / `DB_PORT`                     | `localhost` / `5432`    | Conexão com o PostgreSQL                                    |
 | `DB_USERNAME` / `DB_PASSWORD` / `DB_NAME` | `pbl360`                | Credenciais                                                 |
 | `DB_SYNCHRONIZE`                          | `false`                 | **Mantenha `false`** — o schema é versionado por migrations |
+| `SMTP_USER`                               | —                       | E-mail do remetente (ex.: Gmail)                            |
+| `SMTP_PASS`                               | —                       | Senha de aplicativo (App Password) do e-mail                |
 | `JWT_SECRET`                              | —                       | **Obrigatória**: a API não sobe sem ela                     |
 | `JWT_EXPIRES_IN`                          | `1d`                    | Validade do token (`30m`, `1d`, ou segundos)                |
 | `BCRYPT_ROUNDS`                           | `12`                    | Custo do hash da senha                                      |
