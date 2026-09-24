@@ -25,7 +25,7 @@ export const EditRoomSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
   ApiUnauthorizedResponse({
-    description: 'Não autorizado. Token de acesso não informado, inválido ou expirado.',
+    description: 'Não autorizado. JWT não informado, inválido ou expirado.',
     type: ErrorResponseDto,
   }),
   ApiForbiddenResponse({

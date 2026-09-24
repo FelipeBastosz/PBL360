@@ -33,23 +33,23 @@ export class CreateRoomDto {
 
   @ApiProperty({
     description:
-      'Código acadêmico da turma informado pelo professor. ' +
+      'Código acadêmico da disciplina informado pelo professor. ' +
       'Não é utilizado para ingressar na sala. ' +
       'O ingresso dos alunos é realizado por meio ' +
-      'do token gerado automaticamente pelo sistema.',
+      'do código da sala gerado automaticamente pelo sistema.',
     example: 'EXA123',
     pattern: '^[A-Za-z]{3}[0-9]{3}$',
   })
   @IsString({
-    message: 'O código da turma deve ser um texto.',
+    message: 'O código da disciplina deve ser um texto.',
   })
   @IsNotEmpty({
-    message: 'O código da turma é obrigatório.',
+    message: 'O código da disciplina é obrigatório.',
   })
   @Matches(/^[A-Za-z]{3}[0-9]{3}$/, {
-    message: 'O código da turma deve seguir o formato EXA123.',
+    message: 'O código da disciplina deve seguir o formato ABC123.',
   })
-  codigo: string;
+  codigoDisciplina: string;
 
   @ApiProperty({
     description: 'Semestre acadêmico ao qual a turma pertence.',

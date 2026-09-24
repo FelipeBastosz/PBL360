@@ -1,7 +1,7 @@
 export interface NewRoom {
   tutorId: string;
   name: string;
-  code: string;
-  accessToken: string;
+  courseCode: string;
+  roomCode: string;
   semester: string;
 }

@@ -17,6 +17,7 @@ import { PgRoomRepository } from './infrastructure/database/pg-room.repository';
 import { RoomsController } from './infrastructure/http/rooms.controller';
 import { AddTutorToRoomUseCase } from './application/use-cases/add-tutor-to-room.use-case';
 import { RemoveTutorFromRoomUseCase } from './application/use-cases/remove-tutor-from-room.use-case';
+import { ListRoomsUseCase } from './application/use-cases/list-rooms.use-case';
 
 import { RoomAccessService } from './application/services/room-access.service';
 
@@ -31,6 +32,7 @@ import { RoomAccessService } from './application/services/room-access.service';
     AddTutorToRoomUseCase,
     RemoveTutorFromRoomUseCase,
     DeleteRoomUseCase,
+    ListRoomsUseCase,
     RoomAccessService,
 
     AuthGuard,

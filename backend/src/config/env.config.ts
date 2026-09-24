@@ -22,3 +22,8 @@ export const authConfig = registerAs('auth', () => ({
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '1d',
   bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS ?? '12', 10),
 }));
+
+export const mailConfig = registerAs('mail', () => ({
+  smtpUser: process.env.SMTP_USER ?? '',
+  smtpPass: process.env.SMTP_PASS ?? '',
+}));

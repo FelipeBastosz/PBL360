@@ -6,8 +6,8 @@ function validRoomData(): NewRoom {
   return {
     tutorId: 'tutor-123',
     name: 'Engenharia de Software',
-    code: 'ABC123',
-    accessToken: 'token-123',
+    courseCode: 'ABC123',
+    roomCode: 'token-123',
     semester: '2026.2',
   };
 }
@@ -37,13 +37,13 @@ describe('Room', () => {
     const room = Room.create({
       ...validRoomData(),
       tutorId: '  tutor-123  ',
-      code: '  ABC123  ',
-      accessToken: '  token-123  ',
+      courseCode: '  ABC123  ',
+      roomCode: '  token-123  ',
     });
 
     expect(room.tutorId).toBe('tutor-123');
-    expect(room.code).toBe('ABC123');
-    expect(room.accessToken).toBe('token-123');
+    expect(room.courseCode).toBe('ABC123');
+    expect(room.roomCode).toBe('token-123');
   });
 
   it('rejects a room with an empty name', () => {
@@ -81,41 +81,43 @@ describe('Room', () => {
   });
 
   it('rejects a room with an empty code', () => {
-    expect(() => Room.create({ ...validRoomData(), code: '   ' })).toThrow(InvalidRoomError);
+    expect(() => Room.create({ ...validRoomData(), courseCode: '   ' })).toThrow(InvalidRoomError);
   });
 
   it('rejects a room code with 12 characters', () => {
-    expect(() => Room.create({ ...validRoomData(), code: 'A'.repeat(12) })).toThrow(
+    expect(() => Room.create({ ...validRoomData(), courseCode: 'A'.repeat(12) })).toThrow(
       InvalidRoomError,
     );
   });
 
   it('accepts a room code with three letters and three numbers', () => {
-    const room = Room.create({ ...validRoomData(), code: 'EXA123' });
-    expect(room.code).toBe('EXA123');
+    const room = Room.create({ ...validRoomData(), courseCode: 'EXA123' });
+    expect(room.courseCode).toBe('EXA123');
   });
 
   it('converts lowercase letters in the room code to uppercase', () => {
-    const room = Room.create({ ...validRoomData(), code: 'exa123' });
-    expect(room.code).toBe('EXA123');
+    const room = Room.create({ ...validRoomData(), courseCode: 'exa123' });
+    expect(room.courseCode).toBe('EXA123');
   });
 
   it('rejects a room code with an invalid format', () => {
-    expect(() => Room.create({ ...validRoomData(), code: 'SALA1234' })).toThrow(InvalidRoomError);
+    expect(() => Room.create({ ...validRoomData(), courseCode: 'SALA1234' })).toThrow(
+      InvalidRoomError,
+    );
   });
 
   it('rejects a room with an empty access token', () => {
-    expect(() => Room.create({ ...validRoomData(), accessToken: '   ' })).toThrow(InvalidRoomError);
+    expect(() => Room.create({ ...validRoomData(), roomCode: '   ' })).toThrow(InvalidRoomError);
   });
 
   it('rejects an access token longer than 64 characters', () => {
-    expect(() => Room.create({ ...validRoomData(), accessToken: 'A'.repeat(65) })).toThrow(
+    expect(() => Room.create({ ...validRoomData(), roomCode: 'A'.repeat(65) })).toThrow(
       InvalidRoomError,
     );
   });
 
   it('accepts an access token with 64 characters', () => {
-    const room = Room.create({ ...validRoomData(), accessToken: 'A'.repeat(64) });
-    expect(room.accessToken).toHaveLength(64);
+    const room = Room.create({ ...validRoomData(), roomCode: 'A'.repeat(64) });
+    expect(room.roomCode).toHaveLength(64);
   });
 });

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   ForbiddenException,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -20,6 +21,7 @@ import {
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
@@ -52,6 +54,8 @@ import { DeleteRoomUseCase } from '../../application/use-cases/delete-room.use-c
 
 import { DeleteRoomSwaggerDocs, EditRoomSwaggerDocs } from './room.swagger';
 
+import { ListRoomsUseCase, type ListedRoom } from '../../application/use-cases/list-rooms.use-case';
+
 @ApiTags('Salas')
 @Controller('salas')
 @UseGuards(AuthGuard, RolesGuard)
@@ -60,7 +64,30 @@ export class RoomsController {
     private readonly createRoomUseCase: CreateRoomUseCase,
     private readonly updateRoomUseCase: UpdateRoomUseCase,
     private readonly deleteRoomUseCase: DeleteRoomUseCase,
+    private readonly listRoomsUseCase: ListRoomsUseCase,
   ) {}
+
+  @Get()
+  @Roles(UserType.TUTOR)
+  @ApiBearerAuth(JWT_SECURITY_SCHEME)
+  @ApiOperation({
+    summary: 'Lista as salas vinculadas ao professor autenticado',
+    description: 'Retorna as salas não excluídas vinculadas ao professor, ordenadas por criação.',
+  })
+  @ApiOkResponse({
+    description: 'Lista de salas do professor. Retorna um array vazio quando não houver salas.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  })
+  @ApiForbiddenResponse({
+    description: 'Apenas professores podem consultar suas salas.',
+    type: ErrorResponseDto,
+  })
+  list(@AuthenticatedUserId() tutorId: string): Promise<ListedRoom[]> {
+    return this.listRoomsUseCase.execute(tutorId);
+  }
 
   @Post()
   @Roles(UserType.TUTOR)
@@ -69,15 +96,12 @@ export class RoomsController {
     summary: 'Cria uma nova sala',
     description:
       'Permite que um professor autenticado crie uma sala. ' +
-      'O professor informa o nome, o código da turma e o semestre. ' +
-      'O código da turma (code), como EXA123, identifica a turma acadêmica. ' +
-      'O sistema gera automaticamente um token de acesso (accessToken), ' +
-      'utilizado pelos alunos para ingressar na sala.',
+      'O professor informa o nome, o código da disciplina e o semestre. ',
   })
   @ApiBody({
     description:
       'Dados necessários para criar uma sala. ' +
-      'O token de acesso é gerado automaticamente pelo sistema.',
+      'O código da sala é gerado automaticamente pelo sistema.',
     type: CreateRoomDto,
   })
   @ApiCreatedResponse({
@@ -102,14 +126,14 @@ export class RoomsController {
           description: 'Nome da sala.',
           example: 'Engenharia de Software',
         },
-        code: {
+        courseCode: {
           type: 'string',
-          description: 'Código da turma informado pelo professor.',
+          description: 'Código da disciplina informado pelo professor.',
           example: 'EXA123',
         },
-        accessToken: {
+        roomCode: {
           type: 'string',
-          description: 'Token de 8 caracteres gerado automaticamente para ingresso na sala.',
+          description: 'Código de 8 caracteres gerado automaticamente para ingresso na sala.',
           example: 'aB7kP2x9',
         },
         semester: {
@@ -152,7 +176,7 @@ export class RoomsController {
     return this.createRoomUseCase.execute({
       tutorId: dto.tutorId,
       name: dto.nome,
-      code: dto.codigo,
+      courseCode: dto.codigoDisciplina,
       semester: dto.semestre,
     });
   }

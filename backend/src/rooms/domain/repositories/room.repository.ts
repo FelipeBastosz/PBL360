@@ -5,9 +5,11 @@ export interface RoomRepository {
 
   findById(id: string): Promise<Room | null>;
 
-  findByCode(code: string): Promise<Room | null>;
+  findByCourseCode(courseCode: string): Promise<Room | null>;
 
-  findByAccessToken(accessToken: string): Promise<Room | null>;
+  findByRoomCode(roomCode: string): Promise<Room | null>;
+
+  findByTutorId(tutorId: string): Promise<Room[]>;
 
   update(room: Room): Promise<Room>;
 

@@ -13,8 +13,14 @@ export class NodemailerPasswordResetSender implements PasswordResetSender {
   private readonly userEmail: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.userEmail = this.configService.get<string>('SMTP_USER') ?? '';
-    const pass = this.configService.get<string>('SMTP_PASS') ?? '';
+    this.userEmail =
+      this.configService.get<string>('mail.smtpUser') ??
+      this.configService.get<string>('SMTP_USER') ??
+      '';
+    const pass =
+      this.configService.get<string>('mail.smtpPass') ??
+      this.configService.get<string>('SMTP_PASS') ??
+      '';
 
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
