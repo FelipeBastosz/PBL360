@@ -5,6 +5,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -26,6 +27,31 @@ export const CreateProblemSwaggerDocs = applyDecorators(
   ApiBadRequestResponse({
     description: 'Dados inválidos ou erro de validação.',
     type: ErrorResponseDto,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiForbiddenResponse({
+    description: 'Acesso negado. O professor não possui permissão nesta sala.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Sala não encontrada.',
+    type: ErrorResponseDto,
+  }),
+);
+
+export const ListProblemsSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Lista os problemas de uma sala',
+    description:
+      'Retorna a lista de problemas da sala informada ordenados por ordem de criação. ' +
+      'Caso a sala não possua problemas cadastrados, devolve uma lista vazia.',
+  }),
+  ApiOkResponse({
+    description: 'Lista de problemas da sala retornada com sucesso.',
   }),
   ApiUnauthorizedResponse({
     description: 'JWT não informado, inválido ou expirado.',

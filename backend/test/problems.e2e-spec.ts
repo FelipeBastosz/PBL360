@@ -125,6 +125,16 @@ describe('Problems (e2e)', () => {
     return req.send(payload);
   };
 
+  const getProblems = (targetRoomId: string, token?: string) => {
+    const req = request(app.getHttpServer() as Server).get(`/api/salas/${targetRoomId}/problemas`);
+
+    if (token) {
+      req.set('Authorization', `Bearer ${token}`);
+    }
+
+    return req;
+  };
+
   it('registers a problem successfully with automatically assigned order 1', async () => {
     const response = await postProblem(
       roomId,
@@ -226,5 +236,50 @@ describe('Problems (e2e)', () => {
 
   it('returns 401 Unauthorized when request lacks authorization token', async () => {
     await postProblem(roomId, { titulo: 'Sem Token' }).expect(401);
+  });
+
+  describe('GET /api/salas/:roomId/problemas', () => {
+    it('returns 401 Unauthorized when request lacks authorization token', async () => {
+      await getProblems(roomId).expect(401);
+    });
+
+    it('returns 403 Forbidden when a student attempts to list problems', async () => {
+      await getProblems(roomId, studentToken).expect(403);
+    });
+
+    it('returns 403 Forbidden when tutor has no permission in the room', async () => {
+      const response = await getProblems(roomId, tutor2Token).expect(403);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Você não tem permissão para acessar ou modificar esta sala.');
+    });
+
+    it('returns 404 Not Found when room does not exist', async () => {
+      const nonExistentRoomId = '00000000-0000-0000-0000-000000000000';
+      const response = await getProblems(nonExistentRoomId, tutor1Token).expect(404);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Sala não encontrada.');
+    });
+
+    it('returns 200 OK with empty array when room has no problems', async () => {
+      const response = await getProblems(roomId, tutor1Token).expect(200);
+      expect(response.body).toEqual([]);
+    });
+
+    it('returns 200 OK with problems ordered by creation', async () => {
+      await postProblem(roomId, { titulo: 'Problema Alfa' }, tutor1Token).expect(201);
+      await postProblem(roomId, { titulo: 'Problema Beta' }, tutor1Token).expect(201);
+      await postProblem(roomId, { titulo: 'Problema Gama' }, tutor1Token).expect(201);
+
+      const response = await getProblems(roomId, tutor1Token).expect(200);
+      const body = response.body as ProblemResponseBody[];
+
+      expect(body).toHaveLength(3);
+      expect(body[0].title).toBe('Problema Alfa');
+      expect(body[0].orderIndex).toBe(1);
+      expect(body[1].title).toBe('Problema Beta');
+      expect(body[1].orderIndex).toBe(2);
+      expect(body[2].title).toBe('Problema Gama');
+      expect(body[2].orderIndex).toBe(3);
+    });
   });
 });

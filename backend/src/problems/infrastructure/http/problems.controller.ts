@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -18,14 +19,18 @@ import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { CreateProblemDto } from '../../application/dtos/create-problem.dto';
 import { CreateProblemUseCase } from '../../application/use-cases/create-problem.use-case';
+import { ListProblemsByRoomUseCase } from '../../application/use-cases/list-problems-by-room.use-case';
 import type { Problem } from '../../domain/entities/problem.entity';
-import { CreateProblemSwaggerDocs } from './problem.swagger';
+import { CreateProblemSwaggerDocs, ListProblemsSwaggerDocs } from './problem.swagger';
 
 @ApiTags('Problemas')
 @Controller('salas/:roomId/problemas')
 @UseGuards(AuthGuard, RolesGuard)
 export class ProblemsController {
-  constructor(private readonly createProblemUseCase: CreateProblemUseCase) {}
+  constructor(
+    private readonly createProblemUseCase: CreateProblemUseCase,
+    private readonly listProblemsByRoomUseCase: ListProblemsByRoomUseCase,
+  ) {}
 
   @Post()
   @Roles(UserType.TUTOR)
@@ -44,5 +49,15 @@ export class ProblemsController {
       startDate: dto.dataInicio ? new Date(dto.dataInicio) : null,
       endDate: dto.dataFim ? new Date(dto.dataFim) : null,
     });
+  }
+
+  @Get()
+  @Roles(UserType.TUTOR)
+  @ListProblemsSwaggerDocs
+  list(
+    @Param('roomId', new ParseUUIDPipe()) roomId: string,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<Problem[]> {
+    return this.listProblemsByRoomUseCase.execute({ roomId, tutorId });
   }
 }
