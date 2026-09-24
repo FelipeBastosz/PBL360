@@ -135,6 +135,18 @@ describe('Problems (e2e)', () => {
     return req;
   };
 
+  const getProblemById = (targetRoomId: string, targetProblemId: string, token?: string) => {
+    const req = request(app.getHttpServer() as Server).get(
+      `/api/salas/${targetRoomId}/problemas/${targetProblemId}`,
+    );
+
+    if (token) {
+      req.set('Authorization', `Bearer ${token}`);
+    }
+
+    return req;
+  };
+
   it('registers a problem successfully with automatically assigned order 1', async () => {
     const response = await postProblem(
       roomId,
@@ -280,6 +292,92 @@ describe('Problems (e2e)', () => {
       expect(body[1].orderIndex).toBe(2);
       expect(body[2].title).toBe('Problema Gama');
       expect(body[2].orderIndex).toBe(3);
+    });
+  });
+
+  describe('GET /api/salas/:roomId/problemas/:problemId', () => {
+    it('returns 401 Unauthorized when request lacks authorization token', async () => {
+      const nonExistentProblemId = '00000000-0000-0000-0000-000000000000';
+      await getProblemById(roomId, nonExistentProblemId).expect(401);
+    });
+
+    it('returns 403 Forbidden when a student attempts to get a problem', async () => {
+      const nonExistentProblemId = '00000000-0000-0000-0000-000000000000';
+      await getProblemById(roomId, nonExistentProblemId, studentToken).expect(403);
+    });
+
+    it('returns 403 Forbidden when tutor has no permission in the room', async () => {
+      const nonExistentProblemId = '00000000-0000-0000-0000-000000000000';
+      const response = await getProblemById(roomId, nonExistentProblemId, tutor2Token).expect(403);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Você não tem permissão para acessar ou modificar esta sala.');
+    });
+
+    it('returns 404 Not Found when room does not exist', async () => {
+      const nonExistentRoomId = '00000000-0000-0000-0000-000000000000';
+      const nonExistentProblemId = '00000000-0000-0000-0000-000000000000';
+      const response = await getProblemById(
+        nonExistentRoomId,
+        nonExistentProblemId,
+        tutor1Token,
+      ).expect(404);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Sala não encontrada.');
+    });
+
+    it('returns 404 Not Found when problem does not exist', async () => {
+      const nonExistentProblemId = '00000000-0000-0000-0000-000000000000';
+      const response = await getProblemById(roomId, nonExistentProblemId, tutor1Token).expect(404);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Problema não encontrado.');
+    });
+
+    it('returns 404 Not Found when problem exists but belongs to a different room', async () => {
+      const [otherRoom] = await dataSource.query<[{ id: string }]>(
+        `INSERT INTO rooms (tutor_id, name, course_code, room_code, semester, active)
+         VALUES ($1, 'Outra Sala', 'EXA999', 'ROOM9999', '2026.2', true)
+         RETURNING id;`,
+        [tutor1Id],
+      );
+      await dataSource.query(`INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2);`, [
+        otherRoom.id,
+        tutor1Id,
+      ]);
+
+      const res = await postProblem(
+        otherRoom.id,
+        { titulo: 'Problema de Outra Sala' },
+        tutor1Token,
+      ).expect(201);
+      const problemOfOtherRoom = res.body as ProblemResponseBody;
+
+      const response = await getProblemById(roomId, problemOfOtherRoom.id, tutor1Token).expect(404);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Problema não encontrado.');
+    });
+
+    it('returns 200 OK with problem details when problem belongs to the room', async () => {
+      const res = await postProblem(
+        roomId,
+        {
+          titulo: 'Problema Específico',
+          descricao: 'Descrição detalhada do caso clínico.',
+          dataInicio: '2026-03-01T00:00:00.000Z',
+          dataFim: '2026-03-15T00:00:00.000Z',
+        },
+        tutor1Token,
+      ).expect(201);
+      const created = res.body as ProblemResponseBody;
+
+      const response = await getProblemById(roomId, created.id, tutor1Token).expect(200);
+      const body = response.body as ProblemResponseBody;
+
+      expect(body.id).toBe(created.id);
+      expect(body.roomId).toBe(roomId);
+      expect(body.title).toBe('Problema Específico');
+      expect(body.description).toBe('Descrição detalhada do caso clínico.');
+      expect(body.orderIndex).toBe(1);
+      expect(body.createdBy).toBe(tutor1Id);
     });
   });
 });

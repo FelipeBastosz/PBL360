@@ -66,3 +66,28 @@ export const ListProblemsSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
 );
+
+export const GetProblemSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Obtém as informações de um problema da sala',
+    description:
+      'Retorna os dados detalhados de um problema específico. ' +
+      'Caso o problema não exista ou não pertença à sala informada, o sistema responde que ele não existe.',
+  }),
+  ApiOkResponse({
+    description: 'Problema encontrado com sucesso.',
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiForbiddenResponse({
+    description: 'Acesso negado. O professor não possui permissão nesta sala.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Problema ou sala não encontrada.',
+    type: ErrorResponseDto,
+  }),
+);
