@@ -122,9 +122,9 @@ describe('PgProblemRepository', () => {
       );
 
       mockManager.query
-        .mockResolvedValueOnce([]) // SELECT id FROM rooms WHERE id = $1 FOR UPDATE
-        .mockResolvedValueOnce([{ nextOrder: 1 }]) // SELECT MAX(order_index) + 1
-        .mockResolvedValueOnce([fakeProblemRow({ orderIndex: 1 })]); // INSERT RETURNING
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ nextOrder: 1 }])
+        .mockResolvedValueOnce([fakeProblemRow({ orderIndex: 1 })]);
 
       const newProblem = Problem.create({
         roomId: 'room-uuid-1',
@@ -162,8 +162,8 @@ describe('PgProblemRepository', () => {
       );
 
       mockManager.query
-        .mockResolvedValueOnce([]) // FOR UPDATE
-        .mockResolvedValueOnce([fakeProblemRow({ orderIndex: 5 })]); // INSERT RETURNING
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([fakeProblemRow({ orderIndex: 5 })]);
 
       const problem = Problem.create({
         roomId: 'room-uuid-1',
@@ -190,7 +190,7 @@ describe('PgProblemRepository', () => {
       mockManager.query
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([{ nextOrder: 1 }])
-        .mockResolvedValueOnce([]); // Empty rows
+        .mockResolvedValueOnce([]);
 
       const problem = Problem.create({
         roomId: 'room-uuid-1',
