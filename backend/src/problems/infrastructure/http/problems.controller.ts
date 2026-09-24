@@ -19,9 +19,14 @@ import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { CreateProblemDto } from '../../application/dtos/create-problem.dto';
 import { CreateProblemUseCase } from '../../application/use-cases/create-problem.use-case';
+import { GetProblemUseCase } from '../../application/use-cases/get-problem.use-case';
 import { ListProblemsByRoomUseCase } from '../../application/use-cases/list-problems-by-room.use-case';
 import type { Problem } from '../../domain/entities/problem.entity';
-import { CreateProblemSwaggerDocs, ListProblemsSwaggerDocs } from './problem.swagger';
+import {
+  CreateProblemSwaggerDocs,
+  GetProblemSwaggerDocs,
+  ListProblemsSwaggerDocs,
+} from './problem.swagger';
 
 @ApiTags('Problemas')
 @Controller('salas/:roomId/problemas')
@@ -30,6 +35,7 @@ export class ProblemsController {
   constructor(
     private readonly createProblemUseCase: CreateProblemUseCase,
     private readonly listProblemsByRoomUseCase: ListProblemsByRoomUseCase,
+    private readonly getProblemUseCase: GetProblemUseCase,
   ) {}
 
   @Post()
@@ -59,5 +65,16 @@ export class ProblemsController {
     @AuthenticatedUserId() tutorId: string,
   ): Promise<Problem[]> {
     return this.listProblemsByRoomUseCase.execute({ roomId, tutorId });
+  }
+
+  @Get(':problemId')
+  @Roles(UserType.TUTOR)
+  @GetProblemSwaggerDocs
+  getById(
+    @Param('roomId', new ParseUUIDPipe()) roomId: string,
+    @Param('problemId', new ParseUUIDPipe()) problemId: string,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<Problem> {
+    return this.getProblemUseCase.execute({ roomId, problemId, tutorId });
   }
 }

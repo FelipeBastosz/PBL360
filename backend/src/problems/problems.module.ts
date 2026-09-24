@@ -5,6 +5,7 @@ import { AuthModule } from '@/auth/auth.module';
 import { RoomsModule } from '@/rooms/rooms.module';
 
 import { CreateProblemUseCase } from './application/use-cases/create-problem.use-case';
+import { GetProblemUseCase } from './application/use-cases/get-problem.use-case';
 import { ListProblemsByRoomUseCase } from './application/use-cases/list-problems-by-room.use-case';
 import { Problem } from './domain/entities/problem.entity';
 import { PROBLEM_REPOSITORY } from './domain/repositories/problem.repository';
@@ -17,6 +18,7 @@ import { ProblemsController } from './infrastructure/http/problems.controller';
   providers: [
     CreateProblemUseCase,
     ListProblemsByRoomUseCase,
+    GetProblemUseCase,
     {
       provide: PROBLEM_REPOSITORY,
       useClass: PgProblemRepository,
