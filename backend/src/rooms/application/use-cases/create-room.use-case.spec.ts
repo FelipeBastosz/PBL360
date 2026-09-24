@@ -36,8 +36,8 @@ function createUserRepositoryMock(type: UserType = UserType.TUTOR) {
 
 function createRoomRepositoryMock() {
   const saveMock = jest.fn((room: Room) => Promise.resolve(room));
-  const findByCodeMock = jest.fn().mockResolvedValue(null);
   const findByAccessTokenMock = jest.fn().mockResolvedValue(null);
+  const findByCodeMock = jest.fn().mockResolvedValue(null);
   const findByIdMock = jest.fn().mockResolvedValue(null);
   const updateMock = jest.fn().mockResolvedValue(undefined);
 
@@ -47,69 +47,52 @@ function createRoomRepositoryMock() {
     findByAccessToken: findByAccessTokenMock,
     findById: findByIdMock,
     update: updateMock,
+    addTutor: jest.fn().mockResolvedValue(undefined),
+    hasTutor: jest.fn().mockResolvedValue(false),
+    removeTutor: jest.fn().mockResolvedValue(undefined),
   };
 
   return {
     rooms,
     saveMock,
-    findByCodeMock,
     findByAccessTokenMock,
-    findByIdMock,
-    updateMock,
+    findByCodeMock,
   };
 }
 
 describe('CreateRoomUseCase', () => {
-  it('creates and saves a room', async () => {
-    const saveMock = jest.fn((room: Room) => Promise.resolve(room));
-
-    const rooms: jest.Mocked<RoomRepository> = {
-      save: saveMock,
-      findByCode: jest.fn().mockResolvedValue(null),
-      findByAccessToken: jest.fn().mockResolvedValue(null),
-      findById: jest.fn().mockResolvedValue(null),
-      update: jest.fn().mockResolvedValue(undefined),
-    };
-
+  it('creates and saves a room with the informed code', async () => {
+    const { rooms, saveMock, findByCodeMock } = createRoomRepositoryMock();
     const { users } = createUserRepositoryMock();
     const useCase = new CreateRoomUseCase(rooms, users);
-
     const result = await useCase.execute({
-      tutorId: 'tutor-123',
+      tutorId: TUTOR_ID,
       name: 'Engenharia de Software',
+      code: 'EXA123',
       semester: '2026.2',
     });
 
     expect(result.name).toBe('Engenharia de Software');
     expect(result.active).toBe(true);
-    expect(result.code).toMatch(/^[0-9A-F]{12}$/);
-    expect(result.accessToken).toMatch(/^[0-9a-f]{32}$/);
+    expect(result.code).toBe('EXA123');
+    expect(result.accessToken).toMatch(/^[A-Za-z0-9]{8}$/);
     expect(saveMock).toHaveBeenCalledTimes(1);
+    expect(findByCodeMock).not.toHaveBeenCalled();
   });
 
-  it('generates another code when the first one is taken', async () => {
-    const { rooms, findByCodeMock, saveMock } = createRoomRepositoryMock();
-
-    const existingRoom = Room.create({
-      tutorId: 'tutor-123',
-      name: 'Sala existente',
-      code: 'ABC123',
-      accessToken: 'existing-token',
-      semester: '2026.2',
-    });
-
-    findByCodeMock.mockResolvedValueOnce(existingRoom);
-
+  it('normalizes the informed code to uppercase', async () => {
+    const { rooms, saveMock } = createRoomRepositoryMock();
     const { users } = createUserRepositoryMock();
     const useCase = new CreateRoomUseCase(rooms, users);
-
-    await useCase.execute({
-      tutorId: 'tutor-123',
+    const result = await useCase.execute({
+      tutorId: TUTOR_ID,
       name: 'Engenharia de Software',
+      code: 'exa123',
       semester: '2026.2',
     });
 
-    expect(findByCodeMock).toHaveBeenCalledTimes(2);
+    expect(result.code).toBe('EXA123');
+
     expect(saveMock).toHaveBeenCalledTimes(1);
   });
 
@@ -117,7 +100,7 @@ describe('CreateRoomUseCase', () => {
     const { rooms, findByAccessTokenMock, saveMock } = createRoomRepositoryMock();
 
     const existingRoom = Room.create({
-      tutorId: 'tutor-123',
+      tutorId: TUTOR_ID,
       name: 'Sala existente',
       code: 'ABC123',
       accessToken: 'existing-token',
@@ -127,51 +110,27 @@ describe('CreateRoomUseCase', () => {
     findByAccessTokenMock.mockResolvedValueOnce(existingRoom);
 
     const { users } = createUserRepositoryMock();
+
     const useCase = new CreateRoomUseCase(rooms, users);
 
-    await useCase.execute({
-      tutorId: 'tutor-123',
+    const result = await useCase.execute({
+      tutorId: TUTOR_ID,
       name: 'Engenharia de Software',
+      code: 'EXA123',
       semester: '2026.2',
     });
 
     expect(findByAccessTokenMock).toHaveBeenCalledTimes(2);
+    expect(result.code).toBe('EXA123');
+    expect(result.accessToken).toMatch(/^[A-Za-z0-9]{8}$/);
     expect(saveMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('rejects creation after five code collisions', async () => {
-    const { rooms, findByCodeMock, saveMock } = createRoomRepositoryMock();
-
-    const existingRoom = Room.create({
-      tutorId: 'tutor-123',
-      name: 'Sala existente',
-      code: 'ABC123',
-      accessToken: 'existing-token',
-      semester: '2026.2',
-    });
-
-    findByCodeMock.mockResolvedValue(existingRoom);
-
-    const { users } = createUserRepositoryMock();
-    const useCase = new CreateRoomUseCase(rooms, users);
-
-    await expect(
-      useCase.execute({
-        tutorId: 'tutor-123',
-        name: 'Engenharia de Software',
-        semester: '2026.2',
-      }),
-    ).rejects.toThrow('Não foi possível gerar um código disponível.');
-
-    expect(findByCodeMock).toHaveBeenCalledTimes(5);
-    expect(saveMock).not.toHaveBeenCalled();
   });
 
   it('rejects creation after five access token collisions', async () => {
     const { rooms, findByAccessTokenMock, saveMock } = createRoomRepositoryMock();
 
     const existingRoom = Room.create({
-      tutorId: 'tutor-123',
+      tutorId: TUTOR_ID,
       name: 'Sala existente',
       code: 'ABC123',
       accessToken: 'existing-token',
@@ -181,22 +140,25 @@ describe('CreateRoomUseCase', () => {
     findByAccessTokenMock.mockResolvedValue(existingRoom);
 
     const { users } = createUserRepositoryMock();
+
     const useCase = new CreateRoomUseCase(rooms, users);
 
     await expect(
       useCase.execute({
-        tutorId: 'tutor-123',
+        tutorId: TUTOR_ID,
         name: 'Engenharia de Software',
+        code: 'EXA123',
         semester: '2026.2',
       }),
     ).rejects.toThrow('Não foi possível gerar um token disponível.');
 
     expect(findByAccessTokenMock).toHaveBeenCalledTimes(5);
+
     expect(saveMock).not.toHaveBeenCalled();
   });
 
   it('rejects creation when tutor does not exist', async () => {
-    const { rooms, saveMock, findByCodeMock } = createRoomRepositoryMock();
+    const { rooms, saveMock, findByAccessTokenMock } = createRoomRepositoryMock();
 
     const { users, findByIdMock } = createUserRepositoryMock();
 
@@ -208,34 +170,13 @@ describe('CreateRoomUseCase', () => {
       useCase.execute({
         tutorId: TUTOR_ID,
         name: 'Engenharia de Software',
+        code: 'EXA123',
         semester: '2026.2',
       }),
     ).rejects.toThrow(InvalidRoomError);
 
     expect(findByIdMock).toHaveBeenCalledWith(TUTOR_ID);
-    expect(findByCodeMock).not.toHaveBeenCalled();
-    expect(saveMock).not.toHaveBeenCalled();
-  });
-
-  it('rejects creation when tutor does not exist', async () => {
-    const { rooms, saveMock, findByCodeMock } = createRoomRepositoryMock();
-
-    const { users, findByIdMock } = createUserRepositoryMock();
-
-    findByIdMock.mockResolvedValue(null);
-
-    const useCase = new CreateRoomUseCase(rooms, users);
-
-    await expect(
-      useCase.execute({
-        tutorId: TUTOR_ID,
-        name: 'Engenharia de Software',
-        semester: '2026.2',
-      }),
-    ).rejects.toThrow(InvalidRoomError);
-
-    expect(findByIdMock).toHaveBeenCalledWith(TUTOR_ID);
-    expect(findByCodeMock).not.toHaveBeenCalled();
+    expect(findByAccessTokenMock).not.toHaveBeenCalled();
     expect(saveMock).not.toHaveBeenCalled();
   });
 });
