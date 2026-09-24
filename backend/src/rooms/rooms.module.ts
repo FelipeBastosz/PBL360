@@ -18,6 +18,8 @@ import { RoomsController } from './infrastructure/http/rooms.controller';
 import { AddTutorToRoomUseCase } from './application/use-cases/add-tutor-to-room.use-case';
 import { RemoveTutorFromRoomUseCase } from './application/use-cases/remove-tutor-from-room.use-case';
 
+import { RoomAccessService } from './application/services/room-access.service';
+
 @Module({
   imports: [TypeOrmModule.forFeature([Room]), AuthModule, UsersModule],
 
@@ -29,6 +31,7 @@ import { RemoveTutorFromRoomUseCase } from './application/use-cases/remove-tutor
     AddTutorToRoomUseCase,
     RemoveTutorFromRoomUseCase,
     DeleteRoomUseCase,
+    RoomAccessService,
 
     AuthGuard,
     RolesGuard,
@@ -38,5 +41,6 @@ import { RemoveTutorFromRoomUseCase } from './application/use-cases/remove-tutor
       useClass: PgRoomRepository,
     },
   ],
+  exports: [RoomAccessService, ROOM_REPOSITORY],
 })
 export class RoomsModule {}
