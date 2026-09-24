@@ -11,12 +11,13 @@ import {
 } from 'typeorm';
 import { Room } from '@/rooms/domain/entities/room.entity';
 import { User } from '@/users/domain/entities/user.entity';
+import type { Auditable } from '@/shared/interfaces/auditable.interface';
 import { InvalidProblemError } from '../errors/invalid-problem.error';
 import type { NewProblem } from './new-problem';
 
 @Entity('problems')
 @Unique('uq_problems_room_order', ['roomId', 'orderIndex'])
-export class Problem {
+export class Problem implements Auditable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -39,7 +40,7 @@ export class Problem {
   description?: string | null;
 
   @Column({ name: 'order_index', type: 'smallint', default: 1 })
-  orderIndex: number;
+  orderIndex?: number;
 
   @Column({ name: 'start_date', type: 'date', nullable: true, default: null })
   startDate?: Date | null;
@@ -113,8 +114,10 @@ export class Problem {
       throw new InvalidProblemError('O título do problema deve ter no máximo 120 caracteres.');
     }
 
-    if (this.orderIndex < 1 || !Number.isInteger(this.orderIndex)) {
-      throw new InvalidProblemError('A ordem do problema deve ser um número inteiro positivo.');
+    if (this.orderIndex !== undefined && this.orderIndex !== null) {
+      if (this.orderIndex < 1 || !Number.isInteger(this.orderIndex)) {
+        throw new InvalidProblemError('A ordem do problema deve ser um número inteiro positivo.');
+      }
     }
   }
 }

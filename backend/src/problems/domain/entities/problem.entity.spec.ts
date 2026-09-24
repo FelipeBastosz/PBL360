@@ -51,6 +51,15 @@ describe('Problem Entity', () => {
     expect(problem.description).toBeNull();
   });
 
+  it('creates a problem without orderIndex (pending automatic assignment)', () => {
+    const problem = Problem.create({
+      ...validProblemProps(),
+      orderIndex: undefined,
+    });
+
+    expect(problem.orderIndex).toBeUndefined();
+  });
+
   it('trims string properties upon creation', () => {
     const problem = Problem.create({
       roomId: '  room-uuid-1  ',
