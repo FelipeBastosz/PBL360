@@ -1,4 +1,5 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
 import type { Room } from '../../domain/entities/room.entity';
 
@@ -13,7 +14,7 @@ export class RoomAccessService {
     const room = await this.roomRepository.findById(roomId);
 
     if (!room || room.isDeleted()) {
-      throw new NotFoundException('Sala não encontrada.');
+      throw new NotFoundError('Sala não encontrada.');
     }
 
     if (room.tutorId === tutorId) {
@@ -23,7 +24,7 @@ export class RoomAccessService {
     const isAssociatedTutor = await this.roomRepository.hasTutor(roomId, tutorId);
 
     if (!isAssociatedTutor) {
-      throw new ForbiddenException('Você não tem permissão para acessar ou modificar esta sala.');
+      throw new ForbiddenError('Você não tem permissão para acessar ou modificar esta sala.');
     }
 
     return room;
@@ -33,23 +34,13 @@ export class RoomAccessService {
     const room = await this.roomRepository.findById(roomId);
 
     if (!room || room.isDeleted()) {
-      throw new NotFoundException('Sala não encontrada.');
+      throw new NotFoundError('Sala não encontrada.');
     }
 
     if (room.tutorId !== tutorId) {
-      throw new ForbiddenException('Apenas o professor responsável pode realizar esta ação.');
+      throw new ForbiddenError('Apenas o professor responsável pode realizar esta ação.');
     }
 
     return room;
-  }
-
-  assertResourceBelongsToRoom(
-    resourceRoomId: string,
-    expectedRoomId: string,
-    resourceName = 'Recurso',
-  ): void {
-    if (resourceRoomId !== expectedRoomId) {
-      throw new NotFoundException(`${resourceName} não encontrado nesta sala.`);
-    }
   }
 }

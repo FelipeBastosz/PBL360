@@ -1,48 +1,29 @@
+import type { MessageResponse } from '@/types/auth';
+import type {
+  AddTutorToRoomPayload,
+  CreateRoomPayload,
+  Room,
+  UpdateRoomPayload,
+} from '@/types/room';
 import { api } from './api';
-import type { Room, CreateRoomDTO, UpdateRoomDTO, UpdateRoomResponse } from '../types/room';
 
-export const RoomService = {
-  /**
-   * US01: Creates a new tutorial room.
-   * POST /rooms
-   */
-  createRoom: async (data: CreateRoomDTO): Promise<Room> => {
-    const response = await api.post<Room>('/rooms', data);
-    return response.data;
-  },
+const BASE = '/salas';
 
-  /**
-   * US02: Retrieves all tutorial rooms linked to the authenticated professor.
-   * GET /rooms
-   */
-  getRooms: async (): Promise<Room[]> => {
-    const response = await api.get<Room[]>('/rooms');
-    return response.data;
-  },
+export const roomService = {
+  list: () => api.get<Room[]>(BASE).then((r) => r.data),
 
-  /**
-   * US02: Retrieves details of a specific room by its ID.
-   * GET /rooms/:id
-   */
-  getRoomById: async (id: string): Promise<Room> => {
-    const response = await api.get<Room>(`/rooms/${id}`);
-    return response.data;
-  },
+  getById: (roomId: string) => api.get<Room>(`${BASE}/${roomId}`).then((r) => r.data),
 
-  /**
-   * US03: Updates an existing room.
-   * PATCH /rooms/:id
-   */
-  updateRoom: async (id: string, data: UpdateRoomDTO): Promise<UpdateRoomResponse> => {
-    const response = await api.patch<UpdateRoomResponse>(`/rooms/${id}`, data);
-    return response.data;
-  },
+  create: (payload: CreateRoomPayload) => api.post<Room>(BASE, payload).then((r) => r.data),
 
-  /**
-   * US04: Deletes a tutorial room.
-   * DELETE /rooms/:id
-   */
-  deleteRoom: async (id: string): Promise<void> => {
-    await api.delete(`/rooms/${id}`);
-  },
+  update: (roomId: string, payload: UpdateRoomPayload) =>
+    api.patch<Room>(`${BASE}/${roomId}`, payload).then((r) => r.data),
+
+  remove: (roomId: string) => api.delete<void>(`${BASE}/${roomId}`).then(() => undefined),
+
+  addTutor: (roomId: string, payload: AddTutorToRoomPayload) =>
+    api.post<MessageResponse>(`${BASE}/${roomId}/professores`, payload).then((r) => r.data),
+
+  removeTutor: (roomId: string, tutorId: string) =>
+    api.delete<MessageResponse>(`${BASE}/${roomId}/professores/${tutorId}`).then((r) => r.data),
 };

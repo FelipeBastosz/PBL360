@@ -1,20 +1,8 @@
-import { IsNotEmpty, IsString, IsUUID, MaxLength, Matches } from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength, Matches } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateRoomDto {
-  @ApiProperty({
-    description:
-      'Identificador UUID do professor responsável pela sala. ' +
-      'Deve corresponder ao professor autenticado.',
-    example: '123e4567-e89b-42d3-a456-426614174000',
-    format: 'uuid',
-  })
-  @IsUUID('4', {
-    message: 'O identificador do professor deve ser um UUID válido.',
-  })
-  tutorId: string;
-
   @ApiProperty({
     description: 'Nome da sala informado pelo professor.',
     example: 'Engenharia de Software',

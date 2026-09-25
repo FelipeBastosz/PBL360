@@ -1,54 +1,21 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-
+import { Inject, Injectable } from '@nestjs/common';
+import type { Room, RoomChanges } from '../../domain/entities/room.entity';
 import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
-
-import type { UpdateRoomDto } from '../dtos/update-room.dto';
-
-import type { UpdateRoomResponseDto } from '../dtos/update-room-response.dto';
-
-import { Room } from '../../domain/entities/room.entity';
+import { RoomAccessService } from '../services/room-access.service';
 
 @Injectable()
 export class UpdateRoomUseCase {
   constructor(
     @Inject(ROOM_REPOSITORY)
     private readonly roomRepository: RoomRepository,
+    private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(
-    roomId: string,
-    tutorId: string,
-    data: UpdateRoomDto,
-  ): Promise<UpdateRoomResponseDto> {
-    const room = await this.getRoomForEditing(roomId, tutorId);
+  async execute(roomId: string, tutorId: string, changes: RoomChanges): Promise<Room> {
+    const room = await this.roomAccessService.assertTutorCanAccessRoom(roomId, tutorId);
 
-    Object.assign(room, {
-      name: data.nome ?? room.name,
-      semester: data.semestre ?? room.semester,
-      active: data.ativo ?? room.active,
-    });
+    room.applyChanges(changes);
 
-    const updatedRoom = await this.roomRepository.update(room);
-
-    return {
-      message: 'Sala atualizada com sucesso',
-      data: updatedRoom,
-    };
-  }
-
-  private async getRoomForEditing(roomId: string, tutorId: string): Promise<Room> {
-    const room = await this.roomRepository.findById(roomId);
-
-    if (!room || room.isDeleted()) {
-      throw new NotFoundException('Sala não encontrada.');
-    }
-
-    const isRoomTutor = await this.roomRepository.hasTutor(roomId, tutorId);
-
-    if (!isRoomTutor) {
-      throw new ForbiddenException('Você não tem permissão para editar esta sala.');
-    }
-
-    return room;
+    return this.roomRepository.update(room);
   }
 }

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './domain/entities/user.entity';
-import { USER_REPOSITORY } from './domain/repositories/user.repository.interface';
+import { USER_REPOSITORY } from './domain/repositories/user.repository';
 import { PgUserRepository } from './infrastructure/database/pg-user.repository';
 
 @Module({

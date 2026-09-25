@@ -25,8 +25,8 @@ describe('Problem Entity', () => {
   });
 
   it('creates a problem with optional evaluation and date properties', () => {
-    const startDate = new Date('2026-03-01');
-    const endDate = new Date('2026-03-15');
+    const startDate = '2026-03-01';
+    const endDate = '2026-03-15';
 
     const problem = Problem.create({
       ...validProblemProps(),
@@ -127,5 +127,29 @@ describe('Problem Entity', () => {
         orderIndex: 1.5,
       }),
     ).toThrow(new InvalidProblemError('A ordem do problema deve ser um número inteiro positivo.'));
+  });
+
+  it('rejects an end date before the start date', () => {
+    expect(() =>
+      Problem.create({
+        roomId: 'room-1',
+        title: 'Problema',
+        createdBy: 'tutor-1',
+        startDate: '2026-03-15',
+        endDate: '2026-03-01',
+      }),
+    ).toThrow(new InvalidProblemError('A data de término não pode ser anterior à data de início.'));
+  });
+
+  it('accepts a problem that starts and ends on the same day', () => {
+    const problem = Problem.create({
+      roomId: 'room-1',
+      title: 'Problema',
+      createdBy: 'tutor-1',
+      startDate: '2026-03-01',
+      endDate: '2026-03-01',
+    });
+
+    expect(problem.endDate).toBe('2026-03-01');
   });
 });

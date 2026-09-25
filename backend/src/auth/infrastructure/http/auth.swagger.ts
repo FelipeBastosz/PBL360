@@ -14,9 +14,16 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
+  ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 
+const TOO_MANY_REQUESTS = ApiTooManyRequestsResponse({
+  description: 'Muitas tentativas em pouco tempo. Aguarde alguns minutos.',
+  type: ErrorResponseDto,
+});
+
 export const RegisterAuthSwaggerDocs = applyDecorators(
+  TOO_MANY_REQUESTS,
   ApiOperation({
     summary: 'Cadastra um usuário',
     description:
@@ -33,6 +40,7 @@ export const RegisterAuthSwaggerDocs = applyDecorators(
 );
 
 export const LoginAuthSwaggerDocs = applyDecorators(
+  TOO_MANY_REQUESTS,
   ApiOperation({ summary: 'Autentica um usuário', description: 'Devolve o token JWT da sessão.' }),
   ApiOkResponse({ description: 'Credenciais válidas.', type: SessionResponseDto }),
   ApiBadRequestResponse({ description: 'Payload inválido.', type: ErrorResponseDto }),
@@ -46,6 +54,7 @@ export const LoginAuthSwaggerDocs = applyDecorators(
 );
 
 export const VerifyCodeAuthSwaggerDocs = applyDecorators(
+  TOO_MANY_REQUESTS,
   ApiOperation({
     summary: 'Ativa a conta com o código recebido por e-mail',
     description: 'Valida o código, marca a conta como ativa e devolve o token JWT da sessão.',
@@ -58,6 +67,7 @@ export const VerifyCodeAuthSwaggerDocs = applyDecorators(
 );
 
 export const ResendCodeAuthSwaggerDocs = applyDecorators(
+  TOO_MANY_REQUESTS,
   ApiOperation({
     summary: 'Reenvia o código de verificação',
     description:
@@ -70,6 +80,7 @@ export const ResendCodeAuthSwaggerDocs = applyDecorators(
 );
 
 export const RequestPasswordResetAuthSwaggerDocs = applyDecorators(
+  TOO_MANY_REQUESTS,
   ApiOperation({
     summary: 'Solicita a recuperação de senha',
     description:
@@ -81,6 +92,7 @@ export const RequestPasswordResetAuthSwaggerDocs = applyDecorators(
 );
 
 export const ValidatePasswordResetCodeAuthSwaggerDocs = applyDecorators(
+  TOO_MANY_REQUESTS,
   ApiOperation({
     summary: 'Valida o código de recuperação de senha',
     description:
@@ -92,6 +104,7 @@ export const ValidatePasswordResetCodeAuthSwaggerDocs = applyDecorators(
 );
 
 export const ResetPasswordAuthSwaggerDocs = applyDecorators(
+  TOO_MANY_REQUESTS,
   ApiOperation({
     summary: 'Redefine a senha',
     description:

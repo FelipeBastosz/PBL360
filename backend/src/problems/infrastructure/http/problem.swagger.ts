@@ -13,6 +13,8 @@ import {
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 
+import { ProblemResponseDto } from '../../application/dtos/problem-response.dto';
+
 export const CreateProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
@@ -23,6 +25,7 @@ export const CreateProblemSwaggerDocs = applyDecorators(
   }),
   ApiCreatedResponse({
     description: 'Problema cadastrado com sucesso.',
+    type: ProblemResponseDto,
   }),
   ApiBadRequestResponse({
     description: 'Dados inválidos ou erro de validação.',
@@ -47,11 +50,13 @@ export const ListProblemsSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Lista os problemas de uma sala',
     description:
-      'Retorna a lista de problemas da sala informada ordenados por ordem de criação. ' +
+      'Retorna os problemas da sala informada, na ordem sequencial definida para a sala. ' +
       'Caso a sala não possua problemas cadastrados, devolve uma lista vazia.',
   }),
   ApiOkResponse({
     description: 'Lista de problemas da sala retornada com sucesso.',
+    type: ProblemResponseDto,
+    isArray: true,
   }),
   ApiUnauthorizedResponse({
     description: 'JWT não informado, inválido ou expirado.',
@@ -77,6 +82,7 @@ export const GetProblemSwaggerDocs = applyDecorators(
   }),
   ApiOkResponse({
     description: 'Problema encontrado com sucesso.',
+    type: ProblemResponseDto,
   }),
   ApiUnauthorizedResponse({
     description: 'JWT não informado, inválido ou expirado.',

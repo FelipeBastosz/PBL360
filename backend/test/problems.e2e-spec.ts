@@ -1,21 +1,22 @@
-import { ValidationPipe, type INestApplication } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { Test, type TestingModule } from '@nestjs/testing';
+import { type INestApplication } from '@nestjs/common';
+import { type TestingModule } from '@nestjs/testing';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
-import { AppModule } from '@/app.module';
-import { DomainExceptionFilter } from '@/shared/filters/domain-exception.filter';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { createTestApp } from './helpers/create-test-app';
+import { signAccessToken } from './helpers/fixtures';
 
 interface ProblemResponseBody {
   id: string;
-  roomId: string;
-  title: string;
-  description: string | null;
-  orderIndex: number;
-  createdBy: string;
+  salaId: string;
+  titulo: string;
+  descricao: string | null;
+  ordem: number;
+  dataInicio: string | null;
+  dataFim: string | null;
+  criadoPor: string;
 }
 
 interface ErrorResponseBody {
@@ -28,7 +29,6 @@ describe('Problems (e2e)', () => {
   let moduleRef: TestingModule;
   let app: INestApplication;
   let dataSource: DataSource;
-  let jwtService: JwtService;
 
   let tutor1Id: string;
   let tutor2Id: string;
@@ -40,21 +40,9 @@ describe('Problems (e2e)', () => {
   let studentToken: string;
 
   beforeAll(async () => {
-    moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api');
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-    );
-    app.useGlobalFilters(new DomainExceptionFilter());
-
-    await app.init();
+    ({ app, moduleRef } = await createTestApp());
 
     dataSource = moduleRef.get(DataSource);
-    jwtService = moduleRef.get(JwtService);
   });
 
   const cleanupDb = async () => {
@@ -106,13 +94,9 @@ describe('Problems (e2e)', () => {
       tutor1Id,
     ]);
 
-    tutor1Token = jwtService.sign({ sub: tutor1Id, email: 'carlos@uefs.br', type: UserType.TUTOR });
-    tutor2Token = jwtService.sign({ sub: tutor2Id, email: 'maria@uefs.br', type: UserType.TUTOR });
-    studentToken = jwtService.sign({
-      sub: studentId,
-      email: 'joao@discente.uefs.br',
-      type: UserType.STUDENT,
-    });
+    tutor1Token = signAccessToken(app, tutor1Id, 'carlos@uefs.br', UserType.TUTOR);
+    tutor2Token = signAccessToken(app, tutor2Id, 'maria@uefs.br', UserType.TUTOR);
+    studentToken = signAccessToken(app, studentId, 'joao@discente.uefs.br', UserType.STUDENT);
   });
 
   const postProblem = (targetRoomId: string, payload: object, token?: string) => {
@@ -153,22 +137,54 @@ describe('Problems (e2e)', () => {
       {
         titulo: 'Problema 1 - Primeiros Socorros',
         descricao: 'Descrição detalhada do caso clínico.',
-        dataInicio: '2026-03-01T00:00:00.000Z',
-        dataFim: '2026-03-15T00:00:00.000Z',
+        dataInicio: '2026-03-01',
+        dataFim: '2026-03-15',
       },
       tutor1Token,
     ).expect(201);
 
     const body = response.body as ProblemResponseBody;
     expect(body.id).toBeDefined();
-    expect(body.roomId).toBe(roomId);
-    expect(body.title).toBe('Problema 1 - Primeiros Socorros');
-    expect(body.description).toBe('Descrição detalhada do caso clínico.');
-    expect(body.orderIndex).toBe(1);
-    expect(body.createdBy).toBe(tutor1Id);
+    expect(body.salaId).toBe(roomId);
+    expect(body.titulo).toBe('Problema 1 - Primeiros Socorros');
+    expect(body.descricao).toBe('Descrição detalhada do caso clínico.');
+    expect(body.ordem).toBe(1);
+    expect(body.criadoPor).toBe(tutor1Id);
+    expect(body.dataInicio).toBe('2026-03-01');
+    expect(body.dataFim).toBe('2026-03-15');
   });
 
-  it('increments orderIndex automatically for sequential problem creations', async () => {
+  it('rejects dates with a time component', async () => {
+    const body = (
+      await postProblem(
+        roomId,
+        { titulo: 'P', dataInicio: '2026-03-01T00:00:00.000Z' },
+        tutor1Token,
+      ).expect(400)
+    ).body as ErrorResponseBody;
+
+    expect(body.message).toContain('A data de início deve estar no formato AAAA-MM-DD.');
+  });
+
+  it('rejects an end date before the start date', async () => {
+    const body = (
+      await postProblem(
+        roomId,
+        { titulo: 'P', dataInicio: '2026-03-15', dataFim: '2026-03-01' },
+        tutor1Token,
+      ).expect(400)
+    ).body as ErrorResponseBody;
+
+    expect(body.message).toContain('A data de término não pode ser anterior à data de início.');
+  });
+
+  it('does not accept problems in a deleted room', async () => {
+    await dataSource.query('UPDATE rooms SET deleted_at = now() WHERE id = $1;', [roomId]);
+
+    await postProblem(roomId, { titulo: 'P' }, tutor1Token).expect(404);
+  });
+
+  it('increments the order automatically for sequential problem creations', async () => {
     const res1 = await postProblem(roomId, { titulo: 'Problema 1' }, tutor1Token).expect(201);
     const res2 = await postProblem(roomId, { titulo: 'Problema 2' }, tutor1Token).expect(201);
     const res3 = await postProblem(roomId, { titulo: 'Problema 3' }, tutor1Token).expect(201);
@@ -177,9 +193,9 @@ describe('Problems (e2e)', () => {
     const body2 = res2.body as ProblemResponseBody;
     const body3 = res3.body as ProblemResponseBody;
 
-    expect(body1.orderIndex).toBe(1);
-    expect(body2.orderIndex).toBe(2);
-    expect(body3.orderIndex).toBe(3);
+    expect(body1.ordem).toBe(1);
+    expect(body2.ordem).toBe(2);
+    expect(body3.ordem).toBe(3);
   });
 
   it('prevents race conditions and assigns unique order indices on concurrent requests', async () => {
@@ -193,7 +209,7 @@ describe('Problems (e2e)', () => {
     const orderIndices = responses.map((res) => {
       expect(res.status).toBe(201);
       const body = res.body as ProblemResponseBody;
-      return body.orderIndex;
+      return body.ordem;
     });
 
     const uniqueIndices = new Set(orderIndices);
@@ -286,12 +302,12 @@ describe('Problems (e2e)', () => {
       const body = response.body as ProblemResponseBody[];
 
       expect(body).toHaveLength(3);
-      expect(body[0].title).toBe('Problema Alfa');
-      expect(body[0].orderIndex).toBe(1);
-      expect(body[1].title).toBe('Problema Beta');
-      expect(body[1].orderIndex).toBe(2);
-      expect(body[2].title).toBe('Problema Gama');
-      expect(body[2].orderIndex).toBe(3);
+      expect(body[0]?.titulo).toBe('Problema Alfa');
+      expect(body[0]?.ordem).toBe(1);
+      expect(body[1]?.titulo).toBe('Problema Beta');
+      expect(body[1]?.ordem).toBe(2);
+      expect(body[2]?.titulo).toBe('Problema Gama');
+      expect(body[2]?.ordem).toBe(3);
     });
   });
 
@@ -362,8 +378,8 @@ describe('Problems (e2e)', () => {
         {
           titulo: 'Problema Específico',
           descricao: 'Descrição detalhada do caso clínico.',
-          dataInicio: '2026-03-01T00:00:00.000Z',
-          dataFim: '2026-03-15T00:00:00.000Z',
+          dataInicio: '2026-03-01',
+          dataFim: '2026-03-15',
         },
         tutor1Token,
       ).expect(201);
@@ -373,11 +389,11 @@ describe('Problems (e2e)', () => {
       const body = response.body as ProblemResponseBody;
 
       expect(body.id).toBe(created.id);
-      expect(body.roomId).toBe(roomId);
-      expect(body.title).toBe('Problema Específico');
-      expect(body.description).toBe('Descrição detalhada do caso clínico.');
-      expect(body.orderIndex).toBe(1);
-      expect(body.createdBy).toBe(tutor1Id);
+      expect(body.salaId).toBe(roomId);
+      expect(body.titulo).toBe('Problema Específico');
+      expect(body.descricao).toBe('Descrição detalhada do caso clínico.');
+      expect(body.ordem).toBe(1);
+      expect(body.criadoPor).toBe(tutor1Id);
     });
   });
 });

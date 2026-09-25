@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AuthModule } from '@/auth/auth.module';
 import { RoomsModule } from '@/rooms/rooms.module';
 
 import { CreateProblemUseCase } from './application/use-cases/create-problem.use-case';
@@ -13,7 +12,7 @@ import { PgProblemRepository } from './infrastructure/database/pg-problem.reposi
 import { ProblemsController } from './infrastructure/http/problems.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Problem]), AuthModule, RoomsModule],
+  imports: [TypeOrmModule.forFeature([Problem]), RoomsModule],
   controllers: [ProblemsController],
   providers: [
     CreateProblemUseCase,
@@ -24,6 +23,6 @@ import { ProblemsController } from './infrastructure/http/problems.controller';
       useClass: PgProblemRepository,
     },
   ],
-  exports: [PROBLEM_REPOSITORY, TypeOrmModule],
+  exports: [PROBLEM_REPOSITORY],
 })
 export class ProblemsModule {}

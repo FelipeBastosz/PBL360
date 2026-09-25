@@ -1,13 +1,13 @@
-import { ValidationPipe, type INestApplication } from '@nestjs/common';
-import { Test, type TestingModule } from '@nestjs/testing';
+import { type INestApplication } from '@nestjs/common';
+import { type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { type Server } from 'node:http';
-import { AppModule } from '@/app.module';
-import { DomainExceptionFilter } from '@/shared/filters/domain-exception.filter';
 import { EMAIL_VERIFICATION_SENDER } from '@/auth/domain/services/email-verification-sender';
 import { PASSWORD_RESET_SENDER } from '@/auth/domain/services/password-reset-sender';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { IdentityThrottlerGuard } from '@/shared/throttling/identity-throttler.guard';
+import type { CodeRecipient } from '@/auth/domain/services/code-sender';
+import { createTestApp } from './helpers/create-test-app';
 
 const REGISTER = '/api/autenticacao/registro';
 const LOGIN = '/api/autenticacao/login';
@@ -75,6 +75,8 @@ const tutorPayload = () => ({
 });
 
 describe('Auth (e2e)', () => {
+  const verificationSender = jest.fn().mockResolvedValue(undefined);
+  const resetSender = jest.fn().mockResolvedValue(undefined);
   let moduleRef: TestingModule;
   let app: INestApplication;
   let dataSource: DataSource;
@@ -107,15 +109,15 @@ describe('Auth (e2e)', () => {
     return total;
   };
 
-  const pendingCodeOf = async (userId: string): Promise<string> => {
-    const [row] = await dataSource.query<[{ code: string }]>(
-      `SELECT code FROM email_verification_codes
-        WHERE user_id = $1 AND used_at IS NULL
-        ORDER BY created_at DESC LIMIT 1;`,
-      [userId],
-    );
-    return row.code;
+  const lastCodeSentBy = (sender: jest.Mock, userId: string): string => {
+    const calls = sender.mock.calls as [CodeRecipient][];
+    const sent = calls.map(([recipient]) => recipient).filter((r) => r.userId === userId);
+
+    return sent[sent.length - 1]!.code;
   };
+
+  const pendingCodeOf = (userId: string): Promise<string> =>
+    Promise.resolve(lastCodeSentBy(verificationSender, userId));
 
   const ageResetCodesOf = async (userId: string, seconds: number): Promise<void> => {
     await dataSource.query(
@@ -144,15 +146,8 @@ describe('Auth (e2e)', () => {
     return total;
   };
 
-  const pendingResetCodeOf = async (userId: string): Promise<string> => {
-    const [row] = await dataSource.query<[{ code: string }]>(
-      `SELECT code FROM password_reset_codes
-        WHERE user_id = $1 AND used_at IS NULL
-        ORDER BY created_at DESC LIMIT 1;`,
-      [userId],
-    );
-    return row.code;
-  };
+  const pendingResetCodeOf = (userId: string): Promise<string> =>
+    Promise.resolve(lastCodeSentBy(resetSender, userId));
 
   const registerAndActivate = async (payload: object): Promise<RegisterResponse> => {
     const registered = await register(payload);
@@ -172,26 +167,15 @@ describe('Auth (e2e)', () => {
   };
 
   beforeAll(async () => {
-    moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(EMAIL_VERIFICATION_SENDER)
-      .useValue({
-        sendVerificationCode: jest.fn().mockResolvedValue(undefined),
-      })
-      .overrideProvider(PASSWORD_RESET_SENDER)
-      .useValue({
-        sendResetCode: jest.fn().mockResolvedValue(undefined),
-      })
-      .overrideGuard(ThrottlerGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
-
-    app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api');
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-    );
-    app.useGlobalFilters(new DomainExceptionFilter());
-    await app.init();
+    ({ app, moduleRef } = await createTestApp((builder) =>
+      builder
+        .overrideProvider(EMAIL_VERIFICATION_SENDER)
+        .useValue({ sendCode: verificationSender })
+        .overrideProvider(PASSWORD_RESET_SENDER)
+        .useValue({ sendCode: resetSender })
+        .overrideGuard(IdentityThrottlerGuard)
+        .useValue({ canActivate: () => true }),
+    ));
 
     dataSource = moduleRef.get(DataSource);
   });
@@ -222,16 +206,20 @@ describe('Auth (e2e)', () => {
       expect(body.usuario.ativo).toBe(false);
     });
 
-    it('stores a pending code bound to the created user', async () => {
+    it('stores only the hash of the code it e-mails', async () => {
       const body = await register(studentPayload());
+      const sentCode = await pendingCodeOf(body.usuarioId);
 
-      const [row] = await dataSource.query<[{ userId: string; code: string }]>(
-        `SELECT user_id AS "userId", code FROM email_verification_codes WHERE user_id = $1;`,
+      const [row] = await dataSource.query<[{ userId: string; codeHash: string }]>(
+        `SELECT user_id AS "userId", code_hash AS "codeHash"
+          FROM email_verification_codes WHERE user_id = $1;`,
         [body.usuarioId],
       );
 
+      expect(sentCode).toMatch(/^\d{6}$/);
       expect(row.userId).toBe(body.usuarioId);
-      expect(row.code).toMatch(/^\d{6}$/);
+      expect(row.codeHash).toHaveLength(64);
+      expect(row.codeHash).not.toContain(sentCode);
     });
 
     it('answers with the Portuguese contract and never the password', async () => {
@@ -719,6 +707,68 @@ describe('Auth (e2e)', () => {
       const { token } = await issueResetToken();
 
       await errorOf(RESET_PASSWORD, { token, novaSenha: '123' }, 400);
+    });
+
+    it('accepts each reset token only once', async () => {
+      const { token } = await issueResetToken();
+
+      await resetPassword(token, 'nova-senha-123').expect(200);
+      await resetPassword(token, 'outra-senha-123').expect(400);
+    });
+
+    it('logs out every session opened before the reset', async () => {
+      const registered = await registerAndActivate(tutorPayload());
+      const login = await post(LOGIN, { email: 'carlos@uefs.br', senha: 'senha-secreta' });
+      const oldToken = (login.body as SessionResponse).token;
+      const listRooms = () =>
+        request(app.getHttpServer() as Server)
+          .get('/api/salas')
+          .set('Authorization', `Bearer ${oldToken}`);
+      await listRooms().expect(200);
+
+      await requestReset('carlos@uefs.br').expect(200);
+      const code = await pendingResetCodeOf(registered.usuarioId);
+      const validated = await validateCode('carlos@uefs.br', code).expect(200);
+      await resetPassword((validated.body as { token: string }).token, 'nova-senha-123').expect(
+        200,
+      );
+
+      await listRooms().expect(401);
+    });
+
+    it('never accepts a reset token as a session', async () => {
+      const { token } = await issueResetToken();
+
+      await request(app.getHttpServer() as Server)
+        .get('/api/salas')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(401);
+    });
+  });
+
+  describe('brute force protection', () => {
+    it('burns the verification code after five wrong attempts', async () => {
+      const registered = await register(studentPayload());
+      const attempt = (codigo: string) =>
+        post(VERIFY, { usuarioId: registered.usuarioId, email: 'ana@discente.uefs.br', codigo });
+      const rightCode = await pendingCodeOf(registered.usuarioId);
+      const wrongCode = rightCode === '000000' ? '111111' : '000000';
+
+      for (let i = 0; i < 5; i++) {
+        await attempt(wrongCode).expect(400);
+      }
+
+      await attempt(rightCode).expect(400);
+    });
+
+    it('does not let a student e-mail register as tutor', async () => {
+      const body = await errorOf(
+        REGISTER,
+        { ...tutorPayload(), email: 'carlos@discente.uefs.br' },
+        400,
+      );
+
+      expect(body.message).toContain('Professores devem usar o e-mail institucional @uefs.br.');
     });
   });
 });

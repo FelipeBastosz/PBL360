@@ -34,3 +34,6 @@ Thumbs.db
 .eslintcache
 .cache/
 .vite/
+
+# Archives
+*.zip

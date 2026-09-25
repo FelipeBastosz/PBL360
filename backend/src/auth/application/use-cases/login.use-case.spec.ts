@@ -1,151 +1,72 @@
-import { UnauthorizedException } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import { User } from '@/users/domain/entities/user.entity';
-import { UserType } from '@/users/domain/enums/user-type.enum';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/users/domain/repositories/user.repository.interface';
-import {
-  ACCESS_TOKEN_ISSUER,
-  type AccessTokenIssuer,
-} from '../../domain/services/access-token-issuer';
-import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
-import {
-  PENDING_VERIFICATION_MESSAGE,
-  PENDING_VERIFICATION_REASON,
-  PendingVerificationException,
-} from '../errors/pending-verification.exception';
+import { UnauthorizedError } from '@/shared/errors/application.error';
+import { AccountPendingVerificationError } from '../errors/account-pending-verification.error';
+import type { AccessTokenIssuer } from '../../domain/services/access-token-issuer';
+import type { PasswordHasher } from '../../domain/services/password-hasher';
+import { buildActiveStudent, buildStudent, userRepositoryStub } from '../../testing/auth-fixtures';
 import { LoginUseCase } from './login.use-case';
 
+const credentials = { email: ' ANA@discente.uefs.br ', password: 'senha-secreta' };
+const accessToken = { value: 'jwt', expiresAt: new Date('2026-01-02') };
+
 describe('LoginUseCase', () => {
+  let users: ReturnType<typeof userRepositoryStub>;
+  let passwords: jest.Mocked<PasswordHasher>;
+  let tokens: jest.Mocked<AccessTokenIssuer>;
   let useCase: LoginUseCase;
 
-  const findByEmail: jest.MockedFunction<UserRepository['findByEmail']> = jest.fn();
-  const matches: jest.MockedFunction<PasswordHasher['matches']> = jest.fn();
-  const issueFor: jest.MockedFunction<AccessTokenIssuer['issueFor']> = jest.fn();
-
-  const users: UserRepository = { findByEmail, findById: jest.fn(), save: jest.fn() };
-  const passwords: PasswordHasher = { hash: jest.fn(), matches };
-  const tokens: AccessTokenIssuer = { issueFor };
-
-  const registeredUser = (): User => {
-    const user = User.create({
-      name: 'Ana Souza',
-      email: 'ana@discente.uefs.br',
-      passwordHash: 'hashed',
-      type: UserType.STUDENT,
-      registrationNumber: '20240001',
-      photoUrl: 'https://example.com/ana.png',
-    });
-    user.activate();
-
-    return user;
-  };
-
-  const pendingUser = (): User => {
-    const user = User.create({
-      name: 'Ana Souza',
-      email: 'ana@discente.uefs.br',
-      passwordHash: 'hashed',
-      type: UserType.STUDENT,
-      registrationNumber: '20240001',
-      photoUrl: 'https://example.com/ana.png',
-    });
-    user.id = 'user-1';
-
-    return user;
-  };
-
-  const credentials = { email: ' Ana@Discente.UEFS.br ', password: 'senha-secreta' };
-
-  beforeEach(async () => {
-    jest.resetAllMocks();
-    findByEmail.mockResolvedValue(registeredUser());
-    matches.mockResolvedValue(true);
-    issueFor.mockResolvedValue({ value: 'jwt-token', expiresAt: new Date() });
-
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        LoginUseCase,
-        { provide: USER_REPOSITORY, useValue: users },
-        { provide: PASSWORD_HASHER, useValue: passwords },
-        { provide: ACCESS_TOKEN_ISSUER, useValue: tokens },
-      ],
-    }).compile();
-
-    useCase = moduleRef.get(LoginUseCase);
+  beforeEach(() => {
+    users = userRepositoryStub();
+    passwords = {
+      hash: jest.fn(),
+      matches: jest.fn().mockResolvedValue(true),
+      compareWithDecoy: jest.fn().mockResolvedValue(undefined),
+    };
+    tokens = { issueFor: jest.fn().mockResolvedValue(accessToken) };
+    useCase = new LoginUseCase(users, passwords, tokens);
   });
 
-  it('issues a token for valid credentials', async () => {
-    const session = await useCase.execute(credentials);
+  it('opens a session for valid credentials, normalizing the e-mail', async () => {
+    const user = buildActiveStudent();
+    users.findByEmail.mockResolvedValue(user);
 
-    expect(matches).toHaveBeenCalledWith('senha-secreta', 'hashed');
-    expect(session.accessToken.value).toBe('jwt-token');
-  });
-
-  it('looks the account up by the normalised e-mail', async () => {
-    await useCase.execute(credentials);
-
-    expect(findByEmail).toHaveBeenCalledWith('ana@discente.uefs.br');
-  });
-
-  it('rejects an e-mail that is not registered', async () => {
-    findByEmail.mockResolvedValue(null);
-
-    await expect(useCase.execute(credentials)).rejects.toThrow(UnauthorizedException);
-    expect(issueFor).not.toHaveBeenCalled();
+    await expect(useCase.execute(credentials)).resolves.toEqual({ user, accessToken });
+    expect(users.findByEmail).toHaveBeenCalledWith('ana@discente.uefs.br');
+    expect(passwords.matches).toHaveBeenCalledWith('senha-secreta', 'stored-hash');
   });
 
   it('rejects a wrong password', async () => {
-    matches.mockResolvedValue(false);
+    users.findByEmail.mockResolvedValue(buildActiveStudent());
+    passwords.matches.mockResolvedValue(false);
 
-    await expect(useCase.execute(credentials)).rejects.toThrow(UnauthorizedException);
-    expect(issueFor).not.toHaveBeenCalled();
+    await expect(useCase.execute(credentials)).rejects.toBeInstanceOf(UnauthorizedError);
+    expect(tokens.issueFor).not.toHaveBeenCalled();
   });
 
-  it('gives the same message for an unknown e-mail and a wrong password', async () => {
-    matches.mockResolvedValue(false);
-    const wrongPassword = await useCase.execute(credentials).catch((error: Error) => error.message);
+  it('spends the same hashing time when the e-mail is unknown', async () => {
+    users.findByEmail.mockResolvedValue(null);
 
-    findByEmail.mockResolvedValue(null);
-    const unknownEmail = await useCase.execute(credentials).catch((error: Error) => error.message);
-
-    expect(wrongPassword).toBe(unknownEmail);
+    await expect(useCase.execute(credentials)).rejects.toBeInstanceOf(UnauthorizedError);
+    expect(passwords.compareWithDecoy).toHaveBeenCalledWith('senha-secreta');
   });
 
-  it('rejects an account that has not verified its e-mail yet', async () => {
-    findByEmail.mockResolvedValue(pendingUser());
+  it('answers unknown e-mail and wrong password with the same message', async () => {
+    users.findByEmail.mockResolvedValue(null);
+    const unknown = await useCase.execute(credentials).catch((error: Error) => error.message);
 
-    await expect(useCase.execute(credentials)).rejects.toBeInstanceOf(PendingVerificationException);
-    expect(issueFor).not.toHaveBeenCalled();
+    users.findByEmail.mockResolvedValue(buildActiveStudent());
+    passwords.matches.mockResolvedValue(false);
+    const wrong = await useCase.execute(credentials).catch((error: Error) => error.message);
+
+    expect(unknown).toBe(wrong);
   });
 
-  it('tells the pending account how to finish the verification', async () => {
-    findByEmail.mockResolvedValue(pendingUser());
+  it('tells a pending account how to finish the verification', async () => {
+    users.findByEmail.mockResolvedValue(buildStudent());
 
-    const error = await useCase
-      .execute(credentials)
-      .catch((thrown: PendingVerificationException) => thrown);
+    const error = await useCase.execute(credentials).catch((thrown: unknown) => thrown);
 
-    expect(error).toBeInstanceOf(PendingVerificationException);
-    expect((error as PendingVerificationException).getStatus()).toBe(403);
-    expect((error as PendingVerificationException).getResponse()).toEqual({
-      statusCode: 403,
-      error: 'Forbidden',
-      message: PENDING_VERIFICATION_MESSAGE,
-      motivo: PENDING_VERIFICATION_REASON,
-      usuarioId: 'user-1',
-      email: 'ana@discente.uefs.br',
-    });
-  });
-
-  it('rejects a deactivated account', async () => {
-    const user = registeredUser();
-    user.deactivate();
-    findByEmail.mockResolvedValue(user);
-
-    await expect(useCase.execute(credentials)).rejects.toBeInstanceOf(PendingVerificationException);
-    expect(issueFor).not.toHaveBeenCalled();
+    expect(error).toBeInstanceOf(AccountPendingVerificationError);
+    expect(error).toMatchObject({ userId: 'user-1', email: 'ana@discente.uefs.br' });
+    expect(tokens.issueFor).not.toHaveBeenCalled();
   });
 });

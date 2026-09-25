@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 
 import type { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import { Problem } from '../../domain/entities/problem.entity';
@@ -20,8 +16,8 @@ describe('CreateProblemUseCase', () => {
     authorId: 'tutor-uuid-1',
     title: 'Problema 1 - Diagnóstico Clínico',
     description: 'Caso detalhado',
-    startDate: new Date('2026-03-01'),
-    endDate: new Date('2026-03-15'),
+    startDate: '2026-03-01',
+    endDate: '2026-03-15',
   });
 
   beforeEach(() => {
@@ -29,11 +25,9 @@ describe('CreateProblemUseCase', () => {
     assertTutorCanAccessRoomMock = jest.fn();
 
     const problemRepository: jest.Mocked<ProblemRepository> = {
-      save: saveMock,
+      create: saveMock,
       findById: jest.fn(),
       findByRoomId: jest.fn(),
-      countByRoomId: jest.fn(),
-      getNextOrderIndex: jest.fn(),
     };
 
     const roomAccessService = {
@@ -74,26 +68,22 @@ describe('CreateProblemUseCase', () => {
     expect(result.id).toBe('prob-uuid-1');
   });
 
-  it('fails when room does not exist (NotFoundException)', async () => {
+  it('fails when room does not exist (NotFoundError)', async () => {
     const input = defaultInput();
-    assertTutorCanAccessRoomMock.mockRejectedValueOnce(
-      new NotFoundException('Sala não encontrada.'),
-    );
+    assertTutorCanAccessRoomMock.mockRejectedValueOnce(new NotFoundError('Sala não encontrada.'));
 
-    await expect(useCase.execute(input)).rejects.toThrow(
-      new NotFoundException('Sala não encontrada.'),
-    );
+    await expect(useCase.execute(input)).rejects.toThrow(new NotFoundError('Sala não encontrada.'));
     expect(saveMock).not.toHaveBeenCalled();
   });
 
-  it('fails when tutor does not have access to room (ForbiddenException)', async () => {
+  it('fails when tutor does not have access to room (ForbiddenError)', async () => {
     const input = defaultInput();
     assertTutorCanAccessRoomMock.mockRejectedValueOnce(
-      new ForbiddenException('Você não tem permissão para acessar ou modificar esta sala.'),
+      new ForbiddenError('Você não tem permissão para acessar ou modificar esta sala.'),
     );
 
     await expect(useCase.execute(input)).rejects.toThrow(
-      new ForbiddenException('Você não tem permissão para acessar ou modificar esta sala.'),
+      new ForbiddenError('Você não tem permissão para acessar ou modificar esta sala.'),
     );
     expect(saveMock).not.toHaveBeenCalled();
   });
@@ -111,13 +101,11 @@ describe('CreateProblemUseCase', () => {
     expect(saveMock).not.toHaveBeenCalled();
   });
 
-  it('throws InternalServerErrorException with clear message when save fails', async () => {
+  it('propagates a persistence failure untouched', async () => {
     const input = defaultInput();
     assertTutorCanAccessRoomMock.mockResolvedValueOnce({});
     saveMock.mockRejectedValueOnce(new Error('DB connection failure'));
 
-    await expect(useCase.execute(input)).rejects.toThrow(
-      new InternalServerErrorException('Erro ao cadastrar problema. Nenhuma alteração foi salva.'),
-    );
+    await expect(useCase.execute(input)).rejects.toThrow('DB connection failure');
   });
 });

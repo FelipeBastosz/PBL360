@@ -1,18 +1,13 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import type { User } from '@/users/domain/entities/user.entity';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/users/domain/repositories/user.repository.interface';
+import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import type { AuthenticatedSession } from '../authenticated-session';
 import {
   ACCESS_TOKEN_ISSUER,
   type AccessTokenIssuer,
 } from '../../domain/services/access-token-issuer';
-import {
-  EMAIL_VERIFICATION_CODE_REPOSITORY,
-  type EmailVerificationCodeRepository,
-} from '../../domain/repositories/email-verification-code.repository';
+import { EmailVerificationCodes } from '../services/email-verification-codes';
 
 export interface VerifyEmailCodeInput {
   userId: string;
@@ -26,20 +21,16 @@ const INVALID_CODE = 'Código de verificação inválido ou expirado.';
 export class VerifyEmailCodeUseCase {
   constructor(
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
-    @Inject(EMAIL_VERIFICATION_CODE_REPOSITORY)
-    private readonly codes: EmailVerificationCodeRepository,
+    private readonly verificationCodes: EmailVerificationCodes,
     @Inject(ACCESS_TOKEN_ISSUER) private readonly tokens: AccessTokenIssuer,
   ) {}
 
   async execute(input: VerifyEmailCodeInput): Promise<AuthenticatedSession> {
     const user = await this.findPendingAccount(input);
-    const pendingCode = await this.codes.findPendingByUserId(user.id);
 
-    if (!pendingCode || !pendingCode.isValid(input.code)) {
-      throw new BadRequestException(INVALID_CODE);
+    if (!(await this.verificationCodes.redeem(user.id, input.code))) {
+      throw new InvalidRequestError(INVALID_CODE);
     }
-
-    await this.codes.markAsUsed(pendingCode.id);
 
     user.activate();
     const activated = await this.users.save(user);
@@ -51,11 +42,11 @@ export class VerifyEmailCodeUseCase {
     const user = await this.users.findById(input.userId);
 
     if (!user || user.email !== input.email.trim().toLowerCase()) {
-      throw new BadRequestException(INVALID_CODE);
+      throw new InvalidRequestError(INVALID_CODE);
     }
 
     if (!user.isPendingVerification()) {
-      throw new BadRequestException('Esta conta já foi verificada.');
+      throw new InvalidRequestError('Esta conta já foi verificada.');
     }
 
     return user;
