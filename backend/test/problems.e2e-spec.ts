@@ -1,13 +1,12 @@
-import { ValidationPipe, type INestApplication } from '@nestjs/common';
+import { type INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Test, type TestingModule } from '@nestjs/testing';
+import { type TestingModule } from '@nestjs/testing';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
-import { AppModule } from '@/app.module';
-import { DomainExceptionFilter } from '@/shared/filters/domain-exception.filter';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { createTestApp } from './helpers/create-test-app';
 
 interface ProblemResponseBody {
   id: string;
@@ -40,18 +39,7 @@ describe('Problems (e2e)', () => {
   let studentToken: string;
 
   beforeAll(async () => {
-    moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api');
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-    );
-    app.useGlobalFilters(new DomainExceptionFilter());
-
-    await app.init();
+    ({ app, moduleRef } = await createTestApp());
 
     dataSource = moduleRef.get(DataSource);
     jwtService = moduleRef.get(JwtService);

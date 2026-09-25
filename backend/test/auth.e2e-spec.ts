@@ -1,13 +1,12 @@
-import { ValidationPipe, type INestApplication } from '@nestjs/common';
-import { Test, type TestingModule } from '@nestjs/testing';
+import { type INestApplication } from '@nestjs/common';
+import { type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { type Server } from 'node:http';
-import { AppModule } from '@/app.module';
-import { DomainExceptionFilter } from '@/shared/filters/domain-exception.filter';
 import { EMAIL_VERIFICATION_SENDER } from '@/auth/domain/services/email-verification-sender';
 import { PASSWORD_RESET_SENDER } from '@/auth/domain/services/password-reset-sender';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { IdentityThrottlerGuard } from '@/shared/throttling/identity-throttler.guard';
+import { createTestApp } from './helpers/create-test-app';
 
 const REGISTER = '/api/autenticacao/registro';
 const LOGIN = '/api/autenticacao/login';
@@ -172,26 +171,15 @@ describe('Auth (e2e)', () => {
   };
 
   beforeAll(async () => {
-    moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(EMAIL_VERIFICATION_SENDER)
-      .useValue({
-        sendVerificationCode: jest.fn().mockResolvedValue(undefined),
-      })
-      .overrideProvider(PASSWORD_RESET_SENDER)
-      .useValue({
-        sendResetCode: jest.fn().mockResolvedValue(undefined),
-      })
-      .overrideGuard(ThrottlerGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
-
-    app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api');
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-    );
-    app.useGlobalFilters(new DomainExceptionFilter());
-    await app.init();
+    ({ app, moduleRef } = await createTestApp((builder) =>
+      builder
+        .overrideProvider(EMAIL_VERIFICATION_SENDER)
+        .useValue({ sendVerificationCode: jest.fn().mockResolvedValue(undefined) })
+        .overrideProvider(PASSWORD_RESET_SENDER)
+        .useValue({ sendResetCode: jest.fn().mockResolvedValue(undefined) })
+        .overrideGuard(IdentityThrottlerGuard)
+        .useValue({ canActivate: () => true }),
+    ));
 
     dataSource = moduleRef.get(DataSource);
   });

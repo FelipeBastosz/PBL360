@@ -1,8 +1,7 @@
-import { ValidationPipe, type INestApplication } from '@nestjs/common';
-import { Test, type TestingModule } from '@nestjs/testing';
+import type { Server } from 'node:http';
+import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from '@/app.module';
-import { setupSwagger } from '@/config/swagger.config';
+import { createTestApp } from './helpers/create-test-app';
 
 interface OpenApiDocument {
   info: { title: string; version: string };
@@ -11,21 +10,15 @@ interface OpenApiDocument {
 }
 
 describe('Swagger (e2e)', () => {
-  let moduleRef: TestingModule;
   let app: INestApplication;
   let document: OpenApiDocument;
 
   beforeAll(async () => {
-    moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-    app = moduleRef.createNestApplication();
-    app.setGlobalPrefix('api');
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-    );
-    setupSwagger(app, 'api/docs');
-    await app.init();
+    ({ app } = await createTestApp());
 
-    const response = await request(app.getHttpServer()).get('/api/docs/json').expect(200);
+    const response = await request(app.getHttpServer() as Server)
+      .get('/api/docs/json')
+      .expect(200);
     document = response.body as OpenApiDocument;
   });
 
@@ -34,7 +27,9 @@ describe('Swagger (e2e)', () => {
   });
 
   it('serves the documentation page', () => {
-    return request(app.getHttpServer()).get('/api/docs').expect(200);
+    return request(app.getHttpServer() as Server)
+      .get('/api/docs')
+      .expect(200);
   });
 
   it('describes both authentication endpoints', () => {
