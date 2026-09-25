@@ -18,7 +18,7 @@ import { RoomsController } from './infrastructure/http/rooms.controller';
 import { AddTutorToRoomUseCase } from './application/use-cases/add-tutor-to-room.use-case';
 import { RemoveTutorFromRoomUseCase } from './application/use-cases/remove-tutor-from-room.use-case';
 import { ListRoomsUseCase } from './application/use-cases/list-rooms.use-case';
-
+import { GetRoomDetailUseCase } from './application/use-cases/get-room-detail.use-case';
 import { RoomAccessService } from './application/services/room-access.service';
 
 @Module({
@@ -34,7 +34,7 @@ import { RoomAccessService } from './application/services/room-access.service';
     DeleteRoomUseCase,
     ListRoomsUseCase,
     RoomAccessService,
-
+    GetRoomDetailUseCase,
     AuthGuard,
     RolesGuard,
 

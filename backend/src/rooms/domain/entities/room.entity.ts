@@ -66,7 +66,7 @@ export class Room {
   createdAt: Date;
 
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, default: null })
-  deletedAt?: Date;
+  deletedAt?: Date | null;
 
   static create(props: NewRoom): Room {
     const room = new Room();

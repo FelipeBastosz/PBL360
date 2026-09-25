@@ -7,45 +7,36 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
-
 import { ApiTags } from '@nestjs/swagger';
-
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
-
 import { Roles } from '@/shared/decorators/roles.decorator';
-
 import { AuthGuard } from '@/shared/guards/auth.guard';
-
 import { RolesGuard } from '@/shared/guards/roles.guard';
-
 import { UserType } from '@/users/domain/enums/user-type.enum';
-
 import { CreateRoomDto } from '../../application/dtos/create-room.dto';
-
-import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
-
-import { UpdateRoomResponseDto } from '../../application/dtos/update-room-response.dto';
-
 import { DeleteRoomDto } from '../../application/dtos/delete-room.dto';
-
+import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
+import { UpdateRoomResponseDto } from '../../application/dtos/update-room-response.dto';
 import { CreateRoomUseCase } from '../../application/use-cases/create-room.use-case';
-
-import { UpdateRoomUseCase } from '../../application/use-cases/update-room.use-case';
-
 import { DeleteRoomUseCase } from '../../application/use-cases/delete-room.use-case';
-
+import {
+  GetRoomDetailUseCase,
+  type RoomDetail,
+} from '../../application/use-cases/get-room-detail.use-case';
+import { ListRoomsUseCase, type ListedRoom } from '../../application/use-cases/list-rooms.use-case';
+import { UpdateRoomUseCase } from '../../application/use-cases/update-room.use-case';
 import {
   CreateRoomSwaggerDocs,
   DeleteRoomSwaggerDocs,
   EditRoomSwaggerDocs,
-  ListRoomSwaggerDocs,
+  GetRoomDetailSwaggerDocs,
+  ListRoomsSwaggerDocs,
 } from './room.swagger';
-
-import { ListRoomsUseCase, type ListedRoom } from '../../application/use-cases/list-rooms.use-case';
 
 @ApiTags('Salas')
 @Controller('salas')
@@ -56,13 +47,24 @@ export class RoomsController {
     private readonly updateRoomUseCase: UpdateRoomUseCase,
     private readonly deleteRoomUseCase: DeleteRoomUseCase,
     private readonly listRoomsUseCase: ListRoomsUseCase,
+    private readonly getRoomDetailUseCase: GetRoomDetailUseCase,
   ) {}
 
   @Get()
   @Roles(UserType.TUTOR)
-  @ListRoomSwaggerDocs
+  @ListRoomsSwaggerDocs
   list(@AuthenticatedUserId() tutorId: string): Promise<ListedRoom[]> {
     return this.listRoomsUseCase.execute(tutorId);
+  }
+
+  @Get(':id')
+  @Roles(UserType.TUTOR)
+  @GetRoomDetailSwaggerDocs
+  getDetail(
+    @Param('id', ParseUUIDPipe) roomId: string,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<RoomDetail> {
+    return this.getRoomDetailUseCase.execute(roomId, tutorId);
   }
 
   @Post()
