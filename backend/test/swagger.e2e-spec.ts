@@ -39,20 +39,20 @@ describe('Swagger (e2e)', () => {
   });
 
   it('groups the authentication endpoints under one tag', () => {
-    expect(document.paths['/api/autenticacao/login'].post.tags).toEqual(['Autenticação']);
+    expect(document.paths['/api/autenticacao/login']!.post!.tags).toEqual(['Autenticação']);
   });
 
   it('documents the status codes each endpoint answers with', () => {
-    expect(Object.keys(document.paths['/api/autenticacao/registro'].post.responses)).toEqual(
+    expect(Object.keys(document.paths['/api/autenticacao/registro']!.post!.responses)).toEqual(
       expect.arrayContaining(['201', '400', '409']),
     );
-    expect(Object.keys(document.paths['/api/autenticacao/login'].post.responses)).toEqual(
+    expect(Object.keys(document.paths['/api/autenticacao/login']!.post!.responses)).toEqual(
       expect.arrayContaining(['200', '400', '401']),
     );
   });
 
   it('publishes the request payload in Portuguese', () => {
-    expect(Object.keys(document.components.schemas.RegisterUserDto.properties)).toEqual([
+    expect(Object.keys(document.components.schemas.RegisterUserDto!.properties)).toEqual([
       'nome',
       'email',
       'senha',
@@ -63,7 +63,7 @@ describe('Swagger (e2e)', () => {
   });
 
   it('publishes the response payload without the password hash', () => {
-    const { properties } = document.components.schemas.UserResponseDto;
+    const { properties } = document.components.schemas.UserResponseDto!;
 
     expect(Object.keys(properties)).toEqual([
       'id',

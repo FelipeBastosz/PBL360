@@ -24,11 +24,11 @@ export default tseslint.config(
       },
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-unsafe-argument': 'error',
       '@typescript-eslint/consistent-type-imports': [
-        'warn',
+        'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
       '@typescript-eslint/no-unused-vars': [
@@ -37,7 +37,7 @@ export default tseslint.config(
       ],
       // Size limits from CONVENTIONS.md section 4. Blank lines and comments do not count.
       'max-lines-per-function': [
-        'warn',
+        'error',
         { max: 20, skipBlankLines: true, skipComments: true, IIFEs: true },
       ],
       'max-lines': ['error', { max: 200, skipBlankLines: true, skipComments: true }],

@@ -16,7 +16,7 @@ const HTML_ESCAPES: Record<string, string> = {
 };
 
 export const escapeHtml = (value: string): string =>
-  value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
+  value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char] ?? char);
 
 export const buildCodeEmail = (
   template: CodeEmailTemplate,

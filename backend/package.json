@@ -10,8 +10,8 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,test}/**/*.ts\"",
-    "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
+    "lint": "eslint \"{src,test}/**/*.ts\" --max-warnings 0",
+    "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix --max-warnings 0",
     "format": "prettier --write \"{src,test}/**/*.ts\"",
     "format:check": "prettier --check \"{src,test}/**/*.ts\"",
     "test": "jest --passWithNoTests",
@@ -89,7 +89,11 @@
     "coveragePathIgnorePatterns": [
       "/node_modules/",
       "/migrations/",
-      "main.ts"
+      "/testing/",
+      "main.ts",
+      "\\.module\\.ts$",
+      "\\.dto\\.ts$",
+      "\\.swagger\\.ts$"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
@@ -99,5 +103,8 @@
   },
   "overrides": {
     "multer": "2.4.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -14,7 +14,7 @@ const identityOf = (body: ThrottledRequest['body']): string => {
 
 @Injectable()
 export class IdentityThrottlerGuard extends ThrottlerGuard {
-  protected getTracker(request: Record<string, unknown>): Promise<string> {
+  protected override getTracker(request: Record<string, unknown>): Promise<string> {
     const { ip, body } = request as ThrottledRequest;
 
     return Promise.resolve(`${ip ?? 'unknown'}|${identityOf(body)}`);

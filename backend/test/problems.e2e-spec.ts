@@ -302,12 +302,12 @@ describe('Problems (e2e)', () => {
       const body = response.body as ProblemResponseBody[];
 
       expect(body).toHaveLength(3);
-      expect(body[0].titulo).toBe('Problema Alfa');
-      expect(body[0].ordem).toBe(1);
-      expect(body[1].titulo).toBe('Problema Beta');
-      expect(body[1].ordem).toBe(2);
-      expect(body[2].titulo).toBe('Problema Gama');
-      expect(body[2].ordem).toBe(3);
+      expect(body[0]?.titulo).toBe('Problema Alfa');
+      expect(body[0]?.ordem).toBe(1);
+      expect(body[1]?.titulo).toBe('Problema Beta');
+      expect(body[1]?.ordem).toBe(2);
+      expect(body[2]?.titulo).toBe('Problema Gama');
+      expect(body[2]?.ordem).toBe(3);
     });
   });
 

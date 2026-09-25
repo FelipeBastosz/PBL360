@@ -36,7 +36,7 @@ describe('seed.ts', () => {
       mockUserRepo.findOneBy.mockResolvedValueOnce(null);
       mockUserRepo.save.mockResolvedValueOnce(new User());
 
-      const data = SEED_USERS[0];
+      const data = SEED_USERS[0]!;
       const result = await seedUser(
         data,
         'hashed-password',
@@ -57,7 +57,7 @@ describe('seed.ts', () => {
     it('skips creation when email is already registered', async () => {
       mockUserRepo.findOneBy.mockResolvedValueOnce(new User());
 
-      const data = SEED_USERS[2];
+      const data = SEED_USERS[2]!;
       const result = await seedUser(
         data,
         'hashed-password',

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
 
+import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
+
 import { Problem } from '../../domain/entities/problem.entity';
 import type { ProblemRepository } from '../../domain/repositories/problem.repository';
 
@@ -56,7 +58,9 @@ export class PgProblemRepository implements ProblemRepository {
       [id],
     );
 
-    return rows.length > 0 ? this.toEntity(rows[0]) : null;
+    const row = firstRowOrNull(rows);
+
+    return row ? this.toEntity(row) : null;
   }
 
   async findByRoomId(roomId: string): Promise<Problem[]> {
@@ -80,7 +84,7 @@ export class PgProblemRepository implements ProblemRepository {
   }
 
   private async insertWithNextOrder(manager: EntityManager, problem: Problem): Promise<Problem> {
-    const [row] = await manager.query<ProblemRow[]>(
+    const rows = await manager.query<ProblemRow[]>(
       `INSERT INTO problems (
           room_id, title, description, order_index, start_date, end_date,
           self_eval_released, peer_eval_released, released_at, self_eval_deadline, created_by
@@ -93,7 +97,7 @@ export class PgProblemRepository implements ProblemRepository {
       this.insertValues(problem),
     );
 
-    return this.toEntity(row);
+    return this.toEntity(requireFirstRow(rows, 'Failed to persist problem.'));
   }
 
   private insertValues(problem: Problem): unknown[] {

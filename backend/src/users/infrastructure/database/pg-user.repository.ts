@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../domain/entities/user.entity';
+import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 import { ConflictError } from '@/shared/errors/application.error';
 import type { UserType } from '../../domain/enums/user-type.enum';
@@ -86,11 +87,7 @@ export class PgUserRepository implements UserRepository {
       this.writableValues(user),
     );
 
-    if (rows.length === 0) {
-      throw new Error('Failed to persist user in database.');
-    }
-
-    return this.toEntity(rows[0]);
+    return this.toEntity(requireFirstRow(rows, 'Failed to persist user in database.'));
   }
 
   private async updateExisting(user: User): Promise<User> {
@@ -104,11 +101,7 @@ export class PgUserRepository implements UserRepository {
       [user.id, ...this.writableValues(user)],
     );
 
-    if (rows.length === 0) {
-      throw new Error(`User ${user.id} not found.`);
-    }
-
-    return this.toEntity(rows[0]);
+    return this.toEntity(requireFirstRow(rows, `User ${user.id} not found.`));
   }
 
   private toEntity(row: UserRow): User {
@@ -130,6 +123,7 @@ export class PgUserRepository implements UserRepository {
 
   private async queryOne(sql: string, params: unknown[]): Promise<User | null> {
     const rows = await this.users.query<UserRow[]>(sql, params);
-    return rows.length > 0 ? this.toEntity(rows[0]) : null;
+    const row = firstRowOrNull(rows);
+    return row ? this.toEntity(row) : null;
   }
 }

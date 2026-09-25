@@ -6,7 +6,7 @@ import { OneTimeCode, type NewOneTimeCode } from './one-time-code';
 export class PasswordResetCode extends OneTimeCode {
   @Index('IDX_password_reset_codes_user_id')
   @Column({ name: 'user_id', type: 'uuid' })
-  userId!: string;
+  override userId!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
@@ -16,7 +16,7 @@ export class PasswordResetCode extends OneTimeCode {
   user!: User;
 
   @Column({ type: 'varchar', length: 160 })
-  email!: string;
+  override email!: string;
 
   static issue(props: NewOneTimeCode): PasswordResetCode {
     return new PasswordResetCode().fill(props);

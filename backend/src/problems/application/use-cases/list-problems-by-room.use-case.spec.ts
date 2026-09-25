@@ -85,9 +85,9 @@ describe('ListProblemsByRoomUseCase', () => {
     const result = await useCase.execute({ roomId: 'room-1', tutorId: 'tutor-1' });
 
     expect(result).toHaveLength(2);
-    expect(result[0].title).toBe('Problema 1');
-    expect(result[1].title).toBe('Problema 2');
-    expect(result[0].orderIndex).toBe(1);
-    expect(result[1].orderIndex).toBe(2);
+    expect(result[0]?.title).toBe('Problema 1');
+    expect(result[1]?.title).toBe('Problema 2');
+    expect(result[0]?.orderIndex).toBe(1);
+    expect(result[1]?.orderIndex).toBe(2);
   });
 });

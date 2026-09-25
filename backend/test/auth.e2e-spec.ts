@@ -113,7 +113,7 @@ describe('Auth (e2e)', () => {
     const calls = sender.mock.calls as [CodeRecipient][];
     const sent = calls.map(([recipient]) => recipient).filter((r) => r.userId === userId);
 
-    return sent[sent.length - 1].code;
+    return sent[sent.length - 1]!.code;
   };
 
   const pendingCodeOf = (userId: string): Promise<string> =>

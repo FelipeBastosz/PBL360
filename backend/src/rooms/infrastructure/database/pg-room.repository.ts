@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, type EntityManager } from 'typeorm';
 
+import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 
 import { Room } from '../../domain/entities/room.entity';
@@ -89,11 +90,7 @@ export class PgRoomRepository implements RoomRepository {
       [room.id, room.name, room.semester, room.active],
     );
 
-    if (rows.length === 0) {
-      throw new Error(`Room ${room.id} not found for update.`);
-    }
-
-    return this.toEntity(rows[0]);
+    return this.toEntity(requireFirstRow(rows, `Room ${room.id} not found for update.`));
   }
 
   async softDelete(room: Room): Promise<void> {
@@ -145,12 +142,13 @@ export class PgRoomRepository implements RoomRepository {
   }
 
   private async insertWithOwner(manager: EntityManager, room: Room): Promise<Room> {
-    const [row] = await manager.query<RoomRow[]>(
+    const rows = await manager.query<RoomRow[]>(
       `INSERT INTO rooms (tutor_id, name, course_code, room_code, semester, active)
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING ${ROOM_COLUMNS};`,
       [room.tutorId, room.name, room.courseCode, room.roomCode, room.semester, room.active],
     );
+    const row = requireFirstRow(rows, 'Failed to persist room.');
 
     await manager.query(`INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2);`, [
       row.id,
@@ -163,7 +161,9 @@ export class PgRoomRepository implements RoomRepository {
   private async queryOne(sql: string, params: unknown[]): Promise<Room | null> {
     const rows = await this.rooms.query<RoomRow[]>(sql, params);
 
-    return rows.length > 0 ? this.toEntity(rows[0]) : null;
+    const row = firstRowOrNull(rows);
+
+    return row ? this.toEntity(row) : null;
   }
 
   private toEntity(row: RoomRow): Room {

@@ -36,8 +36,8 @@ describe('OneTimeCodeService', () => {
       await expect(service.issueFor(buildStudent())).resolves.toBe(true);
       await flushPromises();
 
-      const stored = codes.replacePendingFor.mock.calls[0][0];
-      const { code } = sender.sendCode.mock.calls[0][0];
+      const stored = codes.replacePendingFor.mock.calls[0]![0];
+      const { code } = sender.sendCode.mock.calls[0]![0];
       expect(code).toMatch(/^\d{6}$/);
       expect(stored.codeHash).not.toContain(code);
       expect(stored.matches(code)).toBe(true);
@@ -49,7 +49,7 @@ describe('OneTimeCodeService', () => {
 
       await service.issueFor(buildStudent());
 
-      const { expiresAt } = codes.replacePendingFor.mock.calls[0][0];
+      const { expiresAt } = codes.replacePendingFor.mock.calls[0]![0];
       expect(expiresAt.getTime()).toBeGreaterThanOrEqual(before + CODE_EXPIRATION_MINUTES * 60_000);
     });
 
