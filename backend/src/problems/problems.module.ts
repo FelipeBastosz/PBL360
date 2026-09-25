@@ -23,6 +23,6 @@ import { ProblemsController } from './infrastructure/http/problems.controller';
       useClass: PgProblemRepository,
     },
   ],
-  exports: [PROBLEM_REPOSITORY, TypeOrmModule],
+  exports: [PROBLEM_REPOSITORY],
 })
 export class ProblemsModule {}

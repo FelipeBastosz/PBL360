@@ -21,7 +21,6 @@ export class Problem implements Auditable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index('idx_problems_room_id')
   @Column({ name: 'room_id', type: 'uuid' })
   roomId: string;
 
@@ -43,10 +42,10 @@ export class Problem implements Auditable {
   orderIndex?: number;
 
   @Column({ name: 'start_date', type: 'date', nullable: true, default: null })
-  startDate?: Date | null;
+  startDate?: string | null;
 
   @Column({ name: 'end_date', type: 'date', nullable: true, default: null })
-  endDate?: Date | null;
+  endDate?: string | null;
 
   @Column({ name: 'self_eval_released', type: 'boolean', default: false })
   selfEvalReleased: boolean;
@@ -60,6 +59,7 @@ export class Problem implements Auditable {
   @Column({ name: 'self_eval_deadline', type: 'timestamptz', nullable: true, default: null })
   selfEvalDeadline?: Date | null;
 
+  @Index('idx_problems_created_by')
   @Column({ name: 'created_by', type: 'uuid' })
   createdBy: string;
 
@@ -77,6 +77,17 @@ export class Problem implements Auditable {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true, default: null })
+  updatedBy: string | null;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({
+    name: 'updated_by',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_problems_updated_by',
+  })
+  updater: User | null;
+
   static create(props: NewProblem): Problem {
     const problem = new Problem();
 
@@ -91,6 +102,7 @@ export class Problem implements Auditable {
     problem.releasedAt = props.releasedAt ?? null;
     problem.selfEvalDeadline = props.selfEvalDeadline ?? null;
     problem.createdBy = props.createdBy?.trim();
+    problem.updatedBy = null;
 
     problem.assertIsValid();
 
@@ -118,6 +130,14 @@ export class Problem implements Auditable {
       if (this.orderIndex < 1 || !Number.isInteger(this.orderIndex)) {
         throw new InvalidProblemError('A ordem do problema deve ser um número inteiro positivo.');
       }
+    }
+
+    this.assertPeriodIsValid();
+  }
+
+  private assertPeriodIsValid(): void {
+    if (this.startDate && this.endDate && this.endDate < this.startDate) {
+      throw new InvalidProblemError('A data de término não pode ser anterior à data de início.');
     }
   }
 }

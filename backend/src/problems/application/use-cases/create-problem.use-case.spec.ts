@@ -16,8 +16,8 @@ describe('CreateProblemUseCase', () => {
     authorId: 'tutor-uuid-1',
     title: 'Problema 1 - Diagnóstico Clínico',
     description: 'Caso detalhado',
-    startDate: new Date('2026-03-01'),
-    endDate: new Date('2026-03-15'),
+    startDate: '2026-03-01',
+    endDate: '2026-03-15',
   });
 
   beforeEach(() => {
@@ -25,11 +25,9 @@ describe('CreateProblemUseCase', () => {
     assertTutorCanAccessRoomMock = jest.fn();
 
     const problemRepository: jest.Mocked<ProblemRepository> = {
-      save: saveMock,
+      create: saveMock,
       findById: jest.fn(),
       findByRoomId: jest.fn(),
-      countByRoomId: jest.fn(),
-      getNextOrderIndex: jest.fn(),
     };
 
     const roomAccessService = {

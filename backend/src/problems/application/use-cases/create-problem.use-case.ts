@@ -13,8 +13,8 @@ export interface CreateProblemInput {
   authorId: string;
   title: string;
   description?: string | null;
-  startDate?: Date | null;
-  endDate?: Date | null;
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 @Injectable()
@@ -37,6 +37,6 @@ export class CreateProblemUseCase {
       createdBy: input.authorId,
     });
 
-    return this.problemRepository.save(problem);
+    return this.problemRepository.create(problem);
   }
 }

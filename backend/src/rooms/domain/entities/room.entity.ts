@@ -4,6 +4,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -26,6 +27,7 @@ export class Room {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index('idx_rooms_tutor_id')
   @Column({ name: 'tutor_id', type: 'uuid' })
   tutorId: string;
 

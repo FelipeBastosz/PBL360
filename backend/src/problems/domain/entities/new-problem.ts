@@ -4,8 +4,8 @@ export interface NewProblem {
   description?: string | null;
   orderIndex?: number;
   createdBy: string;
-  startDate?: Date | null;
-  endDate?: Date | null;
+  startDate?: string | null;
+  endDate?: string | null;
   selfEvalReleased?: boolean;
   peerEvalReleased?: boolean;
   releasedAt?: Date | null;
