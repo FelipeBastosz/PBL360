@@ -1,6 +1,8 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
+import { IdentityThrottlerGuard } from '@/shared/throttling/identity-throttler.guard';
+import { STRICT_AUTH_LIMIT } from '@/shared/throttling/throttlers';
 import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
 import { PasswordResetTokenResponseDto } from '../../application/dtos/password-reset-token-response.dto';
 import { RequestPasswordResetDto } from '../../application/dtos/request-password-reset.dto';
@@ -28,7 +30,6 @@ import {
   toValidatePasswordResetCodeInput,
   toVerifyEmailCodeInput,
 } from './auth.mapper';
-import { AuthGuard } from '@/shared/guards/auth.guard';
 import { Public } from '@/shared/decorators/public.decorator';
 import {
   LoginAuthSwaggerDocs,
@@ -55,7 +56,8 @@ const PASSWORD_RESET = 'Senha redefinida com sucesso.';
 
 @ApiTags('Autenticação')
 @Controller('autenticacao')
-@UseGuards(AuthGuard)
+@Public()
+@UseGuards(IdentityThrottlerGuard)
 export class AuthController {
   constructor(
     private readonly registerUser: RegisterUserUseCase,
@@ -67,7 +69,6 @@ export class AuthController {
     private readonly resetPassword: ResetPasswordUseCase,
   ) {}
 
-  @Public()
   @Post('registro')
   @RegisterAuthSwaggerDocs
   async register(@Body() dto: RegisterUserDto): Promise<RegisterResponseDto> {
@@ -76,7 +77,6 @@ export class AuthController {
     return toRegisterResponse(user, VERIFICATION_SENT);
   }
 
-  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @LoginAuthSwaggerDocs
@@ -84,7 +84,6 @@ export class AuthController {
     return toSessionResponse(await this.login.execute({ email: dto.email, password: dto.senha }));
   }
 
-  @Public()
   @Post('verificar-codigo')
   @HttpCode(HttpStatus.OK)
   @VerifyCodeAuthSwaggerDocs
@@ -94,8 +93,8 @@ export class AuthController {
     return { mensagem: ACCOUNT_ACTIVATED, ...toSessionResponse(session) };
   }
 
-  @Public()
   @Post('reenviar-codigo')
+  @Throttle(STRICT_AUTH_LIMIT)
   @HttpCode(HttpStatus.OK)
   @ResendCodeAuthSwaggerDocs
   async resendCode(@Body() dto: ResendVerificationCodeDto): Promise<MessageResponseDto> {
@@ -104,9 +103,7 @@ export class AuthController {
     return { mensagem: CODE_RESENT };
   }
 
-  @Public()
-  @UseGuards(ThrottlerGuard)
-  @Throttle({ 'password-reset': { limit: 5, ttl: 900_000 } })
+  @Throttle(STRICT_AUTH_LIMIT)
   @Post('recuperacao-senha')
   @HttpCode(HttpStatus.OK)
   @RequestPasswordResetAuthSwaggerDocs
@@ -118,9 +115,7 @@ export class AuthController {
     return { mensagem: PASSWORD_RESET_REQUESTED };
   }
 
-  @Public()
-  @UseGuards(ThrottlerGuard)
-  @Throttle({ 'password-reset': { limit: 5, ttl: 900_000 } })
+  @Throttle(STRICT_AUTH_LIMIT)
   @Post('recuperacao-senha/validar-codigo')
   @HttpCode(HttpStatus.OK)
   @ValidatePasswordResetCodeAuthSwaggerDocs
@@ -132,7 +127,6 @@ export class AuthController {
     return toPasswordResetTokenResponse(await this.validatePasswordResetCode.execute(input));
   }
 
-  @Public()
   @Post('redefinir-senha')
   @HttpCode(HttpStatus.OK)
   @ResetPasswordAuthSwaggerDocs

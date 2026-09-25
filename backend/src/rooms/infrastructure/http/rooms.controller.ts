@@ -9,7 +9,6 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 
 import { ApiTags } from '@nestjs/swagger';
@@ -17,10 +16,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 
 import { Roles } from '@/shared/decorators/roles.decorator';
-
-import { AuthGuard } from '@/shared/guards/auth.guard';
-
-import { RolesGuard } from '@/shared/guards/roles.guard';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
@@ -49,7 +44,6 @@ import { ListRoomsUseCase, type ListedRoom } from '../../application/use-cases/l
 
 @ApiTags('Salas')
 @Controller('salas')
-@UseGuards(AuthGuard, RolesGuard)
 export class RoomsController {
   constructor(
     private readonly createRoomUseCase: CreateRoomUseCase,

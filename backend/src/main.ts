@@ -1,27 +1,16 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
-import { setupSwagger } from './config/swagger.config';
-import { DomainExceptionFilter } from './shared/filters/domain-exception.filter';
+import { configureApp } from './config/app.setup';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
-  const config = app.get(ConfigService);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  const apiPrefix = config.get<string>('app.apiPrefix') ?? 'api';
+  configureApp(app);
 
-  app.setGlobalPrefix(apiPrefix);
-  app.enableCors({ origin: config.get<string>('app.corsOrigin') ?? '*' });
-  app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-  );
-  app.useGlobalFilters(new DomainExceptionFilter());
-
-  setupSwagger(app, `${apiPrefix}/docs`);
-
-  await app.listen(config.get<number>('app.port') ?? 3000);
+  await app.listen(app.get(ConfigService).get<number>('app.port') ?? 3000);
 }
 
 void bootstrap();

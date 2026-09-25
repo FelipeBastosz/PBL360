@@ -7,15 +7,12 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 
 import { ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
-import { AuthGuard } from '@/shared/guards/auth.guard';
-import { RolesGuard } from '@/shared/guards/roles.guard';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { AddTutorToRoomDto } from '../../application/dtos/add-tutor-to-room.dto';
@@ -25,7 +22,6 @@ import { AddTutorToRoomSwaggerDocs, RemoveTutorFromRoomSwaggerDocs } from './roo
 
 @ApiTags('Salas - Professores')
 @Controller('salas')
-@UseGuards(AuthGuard, RolesGuard)
 export class RoomTutorsController {
   constructor(
     private readonly addTutorToRoomUseCase: AddTutorToRoomUseCase,

@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule, type JwtSignOptions } from '@nestjs/jwt';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from '@/users/users.module';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RegisterUserUseCase } from './application/use-cases/register-user.use-case';
@@ -37,14 +36,11 @@ type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
   imports: [
     TypeOrmModule.forFeature([EmailVerificationCode, PasswordResetCode]),
     UsersModule,
-    ThrottlerModule.forRoot([{ name: 'password-reset', ttl: 900_000, limit: 5 }]),
     JwtModule.registerAsync({
+      global: true,
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret:
-          config.get<string>('auth.jwtSecret') ??
-          config.get<string>('JWT_SECRET') ??
-          'chave_secreta_provisoria_para_testes',
+        secret: config.getOrThrow<string>('auth.jwtSecret'),
         signOptions: { expiresIn: config.get<TokenTtl>('auth.jwtExpiresIn') ?? '1d' },
       }),
     }),
@@ -74,7 +70,5 @@ type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
       useClass: TypeOrmPasswordResetCodeRepository,
     },
   ],
-
-  exports: [JwtModule],
 })
 export class AuthModule {}

@@ -2,10 +2,6 @@ import { Module } from '@nestjs/common';
 import { UsersModule } from '@/users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AuthModule } from '@/auth/auth.module';
-import { AuthGuard } from '@/shared/guards/auth.guard';
-import { RolesGuard } from '@/shared/guards/roles.guard';
-
 import { RoomTutorsController } from './infrastructure/http/room-tutors.controller';
 
 import { CreateRoomUseCase } from './application/use-cases/create-room.use-case';
@@ -22,7 +18,7 @@ import { ListRoomsUseCase } from './application/use-cases/list-rooms.use-case';
 import { RoomAccessService } from './application/services/room-access.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Room]), AuthModule, UsersModule],
+  imports: [TypeOrmModule.forFeature([Room]), UsersModule],
 
   controllers: [RoomsController, RoomTutorsController],
 
@@ -34,9 +30,6 @@ import { RoomAccessService } from './application/services/room-access.service';
     DeleteRoomUseCase,
     ListRoomsUseCase,
     RoomAccessService,
-
-    AuthGuard,
-    RolesGuard,
 
     {
       provide: ROOM_REPOSITORY,

@@ -7,14 +7,11 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
-import { AuthGuard } from '@/shared/guards/auth.guard';
-import { RolesGuard } from '@/shared/guards/roles.guard';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { CreateProblemDto } from '../../application/dtos/create-problem.dto';
@@ -30,7 +27,6 @@ import {
 
 @ApiTags('Problemas')
 @Controller('salas/:roomId/problemas')
-@UseGuards(AuthGuard, RolesGuard)
 export class ProblemsController {
   constructor(
     private readonly createProblemUseCase: CreateProblemUseCase,
