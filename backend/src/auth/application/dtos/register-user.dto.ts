@@ -1,3 +1,4 @@
+import { MaxBytes } from '@/shared/validators/max-bytes.decorator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
@@ -25,7 +26,7 @@ export class RegisterUserDto {
   @ApiProperty({
     format: 'email',
     maxLength: 160,
-    description: 'Somente e-mails institucionais: @uefs.br ou @discente.uefs.br.',
+    description: 'Professores usam @uefs.br e alunos usam @discente.uefs.br.',
     example: 'ana@discente.uefs.br',
   })
   @IsEmail({}, { message: 'Informe um e-mail válido.' })
@@ -39,6 +40,7 @@ export class RegisterUserDto {
   @IsString({ message: 'A senha é obrigatória.' })
   @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
   @MaxLength(72, { message: 'A senha deve ter no máximo 72 caracteres.' })
+  @MaxBytes(72, { message: 'A senha excede o tamanho máximo permitido.' })
   senha!: string;
 
   @ApiProperty({ enum: UserTypePayload, example: UserTypePayload.ALUNO })

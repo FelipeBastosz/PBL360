@@ -16,6 +16,7 @@ interface UserRow {
   photoUrl: string | null;
   type: UserType;
   active: boolean;
+  tokenVersion: number;
   createdAt: Date;
 }
 
@@ -33,9 +34,10 @@ const USER_COLUMNS = `
     photo_url AS "photoUrl",
     type,
     active,
+    token_version AS "tokenVersion",
     created_at AS "createdAt"`;
 
-const WRITABLE_COLUMNS = `name, email, password_hash, registration_number, photo_url, type, active`;
+const WRITABLE_COLUMNS = `name, email, password_hash, registration_number, photo_url, type, active, token_version`;
 
 @Injectable()
 export class PgUserRepository implements UserRepository {
@@ -79,7 +81,7 @@ export class PgUserRepository implements UserRepository {
   private async insertNew(user: User): Promise<User> {
     const rows = await this.users.query<UserRow[]>(
       `INSERT INTO users (${WRITABLE_COLUMNS})
-        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, FALSE))
+        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, FALSE), COALESCE($8, 0))
         RETURNING ${USER_COLUMNS};`,
       this.writableValues(user),
     );
@@ -95,7 +97,8 @@ export class PgUserRepository implements UserRepository {
     const [rows] = await this.users.query<[UserRow[], number]>(
       `UPDATE users
         SET name = $2, email = $3, password_hash = $4, registration_number = $5,
-            photo_url = $6, type = $7, active = COALESCE($8, active)
+            photo_url = $6, type = $7, active = COALESCE($8, active),
+            token_version = COALESCE($9, token_version)
         WHERE id = $1
         RETURNING ${USER_COLUMNS};`,
       [user.id, ...this.writableValues(user)],
@@ -121,6 +124,7 @@ export class PgUserRepository implements UserRepository {
       user.photoUrl,
       user.type,
       user.active,
+      user.tokenVersion,
     ];
   }
 

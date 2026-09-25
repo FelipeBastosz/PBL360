@@ -1,29 +1,9 @@
-import {
-  Entity,
-  Column,
-  PrimaryColumn,
-  CreateDateColumn,
-  Index,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
-import { randomUUID } from 'node:crypto';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { User } from '@/users/domain/entities/user.entity';
-
-export interface NewPasswordResetCode {
-  userId: string;
-  email: string;
-  code: string;
-  expiresInMinutes: number;
-}
-
-export const MAX_VALIDATION_ATTEMPTS = 5;
+import { OneTimeCode, type NewOneTimeCode } from './one-time-code';
 
 @Entity('password_reset_codes')
-export class PasswordResetCode {
-  @PrimaryColumn('uuid')
-  id!: string;
-
+export class PasswordResetCode extends OneTimeCode {
   @Index('IDX_password_reset_codes_user_id')
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
@@ -38,53 +18,7 @@ export class PasswordResetCode {
   @Column({ type: 'varchar', length: 160 })
   email!: string;
 
-  @Column({ type: 'varchar', length: 6 })
-  code!: string;
-
-  @Column({ name: 'expires_at', type: 'timestamptz' })
-  expiresAt!: Date;
-
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt!: Date;
-
-  @Column({ name: 'used_at', type: 'timestamptz', nullable: true })
-  usedAt?: Date | null;
-
-  @Column({ type: 'int', default: 0 })
-  attempts!: number;
-
-  constructor() {}
-
-  static issue(props: NewPasswordResetCode): PasswordResetCode {
-    const now = new Date();
-    const entity = new PasswordResetCode();
-    entity.id = randomUUID();
-    entity.userId = props.userId;
-    entity.email = props.email;
-    entity.code = props.code;
-    entity.expiresAt = new Date(now.getTime() + props.expiresInMinutes * 60 * 1000);
-    entity.createdAt = now;
-    entity.usedAt = null;
-    entity.attempts = 0;
-
-    return entity;
-  }
-
-  isExpired(): boolean {
-    return new Date() > this.expiresAt;
-  }
-
-  isUsed(): boolean {
-    return this.usedAt !== null && this.usedAt !== undefined;
-  }
-
-  hasExceededAttempts(): boolean {
-    return this.attempts >= MAX_VALIDATION_ATTEMPTS;
-  }
-
-  isValid(inputCode: string): boolean {
-    return (
-      this.code === inputCode && !this.isExpired() && !this.isUsed() && !this.hasExceededAttempts()
-    );
+  static issue(props: NewOneTimeCode): PasswordResetCode {
+    return new PasswordResetCode().fill(props);
   }
 }

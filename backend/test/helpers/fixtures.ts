@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import type { DataSource } from 'typeorm';
+import { ACCESS_TOKEN_AUDIENCE } from '@/shared/security/access-token';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 export interface TestUser {
@@ -18,6 +19,17 @@ export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
   );
 };
 
+export const signAccessToken = (
+  app: INestApplication,
+  id: string,
+  email: string,
+  type: UserType,
+  version = 0,
+): string =>
+  app
+    .get(JwtService)
+    .sign({ sub: id, email, type, ver: version }, { audience: ACCESS_TOKEN_AUDIENCE });
+
 export const insertUser = async (
   app: INestApplication,
   dataSource: DataSource,
@@ -30,7 +42,7 @@ export const insertUser = async (
       RETURNING id;`,
     [email, type, type === UserType.STUDENT ? email.slice(0, 8) : null],
   );
-  const token = app.get(JwtService).sign({ sub: row.id, email, type });
+  const token = signAccessToken(app, row.id, email, type);
 
   return { id: row.id, email, type, token };
 };

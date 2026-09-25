@@ -31,7 +31,12 @@ export class LoginUseCase {
   async execute(input: LoginInput): Promise<AuthenticatedSession> {
     const user = await this.users.findByEmail(input.email.trim().toLowerCase());
 
-    if (!user || !(await this.passwords.matches(input.password, user.passwordHash))) {
+    if (!user) {
+      await this.passwords.compareWithDecoy(input.password);
+      throw new UnauthorizedError(INVALID_CREDENTIALS);
+    }
+
+    if (!(await this.passwords.matches(input.password, user.passwordHash))) {
       throw new UnauthorizedError(INVALID_CREDENTIALS);
     }
 

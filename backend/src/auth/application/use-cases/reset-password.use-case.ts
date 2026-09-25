@@ -26,10 +26,10 @@ export class ResetPasswordUseCase {
   ) {}
 
   async execute(input: ResetPasswordInput): Promise<void> {
-    const userId = await this.tokens.verify(input.resetToken);
-    const user = userId ? await this.users.findById(userId) : null;
+    const subject = await this.tokens.verify(input.resetToken);
+    const user = subject ? await this.users.findById(subject.userId) : null;
 
-    if (!user) {
+    if (!subject || !user || user.tokenVersion !== subject.tokenVersion) {
       throw new InvalidRequestError(INVALID_TOKEN);
     }
 

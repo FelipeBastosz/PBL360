@@ -7,7 +7,7 @@ import {
   type UserRepository,
 } from '@/users/domain/repositories/user.repository.interface';
 import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
-import { VerificationCodeIssuer } from '../services/verification-code-issuer';
+import { EmailVerificationCodes } from '../services/email-verification-codes';
 
 export interface RegisterUserInput {
   name: string;
@@ -23,7 +23,7 @@ export class RegisterUserUseCase {
   constructor(
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly passwords: PasswordHasher,
-    private readonly issuer: VerificationCodeIssuer,
+    private readonly verificationCodes: EmailVerificationCodes,
   ) {}
 
   async execute(input: RegisterUserInput): Promise<User> {
@@ -37,7 +37,7 @@ export class RegisterUserUseCase {
       User.create({ ...input, email, passwordHash: await this.passwords.hash(input.password) }),
     );
 
-    await this.issuer.issueFor(user);
+    await this.verificationCodes.issueFor(user);
 
     return user;
   }

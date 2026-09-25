@@ -137,5 +137,43 @@ describe('User (Domain)', () => {
         InvalidUserError,
       );
     });
+
+    describe('institutional e-mail by account type', () => {
+      it('does not let a tutor use a student address', () => {
+        expect(() => User.create(newTutor({ email: 'carlos@discente.uefs.br' }))).toThrow(
+          'Professores devem usar o e-mail institucional @uefs.br.',
+        );
+      });
+
+      it('does not let a student use a staff address', () => {
+        expect(() => User.create(newStudent({ email: 'ana@uefs.br' }))).toThrow(
+          'Alunos devem usar o e-mail institucional @discente.uefs.br.',
+        );
+      });
+    });
+
+    describe('session revocation', () => {
+      it('starts with token version zero', () => {
+        expect(User.create(newTutor()).tokenVersion).toBe(0);
+      });
+
+      it('revokes sessions when the password changes', () => {
+        const user = User.create(newTutor());
+
+        user.changePassword('new-hash');
+
+        expect(user.passwordHash).toBe('new-hash');
+        expect(user.tokenVersion).toBe(1);
+      });
+
+      it('revokes sessions when the account is deactivated', () => {
+        const user = User.create(newTutor());
+        user.activate();
+
+        user.deactivate();
+
+        expect(user.tokenVersion).toBe(1);
+      });
+    });
   });
 });

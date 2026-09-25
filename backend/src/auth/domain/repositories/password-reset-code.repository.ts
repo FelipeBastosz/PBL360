@@ -1,15 +1,6 @@
 import type { PasswordResetCode } from '../entities/password-reset-code.entity';
+import type { OneTimeCodeRepository } from './one-time-code.repository';
 
-export interface PasswordResetCodeRepository {
-  save(code: PasswordResetCode): Promise<void>;
-
-  findPendingByUserId(userId: string): Promise<PasswordResetCode | null>;
-
-  invalidatePendingFor(userId: string): Promise<void>;
-
-  markAsUsed(id: string): Promise<void>;
-
-  registerFailedAttempt(id: string): Promise<void>;
-}
+export type PasswordResetCodeRepository = OneTimeCodeRepository<PasswordResetCode>;
 
 export const PASSWORD_RESET_CODE_REPOSITORY = Symbol('PasswordResetCodeRepository');

@@ -1,109 +1,57 @@
 import { InvalidRequestError } from '@/shared/errors/application.error';
-import { User } from '@/users/domain/entities/user.entity';
-import { UserType } from '@/users/domain/enums/user-type.enum';
-import type { UserRepository } from '@/users/domain/repositories/user.repository.interface';
-import {
-  MAX_VALIDATION_ATTEMPTS,
-  PasswordResetCode,
-} from '../../domain/entities/password-reset-code.entity';
-import type { PasswordResetCodeRepository } from '../../domain/repositories/password-reset-code.repository';
+import type { PasswordResetCodes } from '../services/password-reset-codes';
 import type { PasswordResetTokenIssuer } from '../../domain/services/password-reset-token-issuer';
+import {
+  buildActiveStudent,
+  codeServiceStub,
+  userRepositoryStub,
+} from '../../testing/auth-fixtures';
 import { ValidatePasswordResetCodeUseCase } from './validate-password-reset-code.use-case';
 
-const EMAIL = 'carlos@uefs.br';
-const CODE = '123456';
+const resetToken = { value: 'reset-jwt', expiresAt: new Date('2026-01-02') };
 
 describe('ValidatePasswordResetCodeUseCase', () => {
+  let users: ReturnType<typeof userRepositoryStub>;
+  let codes: ReturnType<typeof codeServiceStub>;
+  let tokens: jest.Mocked<PasswordResetTokenIssuer>;
   let useCase: ValidatePasswordResetCodeUseCase;
 
-  const findByEmail: jest.MockedFunction<UserRepository['findByEmail']> = jest.fn();
-  const findPendingByUserId: jest.MockedFunction<
-    PasswordResetCodeRepository['findPendingByUserId']
-  > = jest.fn();
-  const markAsUsed: jest.MockedFunction<PasswordResetCodeRepository['markAsUsed']> = jest.fn();
-  const registerFailedAttempt: jest.MockedFunction<
-    PasswordResetCodeRepository['registerFailedAttempt']
-  > = jest.fn();
-  const issueFor: jest.MockedFunction<PasswordResetTokenIssuer['issueFor']> = jest.fn();
-
-  const users: UserRepository = { findByEmail, findById: jest.fn(), save: jest.fn() };
-  const codes: PasswordResetCodeRepository = {
-    save: jest.fn(),
-    findPendingByUserId,
-    invalidatePendingFor: jest.fn(),
-    markAsUsed,
-    registerFailedAttempt,
-  };
-  const tokens = { issueFor, verify: jest.fn() } as unknown as PasswordResetTokenIssuer;
-
-  const existingUser = (): User => {
-    const user = User.create({
-      name: 'Carlos Mendes',
-      email: EMAIL,
-      passwordHash: 'hashed',
-      type: UserType.TUTOR,
-    });
-    user.id = 'user-1';
-    user.activate();
-
-    return user;
-  };
-
-  const validCode = (): PasswordResetCode =>
-    PasswordResetCode.issue({ userId: 'user-1', email: EMAIL, code: CODE, expiresInMinutes: 10 });
-
   beforeEach(() => {
-    jest.resetAllMocks();
-    findByEmail.mockResolvedValue(existingUser());
-    findPendingByUserId.mockResolvedValue(validCode());
-    issueFor.mockResolvedValue({ value: 'reset-token', expiresAt: new Date() });
-
-    useCase = new ValidatePasswordResetCodeUseCase(users, codes, tokens);
-  });
-
-  it('issues a reset token and consumes the code when it matches', async () => {
-    await useCase.execute({ email: EMAIL, code: CODE });
-
-    expect(markAsUsed).toHaveBeenCalledWith(expect.any(String));
-    expect(issueFor).toHaveBeenCalledWith('user-1');
-  });
-
-  it('rejects a wrong code and counts the attempt', async () => {
-    const pendingCode = validCode();
-    findPendingByUserId.mockResolvedValue(pendingCode);
-
-    await expect(useCase.execute({ email: EMAIL, code: '000000' })).rejects.toThrow(
-      InvalidRequestError,
-    );
-
-    expect(registerFailedAttempt).toHaveBeenCalledWith(pendingCode.id);
-    expect(issueFor).not.toHaveBeenCalled();
-  });
-
-  it('rejects a correct code once attempts are exhausted', async () => {
-    const exhausted = validCode();
-    exhausted.attempts = MAX_VALIDATION_ATTEMPTS;
-    findPendingByUserId.mockResolvedValue(exhausted);
-
-    await expect(useCase.execute({ email: EMAIL, code: CODE })).rejects.toThrow(
-      InvalidRequestError,
-    );
-    expect(issueFor).not.toHaveBeenCalled();
-  });
-
-  it('rejects when there is no pending code', async () => {
-    findPendingByUserId.mockResolvedValue(null);
-
-    await expect(useCase.execute({ email: EMAIL, code: CODE })).rejects.toThrow(
-      InvalidRequestError,
+    users = userRepositoryStub();
+    codes = codeServiceStub();
+    tokens = { issueFor: jest.fn().mockResolvedValue(resetToken), verify: jest.fn() };
+    useCase = new ValidatePasswordResetCodeUseCase(
+      users,
+      codes as unknown as PasswordResetCodes,
+      tokens,
     );
   });
 
-  it('rejects an unregistered e-mail with the same error', async () => {
-    findByEmail.mockResolvedValue(null);
+  it('exchanges a redeemed code for a token bound to the current token version', async () => {
+    users.findByEmail.mockResolvedValue(buildActiveStudent({ tokenVersion: 3 }));
+    codes.redeem.mockResolvedValue({ id: 'code-1' });
 
-    await expect(useCase.execute({ email: EMAIL, code: CODE })).rejects.toThrow(
-      InvalidRequestError,
+    await expect(
+      useCase.execute({ email: ' ANA@discente.uefs.br ', code: '123456' }),
+    ).resolves.toBe(resetToken);
+    expect(tokens.issueFor).toHaveBeenCalledWith({ userId: 'user-1', tokenVersion: 3 });
+  });
+
+  it('rejects a code that could not be redeemed', async () => {
+    users.findByEmail.mockResolvedValue(buildActiveStudent());
+    codes.redeem.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute({ email: 'ana@discente.uefs.br', code: '000000' }),
+    ).rejects.toBeInstanceOf(InvalidRequestError);
+  });
+
+  it('rejects an unknown e-mail the same way', async () => {
+    users.findByEmail.mockResolvedValue(null);
+
+    await expect(useCase.execute({ email: 'x@discente.uefs.br', code: '123456' })).rejects.toThrow(
+      new InvalidRequestError('Código de recuperação inválido ou expirado.'),
     );
+    expect(codes.redeem).not.toHaveBeenCalled();
   });
 });

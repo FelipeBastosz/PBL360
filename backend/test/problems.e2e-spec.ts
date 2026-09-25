@@ -1,5 +1,4 @@
 import { type INestApplication } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { type TestingModule } from '@nestjs/testing';
 import type { Server } from 'node:http';
 import request from 'supertest';
@@ -7,6 +6,7 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
+import { signAccessToken } from './helpers/fixtures';
 
 interface ProblemResponseBody {
   id: string;
@@ -29,7 +29,6 @@ describe('Problems (e2e)', () => {
   let moduleRef: TestingModule;
   let app: INestApplication;
   let dataSource: DataSource;
-  let jwtService: JwtService;
 
   let tutor1Id: string;
   let tutor2Id: string;
@@ -44,7 +43,6 @@ describe('Problems (e2e)', () => {
     ({ app, moduleRef } = await createTestApp());
 
     dataSource = moduleRef.get(DataSource);
-    jwtService = moduleRef.get(JwtService);
   });
 
   const cleanupDb = async () => {
@@ -96,13 +94,9 @@ describe('Problems (e2e)', () => {
       tutor1Id,
     ]);
 
-    tutor1Token = jwtService.sign({ sub: tutor1Id, email: 'carlos@uefs.br', type: UserType.TUTOR });
-    tutor2Token = jwtService.sign({ sub: tutor2Id, email: 'maria@uefs.br', type: UserType.TUTOR });
-    studentToken = jwtService.sign({
-      sub: studentId,
-      email: 'joao@discente.uefs.br',
-      type: UserType.STUDENT,
-    });
+    tutor1Token = signAccessToken(app, tutor1Id, 'carlos@uefs.br', UserType.TUTOR);
+    tutor2Token = signAccessToken(app, tutor2Id, 'maria@uefs.br', UserType.TUTOR);
+    studentToken = signAccessToken(app, studentId, 'joao@discente.uefs.br', UserType.STUDENT);
   });
 
   const postProblem = (targetRoomId: string, payload: object, token?: string) => {
