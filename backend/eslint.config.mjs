@@ -49,6 +49,7 @@ export default tseslint.config(
     rules: {
       'max-lines-per-function': 'off',
       'max-lines': 'off',
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
 );

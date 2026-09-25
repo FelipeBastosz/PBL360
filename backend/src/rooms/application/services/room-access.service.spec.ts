@@ -30,10 +30,10 @@ describe('RoomAccessService', () => {
     const mockRoomRepository = {
       findById: findByIdMock,
       hasTutor: hasTutorMock,
-      save: jest.fn(),
-      findByAccessToken: jest.fn(),
+      create: jest.fn(),
       findByTutorId: jest.fn(),
       update: jest.fn(),
+      softDelete: jest.fn(),
       addTutor: jest.fn(),
       removeTutor: jest.fn(),
     };
@@ -139,20 +139,6 @@ describe('RoomAccessService', () => {
       await expect(service.assertTutorIsRoomOwner('room-uuid-1', 'other-tutor-id')).rejects.toThrow(
         new ForbiddenError('Apenas o professor responsável pode realizar esta ação.'),
       );
-    });
-  });
-
-  describe('assertResourceBelongsToRoom', () => {
-    it('does not throw when resource belongs to the expected room', () => {
-      expect(() =>
-        service.assertResourceBelongsToRoom('room-uuid-1', 'room-uuid-1', 'Problema'),
-      ).not.toThrow();
-    });
-
-    it('throws NotFoundError when resource belongs to a different room', () => {
-      expect(() =>
-        service.assertResourceBelongsToRoom('room-uuid-2', 'room-uuid-1', 'Problema'),
-      ).toThrow(new NotFoundError('Problema não encontrado nesta sala.'));
     });
   });
 });

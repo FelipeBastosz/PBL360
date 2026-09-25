@@ -3,6 +3,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -12,6 +13,7 @@ import {
 
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
+import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
 
 export const AddTutorToRoomSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
@@ -21,8 +23,9 @@ export const AddTutorToRoomSwaggerDocs = applyDecorators(
       'Permite que o professor responsável associe outro professor ' +
       'cadastrado à sala. O professor responsável é identificado pelo JWT.',
   }),
-  ApiOkResponse({
+  ApiCreatedResponse({
     description: 'Professor associado à sala com sucesso.',
+    type: MessageResponseDto,
   }),
   ApiBadRequestResponse({
     description: 'Identificador inválido.',
@@ -56,6 +59,7 @@ export const RemoveTutorFromRoomSwaggerDocs = applyDecorators(
   }),
   ApiOkResponse({
     description: 'Professor removido da sala com sucesso.',
+    type: MessageResponseDto,
   }),
   ApiBadRequestResponse({
     description: 'Identificador inválido.',

@@ -43,14 +43,4 @@ export class RoomAccessService {
 
     return room;
   }
-
-  assertResourceBelongsToRoom(
-    resourceRoomId: string,
-    expectedRoomId: string,
-    resourceName = 'Recurso',
-  ): void {
-    if (resourceRoomId !== expectedRoomId) {
-      throw new NotFoundError(`${resourceName} não encontrado nesta sala.`);
-    }
-  }
 }

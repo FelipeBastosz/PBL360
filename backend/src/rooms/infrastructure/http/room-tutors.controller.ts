@@ -1,10 +1,10 @@
 import { Body, Controller, Delete, HttpCode, HttpStatus, Post } from '@nestjs/common';
-
 import { ApiTags } from '@nestjs/swagger';
 
-import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
+import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
+import type { MessageResponseDto } from '@/shared/dtos/message-response.dto';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { AddTutorToRoomDto } from '../../application/dtos/add-tutor-to-room.dto';
@@ -12,8 +12,12 @@ import { AddTutorToRoomUseCase } from '../../application/use-cases/add-tutor-to-
 import { RemoveTutorFromRoomUseCase } from '../../application/use-cases/remove-tutor-from-room.use-case';
 import { AddTutorToRoomSwaggerDocs, RemoveTutorFromRoomSwaggerDocs } from './room-tutor.swagger';
 
+const TUTOR_ADDED = 'Professor associado à sala com sucesso.';
+const TUTOR_REMOVED = 'Professor removido da sala com sucesso.';
+
 @ApiTags('Salas - Professores')
 @Controller('salas')
+@Roles(UserType.TUTOR)
 export class RoomTutorsController {
   constructor(
     private readonly addTutorToRoomUseCase: AddTutorToRoomUseCase,
@@ -21,34 +25,28 @@ export class RoomTutorsController {
   ) {}
 
   @Post(':id/professores')
-  @Roles(UserType.TUTOR)
+  @HttpCode(HttpStatus.CREATED)
   @AddTutorToRoomSwaggerDocs
-  @HttpCode(HttpStatus.OK)
   async addTutor(
     @UuidParam('id') roomId: string,
     @Body() dto: AddTutorToRoomDto,
     @AuthenticatedUserId() authenticatedTutorId: string,
-  ): Promise<{ message: string }> {
-    await this.addTutorToRoomUseCase.execute(roomId, authenticatedTutorId, dto.tutorId);
+  ): Promise<MessageResponseDto> {
+    await this.addTutorToRoomUseCase.execute(roomId, authenticatedTutorId, dto.professorId);
 
-    return {
-      message: 'Professor associado à sala com sucesso.',
-    };
+    return { mensagem: TUTOR_ADDED };
   }
 
-  @Delete(':id/professores/:tutorId')
-  @Roles(UserType.TUTOR)
-  @RemoveTutorFromRoomSwaggerDocs
+  @Delete(':id/professores/:professorId')
   @HttpCode(HttpStatus.OK)
+  @RemoveTutorFromRoomSwaggerDocs
   async removeTutor(
     @UuidParam('id') roomId: string,
-    @UuidParam('tutorId') tutorId: string,
+    @UuidParam('professorId') tutorId: string,
     @AuthenticatedUserId() authenticatedTutorId: string,
-  ): Promise<{ message: string }> {
+  ): Promise<MessageResponseDto> {
     await this.removeTutorFromRoomUseCase.execute(roomId, authenticatedTutorId, tutorId);
 
-    return {
-      message: 'Professor removido da sala com sucesso.',
-    };
+    return { mensagem: TUTOR_REMOVED };
   }
 }

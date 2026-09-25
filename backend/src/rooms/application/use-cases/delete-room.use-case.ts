@@ -1,28 +1,20 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
-import { ROOM_REPOSITORY, RoomRepository } from '../../domain/repositories/room.repository';
-import { DeleteRoomDto } from '../dtos/delete-room.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
+import { RoomAccessService } from '../services/room-access.service';
 
 @Injectable()
 export class DeleteRoomUseCase {
   constructor(
     @Inject(ROOM_REPOSITORY)
     private readonly roomRepository: RoomRepository,
+    private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(roomId: string, dto: DeleteRoomDto): Promise<void> {
-    const room = await this.roomRepository.findById(roomId);
-
-    if (!room || room.isDeleted()) {
-      throw new NotFoundError('Sala não encontrada ou já excluída.');
-    }
-
-    if (room.tutorId !== dto.tutorId) {
-      throw new ForbiddenError('Acesso negado. Apenas o tutor responsável pode excluir esta sala.');
-    }
+  async execute(roomId: string, tutorId: string): Promise<void> {
+    const room = await this.roomAccessService.assertTutorIsRoomOwner(roomId, tutorId);
 
     room.delete();
 
-    await this.roomRepository.save(room);
+    await this.roomRepository.softDelete(room);
   }
 }
