@@ -4,15 +4,8 @@ export const JWT_SECRET_PLACEHOLDER = 'change-me-in-every-environment';
 const MIN_PRODUCTION_SECRET_LENGTH = 32;
 const NODE_ENVS = ['development', 'test', 'production'];
 const INTEGER_KEYS = ['PORT', 'DB_PORT', 'BCRYPT_ROUNDS'];
-const REQUIRED_IN_PRODUCTION = [
-  'DB_HOST',
-  'DB_USERNAME',
-  'DB_PASSWORD',
-  'DB_NAME',
-  'CORS_ORIGIN',
-  'SMTP_USER',
-  'SMTP_PASS',
-];
+const DATABASE_KEYS = ['DB_HOST', 'DB_USERNAME', 'DB_PASSWORD', 'DB_NAME'];
+const REQUIRED_IN_PRODUCTION = [...DATABASE_KEYS, 'CORS_ORIGIN', 'SMTP_USER', 'SMTP_PASS'];
 
 const isBlank = (value: string | undefined): boolean => value === undefined || value.trim() === '';
 
@@ -39,28 +32,44 @@ const checkJwtSecret = (env: Env, production: boolean): string[] => {
     : [];
 };
 
+const missingInProduction = (env: Env, keys: string[]): string[] =>
+  keys.filter((key) => isBlank(env[key])).map((key) => `${key} is required in production.`);
+
 const checkProduction = (env: Env): string[] => {
-  const missing = REQUIRED_IN_PRODUCTION.filter((key) => isBlank(env[key])).map(
-    (key) => `${key} is required in production.`,
-  );
+  const missing = missingInProduction(env, REQUIRED_IN_PRODUCTION);
 
   return env.DB_SYNCHRONIZE === 'true'
     ? [...missing, 'DB_SYNCHRONIZE cannot be enabled in production.']
     : missing;
 };
 
+const assertNoErrors = (errors: string[]): void => {
+  if (errors.length > 0) {
+    throw new Error(`Invalid environment configuration:\n- ${errors.join('\n- ')}`);
+  }
+};
+
 export const validateEnv = (env: Env): Env => {
   const production = env.NODE_ENV === 'production';
-  const errors = [
+
+  assertNoErrors([
     ...checkNodeEnv(env),
     ...checkIntegers(env),
     ...checkJwtSecret(env, production),
     ...(production ? checkProduction(env) : []),
-  ];
+  ]);
 
-  if (errors.length > 0) {
-    throw new Error(`Invalid environment configuration:\n- ${errors.join('\n- ')}`);
-  }
+  return env;
+};
+
+export const validateDatabaseEnv = (env: Env): Env => {
+  const production = env.NODE_ENV === 'production';
+
+  assertNoErrors([
+    ...checkNodeEnv(env),
+    ...checkIntegers(env),
+    ...(production ? missingInProduction(env, DATABASE_KEYS) : []),
+  ]);
 
   return env;
 };

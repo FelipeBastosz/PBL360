@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { readDatabaseEnv } from './env.config';
-import { validateEnv } from './env.validation';
+import { validateDatabaseEnv } from './env.validation';
 
 loadEnv();
-validateEnv(process.env);
+validateDatabaseEnv(process.env);
 
 const { host, port, username, password, database } = readDatabaseEnv();
 

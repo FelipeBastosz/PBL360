@@ -1,4 +1,4 @@
-import { JWT_SECRET_PLACEHOLDER, validateEnv } from './env.validation';
+import { JWT_SECRET_PLACEHOLDER, validateDatabaseEnv, validateEnv } from './env.validation';
 
 const STRONG_SECRET = 'a'.repeat(32);
 
@@ -58,6 +58,18 @@ describe('validateEnv', () => {
   it('refuses schema synchronization in production', () => {
     expect(() => validateEnv(productionEnv({ DB_SYNCHRONIZE: 'true' }))).toThrow(
       'DB_SYNCHRONIZE cannot be enabled in production.',
+    );
+  });
+});
+
+describe('validateDatabaseEnv', () => {
+  it('does not need the JWT secret to run migrations', () => {
+    expect(() => validateDatabaseEnv({ DB_NAME: 'pbl360_test' })).not.toThrow();
+  });
+
+  it('requires the database settings in production', () => {
+    expect(() => validateDatabaseEnv({ NODE_ENV: 'production', DB_HOST: 'db' })).toThrow(
+      'DB_USERNAME is required in production.',
     );
   });
 });
