@@ -79,7 +79,8 @@ cp .env.example .env
 ```
 
 Os padrões já batem com o `docker-compose.yml`, então normalmente não há nada a editar. Cada
-variável está documentada em [Variáveis de ambiente](#variáveis-de-ambiente).
+variável está documentada em [Variáveis de ambiente](#variáveis-de-ambiente). A API valida o
+ambiente ao subir e **não inicia** se faltar `JWT_SECRET` ou se algum valor for inválido.
 
 ### 5. Aplique as migrations
 
@@ -87,9 +88,15 @@ variável está documentada em [Variáveis de ambiente](#variáveis-de-ambiente)
 npm run migration:run
 ```
 
-Enquanto não existir nenhuma migration, o comando não faz nada — e isso é o esperado. O
-schema **não** é criado sozinho: `synchronize` fica desligado de propósito (veja
-[Migrations](#migrations)).
+O comando cria todas as tabelas. O schema **não** é criado sozinho: `synchronize` fica
+desligado de propósito (veja [Migrations](#migrations)).
+
+Os testes e2e usam um banco separado, `pbl360_test`, para nunca apagar seus dados de
+desenvolvimento. Crie-o uma vez (pelo Adminer ou `createdb`) e aplique as migrations nele:
+
+```bash
+DB_NAME=pbl360_test npm run migration:run
+```
 
 ### 6. Suba a API
 
@@ -100,16 +107,17 @@ npm run start:dev
 A API fica em <http://localhost:3000/api>, com recarga automática a cada arquivo salvo.
 
 A documentação interativa (Swagger UI) fica em <http://localhost:3000/api/docs>, e o
-OpenAPI em JSON em <http://localhost:3000/api/docs/json>. Ela é gerada a partir dos
+OpenAPI em JSON em <http://localhost:3000/api/docs/json>. Com `NODE_ENV=production` ela não é
+publicada. Ela é gerada a partir dos
 decoradores dos controllers e dos DTOs — endpoint novo sem `@Api*` entra no documento
 sem descrição, sem exemplo e sem os status que ele responde.
 
 ### 7. Verifique que está tudo de pé
 
 ```bash
-npm run lint         # deve terminar sem saída
+npm run lint         # deve terminar sem saída (qualquer warning falha)
 npm test             # unitários
-npm run test:e2e     # e2e; precisa do banco no ar
+npm run test:e2e     # e2e; precisa do banco pbl360_test no ar
 npm run build        # deve gerar dist/ sem erro
 ```
 
@@ -117,14 +125,15 @@ Os quatro passando significa que seu ambiente reproduz o que a CI vai rodar.
 
 ### Problemas comuns
 
-| Sintoma                          | Causa provável e saída                                                     |
-| -------------------------------- | -------------------------------------------------------------------------- |
-| `ECONNREFUSED 127.0.0.1:5432`    | Banco não está no ar. Na raiz: `npm run db:up`                             |
-| `password authentication failed` | `.env` do backend não bate com o `.env` da raiz                            |
-| `port 5432 is already allocated` | Já há um PostgreSQL local. Mude `DB_PORT` no `.env` da raiz                |
-| `relation "..." does not exist`  | Faltou `npm run migration:run`                                             |
-| Hook de commit não dispara       | Rode `npm install` na raiz (instala o husky)                               |
-| `Cannot find module '@/...'`     | Rode do diretório `backend/`; o alias `@/` é resolvido pelo tsconfig daqui |
+| Sintoma                             | Causa provável e saída                                                     |
+| ----------------------------------- | -------------------------------------------------------------------------- |
+| `ECONNREFUSED 127.0.0.1:5432`       | Banco não está no ar. Na raiz: `npm run db:up`                             |
+| `password authentication failed`    | `.env` do backend não bate com o `.env` da raiz                            |
+| `port 5432 is already allocated`    | Já há um PostgreSQL local. Mude `DB_PORT` no `.env` da raiz                |
+| `relation "..." does not exist`     | Faltou `npm run migration:run` (no e2e: `DB_NAME=pbl360_test`)             |
+| `Invalid environment configuration` | O `.env` está incompleto ou com valor inválido; a mensagem lista o quê     |
+| Hook de commit não dispara          | Rode `npm install` na raiz (instala o husky)                               |
+| `Cannot find module '@/...'`        | Rode do diretório `backend/`; o alias `@/` é resolvido pelo tsconfig daqui |
 
 Para começar do zero, apagando os dados: na raiz, `npm run db:reset`.
 
@@ -133,14 +142,16 @@ Para começar do zero, apagando os dados: na raiz, `npm run db:reset`.
 | Script                       | O que faz                                        |
 | ---------------------------- | ------------------------------------------------ |
 | `npm run start:dev`          | Sobe a API em watch mode                         |
+| `npm run start:debug`        | Watch mode com o inspetor do Node ligado         |
 | `npm run start:prod`         | Executa o build de `dist/`                       |
 | `npm run build`              | Compila para `dist/`                             |
-| `npm run seed`               | Popula o banco com dados iniciais de dev         |
+| `npm run seed`               | Popula o banco com dados de dev (nunca em prod)  |
 | `npm run lint`               | ESLint (com regras type-aware)                   |
 | `npm run lint:fix`           | ESLint com correção automática                   |
 | `npm run format`             | Prettier em `src/` e `test/`                     |
 | `npm run format:check`       | Falha se algo estiver desformatado (usado na CI) |
 | `npm run test`               | Testes unitários (`*.spec.ts` em `src/`)         |
+| `npm run test:watch`         | Testes unitários em watch mode                   |
 | `npm run test:cov`           | Testes com relatório de cobertura                |
 | `npm run test:e2e`           | Testes e2e (`*.e2e-spec.ts` em `test/`)          |
 | `npm run migration:create`   | Cria uma migration vazia                         |
@@ -150,14 +161,14 @@ Para começar do zero, apagando os dados: na raiz, `npm run db:reset`.
 
 ## Seed de ambiente de desenvolvimento
 
-O comando `npm run seed` (ou `npm run db:seed` na raiz) insere usuários de teste com credenciais padrão (`senha-secreta`):
+O comando `npm run seed` (ou `npm run db:seed` na raiz) insere usuários de teste já ativados, com a senha de `SEED_PASSWORD` (padrão `senha-secreta`). Com `NODE_ENV=production` o seed se recusa a rodar.
 
 - **Professores (`TUTOR`)**:
   - `carlos@uefs.br`
   - `maria@uefs.br`
 - **Alunos (`STUDENT`)**:
-  - `ana@discente.uefs.br` (Matrícula: `20240001`)
-  - `joao@discente.uefs.br` (Matrícula: `20240002`)
+  - `20240001@discente.uefs.br` (Ana Souza, matrícula `20240001`)
+  - `20240002@discente.uefs.br` (João Silva, matrícula `20240002`)
 
 O script é idempotente: e-mails já existentes no banco são ignorados sem gerar duplicação ou erro.
 
@@ -166,19 +177,23 @@ O script é idempotente: e-mails já existentes no banco são ignorados sem gera
 Todas estão documentadas em [`.env.example`](.env.example). O carregamento é feito pelo
 `@nestjs/config` e tipado em `src/config/env.config.ts`.
 
-| Variável                                  | Padrão                  | Observação                                                  |
-| ----------------------------------------- | ----------------------- | ----------------------------------------------------------- |
-| `PORT`                                    | `3000`                  | Porta HTTP                                                  |
-| `API_PREFIX`                              | `api`                   | Prefixo global das rotas                                    |
-| `DB_HOST` / `DB_PORT`                     | `localhost` / `5432`    | Conexão com o PostgreSQL                                    |
-| `DB_USERNAME` / `DB_PASSWORD` / `DB_NAME` | `pbl360`                | Credenciais                                                 |
-| `DB_SYNCHRONIZE`                          | `false`                 | **Mantenha `false`** — o schema é versionado por migrations |
-| `SMTP_USER`                               | —                       | E-mail do remetente (ex.: Gmail)                            |
-| `SMTP_PASS`                               | —                       | Senha de aplicativo (App Password) do e-mail                |
-| `JWT_SECRET`                              | —                       | **Obrigatória**: a API não sobe sem ela                     |
-| `JWT_EXPIRES_IN`                          | `1d`                    | Validade do token (`30m`, `1d`, ou segundos)                |
-| `BCRYPT_ROUNDS`                           | `12`                    | Custo do hash da senha                                      |
-| `CORS_ORIGIN`                             | `http://localhost:5173` | Origem permitida para o frontend                            |
+| Variável                                  | Padrão                  | Observação                                         |
+| ----------------------------------------- | ----------------------- | -------------------------------------------------- |
+| `NODE_ENV`                                | `development`           | `development`, `test` ou `production`              |
+| `PORT`                                    | `3000`                  | Porta HTTP                                         |
+| `API_PREFIX`                              | `api`                   | Prefixo global das rotas                           |
+| `DB_HOST` / `DB_PORT`                     | `localhost` / `5432`    | Conexão com o PostgreSQL                           |
+| `DB_USERNAME` / `DB_PASSWORD` / `DB_NAME` | `pbl360`                | Credenciais                                        |
+| `DB_SYNCHRONIZE`                          | `false`                 | **Mantenha `false`** — recusado em produção        |
+| `DB_LOGGING`                              | `false`                 | Loga o SQL executado                               |
+| `SMTP_USER`                               | —                       | E-mail do remetente (ex.: Gmail)                   |
+| `SMTP_PASS`                               | —                       | Senha de aplicativo (App Password) do e-mail       |
+| `JWT_SECRET`                              | —                       | **Obrigatória**; em produção, 32+ caracteres       |
+| `JWT_EXPIRES_IN`                          | `1d`                    | Validade do token (`30m`, `1d`, ou segundos)       |
+| `BCRYPT_ROUNDS`                           | `12`                    | Custo do hash da senha                             |
+| `CORS_ORIGIN`                             | `http://localhost:5173` | Origens permitidas, separadas por vírgula          |
+| `TRUST_PROXY`                             | `false`                 | Atrás de proxy: `true`, nº de saltos ou `loopback` |
+| `SEED_PASSWORD`                           | `senha-secreta`         | Senha dos usuários criados pelo seed               |
 
 ## Migrations
 
@@ -211,7 +226,7 @@ A aplicação em si é configurada por `src/config/typeorm.config.ts`, via `Type
 npm test                    # unitários, rápido
 npm run test:watch          # unitários em watch — o loop do dia a dia
 npm run test:cov            # unitários + cobertura em coverage/
-npm run test:e2e            # e2e; suba o banco antes (na raiz: npm run db:up)
+npm run test:e2e            # e2e no banco pbl360_test; suba o banco antes (na raiz: npm run db:up)
 
 npm test -- create-user     # filtra por caminho de arquivo
 npm test -- -t 'rejects'    # filtra por nome do teste
