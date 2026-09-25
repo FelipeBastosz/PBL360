@@ -220,6 +220,41 @@ export class UsersController {
 }
 ```
 
+**Documentação Swagger fora do controller**
+
+A documentação OpenAPI de cada rota (`@ApiOperation`, `@ApiBody`, `@Api*Response`,
+`@ApiBearerAuth`) **não fica no controller**. Ela vive em um arquivo `<feature>.swagger.ts`,
+ao lado do controller em `infrastructure/http/`, e cada rota ganha um decorator composto
+com `applyDecorators`. Assim o controller continua legível: só rota, guards, papéis e a
+chamada ao caso de uso.
+
+```ts
+// infrastructure/http/room.swagger.ts
+export const DeleteRoomSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({ summary: 'Exclui uma sala', description: '...' }),
+  ApiNoContentResponse({ description: 'Sala excluída com sucesso.' }),
+  ApiForbiddenResponse({ description: '...', type: ErrorResponseDto }),
+);
+```
+
+```ts
+// infrastructure/http/rooms.controller.ts
+@Delete(':id')
+@Roles(UserType.TUTOR)
+@DeleteRoomSwaggerDocs
+remove(@Param('id', new ParseUUIDPipe()) id: string) { ... }
+```
+
+Regras:
+
+- Um arquivo `.swagger.ts` por controller; o controller importa de `@nestjs/swagger`
+  apenas o `@ApiTags`, que continua na classe.
+- O nome da constante segue `<Ação><Recurso>SwaggerDocs` (ex.: `CreateRoomSwaggerDocs`,
+  `LoginAuthSwaggerDocs`) e é aplicado sem parênteses: `@CreateRoomSwaggerDocs`.
+- Decorators que mudam o comportamento da rota (`@Roles`, `@Public`, `@HttpCode`,
+  `@Throttle`, `@UseGuards`) **ficam no controller** — o arquivo swagger só documenta.
+
 **`infrastructure/database/`** — as implementações concretas dos repositórios, usando
 TypeORM. É o único lugar do módulo onde `Repository`, `QueryBuilder` e SQL aparecem.
 
@@ -359,7 +394,8 @@ async create(
 4. Escreva o **caso de uso** em `application/use-cases/`, dependendo da abstração.
 5. Escreva o **DTO** em `application/dtos/`.
 6. Implemente o **repositório TypeORM** em `infrastructure/database/`.
-7. Escreva o **controller** em `infrastructure/http/`.
+7. Escreva o **controller** em `infrastructure/http/`, com a documentação Swagger em
+   `<feature>.swagger.ts` ao lado dele.
 8. Monte o `<feature>.module.ts` e registre-o em `app.module.ts`.
 9. Gere e revise a **migration**.
 10. Escreva os **testes** — unitário ao lado do código, e2e em `test/`. A feature não está
@@ -378,6 +414,7 @@ A ordem importa: começar pelo domínio evita que decisões de banco vazem para 
 | Caso de uso         | `create-user.use-case.ts`                 | `CreateUserUseCase`                 |
 | DTO                 | `create-user.dto.ts`                      | `CreateUserDto`                     |
 | Controller          | `users.controller.ts`                     | `UsersController`                   |
+| Docs Swagger        | `user.swagger.ts`                         | `CreateUserSwaggerDocs`             |
 | Módulo              | `users.module.ts`                         | `UsersModule`                       |
 | Migration           | `1712345678901-CreateUsers.ts`            | `CreateUsers...`                    |
 | Middleware          | `http-logger.middleware.ts`               | `HttpLoggerMiddleware`              |

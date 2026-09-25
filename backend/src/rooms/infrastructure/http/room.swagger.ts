@@ -1,6 +1,6 @@
+import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { CreateRoomDto } from '@/rooms/application/dtos/create-room.dto';
 import { UpdateRoomResponseDto } from '@/rooms/application/dtos/update-room-response.dto';
-import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { applyDecorators } from '@nestjs/common';
 import {
