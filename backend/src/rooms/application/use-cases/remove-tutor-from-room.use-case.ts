@@ -1,4 +1,5 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 
 import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
 
@@ -13,21 +14,21 @@ export class RemoveTutorFromRoomUseCase {
     const room = await this.roomRepository.findById(roomId);
 
     if (!room) {
-      throw new NotFoundException('Sala não encontrada.');
+      throw new NotFoundError('Sala não encontrada.');
     }
 
     if (room.tutorId !== authenticatedTutorId) {
-      throw new ForbiddenException('Apenas o professor responsável pode remover professores.');
+      throw new ForbiddenError('Apenas o professor responsável pode remover professores.');
     }
 
     if (room.tutorId === tutorId) {
-      throw new ForbiddenException('O professor responsável não pode ser removido da sala.');
+      throw new ForbiddenError('O professor responsável não pode ser removido da sala.');
     }
 
     const isAssociated = await this.roomRepository.hasTutor(roomId, tutorId);
 
     if (!isAssociated) {
-      throw new NotFoundException('Professor não está associado à sala.');
+      throw new NotFoundError('Professor não está associado à sala.');
     }
 
     await this.roomRepository.removeTutor(roomId, tutorId);

@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import type { UserRepository } from '@/users/domain/repositories/user.repository.interface';
@@ -73,7 +73,7 @@ describe('ValidatePasswordResetCodeUseCase', () => {
     findPendingByUserId.mockResolvedValue(pendingCode);
 
     await expect(useCase.execute({ email: EMAIL, code: '000000' })).rejects.toThrow(
-      BadRequestException,
+      InvalidRequestError,
     );
 
     expect(registerFailedAttempt).toHaveBeenCalledWith(pendingCode.id);
@@ -86,7 +86,7 @@ describe('ValidatePasswordResetCodeUseCase', () => {
     findPendingByUserId.mockResolvedValue(exhausted);
 
     await expect(useCase.execute({ email: EMAIL, code: CODE })).rejects.toThrow(
-      BadRequestException,
+      InvalidRequestError,
     );
     expect(issueFor).not.toHaveBeenCalled();
   });
@@ -95,7 +95,7 @@ describe('ValidatePasswordResetCodeUseCase', () => {
     findPendingByUserId.mockResolvedValue(null);
 
     await expect(useCase.execute({ email: EMAIL, code: CODE })).rejects.toThrow(
-      BadRequestException,
+      InvalidRequestError,
     );
   });
 
@@ -103,7 +103,7 @@ describe('ValidatePasswordResetCodeUseCase', () => {
     findByEmail.mockResolvedValue(null);
 
     await expect(useCase.execute({ email: EMAIL, code: CODE })).rejects.toThrow(
-      BadRequestException,
+      InvalidRequestError,
     );
   });
 });

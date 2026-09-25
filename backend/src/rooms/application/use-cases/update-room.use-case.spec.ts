@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { UpdateRoomUseCase } from './update-room.use-case';
 import type { RoomRepository } from '../../domain/repositories/room.repository';
 import { Room } from '../../domain/entities/room.entity';
@@ -96,9 +96,7 @@ describe('UpdateRoomUseCase', () => {
       nome: 'Tentativa de alteração da sala',
     };
 
-    await expect(sut.execute(mockRoom.id, 'tutor-INTRUSO', dto)).rejects.toThrow(
-      ForbiddenException,
-    );
+    await expect(sut.execute(mockRoom.id, 'tutor-INTRUSO', dto)).rejects.toThrow(ForbiddenError);
 
     expect(roomRepository.hasTutor).toHaveBeenCalledWith(mockRoom.id, 'tutor-INTRUSO');
     expect(roomRepository.update).not.toHaveBeenCalled();
@@ -111,7 +109,7 @@ describe('UpdateRoomUseCase', () => {
       nome: 'Nova sala',
     };
 
-    await expect(sut.execute(mockRoom.id, 'tutor-123', dto)).rejects.toThrow(NotFoundException);
+    await expect(sut.execute(mockRoom.id, 'tutor-123', dto)).rejects.toThrow(NotFoundError);
 
     expect(roomRepository.update).not.toHaveBeenCalled();
   });
@@ -123,7 +121,7 @@ describe('UpdateRoomUseCase', () => {
       nome: 'Sala alterada',
     };
 
-    await expect(sut.execute(mockRoom.id, 'tutor-123', dto)).rejects.toThrow(NotFoundException);
+    await expect(sut.execute(mockRoom.id, 'tutor-123', dto)).rejects.toThrow(NotFoundError);
 
     expect(roomRepository.update).not.toHaveBeenCalled();
   });

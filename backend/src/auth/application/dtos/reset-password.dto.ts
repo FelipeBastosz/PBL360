@@ -6,7 +6,7 @@ export class ResetPasswordDto {
     description: 'Token devolvido por /autenticacao/recuperacao-senha/validar-codigo.',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
-  @IsString()
+  @IsString({ message: 'O token deve ser um texto.' })
   @IsNotEmpty({ message: 'O token é obrigatório.' })
   token: string;
 

@@ -1,4 +1,5 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import {
   USER_REPOSITORY,
   type UserRepository,
@@ -34,12 +35,12 @@ export class ValidatePasswordResetCodeUseCase {
     const pendingCode = user ? await this.codes.findPendingByUserId(user.id) : null;
 
     if (!pendingCode) {
-      throw new BadRequestException(INVALID_CODE);
+      throw new InvalidRequestError(INVALID_CODE);
     }
 
     if (!pendingCode.isValid(input.code)) {
       await this.codes.registerFailedAttempt(pendingCode.id);
-      throw new BadRequestException(INVALID_CODE);
+      throw new InvalidRequestError(INVALID_CODE);
     }
 
     await this.codes.markAsUsed(pendingCode.id);

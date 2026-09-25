@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedError } from '@/shared/errors/application.error';
 import { Test } from '@nestjs/testing';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -11,11 +11,7 @@ import {
   type AccessTokenIssuer,
 } from '../../domain/services/access-token-issuer';
 import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
-import {
-  PENDING_VERIFICATION_MESSAGE,
-  PENDING_VERIFICATION_REASON,
-  PendingVerificationException,
-} from '../errors/pending-verification.exception';
+import { AccountPendingVerificationError } from '../errors/account-pending-verification.error';
 import { LoginUseCase } from './login.use-case';
 
 describe('LoginUseCase', () => {
@@ -93,14 +89,14 @@ describe('LoginUseCase', () => {
   it('rejects an e-mail that is not registered', async () => {
     findByEmail.mockResolvedValue(null);
 
-    await expect(useCase.execute(credentials)).rejects.toThrow(UnauthorizedException);
+    await expect(useCase.execute(credentials)).rejects.toThrow(UnauthorizedError);
     expect(issueFor).not.toHaveBeenCalled();
   });
 
   it('rejects a wrong password', async () => {
     matches.mockResolvedValue(false);
 
-    await expect(useCase.execute(credentials)).rejects.toThrow(UnauthorizedException);
+    await expect(useCase.execute(credentials)).rejects.toThrow(UnauthorizedError);
     expect(issueFor).not.toHaveBeenCalled();
   });
 
@@ -117,27 +113,19 @@ describe('LoginUseCase', () => {
   it('rejects an account that has not verified its e-mail yet', async () => {
     findByEmail.mockResolvedValue(pendingUser());
 
-    await expect(useCase.execute(credentials)).rejects.toBeInstanceOf(PendingVerificationException);
+    await expect(useCase.execute(credentials)).rejects.toBeInstanceOf(
+      AccountPendingVerificationError,
+    );
     expect(issueFor).not.toHaveBeenCalled();
   });
 
   it('tells the pending account how to finish the verification', async () => {
     findByEmail.mockResolvedValue(pendingUser());
 
-    const error = await useCase
-      .execute(credentials)
-      .catch((thrown: PendingVerificationException) => thrown);
+    const error = await useCase.execute(credentials).catch((thrown: unknown) => thrown);
 
-    expect(error).toBeInstanceOf(PendingVerificationException);
-    expect((error as PendingVerificationException).getStatus()).toBe(403);
-    expect((error as PendingVerificationException).getResponse()).toEqual({
-      statusCode: 403,
-      error: 'Forbidden',
-      message: PENDING_VERIFICATION_MESSAGE,
-      motivo: PENDING_VERIFICATION_REASON,
-      usuarioId: 'user-1',
-      email: 'ana@discente.uefs.br',
-    });
+    expect(error).toBeInstanceOf(AccountPendingVerificationError);
+    expect(error).toMatchObject({ userId: 'user-1', email: 'ana@discente.uefs.br' });
   });
 
   it('rejects a deactivated account', async () => {
@@ -145,7 +133,9 @@ describe('LoginUseCase', () => {
     user.deactivate();
     findByEmail.mockResolvedValue(user);
 
-    await expect(useCase.execute(credentials)).rejects.toBeInstanceOf(PendingVerificationException);
+    await expect(useCase.execute(credentials)).rejects.toBeInstanceOf(
+      AccountPendingVerificationError,
+    );
     expect(issueFor).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,5 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 
 import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
 
@@ -40,13 +41,13 @@ export class UpdateRoomUseCase {
     const room = await this.roomRepository.findById(roomId);
 
     if (!room || room.isDeleted()) {
-      throw new NotFoundException('Sala não encontrada.');
+      throw new NotFoundError('Sala não encontrada.');
     }
 
     const isRoomTutor = await this.roomRepository.hasTutor(roomId, tutorId);
 
     if (!isRoomTutor) {
-      throw new ForbiddenException('Você não tem permissão para editar esta sala.');
+      throw new ForbiddenError('Você não tem permissão para editar esta sala.');
     }
 
     return room;

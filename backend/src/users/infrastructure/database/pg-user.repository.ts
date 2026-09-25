@@ -2,9 +2,27 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../domain/entities/user.entity';
+import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
+import { ConflictError } from '@/shared/errors/application.error';
+import type { UserType } from '../../domain/enums/user-type.enum';
 import type { UserRepository } from '../../domain/repositories/user.repository.interface';
 
-type UserRow = Omit<User, 'isTutor' | 'isStudent' | 'activate' | 'deactivate'>;
+interface UserRow {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  registrationNumber: string | null;
+  photoUrl: string | null;
+  type: UserType;
+  active: boolean;
+  createdAt: Date;
+}
+
+const CONFLICT_MESSAGES: Record<string, string> = {
+  uq_users_email: 'Já existe uma conta cadastrada com este e-mail.',
+  uq_users_registration_number: 'Já existe uma conta cadastrada com esta matrícula.',
+};
 
 const USER_COLUMNS = `
     id,
@@ -44,7 +62,18 @@ export class PgUserRepository implements UserRepository {
   }
 
   async save(user: User): Promise<User> {
-    return user.id ? this.updateExisting(user) : this.insertNew(user);
+    try {
+      return await (user.id ? this.updateExisting(user) : this.insertNew(user));
+    } catch (error) {
+      throw this.translateConflict(error);
+    }
+  }
+
+  private translateConflict(error: unknown): unknown {
+    const constraint = violatedUniqueConstraint(error);
+    const message = constraint === null ? undefined : CONFLICT_MESSAGES[constraint];
+
+    return message ? new ConflictError(message) : error;
   }
 
   private async insertNew(user: User): Promise<User> {

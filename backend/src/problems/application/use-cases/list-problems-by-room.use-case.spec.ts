@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 
 import type { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import { Room } from '@/rooms/domain/entities/room.entity';
@@ -34,25 +34,23 @@ describe('ListProblemsByRoomUseCase', () => {
   });
 
   it('rejects when room is not found', async () => {
-    assertTutorCanAccessRoomMock.mockRejectedValueOnce(
-      new NotFoundException('Sala não encontrada.'),
-    );
+    assertTutorCanAccessRoomMock.mockRejectedValueOnce(new NotFoundError('Sala não encontrada.'));
 
     await expect(
       useCase.execute({ roomId: 'non-existent-room', tutorId: 'tutor-1' }),
-    ).rejects.toThrow(NotFoundException);
+    ).rejects.toThrow(NotFoundError);
 
     expect(findByRoomIdMock).not.toHaveBeenCalled();
   });
 
   it('rejects when tutor does not have access to the room', async () => {
     assertTutorCanAccessRoomMock.mockRejectedValueOnce(
-      new ForbiddenException('Você não tem permissão para acessar ou modificar esta sala.'),
+      new ForbiddenError('Você não tem permissão para acessar ou modificar esta sala.'),
     );
 
     await expect(
       useCase.execute({ roomId: 'room-1', tutorId: 'unauthorized-tutor' }),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toThrow(ForbiddenError);
 
     expect(findByRoomIdMock).not.toHaveBeenCalled();
   });

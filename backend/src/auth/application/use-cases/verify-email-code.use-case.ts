@@ -1,4 +1,5 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import type { User } from '@/users/domain/entities/user.entity';
 import {
   USER_REPOSITORY,
@@ -36,7 +37,7 @@ export class VerifyEmailCodeUseCase {
     const pendingCode = await this.codes.findPendingByUserId(user.id);
 
     if (!pendingCode || !pendingCode.isValid(input.code)) {
-      throw new BadRequestException(INVALID_CODE);
+      throw new InvalidRequestError(INVALID_CODE);
     }
 
     await this.codes.markAsUsed(pendingCode.id);
@@ -51,11 +52,11 @@ export class VerifyEmailCodeUseCase {
     const user = await this.users.findById(input.userId);
 
     if (!user || user.email !== input.email.trim().toLowerCase()) {
-      throw new BadRequestException(INVALID_CODE);
+      throw new InvalidRequestError(INVALID_CODE);
     }
 
     if (!user.isPendingVerification()) {
-      throw new BadRequestException('Esta conta já foi verificada.');
+      throw new InvalidRequestError('Esta conta já foi verificada.');
     }
 
     return user;

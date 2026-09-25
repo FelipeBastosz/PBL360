@@ -1,4 +1,5 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import {
   USER_REPOSITORY,
   type UserRepository,
@@ -29,7 +30,7 @@ export class ResetPasswordUseCase {
     const user = userId ? await this.users.findById(userId) : null;
 
     if (!user) {
-      throw new BadRequestException(INVALID_TOKEN);
+      throw new InvalidRequestError(INVALID_TOKEN);
     }
 
     user.changePassword(await this.hasher.hash(input.newPassword));

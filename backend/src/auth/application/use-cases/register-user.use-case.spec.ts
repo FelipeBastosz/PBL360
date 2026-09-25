@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictError } from '@/shared/errors/application.error';
 import { Test } from '@nestjs/testing';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -91,7 +91,7 @@ describe('RegisterUserUseCase', () => {
   it('rejects an e-mail that is already registered', async () => {
     findByEmail.mockResolvedValue(new User());
 
-    await expect(useCase.execute(tutorInput())).rejects.toThrow(ConflictException);
+    await expect(useCase.execute(tutorInput())).rejects.toThrow(ConflictError);
     expect(save).not.toHaveBeenCalled();
   });
 

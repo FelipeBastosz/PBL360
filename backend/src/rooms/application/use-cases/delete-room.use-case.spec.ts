@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import type { RoomRepository } from '../../domain/repositories/room.repository';
 import type { DeleteRoomDto } from '../dtos/delete-room.dto';
 import { Room } from '../../domain/entities/room.entity';
@@ -53,31 +53,31 @@ describe('DeleteRoomUseCase', () => {
     expect(saveMock).toHaveBeenCalledWith(room);
   });
 
-  it('deve lançar NotFoundException se a sala não existir', async () => {
+  it('deve lançar NotFoundError se a sala não existir', async () => {
     findByIdMock.mockResolvedValue(null);
 
     const dto: DeleteRoomDto = { tutorId: 'tutor-123' };
 
-    await expect(useCase.execute('room-123', dto)).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute('room-123', dto)).rejects.toThrow(NotFoundError);
     expect(saveMock).not.toHaveBeenCalled();
   });
 
-  it('deve lançar NotFoundException se a sala já estiver excluída', async () => {
+  it('deve lançar NotFoundError se a sala já estiver excluída', async () => {
     room.delete();
     findByIdMock.mockResolvedValue(room);
 
     const dto: DeleteRoomDto = { tutorId: 'tutor-123' };
 
-    await expect(useCase.execute('room-123', dto)).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute('room-123', dto)).rejects.toThrow(NotFoundError);
     expect(saveMock).not.toHaveBeenCalled();
   });
 
-  it('deve lançar ForbiddenException se o professor não for o dono da sala', async () => {
+  it('deve lançar ForbiddenError se o professor não for o dono da sala', async () => {
     findByIdMock.mockResolvedValue(room);
 
     const dto: DeleteRoomDto = { tutorId: 'tutor-intruso' };
 
-    await expect(useCase.execute('room-123', dto)).rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute('room-123', dto)).rejects.toThrow(ForbiddenError);
     expect(room.isDeleted()).toBe(false);
     expect(room.active).toBe(true);
     expect(saveMock).not.toHaveBeenCalled();

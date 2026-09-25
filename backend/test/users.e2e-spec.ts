@@ -1,6 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { AppModule } from '@/app.module';
+import { ConflictError } from '@/shared/errors/application.error';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import {
@@ -20,7 +21,7 @@ describe('User repository (e2e)', () => {
     user.name = 'Ana Souza';
     user.email = 'ana@uefs.br';
     user.passwordHash = 'hashed_password';
-    user.registrationNumber = '2024001';
+    user.registrationNumber = '20240001';
     user.type = UserType.STUDENT;
     return user;
   };
@@ -74,9 +75,22 @@ describe('User repository (e2e)', () => {
     it('rejects a duplicate email', async () => {
       await repository.save(buildUser());
       const duplicate = buildUser();
-      duplicate.registrationNumber = '2024002';
+      duplicate.registrationNumber = '20240002';
 
-      await expect(repository.save(duplicate)).rejects.toThrow('uq_users_email');
+      await expect(repository.save(duplicate)).rejects.toThrow(
+        new ConflictError('Já existe uma conta cadastrada com este e-mail.'),
+      );
+      expect(await countUsers()).toBe(1);
+    });
+
+    it('rejects a duplicate registration number', async () => {
+      await repository.save(buildUser());
+      const duplicate = buildUser();
+      duplicate.email = 'outra@discente.uefs.br';
+
+      await expect(repository.save(duplicate)).rejects.toThrow(
+        new ConflictError('Já existe uma conta cadastrada com esta matrícula.'),
+      );
       expect(await countUsers()).toBe(1);
     });
   });
@@ -89,7 +103,7 @@ describe('User repository (e2e)', () => {
 
       expect(found?.id).toBe(saved.id);
       expect(found?.passwordHash).toBe('hashed_password');
-      expect(found?.registrationNumber).toBe('2024001');
+      expect(found?.registrationNumber).toBe('20240001');
       expect(found?.createdAt).toBeInstanceOf(Date);
       expect(found?.isStudent()).toBe(true);
     });

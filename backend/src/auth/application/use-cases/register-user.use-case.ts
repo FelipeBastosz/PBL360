@@ -1,4 +1,5 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConflictError } from '@/shared/errors/application.error';
 import { User } from '@/users/domain/entities/user.entity';
 import type { UserType } from '@/users/domain/enums/user-type.enum';
 import {
@@ -29,7 +30,7 @@ export class RegisterUserUseCase {
     const email = input.email.trim().toLowerCase();
 
     if (await this.users.findByEmail(email)) {
-      throw new ConflictException('Já existe uma conta cadastrada com este e-mail.');
+      throw new ConflictError('Já existe uma conta cadastrada com este e-mail.');
     }
 
     const user = await this.users.save(

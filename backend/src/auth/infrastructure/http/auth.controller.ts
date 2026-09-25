@@ -1,4 +1,12 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseFilters,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { IdentityThrottlerGuard } from '@/shared/throttling/identity-throttler.guard';
@@ -40,6 +48,7 @@ import {
   ValidatePasswordResetCodeAuthSwaggerDocs,
   VerifyCodeAuthSwaggerDocs,
 } from './auth.swagger';
+import { PendingVerificationFilter } from './pending-verification.filter';
 
 const VERIFICATION_SENT =
   'Cadastro realizado. Enviamos um código de verificação para o seu e-mail institucional.';
@@ -58,6 +67,7 @@ const PASSWORD_RESET = 'Senha redefinida com sucesso.';
 @Controller('autenticacao')
 @Public()
 @UseGuards(IdentityThrottlerGuard)
+@UseFilters(PendingVerificationFilter)
 export class AuthController {
   constructor(
     private readonly registerUser: RegisterUserUseCase,

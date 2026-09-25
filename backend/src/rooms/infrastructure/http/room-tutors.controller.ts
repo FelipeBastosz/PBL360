@@ -1,16 +1,8 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  HttpCode,
-  HttpStatus,
-  Param,
-  ParseUUIDPipe,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, HttpCode, HttpStatus, Post } from '@nestjs/common';
 
 import { ApiTags } from '@nestjs/swagger';
 
+import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -33,7 +25,7 @@ export class RoomTutorsController {
   @AddTutorToRoomSwaggerDocs
   @HttpCode(HttpStatus.OK)
   async addTutor(
-    @Param('id', new ParseUUIDPipe()) roomId: string,
+    @UuidParam('id') roomId: string,
     @Body() dto: AddTutorToRoomDto,
     @AuthenticatedUserId() authenticatedTutorId: string,
   ): Promise<{ message: string }> {
@@ -49,8 +41,8 @@ export class RoomTutorsController {
   @RemoveTutorFromRoomSwaggerDocs
   @HttpCode(HttpStatus.OK)
   async removeTutor(
-    @Param('id', new ParseUUIDPipe()) roomId: string,
-    @Param('tutorId', new ParseUUIDPipe()) tutorId: string,
+    @UuidParam('id') roomId: string,
+    @UuidParam('tutorId') tutorId: string,
     @AuthenticatedUserId() authenticatedTutorId: string,
   ): Promise<{ message: string }> {
     await this.removeTutorFromRoomUseCase.execute(roomId, authenticatedTutorId, tutorId);

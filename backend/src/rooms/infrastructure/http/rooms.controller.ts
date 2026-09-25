@@ -6,13 +6,13 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Patch,
   Post,
 } from '@nestjs/common';
 
 import { ApiTags } from '@nestjs/swagger';
 
+import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 
 import { Roles } from '@/shared/decorators/roles.decorator';
@@ -79,7 +79,7 @@ export class RoomsController {
   @Roles(UserType.TUTOR)
   @EditRoomSwaggerDocs
   async edit(
-    @Param('id') roomId: string,
+    @UuidParam('id') roomId: string,
     @Body() updateRoomDto: UpdateRoomDto,
     @AuthenticatedUserId() authenticatedTutorId: string,
   ): Promise<UpdateRoomResponseDto> {
@@ -90,7 +90,10 @@ export class RoomsController {
   @Roles(UserType.TUTOR)
   @HttpCode(HttpStatus.NO_CONTENT)
   @DeleteRoomSwaggerDocs
-  async delete(@Param('id') roomId: string, @Body() deleteRoomDto: DeleteRoomDto): Promise<void> {
+  async delete(
+    @UuidParam('id') roomId: string,
+    @Body() deleteRoomDto: DeleteRoomDto,
+  ): Promise<void> {
     return this.deleteRoomUseCase.execute(roomId, deleteRoomDto);
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import type { UserRepository } from '@/users/domain/repositories/user.repository.interface';
@@ -120,7 +120,7 @@ describe('VerifyEmailCodeUseCase', () => {
   it('rejects when there is no pending code', async () => {
     findPendingByUserId.mockResolvedValue(null);
 
-    await expect(useCase.execute(input)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(useCase.execute(input)).rejects.toBeInstanceOf(InvalidRequestError);
     expect(saveUser).not.toHaveBeenCalled();
   });
 

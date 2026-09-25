@@ -1,10 +1,5 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 
 import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
 
@@ -27,23 +22,23 @@ export class AddTutorToRoomUseCase {
     const room = await this.roomRepository.findById(roomId);
 
     if (!room) {
-      throw new NotFoundException('Sala não encontrada.');
+      throw new NotFoundError('Sala não encontrada.');
     }
 
     if (room.tutorId !== authenticatedTutorId) {
-      throw new ForbiddenException('Apenas o professor responsável pode adicionar professores.');
+      throw new ForbiddenError('Apenas o professor responsável pode adicionar professores.');
     }
 
     const tutor = await this.userRepository.findById(tutorId);
 
     if (!tutor || !tutor.isTutor()) {
-      throw new NotFoundException('Professor não encontrado.');
+      throw new NotFoundError('Professor não encontrado.');
     }
 
     const alreadyAssociated = await this.roomRepository.hasTutor(roomId, tutorId);
 
     if (alreadyAssociated) {
-      throw new ConflictException('Este professor já está associado à sala.');
+      throw new ConflictError('Este professor já está associado à sala.');
     }
 
     await this.roomRepository.addTutor(roomId, tutorId);

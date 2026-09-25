@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import type { UserRepository } from '@/users/domain/repositories/user.repository.interface';
@@ -52,7 +52,7 @@ describe('ResetPasswordUseCase', () => {
 
     await expect(
       useCase.execute({ resetToken: 'bad-token', newPassword: 'nova-senha-123' }),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(InvalidRequestError);
     expect(save).not.toHaveBeenCalled();
   });
 
@@ -61,6 +61,6 @@ describe('ResetPasswordUseCase', () => {
 
     await expect(
       useCase.execute({ resetToken: 'reset-token', newPassword: 'nova-senha-123' }),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(InvalidRequestError);
   });
 });

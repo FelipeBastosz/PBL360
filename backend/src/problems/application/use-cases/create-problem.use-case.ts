@@ -1,7 +1,6 @@
-import { HttpException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
-import { DomainError } from '@/shared/errors/domain.error';
 
 import { Problem } from '../../domain/entities/problem.entity';
 import {
@@ -38,20 +37,6 @@ export class CreateProblemUseCase {
       createdBy: input.authorId,
     });
 
-    return this.saveProblem(problem);
-  }
-
-  private async saveProblem(problem: Problem): Promise<Problem> {
-    try {
-      return await this.problemRepository.save(problem);
-    } catch (error) {
-      if (error instanceof DomainError || error instanceof HttpException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Erro ao cadastrar problema. Nenhuma alteração foi salva.',
-      );
-    }
+    return this.problemRepository.save(problem);
   }
 }

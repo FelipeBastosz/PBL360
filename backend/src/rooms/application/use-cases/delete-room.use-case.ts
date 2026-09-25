@@ -1,4 +1,5 @@
-import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { ROOM_REPOSITORY, RoomRepository } from '../../domain/repositories/room.repository';
 import { DeleteRoomDto } from '../dtos/delete-room.dto';
 
@@ -13,13 +14,11 @@ export class DeleteRoomUseCase {
     const room = await this.roomRepository.findById(roomId);
 
     if (!room || room.isDeleted()) {
-      throw new NotFoundException('Sala não encontrada ou já excluída.');
+      throw new NotFoundError('Sala não encontrada ou já excluída.');
     }
 
     if (room.tutorId !== dto.tutorId) {
-      throw new ForbiddenException(
-        'Acesso negado. Apenas o tutor responsável pode excluir esta sala.',
-      );
+      throw new ForbiddenError('Acesso negado. Apenas o tutor responsável pode excluir esta sala.');
     }
 
     room.delete();

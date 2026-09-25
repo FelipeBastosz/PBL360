@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { RoomAccessService } from './room-access.service';
 import { ROOM_REPOSITORY } from '../../domain/repositories/room.repository';
@@ -75,24 +75,24 @@ describe('RoomAccessService', () => {
       expect(hasTutorMock).toHaveBeenCalledWith('room-uuid-1', 'tutor-co-id');
     });
 
-    it('throws NotFoundException when room does not exist', async () => {
+    it('throws NotFoundError when room does not exist', async () => {
       findByIdMock.mockResolvedValue(null);
 
       await expect(service.assertTutorCanAccessRoom('non-existent-id', 'tutor-id')).rejects.toThrow(
-        new NotFoundException('Sala não encontrada.'),
+        new NotFoundError('Sala não encontrada.'),
       );
     });
 
-    it('throws NotFoundException when room is deleted', async () => {
+    it('throws NotFoundError when room is deleted', async () => {
       const deletedRoom = createMockRoom('tutor-owner-id', true);
       findByIdMock.mockResolvedValue(deletedRoom);
 
       await expect(
         service.assertTutorCanAccessRoom('room-uuid-1', 'tutor-owner-id'),
-      ).rejects.toThrow(new NotFoundException('Sala não encontrada.'));
+      ).rejects.toThrow(new NotFoundError('Sala não encontrada.'));
     });
 
-    it('throws ForbiddenException when tutor is neither owner nor associated', async () => {
+    it('throws ForbiddenError when tutor is neither owner nor associated', async () => {
       const mockRoom = createMockRoom('tutor-owner-id');
       findByIdMock.mockResolvedValue(mockRoom);
       hasTutorMock.mockResolvedValue(false);
@@ -100,7 +100,7 @@ describe('RoomAccessService', () => {
       await expect(
         service.assertTutorCanAccessRoom('room-uuid-1', 'unauthorized-tutor-id'),
       ).rejects.toThrow(
-        new ForbiddenException('Você não tem permissão para acessar ou modificar esta sala.'),
+        new ForbiddenError('Você não tem permissão para acessar ou modificar esta sala.'),
       );
     });
   });
@@ -115,29 +115,29 @@ describe('RoomAccessService', () => {
       expect(result).toBe(mockRoom);
     });
 
-    it('throws NotFoundException when room does not exist', async () => {
+    it('throws NotFoundError when room does not exist', async () => {
       findByIdMock.mockResolvedValue(null);
 
       await expect(service.assertTutorIsRoomOwner('non-existent-id', 'tutor-id')).rejects.toThrow(
-        new NotFoundException('Sala não encontrada.'),
+        new NotFoundError('Sala não encontrada.'),
       );
     });
 
-    it('throws NotFoundException when room is deleted', async () => {
+    it('throws NotFoundError when room is deleted', async () => {
       const deletedRoom = createMockRoom('tutor-owner-id', true);
       findByIdMock.mockResolvedValue(deletedRoom);
 
       await expect(service.assertTutorIsRoomOwner('room-uuid-1', 'tutor-owner-id')).rejects.toThrow(
-        new NotFoundException('Sala não encontrada.'),
+        new NotFoundError('Sala não encontrada.'),
       );
     });
 
-    it('throws ForbiddenException when tutor is not the owner', async () => {
+    it('throws ForbiddenError when tutor is not the owner', async () => {
       const mockRoom = createMockRoom('tutor-owner-id');
       findByIdMock.mockResolvedValue(mockRoom);
 
       await expect(service.assertTutorIsRoomOwner('room-uuid-1', 'other-tutor-id')).rejects.toThrow(
-        new ForbiddenException('Apenas o professor responsável pode realizar esta ação.'),
+        new ForbiddenError('Apenas o professor responsável pode realizar esta ação.'),
       );
     });
   });
@@ -149,10 +149,10 @@ describe('RoomAccessService', () => {
       ).not.toThrow();
     });
 
-    it('throws NotFoundException when resource belongs to a different room', () => {
+    it('throws NotFoundError when resource belongs to a different room', () => {
       expect(() =>
         service.assertResourceBelongsToRoom('room-uuid-2', 'room-uuid-1', 'Problema'),
-      ).toThrow(new NotFoundException('Problema não encontrado nesta sala.'));
+      ).toThrow(new NotFoundError('Problema não encontrado nesta sala.'));
     });
   });
 });

@@ -1,15 +1,7 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  ParseUUIDPipe,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
+import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -39,7 +31,7 @@ export class ProblemsController {
   @CreateProblemSwaggerDocs
   @HttpCode(HttpStatus.CREATED)
   create(
-    @Param('roomId', new ParseUUIDPipe()) roomId: string,
+    @UuidParam('roomId') roomId: string,
     @Body() dto: CreateProblemDto,
     @AuthenticatedUserId() authorId: string,
   ): Promise<Problem> {
@@ -57,7 +49,7 @@ export class ProblemsController {
   @Roles(UserType.TUTOR)
   @ListProblemsSwaggerDocs
   list(
-    @Param('roomId', new ParseUUIDPipe()) roomId: string,
+    @UuidParam('roomId') roomId: string,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<Problem[]> {
     return this.listProblemsByRoomUseCase.execute({ roomId, tutorId });
@@ -67,8 +59,8 @@ export class ProblemsController {
   @Roles(UserType.TUTOR)
   @GetProblemSwaggerDocs
   getById(
-    @Param('roomId', new ParseUUIDPipe()) roomId: string,
-    @Param('problemId', new ParseUUIDPipe()) problemId: string,
+    @UuidParam('roomId') roomId: string,
+    @UuidParam('problemId') problemId: string,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<Problem> {
     return this.getProblemUseCase.execute({ roomId, problemId, tutorId });
