@@ -1,8 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/users/domain/repositories/user.repository.interface';
+import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import { PasswordResetCodes } from '../services/password-reset-codes';
 
 export interface RequestPasswordResetInput {

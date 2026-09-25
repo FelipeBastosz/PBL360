@@ -4,10 +4,7 @@ import { AppModule } from '@/app.module';
 import { ConflictError } from '@/shared/errors/application.error';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
-import {
-  type UserRepository,
-  USER_REPOSITORY,
-} from '@/users/domain/repositories/user.repository.interface';
+import { type UserRepository, USER_REPOSITORY } from '@/users/domain/repositories/user.repository';
 
 const MISSING_ID = '00000000-0000-0000-0000-000000000000';
 

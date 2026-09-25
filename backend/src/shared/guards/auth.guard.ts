@@ -8,10 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/users/domain/repositories/user.repository.interface';
+import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { ACCESS_TOKEN_AUDIENCE, type AccessTokenClaims } from '../security/access-token';
 

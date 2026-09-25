@@ -1,8 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/users/domain/repositories/user.repository.interface';
+import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import { EmailVerificationCodes } from '../services/email-verification-codes';
 
 export interface ResendVerificationCodeInput {

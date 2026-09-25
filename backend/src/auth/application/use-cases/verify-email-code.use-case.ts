@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InvalidRequestError } from '@/shared/errors/application.error';
 import type { User } from '@/users/domain/entities/user.entity';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/users/domain/repositories/user.repository.interface';
+import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import type { AuthenticatedSession } from '../authenticated-session';
 import {
   ACCESS_TOKEN_ISSUER,

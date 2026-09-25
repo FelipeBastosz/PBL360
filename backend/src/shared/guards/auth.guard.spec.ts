@@ -3,7 +3,7 @@ import type { JwtService } from '@nestjs/jwt';
 import type { Reflector } from '@nestjs/core';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
-import type { UserRepository } from '@/users/domain/repositories/user.repository.interface';
+import type { UserRepository } from '@/users/domain/repositories/user.repository';
 import { ACCESS_TOKEN_AUDIENCE } from '../security/access-token';
 import { AuthGuard } from './auth.guard';
 

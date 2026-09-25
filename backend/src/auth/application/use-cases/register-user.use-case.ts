@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConflictError } from '@/shared/errors/application.error';
 import { User } from '@/users/domain/entities/user.entity';
 import type { UserType } from '@/users/domain/enums/user-type.enum';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/users/domain/repositories/user.repository.interface';
+import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
 import { EmailVerificationCodes } from '../services/email-verification-codes';
 

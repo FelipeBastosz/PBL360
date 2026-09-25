@@ -5,7 +5,7 @@ import { User } from '../../domain/entities/user.entity';
 import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 import { ConflictError } from '@/shared/errors/application.error';
 import type { UserType } from '../../domain/enums/user-type.enum';
-import type { UserRepository } from '../../domain/repositories/user.repository.interface';
+import type { UserRepository } from '../../domain/repositories/user.repository';
 
 interface UserRow {
   id: string;

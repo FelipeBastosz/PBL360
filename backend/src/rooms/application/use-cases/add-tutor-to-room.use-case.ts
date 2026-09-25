@@ -1,9 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConflictError, NotFoundError } from '@/shared/errors/application.error';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/users/domain/repositories/user.repository.interface';
+import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
 import { RoomAccessService } from '../services/room-access.service';
 

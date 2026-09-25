@@ -1,7 +1,7 @@
 import { ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
-import type { UserRepository } from '@/users/domain/repositories/user.repository.interface';
+import type { UserRepository } from '@/users/domain/repositories/user.repository';
 import type { RoomAccessService } from '../services/room-access.service';
 import {
   buildRoom,

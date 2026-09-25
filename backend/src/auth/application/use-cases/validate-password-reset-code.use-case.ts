@@ -1,9 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InvalidRequestError } from '@/shared/errors/application.error';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/users/domain/repositories/user.repository.interface';
+import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import {
   PASSWORD_RESET_TOKEN_ISSUER,
   type PasswordResetToken,
