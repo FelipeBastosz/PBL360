@@ -1,18 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiConflictResponse,
-  ApiCreatedResponse,
-  ApiForbiddenResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
-import { PendingVerificationResponseDto } from '../../application/dtos/pending-verification-response.dto';
 import { PasswordResetTokenResponseDto } from '../../application/dtos/password-reset-token-response.dto';
 import { RequestPasswordResetDto } from '../../application/dtos/request-password-reset.dto';
 import { ResendVerificationCodeDto } from '../../application/dtos/resend-verification-code.dto';
@@ -41,6 +30,15 @@ import {
 } from './auth.mapper';
 import { AuthGuard } from '@/shared/guards/auth.guard';
 import { Public } from '@/shared/decorators/public.decorator';
+import {
+  LoginAuthSwaggerDocs,
+  RegisterAuthSwaggerDocs,
+  RequestPasswordResetAuthSwaggerDocs,
+  ResendCodeAuthSwaggerDocs,
+  ResetPasswordAuthSwaggerDocs,
+  ValidatePasswordResetCodeAuthSwaggerDocs,
+  VerifyCodeAuthSwaggerDocs,
+} from './auth.swagger';
 
 const VERIFICATION_SENT =
   'Cadastro realizado. Enviamos um código de verificação para o seu e-mail institucional.';
@@ -71,19 +69,7 @@ export class AuthController {
 
   @Public()
   @Post('registro')
-  @ApiOperation({
-    summary: 'Cadastra um usuário',
-    description:
-      'Cria a conta inativa e envia um código de verificação para o e-mail institucional. ' +
-      'Nenhum token é emitido aqui: use o `usuarioId` devolvido em /autenticacao/verificar-codigo ' +
-      'para ativar a conta. PROFESSOR pode omitir matrícula e foto; ALUNO precisa das duas.',
-  })
-  @ApiCreatedResponse({
-    description: 'Conta criada, pendente de verificação.',
-    type: RegisterResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'Payload inválido.', type: ErrorResponseDto })
-  @ApiConflictResponse({ description: 'E-mail já cadastrado.', type: ErrorResponseDto })
+  @RegisterAuthSwaggerDocs
   async register(@Body() dto: RegisterUserDto): Promise<RegisterResponseDto> {
     const user = await this.registerUser.execute(toRegisterUserInput(dto));
 
@@ -93,16 +79,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Autentica um usuário', description: 'Devolve o token JWT da sessão.' })
-  @ApiOkResponse({ description: 'Credenciais válidas.', type: SessionResponseDto })
-  @ApiBadRequestResponse({ description: 'Payload inválido.', type: ErrorResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Credenciais inválidas.', type: ErrorResponseDto })
-  @ApiForbiddenResponse({
-    description:
-      'Conta pendente de verificação. O corpo traz o `usuarioId` e o `email` necessários ' +
-      'em /autenticacao/verificar-codigo.',
-    type: PendingVerificationResponseDto,
-  })
+  @LoginAuthSwaggerDocs
   async signIn(@Body() dto: LoginDto): Promise<SessionResponseDto> {
     return toSessionResponse(await this.login.execute({ email: dto.email, password: dto.senha }));
   }
@@ -110,15 +87,7 @@ export class AuthController {
   @Public()
   @Post('verificar-codigo')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Ativa a conta com o código recebido por e-mail',
-    description: 'Valida o código, marca a conta como ativa e devolve o token JWT da sessão.',
-  })
-  @ApiOkResponse({ description: 'Conta ativada.', type: VerificationResponseDto })
-  @ApiBadRequestResponse({
-    description: 'Código inválido, expirado ou conta já verificada.',
-    type: ErrorResponseDto,
-  })
+  @VerifyCodeAuthSwaggerDocs
   async verifyCode(@Body() dto: VerifyEmailCodeDto): Promise<VerificationResponseDto> {
     const session = await this.verifyEmailCode.execute(toVerifyEmailCodeInput(dto));
 
@@ -128,15 +97,7 @@ export class AuthController {
   @Public()
   @Post('reenviar-codigo')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Reenvia o código de verificação',
-    description:
-      'Invalida os códigos pendentes e envia um novo. A resposta é sempre a mesma, exista ' +
-      'ou não uma conta pendente com o e-mail informado, para não revelar quem está cadastrado. ' +
-      'Pedidos repetidos dentro de 60 segundos não disparam um novo e-mail.',
-  })
-  @ApiOkResponse({ description: 'Pedido recebido.', type: MessageResponseDto })
-  @ApiBadRequestResponse({ description: 'Payload inválido.', type: ErrorResponseDto })
+  @ResendCodeAuthSwaggerDocs
   async resendCode(@Body() dto: ResendVerificationCodeDto): Promise<MessageResponseDto> {
     await this.resendVerificationCode.execute({ email: dto.email });
 
@@ -148,14 +109,7 @@ export class AuthController {
   @Throttle({ 'password-reset': { limit: 5, ttl: 900_000 } })
   @Post('recuperacao-senha')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Solicita a recuperação de senha',
-    description:
-      'Gera e envia um código de recuperação. Resposta sempre igual, exista ou não a conta. ' +
-      'Cooldown de 60s por conta; limite de 5 pedidos por IP a cada 15 min.',
-  })
-  @ApiOkResponse({ description: 'Pedido recebido.', type: MessageResponseDto })
-  @ApiBadRequestResponse({ description: 'Payload inválido.', type: ErrorResponseDto })
+  @RequestPasswordResetAuthSwaggerDocs
   async requestPasswordResetCode(
     @Body() dto: RequestPasswordResetDto,
   ): Promise<MessageResponseDto> {
@@ -169,14 +123,7 @@ export class AuthController {
   @Throttle({ 'password-reset': { limit: 5, ttl: 900_000 } })
   @Post('recuperacao-senha/validar-codigo')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Valida o código de recuperação de senha',
-    description:
-      'Devolve um token de curta duração, usado só em /autenticacao/redefinir-senha. ' +
-      'Limitado a 5 tentativas por IP a cada 15 minutos, além do limite de 5 tentativas por código.',
-  })
-  @ApiOkResponse({ description: 'Código válido.', type: PasswordResetTokenResponseDto })
-  @ApiBadRequestResponse({ description: 'Código inválido ou expirado.', type: ErrorResponseDto })
+  @ValidatePasswordResetCodeAuthSwaggerDocs
   async validateResetCode(
     @Body() dto: ValidatePasswordResetCodeDto,
   ): Promise<PasswordResetTokenResponseDto> {
@@ -188,16 +135,7 @@ export class AuthController {
   @Public()
   @Post('redefinir-senha')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Redefine a senha',
-    description:
-      'Aplica a nova senha usando o token devolvido por /autenticacao/recuperacao-senha/validar-codigo.',
-  })
-  @ApiOkResponse({ description: 'Senha redefinida.', type: MessageResponseDto })
-  @ApiBadRequestResponse({
-    description: 'Token inválido, expirado ou payload inválido.',
-    type: ErrorResponseDto,
-  })
+  @ResetPasswordAuthSwaggerDocs
   async redefinePassword(@Body() dto: ResetPasswordDto): Promise<MessageResponseDto> {
     await this.resetPassword.execute({ resetToken: dto.token, newPassword: dto.novaSenha });
 

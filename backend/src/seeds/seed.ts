@@ -28,14 +28,14 @@ export const SEED_USERS: SeedUserData[] = [
   },
   {
     name: 'Ana Souza',
-    email: 'ana@discente.uefs.br',
+    email: '20240001@discente.uefs.br',
     type: UserType.STUDENT,
     registrationNumber: '20240001',
     photoUrl: 'https://example.com/photos/ana.png',
   },
   {
     name: 'João Silva',
-    email: 'joao@discente.uefs.br',
+    email: '20240002@discente.uefs.br',
     type: UserType.STUDENT,
     registrationNumber: '20240002',
     photoUrl: 'https://example.com/photos/joao.png',
