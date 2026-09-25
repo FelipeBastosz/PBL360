@@ -167,6 +167,6 @@ export class PgRoomRepository implements RoomRepository {
   }
 
   private toEntity(row: RoomRow): Room {
-    return this.rooms.create({ ...row, deletedAt: row.deletedAt ?? undefined });
+    return this.rooms.create(row);
   }
 }

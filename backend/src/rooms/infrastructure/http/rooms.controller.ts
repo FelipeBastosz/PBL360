@@ -11,6 +11,7 @@ import type { RoomResponseDto } from '../../application/dtos/room-response.dto';
 import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 import { CreateRoomUseCase } from '../../application/use-cases/create-room.use-case';
 import { DeleteRoomUseCase } from '../../application/use-cases/delete-room.use-case';
+import { GetRoomDetailUseCase } from '../../application/use-cases/get-room-detail.use-case';
 import { ListRoomsUseCase } from '../../application/use-cases/list-rooms.use-case';
 import { UpdateRoomUseCase } from '../../application/use-cases/update-room.use-case';
 import { toRoomChanges, toRoomResponse } from './room.mapper';
@@ -18,7 +19,8 @@ import {
   CreateRoomSwaggerDocs,
   DeleteRoomSwaggerDocs,
   EditRoomSwaggerDocs,
-  ListRoomSwaggerDocs,
+  GetRoomDetailSwaggerDocs,
+  ListRoomsSwaggerDocs,
 } from './room.swagger';
 
 @ApiTags('Salas')
@@ -30,14 +32,24 @@ export class RoomsController {
     private readonly updateRoomUseCase: UpdateRoomUseCase,
     private readonly deleteRoomUseCase: DeleteRoomUseCase,
     private readonly listRoomsUseCase: ListRoomsUseCase,
+    private readonly getRoomDetailUseCase: GetRoomDetailUseCase,
   ) {}
 
   @Get()
-  @ListRoomSwaggerDocs
+  @ListRoomsSwaggerDocs
   async list(@AuthenticatedUserId() tutorId: string): Promise<RoomResponseDto[]> {
     const rooms = await this.listRoomsUseCase.execute(tutorId);
 
     return rooms.map(toRoomResponse);
+  }
+
+  @Get(':id')
+  @GetRoomDetailSwaggerDocs
+  async getDetail(
+    @UuidParam('id') roomId: string,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<RoomResponseDto> {
+    return toRoomResponse(await this.getRoomDetailUseCase.execute(roomId, tutorId));
   }
 
   @Post()

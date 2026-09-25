@@ -34,7 +34,7 @@ const ROOM_NOT_FOUND = ApiNotFoundResponse({
   type: ErrorResponseDto,
 });
 
-export const ListRoomSwaggerDocs = applyDecorators(
+export const ListRoomsSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
     summary: 'Lista as salas vinculadas ao professor autenticado',
@@ -50,6 +50,22 @@ export const ListRoomSwaggerDocs = applyDecorators(
     description: 'Apenas professores podem consultar suas salas.',
     type: ErrorResponseDto,
   }),
+);
+
+export const GetRoomDetailSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Consulta os dados de uma sala',
+    description: 'Disponível para qualquer professor vinculado à sala.',
+  }),
+  ApiOkResponse({ description: 'Dados completos da sala.', type: RoomResponseDto }),
+  INVALID_ID,
+  UNAUTHORIZED,
+  ApiForbiddenResponse({
+    description: 'O professor não está vinculado à sala.',
+    type: ErrorResponseDto,
+  }),
+  ROOM_NOT_FOUND,
 );
 
 export const CreateRoomSwaggerDocs = applyDecorators(

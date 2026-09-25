@@ -109,6 +109,34 @@ describe('Rooms (e2e)', () => {
     });
   });
 
+  describe('GET /salas/:id', () => {
+    it('shows the room to a linked tutor', async () => {
+      const room = await createRoom();
+      await api(app, owner).post(`/salas/${room.id}/professores`, { professorId: colleague.id });
+
+      const response = await api(app, colleague).get(`/salas/${room.id}`).expect(200);
+
+      expect(response.body).toEqual(room);
+    });
+
+    it('is forbidden to a tutor not linked to the room', async () => {
+      const room = await createRoom();
+
+      await api(app, colleague).get(`/salas/${room.id}`).expect(403);
+    });
+
+    it('answers 404 for a deleted room', async () => {
+      const room = await createRoom();
+      await api(app, owner).delete(`/salas/${room.id}`).expect(204);
+
+      await api(app, owner).get(`/salas/${room.id}`).expect(404);
+    });
+
+    it('answers 400 for an id that is not a UUID', async () => {
+      await api(app, owner).get('/salas/abc').expect(400);
+    });
+  });
+
   describe('PATCH /salas/:id', () => {
     it('updates the informed fields', async () => {
       const room = await createRoom();
