@@ -6,10 +6,12 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
-  Post,
+  Post, Put,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { UpdateProblemDto } from '../../application/dtos/update-problem.dto';
+import { UpdateProblemUseCase } from '../../application/use-cases/update-problem.use-case';
 
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
@@ -26,6 +28,7 @@ import {
   CreateProblemSwaggerDocs,
   GetProblemSwaggerDocs,
   ListProblemsSwaggerDocs,
+  UpdateProblemSwaggerDocs,
 } from './problem.swagger';
 
 @ApiTags('Problemas')
@@ -36,7 +39,9 @@ export class ProblemsController {
     private readonly createProblemUseCase: CreateProblemUseCase,
     private readonly listProblemsByRoomUseCase: ListProblemsByRoomUseCase,
     private readonly getProblemUseCase: GetProblemUseCase,
+    private readonly updateProblemUseCase: UpdateProblemUseCase,
   ) {}
+
 
   @Post()
   @Roles(UserType.TUTOR)
@@ -76,5 +81,18 @@ export class ProblemsController {
     @AuthenticatedUserId() tutorId: string,
   ): Promise<Problem> {
     return this.getProblemUseCase.execute({ roomId, problemId, tutorId });
+  }
+
+  @Put(':problemId')
+  @Roles(UserType.TUTOR)
+  @HttpCode(HttpStatus.OK)
+  @UpdateProblemSwaggerDocs
+async update(
+    @Param('roomId', new ParseUUIDPipe()) _roomId: string,
+    @Param('problemId', new ParseUUIDPipe()) problemId: string,
+    @Body() dto: UpdateProblemDto,
+    @AuthenticatedUserId() _tutorId: string,
+  ): Promise<Problem> {
+    return this.updateProblemUseCase.execute(problemId, dto);
   }
 }
