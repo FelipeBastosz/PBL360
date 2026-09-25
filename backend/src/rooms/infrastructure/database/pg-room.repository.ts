@@ -14,6 +14,7 @@ interface RoomRow {
   semester: string;
   active: boolean;
   createdAt: Date;
+  deletedAt: Date | null;
 }
 
 const ROOM_COLUMNS = `
@@ -24,7 +25,8 @@ const ROOM_COLUMNS = `
   room_code AS "roomCode",
   semester,
   active,
-  created_at AS "createdAt"`;
+  created_at AS "createdAt",
+  deleted_at AS "deletedAt"`;
 
 @Injectable()
 export class PgRoomRepository implements RoomRepository {
