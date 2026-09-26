@@ -99,9 +99,14 @@ export const UpdateProblemSwaggerDocs = applyDecorators(
       'Permite que o professor atualize o título de um problema existente na sala. Apenas o campo "title" é editável.',
   }),
   ApiOkResponse({ description: 'Problema atualizado com sucesso.' }),
-  ApiBadRequestResponse({ description: 'Dados inválidos ou erro de validação.', type: ErrorResponseDto }),
-  ApiUnauthorizedResponse({ description: 'JWT não informado, inválido ou expirado.', type: ErrorResponseDto }),
+  ApiBadRequestResponse({
+    description: 'Dados inválidos ou erro de validação.',
+    type: ErrorResponseDto,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
   ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
   ApiNotFoundResponse({ description: 'Problema não encontrado.', type: ErrorResponseDto }),
 );
-

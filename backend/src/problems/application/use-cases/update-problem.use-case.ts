@@ -1,6 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
-import { PROBLEM_REPOSITORY, ProblemRepository } from '../../domain/repositories/problem.repository';
+import {
+  PROBLEM_REPOSITORY,
+  ProblemRepository,
+} from '../../domain/repositories/problem.repository';
 import { UpdateProblemDto } from '../dtos/update-problem.dto';
 import { Problem } from '../../domain/entities/problem.entity';
 

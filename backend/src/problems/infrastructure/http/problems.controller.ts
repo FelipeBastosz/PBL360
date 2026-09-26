@@ -6,7 +6,8 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
-  Post, Put,
+  Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -41,7 +42,6 @@ export class ProblemsController {
     private readonly getProblemUseCase: GetProblemUseCase,
     private readonly updateProblemUseCase: UpdateProblemUseCase,
   ) {}
-
 
   @Post()
   @Roles(UserType.TUTOR)
@@ -87,7 +87,7 @@ export class ProblemsController {
   @Roles(UserType.TUTOR)
   @HttpCode(HttpStatus.OK)
   @UpdateProblemSwaggerDocs
-async update(
+  async update(
     @Param('roomId', new ParseUUIDPipe()) _roomId: string,
     @Param('problemId', new ParseUUIDPipe()) problemId: string,
     @Body() dto: UpdateProblemDto,

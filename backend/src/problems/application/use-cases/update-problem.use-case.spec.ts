@@ -1,9 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 
 import { PROBLEM_REPOSITORY } from '../../domain/repositories/problem.repository';
-import { Problem } from '../../domain/entities/problem.entity';
-import { UpdateProblemDto } from '../dtos/update-problem.dto';
+import type { Problem } from '../../domain/entities/problem.entity';
+import type { UpdateProblemDto } from '../dtos/update-problem.dto';
 import { UpdateProblemUseCase } from './update-problem.use-case';
 
 const mockProblem = {
@@ -22,10 +22,7 @@ describe('UpdateProblemUseCase', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UpdateProblemUseCase,
-        { provide: PROBLEM_REPOSITORY, useValue: repository },
-      ],
+      providers: [UpdateProblemUseCase, { provide: PROBLEM_REPOSITORY, useValue: repository }],
     }).compile();
 
     useCase = module.get(UpdateProblemUseCase);
@@ -33,7 +30,7 @@ describe('UpdateProblemUseCase', () => {
 
   it('should update the title when the problem exists', async () => {
     repository.findById.mockResolvedValue(mockProblem);
-    repository.save.mockImplementation(async (p: Problem) => p);
+    repository.save.mockImplementation((p: Problem) => Promise.resolve(p));
 
     const dto: UpdateProblemDto = { title: 'Novo título' };
     const result = await useCase.execute('prob-1', dto);
