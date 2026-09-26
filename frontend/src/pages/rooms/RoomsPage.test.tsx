@@ -4,19 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import RoomsPage from './RoomsPage';
 import { AuthContext } from '@/contexts/authContext';
+import type { UserResponse } from '@/types/auth';
 
-type TestUser = {
-  id: string;
-  nome: string;
-  email: string;
-  tipo: 'PROFESSOR' | 'ALUNO';
-  matricula: string | null;
-  fotoUrl: string | null;
-  ativo: boolean;
-  criadoEm: string;
-};
-
-const mockTeacher: TestUser = {
+const mockTeacher: UserResponse = {
   id: '1',
   nome: 'Professor Fulano',
   email: 'prof@test.com',
@@ -27,7 +17,7 @@ const mockTeacher: TestUser = {
   criadoEm: '2026-01-01',
 };
 
-const mockStudent: TestUser = {
+const mockStudent: UserResponse = {
   id: '2',
   nome: 'Aluno Ciclano',
   email: 'aluno@test.com',
@@ -38,20 +28,20 @@ const mockStudent: TestUser = {
   criadoEm: '2026-01-01',
 };
 
-function renderWithUser(user: TestUser = mockTeacher) {
+function renderWithUser(user: UserResponse = mockTeacher) {
   return render(
     <AuthContext.Provider
       value={{
         user,
+        isAuthenticated: true,
         login: vi.fn(),
         logout: vi.fn(),
-        refreshSession: vi.fn(),
       }}
     >
       <MemoryRouter>
         <RoomsPage />
       </MemoryRouter>
-    </AuthContext.Provider>,
+    </AuthContext.Provider>
   );
 }
 
