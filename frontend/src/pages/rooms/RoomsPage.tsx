@@ -18,7 +18,9 @@ function RoomsHeader() {
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4">
-      <BrandHeader className="text-white" />
+      <div className="text-white">
+        <BrandHeader />
+      </div>
       <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
         {getInitials(user?.nome)}
       </div>

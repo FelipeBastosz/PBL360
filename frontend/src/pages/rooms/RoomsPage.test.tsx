@@ -5,36 +5,46 @@ import { MemoryRouter } from 'react-router-dom';
 import RoomsPage from './RoomsPage';
 import { AuthContext } from '@/contexts/authContext';
 
-const mockTeacher = {
+type TestUser = {
+  id: string;
+  nome: string;
+  email: string;
+  tipo: 'PROFESSOR' | 'ALUNO';
+  matricula: string | null;
+  fotoUrl: string | null;
+  ativo: boolean;
+  criadoEm: string;
+};
+
+const mockTeacher: TestUser = {
   id: '1',
   nome: 'Professor Fulano',
   email: 'prof@test.com',
-  tipo: 'PROFESSOR' as const,
+  tipo: 'PROFESSOR',
   matricula: null,
   fotoUrl: null,
   ativo: true,
   criadoEm: '2026-01-01',
 };
 
-const mockStudent = {
+const mockStudent: TestUser = {
   id: '2',
   nome: 'Aluno Ciclano',
   email: 'aluno@test.com',
-  tipo: 'ALUNO' as const,
+  tipo: 'ALUNO',
   matricula: '123456',
   fotoUrl: null,
   ativo: true,
   criadoEm: '2026-01-01',
 };
 
-function renderWithUser(user = mockTeacher) {
+function renderWithUser(user: TestUser = mockTeacher) {
   return render(
     <AuthContext.Provider
       value={{
         user,
         login: vi.fn(),
         logout: vi.fn(),
-        updateUser: vi.fn(),
         refreshSession: vi.fn(),
       }}
     >
