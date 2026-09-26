@@ -24,7 +24,7 @@ export class PerformanceTable {
   @Column({ name: 'tutor_id', type: 'uuid' })
   tutorId: string;
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: 'tutor_id',
     referencedColumnName: 'id',

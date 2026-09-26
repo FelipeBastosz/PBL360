@@ -3,9 +3,11 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
@@ -13,15 +15,18 @@ import type { NewPerformanceCriterion } from './new-performance-table';
 import { PerformanceTable } from './performance-table.entity';
 
 @Entity('performance_criteria')
+@Unique('uq_performance_criteria_table_order', ['performanceTableId', 'orderIndex'])
 export class PerformanceCriterion {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index('idx_performance_criteria_table_id')
   @Column({ name: 'performance_table_id', type: 'uuid' })
   performanceTableId: string;
 
   @ManyToOne(() => PerformanceTable, (table) => table.criteria, {
     nullable: false,
+    onDelete: 'RESTRICT',
   })
   @JoinColumn({
     name: 'performance_table_id',
