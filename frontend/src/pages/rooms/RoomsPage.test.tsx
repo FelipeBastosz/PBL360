@@ -41,7 +41,7 @@ function renderWithUser(user: UserResponse = mockTeacher) {
       <MemoryRouter>
         <RoomsPage />
       </MemoryRouter>
-    </AuthContext.Provider>
+    </AuthContext.Provider>,
   );
 }
 
