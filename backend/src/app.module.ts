@@ -14,6 +14,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { ProblemsModule } from './problems/problems.module';
+import { PerformanceTablesModule } from './performance-tables/performance-tables.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ProblemsModule } from './problems/problems.module';
     AuthModule,
     RoomsModule,
     ProblemsModule,
+    PerformanceTablesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
