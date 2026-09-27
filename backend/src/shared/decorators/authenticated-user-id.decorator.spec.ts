@@ -24,7 +24,7 @@ function getParamDecoratorFactory(): DecoratorFactory {
     TestController,
     'test',
   ) as RouteArgsMetadata;
-  return args[Object.keys(args)[0]].factory;
+  return Object.values(args)[0]!.factory;
 }
 
 describe('AuthenticatedUserId decorator', () => {

@@ -1,5 +1,7 @@
 import type { DataSource, Repository } from 'typeorm';
 import { DEFAULT_PASSWORD, runSeed, SEED_USERS, seedUser } from './seed';
+
+const TEST_ENV = { NODE_ENV: 'test', BCRYPT_ROUNDS: '4' };
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
@@ -34,7 +36,7 @@ describe('seed.ts', () => {
       mockUserRepo.findOneBy.mockResolvedValueOnce(null);
       mockUserRepo.save.mockResolvedValueOnce(new User());
 
-      const data = SEED_USERS[0];
+      const data = SEED_USERS[0]!;
       const result = await seedUser(
         data,
         'hashed-password',
@@ -55,7 +57,7 @@ describe('seed.ts', () => {
     it('skips creation when email is already registered', async () => {
       mockUserRepo.findOneBy.mockResolvedValueOnce(new User());
 
-      const data = SEED_USERS[2];
+      const data = SEED_USERS[2]!;
       const result = await seedUser(
         data,
         'hashed-password',
@@ -72,7 +74,7 @@ describe('seed.ts', () => {
       mockUserRepo.findOneBy.mockResolvedValue(null);
       mockUserRepo.save.mockResolvedValue(new User());
 
-      await runSeed(mockDataSource as unknown as DataSource);
+      await runSeed(mockDataSource as unknown as DataSource, TEST_ENV);
 
       expect(mockDataSource.initialize).toHaveBeenCalled();
       expect(mockUserRepo.save).toHaveBeenCalledTimes(SEED_USERS.length);
@@ -84,10 +86,28 @@ describe('seed.ts', () => {
       mockUserRepo.findOneBy.mockResolvedValue(null);
       mockUserRepo.save.mockResolvedValue(new User());
 
-      await runSeed(mockDataSource as unknown as DataSource);
+      await runSeed(mockDataSource as unknown as DataSource, TEST_ENV);
 
       expect(mockDataSource.initialize).not.toHaveBeenCalled();
       expect(mockDataSource.destroy).not.toHaveBeenCalled();
+    });
+
+    it('refuses to run in production', async () => {
+      await expect(
+        runSeed(mockDataSource as unknown as DataSource, { NODE_ENV: 'production' }),
+      ).rejects.toThrow('never runs in production');
+
+      expect(mockDataSource.initialize).not.toHaveBeenCalled();
+    });
+
+    it('destroys the connection even when seeding a user fails', async () => {
+      mockUserRepo.findOneBy.mockRejectedValue(new Error('connection lost'));
+
+      await expect(runSeed(mockDataSource as unknown as DataSource, TEST_ENV)).rejects.toThrow(
+        'connection lost',
+      );
+
+      expect(mockDataSource.destroy).toHaveBeenCalled();
     });
   });
 

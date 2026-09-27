@@ -1,18 +1,30 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
+import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { ACCESS_TOKEN_AUDIENCE, type AccessTokenClaims } from '../security/access-token';
 
 interface RequestWithUser extends Request {
-  user?: unknown;
+  user?: AccessTokenClaims;
 }
+
+const MISSING_TOKEN = 'Token de autenticação não fornecido.';
+const INVALID_TOKEN = 'Token de autenticação inválido ou expirado.';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private jwtService: JwtService,
-    private reflector: Reflector,
+    private readonly jwtService: JwtService,
+    private readonly reflector: Reflector,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -24,10 +36,10 @@ export class AuthGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
-      throw new UnauthorizedException('Token de autenticação não fornecido.');
+      throw new UnauthorizedException(MISSING_TOKEN);
     }
 
-    request.user = await this.verifyToken(token);
+    request.user = await this.currentClaims(await this.verifyToken(token));
     return true;
   }
 
@@ -45,11 +57,23 @@ export class AuthGuard implements CanActivate {
     return type === 'Bearer' ? token : undefined;
   }
 
-  private async verifyToken(token: string): Promise<unknown> {
+  private async verifyToken(token: string): Promise<AccessTokenClaims> {
     try {
-      return await this.jwtService.verifyAsync(token);
+      return await this.jwtService.verifyAsync<AccessTokenClaims>(token, {
+        audience: ACCESS_TOKEN_AUDIENCE,
+      });
     } catch {
-      throw new UnauthorizedException('Token de autenticação inválido ou expirado.');
+      throw new UnauthorizedException(INVALID_TOKEN);
     }
+  }
+
+  private async currentClaims(claims: AccessTokenClaims): Promise<AccessTokenClaims> {
+    const user = typeof claims.sub === 'string' ? await this.users.findById(claims.sub) : null;
+
+    if (!user || user.isPendingVerification() || user.tokenVersion !== claims.ver) {
+      throw new UnauthorizedException(INVALID_TOKEN);
+    }
+
+    return { sub: user.id, email: user.email, type: user.type, ver: user.tokenVersion };
   }
 }

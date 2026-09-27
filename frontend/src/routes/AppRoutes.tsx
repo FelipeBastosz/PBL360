@@ -11,6 +11,12 @@ const LoginPage = lazy(() => import('@/pages/login/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/register/RegisterPage'));
 const VerifyAccountPage = lazy(() => import('@/pages/register/VerifyAccountPage'));
 const RegisterSuccessPage = lazy(() => import('@/pages/register/RegisterSuccessPage'));
+const ForgotPasswordPage = lazy(() => import('@/pages/password-reset/ForgotPasswordPage'));
+const ResetPasswordCodePage = lazy(() => import('@/pages/password-reset/ResetPasswordCodePage'));
+const ResetPasswordPage = lazy(() => import('@/pages/password-reset/ResetPasswordPage'));
+const ResetPasswordSuccessPage = lazy(
+  () => import('@/pages/password-reset/ResetPasswordSuccessPage'),
+);
 const NotFoundPage = lazy(() => import('@/pages/not-found/NotFoundPage'));
 const HomePage = lazy(() => import('@/pages/home/HomePage'));
 
@@ -25,6 +31,10 @@ export function AppRoutes() {
           <Route path={ROUTES.register} element={<RegisterPage />} />
           <Route path={ROUTES.verifyAccount} element={<VerifyAccountPage />} />
           <Route path={ROUTES.registerSuccess} element={<RegisterSuccessPage />} />
+          <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+          <Route path={ROUTES.resetPasswordCode} element={<ResetPasswordCodePage />} />
+          <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
+          <Route path={ROUTES.resetPasswordSuccess} element={<ResetPasswordSuccessPage />} />
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route path={ROUTES.home} element={<HomePage />} />

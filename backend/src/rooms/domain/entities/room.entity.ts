@@ -4,20 +4,30 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   JoinTable,
   ManyToMany,
+  Unique,
 } from 'typeorm';
 import { InvalidRoomError } from '../errors/invalid-room.error';
 import { User } from '@/users/domain/entities/user.entity';
 
+export interface RoomChanges {
+  name?: string;
+  semester?: string;
+  active?: boolean;
+}
+
 @Entity('rooms')
+@Unique('uq_rooms_room_code', ['roomCode'])
 export class Room {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index('idx_rooms_tutor_id')
   @Column({ name: 'tutor_id', type: 'uuid' })
   tutorId: string;
 
@@ -53,7 +63,7 @@ export class Room {
   @Column({ name: 'course_code', type: 'varchar', length: 12 })
   courseCode: string;
 
-  @Column({ name: 'room_code', type: 'varchar', length: 64, unique: true })
+  @Column({ name: 'room_code', type: 'varchar', length: 64 })
   roomCode: string;
 
   @Column({ type: 'varchar', length: 10 })
@@ -66,7 +76,7 @@ export class Room {
   createdAt: Date;
 
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, default: null })
-  deletedAt?: Date;
+  deletedAt?: Date | null;
 
   static create(props: NewRoom): Room {
     const room = new Room();
@@ -81,6 +91,14 @@ export class Room {
     room.assertIsValid();
 
     return room;
+  }
+
+  public applyChanges(changes: RoomChanges): void {
+    this.name = changes.name?.trim() ?? this.name;
+    this.semester = changes.semester?.trim() ?? this.semester;
+    this.active = changes.active ?? this.active;
+
+    this.assertIsValid();
   }
 
   public delete(): void {
@@ -127,11 +145,11 @@ export class Room {
     }
 
     if (!/^[A-Z]{3}[0-9]{3}$/.test(this.courseCode)) {
-      throw new InvalidRoomError('O código da turma deve seguir o formato EXA123.');
+      throw new InvalidRoomError('O código da disciplina deve seguir o formato ABC123.');
     }
 
     if (!this.roomCode || this.roomCode.length > 64) {
-      throw new InvalidRoomError('O token de acesso é inválido.');
+      throw new InvalidRoomError('O código da sala é inválido.');
     }
   }
 }

@@ -1,3 +1,4 @@
+import { MaxBytes } from '@/shared/validators/max-bytes.decorator';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 
@@ -6,7 +7,7 @@ export class ResetPasswordDto {
     description: 'Token devolvido por /autenticacao/recuperacao-senha/validar-codigo.',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
-  @IsString()
+  @IsString({ message: 'O token deve ser um texto.' })
   @IsNotEmpty({ message: 'O token é obrigatório.' })
   token: string;
 
@@ -14,5 +15,6 @@ export class ResetPasswordDto {
   @IsString({ message: 'A senha é obrigatória.' })
   @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
   @MaxLength(72, { message: 'A senha deve ter no máximo 72 caracteres.' })
+  @MaxBytes(72, { message: 'A senha excede o tamanho máximo permitido.' })
   novaSenha: string;
 }

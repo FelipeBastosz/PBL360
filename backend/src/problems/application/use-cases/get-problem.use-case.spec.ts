@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 
 import type { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import { Room } from '@/rooms/domain/entities/room.entity';
@@ -17,11 +17,10 @@ describe('GetProblemUseCase', () => {
     assertTutorCanAccessRoomMock = jest.fn();
 
     const problemRepository: jest.Mocked<ProblemRepository> = {
+      create: jest.fn(),
       save: jest.fn(),
       findById: findByIdMock,
       findByRoomId: jest.fn(),
-      countByRoomId: jest.fn(),
-      getNextOrderIndex: jest.fn(),
     };
 
     const roomAccessService = {
@@ -34,9 +33,7 @@ describe('GetProblemUseCase', () => {
   });
 
   it('rejects when room is not found', async () => {
-    assertTutorCanAccessRoomMock.mockRejectedValueOnce(
-      new NotFoundException('Sala não encontrada.'),
-    );
+    assertTutorCanAccessRoomMock.mockRejectedValueOnce(new NotFoundError('Sala não encontrada.'));
 
     await expect(
       useCase.execute({
@@ -44,14 +41,14 @@ describe('GetProblemUseCase', () => {
         problemId: 'prob-1',
         tutorId: 'tutor-1',
       }),
-    ).rejects.toThrow(NotFoundException);
+    ).rejects.toThrow(NotFoundError);
 
     expect(findByIdMock).not.toHaveBeenCalled();
   });
 
   it('rejects when tutor does not have access to the room', async () => {
     assertTutorCanAccessRoomMock.mockRejectedValueOnce(
-      new ForbiddenException('Você não tem permissão para acessar ou modificar esta sala.'),
+      new ForbiddenError('Você não tem permissão para acessar ou modificar esta sala.'),
     );
 
     await expect(
@@ -60,12 +57,12 @@ describe('GetProblemUseCase', () => {
         problemId: 'prob-1',
         tutorId: 'unauthorized-tutor',
       }),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toThrow(ForbiddenError);
 
     expect(findByIdMock).not.toHaveBeenCalled();
   });
 
-  it('throws NotFoundException when problem does not exist', async () => {
+  it('throws NotFoundError when problem does not exist', async () => {
     assertTutorCanAccessRoomMock.mockResolvedValueOnce(new Room());
     findByIdMock.mockResolvedValueOnce(null);
 
@@ -75,10 +72,10 @@ describe('GetProblemUseCase', () => {
         problemId: 'prob-not-found',
         tutorId: 'tutor-1',
       }),
-    ).rejects.toThrow(new NotFoundException('Problema não encontrado.'));
+    ).rejects.toThrow(new NotFoundError('Problema não encontrado.'));
   });
 
-  it('throws NotFoundException when problem belongs to a different room', async () => {
+  it('throws NotFoundError when problem belongs to a different room', async () => {
     assertTutorCanAccessRoomMock.mockResolvedValueOnce(new Room());
 
     const problemOfAnotherRoom = Problem.create({
@@ -97,7 +94,7 @@ describe('GetProblemUseCase', () => {
         problemId: 'prob-1',
         tutorId: 'tutor-1',
       }),
-    ).rejects.toThrow(new NotFoundException('Problema não encontrado.'));
+    ).rejects.toThrow(new NotFoundError('Problema não encontrado.'));
   });
 
   it('returns problem when it exists and belongs to the room', async () => {

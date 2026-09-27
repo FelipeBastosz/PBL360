@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { Logger } from '@nestjs/common';
 import { hash } from 'bcrypt';
 import type { DataSource } from 'typeorm';
 import dataSource from '@/config/data-source';
@@ -14,6 +15,10 @@ export interface SeedUserData {
 }
 
 export const DEFAULT_PASSWORD = 'senha-secreta';
+
+const DEFAULT_BCRYPT_ROUNDS = 12;
+
+const logger = new Logger('Seed');
 
 export const SEED_USERS: SeedUserData[] = [
   {
@@ -63,34 +68,58 @@ export async function seedUser(
 ): Promise<boolean> {
   const repo = ds.getRepository(User);
   if (await repo.findOneBy({ email: data.email })) {
-    console.log(`[SEED] User ${data.email} already exists. Skipping.`);
+    logger.log(`User ${data.email} already exists. Skipping.`);
     return false;
   }
   await repo.save(buildSeedUser(data, pwdHash));
-  console.log(`[SEED] Created ${data.type} user: ${data.email}`);
+  logger.log(`Created ${data.type} user: ${data.email}`);
   return true;
 }
 
-export async function runSeed(ds: DataSource = dataSource): Promise<void> {
-  console.log('[SEED] Starting database seed...');
-  let initializedHere = false;
-  if (!ds.isInitialized) {
-    await ds.initialize();
-    initializedHere = true;
+export function assertSeedAllowed(env: NodeJS.ProcessEnv = process.env): void {
+  if (env.NODE_ENV === 'production') {
+    throw new Error(
+      'The seed creates accounts with a known password and never runs in production.',
+    );
   }
-  const passwordHash = await hash(DEFAULT_PASSWORD, 12);
+}
+
+async function hashSeedPassword(env: NodeJS.ProcessEnv): Promise<string> {
+  const rounds = parseInt(env.BCRYPT_ROUNDS ?? String(DEFAULT_BCRYPT_ROUNDS), 10);
+
+  return hash(env.SEED_PASSWORD ?? DEFAULT_PASSWORD, rounds);
+}
+
+async function seedAllUsers(ds: DataSource, env: NodeJS.ProcessEnv): Promise<void> {
+  const passwordHash = await hashSeedPassword(env);
   for (const data of SEED_USERS) {
     await seedUser(data, passwordHash, ds);
   }
+}
+
+export async function runSeed(
+  ds: DataSource = dataSource,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<void> {
+  assertSeedAllowed(env);
+  logger.log('Starting database seed...');
+  const initializedHere = !ds.isInitialized;
   if (initializedHere) {
-    await ds.destroy();
+    await ds.initialize();
   }
-  console.log('[SEED] Database seed completed successfully.');
+  try {
+    await seedAllUsers(ds, env);
+  } finally {
+    if (initializedHere) {
+      await ds.destroy();
+    }
+  }
+  logger.log('Database seed completed successfully.');
 }
 
 if (require.main === module) {
-  runSeed().catch((error) => {
-    console.error('[SEED] Error seeding database:', error);
+  runSeed().catch((error: unknown) => {
+    logger.error('Error seeding database', error instanceof Error ? error.stack : error);
     process.exit(1);
   });
 }

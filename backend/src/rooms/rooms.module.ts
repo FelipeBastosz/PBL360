@@ -2,10 +2,6 @@ import { Module } from '@nestjs/common';
 import { UsersModule } from '@/users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AuthModule } from '@/auth/auth.module';
-import { AuthGuard } from '@/shared/guards/auth.guard';
-import { RolesGuard } from '@/shared/guards/roles.guard';
-
 import { RoomTutorsController } from './infrastructure/http/room-tutors.controller';
 
 import { CreateRoomUseCase } from './application/use-cases/create-room.use-case';
@@ -18,11 +14,12 @@ import { RoomsController } from './infrastructure/http/rooms.controller';
 import { AddTutorToRoomUseCase } from './application/use-cases/add-tutor-to-room.use-case';
 import { RemoveTutorFromRoomUseCase } from './application/use-cases/remove-tutor-from-room.use-case';
 import { ListRoomsUseCase } from './application/use-cases/list-rooms.use-case';
+import { GetRoomDetailUseCase } from './application/use-cases/get-room-detail.use-case';
 
 import { RoomAccessService } from './application/services/room-access.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Room]), AuthModule, UsersModule],
+  imports: [TypeOrmModule.forFeature([Room]), UsersModule],
 
   controllers: [RoomsController, RoomTutorsController],
 
@@ -33,16 +30,14 @@ import { RoomAccessService } from './application/services/room-access.service';
     RemoveTutorFromRoomUseCase,
     DeleteRoomUseCase,
     ListRoomsUseCase,
+    GetRoomDetailUseCase,
     RoomAccessService,
-
-    AuthGuard,
-    RolesGuard,
 
     {
       provide: ROOM_REPOSITORY,
       useClass: PgRoomRepository,
     },
   ],
-  exports: [RoomAccessService, ROOM_REPOSITORY],
+  exports: [RoomAccessService],
 })
 export class RoomsModule {}

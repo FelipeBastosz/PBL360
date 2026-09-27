@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { TextField } from '@/components/ui/TextField';
 import type { FieldErrors } from '@/hooks/useForm';
+import { ROUTES } from '@/routes/paths';
 import type { LoginFormValues } from '@/utils/authForms';
 
 type LoginFormProps = {
@@ -46,6 +47,11 @@ export function LoginForm(props: LoginFormProps) {
         onChange={(value) => onChange('senha', value)}
         error={errors.senha}
       />
+      <div className="-mt-3 flex justify-end">
+        <Link to={ROUTES.forgotPassword} className="text-sm text-brand-900 hover:underline">
+          Esqueceu a senha?
+        </Link>
+      </div>
       <Button type="submit" isLoading={isLoading} className="mt-2 text-2xl">
         Entrar
       </Button>

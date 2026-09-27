@@ -1,4 +1,5 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { NotFoundError } from '@/shared/errors/application.error';
 
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
 
@@ -28,7 +29,7 @@ export class GetProblemUseCase {
     const problem = await this.problemRepository.findById(input.problemId);
 
     if (!problem || problem.roomId !== input.roomId) {
-      throw new NotFoundException('Problema não encontrado.');
+      throw new NotFoundError('Problema não encontrado.');
     }
 
     return problem;

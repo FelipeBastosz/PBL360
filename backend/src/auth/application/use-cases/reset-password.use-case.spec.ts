@@ -1,66 +1,52 @@
-import { BadRequestException } from '@nestjs/common';
-import { User } from '@/users/domain/entities/user.entity';
-import { UserType } from '@/users/domain/enums/user-type.enum';
-import type { UserRepository } from '@/users/domain/repositories/user.repository.interface';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import type { PasswordHasher } from '../../domain/services/password-hasher';
 import type { PasswordResetTokenIssuer } from '../../domain/services/password-reset-token-issuer';
+import { buildActiveStudent, userRepositoryStub } from '../../testing/auth-fixtures';
 import { ResetPasswordUseCase } from './reset-password.use-case';
 
+const input = { resetToken: 'reset-jwt', newPassword: 'nova-senha-secreta' };
+
 describe('ResetPasswordUseCase', () => {
+  let users: ReturnType<typeof userRepositoryStub>;
+  let tokens: jest.Mocked<PasswordResetTokenIssuer>;
   let useCase: ResetPasswordUseCase;
 
-  const findById: jest.MockedFunction<UserRepository['findById']> = jest.fn();
-  const save: jest.MockedFunction<UserRepository['save']> = jest.fn();
-  const verify: jest.MockedFunction<PasswordResetTokenIssuer['verify']> = jest.fn();
-  const hash: jest.MockedFunction<PasswordHasher['hash']> = jest.fn();
-
-  const users: UserRepository = { findByEmail: jest.fn(), findById, save };
-  const tokens = { issueFor: jest.fn(), verify } as unknown as PasswordResetTokenIssuer;
-  const hasher: PasswordHasher = { hash, matches: jest.fn() };
-
-  const existingUser = (): User => {
-    const user = User.create({
-      name: 'Carlos Mendes',
-      email: 'carlos@uefs.br',
-      passwordHash: 'old_hash',
-      type: UserType.TUTOR,
-    });
-    user.id = 'user-1';
-
-    return user;
-  };
-
   beforeEach(() => {
-    jest.resetAllMocks();
-    verify.mockResolvedValue('user-1');
-    findById.mockResolvedValue(existingUser());
-    hash.mockResolvedValue('new_hash');
-    save.mockImplementation((user) => Promise.resolve(user));
-
+    users = userRepositoryStub();
+    tokens = { issueFor: jest.fn(), verify: jest.fn() };
+    const hasher: PasswordHasher = {
+      hash: jest.fn().mockResolvedValue('new-hash'),
+      matches: jest.fn(),
+      compareWithDecoy: jest.fn(),
+    };
     useCase = new ResetPasswordUseCase(users, tokens, hasher);
   });
 
-  it('applies the new hashed password', async () => {
-    await useCase.execute({ resetToken: 'reset-token', newPassword: 'nova-senha-123' });
+  it('changes the password and revokes every open session', async () => {
+    const user = buildActiveStudent({ tokenVersion: 2 });
+    users.findById.mockResolvedValue(user);
+    tokens.verify.mockResolvedValue({ userId: 'user-1', tokenVersion: 2 });
 
-    expect(hash).toHaveBeenCalledWith('nova-senha-123');
-    expect(save).toHaveBeenCalledWith(expect.objectContaining({ passwordHash: 'new_hash' }));
+    await useCase.execute(input);
+
+    expect(users.save).toHaveBeenCalledWith(
+      expect.objectContaining({ passwordHash: 'new-hash', tokenVersion: 3 }),
+    );
   });
 
-  it('rejects an invalid or expired token', async () => {
-    verify.mockResolvedValue(null);
+  it('refuses a token issued before the last password change', async () => {
+    users.findById.mockResolvedValue(buildActiveStudent({ tokenVersion: 3 }));
+    tokens.verify.mockResolvedValue({ userId: 'user-1', tokenVersion: 2 });
 
-    await expect(
-      useCase.execute({ resetToken: 'bad-token', newPassword: 'nova-senha-123' }),
-    ).rejects.toThrow(BadRequestException);
-    expect(save).not.toHaveBeenCalled();
+    await expect(useCase.execute(input)).rejects.toBeInstanceOf(InvalidRequestError);
+    expect(users.save).not.toHaveBeenCalled();
   });
 
-  it('rejects a token whose user no longer exists', async () => {
-    findById.mockResolvedValue(null);
+  it('refuses an invalid token', async () => {
+    tokens.verify.mockResolvedValue(null);
 
-    await expect(
-      useCase.execute({ resetToken: 'reset-token', newPassword: 'nova-senha-123' }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(input)).rejects.toThrow(
+      new InvalidRequestError('Token de redefinição inválido ou expirado.'),
+    );
   });
 });

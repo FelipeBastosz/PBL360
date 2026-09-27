@@ -1,6 +1,3 @@
-export class InvalidRoomError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidRoomError';
-  }
-}
+import { DomainError } from '@/shared/errors/domain.error';
+
+export class InvalidRoomError extends DomainError {}

@@ -1,30 +1,20 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Put,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { UpdateProblemDto } from '../../application/dtos/update-problem.dto';
-import { UpdateProblemUseCase } from '../../application/use-cases/update-problem.use-case';
 
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
-import { AuthGuard } from '@/shared/guards/auth.guard';
-import { RolesGuard } from '@/shared/guards/roles.guard';
+import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { CreateProblemDto } from '../../application/dtos/create-problem.dto';
+import { UpdateProblemDto } from '../../application/dtos/update-problem.dto';
+import type { ProblemResponseDto } from '../../application/dtos/problem-response.dto';
 import { CreateProblemUseCase } from '../../application/use-cases/create-problem.use-case';
 import { GetProblemUseCase } from '../../application/use-cases/get-problem.use-case';
 import { ListProblemsByRoomUseCase } from '../../application/use-cases/list-problems-by-room.use-case';
+import { UpdateProblemUseCase } from '../../application/use-cases/update-problem.use-case';
 import type { Problem } from '../../domain/entities/problem.entity';
+import { toProblemResponse } from './problem.mapper';
 import {
   CreateProblemSwaggerDocs,
   GetProblemSwaggerDocs,
@@ -34,7 +24,7 @@ import {
 
 @ApiTags('Problemas')
 @Controller('salas/:roomId/problemas')
-@UseGuards(AuthGuard, RolesGuard)
+@Roles(UserType.TUTOR)
 export class ProblemsController {
   constructor(
     private readonly createProblemUseCase: CreateProblemUseCase,
@@ -44,43 +34,44 @@ export class ProblemsController {
   ) {}
 
   @Post()
-  @Roles(UserType.TUTOR)
-  @CreateProblemSwaggerDocs
   @HttpCode(HttpStatus.CREATED)
-  create(
-    @Param('roomId', new ParseUUIDPipe()) roomId: string,
+  @CreateProblemSwaggerDocs
+  async create(
+    @UuidParam('roomId') roomId: string,
     @Body() dto: CreateProblemDto,
     @AuthenticatedUserId() authorId: string,
-  ): Promise<Problem> {
-    return this.createProblemUseCase.execute({
+  ): Promise<ProblemResponseDto> {
+    const problem = await this.createProblemUseCase.execute({
       roomId,
       authorId,
       title: dto.titulo,
       description: dto.descricao,
-      startDate: dto.dataInicio ? new Date(dto.dataInicio) : null,
-      endDate: dto.dataFim ? new Date(dto.dataFim) : null,
+      startDate: dto.dataInicio ?? null,
+      endDate: dto.dataFim ?? null,
     });
+
+    return toProblemResponse(problem);
   }
 
   @Get()
-  @Roles(UserType.TUTOR)
   @ListProblemsSwaggerDocs
-  list(
-    @Param('roomId', new ParseUUIDPipe()) roomId: string,
+  async list(
+    @UuidParam('roomId') roomId: string,
     @AuthenticatedUserId() tutorId: string,
-  ): Promise<Problem[]> {
-    return this.listProblemsByRoomUseCase.execute({ roomId, tutorId });
+  ): Promise<ProblemResponseDto[]> {
+    const problems = await this.listProblemsByRoomUseCase.execute({ roomId, tutorId });
+
+    return problems.map(toProblemResponse);
   }
 
   @Get(':problemId')
-  @Roles(UserType.TUTOR)
   @GetProblemSwaggerDocs
-  getById(
-    @Param('roomId', new ParseUUIDPipe()) roomId: string,
-    @Param('problemId', new ParseUUIDPipe()) problemId: string,
+  async getById(
+    @UuidParam('roomId') roomId: string,
+    @UuidParam('problemId') problemId: string,
     @AuthenticatedUserId() tutorId: string,
-  ): Promise<Problem> {
-    return this.getProblemUseCase.execute({ roomId, problemId, tutorId });
+  ): Promise<ProblemResponseDto> {
+    return toProblemResponse(await this.getProblemUseCase.execute({ roomId, problemId, tutorId }));
   }
 
   @Put(':problemId')
@@ -88,11 +79,11 @@ export class ProblemsController {
   @HttpCode(HttpStatus.OK)
   @UpdateProblemSwaggerDocs
   async update(
-    @Param('roomId', new ParseUUIDPipe()) _roomId: string,
-    @Param('problemId', new ParseUUIDPipe()) problemId: string,
+    @UuidParam('roomId') roomId: string,
+    @UuidParam('problemId') problemId: string,
     @Body() dto: UpdateProblemDto,
-    @AuthenticatedUserId() _tutorId: string,
+    @AuthenticatedUserId() tutorId: string,
   ): Promise<Problem> {
-    return this.updateProblemUseCase.execute(problemId, dto);
+    return this.updateProblemUseCase.execute({ roomId, problemId, tutorId, dto });
   }
 }

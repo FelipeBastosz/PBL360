@@ -1,15 +1,23 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateRoomDto {
-  @IsString({ message: 'O campo "nome" deve ser um texto.' })
+  @ApiPropertyOptional({ example: 'Engenharia de Software II', maxLength: 120 })
   @IsOptional()
+  @IsString({ message: 'O nome da sala deve ser um texto.' })
+  @IsNotEmpty({ message: 'O nome da sala não pode ser vazio.' })
+  @MaxLength(120, { message: 'O nome da sala deve ter no máximo 120 caracteres.' })
   nome?: string;
 
-  @IsString({ message: 'O campo "semestre" deve ser um texto (Ex: 2026.2).' })
+  @ApiPropertyOptional({ example: '2026.2', maxLength: 10 })
   @IsOptional()
+  @IsString({ message: 'O semestre deve ser um texto.' })
+  @IsNotEmpty({ message: 'O semestre não pode ser vazio.' })
+  @MaxLength(10, { message: 'O semestre deve ter no máximo 10 caracteres.' })
   semestre?: string;
 
-  @IsBoolean({ message: 'O campo "ativo" deve ser um valor booleano (verdadeiro ou falso).' })
+  @ApiPropertyOptional({ example: true })
   @IsOptional()
+  @IsBoolean({ message: 'O campo "ativo" deve ser verdadeiro ou falso.' })
   ativo?: boolean;
 }

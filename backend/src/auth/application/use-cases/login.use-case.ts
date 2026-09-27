@@ -1,16 +1,14 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { UnauthorizedError } from '@/shared/errors/application.error';
 import type { User } from '@/users/domain/entities/user.entity';
-import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from '@/users/domain/repositories/user.repository.interface';
+import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import type { AuthenticatedSession } from '../authenticated-session';
 import {
   ACCESS_TOKEN_ISSUER,
   type AccessTokenIssuer,
 } from '../../domain/services/access-token-issuer';
 import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
-import { PendingVerificationException } from '../errors/pending-verification.exception';
+import { AccountPendingVerificationError } from '../errors/account-pending-verification.error';
 
 export interface LoginInput {
   email: string;
@@ -30,8 +28,13 @@ export class LoginUseCase {
   async execute(input: LoginInput): Promise<AuthenticatedSession> {
     const user = await this.users.findByEmail(input.email.trim().toLowerCase());
 
-    if (!user || !(await this.passwords.matches(input.password, user.passwordHash))) {
-      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    if (!user) {
+      await this.passwords.compareWithDecoy(input.password);
+      throw new UnauthorizedError(INVALID_CREDENTIALS);
+    }
+
+    if (!(await this.passwords.matches(input.password, user.passwordHash))) {
+      throw new UnauthorizedError(INVALID_CREDENTIALS);
     }
 
     this.assertIsActive(user);
@@ -41,7 +44,7 @@ export class LoginUseCase {
 
   private assertIsActive(user: User): void {
     if (user.isPendingVerification()) {
-      throw new PendingVerificationException(user);
+      throw new AccountPendingVerificationError(user.id, user.email);
     }
   }
 }

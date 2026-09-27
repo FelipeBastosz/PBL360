@@ -16,7 +16,8 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit -p tsconfig.app.json",
-    "test:cov": "vitest run --coverage --passWithNoTests"
+    "test:cov": "vitest run --coverage --passWithNoTests",
+    "test:e2e": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@heroicons/react": "2.2.0",

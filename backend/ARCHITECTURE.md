@@ -99,8 +99,9 @@ backend/
 └── test/                        # testes e2e (*.e2e-spec.ts) + jest-e2e.json
 ```
 
-> `src/example/` existe como **molde**. Ao criar o primeiro módulo real, copie a estrutura
-> de pastas e renomeie. Quando não fizer mais sentido, apague a pasta `example/`.
+> Para criar um módulo novo, use `rooms/` ou `problems/` como referência: são os módulos que
+> seguem todas as convenções deste documento (DTO de resposta, mapper, arquivo swagger,
+> `RoomAccessService` e e2e próprio).
 
 ### O log de requisições
 
@@ -260,36 +261,38 @@ TypeORM. É o único lugar do módulo onde `Repository`, `QueryBuilder` e SQL ap
 
 **Mapeamento e Repositórios com SQL Puro**
 
-Quando a implementação do repositório utilizar queries puras (`repository.query`) em vez do ORM, o arquivo deve manter a separação de tipos por meio de uma interface `Raw` privada ou exportada no próprio arquivo, seguida de uma função mapper. Isso elimina o uso de `any` e garante a tipagem estrita exigida pelo projeto:
+Os repositórios usam SQL puro (`repository.query`) e se chamam `Pg<Entidade>Repository`
+(`pg-user.repository.ts`). Cada arquivo declara uma interface `Row` com exatamente as
+colunas que a query devolve (com `AS "camelCase"`) e converte a linha em entidade num único
+ponto (`toEntity`). Isso elimina `any` e mantém a tipagem estrita:
 
 ```ts
-// infrastructure/database/typeorm-email-verification-code.repository.ts
-interface EmailVerificationCodeRaw {
+// infrastructure/database/pg-room.repository.ts
+interface RoomRow {
   id: string;
-  email: string;
-  code: string;
-  expiresAt: string | Date;
-  createdAt: string | Date;
-  usedAt: string | Date | null;
+  tutorId: string;
+  name: string;
+  deletedAt: Date | null;
 }
 
-@Injectable()
-export class TypeOrmEmailVerificationCodeRepository implements EmailVerificationCodeRepository {
-  // ... métodos do repositório ...
-
-  private mapToEntity(raw: EmailVerificationCodeRaw): EmailVerificationCode {
-    const entity = new EmailVerificationCode();
-    entity.id = raw.id;
-    entity.email = raw.email;
-    entity.code = raw.code;
-    entity.expiresAt = new Date(raw.expiresAt);
-    entity.createdAt = new Date(raw.createdAt);
-    entity.usedAt = raw.usedAt ? new Date(raw.usedAt) : null;
-
-    return entity;
-  }
-}
+const ROOM_COLUMNS = `id, tutor_id AS "tutorId", name, deleted_at AS "deletedAt"`;
 ```
+
+Regras do repositório:
+
+- **Toda coluna que a entidade usa entra no `SELECT`.** Uma coluna esquecida vira `undefined`
+  na entidade e quebra regras em silêncio (foi assim que salas excluídas continuaram
+  acessíveis).
+- **Um método por intenção de escrita**: `create`, `update`, `softDelete`. Nunca um `save`
+  que decide sozinho entre `INSERT` e `UPDATE`.
+- **Operações concorrentes são atômicas no SQL**: `ON CONFLICT DO NOTHING RETURNING`,
+  `UPDATE ... WHERE attempts < $2 RETURNING` e o boolean devolvido diz se a operação
+  aconteceu. "Lê, confere em memória e grava" perde para duas requisições simultâneas.
+- **Violação de UNIQUE vira `ConflictError`** no próprio repositório (use
+  `violatedUniqueConstraint` de `@/shared/database/unique-violation`); o cliente recebe 409,
+  nunca 500.
+- **Datas sem horário** (`DATE`) trafegam como texto `AAAA-MM-DD`. Converter para `Date`
+  aplica o fuso do servidor e grava o dia anterior.
 
 ### 3.4 O módulo — onde as pontas se encontram
 
@@ -297,9 +300,9 @@ A inversão de dependência acontece no `*.module.ts`, ligando a abstração do 
 implementação da infraestrutura:
 
 ```ts
-// infrastructure/database/typeorm-user.repository.ts
+// infrastructure/database/pg-user.repository.ts
 @Injectable()
-export class TypeOrmUserRepository implements UserRepository { ... }
+export class PgUserRepository implements UserRepository { ... }
 ```
 
 ```ts
@@ -307,7 +310,7 @@ export class TypeOrmUserRepository implements UserRepository { ... }
 @Module({
   imports: [TypeOrmModule.forFeature([User])],
   controllers: [UsersController],
-  providers: [CreateUserUseCase, { provide: USER_REPOSITORY, useClass: TypeOrmUserRepository }],
+  providers: [CreateUserUseCase, { provide: USER_REPOSITORY, useClass: PgUserRepository }],
 })
 export class UsersModule {}
 ```
@@ -317,54 +320,60 @@ Esse `provide/useClass` é o ponto em que toda a arquitetura se sustenta: o caso
 dublê em teste. O `implements UserRepository` garante em tempo de compilação que o dublê e a
 implementação real cumprem o mesmo contrato.
 
-3.4 Segurança na Borda (Autenticação e Autorização)
+### 3.5 Segurança na borda (autenticação e autorização)
 
-A segurança (validação de tokens e verificação de perfis) ocorre exclusivamente na camada de infraestrutura (infrastructure/http), protegendo o acesso aos controllers. As regras de negócio não lidam com cabeçalhos HTTP ou extração de JWT.
+A segurança (validação de tokens e verificação de perfis) acontece só na borda. As regras de
+negócio não lidam com cabeçalhos HTTP nem com JWT.
 
-Utilizamos um sistema baseado em Guards e Decorators (localizados em src/shared/) para encadear as verificações:
+**Os guards são globais.** `AuthGuard` e `RolesGuard` estão registrados como `APP_GUARD` no
+`AppModule`, nessa ordem. Toda rota exige um JWT válido, a menos que seja marcada com
+`@Public()`. Um controller novo nasce protegido; ninguém precisa lembrar de `@UseGuards`.
 
-AuthGuard e @Public(): O AuthGuard intercepta a requisição, verifica a validade do JWT e injeta o payload no request.user. Para rotas que devem ser acessíveis sem token (como login e registro), aplicamos o decorator @Public(), que instrui o AuthGuard a liberar a requisição.
-
-RolesGuard e @Roles(): Executado após o AuthGuard, ele verifica se a propriedade type do usuário autenticado condiz com as roles exigidas para a rota. O decorator @Roles(UserType.TUTOR, UserType.STUDENT) dita quais perfis têm acesso.
-
-A ordem de injeção importa: o AuthGuard deve preceder o RolesGuard.
+- **`AuthGuard`** aceita apenas tokens de acesso (`audience: pbl360:access`), recarrega o
+  usuário do banco e confere se ele existe, está ativo e se a versão do token (`ver`) é a
+  atual. Trocar a senha ou desativar a conta incrementa `users.token_version` e derruba todas
+  as sessões abertas.
+- **`RolesGuard`** confere o `type` do usuário contra `@Roles(...)`, que pode ficar na classe
+  ou no método.
+- **Tokens com finalidades diferentes têm `audience` diferentes.** O token de redefinição de
+  senha (`pbl360:password-reset`) nunca é aceito como sessão, e vice-versa.
+- **Rotas públicas de autenticação** usam o `IdentityThrottlerGuard`, que limita por IP +
+  e-mail (ou `usuarioId`): 10 tentativas a cada 15 minutos, ou 5 nas rotas de código. Assim uma
+  turma inteira atrás do mesmo NAT não bloqueia a si mesma.
+- **Códigos de verificação e de recuperação** passam pelo `OneTimeCodeService`: só o hash
+  SHA-256 é gravado, cada código aceita 5 tentativas (consumidas atomicamente), há um intervalo
+  mínimo de 60 s entre envios e um teto de 5 códigos por hora por conta.
+- **Cadastro com e-mail já existente responde 409.** É uma decisão consciente: o domínio é
+  fechado (e-mails institucionais), e a mensagem clara vale mais para o aluno do que esconder
+  quem tem conta. Login, reenvio e recuperação continuam com resposta única e tempo
+  equivalente, para não revelar contas.
 
 ```ts
-
-import { Controller, Post, Get, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@/shared/guards/auth.guard';
-import { RolesGuard } from '@/shared/guards/roles.guard';
-import { Public } from '@/shared/decorators/public.decorator';
-import { Roles } from '@/shared/decorators/roles.decorator';
-import { UserType } from '@/users/domain/enums/user-type.enum';
-
-@UseGuards(AuthGuard) // Protege todas as rotas deste controller por padrão
-@Controller('recursos')
-export class RecursosController {
-
-  @Public() // Ignora o AuthGuard
-  @Post('registro')
-  registrar() { ... }
-
-  @Get('apenas-tutores')
-  @UseGuards(RolesGuard) // Adiciona a exigência de perfil (o AuthGuard já rodou)
-  @Roles(UserType.TUTOR)
-  buscarAlgoTutor() { ... }
+@ApiTags('Salas')
+@Controller('salas')
+@Roles(UserType.TUTOR)
+export class RoomsController {
+  @Get()
+  list(@AuthenticatedUserId() tutorId: string) { ... }
 }
 
+@Controller('autenticacao')
+@Public()
+@UseGuards(IdentityThrottlerGuard)
+export class AuthController { ... }
 ```
 
-### 3.5 Registro de Autoria e Auditoria (US43 / Task #136)
+### 3.6 Registro de Autoria e Auditoria (US43 / Task #136)
 
 Para garantir que tudo o que um professor criar ou alterar fique estritamente associado a ele — permitindo rastreabilidade e auditoria quando houver múltiplos professores na mesma sala —, todas as funcionalidades devem seguir um padrão único de identificação e persistência de autoria:
 
-1. **Obtenção Segura do Autor**: O identificador do autor NUNCA é recebido no corpo da requisição (`Body`) para evitar que um usuário forje ações em nome de outro. Ele deve ser obtido exclusivamente do token JWT autenticado no controller através do decorator `@AuthenticatedUserId()` ou `@AuthenticatedUser()` (localizados em `@/shared/decorators/`).
+1. **Obtenção Segura do Autor**: O identificador do autor NUNCA é recebido no corpo da requisição (`Body`) para evitar que um usuário forje ações em nome de outro. Ele deve ser obtido exclusivamente do token JWT autenticado no controller através do decorator `@AuthenticatedUserId()` (em `@/shared/decorators/`). O DTO não declara campos como `tutorId` ou `autorId`; como o `ValidationPipe` usa `forbidNonWhitelisted`, um cliente que tente enviá-los recebe 400.
 2. **Campos Padrão de Autoria em Entidades**: Entidades criadas ou alteradas no sistema que demandam rastreabilidade de ações (como problemas, feedbacks, notas e configurações) devem implementar os campos padronizados descritos na interface `Auditable` (`@/shared/interfaces/auditable.interface.ts`):
    - `createdBy` (`created_by` no banco, tipo `UUID` referenciando `users`): Usuário que criou o recurso.
    - `createdAt` (`created_at` no banco, tipo `timestamptz`): Data/hora de criação.
    - `updatedBy` (`updated_by` no banco, tipo `UUID` referenciando `users`, opcional): Usuário que realizou a última modificação.
    - `updatedAt` (`updated_at` no banco, tipo `timestamptz`, opcional): Data/hora da última alteração.
-3. **Validação de Permissão e Vínculo com a Sala**: Ao realizar qualquer ação sobre uma sala ou recursos vinculados a ela, o caso de uso deve receber o `authorId` e validar a relação com a sala (por exemplo, via `roomRepository.hasTutor(roomId, authorId)`). Caso o usuário não faça parte dos professores da sala, o caso de uso deve rejeitar a ação com `ForbiddenException`.
+3. **Validação de Permissão e Vínculo com a Sala**: Toda ação sobre uma sala ou sobre recursos dela passa pelo `RoomAccessService` (exportado pelo `RoomsModule`). `assertTutorCanAccessRoom` libera qualquer professor vinculado; `assertTutorIsRoomOwner` libera só o responsável (excluir a sala, gerenciar professores). Os dois respondem `NotFoundError` para sala inexistente ou excluída e `ForbiddenError` para quem não tem vínculo. Nenhum caso de uso reimplementa essa checagem.
 
 Exemplo de uso no Controller e Caso de Uso:
 
@@ -372,7 +381,7 @@ Exemplo de uso no Controller e Caso de Uso:
 @Post()
 @Roles(UserType.TUTOR)
 async create(
-  @Param('roomId') roomId: string,
+  @UuidParam('roomId') roomId: string,
   @Body() dto: CreateProblemDto,
   @AuthenticatedUserId() authorId: string,
 ) {
@@ -410,10 +419,12 @@ A ordem importa: começar pelo domínio evita que decisões de banco vazem para 
 | Entidade            | `user.entity.ts`                          | `User`                              |
 | Contrato de repo    | `user.repository.ts`                      | `UserRepository`                    |
 | Token de injeção    | (no mesmo arquivo do contrato)            | `USER_REPOSITORY`                   |
-| Repo TypeORM        | `typeorm-user.repository.ts`              | `TypeOrmUserRepository`             |
+| Repositório         | `pg-user.repository.ts`                   | `PgUserRepository`                  |
 | Caso de uso         | `create-user.use-case.ts`                 | `CreateUserUseCase`                 |
 | DTO                 | `create-user.dto.ts`                      | `CreateUserDto`                     |
 | Controller          | `users.controller.ts`                     | `UsersController`                   |
+| DTO de resposta     | `user-response.dto.ts`                    | `UserResponseDto`                   |
+| Mapper HTTP         | `user.mapper.ts`                          | `toUserResponse`                    |
 | Docs Swagger        | `user.swagger.ts`                         | `CreateUserSwaggerDocs`             |
 | Módulo              | `users.module.ts`                         | `UsersModule`                       |
 | Migration           | `1712345678901-CreateUsers.ts`            | `CreateUsers...`                    |
@@ -467,9 +478,9 @@ Prefira retorno antecipado a aninhamento:
 ```ts
 // avoid                          // prefer
 if (user) {
-  if (!user) throw new NotFoundException();
+  if (!user) throw new NotFoundError('...');
   if (user.isActive) {
-    if (!user.isActive) throw new ForbiddenException();
+    if (!user.isActive) throw new ForbiddenError('...');
     // ...                        // ...
   }
 }
@@ -496,9 +507,28 @@ automaticamente).
 
 ### Erros
 
-Lance exceções HTTP do Nest **na borda** (`NotFoundException`, `ConflictException`). No
-domínio, lance erros de domínio e traduza-os na infraestrutura. Nunca engula uma exceção com
-um `catch` vazio, e nunca devolva `null` para sinalizar erro sem que a assinatura diga isso.
+A camada `application` não conhece HTTP: ela lança os erros de `@/shared/errors/application.error`
+(`InvalidRequestError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`,
+`ConflictError`). O domínio lança subclasses de `DomainError` (por exemplo `InvalidRoomError`).
+O `DomainExceptionFilter` global traduz cada um no status correspondente (400, 401, 403, 404,
+409; `DomainError` vira 400), no mesmo formato de corpo das exceções do Nest. Exceções HTTP do
+Nest (`NotFoundException` etc.) só aparecem na borda: guards, pipes e filtros. Um erro de
+domínio que não estende `DomainError` escapa do filtro e vira 500.
+
+Quando a resposta de erro precisa de campos extras, o erro de aplicação carrega os dados em
+inglês e um filtro do próprio controller monta o corpo em português (veja
+`PendingVerificationFilter` em `auth/infrastructure/http/`).
+
+Nunca engula uma exceção com um `catch` vazio, e nunca devolva `null` para sinalizar erro sem
+que a assinatura diga isso.
+
+### Contrato de resposta
+
+Controllers nunca devolvem entidades. Cada módulo tem DTOs de resposta em português em
+`application/dtos/` (`RoomResponseDto`, `ProblemResponseDto`) e um mapper em
+`infrastructure/http/` (`room.mapper.ts`) que traduz a entidade na borda. Casos de uso
+devolvem entidades ou valores de domínio, nunca `{ message, data }`. Parâmetros de rota com
+UUID usam `@UuidParam('id')`, que responde 400 em português para um id inválido.
 
 ### Efeitos colaterais e imutabilidade
 
@@ -617,7 +647,7 @@ describe('CreateUserUseCase', () => {
   it('rejects an e-mail that is already registered', async () => {
     users.findByEmail.mockResolvedValue(anExistingUser());
 
-    await expect(useCase.execute(input)).rejects.toThrow(ConflictException);
+    await expect(useCase.execute(input)).rejects.toThrow(ConflictError);
     expect(users.save).not.toHaveBeenCalled();
   });
 });
@@ -643,27 +673,28 @@ registered'`, não `'testa execute'`.
 O e2e sobe a aplicação de verdade e bate nela por HTTP, com `supertest`.
 
 ```ts
-// test/users.e2e-spec.ts
-describe('Users (e2e)', () => {
+// test/rooms.e2e-spec.ts
+describe('Rooms (e2e)', () => {
   let app: INestApplication;
+  let moduleRef: TestingModule;
+  let owner: TestUser;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-    app = moduleRef.createNestApplication();
-    // Mirror main.ts, or the test will not exercise what production runs.
-    app.setGlobalPrefix('api');
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
-    await app.init();
+    ({ app, moduleRef } = await createTestApp());
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('rejects a payload with an unknown field', () => {
-    return request(app.getHttpServer())
-      .post('/api/usuarios')
-      .send({ nome: 'Ana', campoInexistente: 1 })
+  beforeEach(async () => {
+    await cleanDatabase(moduleRef.get(DataSource));
+    owner = await insertUser(app, moduleRef.get(DataSource), 'carlos@uefs.br');
+  });
+
+  it('refuses a tutor id sent in the body', () => {
+    return api(app, owner)
+      .post('/salas', { ...NEW_ROOM, tutorId: 'x' })
       .expect(400);
   });
 });
@@ -671,12 +702,21 @@ describe('Users (e2e)', () => {
 
 Regras:
 
-- **Replique a configuração do `main.ts`** (prefixo, `ValidationPipe`). Um e2e que não aplica
-  o mesmo pipe testa uma aplicação que não existe.
+- **Suba a aplicação com `createTestApp()`** (`test/helpers/create-test-app.ts`). Ele aplica o
+  mesmo `configureApp` do `main.ts` (prefixo, `helmet`, CORS, `ValidationPipe`, filtros), então
+  o teste exercita exatamente o que roda em produção. Para trocar um provider, passe um
+  customizador: `createTestApp((b) => b.overrideProvider(X).useValue(y))`.
+- **Use os helpers de `test/helpers/fixtures.ts`** (`cleanDatabase`, `insertUser`, `api`,
+  `signAccessToken`) em vez de repetir SQL e montagem de token em cada arquivo.
+- **O e2e nunca toca no banco de desenvolvimento.** O `test/setup-e2e.ts` força um `DB_NAME`
+  terminado em `_test` (padrão `pbl360_test`). Crie esse banco e rode as migrations nele uma
+  vez: `DB_NAME=pbl360_test npm run migration:run`.
 - **Sempre `await app.close()`** no `afterAll`, senão o Jest fica pendurado.
-- **Cada teste cuida do próprio estado.** Limpe as tabelas que você usou no `beforeEach`;
-  nunca dependa da ordem dos testes nem do que sobrou do anterior.
+- **Cada teste cuida do próprio estado.** Limpe as tabelas no `beforeEach`; nunca dependa da
+  ordem dos testes nem do que sobrou do anterior.
 - **Use as rotas e os campos em português** — é o contrato real que está sendo verificado.
+- **Não teste SQL com dublê.** Repositório se testa no e2e, contra o PostgreSQL de verdade;
+  um unitário que compara strings de SQL com um mock não prova nada.
 - O e2e roda com `--runInBand` (um arquivo por vez) justamente para que dois testes não
   disputem o mesmo banco.
 
@@ -695,7 +735,8 @@ npm test -- -t 'rejects' # só os testes cujo nome casa com "rejects"
 O e2e precisa de banco. Na raiz do repositório:
 
 ```bash
-npm run db:up            # sobe o PostgreSQL
+npm run db:up                                            # sobe o PostgreSQL
+DB_NAME=pbl360_test npm --prefix backend run migration:run  # uma vez, no banco de teste
 npm --prefix backend run test:e2e
 ```
 
@@ -719,3 +760,14 @@ que 60% nos lugares certos. A pergunta útil não é "quantas linhas foram execu
 Nada de `process.env` espalhado pelo código. As variáveis são lidas e tipadas uma vez em
 `src/config/env.config.ts` (via `registerAs` do `@nestjs/config`) e consumidas por injeção
 do `ConfigService`. Toda variável nova entra também no `.env.example`, documentada.
+
+O `validateEnv` (`src/config/env.validation.ts`) roda na inicialização e **aborta o boot**
+quando algo está errado, em vez de cair num padrão que enfraquece a aplicação:
+
+- `JWT_SECRET` é sempre obrigatório; em produção precisa ter ao menos 32 caracteres e não pode
+  ser o valor do `.env.example`. Não existe segredo padrão no código.
+- Números (`PORT`, `DB_PORT`, `BCRYPT_ROUNDS`) precisam ser inteiros.
+- Em produção, banco, `CORS_ORIGIN` e SMTP são obrigatórios, e `DB_SYNCHRONIZE=true` é recusado.
+- O CLI de migrations usa `validateDatabaseEnv`, que confere só a parte de banco.
+
+Em produção o Swagger não é publicado, e o seed (`npm run seed`) se recusa a rodar.

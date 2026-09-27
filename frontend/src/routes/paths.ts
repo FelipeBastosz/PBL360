@@ -5,5 +5,9 @@ export const ROUTES = {
   register: '/cadastro',
   verifyAccount: '/cadastro/verificar',
   registerSuccess: '/cadastro/concluido',
+  forgotPassword: '/recuperar-senha',
+  resetPasswordCode: '/recuperar-senha/codigo',
+  resetPassword: '/recuperar-senha/nova-senha',
+  resetPasswordSuccess: '/recuperar-senha/concluido',
   home: '/inicio',
 } as const;

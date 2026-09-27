@@ -4,7 +4,9 @@ import { InvalidUserError } from '../errors/invalid-user.error';
 import type { NewUser } from './new-user';
 import { Room } from '@/rooms/domain/entities/room.entity';
 
-const INSTITUTIONAL_EMAIL = /^[^@\s]+@(discente\.)?uefs\.br$/i;
+const TUTOR_EMAIL = /^[^@\s]+@uefs\.br$/i;
+
+const STUDENT_EMAIL = /^[^@\s]+@discente\.uefs\.br$/i;
 
 const REGISTRATION_NUMBER = /^\d{8}$/;
 
@@ -40,6 +42,9 @@ export class User {
   @Column({ type: 'boolean', default: false })
   active: boolean;
 
+  @Column({ name: 'token_version', type: 'int', default: 0 })
+  tokenVersion: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
@@ -55,17 +60,14 @@ export class User {
     user.registrationNumber = props.registrationNumber?.trim() || null;
     user.photoUrl = props.photoUrl?.trim() || null;
     user.active = false;
+    user.tokenVersion = 0;
     user.assertIsValid();
 
     return user;
   }
 
   private assertIsValid(): void {
-    if (!INSTITUTIONAL_EMAIL.test(this.email)) {
-      throw new InvalidUserError(
-        'O e-mail deve ser institucional (@uefs.br ou @discente.uefs.br).',
-      );
-    }
+    this.assertEmailMatchesType();
 
     if (this.registrationNumber !== null && !REGISTRATION_NUMBER.test(this.registrationNumber)) {
       throw new InvalidUserError('A matrícula deve conter exatamente 8 dígitos.');
@@ -73,6 +75,16 @@ export class User {
 
     if (this.isStudent()) {
       this.assertStudentProfileIsComplete();
+    }
+  }
+
+  private assertEmailMatchesType(): void {
+    if (this.isTutor() && !TUTOR_EMAIL.test(this.email)) {
+      throw new InvalidUserError('Professores devem usar o e-mail institucional @uefs.br.');
+    }
+
+    if (this.isStudent() && !STUDENT_EMAIL.test(this.email)) {
+      throw new InvalidUserError('Alunos devem usar o e-mail institucional @discente.uefs.br.');
     }
   }
 
@@ -104,9 +116,15 @@ export class User {
 
   deactivate(): void {
     this.active = false;
+    this.revokeSessions();
   }
 
   changePassword(passwordHash: string): void {
     this.passwordHash = passwordHash;
+    this.revokeSessions();
+  }
+
+  private revokeSessions(): void {
+    this.tokenVersion = (this.tokenVersion ?? 0) + 1;
   }
 }

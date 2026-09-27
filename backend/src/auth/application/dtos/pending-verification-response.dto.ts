@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  PENDING_VERIFICATION_MESSAGE,
-  PENDING_VERIFICATION_REASON,
-} from '../errors/pending-verification.exception';
+
+export const PENDING_VERIFICATION_REASON = 'CONTA_NAO_VERIFICADA';
+
+export const PENDING_VERIFICATION_MESSAGE =
+  'Confirme o código enviado para o seu e-mail institucional para ativar a conta.';
 
 export class PendingVerificationResponseDto {
   @ApiProperty({ example: 403 })
