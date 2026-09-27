@@ -1,5 +1,6 @@
 import {
   Column,
+  Check,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
@@ -14,6 +15,8 @@ import { InvalidPerformanceTableError } from '../errors/invalid-performance-tabl
 import type { NewPerformanceCriterion } from './new-performance-table';
 import { PerformanceTable } from './performance-table.entity';
 
+@Check(`chk_performance_criteria_weight_positive`, `"weight" > 0`)
+@Check(`chk_performance_criteria_max_score_positive`, `"max_score" > 0`)
 @Entity('performance_criteria')
 @Unique('uq_performance_criteria_table_order', ['performanceTableId', 'orderIndex'])
 export class PerformanceCriterion {
@@ -53,10 +56,10 @@ export class PerformanceCriterion {
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, default: null })
   deletedAt: Date | null;
 
-  @Column({ type: 'numeric', precision: 10, scale: 2 })
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 1 })
   weight: number;
 
-  @Column({ name: 'max_score', type: 'numeric', precision: 10, scale: 2 })
+  @Column({ name: 'max_score', type: 'numeric', precision: 10, scale: 2, default: 10 })
   maxScore: number;
 
   static create(props: NewPerformanceCriterion): PerformanceCriterion {

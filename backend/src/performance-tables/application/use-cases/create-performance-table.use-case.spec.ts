@@ -23,7 +23,13 @@ describe('CreatePerformanceTableUseCase', () => {
     const result = await useCase.execute({
       tutorId: 'tutor-uuid-1',
       name: 'Avaliação tutorial',
-      criteria: [{ name: 'Participação' }],
+      criteria: [
+        {
+          name: 'Participação',
+          weight: 1,
+          maxScore: 10,
+        },
+      ],
     });
 
     expect(createMock).toHaveBeenCalledWith(
@@ -55,7 +61,13 @@ describe('CreatePerformanceTableUseCase', () => {
       useCase.execute({
         tutorId: 'tutor-uuid-1',
         name: 'Avaliação tutorial',
-        criteria: [{ name: 'Participação' }],
+        criteria: [
+          {
+            name: 'Participação',
+            weight: 1,
+            maxScore: 10,
+          },
+        ],
       }),
     ).rejects.toThrow('DB connection failure');
   });
