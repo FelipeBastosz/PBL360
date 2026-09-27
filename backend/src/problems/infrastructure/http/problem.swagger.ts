@@ -4,6 +4,7 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -13,6 +14,7 @@ import {
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 
+import { ProblemDeletionImpactDto } from '../../application/dtos/problem-deletion-impact.dto';
 import { ProblemResponseDto } from '../../application/dtos/problem-response.dto';
 
 export const CreateProblemSwaggerDocs = applyDecorators(
@@ -115,4 +117,53 @@ export const UpdateProblemSwaggerDocs = applyDecorators(
   }),
   ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
   ApiNotFoundResponse({ description: 'Problema não encontrado.', type: ErrorResponseDto }),
+);
+
+export const GetProblemDeletionImpactSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Consulta o impacto da exclusão de um problema',
+    description:
+      'Retorna a contagem de registros que dependem do problema (sessões, notas, feedbacks e avaliações) ' +
+      'para confirmação prévia da exclusão.',
+  }),
+  ApiOkResponse({
+    description: 'Impacto da exclusão consultado com sucesso.',
+    type: ProblemDeletionImpactDto,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiForbiddenResponse({
+    description: 'Acesso negado. O professor não possui permissão nesta sala.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Problema ou sala não encontrada.',
+    type: ErrorResponseDto,
+  }),
+);
+
+export const DeleteProblemSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Exclui um problema da sala',
+    description:
+      'Remove permanentemente o problema da sala mantendo a ordem sequencial dos problemas restantes. ' +
+      'Apenas o professor responsável pela sala possui permissão para excluir problemas.',
+  }),
+  ApiNoContentResponse({ description: 'Problema excluído com sucesso.' }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiForbiddenResponse({
+    description: 'Acesso negado. Apenas o professor responsável pode excluir problemas da sala.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Problema ou sala não encontrada.',
+    type: ErrorResponseDto,
+  }),
 );

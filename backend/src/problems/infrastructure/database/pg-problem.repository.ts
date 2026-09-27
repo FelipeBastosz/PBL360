@@ -87,6 +87,39 @@ export class PgProblemRepository implements ProblemRepository {
     });
   }
 
+  async delete(id: string, roomId: string): Promise<void> {
+    await this.problems.manager.transaction(async (manager): Promise<void> => {
+      await manager.query(`SELECT id FROM rooms WHERE id = $1 FOR UPDATE;`, [roomId]);
+      const targetRows = await manager.query<Array<{ orderIndex: number }>>(
+        `SELECT order_index AS "orderIndex" FROM problems WHERE id = $1 AND room_id = $2;`,
+        [id, roomId],
+      );
+
+      const target = firstRowOrNull(targetRows);
+      if (!target) {
+        return;
+      }
+
+      const orderIndex = Number(target.orderIndex);
+
+      await manager.query(`DELETE FROM problems WHERE id = $1 AND room_id = $2;`, [id, roomId]);
+      await this.decrementFollowingOrders(manager, roomId, orderIndex);
+    });
+  }
+
+  private async decrementFollowingOrders(
+    manager: EntityManager,
+    roomId: string,
+    orderIndex: number,
+  ): Promise<void> {
+    await manager.query(
+      `UPDATE problems
+       SET order_index = order_index - 1
+       WHERE room_id = $1 AND order_index > $2;`,
+      [roomId, orderIndex],
+    );
+  }
+
   private async insertWithNextOrder(manager: EntityManager, problem: Problem): Promise<Problem> {
     const rows = await manager.query<ProblemRow[]>(
       `INSERT INTO problems (

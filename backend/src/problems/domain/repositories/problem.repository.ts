@@ -7,4 +7,5 @@ export interface ProblemRepository {
   save(problem: Problem): Promise<Problem>;
   findById(id: string): Promise<Problem | null>;
   findByRoomId(roomId: string): Promise<Problem[]>;
+  delete(id: string, roomId: string): Promise<void>;
 }
