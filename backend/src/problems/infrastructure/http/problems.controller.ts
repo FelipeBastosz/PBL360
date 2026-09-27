@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
@@ -7,13 +7,18 @@ import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { CreateProblemDto } from '../../application/dtos/create-problem.dto';
+import type { ProblemDeletionImpactDto } from '../../application/dtos/problem-deletion-impact.dto';
 import type { ProblemResponseDto } from '../../application/dtos/problem-response.dto';
 import { CreateProblemUseCase } from '../../application/use-cases/create-problem.use-case';
+import { DeleteProblemUseCase } from '../../application/use-cases/delete-problem.use-case';
+import { GetProblemDeletionImpactUseCase } from '../../application/use-cases/get-problem-deletion-impact.use-case';
 import { GetProblemUseCase } from '../../application/use-cases/get-problem.use-case';
 import { ListProblemsByRoomUseCase } from '../../application/use-cases/list-problems-by-room.use-case';
 import { toProblemResponse } from './problem.mapper';
 import {
   CreateProblemSwaggerDocs,
+  DeleteProblemSwaggerDocs,
+  GetProblemDeletionImpactSwaggerDocs,
   GetProblemSwaggerDocs,
   ListProblemsSwaggerDocs,
 } from './problem.swagger';
@@ -26,6 +31,8 @@ export class ProblemsController {
     private readonly createProblemUseCase: CreateProblemUseCase,
     private readonly listProblemsByRoomUseCase: ListProblemsByRoomUseCase,
     private readonly getProblemUseCase: GetProblemUseCase,
+    private readonly getProblemDeletionImpactUseCase: GetProblemDeletionImpactUseCase,
+    private readonly deleteProblemUseCase: DeleteProblemUseCase,
   ) {}
 
   @Post()
@@ -67,5 +74,26 @@ export class ProblemsController {
     @AuthenticatedUserId() tutorId: string,
   ): Promise<ProblemResponseDto> {
     return toProblemResponse(await this.getProblemUseCase.execute({ roomId, problemId, tutorId }));
+  }
+
+  @Get(':problemId/impacto-exclusao')
+  @GetProblemDeletionImpactSwaggerDocs
+  async getDeletionImpact(
+    @UuidParam('roomId') roomId: string,
+    @UuidParam('problemId') problemId: string,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<ProblemDeletionImpactDto> {
+    return this.getProblemDeletionImpactUseCase.execute({ roomId, problemId, tutorId });
+  }
+
+  @Delete(':problemId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @DeleteProblemSwaggerDocs
+  async delete(
+    @UuidParam('roomId') roomId: string,
+    @UuidParam('problemId') problemId: string,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<void> {
+    await this.deleteProblemUseCase.execute({ roomId, problemId, tutorId });
   }
 }

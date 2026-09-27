@@ -131,6 +131,34 @@ describe('Problems (e2e)', () => {
     return req;
   };
 
+  const getProblemDeletionImpact = (
+    targetRoomId: string,
+    targetProblemId: string,
+    token?: string,
+  ) => {
+    const req = request(app.getHttpServer() as Server).get(
+      `/api/salas/${targetRoomId}/problemas/${targetProblemId}/impacto-exclusao`,
+    );
+
+    if (token) {
+      req.set('Authorization', `Bearer ${token}`);
+    }
+
+    return req;
+  };
+
+  const deleteProblem = (targetRoomId: string, targetProblemId: string, token?: string) => {
+    const req = request(app.getHttpServer() as Server).delete(
+      `/api/salas/${targetRoomId}/problemas/${targetProblemId}`,
+    );
+
+    if (token) {
+      req.set('Authorization', `Bearer ${token}`);
+    }
+
+    return req;
+  };
+
   it('registers a problem successfully with automatically assigned order 1', async () => {
     const response = await postProblem(
       roomId,
@@ -394,6 +422,114 @@ describe('Problems (e2e)', () => {
       expect(body.descricao).toBe('Descrição detalhada do caso clínico.');
       expect(body.ordem).toBe(1);
       expect(body.criadoPor).toBe(tutor1Id);
+    });
+  });
+
+  describe('GET /api/salas/:roomId/problemas/:problemId/impacto-exclusao', () => {
+    it('returns 401 Unauthorized when request lacks a JWT', async () => {
+      await getProblemDeletionImpact(roomId, '00000000-0000-0000-0000-000000000000').expect(401);
+    });
+
+    it('returns 403 Forbidden when tutor has no access to the room', async () => {
+      const res = await postProblem(
+        roomId,
+        { titulo: 'Problema Para Impacto' },
+        tutor1Token,
+      ).expect(201);
+      const created = res.body as ProblemResponseBody;
+
+      const response = await getProblemDeletionImpact(roomId, created.id, tutor2Token).expect(403);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Você não tem permissão para acessar ou modificar esta sala.');
+    });
+
+    it('returns 404 Not Found when problem does not exist in room', async () => {
+      const response = await getProblemDeletionImpact(
+        roomId,
+        '00000000-0000-0000-0000-000000000000',
+        tutor1Token,
+      ).expect(404);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Problema não encontrado.');
+    });
+
+    it('returns 200 OK with zero counts in the definitive response format', async () => {
+      const res = await postProblem(
+        roomId,
+        { titulo: 'Problema Com Impacto Zero' },
+        tutor1Token,
+      ).expect(201);
+      const created = res.body as ProblemResponseBody;
+
+      const response = await getProblemDeletionImpact(roomId, created.id, tutor1Token).expect(200);
+      expect(response.body).toEqual({
+        sessoes: 0,
+        notas: 0,
+        feedbacks: 0,
+        avaliacoes: 0,
+      });
+    });
+  });
+
+  describe('DELETE /api/salas/:roomId/problemas/:problemId', () => {
+    it('returns 401 Unauthorized when request lacks a JWT', async () => {
+      await deleteProblem(roomId, '00000000-0000-0000-0000-000000000000').expect(401);
+    });
+
+    it('returns 403 Forbidden when tutor is associated but not the room owner', async () => {
+      // Associa tutor2 à sala como tutor adicional (não dono)
+      await dataSource.query(`INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2);`, [
+        roomId,
+        tutor2Id,
+      ]);
+
+      const res = await postProblem(
+        roomId,
+        { titulo: 'Problema Criado Pelo Dono' },
+        tutor1Token,
+      ).expect(201);
+      const created = res.body as ProblemResponseBody;
+
+      // tutor2 tenta excluir mas não é o dono responsável
+      const response = await deleteProblem(roomId, created.id, tutor2Token).expect(403);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Apenas o professor responsável pode realizar esta ação.');
+    });
+
+    it('returns 404 Not Found when problem does not exist', async () => {
+      const response = await deleteProblem(
+        roomId,
+        '00000000-0000-0000-0000-000000000000',
+        tutor1Token,
+      ).expect(404);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Problema não encontrado.');
+    });
+
+    it('returns 204 No Content and reorders subsequent problems properly', async () => {
+      const res1 = await postProblem(roomId, { titulo: 'Problema 1' }, tutor1Token).expect(201);
+      const res2 = await postProblem(roomId, { titulo: 'Problema 2' }, tutor1Token).expect(201);
+      const res3 = await postProblem(roomId, { titulo: 'Problema 3' }, tutor1Token).expect(201);
+
+      const prob1 = res1.body as ProblemResponseBody;
+      const prob2 = res2.body as ProblemResponseBody;
+      const prob3 = res3.body as ProblemResponseBody;
+
+      // Exclui o Problema 2
+      await deleteProblem(roomId, prob2.id, tutor1Token).expect(204);
+
+      // Problema 2 agora não é encontrado
+      await getProblemById(roomId, prob2.id, tutor1Token).expect(404);
+
+      // Problema 1 e Problema 3 permanecem na ordem sequencial correta
+      const listRes = await getProblems(roomId, tutor1Token).expect(200);
+      const list = listRes.body as ProblemResponseBody[];
+
+      expect(list).toHaveLength(2);
+      expect(list[0].id).toBe(prob1.id);
+      expect(list[0].ordem).toBe(1);
+      expect(list[1].id).toBe(prob3.id);
+      expect(list[1].ordem).toBe(2);
     });
   });
 });
