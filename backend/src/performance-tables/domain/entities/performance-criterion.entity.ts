@@ -53,11 +53,19 @@ export class PerformanceCriterion {
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, default: null })
   deletedAt: Date | null;
 
+  @Column({ type: 'numeric', precision: 10, scale: 2 })
+  weight: number;
+
+  @Column({ name: 'max_score', type: 'numeric', precision: 10, scale: 2 })
+  maxScore: number;
+
   static create(props: NewPerformanceCriterion): PerformanceCriterion {
     const criterion = new PerformanceCriterion();
     criterion.name = props.name?.trim();
     criterion.description = props.description?.trim() || null;
     criterion.orderIndex = props.orderIndex ?? 1;
+    criterion.weight = props.weight;
+    criterion.maxScore = props.maxScore;
     criterion.assertIsValid();
 
     return criterion;
