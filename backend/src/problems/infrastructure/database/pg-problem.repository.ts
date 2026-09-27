@@ -99,14 +99,21 @@ export class PgProblemRepository implements ProblemRepository {
       const orderIndex = Number(target.orderIndex);
 
       await manager.query(`DELETE FROM problems WHERE id = $1 AND room_id = $2;`, [id, roomId]);
-
-      await manager.query(
-        `UPDATE problems
-         SET order_index = order_index - 1
-         WHERE room_id = $1 AND order_index > $2;`,
-        [roomId, orderIndex],
-      );
+      await this.decrementFollowingOrders(manager, roomId, orderIndex);
     });
+  }
+
+  private async decrementFollowingOrders(
+    manager: EntityManager,
+    roomId: string,
+    orderIndex: number,
+  ): Promise<void> {
+    await manager.query(
+      `UPDATE problems
+       SET order_index = order_index - 1
+       WHERE room_id = $1 AND order_index > $2;`,
+      [roomId, orderIndex],
+    );
   }
 
   private async insertWithNextOrder(manager: EntityManager, problem: Problem): Promise<Problem> {
