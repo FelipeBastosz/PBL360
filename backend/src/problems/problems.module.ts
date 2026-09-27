@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoomsModule } from '@/rooms/rooms.module';
 
 import { CreateProblemUseCase } from './application/use-cases/create-problem.use-case';
+import { DeleteProblemUseCase } from './application/use-cases/delete-problem.use-case';
+import { GetProblemDeletionImpactUseCase } from './application/use-cases/get-problem-deletion-impact.use-case';
 import { GetProblemUseCase } from './application/use-cases/get-problem.use-case';
 import { ListProblemsByRoomUseCase } from './application/use-cases/list-problems-by-room.use-case';
 import { Problem } from './domain/entities/problem.entity';
@@ -18,6 +20,8 @@ import { ProblemsController } from './infrastructure/http/problems.controller';
     CreateProblemUseCase,
     ListProblemsByRoomUseCase,
     GetProblemUseCase,
+    GetProblemDeletionImpactUseCase,
+    DeleteProblemUseCase,
     {
       provide: PROBLEM_REPOSITORY,
       useClass: PgProblemRepository,
