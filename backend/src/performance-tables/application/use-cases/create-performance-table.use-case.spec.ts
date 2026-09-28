@@ -26,6 +26,7 @@ describe('CreatePerformanceTableUseCase', () => {
       criteria: [
         {
           name: 'Participação',
+          orderIndex: 1,
           weight: 1,
           maxScore: 10,
         },
@@ -36,7 +37,7 @@ describe('CreatePerformanceTableUseCase', () => {
       expect.objectContaining({
         tutorId: 'tutor-uuid-1',
         name: 'Avaliação tutorial',
-        criteria: [expect.objectContaining({ name: 'Participação', orderIndex: 1 })],
+        criteria: [expect.objectContaining({ name: 'Participação', orderIndex: 1, weight: 1, maxScore: 10 })],
       }),
     );
     expect(result).toBe(savedTable);
@@ -64,6 +65,7 @@ describe('CreatePerformanceTableUseCase', () => {
         criteria: [
           {
             name: 'Participação',
+            orderIndex: 1,
             weight: 1,
             maxScore: 10,
           },
