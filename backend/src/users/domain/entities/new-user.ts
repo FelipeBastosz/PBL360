@@ -1,4 +1,5 @@
 import type { UserType } from '../enums/user-type.enum';
+import type { UserPhoto } from './user-photo.entity';
 
 export interface NewUser {
   name: string;
@@ -6,5 +7,5 @@ export interface NewUser {
   passwordHash: string;
   type: UserType;
   registrationNumber?: string | null;
-  photoUrl?: string | null;
+  photo?: UserPhoto | null;
 }

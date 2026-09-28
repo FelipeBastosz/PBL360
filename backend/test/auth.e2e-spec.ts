@@ -7,6 +7,8 @@ import { EMAIL_VERIFICATION_SENDER } from '@/auth/domain/services/email-verifica
 import { PASSWORD_RESET_SENDER } from '@/auth/domain/services/password-reset-sender';
 import { IdentityThrottlerGuard } from '@/shared/throttling/identity-throttler.guard';
 import type { CodeRecipient } from '@/auth/domain/services/code-sender';
+import { MAX_PHOTO_BYTES } from '@/users/domain/entities/user-photo.entity';
+import { pngPhotoBytes } from '@/users/testing/photo-fixtures';
 import { createTestApp } from './helpers/create-test-app';
 
 const REGISTER = '/api/autenticacao/registro';
@@ -34,7 +36,7 @@ interface UserResponse {
   email: string;
   tipo: string;
   matricula: string | null;
-  fotoUrl: string | null;
+  possuiFoto: boolean;
   ativo: boolean;
   criadoEm: string;
 }
@@ -64,7 +66,7 @@ const studentPayload = () => ({
   senha: 'senha-secreta',
   tipo: 'ALUNO',
   matricula: '20240001',
-  fotoUrl: 'https://example.com/ana.png',
+  foto: pngPhotoBytes(),
 });
 
 const tutorPayload = () => ({
@@ -81,10 +83,17 @@ describe('Auth (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
 
-  const post = (path: string, payload: object) =>
-    request(app.getHttpServer() as Server)
-      .post(path)
-      .send(payload);
+  const post = (path: string, payload: object) => {
+    const req = request(app.getHttpServer() as Server).post(path);
+    const { foto, ...fields } = payload as { foto?: Buffer };
+
+    if (!foto) {
+      return req.send(payload);
+    }
+
+    Object.entries(fields).forEach(([name, value]) => void req.field(name, String(value)));
+    return req.attach('foto', foto, { filename: 'foto.png', contentType: 'image/png' });
+  };
 
   const register = async (payload: object, status = 201): Promise<RegisterResponse> => {
     const response = await post(REGISTER, payload).expect(status);
@@ -230,7 +239,7 @@ describe('Auth (e2e)', () => {
         email: 'ana@discente.uefs.br',
         tipo: 'ALUNO',
         matricula: '20240001',
-        fotoUrl: 'https://example.com/ana.png',
+        possuiFoto: true,
         ativo: false,
       });
       expect(JSON.stringify(body)).not.toContain('senha-secreta');
@@ -239,7 +248,7 @@ describe('Auth (e2e)', () => {
     it('registers a tutor without photo and registration number', async () => {
       const body = await register(tutorPayload());
 
-      expect(body.usuario).toMatchObject({ tipo: 'PROFESSOR', matricula: null, fotoUrl: null });
+      expect(body.usuario).toMatchObject({ tipo: 'PROFESSOR', matricula: null, possuiFoto: false });
     });
 
     it('rejects an e-mail outside the university domains', async () => {
@@ -250,17 +259,70 @@ describe('Auth (e2e)', () => {
       );
     });
 
-    it('rejects a student without registration number and photo', async () => {
-      const { matricula: _matricula, fotoUrl: _fotoUrl, ...incomplete } = studentPayload();
+    it('stores the uploaded photo bytes in the database', async () => {
+      const body = await register(studentPayload());
+
+      const [row] = await dataSource.query<[{ content: Buffer; mimeType: string }]>(
+        'SELECT content, mime_type AS "mimeType" FROM user_photos WHERE user_id = $1;',
+        [body.usuarioId],
+      );
+
+      expect(row.mimeType).toBe('image/png');
+      expect(row.content.equals(pngPhotoBytes())).toBe(true);
+    });
+
+    it('lets a tutor send an optional photo', async () => {
+      const body = await register({ ...tutorPayload(), foto: pngPhotoBytes() });
+
+      expect(body.usuario.possuiFoto).toBe(true);
+    });
+
+    it('rejects a student without registration number', async () => {
+      const { matricula: _matricula, ...incomplete } = studentPayload();
 
       const body = await errorOf(REGISTER, incomplete, 400);
 
-      expect(body.message).toEqual(
-        expect.arrayContaining([
-          'A matrícula é obrigatória para alunos.',
-          'A foto é obrigatória para alunos.',
-        ]),
+      expect(body.message).toContain('A matrícula é obrigatória para alunos.');
+    });
+
+    it('rejects a student without photo', async () => {
+      const { foto: _foto, ...incomplete } = studentPayload();
+
+      const body = await errorOf(REGISTER, incomplete, 400);
+
+      expect(body.message).toContain('A foto é obrigatória para alunos.');
+    });
+
+    it('rejects a photo that is not an accepted image', async () => {
+      const payload = { ...studentPayload(), foto: Buffer.from('<svg></svg>') };
+
+      const body = await errorOf(REGISTER, payload, 400);
+
+      expect(body.message).toContain('A foto deve ser uma imagem JPEG, PNG ou WebP.');
+    });
+
+    it('rejects a photo above 2 MB before reaching the database', async () => {
+      const oversized = Buffer.concat([pngPhotoBytes(), Buffer.alloc(MAX_PHOTO_BYTES)]);
+
+      const body = await errorOf(REGISTER, { ...studentPayload(), foto: oversized }, 413);
+
+      expect(body.message).toBe('A foto deve ter no máximo 2 MB.');
+    });
+
+    it('rejects a file sent under another field name', async () => {
+      const { foto, ...fields } = studentPayload();
+      const req = request(app.getHttpServer() as Server).post(REGISTER);
+      Object.entries(fields).forEach(([name, value]) => void req.field(name, value));
+
+      const response = await req.attach('avatar', foto, 'foto.png').expect(400);
+
+      expect((response.body as ErrorResponse).message).toBe(
+        'Envie uma única foto no campo "foto".',
       );
+    });
+
+    it('no longer accepts a photo link', async () => {
+      await errorOf(REGISTER, { ...tutorPayload(), fotoUrl: 'https://example.com/a.png' }, 400);
     });
 
     it('rejects a registration number that is not eight digits', async () => {
