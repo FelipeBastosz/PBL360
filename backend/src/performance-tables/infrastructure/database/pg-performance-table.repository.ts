@@ -51,7 +51,7 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
 
     return manager.query(
       `INSERT INTO performance_criteria
-         (performance_table_id, name, description, order_index)
+         (performance_table_id, name, description, order_index, weight, max_score)
        VALUES ${placeholders};`,
       criteria.flat(),
     );
@@ -63,13 +63,15 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
       criterion.name,
       criterion.description ?? null,
       criterion.orderIndex,
+      criterion.weight,
+      criterion.maxScore,
     ]);
   }
 
   private buildCriteriaPlaceholders(criteriaCount: number): string {
     return Array.from({ length: criteriaCount }, (_, criterionIndex) => {
-      const offset = criterionIndex * 4;
-      return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4})`;
+      const offset = criterionIndex * 6;
+      return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6})`;
     }).join(', ');
   }
 }
