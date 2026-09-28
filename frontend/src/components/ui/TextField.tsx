@@ -14,6 +14,7 @@ type TextFieldProps = {
   hint?: string;
   endAdornment?: ReactNode;
   autoFocus?: boolean;
+  disabled?: boolean;
 };
 
 export function TextField({
