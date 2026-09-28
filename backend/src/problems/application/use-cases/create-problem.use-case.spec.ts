@@ -26,6 +26,7 @@ describe('CreateProblemUseCase', () => {
 
     const problemRepository: jest.Mocked<ProblemRepository> = {
       create: saveMock,
+      save: jest.fn(),
       findById: jest.fn(),
       findByRoomId: jest.fn(),
     };

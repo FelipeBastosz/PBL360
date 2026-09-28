@@ -99,6 +99,25 @@ export const GetProblemSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
 );
+export const UpdateProblemSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Atualiza título de um problema',
+    description:
+      'Permite que o professor atualize o título de um problema existente na sala. Apenas o campo "title" é editável.',
+  }),
+  ApiOkResponse({ description: 'Problema atualizado com sucesso.' }),
+  ApiBadRequestResponse({
+    description: 'Dados inválidos ou erro de validação.',
+    type: ErrorResponseDto,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
+  ApiNotFoundResponse({ description: 'Problema não encontrado.', type: ErrorResponseDto }),
+);
 
 export const GetProblemDeletionImpactSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
@@ -134,9 +153,7 @@ export const DeleteProblemSwaggerDocs = applyDecorators(
       'Remove permanentemente o problema da sala mantendo a ordem sequencial dos problemas restantes. ' +
       'Apenas o professor responsável pela sala possui permissão para excluir problemas.',
   }),
-  ApiNoContentResponse({
-    description: 'Problema excluído com sucesso.',
-  }),
+  ApiNoContentResponse({ description: 'Problema excluído com sucesso.' }),
   ApiUnauthorizedResponse({
     description: 'JWT não informado, inválido ou expirado.',
     type: ErrorResponseDto,

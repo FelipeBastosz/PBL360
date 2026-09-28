@@ -109,6 +109,23 @@ describe('Problems (e2e)', () => {
     return req.send(payload);
   };
 
+  const updateProblem = (
+    targetRoomId: string,
+    targetProblemId: string,
+    payload: object,
+    token?: string,
+  ) => {
+    const req = request(app.getHttpServer() as Server).put(
+      `/api/salas/${targetRoomId}/problemas/${targetProblemId}`,
+    );
+
+    if (token) {
+      req.set('Authorization', `Bearer ${token}`);
+    }
+
+    return req.send(payload);
+  };
+
   const getProblems = (targetRoomId: string, token?: string) => {
     const req = request(app.getHttpServer() as Server).get(`/api/salas/${targetRoomId}/problemas`);
 
@@ -425,6 +442,100 @@ describe('Problems (e2e)', () => {
     });
   });
 
+  describe('PUT /api/salas/:roomId/problemas/:problemId', () => {
+    it('returns 401 Unauthorized when request lacks an access token', async () => {
+      await updateProblem(roomId, '00000000-0000-0000-0000-000000000000', {
+        title: 'Novo título',
+      }).expect(401);
+    });
+
+    it('returns 403 Forbidden when a student attempts to update a problem', async () => {
+      await updateProblem(
+        roomId,
+        '00000000-0000-0000-0000-000000000000',
+        { title: 'Novo título' },
+        studentToken,
+      ).expect(403);
+    });
+
+    it('returns 403 Forbidden when tutor has no access to the room', async () => {
+      const created = (
+        await postProblem(roomId, { titulo: 'Título original' }, tutor1Token).expect(201)
+      ).body as ProblemResponseBody;
+
+      await updateProblem(roomId, created.id, { title: 'Alteração indevida' }, tutor2Token).expect(
+        403,
+      );
+
+      const response = (await getProblemById(roomId, created.id, tutor1Token).expect(200))
+        .body as ProblemResponseBody;
+      expect(response.titulo).toBe('Título original');
+    });
+
+    it('returns 404 when the problem belongs to a different room', async () => {
+      const [otherRoom] = await dataSource.query<[{ id: string }]>(
+        `INSERT INTO rooms (tutor_id, name, course_code, room_code, semester, active)
+         VALUES ($1, 'Outra Sala', 'EXA999', 'ROOM9999', '2026.2', true)
+         RETURNING id;`,
+        [tutor1Id],
+      );
+      const created = (
+        await postProblem(roomId, { titulo: 'Título original' }, tutor1Token).expect(201)
+      ).body as ProblemResponseBody;
+
+      await updateProblem(
+        otherRoom.id,
+        created.id,
+        { title: 'Alteração indevida' },
+        tutor1Token,
+      ).expect(404);
+
+      const response = (await getProblemById(roomId, created.id, tutor1Token).expect(200))
+        .body as ProblemResponseBody;
+      expect(response.titulo).toBe('Título original');
+    });
+
+    it('allows a tutor linked to the room to update the problem', async () => {
+      const created = (
+        await postProblem(roomId, { titulo: 'Título original' }, tutor1Token).expect(201)
+      ).body as ProblemResponseBody;
+      await dataSource.query(`INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2);`, [
+        roomId,
+        tutor2Id,
+      ]);
+
+      await updateProblem(roomId, created.id, { title: 'Título atualizado' }, tutor2Token).expect(
+        200,
+      );
+
+      const response = (await getProblemById(roomId, created.id, tutor1Token).expect(200))
+        .body as ProblemResponseBody;
+      expect(response.titulo).toBe('Título atualizado');
+    });
+
+    it('rejects a title longer than the database column limit', async () => {
+      const created = (
+        await postProblem(roomId, { titulo: 'Título original' }, tutor1Token).expect(201)
+      ).body as ProblemResponseBody;
+
+      await updateProblem(roomId, created.id, { title: 'a'.repeat(121) }, tutor1Token).expect(400);
+    });
+
+    it('updates the problem title for a tutor with room access', async () => {
+      const created = (
+        await postProblem(roomId, { titulo: 'Título original' }, tutor1Token).expect(201)
+      ).body as ProblemResponseBody;
+
+      await updateProblem(roomId, created.id, { title: 'Título atualizado' }, tutor1Token).expect(
+        200,
+      );
+
+      const response = (await getProblemById(roomId, created.id, tutor1Token).expect(200))
+        .body as ProblemResponseBody;
+      expect(response.titulo).toBe('Título atualizado');
+    });
+  });
+
   describe('GET /api/salas/:roomId/problemas/:problemId/impacto-exclusao', () => {
     it('returns 401 Unauthorized when request lacks a JWT', async () => {
       await getProblemDeletionImpact(roomId, '00000000-0000-0000-0000-000000000000').expect(401);
@@ -477,12 +588,10 @@ describe('Problems (e2e)', () => {
     });
 
     it('returns 403 Forbidden when tutor is associated but not the room owner', async () => {
-      // Associa tutor2 à sala como tutor adicional (não dono)
       await dataSource.query(`INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2);`, [
         roomId,
         tutor2Id,
       ]);
-
       const res = await postProblem(
         roomId,
         { titulo: 'Problema Criado Pelo Dono' },

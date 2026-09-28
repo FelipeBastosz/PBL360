@@ -75,6 +75,10 @@ export class PgProblemRepository implements ProblemRepository {
     return rows.map((row) => this.toEntity(row));
   }
 
+  save(problem: Problem): Promise<Problem> {
+    return this.problems.save(problem);
+  }
+
   create(problem: Problem): Promise<Problem> {
     return this.problems.manager.transaction(async (manager): Promise<Problem> => {
       await manager.query(`SELECT id FROM rooms WHERE id = $1 FOR UPDATE;`, [problem.roomId]);

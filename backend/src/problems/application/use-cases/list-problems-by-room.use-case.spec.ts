@@ -18,6 +18,7 @@ describe('ListProblemsByRoomUseCase', () => {
 
     const problemRepository: jest.Mocked<ProblemRepository> = {
       create: jest.fn(),
+      save: jest.fn(),
       findById: jest.fn(),
       findByRoomId: findByRoomIdMock,
     };
