@@ -6,7 +6,7 @@ function validTableData(): NewPerformanceTable {
   return {
     tutorId: 'tutor-123',
     name: 'Avaliação tutorial',
-    criteria: [{ name: 'Participação', weight: 1, maxScore: 10 }],
+    criteria: [{ name: 'Participação', orderIndex: 1, weight: 1, maxScore: 10 }],
   };
 }
 
@@ -16,7 +16,7 @@ describe('PerformanceTable', () => {
 
     expect(table.name).toBe('Avaliação tutorial');
     expect(table.criteria).toEqual([
-      expect.objectContaining({ name: 'Participação', orderIndex: 1 }),
+      expect.objectContaining({ name: 'Participação', orderIndex: 1, weight: 1, maxScore: 10 }),
     ]);
   });
 
@@ -28,7 +28,9 @@ describe('PerformanceTable', () => {
     });
 
     expect(table.name).toBe('Avaliação tutorial');
-    expect(table.criteria).toEqual([expect.objectContaining({ name: 'Participação' })]);
+    expect(table.criteria).toEqual([
+      expect.objectContaining({ name: 'Participação', orderIndex: 1, weight: 1, maxScore: 10 }),
+    ]);
   });
 
   it('rejects a table without a name', () => {
@@ -47,7 +49,7 @@ describe('PerformanceTable', () => {
     expect(() =>
       PerformanceTable.create({
         ...validTableData(),
-        criteria: [{ name: '   ', weight: 1, maxScore: 10 }],
+        criteria: [{ name: '   ', orderIndex: 1, weight: 1, maxScore: 10 }],
       }),
     ).toThrow(InvalidPerformanceTableError);
   });
@@ -61,7 +63,7 @@ describe('PerformanceTable', () => {
     expect(() =>
       PerformanceTable.create({
         ...validTableData(),
-        criteria: [{ name: 'Participação', weight: 1, maxScore: 10, ...criterion }],
+        criteria: [{ name: 'Participação', orderIndex: 1, weight: 1, maxScore: 10, ...criterion }],
       }),
     ).toThrow(InvalidPerformanceTableError);
   });
