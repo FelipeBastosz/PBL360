@@ -6,7 +6,7 @@ function validTableData(): NewPerformanceTable {
   return {
     tutorId: 'tutor-123',
     name: 'Avaliação tutorial',
-    criteria: [{ name: 'Participação' }],
+    criteria: [{ name: 'Participação', weight: 1, maxScore: 10 }],
   };
 }
 
@@ -24,7 +24,7 @@ describe('PerformanceTable', () => {
     const table = PerformanceTable.create({
       ...validTableData(),
       name: '  Avaliação tutorial  ',
-      criteria: [{ name: '  Participação  ' }],
+      criteria: [{ name: '  Participação  ', weight: 1, maxScore: 10 }],
     });
 
     expect(table.name).toBe('Avaliação tutorial');
@@ -45,7 +45,24 @@ describe('PerformanceTable', () => {
 
   it('rejects a criterion without a name', () => {
     expect(() =>
-      PerformanceTable.create({ ...validTableData(), criteria: [{ name: '   ' }] }),
+      PerformanceTable.create({
+        ...validTableData(),
+        criteria: [{ name: '   ', weight: 1, maxScore: 10 }],
+      }),
+    ).toThrow(InvalidPerformanceTableError);
+  });
+
+  it.each([
+    ['weight', { weight: 0 }],
+    ['weight', { weight: -1 }],
+    ['maxScore', { maxScore: 0 }],
+    ['maxScore', { maxScore: -1 }],
+  ])('rejects a criterion with an invalid %s', (_field, criterion) => {
+    expect(() =>
+      PerformanceTable.create({
+        ...validTableData(),
+        criteria: [{ name: 'Participação', weight: 1, maxScore: 10, ...criterion }],
+      }),
     ).toThrow(InvalidPerformanceTableError);
   });
 });

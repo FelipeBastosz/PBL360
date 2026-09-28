@@ -88,5 +88,20 @@ export class PerformanceCriterion {
     if (!Number.isInteger(this.orderIndex) || this.orderIndex < 1) {
       throw new InvalidPerformanceTableError('A ordem do critério deve ser um inteiro positivo.');
     }
+
+    this.assertScoreAndWeightAreValid();
+  }
+
+  private assertScoreAndWeightAreValid(): void {
+    if (
+      !Number.isFinite(this.weight) ||
+      this.weight <= 0 ||
+      !Number.isFinite(this.maxScore) ||
+      this.maxScore <= 0
+    ) {
+      throw new InvalidPerformanceTableError(
+        'O peso e a pontuação máxima do critério devem ser números positivos.',
+      );
+    }
   }
 }
