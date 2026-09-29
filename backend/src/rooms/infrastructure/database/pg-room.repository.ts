@@ -7,7 +7,11 @@ import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 
 import { Room } from '../../domain/entities/room.entity';
 import { RoomCodeInUseError } from '../../domain/errors/room-code-in-use.error';
-import type { RoomRepository } from '../../domain/repositories/room.repository';
+import type {
+  RoomRepository,
+  RoomStudentSummary,
+  StudentRoomSummary,
+} from '../../domain/repositories/room.repository';
 
 export const ROOM_CODE_CONSTRAINT = 'uq_rooms_room_code';
 
@@ -78,6 +82,35 @@ export class PgRoomRepository implements RoomRepository {
     );
 
     return rows.map((row) => this.toEntity(row));
+  }
+
+  async findForStudent(studentId: string): Promise<StudentRoomSummary[]> {
+    const rows = await this.rooms.query<StudentRoomSummary[]>(
+      `SELECT rooms.id AS "roomId", rooms.name, rooms.semester,
+              COUNT(members.student_id)::int AS "totalStudents"
+         FROM room_students enrollment
+         JOIN rooms ON rooms.id = enrollment.room_id
+         JOIN room_students members ON members.room_id = rooms.id
+        WHERE enrollment.student_id = $1
+          AND rooms.deleted_at IS NULL
+        GROUP BY rooms.id, rooms.name, rooms.semester
+        ORDER BY rooms.semester DESC, rooms.name ASC;`,
+      [studentId],
+    );
+
+    return rows;
+  }
+
+  async findStudents(roomId: string): Promise<RoomStudentSummary[]> {
+    return this.rooms.query<RoomStudentSummary[]>(
+      `SELECT users.name, enrollment.joined_at AS "joinedAt"
+         FROM room_students enrollment
+         JOIN users ON users.id = enrollment.student_id
+        WHERE enrollment.room_id = $1
+          AND users.type = 'STUDENT'
+        ORDER BY enrollment.joined_at ASC, users.name ASC;`,
+      [roomId],
+    );
   }
 
   async update(room: Room): Promise<Room> {

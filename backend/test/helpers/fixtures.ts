@@ -15,7 +15,7 @@ export interface TestUser {
 
 export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
   await dataSource.query(
-    'TRUNCATE problems, room_tutors, rooms, password_reset_codes, email_verification_codes, users CASCADE;',
+    'TRUNCATE problems, room_students, room_tutors, rooms, password_reset_codes, email_verification_codes, users CASCADE;',
   );
 };
 
