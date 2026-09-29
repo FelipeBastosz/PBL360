@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { HorizontalLogo } from '@/components/ui/HorizontalLogo';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,24 +12,13 @@ import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import { cn } from '@/utils/cn';
 
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
-
 function RoomsHeader() {
   const { user } = useAuth();
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4">
       <HorizontalLogo />
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(user?.nome)}
-      </div>
+      <UserAvatar user={user} />
     </header>
   );
 }
@@ -161,7 +151,7 @@ function RoomsList({ isLoading, rooms, isStudent, hasFilter, userNome }: RoomsLi
   return (
     <div className="mt-4 flex flex-col gap-4">
       {rooms.map((room) => (
-        <RoomCard key={room.id} room={room} professorNome={userNome} />
+        <RoomCard key={room.id} room={room} professorNome={isStudent ? undefined : userNome} />
       ))}
     </div>
   );
@@ -173,7 +163,24 @@ export default function RoomsPage() {
   const [query, setQuery] = useState('');
   const isStudent = user?.tipo === 'ALUNO';
 
-  const { run, isLoading, error } = useAsyncAction(roomService.list);
+  const fetchRooms = useCallback(async (): Promise<Room[]> => {
+    if (isStudent) {
+      const studentRooms = roomService.listMyRooms ? await roomService.listMyRooms() : [];
+      return studentRooms.map((sr) => ({
+        id: sr.salaId,
+        nome: sr.nome,
+        semestre: sr.semestre,
+        codigoDisciplina: '',
+        codigoSala: '',
+        professorResponsavelId: '',
+        ativo: true,
+        criadoEm: '',
+      }));
+    }
+    return roomService.list();
+  }, [isStudent]);
+
+  const { run, isLoading, error } = useAsyncAction(fetchRooms);
 
   useEffect(() => {
     run().then((result) => {

@@ -11,6 +11,7 @@ import type { Room } from '@/types/room';
 vi.mock('@/services/room.service', () => ({
   roomService: {
     list: vi.fn(),
+    listMyRooms: vi.fn(),
   },
 }));
 
@@ -80,6 +81,7 @@ describe('RoomsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(roomService.list).mockResolvedValue([]);
+    vi.mocked(roomService.listMyRooms).mockResolvedValue([]);
   });
 
   describe('common behaviors', () => {
@@ -182,6 +184,23 @@ describe('RoomsPage', () => {
       expect(screen.getByRole('button', { name: 'Entrar em uma turma' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Criar nova turma' })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Editar uma turma' })).not.toBeInTheDocument();
+    });
+
+    it('renders room cards for student when rooms exist', async () => {
+      vi.mocked(roomService.listMyRooms).mockResolvedValue([
+        {
+          salaId: 'room-student-1',
+          nome: 'Engenharia de Software (Aluno)',
+          semestre: '2026.2',
+          totalAlunos: 25,
+        },
+      ]);
+      renderWithUser(mockStudent);
+
+      expect(await screen.findByText('Engenharia de Software (Aluno)')).toBeInTheDocument();
+      expect(
+        screen.queryByText('Você ainda não faz parte de nenhuma turma.'),
+      ).not.toBeInTheDocument();
     });
   });
 });
