@@ -4,6 +4,7 @@
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
   --color-brand-50: #eeeefb;
+  --color-brand-100: #cfcffd;
   --color-brand-200: #9e9eff;
   --color-brand-300: #9494ce;
   --color-brand-700: #1a1a8c;
@@ -21,6 +22,68 @@
   --color-success-soft: #ecfdf3;
 
   --animate-fade-up: fade-up 600ms ease-out both;
+  --animate-pop-in: pop-in 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-ring: ring 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-develop: develop 700ms ease-out both;
+  --animate-shake: shake 360ms ease-in-out;
+  --animate-slide-down: slide-down 220ms ease-out both;
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes ring {
+    from {
+      opacity: 0.9;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.35);
+    }
+  }
+
+  @keyframes develop {
+    from {
+      opacity: 0;
+      filter: blur(8px) saturate(0);
+      transform: scale(1.12);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0) saturate(1);
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shake {
+    20%,
+    60% {
+      transform: translateX(-5px);
+    }
+    40%,
+    80% {
+      transform: translateX(5px);
+    }
+  }
+
+  @keyframes slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
   @keyframes fade-up {
     from {
@@ -43,5 +106,47 @@
 
   body {
     @apply bg-surface font-sans text-ink antialiased;
+  }
+}
+
+@layer components {
+  .stagger-in > * {
+    animation: fade-up 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .stagger-in > :nth-child(1) {
+    animation-delay: 120ms;
+  }
+  .stagger-in > :nth-child(2) {
+    animation-delay: 160ms;
+  }
+  .stagger-in > :nth-child(3) {
+    animation-delay: 200ms;
+  }
+  .stagger-in > :nth-child(4) {
+    animation-delay: 240ms;
+  }
+  .stagger-in > :nth-child(5) {
+    animation-delay: 280ms;
+  }
+  .stagger-in > :nth-child(6) {
+    animation-delay: 320ms;
+  }
+  .stagger-in > :nth-child(7) {
+    animation-delay: 360ms;
+  }
+  .stagger-in > :nth-child(n + 8) {
+    animation-delay: 400ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

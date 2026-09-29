@@ -12,9 +12,20 @@ type TextFieldProps = {
   maxLength?: number;
   error?: string;
   hint?: string;
+  optional?: boolean;
   endAdornment?: ReactNode;
   autoFocus?: boolean;
 };
+
+function inputClassName(hasAdornment: boolean, hasError: boolean): string {
+  return cn(
+    'h-12 w-full rounded-xl border px-4 text-base text-ink bg-white shadow-[0_1px_2px_rgb(16_33_76/0.06)] transition-[border-color,box-shadow] duration-200 ease-out placeholder:text-placeholder hover:border-brand-300 focus:border-brand-900 focus:shadow-[0_0_0_4px_rgb(0_0_119/0.12)] focus:outline-none',
+    hasAdornment ? 'pr-12' : undefined,
+    hasError
+      ? 'border-danger hover:border-danger focus:border-danger focus:shadow-[0_0_0_4px_rgb(180_35_24/0.12)]'
+      : 'border-black/10',
+  );
+}
 
 export function TextField({
   label,
@@ -23,6 +34,7 @@ export function TextField({
   type = 'text',
   error,
   hint,
+  optional,
   endAdornment,
   ...inputProps
 }: TextFieldProps) {
@@ -33,6 +45,7 @@ export function TextField({
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-lg text-brand-900">
         {label}
+        {optional && <span className="text-brand-300"> (opcional)</span>}
       </label>
       <div className="relative">
         <input
@@ -42,11 +55,7 @@ export function TextField({
           onChange={(event) => onChange(event.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy || undefined}
-          className={cn(
-            'h-12 w-full rounded-[10px] border px-4 text-base text-ink bg-white placeholder:text-placeholder focus:outline-2 focus:outline-offset-0 focus:outline-brand-900',
-            endAdornment ? 'pr-12' : undefined,
-            error ? 'border-danger' : 'border-black/20',
-          )}
+          className={inputClassName(Boolean(endAdornment), Boolean(error))}
           {...inputProps}
         />
         {endAdornment && (
@@ -54,7 +63,7 @@ export function TextField({
         )}
       </div>
       {error && (
-        <p id={`${id}-error`} className="text-sm text-danger">
+        <p id={`${id}-error`} className="text-sm text-danger animate-slide-down">
           {error}
         </p>
       )}
