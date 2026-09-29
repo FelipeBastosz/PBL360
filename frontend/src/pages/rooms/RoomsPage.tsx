@@ -4,6 +4,8 @@ import { BrandHeader } from '@/components/layout/BrandHeader';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/utils/cn';
+import { Link } from 'react-router-dom';
+import { ROUTES } from '@/routes/paths';
 
 function RoomsHeader() {
   const { user } = useAuth();
@@ -76,9 +78,12 @@ function RoomsFabMenu({ isStudent }: RoomsFabMenuProps) {
               <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
                 Editar uma turma
               </button>
-              <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
+              <Link
+                to={ROUTES.createRoom}
+                className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+              >
                 Criar nova turma
-              </button>
+              </Link>
             </>
           )}
         </div>

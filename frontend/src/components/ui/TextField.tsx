@@ -15,6 +15,7 @@ type TextFieldProps = {
   optional?: boolean;
   endAdornment?: ReactNode;
   autoFocus?: boolean;
+  disabled?: boolean;
 };
 
 function inputClassName(hasAdornment: boolean, hasError: boolean): string {

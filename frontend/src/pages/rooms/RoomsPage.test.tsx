@@ -79,7 +79,7 @@ describe('RoomsPage', () => {
       const fab = screen.getByRole('button', { name: /ações de turma/i });
       await userEvent.click(fab);
 
-      expect(screen.getByRole('button', { name: 'Criar nova turma' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Criar nova turma' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Editar uma turma' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Entrar em uma turma' })).not.toBeInTheDocument();
     });
