@@ -1,28 +1,40 @@
-import { useState } from 'react';
-import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { BrandHeader } from '@/components/layout/BrandHeader';
-import { UserAvatar } from '@/components/ui/UserAvatar';
-import { useAuth } from '@/hooks/useAuth';
-import { cn } from '@/utils/cn';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { HorizontalLogo } from '@/components/ui/HorizontalLogo';
+import { Spinner } from '@/components/ui/Spinner';
+import { Alert } from '@/components/ui/Alert';
+import { useAuth } from '@/hooks/useAuth';
+import { useAsyncAction } from '@/hooks/useAsyncAction';
+import { roomService } from '@/services/room.service';
 import { ROUTES } from '@/routes/paths';
+import type { Room } from '@/types/room';
+import { cn } from '@/utils/cn';
+
+function getInitials(name?: string) {
+  if (!name) return 'U';
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((p) => p[0].toUpperCase())
+    .join('');
+}
 
 function RoomsHeader() {
   const { user } = useAuth();
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4">
-      <div className="text-white">
-        <BrandHeader />
+      <HorizontalLogo />
+      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
+        {getInitials(user?.nome)}
       </div>
-      <UserAvatar user={user} />
     </header>
   );
 }
 
-function RoomsSearch() {
-  const [query, setQuery] = useState('');
-
+type RoomsSearchProps = { query: string; setQuery: (q: string) => void };
+function RoomsSearch({ query, setQuery }: RoomsSearchProps) {
   return (
     <div className="relative mt-4 px-4">
       <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center pl-3">
@@ -39,11 +51,7 @@ function RoomsSearch() {
   );
 }
 
-type RoomsEmptyStateProps = {
-  isStudent: boolean;
-};
-
-function RoomsEmptyState({ isStudent }: RoomsEmptyStateProps) {
+function RoomsEmptyState({ isStudent }: { isStudent: boolean }) {
   return (
     <div className="mt-20 flex flex-col items-center justify-center px-6 text-center">
       <p className="text-base font-semibold text-ink">
@@ -58,11 +66,7 @@ function RoomsEmptyState({ isStudent }: RoomsEmptyStateProps) {
   );
 }
 
-type RoomsFabMenuProps = {
-  isStudent: boolean;
-};
-
-function RoomsFabMenu({ isStudent }: RoomsFabMenuProps) {
+function RoomsFabMenu({ isStudent }: { isStudent: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -102,26 +106,101 @@ function RoomsFabMenu({ isStudent }: RoomsFabMenuProps) {
   );
 }
 
+type RoomCardProps = { room: Room; professorNome?: string };
+function RoomCard({ room, professorNome }: RoomCardProps) {
+  return (
+    <Link
+      to={`${ROUTES.rooms}/${room.id}`}
+      className="flex flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-brand-900"
+    >
+      <div className="h-1.5 w-full bg-brand-900" />
+      <div className="flex flex-col gap-3 p-4">
+        <div>
+          <h3 className="line-clamp-2 text-base font-bold text-brand-900">{room.nome}</h3>
+          <p className="text-sm text-muted">Prof. {professorNome || 'Responsável'}</p>
+        </div>
+        <div className="mt-1 flex items-center justify-between">
+          <span className="text-sm text-muted">0 alunos</span>
+          <span className="rounded-full bg-brand-200 px-2.5 py-0.5 text-xs font-bold text-brand-900">
+            0 problemas
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+type RoomsListProps = {
+  isLoading: boolean;
+  rooms: Room[];
+  isStudent: boolean;
+  hasFilter: boolean;
+  userNome?: string;
+};
+
+function RoomsList({ isLoading, rooms, isStudent, hasFilter, userNome }: RoomsListProps) {
+  if (isLoading) {
+    return (
+      <div className="mt-10 flex justify-center">
+        <Spinner className="size-8 text-brand-900" />
+      </div>
+    );
+  }
+
+  if (rooms.length === 0) {
+    return hasFilter ? (
+      <p className="mt-10 text-center text-sm text-muted">Nenhuma turma encontrada.</p>
+    ) : (
+      <RoomsEmptyState isStudent={isStudent} />
+    );
+  }
+
+  return (
+    <div className="mt-4 flex flex-col gap-4">
+      {rooms.map((room) => (
+        <RoomCard key={room.id} room={room} professorNome={userNome} />
+      ))}
+    </div>
+  );
+}
+
 export default function RoomsPage() {
   const { user } = useAuth();
-  const [rooms] = useState<unknown[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [query, setQuery] = useState('');
   const isStudent = user?.tipo === 'ALUNO';
+
+  const { run, isLoading, error } = useAsyncAction(roomService.list);
+
+  useEffect(() => {
+    run().then((result) => {
+      if (result.ok) setRooms(result.data);
+    });
+  }, [run]);
+
+  const filteredRooms = rooms.filter((r) => r.nome.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
       <RoomsHeader />
-      <RoomsSearch />
+      <RoomsSearch query={query} setQuery={setQuery} />
 
-      <main className="mt-6 px-4">
+      <main className="mx-auto mt-6 w-full max-w-md px-4">
         <h2 className="text-xs font-bold uppercase tracking-widest text-muted">
-          Minhas turmas · {rooms.length}
+          Minhas turmas · {filteredRooms.length}
         </h2>
-
-        {rooms.length === 0 ? (
-          <RoomsEmptyState isStudent={isStudent} />
-        ) : (
-          <div className="mt-4 flex flex-col gap-3">{/* Listagem de turmas */}</div>
+        {error && (
+          <Alert tone="error" className="mt-4">
+            {error.message}
+          </Alert>
         )}
+        <RoomsList
+          isLoading={isLoading}
+          rooms={filteredRooms}
+          isStudent={isStudent}
+          hasFilter={query.length > 0}
+          userNome={user?.nome}
+        />
       </main>
 
       <RoomsFabMenu isStudent={isStudent} />
