@@ -23,14 +23,14 @@ describe('CreatePerformanceTableUseCase', () => {
     const result = await useCase.execute({
       tutorId: 'tutor-uuid-1',
       name: 'Avaliação tutorial',
-      criteria: [{ name: 'Participação' }],
+      criteria: [{ name: 'Participação', orderIndex: 1, weight: 0.5 }],
     });
 
     expect(createMock).toHaveBeenCalledWith(
       expect.objectContaining({
         tutorId: 'tutor-uuid-1',
         name: 'Avaliação tutorial',
-        criteria: [expect.objectContaining({ name: 'Participação', orderIndex: 1 })],
+        criteria: [expect.objectContaining({ name: 'Participação', orderIndex: 1, weight: 0.5 })],
       }),
     );
     expect(result).toBe(savedTable);

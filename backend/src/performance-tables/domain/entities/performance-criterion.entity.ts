@@ -1,5 +1,6 @@
 import {
   Column,
+  Check,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
@@ -16,6 +17,7 @@ import { PerformanceTable } from './performance-table.entity';
 
 @Entity('performance_criteria')
 @Unique('uq_performance_criteria_table_order', ['performanceTableId', 'orderIndex'])
+@Check('chk_performance_criteria_weight', '"weight" >= 0 AND "weight" <= 10')
 export class PerformanceCriterion {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -44,6 +46,9 @@ export class PerformanceCriterion {
   @Column({ name: 'order_index', type: 'smallint', default: 1 })
   orderIndex: number;
 
+  @Column({ name: 'weight', type: 'numeric', precision: 4, scale: 2, default: 1 })
+  weight: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
@@ -58,6 +63,7 @@ export class PerformanceCriterion {
     criterion.name = props.name?.trim();
     criterion.description = props.description?.trim() || null;
     criterion.orderIndex = props.orderIndex ?? 1;
+    criterion.weight = props.weight ?? 1;
     criterion.assertIsValid();
 
     return criterion;
@@ -76,6 +82,10 @@ export class PerformanceCriterion {
 
     if (!Number.isInteger(this.orderIndex) || this.orderIndex < 1) {
       throw new InvalidPerformanceTableError('A ordem do critério deve ser um inteiro positivo.');
+    }
+
+    if (this.weight <= 0 || this.weight >= 10) {
+      throw new InvalidPerformanceTableError('O peso do critério deve estar entre 0 e 10.');
     }
   }
 }

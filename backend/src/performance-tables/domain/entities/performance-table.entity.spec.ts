@@ -6,7 +6,7 @@ function validTableData(): NewPerformanceTable {
   return {
     tutorId: 'tutor-123',
     name: 'Avaliação tutorial',
-    criteria: [{ name: 'Participação' }],
+    criteria: [{ name: 'Participação', orderIndex: 1, weight: 0.5 }],
   };
 }
 
@@ -16,7 +16,7 @@ describe('PerformanceTable', () => {
 
     expect(table.name).toBe('Avaliação tutorial');
     expect(table.criteria).toEqual([
-      expect.objectContaining({ name: 'Participação', orderIndex: 1 }),
+      expect.objectContaining({ name: 'Participação', orderIndex: 1, weight: 0.5 }),
     ]);
   });
 
@@ -24,11 +24,13 @@ describe('PerformanceTable', () => {
     const table = PerformanceTable.create({
       ...validTableData(),
       name: '  Avaliação tutorial  ',
-      criteria: [{ name: '  Participação  ' }],
+      criteria: [{ name: '  Participação  ', orderIndex: 1, weight: 0.5 }],
     });
 
     expect(table.name).toBe('Avaliação tutorial');
-    expect(table.criteria).toEqual([expect.objectContaining({ name: 'Participação' })]);
+    expect(table.criteria).toEqual([
+      expect.objectContaining({ name: 'Participação', orderIndex: 1, weight: 0.5 }),
+    ]);
   });
 
   it('rejects a table without a name', () => {
@@ -43,9 +45,24 @@ describe('PerformanceTable', () => {
     );
   });
 
+  it('rejects criteria with repeated order indexes', () => {
+    expect(() =>
+      PerformanceTable.create({
+        ...validTableData(),
+        criteria: [
+          { name: 'Participação', orderIndex: 1, weight: 0.5 },
+          { name: 'Comunicação', orderIndex: 1, weight: 0.5 },
+        ],
+      }),
+    ).toThrow(InvalidPerformanceTableError);
+  });
+
   it('rejects a criterion without a name', () => {
     expect(() =>
-      PerformanceTable.create({ ...validTableData(), criteria: [{ name: '   ' }] }),
+      PerformanceTable.create({
+        ...validTableData(),
+        criteria: [{ name: '   ', orderIndex: 1, weight: 0.5 }],
+      }),
     ).toThrow(InvalidPerformanceTableError);
   });
 });

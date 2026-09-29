@@ -86,5 +86,16 @@ export class PerformanceTable {
         'A tabela de desempenho deve possuir ao menos um critério.',
       );
     }
+
+    this.criteriaHaveUniqueOrderIndexes();
+  }
+
+  private criteriaHaveUniqueOrderIndexes(): void {
+    const orderIndexes = this.criteria.map((criterion) => criterion.orderIndex);
+    if (new Set(orderIndexes).size !== orderIndexes.length) {
+      throw new InvalidPerformanceTableError(
+        'Os critérios da tabela de desempenho não podem repetir a ordem.',
+      );
+    }
   }
 }
