@@ -48,6 +48,20 @@ describe('validateRegisterForm', () => {
     expect(errors.foto).toBe('Envie uma foto sua.');
   });
 
+  it('validates the optional fields a professor chose to fill', () => {
+    const svg = new File(['<svg/>'], 'a.svg', { type: 'image/svg+xml' });
+    const errors = validateRegisterForm({
+      ...student,
+      tipo: 'PROFESSOR',
+      email: 'carlos@uefs.br',
+      matricula: '1999',
+      foto: svg,
+    });
+
+    expect(errors.matricula).toBe('A matrícula deve conter exatamente 8 dígitos.');
+    expect(errors.foto).toBe('A foto deve ser uma imagem JPEG, PNG ou WebP.');
+  });
+
   it('does not require registration number nor photo from professors', () => {
     const errors = validateRegisterForm({
       ...student,
@@ -73,12 +87,22 @@ describe('toRegisterPayload', () => {
     });
   });
 
-  it('leaves student-only fields out of a professor payload', () => {
-    expect(toRegisterPayload({ ...student, tipo: 'PROFESSOR' })).toEqual({
-      nome: 'Ana Souza',
-      email: 'ana@discente.uefs.br',
-      senha: 'senha-secreta',
+  it('leaves out the optional fields a professor did not fill', () => {
+    expect(toRegisterPayload({ ...student, tipo: 'PROFESSOR', matricula: '', foto: null })).toEqual(
+      {
+        nome: 'Ana Souza',
+        email: 'ana@discente.uefs.br',
+        senha: 'senha-secreta',
+        tipo: 'PROFESSOR',
+      },
+    );
+  });
+
+  it('keeps the optional fields a professor did fill', () => {
+    expect(toRegisterPayload({ ...student, tipo: 'PROFESSOR' })).toMatchObject({
       tipo: 'PROFESSOR',
+      matricula: '20240001',
+      foto: photo,
     });
   });
 });
