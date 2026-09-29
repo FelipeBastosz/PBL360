@@ -22,6 +22,14 @@ export class ProblemResponseDto {
   @ApiProperty({ nullable: true, type: String, format: 'date', example: '2026-03-15' })
   dataFim: string | null;
 
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'Tabela de desempenho vinculada ao problema.',
+  })
+  tabelaId: string | null;
+
   @ApiProperty({ example: false })
   autoavaliacaoLiberada: boolean;
 

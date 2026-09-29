@@ -6,6 +6,7 @@ export type Problem = {
   ordem: number;
   dataInicio: string | null;
   dataFim: string | null;
+  tabelaId: string | null;
   autoavaliacaoLiberada: boolean;
   avaliacaoEntreParesLiberada: boolean;
   liberadoEm: string | null;
@@ -20,4 +21,5 @@ export type CreateProblemPayload = {
   descricao?: string;
   dataInicio?: string;
   dataFim?: string;
+  tabelaId?: string;
 };

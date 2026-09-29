@@ -9,6 +9,7 @@ export const toProblemResponse = (problem: Problem): ProblemResponseDto => ({
   ordem: problem.orderIndex ?? 1,
   dataInicio: problem.startDate ?? null,
   dataFim: problem.endDate ?? null,
+  tabelaId: problem.performanceTableId ?? null,
   autoavaliacaoLiberada: problem.selfEvalReleased,
   avaliacaoEntreParesLiberada: problem.peerEvalReleased,
   liberadoEm: problem.releasedAt ?? null,
