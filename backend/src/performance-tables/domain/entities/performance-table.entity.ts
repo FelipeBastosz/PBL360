@@ -35,6 +35,9 @@ export class PerformanceTable {
   @Column({ type: 'varchar', length: 120 })
   name: string;
 
+  @Column({ type: 'text', nullable: true, default: null })
+  description: string | null;
+
   @OneToMany(() => PerformanceCriterion, (criterion) => criterion.performanceTable, {
     cascade: ['insert'],
   })
@@ -53,6 +56,7 @@ export class PerformanceTable {
     const table = new PerformanceTable();
     table.tutorId = props.tutorId?.trim();
     table.name = props.name?.trim();
+    table.description = props.description?.trim() || null;
     table.criteria = (props.criteria ?? []).map((criterion, index) => {
       const entity = PerformanceCriterion.create({
         ...criterion,

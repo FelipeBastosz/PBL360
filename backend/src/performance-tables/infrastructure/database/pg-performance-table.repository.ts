@@ -4,6 +4,8 @@ import { type EntityManager, Repository } from 'typeorm';
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
 import type { PerformanceTableRepository } from '../../domain/repositories/performance-table.repository';
 
+const CRITERION_COLUMNS = 7;
+
 @Injectable()
 export class PgPerformanceTableRepository implements PerformanceTableRepository {
   constructor(
@@ -27,11 +29,11 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     table: PerformanceTable,
   ): Promise<PerformanceTable> {
     const [persistedTable] = await manager.query<PerformanceTable[]>(
-      `INSERT INTO performance_tables (tutor_id, name)
-         VALUES ($1, $2)
-         RETURNING id, tutor_id AS "tutorId", name, created_at AS "createdAt",
+      `INSERT INTO performance_tables (tutor_id, name, description)
+         VALUES ($1, $2, $3)
+         RETURNING id, tutor_id AS "tutorId", name, description, created_at AS "createdAt",
                    updated_at AS "updatedAt", deleted_at AS "deletedAt";`,
-      [table.tutorId, table.name],
+      [table.tutorId, table.name, table.description],
     );
 
     if (!persistedTable) {
@@ -51,7 +53,7 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
 
     return manager.query(
       `INSERT INTO performance_criteria
-         (performance_table_id, name, description, order_index, weight)
+         (performance_table_id, name, description, category, order_index, weight, max_score)
        VALUES ${placeholders};`,
       criteria.flat(),
     );
@@ -62,15 +64,21 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
       tableId,
       criterion.name,
       criterion.description ?? null,
+      criterion.category,
       criterion.orderIndex,
       criterion.weight,
+      criterion.maxScore,
     ]);
   }
 
   private buildCriteriaPlaceholders(criteriaCount: number): string {
     return Array.from({ length: criteriaCount }, (_, criterionIndex) => {
-      const offset = criterionIndex * 5;
-      return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`;
+      const offset = criterionIndex * CRITERION_COLUMNS;
+      const placeholders = Array.from(
+        { length: CRITERION_COLUMNS },
+        (_, column) => `$${offset + column + 1}`,
+      );
+      return `(${placeholders.join(', ')})`;
     }).join(', ');
   }
 }
