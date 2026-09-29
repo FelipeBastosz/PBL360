@@ -1,6 +1,5 @@
 import type { DataSource, Repository } from 'typeorm';
 import { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
-import { CriterionCategory } from '@/performance-tables/domain/enums/criterion-category.enum';
 import { User } from '@/users/domain/entities/user.entity';
 import {
   SEED_PERFORMANCE_TABLES,
@@ -23,7 +22,7 @@ describe('performance-tables.seed', () => {
     } as unknown as DataSource;
   });
 
-  it('creates a table with criteria in the three categories', async () => {
+  it('creates a table with its criteria', async () => {
     userRepo.findOneBy.mockResolvedValueOnce(Object.assign(new User(), { id: 'tutor-1' }));
     tableRepo.findOneBy.mockResolvedValueOnce(null);
 
@@ -33,8 +32,21 @@ describe('performance-tables.seed', () => {
     expect(created).toBe(true);
     expect(saved.tutorId).toBe('tutor-1');
     expect(saved.criteria).toHaveLength(6);
-    expect(new Set(saved.criteria.map((criterion) => criterion.category))).toEqual(
-      new Set(Object.values(CriterionCategory)),
+    expect(saved.criteria).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'Domínio do tema',
+          description: 'Demonstra domínio sobre o tema estudado.',
+          orderIndex: 1,
+          weight: 3,
+        }),
+        expect.objectContaining({
+          name: 'Postura',
+          description: 'Mantém postura adequada durante as atividades.',
+          orderIndex: 6,
+          weight: 1,
+        }),
+      ]),
     );
   });
 

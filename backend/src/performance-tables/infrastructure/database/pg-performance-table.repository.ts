@@ -4,7 +4,7 @@ import { type EntityManager, Repository } from 'typeorm';
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
 import type { PerformanceTableRepository } from '../../domain/repositories/performance-table.repository';
 
-const CRITERION_COLUMNS = 7;
+const CRITERION_COLUMNS = 5;
 
 @Injectable()
 export class PgPerformanceTableRepository implements PerformanceTableRepository {
@@ -53,7 +53,7 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
 
     return manager.query(
       `INSERT INTO performance_criteria
-         (performance_table_id, name, description, category, order_index, weight, max_score)
+         (performance_table_id, name, description, order_index, weight)
        VALUES ${placeholders};`,
       criteria.flat(),
     );
@@ -64,10 +64,8 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
       tableId,
       criterion.name,
       criterion.description ?? null,
-      criterion.category,
       criterion.orderIndex,
       criterion.weight,
-      criterion.maxScore,
     ]);
   }
 

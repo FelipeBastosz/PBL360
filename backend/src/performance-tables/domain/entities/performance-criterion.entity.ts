@@ -11,7 +11,6 @@ import {
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
-import { CriterionCategory } from '../enums/criterion-category.enum';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { NewPerformanceCriterion } from './new-performance-table';
 import { PerformanceTable } from './performance-table.entity';
@@ -19,7 +18,6 @@ import { PerformanceTable } from './performance-table.entity';
 @Entity('performance_criteria')
 @Unique('uq_performance_criteria_table_order', ['performanceTableId', 'orderIndex'])
 @Check('chk_performance_criteria_weight', '"weight" >= 0 AND "weight" <= 10')
-@Check('chk_performance_criteria_max_score', '"max_score" > 0')
 export class PerformanceCriterion {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -45,22 +43,11 @@ export class PerformanceCriterion {
   @Column({ type: 'text', nullable: true, default: null })
   description: string | null;
 
-  @Column({
-    type: 'enum',
-    enum: CriterionCategory,
-    enumName: 'performance_criterion_category',
-    default: CriterionCategory.CONTENT,
-  })
-  category: CriterionCategory;
-
   @Column({ name: 'order_index', type: 'smallint', default: 1 })
   orderIndex: number;
 
   @Column({ name: 'weight', type: 'numeric', precision: 4, scale: 2, default: 1 })
   weight: number;
-
-  @Column({ name: 'max_score', type: 'numeric', precision: 5, scale: 2, default: 10 })
-  maxScore: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
@@ -75,10 +62,8 @@ export class PerformanceCriterion {
     const criterion = new PerformanceCriterion();
     criterion.name = props.name?.trim();
     criterion.description = props.description?.trim() || null;
-    criterion.category = props.category ?? CriterionCategory.CONTENT;
     criterion.orderIndex = props.orderIndex ?? 1;
     criterion.weight = props.weight ?? 1;
-    criterion.maxScore = props.maxScore ?? 10;
     criterion.assertIsValid();
 
     return criterion;
@@ -86,7 +71,6 @@ export class PerformanceCriterion {
 
   private assertIsValid(): void {
     this.assertNameIsValid();
-    this.assertCategoryIsValid();
     this.assertNumbersAreValid();
   }
 
@@ -102,21 +86,9 @@ export class PerformanceCriterion {
     }
   }
 
-  private assertCategoryIsValid(): void {
-    if (!Object.values(CriterionCategory).includes(this.category)) {
-      throw new InvalidPerformanceTableError(
-        'A categoria do critério deve ser CONTENT, PARTICIPATION ou BEHAVIOR.',
-      );
-    }
-  }
-
   private assertNumbersAreValid(): void {
     if (!Number.isInteger(this.orderIndex) || this.orderIndex < 1) {
       throw new InvalidPerformanceTableError('A ordem do critério deve ser um inteiro positivo.');
-    }
-
-    if (!(this.maxScore > 0)) {
-      throw new InvalidPerformanceTableError('A nota máxima do critério deve ser maior que zero.');
     }
 
     if (this.weight <= 0 || this.weight >= 10) {
