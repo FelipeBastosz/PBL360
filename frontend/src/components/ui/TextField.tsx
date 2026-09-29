@@ -1,5 +1,6 @@
 import { type ReactNode, useId } from 'react';
 import { cn } from '@/utils/cn';
+import { fieldControlClassName } from './fieldStyles';
 
 type TextFieldProps = {
   label: string;
@@ -17,16 +18,6 @@ type TextFieldProps = {
   autoFocus?: boolean;
   disabled?: boolean;
 };
-
-function inputClassName(hasAdornment: boolean, hasError: boolean): string {
-  return cn(
-    'h-12 w-full rounded-xl border px-4 text-base text-ink bg-white shadow-[0_1px_2px_rgb(16_33_76/0.06)] transition-[border-color,box-shadow] duration-200 ease-out placeholder:text-placeholder hover:border-brand-300 focus:border-brand-900 focus:shadow-[0_0_0_4px_rgb(0_0_119/0.12)] focus:outline-none',
-    hasAdornment ? 'pr-12' : undefined,
-    hasError
-      ? 'border-danger hover:border-danger focus:border-danger focus:shadow-[0_0_0_4px_rgb(180_35_24/0.12)]'
-      : 'border-black/10',
-  );
-}
 
 export function TextField({
   label,
@@ -56,7 +47,7 @@ export function TextField({
           onChange={(event) => onChange(event.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy || undefined}
-          className={inputClassName(Boolean(endAdornment), Boolean(error))}
+          className={cn(fieldControlClassName(Boolean(error)), endAdornment ? 'pr-12' : undefined)}
           {...inputProps}
         />
         {endAdornment && (

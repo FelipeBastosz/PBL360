@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
+import { FlowShell } from '@/components/layout/FlowShell';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { SelectField } from '@/components/ui/SelectField';
 import { Alert } from '@/components/ui/Alert';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useForm } from '@/hooks/useForm';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
@@ -21,32 +22,6 @@ const selectOptions = [
   ...MOCK_DISCIPLINES.map((d) => ({ value: d.id, label: `${d.codigo} - ${d.nome}` })),
   { value: 'outra', label: 'Outra disciplina...' },
 ];
-
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
-
-function CreateRoomHeader() {
-  const { user } = useAuth();
-  return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4">
-      <div className="flex items-center gap-2 text-white">
-        <Link to={ROUTES.rooms} aria-label="Voltar" className="rounded-md p-1 hover:bg-white/10">
-          <ChevronLeftIcon className="size-6" aria-hidden />
-        </Link>
-        <h1 className="text-lg font-semibold">Criar turma</h1>
-      </div>
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(user?.nome)}
-      </div>
-    </header>
-  );
-}
 
 function CreateRoomActions({ isLoading, onCancel }: { isLoading: boolean; onCancel: () => void }) {
   return (
@@ -88,13 +63,15 @@ function CreateRoomFields({
         error={isCustom ? undefined : form.errors.codigo}
       />
       {isCustom && (
-        <TextField
-          label="Código da Disciplina"
-          placeholder="ex.: ABC123"
-          value={form.values.codigo}
-          onChange={(v) => form.setValue('codigo', v)}
-          error={form.errors.codigo}
-        />
+        <div className="animate-slide-down">
+          <TextField
+            label="Código da Disciplina"
+            placeholder="ex.: ABC123"
+            value={form.values.codigo}
+            onChange={(v) => form.setValue('codigo', v)}
+            error={form.errors.codigo}
+          />
+        </div>
       )}
       <TextField
         label="Nome da Disciplina"
@@ -118,6 +95,14 @@ function CreateRoomFields({
         error={form.errors.semestre}
       />
     </>
+  );
+}
+
+function FormError({ message }: { message: string }) {
+  return (
+    <div className="animate-shake">
+      <Alert tone="error">{message}</Alert>
+    </div>
   );
 }
 
@@ -160,8 +145,8 @@ function CreateRoomForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 p-6 pb-12 bg-surface">
-      {error && <Alert tone="error">{error.message}</Alert>}
+    <form onSubmit={handleSubmit} className="stagger-in flex flex-col gap-5">
+      {error && <FormError message={error.message} />}
       <CreateRoomFields
         selectedDisciplineId={selectedDisciplineId}
         onSelectDiscipline={handleDisciplineSelect}
@@ -174,12 +159,16 @@ function CreateRoomForm() {
 }
 
 export default function CreateRoomPage() {
+  const { user } = useAuth();
+
   return (
-    <div className="min-h-dvh bg-surface">
-      <CreateRoomHeader />
-      <main className="mx-auto w-full max-w-md">
-        <CreateRoomForm />
-      </main>
-    </div>
+    <FlowShell
+      title="Criar turma"
+      subtitle="Dados da disciplina"
+      backTo={ROUTES.rooms}
+      trailing={<UserAvatar user={user} />}
+    >
+      <CreateRoomForm />
+    </FlowShell>
   );
 }

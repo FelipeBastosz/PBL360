@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/utils/cn';
+import { fieldControlClassName } from './fieldStyles';
 
 type SelectOption = { value: string; label: string };
 
@@ -38,8 +39,8 @@ export function SelectField({
           disabled={disabled}
           aria-invalid={error ? true : undefined}
           className={cn(
-            'h-12 w-full appearance-none rounded-[10px] border px-4 text-base text-ink bg-white focus:outline-2 focus:outline-offset-0 focus:outline-brand-900 disabled:bg-black/5 disabled:text-placeholder',
-            error ? 'border-danger' : 'border-black/20',
+            fieldControlClassName(Boolean(error)),
+            'peer appearance-none pr-11',
             value === '' && 'text-placeholder',
           )}
         >
@@ -52,11 +53,11 @@ export function SelectField({
             </option>
           ))}
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
-          <ChevronDownIcon className="size-5 text-placeholder" aria-hidden />
+        <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-placeholder transition-transform duration-200 peer-focus:rotate-180 peer-focus:text-brand-900">
+          <ChevronDownIcon className="size-5" aria-hidden />
         </div>
       </div>
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="text-sm text-danger animate-slide-down">{error}</p>}
     </div>
   );
 }

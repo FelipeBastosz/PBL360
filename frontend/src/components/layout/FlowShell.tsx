@@ -6,6 +6,7 @@ import { cn } from '@/utils/cn';
 type FlowShellProps = {
   title: string;
   subtitle?: string;
+  trailing?: ReactNode;
   backTo: string;
   backLabel?: string;
   children: ReactNode;
@@ -14,6 +15,7 @@ type FlowShellProps = {
 export function FlowShell({
   title,
   subtitle,
+  trailing,
   backTo,
   backLabel = 'Voltar',
   children,
@@ -28,10 +30,11 @@ export function FlowShell({
         >
           <ChevronLeftIcon className="size-7" aria-hidden />
         </Link>
-        <div className="flex flex-col animate-slide-down">
-          <h1 className="text-2xl leading-tight font-semibold">{title}</h1>
-          {subtitle && <p className="text-base text-white/70">{subtitle}</p>}
+        <div className="flex min-w-0 flex-1 flex-col animate-slide-down">
+          <h1 className="truncate text-2xl leading-tight font-semibold">{title}</h1>
+          {subtitle && <p className="truncate text-base text-white/70">{subtitle}</p>}
         </div>
+        {trailing && <div className="shrink-0 animate-pop-in">{trailing}</div>}
       </header>
       <main
         className={cn(
