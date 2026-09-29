@@ -4,6 +4,7 @@ import type {
   CreateRoomPayload,
   Room,
   UpdateRoomPayload,
+  StudentRoom,
 } from '@/types/room';
 import { api } from './api';
 
@@ -26,4 +27,6 @@ export const roomService = {
 
   removeTutor: (roomId: string, tutorId: string) =>
     api.delete<MessageResponse>(`${BASE}/${roomId}/professores/${tutorId}`).then((r) => r.data),
+
+  listMyRooms: () => api.get<StudentRoom[]>(`${BASE}/minhas`).then((r) => r.data),
 };

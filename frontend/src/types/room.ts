@@ -24,3 +24,10 @@ export type UpdateRoomPayload = {
 export type AddTutorToRoomPayload = {
   professorId: string;
 };
+
+export type StudentRoom = {
+  salaId: string;
+  nome: string;
+  semestre: string;
+  totalAlunos: number;
+};
