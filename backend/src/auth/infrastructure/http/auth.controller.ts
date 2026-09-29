@@ -9,9 +9,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { IdentityThrottlerGuard } from '@/shared/throttling/identity-throttler.guard';
-import { STRICT_AUTH_LIMIT } from '@/shared/throttling/throttlers';
+import { ROOM_ENTRY_THROTTLER, STRICT_AUTH_LIMIT } from '@/shared/throttling/throttlers';
 import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
 import { PasswordResetTokenResponseDto } from '../../application/dtos/password-reset-token-response.dto';
 import { RequestPasswordResetDto } from '../../application/dtos/request-password-reset.dto';
@@ -69,6 +69,7 @@ const PASSWORD_RESET = 'Senha redefinida com sucesso.';
 @Controller('autenticacao')
 @Public()
 @UseGuards(IdentityThrottlerGuard)
+@SkipThrottle({ [ROOM_ENTRY_THROTTLER]: true })
 @UseFilters(PendingVerificationFilter)
 export class AuthController {
   constructor(

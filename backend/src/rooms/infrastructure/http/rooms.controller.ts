@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
@@ -18,7 +28,13 @@ import { ListStudentRoomsUseCase } from '../../application/use-cases/list-studen
 import { UpdateRoomUseCase } from '../../application/use-cases/update-room.use-case';
 import { RoomStudentResponseDto } from '../../application/dtos/room-student-response.dto';
 import { StudentRoomResponseDto } from '../../application/dtos/student-room-response.dto';
-import { toRoomChanges, toRoomResponse } from './room.mapper';
+import { JoinRoomByCodeDto, JoinRoomByLinkDto } from '../../application/dtos/join-room.dto';
+import { JoinRoomUseCase } from '../../application/use-cases/join-room.use-case';
+import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
+import { RoomEntryThrottlerGuard } from '@/shared/throttling/room-entry-throttler.guard';
+import { AUTH_THROTTLER, ROOM_ENTRY_LIMIT } from '@/shared/throttling/throttlers';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { roomCodeFromInviteLink, toRoomChanges, toRoomResponse } from './room.mapper';
 import {
   CreateRoomSwaggerDocs,
   DeleteRoomSwaggerDocs,
@@ -27,6 +43,7 @@ import {
   ListRoomsSwaggerDocs,
 } from './room.swagger';
 import { ListRoomStudentsSwaggerDocs, ListStudentRoomsSwaggerDocs } from './room-members.swagger';
+import { JoinRoomByCodeSwaggerDocs, JoinRoomByLinkSwaggerDocs } from './room-entry.swagger';
 
 @ApiTags('Salas')
 @Controller('salas')
@@ -40,7 +57,42 @@ export class RoomsController {
     private readonly getRoomDetailUseCase: GetRoomDetailUseCase,
     private readonly listStudentRoomsUseCase: ListStudentRoomsUseCase,
     private readonly listRoomStudentsUseCase: ListRoomStudentsUseCase,
+    private readonly joinRoomUseCase: JoinRoomUseCase,
   ) {}
+
+  @Post('ingressar/codigo')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserType.STUDENT)
+  @Throttle(ROOM_ENTRY_LIMIT)
+  @SkipThrottle({ [AUTH_THROTTLER]: true })
+  @UseGuards(RoomEntryThrottlerGuard)
+  @JoinRoomByCodeSwaggerDocs
+  joinByCode(
+    @Body() dto: JoinRoomByCodeDto,
+    @AuthenticatedUserId() studentId: string,
+  ): Promise<MessageResponseDto> {
+    return this.joinRoom(dto.codigoSala, studentId);
+  }
+
+  @Post('ingressar/link')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserType.STUDENT)
+  @Throttle(ROOM_ENTRY_LIMIT)
+  @SkipThrottle({ [AUTH_THROTTLER]: true })
+  @UseGuards(RoomEntryThrottlerGuard)
+  @JoinRoomByLinkSwaggerDocs
+  joinByLink(
+    @Body() dto: JoinRoomByLinkDto,
+    @AuthenticatedUserId() studentId: string,
+  ): Promise<MessageResponseDto> {
+    return this.joinRoom(roomCodeFromInviteLink(dto.link), studentId);
+  }
+
+  private async joinRoom(roomCode: string, studentId: string): Promise<MessageResponseDto> {
+    await this.joinRoomUseCase.execute({ roomCode, studentId });
+
+    return { mensagem: 'Entrada na sala realizada com sucesso.' };
+  }
 
   @Get('minhas')
   @Roles(UserType.STUDENT)

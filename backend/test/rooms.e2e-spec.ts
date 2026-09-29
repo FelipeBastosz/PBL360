@@ -69,6 +69,14 @@ describe('Rooms (e2e)', () => {
     return row.deleted_at;
   };
 
+  const enrolledStudentCount = async (roomId: string): Promise<number> => {
+    const [row] = await dataSource.query<[{ count: string }]>(
+      'SELECT COUNT(*)::text AS count FROM room_students WHERE room_id = $1 AND student_id = $2;',
+      [roomId, student.id],
+    );
+    return Number(row.count);
+  };
+
   describe('POST /salas', () => {
     it('creates a room owned by the authenticated tutor, in Portuguese', async () => {
       const room = await createRoom();
@@ -152,6 +160,56 @@ describe('Rooms (e2e)', () => {
 
     it('is forbidden to tutors', async () => {
       await api(app, owner).get('/salas/minhas').expect(403);
+    });
+  });
+
+  describe('POST /salas/ingressar', () => {
+    it('enters by code and returns the same success response on retries', async () => {
+      const room = await createRoom();
+      const enter = () =>
+        api(app, student).post('/salas/ingressar/codigo', { codigoSala: room.codigoSala });
+      const expected = { mensagem: 'Entrada na sala realizada com sucesso.' };
+
+      await enter().expect(200, expected);
+      await enter().expect(200, expected);
+
+      expect(await enrolledStudentCount(room.id)).toBe(1);
+    });
+
+    it('enters by the shared invite link using the same behavior', async () => {
+      const room = await createRoom();
+
+      await api(app, student)
+        .post('/salas/ingressar/link', {
+          link: `https://pbl360.com/salas/${room.codigoSala}`,
+        })
+        .expect(200, { mensagem: 'Entrada na sala realizada com sucesso.' });
+
+      expect(await enrolledStudentCount(room.id)).toBe(1);
+    });
+
+    it('uses the same not-found response for an unknown code and inactive room', async () => {
+      const room = await createRoom();
+      const unavailable = {
+        statusCode: 404,
+        message: 'Código de ingresso inválido ou sala indisponível.',
+        error: 'Not Found',
+      };
+
+      await api(app, student)
+        .post('/salas/ingressar/codigo', { codigoSala: 'invalid1' })
+        .expect(404, unavailable);
+      await api(app, owner).patch(`/salas/${room.id}`, { ativo: false }).expect(200);
+      await api(app, student)
+        .post('/salas/ingressar/codigo', { codigoSala: room.codigoSala })
+        .expect(404, unavailable);
+    });
+
+    it('rejects malformed links and non-student users', async () => {
+      await api(app, student)
+        .post('/salas/ingressar/link', { link: 'https://pbl360.com/outra/aB7kP2x9' })
+        .expect(400);
+      await api(app, owner).post('/salas/ingressar/codigo', { codigoSala: 'aB7kP2x9' }).expect(403);
     });
   });
 
@@ -323,5 +381,22 @@ describe('Rooms (e2e)', () => {
         .post(`/salas/${room.id}/professores`, { professorId: colleague.id })
         .expect(404);
     });
+  });
+
+  it('limits shared code and link attempts with a standardized 429 response', async () => {
+    const enterWithInvalidCode = () =>
+      api(app, student).post('/salas/ingressar/codigo', { codigoSala: 'invalid1' });
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await enterWithInvalidCode().expect(404);
+    }
+
+    await api(app, student)
+      .post('/salas/ingressar/link', { link: 'https://pbl360.com/salas/Ab12Cd34' })
+      .expect(429, {
+        statusCode: 429,
+        message: 'Muitas tentativas de ingresso. Aguarde um minuto e tente novamente.',
+        error: 'Too Many Requests',
+      });
   });
 });

@@ -19,6 +19,8 @@ export const buildRoom = (overrides: Partial<Room> = {}): Room => {
 export const roomRepositoryStub = (): jest.Mocked<RoomRepository> => ({
   create: jest.fn(),
   findById: jest.fn(),
+  findByRoomCode: jest.fn(),
+  joinStudent: jest.fn(),
   findByTutorId: jest.fn(),
   update: jest.fn(),
   softDelete: jest.fn(),
