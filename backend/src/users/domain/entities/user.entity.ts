@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, ManyToMany } 
 import { UserType } from '../enums/user-type.enum';
 import { InvalidUserError } from '../errors/invalid-user.error';
 import type { NewUser } from './new-user';
+import type { UserPhoto } from './user-photo.entity';
 import { Room } from '@/rooms/domain/entities/room.entity';
 
 const TUTOR_EMAIL = /^[^@\s]+@uefs\.br$/i;
@@ -33,9 +34,6 @@ export class User {
   })
   registrationNumber: string | null;
 
-  @Column({ name: 'photo_url', type: 'varchar', length: 255, nullable: true })
-  photoUrl: string | null;
-
   @Column({ type: 'enum', enum: UserType, enumName: 'user_type' })
   type: UserType;
 
@@ -51,6 +49,10 @@ export class User {
   @ManyToMany(() => Room, (room) => room.tutors)
   rooms: Room[];
 
+  hasPhoto: boolean;
+
+  pendingPhoto: UserPhoto | null = null;
+
   static create(props: NewUser): User {
     const user = new User();
     user.name = props.name.trim();
@@ -58,7 +60,8 @@ export class User {
     user.passwordHash = props.passwordHash;
     user.type = props.type;
     user.registrationNumber = props.registrationNumber?.trim() || null;
-    user.photoUrl = props.photoUrl?.trim() || null;
+    user.pendingPhoto = props.photo ?? null;
+    user.hasPhoto = user.pendingPhoto !== null;
     user.active = false;
     user.tokenVersion = 0;
     user.assertIsValid();
@@ -93,7 +96,7 @@ export class User {
       throw new InvalidUserError('A matrícula é obrigatória para alunos.');
     }
 
-    if (this.photoUrl === null) {
+    if (!this.hasPhoto) {
       throw new InvalidUserError('A foto é obrigatória para alunos.');
     }
   }

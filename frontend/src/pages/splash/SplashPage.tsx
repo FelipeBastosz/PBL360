@@ -22,6 +22,7 @@ export default function SplashPage() {
     <main className="flex min-h-dvh flex-col items-center justify-center px-6 text-card bg-brand-900">
       <h1 className="sr-only">PBL360</h1>
       <LogoMark
+        animated
         className="size-[min(293px,75vw)] animate-fade-up text-brand-900 lg:size-80"
         discClassName="fill-card"
       />

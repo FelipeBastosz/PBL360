@@ -4,6 +4,7 @@ import { AppModule } from '@/app.module';
 import { ConflictError } from '@/shared/errors/application.error';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { buildPhoto, pngPhotoBytes } from '@/users/testing/photo-fixtures';
 import { type UserRepository, USER_REPOSITORY } from '@/users/domain/repositories/user.repository';
 
 const MISSING_ID = '00000000-0000-0000-0000-000000000000';
@@ -58,7 +59,7 @@ describe('User repository (e2e)', () => {
 
       expect(saved.active).toBe(false);
       expect(saved.createdAt).toBeInstanceOf(Date);
-      expect(saved.photoUrl).toBeNull();
+      expect(saved.hasPhoto).toBe(false);
     });
 
     it('returns a hydrated entity, not a raw row', async () => {
@@ -89,6 +90,60 @@ describe('User repository (e2e)', () => {
         new ConflictError('Já existe uma conta cadastrada com esta matrícula.'),
       );
       expect(await countUsers()).toBe(1);
+    });
+  });
+
+  describe('photo', () => {
+    const storedPhotoOf = async (userId: string) => {
+      const rows = await dataSource.query<{ content: Buffer; mimeType: string }[]>(
+        'SELECT content, mime_type AS "mimeType" FROM user_photos WHERE user_id = $1;',
+        [userId],
+      );
+      return rows[0];
+    };
+
+    it('stores the pending photo bytes with the new user', async () => {
+      const user = Object.assign(buildUser(), { pendingPhoto: buildPhoto() });
+
+      const saved = await repository.save(user);
+      const stored = await storedPhotoOf(saved.id);
+
+      expect(saved.hasPhoto).toBe(true);
+      expect(stored?.mimeType).toBe('image/png');
+      expect(stored?.content.equals(pngPhotoBytes())).toBe(true);
+    });
+
+    it('reports the stored photo on later lookups', async () => {
+      const saved = await repository.save(
+        Object.assign(buildUser(), { pendingPhoto: buildPhoto() }),
+      );
+
+      expect((await repository.findById(saved.id))?.hasPhoto).toBe(true);
+    });
+
+    it('keeps the photo when an unrelated field changes', async () => {
+      const saved = await repository.save(
+        Object.assign(buildUser(), { pendingPhoto: buildPhoto() }),
+      );
+      saved.name = 'Ana Souza Lima';
+
+      const updated = await repository.save(saved);
+
+      expect(updated.hasPhoto).toBe(true);
+      expect(await storedPhotoOf(saved.id)).toBeDefined();
+    });
+
+    it('stores neither user nor photo when the user conflicts', async () => {
+      await repository.save(buildUser());
+      const duplicate = Object.assign(buildUser(), { pendingPhoto: buildPhoto() });
+      duplicate.registrationNumber = '20240002';
+
+      await expect(repository.save(duplicate)).rejects.toBeInstanceOf(ConflictError);
+
+      const [{ total }] = await dataSource.query<[{ total: number }]>(
+        'SELECT COUNT(*)::int AS total FROM user_photos;',
+      );
+      expect(total).toBe(0);
     });
   });
 

@@ -2,6 +2,7 @@ import { UserType } from '../enums/user-type.enum';
 import { InvalidUserError } from '../errors/invalid-user.error';
 import { User } from './user.entity';
 import type { NewUser } from './new-user';
+import { buildPhoto } from '../../testing/photo-fixtures';
 
 describe('User (Domain)', () => {
   const buildUser = (type: UserType): User => {
@@ -10,7 +11,6 @@ describe('User (Domain)', () => {
     user.email = 'fulano@uefs.br';
     user.passwordHash = 'hashed_password_123';
     user.registrationNumber = '12345678';
-    user.photoUrl = 'https://example.com/photo.png';
     user.type = type;
     user.active = true;
     return user;
@@ -55,7 +55,7 @@ describe('User (Domain)', () => {
       passwordHash: 'hashed_password_123',
       type: UserType.STUDENT,
       registrationNumber: '20240001',
-      photoUrl: 'https://example.com/ana.png',
+      photo: buildPhoto(),
       ...overrides,
     });
 
@@ -101,11 +101,20 @@ describe('User (Domain)', () => {
       expect(user.isPendingVerification()).toBe(false);
     });
 
-    it('leaves the tutor registration number and photo null', () => {
+    it('leaves the tutor registration number and photo empty', () => {
       const tutor = User.create(newTutor());
 
       expect(tutor.registrationNumber).toBeNull();
-      expect(tutor.photoUrl).toBeNull();
+      expect(tutor.hasPhoto).toBe(false);
+      expect(tutor.pendingPhoto).toBeNull();
+    });
+
+    it('keeps the student photo pending until it is persisted', () => {
+      const photo = buildPhoto();
+      const student = User.create(newStudent({ photo }));
+
+      expect(student.hasPhoto).toBe(true);
+      expect(student.pendingPhoto).toBe(photo);
     });
 
     it('accepts a tutor that does carry a registration number', () => {
@@ -121,7 +130,7 @@ describe('User (Domain)', () => {
     });
 
     it('rejects a student without a photo', () => {
-      expect(() => User.create(newStudent({ photoUrl: null }))).toThrow(
+      expect(() => User.create(newStudent({ photo: null }))).toThrow(
         'A foto é obrigatória para alunos.',
       );
     });

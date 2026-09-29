@@ -3,10 +3,12 @@ import { DEFAULT_PASSWORD, runSeed, SEED_USERS, seedUser } from './seed';
 
 const TEST_ENV = { NODE_ENV: 'test', BCRYPT_ROUNDS: '4' };
 import { User } from '@/users/domain/entities/user.entity';
+import { UserPhoto } from '@/users/domain/entities/user-photo.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 describe('seed.ts', () => {
   let mockUserRepo: jest.Mocked<Pick<Repository<User>, 'findOneBy' | 'save'>>;
+  let mockPhotoRepo: jest.Mocked<Pick<Repository<UserPhoto>, 'save'>>;
   let mockDataSource: jest.Mocked<Pick<DataSource, 'getRepository' | 'initialize' | 'destroy'>> & {
     isInitialized: boolean;
   };
@@ -16,10 +18,15 @@ describe('seed.ts', () => {
       findOneBy: jest.fn(),
       save: jest.fn(),
     };
+    mockPhotoRepo = { save: jest.fn() };
 
     mockDataSource = {
       isInitialized: false,
-      getRepository: jest.fn().mockReturnValue(mockUserRepo),
+      getRepository: jest
+        .fn()
+        .mockImplementation((entity: unknown) =>
+          entity === UserPhoto ? mockPhotoRepo : mockUserRepo,
+        ),
       initialize: jest.fn().mockImplementation(() => {
         mockDataSource.isInitialized = true;
         return Promise.resolve();
@@ -52,6 +59,26 @@ describe('seed.ts', () => {
           type: UserType.TUTOR,
         }),
       );
+    });
+
+    it('stores a placeholder photo for every seeded student', async () => {
+      mockUserRepo.findOneBy.mockResolvedValueOnce(null);
+      mockUserRepo.save.mockResolvedValueOnce(Object.assign(new User(), { id: 'student-1' }));
+
+      await seedUser(SEED_USERS[2]!, 'hashed-password', mockDataSource as unknown as DataSource);
+
+      expect(mockPhotoRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'student-1', mimeType: 'image/png' }),
+      );
+    });
+
+    it('stores no photo for a tutor', async () => {
+      mockUserRepo.findOneBy.mockResolvedValueOnce(null);
+      mockUserRepo.save.mockResolvedValueOnce(new User());
+
+      await seedUser(SEED_USERS[0]!, 'hashed-password', mockDataSource as unknown as DataSource);
+
+      expect(mockPhotoRepo.save).not.toHaveBeenCalled();
     });
 
     it('skips creation when email is already registered', async () => {

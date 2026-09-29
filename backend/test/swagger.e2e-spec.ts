@@ -52,14 +52,24 @@ describe('Swagger (e2e)', () => {
   });
 
   it('publishes the request payload in Portuguese', () => {
-    expect(Object.keys(document.components.schemas.RegisterUserDto!.properties)).toEqual([
+    expect(Object.keys(document.components.schemas.RegisterUserFormDto!.properties)).toEqual([
       'nome',
       'email',
       'senha',
       'tipo',
       'matricula',
-      'fotoUrl',
+      'foto',
     ]);
+  });
+
+  it('documents the photo upload of the registration form', () => {
+    const registration = document.paths['/api/autenticacao/registro']!.post! as unknown as {
+      requestBody: { content: Record<string, unknown> };
+    };
+
+    expect(Object.keys(registration.requestBody.content)).toEqual(
+      expect.arrayContaining(['multipart/form-data', 'application/json']),
+    );
   });
 
   it('publishes the response payload without the password hash', () => {
@@ -71,7 +81,7 @@ describe('Swagger (e2e)', () => {
       'email',
       'tipo',
       'matricula',
-      'fotoUrl',
+      'possuiFoto',
       'ativo',
       'criadoEm',
     ]);

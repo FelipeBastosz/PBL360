@@ -6,7 +6,8 @@ import {
   validateName,
   validateNewPassword,
   validatePasswordConfirmation,
-  validatePhotoUrl,
+  validatePhoto,
+  PHOTO_MAX_BYTES,
   validateRegistrationNumber,
   validateRequiredPassword,
 } from './validation';
@@ -77,11 +78,18 @@ describe('registration fields', () => {
     expect(validateRegistrationNumber('20240001')).toBeUndefined();
   });
 
-  it('accepts only http and https photo links', () => {
-    expect(validatePhotoUrl('')).toBe('Informe o link da sua foto.');
-    expect(validatePhotoUrl('não é link')).toBe('Informe um link válido.');
-    expect(validatePhotoUrl('ftp://example.com/a.png')).toBe('Informe um link válido.');
-    expect(validatePhotoUrl('https://example.com/ana.png')).toBeUndefined();
+  it('requires a JPEG, PNG or WebP photo of up to 2 MB', () => {
+    const image = (type: string, size = 1) => new File([new Uint8Array(size)], 'foto', { type });
+
+    expect(validatePhoto(null)).toBe('Envie uma foto sua.');
+    expect(validatePhoto(image('image/svg+xml'))).toBe(
+      'A foto deve ser uma imagem JPEG, PNG ou WebP.',
+    );
+    expect(validatePhoto(image('image/png', PHOTO_MAX_BYTES + 1))).toBe(
+      'A foto deve ter no máximo 2 MB.',
+    );
+    expect(validatePhoto(image('image/jpeg', PHOTO_MAX_BYTES))).toBeUndefined();
+    expect(validatePhoto(image('image/webp'))).toBeUndefined();
   });
 });
 

@@ -1,5 +1,6 @@
 import { type ReactNode, useId } from 'react';
 import { cn } from '@/utils/cn';
+import { fieldControlClassName } from './fieldStyles';
 
 type TextFieldProps = {
   label: string;
@@ -12,8 +13,10 @@ type TextFieldProps = {
   maxLength?: number;
   error?: string;
   hint?: string;
+  optional?: boolean;
   endAdornment?: ReactNode;
   autoFocus?: boolean;
+  disabled?: boolean;
 };
 
 export function TextField({
@@ -23,6 +26,7 @@ export function TextField({
   type = 'text',
   error,
   hint,
+  optional,
   endAdornment,
   ...inputProps
 }: TextFieldProps) {
@@ -33,6 +37,7 @@ export function TextField({
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-lg text-brand-900">
         {label}
+        {optional && <span className="text-brand-300"> (opcional)</span>}
       </label>
       <div className="relative">
         <input
@@ -42,11 +47,7 @@ export function TextField({
           onChange={(event) => onChange(event.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy || undefined}
-          className={cn(
-            'h-12 w-full rounded-[10px] border px-4 text-base text-ink bg-white placeholder:text-placeholder focus:outline-2 focus:outline-offset-0 focus:outline-brand-900',
-            endAdornment ? 'pr-12' : undefined,
-            error ? 'border-danger' : 'border-black/20',
-          )}
+          className={cn(fieldControlClassName(Boolean(error)), endAdornment ? 'pr-12' : undefined)}
           {...inputProps}
         />
         {endAdornment && (
@@ -54,7 +55,7 @@ export function TextField({
         )}
       </div>
       {error && (
-        <p id={`${id}-error`} className="text-sm text-danger">
+        <p id={`${id}-error`} className="text-sm text-danger animate-slide-down">
           {error}
         </p>
       )}

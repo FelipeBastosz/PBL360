@@ -2,6 +2,7 @@ import { ConflictError } from '@/shared/errors/application.error';
 import { InvalidUserError } from '@/users/domain/errors/invalid-user.error';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import type { User } from '@/users/domain/entities/user.entity';
+import { pngPhotoBytes } from '@/users/testing/photo-fixtures';
 import type { EmailVerificationCodes } from '../services/email-verification-codes';
 import type { PasswordHasher } from '../../domain/services/password-hasher';
 import { buildStudent, codeServiceStub, userRepositoryStub } from '../../testing/auth-fixtures';
@@ -12,6 +13,14 @@ const tutorInput = {
   email: ' Carlos@UEFS.br ',
   password: 'senha-secreta',
   type: UserType.TUTOR,
+};
+
+const studentInput = {
+  name: 'Ana Souza',
+  email: 'ana@discente.uefs.br',
+  password: 'senha-secreta',
+  type: UserType.STUDENT,
+  registrationNumber: '20240001',
 };
 
 describe('RegisterUserUseCase', () => {
@@ -52,6 +61,33 @@ describe('RegisterUserUseCase', () => {
   it('does not let a student e-mail register as tutor', async () => {
     await expect(useCase.execute({ ...tutorInput, email: 'ana@discente.uefs.br' })).rejects.toThrow(
       new InvalidUserError('Professores devem usar o e-mail institucional @uefs.br.'),
+    );
+    expect(users.save).not.toHaveBeenCalled();
+  });
+
+  it('hands the uploaded photo to the repository alongside the student', async () => {
+    const user = await useCase.execute({ ...studentInput, photo: pngPhotoBytes() });
+
+    expect(user.hasPhoto).toBe(true);
+    expect(users.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pendingPhoto: expect.objectContaining({ mimeType: 'image/png' }) as unknown,
+      }),
+    );
+  });
+
+  it('rejects a student without a photo', async () => {
+    await expect(useCase.execute(studentInput)).rejects.toThrow(
+      new InvalidUserError('A foto é obrigatória para alunos.'),
+    );
+    expect(users.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects a photo that is not an accepted image before storing anything', async () => {
+    const photo = Buffer.from('não é uma imagem');
+
+    await expect(useCase.execute({ ...studentInput, photo })).rejects.toThrow(
+      new InvalidUserError('A foto deve ser uma imagem JPEG, PNG ou WebP.'),
     );
     expect(users.save).not.toHaveBeenCalled();
   });

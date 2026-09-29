@@ -2,6 +2,7 @@ import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import { BrandHeader } from '@/components/layout/BrandHeader';
 import { Button } from '@/components/ui/Button';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/routes/paths';
 import { profileLabel } from '@/utils/profile';
@@ -24,11 +25,21 @@ export default function HomePage() {
           Sair
         </Button>
       </header>
-      <main className="mx-auto flex max-w-3xl flex-col gap-2 px-6 py-10">
-        <h1 className="text-[1.75rem] font-semibold text-ink">Olá, {user?.nome}!</h1>
-        <p className="text-brand-300">
-          Você entrou como {user ? profileLabel(user.tipo) : ''} com {user?.email}.
-        </p>
+
+      <main className="mx-auto flex max-w-3xl flex-col gap-4 px-6 py-10">
+        <div className="flex items-center gap-5">
+          <UserAvatar user={user} className="size-20 text-2xl" />
+          <div className="flex min-w-0 flex-col gap-2">
+            <h1 className="text-[1.75rem] font-semibold text-ink">Olá, {user?.nome}!</h1>
+            <p className="text-brand-300">
+              Você entrou como {user ? profileLabel(user.tipo) : ''} com {user?.email}.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <Button onClick={() => navigate(ROUTES.rooms)}>Ver Minhas Turmas</Button>
+        </div>
       </main>
     </div>
   );

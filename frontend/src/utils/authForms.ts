@@ -6,7 +6,7 @@ import {
   validateName,
   validateNewPassword,
   validatePasswordConfirmation,
-  validatePhotoUrl,
+  validatePhoto,
   validateRegistrationNumber,
   validateRequiredPassword,
 } from './validation';
@@ -22,7 +22,7 @@ export type RegisterFormValues = {
   nome: string;
   email: string;
   matricula: string;
-  fotoUrl: string;
+  foto: File | null;
   senha: string;
   confirmacao: string;
 };
@@ -53,19 +53,23 @@ export function validateRegisterForm(values: RegisterFormValues): Errors<Registe
   return {
     nome: validateName(values.nome),
     email: validateInstitutionalEmail(values.email),
-    matricula: isStudent ? validateRegistrationNumber(values.matricula) : undefined,
-    fotoUrl: isStudent ? validatePhotoUrl(values.fotoUrl) : undefined,
+    matricula:
+      isStudent || values.matricula.trim()
+        ? validateRegistrationNumber(values.matricula)
+        : undefined,
+    foto: isStudent || values.foto ? validatePhoto(values.foto) : undefined,
     ...validateNewPasswordForm(values),
   };
 }
 
 export function toRegisterPayload(values: RegisterFormValues): RegisterPayload {
-  const base = {
+  const matricula = values.matricula.trim();
+  return {
     nome: values.nome.trim(),
     email: values.email.trim().toLowerCase(),
     senha: values.senha,
     tipo: values.tipo,
+    ...(matricula && { matricula }),
+    ...(values.foto && { foto: values.foto }),
   };
-  if (values.tipo !== 'ALUNO') return base;
-  return { ...base, matricula: values.matricula.trim(), fotoUrl: values.fotoUrl.trim() };
 }

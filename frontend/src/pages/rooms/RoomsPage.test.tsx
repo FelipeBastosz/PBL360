@@ -12,7 +12,7 @@ const mockTeacher: UserResponse = {
   email: 'prof@test.com',
   tipo: 'PROFESSOR',
   matricula: null,
-  fotoUrl: null,
+  possuiFoto: false,
   ativo: true,
   criadoEm: '2026-01-01',
 };
@@ -23,7 +23,7 @@ const mockStudent: UserResponse = {
   email: 'aluno@test.com',
   tipo: 'ALUNO',
   matricula: '123456',
-  fotoUrl: null,
+  possuiFoto: false,
   ativo: true,
   criadoEm: '2026-01-01',
 };
@@ -79,7 +79,7 @@ describe('RoomsPage', () => {
       const fab = screen.getByRole('button', { name: /ações de turma/i });
       await userEvent.click(fab);
 
-      expect(screen.getByRole('button', { name: 'Criar nova turma' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Criar nova turma' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Editar uma turma' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Entrar em uma turma' })).not.toBeInTheDocument();
     });

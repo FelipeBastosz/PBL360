@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, type EntityManager } from 'typeorm';
 import { User } from '../../domain/entities/user.entity';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
@@ -14,7 +14,7 @@ interface UserRow {
   email: string;
   passwordHash: string;
   registrationNumber: string | null;
-  photoUrl: string | null;
+  hasPhoto: boolean;
   type: UserType;
   active: boolean;
   tokenVersion: number;
@@ -32,13 +32,13 @@ const USER_COLUMNS = `
     email,
     password_hash AS "passwordHash",
     registration_number AS "registrationNumber",
-    photo_url AS "photoUrl",
+    EXISTS (SELECT 1 FROM user_photos WHERE user_photos.user_id = users.id) AS "hasPhoto",
     type,
     active,
     token_version AS "tokenVersion",
     created_at AS "createdAt"`;
 
-const WRITABLE_COLUMNS = `name, email, password_hash, registration_number, photo_url, type, active, token_version`;
+const WRITABLE_COLUMNS = `name, email, password_hash, registration_number, type, active, token_version`;
 
 @Injectable()
 export class PgUserRepository implements UserRepository {
@@ -66,7 +66,13 @@ export class PgUserRepository implements UserRepository {
 
   async save(user: User): Promise<User> {
     try {
-      return await (user.id ? this.updateExisting(user) : this.insertNew(user));
+      return await this.users.manager.transaction(async (manager) => {
+        const saved = await (user.id
+          ? this.updateExisting(manager, user)
+          : this.insertNew(manager, user));
+
+        return this.savePendingPhoto(manager, user, saved);
+      });
     } catch (error) {
       throw this.translateConflict(error);
     }
@@ -79,10 +85,10 @@ export class PgUserRepository implements UserRepository {
     return message ? new ConflictError(message) : error;
   }
 
-  private async insertNew(user: User): Promise<User> {
-    const rows = await this.users.query<UserRow[]>(
+  private async insertNew(manager: EntityManager, user: User): Promise<User> {
+    const rows = await manager.query<UserRow[]>(
       `INSERT INTO users (${WRITABLE_COLUMNS})
-        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, FALSE), COALESCE($8, 0))
+        VALUES ($1, $2, $3, $4, $5, COALESCE($6, FALSE), COALESCE($7, 0))
         RETURNING ${USER_COLUMNS};`,
       this.writableValues(user),
     );
@@ -90,12 +96,12 @@ export class PgUserRepository implements UserRepository {
     return this.toEntity(requireFirstRow(rows, 'Failed to persist user in database.'));
   }
 
-  private async updateExisting(user: User): Promise<User> {
-    const [rows] = await this.users.query<[UserRow[], number]>(
+  private async updateExisting(manager: EntityManager, user: User): Promise<User> {
+    const [rows] = await manager.query<[UserRow[], number]>(
       `UPDATE users
         SET name = $2, email = $3, password_hash = $4, registration_number = $5,
-            photo_url = $6, type = $7, active = COALESCE($8, active),
-            token_version = COALESCE($9, token_version)
+            type = $6, active = COALESCE($7, active),
+            token_version = COALESCE($8, token_version)
         WHERE id = $1
         RETURNING ${USER_COLUMNS};`,
       [user.id, ...this.writableValues(user)],
@@ -104,8 +110,27 @@ export class PgUserRepository implements UserRepository {
     return this.toEntity(requireFirstRow(rows, `User ${user.id} not found.`));
   }
 
+  private async savePendingPhoto(manager: EntityManager, user: User, saved: User): Promise<User> {
+    const photo = user.pendingPhoto;
+
+    if (!photo) {
+      return saved;
+    }
+
+    await manager.query(
+      `INSERT INTO user_photos (user_id, content, mime_type)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (user_id) DO UPDATE
+          SET content = EXCLUDED.content, mime_type = EXCLUDED.mime_type, updated_at = now();`,
+      [saved.id, photo.content, photo.mimeType],
+    );
+    saved.hasPhoto = true;
+
+    return saved;
+  }
+
   private toEntity(row: UserRow): User {
-    return this.users.create(row);
+    return Object.assign(this.users.create(row), { hasPhoto: row.hasPhoto });
   }
 
   private writableValues(user: User): unknown[] {
@@ -114,7 +139,6 @@ export class PgUserRepository implements UserRepository {
       user.email,
       user.passwordHash,
       user.registrationNumber,
-      user.photoUrl,
       user.type,
       user.active,
       user.tokenVersion,
