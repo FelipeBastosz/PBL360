@@ -16,6 +16,18 @@ interface RoomBody {
   criadoEm: string;
 }
 
+interface StudentRoomBody {
+  salaId: string;
+  nome: string;
+  semestre: string;
+  totalAlunos: number;
+}
+
+interface RoomStudentBody {
+  nome: string;
+  dataEntrada: string;
+}
+
 const NEW_ROOM = { nome: 'Engenharia de Software', codigoDisciplina: 'exa123', semestre: '2026.2' };
 const MISSING_ID = '00000000-0000-4000-8000-000000000000';
 
@@ -106,6 +118,81 @@ describe('Rooms (e2e)', () => {
 
       expect((mine.body as RoomBody[]).map((r) => r.id)).toEqual([room.id]);
       expect(theirs.body).toEqual([]);
+    });
+  });
+
+  describe('GET /salas/minhas', () => {
+    it('lists only the student rooms and includes their total enrollment', async () => {
+      const room = await createRoom();
+      const unrelatedRoom = await api(app, colleague).post('/salas', NEW_ROOM).expect(201);
+      const unrelatedRoomBody = unrelatedRoom.body as RoomBody;
+      const secondStudent = await insertUser(
+        app,
+        dataSource,
+        '20240002@discente.uefs.br',
+        UserType.STUDENT,
+      );
+      await dataSource.query(
+        'INSERT INTO room_students (room_id, student_id) VALUES ($1, $2), ($1, $3), ($4, $3);',
+        [room.id, student.id, secondStudent.id, unrelatedRoomBody.id],
+      );
+
+      const response = await api(app, student).get('/salas/minhas').expect(200);
+      const listedRooms = response.body as StudentRoomBody[];
+
+      expect(listedRooms).toEqual([
+        {
+          salaId: room.id,
+          nome: room.nome,
+          semestre: room.semestre,
+          totalAlunos: 2,
+        },
+      ]);
+    });
+
+    it('is forbidden to tutors', async () => {
+      await api(app, owner).get('/salas/minhas').expect(403);
+    });
+  });
+
+  describe('GET /salas/:id/alunos', () => {
+    it('lists only student names and enrollment dates for a linked tutor', async () => {
+      const room = await createRoom();
+      const secondStudent = await insertUser(
+        app,
+        dataSource,
+        '20240002@discente.uefs.br',
+        UserType.STUDENT,
+      );
+      await dataSource.query(
+        'INSERT INTO room_students (room_id, student_id) VALUES ($1, $2), ($1, $3);',
+        [room.id, student.id, secondStudent.id],
+      );
+
+      const response = await api(app, owner).get(`/salas/${room.id}/alunos`).expect(200);
+      const listedStudents = response.body as RoomStudentBody[];
+
+      expect(listedStudents).toHaveLength(2);
+      expect(listedStudents.map((entry) => entry.nome)).toEqual([
+        'Usuário de Teste',
+        'Usuário de Teste',
+      ]);
+      expect(listedStudents.every((entry) => Number.isFinite(Date.parse(entry.dataEntrada)))).toBe(
+        true,
+      );
+      expect(Object.keys(listedStudents[0])).toEqual(['nome', 'dataEntrada']);
+    });
+
+    it('is forbidden to a tutor not linked to the room', async () => {
+      const room = await createRoom();
+
+      await api(app, colleague).get(`/salas/${room.id}/alunos`).expect(403);
+    });
+
+    it('is forbidden to students', async () => {
+      const room = await createRoom();
+
+      await api(app, student).get(`/salas/${room.id}/alunos`).expect(403);
     });
   });
 

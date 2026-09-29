@@ -8,6 +8,7 @@ import { CreateRoomUseCase } from './application/use-cases/create-room.use-case'
 import { UpdateRoomUseCase } from './application/use-cases/update-room.use-case';
 import { DeleteRoomUseCase } from './application/use-cases/delete-room.use-case';
 import { Room } from './domain/entities/room.entity';
+import { RoomStudent } from './domain/entities/room-student.entity';
 import { ROOM_REPOSITORY } from './domain/repositories/room.repository';
 import { PgRoomRepository } from './infrastructure/database/pg-room.repository';
 import { RoomsController } from './infrastructure/http/rooms.controller';
@@ -15,11 +16,13 @@ import { AddTutorToRoomUseCase } from './application/use-cases/add-tutor-to-room
 import { RemoveTutorFromRoomUseCase } from './application/use-cases/remove-tutor-from-room.use-case';
 import { ListRoomsUseCase } from './application/use-cases/list-rooms.use-case';
 import { GetRoomDetailUseCase } from './application/use-cases/get-room-detail.use-case';
+import { ListStudentRoomsUseCase } from './application/use-cases/list-student-rooms.use-case';
+import { ListRoomStudentsUseCase } from './application/use-cases/list-room-students.use-case';
 
 import { RoomAccessService } from './application/services/room-access.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Room]), UsersModule],
+  imports: [TypeOrmModule.forFeature([Room, RoomStudent]), UsersModule],
 
   controllers: [RoomsController, RoomTutorsController],
 
@@ -31,6 +34,8 @@ import { RoomAccessService } from './application/services/room-access.service';
     DeleteRoomUseCase,
     ListRoomsUseCase,
     GetRoomDetailUseCase,
+    ListStudentRoomsUseCase,
+    ListRoomStudentsUseCase,
     RoomAccessService,
 
     {

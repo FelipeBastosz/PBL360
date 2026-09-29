@@ -12,8 +12,12 @@ import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 import { CreateRoomUseCase } from '../../application/use-cases/create-room.use-case';
 import { DeleteRoomUseCase } from '../../application/use-cases/delete-room.use-case';
 import { GetRoomDetailUseCase } from '../../application/use-cases/get-room-detail.use-case';
+import { ListRoomStudentsUseCase } from '../../application/use-cases/list-room-students.use-case';
 import { ListRoomsUseCase } from '../../application/use-cases/list-rooms.use-case';
+import { ListStudentRoomsUseCase } from '../../application/use-cases/list-student-rooms.use-case';
 import { UpdateRoomUseCase } from '../../application/use-cases/update-room.use-case';
+import { RoomStudentResponseDto } from '../../application/dtos/room-student-response.dto';
+import { StudentRoomResponseDto } from '../../application/dtos/student-room-response.dto';
 import { toRoomChanges, toRoomResponse } from './room.mapper';
 import {
   CreateRoomSwaggerDocs,
@@ -22,6 +26,7 @@ import {
   GetRoomDetailSwaggerDocs,
   ListRoomsSwaggerDocs,
 } from './room.swagger';
+import { ListRoomStudentsSwaggerDocs, ListStudentRoomsSwaggerDocs } from './room-members.swagger';
 
 @ApiTags('Salas')
 @Controller('salas')
@@ -33,7 +38,36 @@ export class RoomsController {
     private readonly deleteRoomUseCase: DeleteRoomUseCase,
     private readonly listRoomsUseCase: ListRoomsUseCase,
     private readonly getRoomDetailUseCase: GetRoomDetailUseCase,
+    private readonly listStudentRoomsUseCase: ListStudentRoomsUseCase,
+    private readonly listRoomStudentsUseCase: ListRoomStudentsUseCase,
   ) {}
+
+  @Get('minhas')
+  @Roles(UserType.STUDENT)
+  @ListStudentRoomsSwaggerDocs
+  async listStudentRooms(
+    @AuthenticatedUserId() studentId: string,
+  ): Promise<StudentRoomResponseDto[]> {
+    const rooms = await this.listStudentRoomsUseCase.execute(studentId);
+
+    return rooms.map((room) => ({
+      salaId: room.roomId,
+      nome: room.name,
+      semestre: room.semester,
+      totalAlunos: room.totalStudents,
+    }));
+  }
+
+  @Get(':id/alunos')
+  @ListRoomStudentsSwaggerDocs
+  async listRoomStudents(
+    @UuidParam('id') roomId: string,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<RoomStudentResponseDto[]> {
+    const students = await this.listRoomStudentsUseCase.execute(roomId, tutorId);
+
+    return students.map((student) => ({ nome: student.name, dataEntrada: student.joinedAt }));
+  }
 
   @Get()
   @ListRoomsSwaggerDocs
