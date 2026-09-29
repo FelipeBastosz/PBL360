@@ -10,4 +10,7 @@ export const ROUTES = {
   resetPassword: '/recuperar-senha/nova-senha',
   resetPasswordSuccess: '/recuperar-senha/concluido',
   home: '/inicio',
+  rooms: '/turmas',
+  createRoom: '/turmas/nova',
+  createRoomSuccess: '/turmas/nova/sucesso',
 } as const;
