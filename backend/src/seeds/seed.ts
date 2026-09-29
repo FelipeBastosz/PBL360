@@ -7,6 +7,7 @@ import { User } from '@/users/domain/entities/user.entity';
 import { UserPhoto } from '@/users/domain/entities/user-photo.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { placeholderPhotoBytes } from './placeholder-photo';
+import { seedAllPerformanceTables } from './performance-tables.seed';
 
 export interface SeedUserData {
   name: string;
@@ -112,6 +113,7 @@ export async function runSeed(
   }
   try {
     await seedAllUsers(ds, env);
+    await seedAllPerformanceTables(ds);
   } finally {
     if (initializedHere) {
       await ds.destroy();

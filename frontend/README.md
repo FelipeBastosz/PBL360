@@ -127,9 +127,10 @@ Os quatro passando significa que seu ambiente reproduz o que a CI vai rodar.
 Apenas variáveis com prefixo `VITE_` chegam ao navegador — e **tudo que chega ao navegador é
 público**. Nunca coloque segredo aqui.
 
-| Variável       | Padrão                      | Uso                       |
-| -------------- | --------------------------- | ------------------------- |
-| `VITE_API_URL` | `http://localhost:3000/api` | Base URL do cliente Axios |
+| Variável         | Padrão                      | Uso                                                                                          |
+| ---------------- | --------------------------- | -------------------------------------------------------------------------------------------- |
+| `VITE_API_URL`   | `http://localhost:3000/api` | Base URL do cliente Axios                                                                    |
+| `VITE_USE_MOCKS` | `false`                     | Com `true`, `performance-table.service` responde com dados de demonstração, sem chamar a API |
 
 Os tipos ficam em `src/vite-env.d.ts`; adicione toda variável nova à interface `ImportMetaEnv`
 para ter autocomplete e erro de compilação quando faltar.

@@ -19,6 +19,7 @@ interface ProblemRow {
   peerEvalReleased: boolean;
   releasedAt: Date | null;
   selfEvalDeadline: Date | null;
+  performanceTableId: string | null;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -37,6 +38,7 @@ const PROBLEM_COLUMNS = `
   peer_eval_released AS "peerEvalReleased",
   released_at AS "releasedAt",
   self_eval_deadline AS "selfEvalDeadline",
+  performance_table_id AS "performanceTableId",
   created_by AS "createdBy",
   created_at AS "createdAt",
   updated_at AS "updatedAt",
@@ -124,10 +126,11 @@ export class PgProblemRepository implements ProblemRepository {
     const rows = await manager.query<ProblemRow[]>(
       `INSERT INTO problems (
           room_id, title, description, order_index, start_date, end_date,
-          self_eval_released, peer_eval_released, released_at, self_eval_deadline, created_by
+          self_eval_released, peer_eval_released, released_at, self_eval_deadline,
+          performance_table_id, created_by
         )
         SELECT $1, $2, $3, COALESCE(MAX(order_index), 0) + 1, $4::date, $5::date,
-               $6, $7, $8, $9, $10
+               $6, $7, $8, $9, $10, $11
         FROM problems
         WHERE room_id = $1
         RETURNING ${PROBLEM_COLUMNS};`,
@@ -148,6 +151,7 @@ export class PgProblemRepository implements ProblemRepository {
       problem.peerEvalReleased,
       problem.releasedAt ?? null,
       problem.selfEvalDeadline ?? null,
+      problem.performanceTableId ?? null,
       problem.createdBy,
     ];
   }

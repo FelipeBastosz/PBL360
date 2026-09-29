@@ -1,3 +1,4 @@
+import { CriterionCategory } from '../enums/criterion-category.enum';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { NewPerformanceTable } from './new-performance-table';
 import { PerformanceTable } from './performance-table.entity';
@@ -62,6 +63,53 @@ describe('PerformanceTable', () => {
       PerformanceTable.create({
         ...validTableData(),
         criteria: [{ name: '   ', orderIndex: 1, weight: 0.5 }],
+      }),
+    ).toThrow(InvalidPerformanceTableError);
+  });
+
+  it('defaults the description, category and max score of a criterion', () => {
+    const table = PerformanceTable.create(validTableData());
+
+    expect(table.description).toBeNull();
+    expect(table.criteria[0]).toEqual(
+      expect.objectContaining({ category: CriterionCategory.CONTENT, maxScore: 10 }),
+    );
+  });
+
+  it('keeps the description, category and max score informed', () => {
+    const table = PerformanceTable.create({
+      ...validTableData(),
+      description: '  Critérios do módulo  ',
+      criteria: [
+        {
+          name: 'Postura',
+          category: CriterionCategory.BEHAVIOR,
+          weight: 2,
+          maxScore: 5,
+        },
+      ],
+    });
+
+    expect(table.description).toBe('Critérios do módulo');
+    expect(table.criteria[0]).toEqual(
+      expect.objectContaining({ category: CriterionCategory.BEHAVIOR, maxScore: 5 }),
+    );
+  });
+
+  it('rejects a criterion with an unknown category', () => {
+    expect(() =>
+      PerformanceTable.create({
+        ...validTableData(),
+        criteria: [{ name: 'Postura', category: 'OTHER' as CriterionCategory }],
+      }),
+    ).toThrow(InvalidPerformanceTableError);
+  });
+
+  it.each([0, -1])('rejects a criterion with max score %s', (maxScore) => {
+    expect(() =>
+      PerformanceTable.create({
+        ...validTableData(),
+        criteria: [{ name: 'Postura', maxScore }],
       }),
     ).toThrow(InvalidPerformanceTableError);
   });
