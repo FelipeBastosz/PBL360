@@ -29,4 +29,10 @@ describe('IdentityThrottlerGuard', () => {
 
     expect(ana).not.toBe(joao);
   });
+
+  it('includes the authenticated user in protected request trackers', async () => {
+    await expect(guard.trackerOf({ ip: '10.0.0.1', user: { sub: 'student-id' } })).resolves.toBe(
+      '10.0.0.1||student-id',
+    );
+  });
 });

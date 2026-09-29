@@ -1,6 +1,7 @@
 import type { RoomResponseDto } from '../../application/dtos/room-response.dto';
 import type { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 import type { Room, RoomChanges } from '../../domain/entities/room.entity';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 
 export const toRoomResponse = (room: Room): RoomResponseDto => ({
   id: room.id,
@@ -18,3 +19,15 @@ export const toRoomChanges = (dto: UpdateRoomDto): RoomChanges => ({
   semester: dto.semestre,
   active: dto.ativo,
 });
+
+export const roomCodeFromInviteLink = (link: string): string => {
+  const pathname = new URL(link).pathname;
+  const match = pathname.match(/^\/salas\/([A-Za-z0-9]{8})\/?$/);
+  const roomCode = match?.[1];
+
+  if (!roomCode) {
+    throw new InvalidRequestError('O link de ingresso é inválido.');
+  }
+
+  return roomCode;
+};

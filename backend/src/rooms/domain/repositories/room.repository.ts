@@ -17,6 +17,10 @@ export interface RoomRepository {
 
   findById(id: string): Promise<Room | null>;
 
+  findByRoomCode(roomCode: string): Promise<Room | null>;
+
+  joinStudent(roomId: string, studentId: string): Promise<void>;
+
   findByTutorId(tutorId: string): Promise<Room[]>;
 
   update(room: Room): Promise<Room>;

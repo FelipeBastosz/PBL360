@@ -66,6 +66,26 @@ export class PgRoomRepository implements RoomRepository {
     );
   }
 
+  findByRoomCode(roomCode: string): Promise<Room | null> {
+    return this.queryOne(
+      `SELECT ${ROOM_COLUMNS}
+        FROM rooms
+        WHERE room_code = $1
+          AND deleted_at IS NULL
+        LIMIT 1;`,
+      [roomCode],
+    );
+  }
+
+  async joinStudent(roomId: string, studentId: string): Promise<void> {
+    await this.rooms.query(
+      `INSERT INTO room_students (room_id, student_id)
+        VALUES ($1, $2)
+        ON CONFLICT (room_id, student_id) DO NOTHING;`,
+      [roomId, studentId],
+    );
+  }
+
   async findByTutorId(tutorId: string): Promise<Room[]> {
     const rows = await this.rooms.query<RoomRow[]>(
       `SELECT ${ROOM_COLUMNS}
