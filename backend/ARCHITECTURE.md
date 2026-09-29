@@ -294,6 +294,15 @@ Regras do repositório:
 - **Datas sem horário** (`DATE`) trafegam como texto `AAAA-MM-DD`. Converter para `Date`
   aplica o fuso do servidor e grava o dia anterior.
 
+**Arquivos binários (foto do carômetro)**
+
+A foto do usuário é gravada no próprio banco, na tabela `user_photos` (`bytea`), separada de
+`users` para que nenhuma consulta de usuário carregue a imagem sem querer — o `SELECT` de
+`users` só expõe `hasPhoto`. O upload chega como `multipart/form-data` no campo `foto` do
+cadastro (`@PhotoUpload()`, memória, limite de 2 MB) e o formato é detectado pela assinatura
+dos bytes em `UserPhoto.fromBytes`, nunca pelo `Content-Type` informado pelo cliente. A imagem
+é servida autenticada em `GET /usuarios/{id}/foto`: o próprio usuário e os professores podem vê-la.
+
 ### 3.4 O módulo — onde as pontas se encontram
 
 A inversão de dependência acontece no `*.module.ts`, ligando a abstração do domínio à
