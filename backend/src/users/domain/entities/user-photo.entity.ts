@@ -1,4 +1,13 @@
-import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Check,
+  Column,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { User } from './user.entity';
 import { InvalidUserError } from '../errors/invalid-user.error';
 
 export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
@@ -26,9 +35,15 @@ const SIGNATURES: { mimeType: PhotoMimeType; matches: (bytes: Buffer) => boolean
 ];
 
 @Entity('user_photos')
+@Check('chk_user_photos_mime_type', `mime_type IN ('image/jpeg', 'image/png', 'image/webp')`)
+@Check('chk_user_photos_size', `octet_length(content) BETWEEN 1 AND ${MAX_PHOTO_BYTES}`)
 export class UserPhoto {
   @PrimaryColumn({ name: 'user_id', type: 'uuid' })
   userId: string;
+
+  @OneToOne(() => User, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'user_id', foreignKeyConstraintName: 'fk_user_photos_user' })
+  user?: User;
 
   @Column({ type: 'bytea' })
   content: Buffer;
