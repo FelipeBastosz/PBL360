@@ -79,9 +79,12 @@ function RoomsFabMenu({ isStudent }: { isStudent: boolean }) {
             </button>
           ) : (
             <>
-              <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
+              <Link
+                to={ROUTES.manageRooms}
+                className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+              >
                 Editar uma turma
-              </button>
+              </Link>
               <Link
                 to={ROUTES.createRoom}
                 className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
