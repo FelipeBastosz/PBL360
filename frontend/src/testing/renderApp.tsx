@@ -28,7 +28,7 @@ export const studentUser: UserResponse = {
   email: 'ana@discente.uefs.br',
   tipo: 'ALUNO',
   matricula: '20240001',
-  possuiFoto: true,
+  possuiFoto: false,
   ativo: true,
   criadoEm: '2026-09-01T10:00:00.000Z',
 };
