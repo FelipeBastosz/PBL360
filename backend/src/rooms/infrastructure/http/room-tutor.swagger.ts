@@ -15,6 +15,8 @@ import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
 
+import { RoomTutorResponseDto } from '../../application/dtos/room-tutor-response.dto';
+
 export const AddTutorToRoomSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
@@ -79,4 +81,17 @@ export const RemoveTutorFromRoomSwaggerDocs = applyDecorators(
     description: 'Sala ou associação não encontrada.',
     type: ErrorResponseDto,
   }),
+);
+
+export const ListRoomTutorsSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({ summary: 'Lista os professores associados à sala' }),
+  ApiOkResponse({ type: RoomTutorResponseDto, isArray: true }),
+  ApiBadRequestResponse({ description: 'Identificador inválido.', type: ErrorResponseDto }),
+  ApiUnauthorizedResponse({ description: 'Autenticação obrigatória.', type: ErrorResponseDto }),
+  ApiForbiddenResponse({
+    description: 'Sem permissão para acessar a sala.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({ description: 'Sala não encontrada.', type: ErrorResponseDto }),
 );

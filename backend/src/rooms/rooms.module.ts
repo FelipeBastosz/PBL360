@@ -1,3 +1,4 @@
+import { ListRoomTutorsUseCase } from './application/use-cases/list-room-tutors.use-case';
 import { Module } from '@nestjs/common';
 import { UsersModule } from '@/users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -28,6 +29,7 @@ import { RoomAccessService } from './application/services/room-access.service';
   controllers: [RoomsController, RoomTutorsController],
 
   providers: [
+    ListRoomTutorsUseCase,
     CreateRoomUseCase,
     UpdateRoomUseCase,
     AddTutorToRoomUseCase,

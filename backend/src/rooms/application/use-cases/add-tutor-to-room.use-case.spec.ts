@@ -24,7 +24,12 @@ describe('AddTutorToRoomUseCase', () => {
 
   beforeEach(() => {
     rooms = roomRepositoryStub();
-    users = { findByEmail: jest.fn(), findById: jest.fn(), save: jest.fn() };
+    users = {
+      searchTutors: jest.fn(),
+      findByEmail: jest.fn(),
+      findById: jest.fn(),
+      save: jest.fn(),
+    };
     access = roomAccessStub();
     access.assertTutorIsRoomOwner.mockResolvedValue(buildRoom());
     useCase = new AddTutorToRoomUseCase(rooms, users, access as unknown as RoomAccessService);
