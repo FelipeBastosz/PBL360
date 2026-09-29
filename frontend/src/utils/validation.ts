@@ -4,6 +4,8 @@ const REGISTRATION_NUMBER = /^\d{8}$/;
 const CODE = /^\d{6}$/;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 72;
+export const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const PHOTO_MAX_BYTES = 2 * 1024 * 1024;
 
 export function validateEmail(email: string): string | undefined {
   const value = email.trim();
@@ -54,14 +56,10 @@ export function validateRegistrationNumber(value: string): string | undefined {
     : 'A matrícula deve conter exatamente 8 dígitos.';
 }
 
-export function validatePhotoUrl(value: string): string | undefined {
-  if (!value.trim()) return 'Informe o link da sua foto.';
-  try {
-    const url = new URL(value.trim());
-    return ['http:', 'https:'].includes(url.protocol) ? undefined : 'Informe um link válido.';
-  } catch {
-    return 'Informe um link válido.';
-  }
+export function validatePhoto(file: File | null): string | undefined {
+  if (!file) return 'Envie uma foto sua.';
+  if (!PHOTO_TYPES.includes(file.type)) return 'A foto deve ser uma imagem JPEG, PNG ou WebP.';
+  return file.size > PHOTO_MAX_BYTES ? 'A foto deve ter no máximo 2 MB.' : undefined;
 }
 
 export function validateCode(code: string): string | undefined {

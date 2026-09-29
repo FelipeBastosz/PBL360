@@ -12,7 +12,7 @@ function sessionExpiringIn(ms: number): SessionResponse {
       email: 'ana@discente.uefs.br',
       tipo: 'ALUNO',
       matricula: '20240001',
-      fotoUrl: 'https://example.com/ana.png',
+      possuiFoto: true,
       ativo: true,
       criadoEm: '2026-09-01T10:00:00.000Z',
     },

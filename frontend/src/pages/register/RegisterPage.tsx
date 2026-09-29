@@ -19,7 +19,7 @@ function initialValues(profileParam: string | null): RegisterFormValues {
     nome: '',
     email: '',
     matricula: '',
-    fotoUrl: '',
+    foto: null,
     senha: '',
     confirmacao: '',
   };

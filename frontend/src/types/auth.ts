@@ -6,7 +6,7 @@ export type UserResponse = {
   email: string;
   tipo: UserTypePayload;
   matricula: string | null;
-  fotoUrl: string | null;
+  possuiFoto: boolean;
   ativo: boolean;
   criadoEm: string;
 };
@@ -22,7 +22,7 @@ export type RegisterPayload = {
   senha: string;
   tipo: UserTypePayload;
   matricula?: string;
-  fotoUrl?: string;
+  foto?: File;
 };
 
 export type VerifyEmailCodePayload = {

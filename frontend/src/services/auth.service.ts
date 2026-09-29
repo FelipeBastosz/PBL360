@@ -16,12 +16,24 @@ import { api } from './api';
 
 const BASE = '/autenticacao';
 
+function toRegisterFormData(payload: RegisterPayload): FormData {
+  const data = new FormData();
+  Object.entries(payload).forEach(([field, value]) => {
+    if (value !== undefined) data.append(field, value);
+  });
+  return data;
+}
+
 export const authService = {
   login: (payload: LoginPayload) =>
     api.post<SessionResponse>(`${BASE}/login`, payload).then((r) => r.data),
 
   register: (payload: RegisterPayload) =>
-    api.post<RegisterResponse>(`${BASE}/registro`, payload).then((r) => r.data),
+    api
+      .post<RegisterResponse>(`${BASE}/registro`, toRegisterFormData(payload), {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data),
 
   verifyEmailCode: (payload: VerifyEmailCodePayload) =>
     api.post<VerificationResponse>(`${BASE}/verificar-codigo`, payload).then((r) => r.data),

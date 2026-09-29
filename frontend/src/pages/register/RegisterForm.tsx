@@ -2,6 +2,7 @@ import type { FormEvent } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { PasswordField } from '@/components/ui/PasswordField';
+import { PhotoField } from '@/components/ui/PhotoField';
 import { TextField } from '@/components/ui/TextField';
 import type { FieldErrors } from '@/hooks/useForm';
 import type { UserTypePayload } from '@/types/auth';
@@ -11,7 +12,7 @@ import { ProfileToggle } from './ProfileToggle';
 type RegisterFormProps = {
   values: RegisterFormValues;
   errors: FieldErrors<RegisterFormValues>;
-  onChange: (field: keyof RegisterFormValues, value: string) => void;
+  onChange: <K extends keyof RegisterFormValues>(field: K, value: RegisterFormValues[K]) => void;
   onSubmit: () => void;
   isLoading: boolean;
   errorMessages?: string[];
@@ -29,15 +30,12 @@ function StudentFields({ values, errors, onChange }: RegisterFormProps) {
         onChange={(value) => onChange('matricula', value.replace(/\D/g, ''))}
         error={errors.matricula}
       />
-      <TextField
-        label="Link da foto"
-        type="url"
-        inputMode="url"
-        placeholder="https://..."
-        hint="Endereço público de uma foto sua, usada para identificação nas sessões."
-        value={values.fotoUrl}
-        onChange={(value) => onChange('fotoUrl', value)}
-        error={errors.fotoUrl}
+      <PhotoField
+        label="Foto"
+        hint="JPEG, PNG ou WebP de até 2 MB. Usada para identificação nas sessões."
+        value={values.foto}
+        onChange={(file) => onChange('foto', file)}
+        error={errors.foto}
       />
     </>
   );
