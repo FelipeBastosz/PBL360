@@ -1,5 +1,6 @@
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { buildPhoto, pngPhotoBytes } from '@/users/testing/photo-fixtures';
 import { UserTypePayload } from '../../application/dtos/user-type-payload.enum';
 import type { RegisterUserDto } from '../../application/dtos/register-user.dto';
 import type { VerifyEmailCodeDto } from '../../application/dtos/verify-email-code.dto';
@@ -19,7 +20,7 @@ describe('auth.mapper', () => {
       passwordHash: 'hashed',
       type: UserType.STUDENT,
       registrationNumber: '20240001',
-      photoUrl: 'https://example.com/ana.png',
+      photo: buildPhoto(),
     });
     user.activate();
 
@@ -33,16 +34,16 @@ describe('auth.mapper', () => {
       senha: 'senha-secreta',
       tipo: UserTypePayload.ALUNO,
       matricula: '20240001',
-      fotoUrl: 'https://example.com/ana.png',
     };
+    const photo = pngPhotoBytes();
 
-    expect(toRegisterUserInput(dto)).toEqual({
+    expect(toRegisterUserInput(dto, photo)).toEqual({
       name: 'Ana Souza',
       email: 'ana@discente.uefs.br',
       password: 'senha-secreta',
       type: UserType.STUDENT,
       registrationNumber: '20240001',
-      photoUrl: 'https://example.com/ana.png',
+      photo,
     });
   });
 
@@ -57,7 +58,7 @@ describe('auth.mapper', () => {
     expect(toRegisterUserInput(dto)).toMatchObject({
       type: UserType.TUTOR,
       registrationNumber: null,
-      photoUrl: null,
+      photo: null,
     });
   });
 
@@ -95,7 +96,7 @@ describe('auth.mapper', () => {
         email: 'ana@discente.uefs.br',
         tipo: UserTypePayload.ALUNO,
         matricula: '20240001',
-        fotoUrl: 'https://example.com/ana.png',
+        possuiFoto: true,
         ativo: true,
         criadoEm: undefined,
       },
@@ -109,7 +110,7 @@ describe('auth.mapper', () => {
       passwordHash: 'hashed',
       type: UserType.STUDENT,
       registrationNumber: '20240001',
-      photoUrl: 'https://example.com/ana.png',
+      photo: buildPhoto(),
     });
     pending.id = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 

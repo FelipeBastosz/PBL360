@@ -1,6 +1,5 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { AuthCard } from '@/components/layout/AuthCard';
-import { AuthShell } from '@/components/layout/AuthShell';
+import { FlowShell } from '@/components/layout/FlowShell';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useForm } from '@/hooks/useForm';
 import { authService } from '@/services/auth.service';
@@ -10,7 +9,7 @@ import {
   toRegisterPayload,
   validateRegisterForm,
 } from '@/utils/authForms';
-import { parseProfileParam, toProfileParam } from '@/utils/profile';
+import { parseProfileParam, profileLabel, toProfileParam } from '@/utils/profile';
 import { RegisterForm } from './RegisterForm';
 
 function initialValues(profileParam: string | null): RegisterFormValues {
@@ -19,7 +18,7 @@ function initialValues(profileParam: string | null): RegisterFormValues {
     nome: '',
     email: '',
     matricula: '',
-    fotoUrl: '',
+    foto: null,
     senha: '',
     confirmacao: '',
   };
@@ -30,6 +29,7 @@ export default function RegisterPage() {
   const [searchParams] = useSearchParams();
   const form = useForm(initialValues(searchParams.get('perfil')), validateRegisterForm);
   const { run, isLoading, error } = useAsyncAction(authService.register);
+  const profile = form.values.tipo;
 
   async function handleSubmit() {
     if (!form.validateAll()) return;
@@ -41,28 +41,29 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthShell>
-      <AuthCard>
-        <h1 className="text-[1.75rem] font-semibold text-ink">Criar conta</h1>
-        <p className="mt-1 mb-8 text-brand-300">Preencha seus dados para acessar a plataforma.</p>
-        <RegisterForm
-          values={form.values}
-          errors={form.errors}
-          onChange={form.setValue}
-          onSubmit={handleSubmit}
-          isLoading={isLoading}
-          errorMessages={error?.messages}
-        />
-        <p className="mt-8 text-center text-sm text-muted">
-          Já tem conta?{' '}
-          <Link
-            to={`${ROUTES.login}?perfil=${toProfileParam(form.values.tipo)}`}
-            className="text-brand-900 hover:underline"
-          >
-            Entrar
-          </Link>
-        </p>
-      </AuthCard>
-    </AuthShell>
+    <FlowShell
+      title="Criar conta"
+      subtitle={`Cadastro de ${profileLabel(profile).toLowerCase()}`}
+      backTo={ROUTES.profileSelection}
+      backLabel="Voltar para a escolha de perfil"
+    >
+      <RegisterForm
+        values={form.values}
+        errors={form.errors}
+        onChange={form.setValue}
+        onSubmit={handleSubmit}
+        isLoading={isLoading}
+        errorMessages={error?.messages}
+      />
+      <p className="mt-6 text-center text-base font-semibold text-brand-300 animate-fade-up [animation-delay:420ms]">
+        Já tem conta?{' '}
+        <Link
+          to={`${ROUTES.login}?perfil=${toProfileParam(profile)}`}
+          className="text-brand-900 underline-offset-4 hover:underline"
+        >
+          Entrar
+        </Link>
+      </p>
+    </FlowShell>
   );
 }

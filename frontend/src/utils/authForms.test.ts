@@ -7,12 +7,14 @@ import {
   validateRegisterForm,
 } from './authForms';
 
+const photo = new File(['png'], 'ana.png', { type: 'image/png' });
+
 const student: RegisterFormValues = {
   tipo: 'ALUNO',
   nome: '  Ana Souza ',
   email: ' Ana@Discente.uefs.br ',
   matricula: '20240001',
-  fotoUrl: 'https://example.com/ana.png',
+  foto: photo,
   senha: 'senha-secreta',
   confirmacao: 'senha-secreta',
 };
@@ -40,10 +42,24 @@ describe('validateRegisterForm', () => {
   });
 
   it('requires registration number and photo from students', () => {
-    const errors = validateRegisterForm({ ...student, matricula: '', fotoUrl: '' });
+    const errors = validateRegisterForm({ ...student, matricula: '', foto: null });
 
     expect(errors.matricula).toBe('Informe sua matrícula.');
-    expect(errors.fotoUrl).toBe('Informe o link da sua foto.');
+    expect(errors.foto).toBe('Envie uma foto sua.');
+  });
+
+  it('validates the optional fields a professor chose to fill', () => {
+    const svg = new File(['<svg/>'], 'a.svg', { type: 'image/svg+xml' });
+    const errors = validateRegisterForm({
+      ...student,
+      tipo: 'PROFESSOR',
+      email: 'carlos@uefs.br',
+      matricula: '1999',
+      foto: svg,
+    });
+
+    expect(errors.matricula).toBe('A matrícula deve conter exatamente 8 dígitos.');
+    expect(errors.foto).toBe('A foto deve ser uma imagem JPEG, PNG ou WebP.');
   });
 
   it('does not require registration number nor photo from professors', () => {
@@ -52,7 +68,7 @@ describe('validateRegisterForm', () => {
       tipo: 'PROFESSOR',
       email: 'carlos@uefs.br',
       matricula: '',
-      fotoUrl: '',
+      foto: null,
     });
 
     expect(Object.values(errors).filter(Boolean)).toEqual([]);
@@ -67,16 +83,26 @@ describe('toRegisterPayload', () => {
       senha: 'senha-secreta',
       tipo: 'ALUNO',
       matricula: '20240001',
-      fotoUrl: 'https://example.com/ana.png',
+      foto: photo,
     });
   });
 
-  it('leaves student-only fields out of a professor payload', () => {
-    expect(toRegisterPayload({ ...student, tipo: 'PROFESSOR' })).toEqual({
-      nome: 'Ana Souza',
-      email: 'ana@discente.uefs.br',
-      senha: 'senha-secreta',
+  it('leaves out the optional fields a professor did not fill', () => {
+    expect(toRegisterPayload({ ...student, tipo: 'PROFESSOR', matricula: '', foto: null })).toEqual(
+      {
+        nome: 'Ana Souza',
+        email: 'ana@discente.uefs.br',
+        senha: 'senha-secreta',
+        tipo: 'PROFESSOR',
+      },
+    );
+  });
+
+  it('keeps the optional fields a professor did fill', () => {
+    expect(toRegisterPayload({ ...student, tipo: 'PROFESSOR' })).toMatchObject({
       tipo: 'PROFESSOR',
+      matricula: '20240001',
+      foto: photo,
     });
   });
 });

@@ -5,7 +5,6 @@ import {
   IsEnum,
   IsNotEmpty,
   IsString,
-  IsUrl,
   Length,
   Matches,
   MaxLength,
@@ -56,16 +55,4 @@ export class RegisterUserDto {
   @IsNotEmpty({ message: 'A matrícula é obrigatória para alunos.' })
   @Matches(REGISTRATION_NUMBER, { message: 'A matrícula deve conter exatamente 8 dígitos.' })
   matricula?: string;
-
-  @ApiPropertyOptional({
-    format: 'url',
-    maxLength: 255,
-    description: 'Obrigatória para ALUNO, opcional para PROFESSOR.',
-    example: 'https://uefs.br/fotos/ana.png',
-  })
-  @ValidateIf((dto: RegisterUserDto) => dto.tipo === UserTypePayload.ALUNO || dto.fotoUrl != null)
-  @IsNotEmpty({ message: 'A foto é obrigatória para alunos.' })
-  @IsUrl({}, { message: 'A foto deve ser uma URL válida.' })
-  @MaxLength(255, { message: 'A URL da foto deve ter no máximo 255 caracteres.' })
-  fotoUrl?: string;
 }

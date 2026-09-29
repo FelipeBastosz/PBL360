@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { ToastProvider } from '@/contexts/ToastProvider';
 import CreateRoomSuccessPage from '@/pages/rooms/CreateRoomSuccessPage';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -22,11 +23,13 @@ describe('CreateRoomSuccessPage', () => {
 
   const renderWithState = () =>
     render(
-      <MemoryRouter initialEntries={[{ pathname: '/sala/sucesso', state: { room: mockRoom } }]}>
-        <Routes>
-          <Route path="/sala/sucesso" element={<CreateRoomSuccessPage />} />
-        </Routes>
-      </MemoryRouter>,
+      <ToastProvider>
+        <MemoryRouter initialEntries={[{ pathname: '/sala/sucesso', state: { room: mockRoom } }]}>
+          <Routes>
+            <Route path="/sala/sucesso" element={<CreateRoomSuccessPage />} />
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>,
     );
 
   it('renderiza corretamente quando a sala está no state', () => {
@@ -64,5 +67,15 @@ describe('CreateRoomSuccessPage', () => {
     await waitFor(() =>
       expect(writeTextMock).toHaveBeenCalledWith('https://pbl360.com/salas/ABC-123'),
     );
+  });
+
+  it('avisa com um toast quando copia o link por não haver compartilhamento nativo', async () => {
+    writeTextMock.mockResolvedValue(undefined);
+    renderWithState();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar link' }));
+
+    expect(await screen.findByText('Link da turma copiado.')).toBeInTheDocument();
+    expect(writeTextMock).toHaveBeenCalledWith('https://pbl360.com/salas/ABC-123');
   });
 });

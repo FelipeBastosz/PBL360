@@ -12,7 +12,7 @@ const mockTeacher: UserResponse = {
   email: 'prof@test.com',
   tipo: 'PROFESSOR',
   matricula: null,
-  fotoUrl: null,
+  possuiFoto: false,
   ativo: true,
   criadoEm: '2026-01-01',
 };
@@ -23,7 +23,7 @@ const mockStudent: UserResponse = {
   email: 'aluno@test.com',
   tipo: 'ALUNO',
   matricula: '123456',
-  fotoUrl: null,
+  possuiFoto: false,
   ativo: true,
   criadoEm: '2026-01-01',
 };

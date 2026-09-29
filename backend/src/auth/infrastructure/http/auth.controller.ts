@@ -4,6 +4,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  UploadedFile,
   UseFilters,
   UseGuards,
 } from '@nestjs/common';
@@ -49,6 +50,7 @@ import {
   VerifyCodeAuthSwaggerDocs,
 } from './auth.swagger';
 import { PendingVerificationFilter } from './pending-verification.filter';
+import { PhotoUpload, type UploadedPhoto } from './photo-upload.interceptor';
 
 const VERIFICATION_SENT =
   'Cadastro realizado. Enviamos um código de verificação para o seu e-mail institucional.';
@@ -80,9 +82,13 @@ export class AuthController {
   ) {}
 
   @Post('registro')
+  @PhotoUpload()
   @RegisterAuthSwaggerDocs
-  async register(@Body() dto: RegisterUserDto): Promise<RegisterResponseDto> {
-    const user = await this.registerUser.execute(toRegisterUserInput(dto));
+  async register(
+    @Body() dto: RegisterUserDto,
+    @UploadedFile() photo?: UploadedPhoto,
+  ): Promise<RegisterResponseDto> {
+    const user = await this.registerUser.execute(toRegisterUserInput(dto, photo?.buffer));
 
     return toRegisterResponse(user, VERIFICATION_SENT);
   }

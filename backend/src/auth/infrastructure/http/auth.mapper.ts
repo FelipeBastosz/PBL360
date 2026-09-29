@@ -9,6 +9,7 @@ import type { PasswordResetTokenResponseDto } from '../../application/dtos/passw
 import { UserTypePayload } from '../../application/dtos/user-type-payload.enum';
 import type { ValidatePasswordResetCodeDto } from '../../application/dtos/validate-password-reset-code.dto';
 import type { VerifyEmailCodeDto } from '../../application/dtos/verify-email-code.dto';
+import type { RegisterUserInput } from '../../application/use-cases/register-user.use-case';
 import type { PasswordResetToken } from '../../domain/services/password-reset-token-issuer';
 import type { ValidatePasswordResetCodeInput } from '../../application/use-cases/validate-password-reset-code.use-case';
 import type { VerifyEmailCodeInput } from '../../application/use-cases/verify-email-code.use-case';
@@ -23,13 +24,16 @@ const PAYLOAD_TYPE: Record<UserType, UserTypePayload> = {
   [UserType.STUDENT]: UserTypePayload.ALUNO,
 };
 
-export const toRegisterUserInput = (dto: RegisterUserDto) => ({
+export const toRegisterUserInput = (
+  dto: RegisterUserDto,
+  photo: Buffer | null = null,
+): RegisterUserInput => ({
   name: dto.nome,
   email: dto.email,
   password: dto.senha,
   type: DOMAIN_TYPE[dto.tipo],
   registrationNumber: dto.matricula ?? null,
-  photoUrl: dto.fotoUrl ?? null,
+  photo,
 });
 
 export const toVerifyEmailCodeInput = (dto: VerifyEmailCodeDto): VerifyEmailCodeInput => ({
@@ -44,7 +48,7 @@ export const toUserResponse = (user: User): UserResponseDto => ({
   email: user.email,
   tipo: PAYLOAD_TYPE[user.type],
   matricula: user.registrationNumber,
-  fotoUrl: user.photoUrl,
+  possuiFoto: user.hasPhoto,
   ativo: user.active,
   criadoEm: user.createdAt,
 });

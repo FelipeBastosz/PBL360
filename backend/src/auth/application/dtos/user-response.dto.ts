@@ -17,8 +17,11 @@ export class UserResponseDto {
   @ApiProperty({ nullable: true, example: '20240001' })
   matricula: string | null;
 
-  @ApiProperty({ nullable: true, example: 'https://uefs.br/fotos/ana.png' })
-  fotoUrl: string | null;
+  @ApiProperty({
+    description: 'Indica se há foto cadastrada, disponível em GET /usuarios/{id}/foto.',
+    example: true,
+  })
+  possuiFoto: boolean;
 
   @ApiProperty({ example: true })
   ativo: boolean;

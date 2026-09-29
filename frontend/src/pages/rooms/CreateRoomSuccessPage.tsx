@@ -1,37 +1,14 @@
 import { useState } from 'react';
-import { useLocation, Navigate, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeftIcon, DocumentDuplicateIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { useLocation, Navigate, useNavigate } from 'react-router-dom';
+import { DocumentDuplicateIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { FlowShell } from '@/components/layout/FlowShell';
 import { Button } from '@/components/ui/Button';
 import { SuccessState } from '@/components/ui/SuccessState';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
 import { ROUTES } from '@/routes/paths';
 import { buildRoomInviteUrl } from '@/utils/urlBuilder';
-
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
-
-function SuccessHeader() {
-  const { user } = useAuth();
-  return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4">
-      <div className="flex items-center gap-2 text-white">
-        <Link to={ROUTES.rooms} aria-label="Voltar" className="rounded-md p-1 hover:bg-white/10">
-          <ChevronLeftIcon className="size-6" aria-hidden />
-        </Link>
-        <h1 className="text-lg font-semibold">Turma criada</h1>
-      </div>
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(user?.nome)}
-      </div>
-    </header>
-  );
-}
 
 function CopyRow({
   label,
@@ -53,17 +30,22 @@ function CopyRow({
   return (
     <div className="flex items-center justify-between gap-2 text-sm text-brand-900">
       <p className="truncate">
-        <span className="font-semibold">{label}:</span> {displayValue ?? value}
+        <span className="font-semibold">{label}:</span>{' '}
+        <span className="[font-feature-settings:'calt'_0]">{displayValue ?? value}</span>
       </p>
       <button
         onClick={handleCopy}
         aria-label={`Copiar ${label}`}
-        className="shrink-0 p-1 hover:text-brand-700"
+        className="shrink-0 rounded-md p-1 transition-[color,transform] duration-200 hover:text-brand-700 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
       >
         {copied ? (
-          <CheckIcon className="size-5 text-success" />
+          <CheckIcon
+            key="copied"
+            className="size-5 text-success animate-pop-in"
+            strokeWidth={2.5}
+          />
         ) : (
-          <DocumentDuplicateIcon className="size-5" />
+          <DocumentDuplicateIcon key="copy" className="size-5 animate-pop-in" />
         )}
       </button>
     </div>
@@ -84,23 +66,21 @@ function SuccessInfoCard({ roomCode }: { roomCode: string }) {
 
 function SuccessActions({ roomId, inviteUrl }: { roomId: string; inviteUrl: string }) {
   const navigate = useNavigate();
+  const { notify } = useToast();
 
   async function handleShare() {
     if (navigator.share) {
       await navigator.share({ title: 'Convite para turma', url: inviteUrl });
     } else {
-      navigator.clipboard.writeText(inviteUrl);
-      alert('Link copiado para a área de transferência!');
+      await navigator.clipboard.writeText(inviteUrl);
+      notify({ tone: 'success', message: 'Link da turma copiado.' });
     }
   }
 
   return (
     <div className="mt-8 flex w-full flex-col gap-4">
       <Button onClick={() => navigate(`${ROUTES.rooms}/${roomId}`)}>Ir para a turma</Button>
-      <Button
-        className="bg-brand-200 text-brand-900 hover:bg-brand-300 focus-visible:outline-brand-900"
-        onClick={handleShare}
-      >
+      <Button variant="outline" onClick={handleShare}>
         Compartilhar link
       </Button>
     </div>
@@ -109,6 +89,7 @@ function SuccessActions({ roomId, inviteUrl }: { roomId: string; inviteUrl: stri
 
 export default function CreateRoomSuccessPage() {
   const location = useLocation();
+  const { user } = useAuth();
   const room = location.state?.room;
 
   if (!room) {
@@ -119,20 +100,17 @@ export default function CreateRoomSuccessPage() {
   const roomName = room.nome || room.name;
 
   return (
-    <div className="min-h-dvh bg-surface">
-      <SuccessHeader />
-      <main className="mx-auto flex w-full max-w-md flex-col px-6 pt-12 text-center">
-        <SuccessState
-          title="Turma criada com sucesso!"
-          description={`Você criou a turma: ${roomName}`}
-          action={
-            <>
-              <SuccessInfoCard roomCode={roomCode} />
-              <SuccessActions roomId={room.id} inviteUrl={buildRoomInviteUrl(roomCode)} />
-            </>
-          }
-        />
-      </main>
-    </div>
+    <FlowShell title="Turma criada" backTo={ROUTES.rooms} trailing={<UserAvatar user={user} />}>
+      <SuccessState
+        title="Turma criada com sucesso!"
+        description={`Você criou a turma: ${roomName}`}
+        action={
+          <>
+            <SuccessInfoCard roomCode={roomCode} />
+            <SuccessActions roomId={room.id} inviteUrl={buildRoomInviteUrl(roomCode)} />
+          </>
+        }
+      />
+    </FlowShell>
   );
 }

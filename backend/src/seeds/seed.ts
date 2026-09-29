@@ -4,14 +4,15 @@ import { hash } from 'bcrypt';
 import type { DataSource } from 'typeorm';
 import dataSource from '@/config/data-source';
 import { User } from '@/users/domain/entities/user.entity';
+import { UserPhoto } from '@/users/domain/entities/user-photo.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { placeholderPhotoBytes } from './placeholder-photo';
 
 export interface SeedUserData {
   name: string;
   email: string;
   type: UserType;
   registrationNumber?: string;
-  photoUrl?: string;
 }
 
 export const DEFAULT_PASSWORD = 'senha-secreta';
@@ -36,14 +37,12 @@ export const SEED_USERS: SeedUserData[] = [
     email: '20240001@discente.uefs.br',
     type: UserType.STUDENT,
     registrationNumber: '20240001',
-    photoUrl: 'https://example.com/photos/ana.png',
   },
   {
     name: 'João Silva',
     email: '20240002@discente.uefs.br',
     type: UserType.STUDENT,
     registrationNumber: '20240002',
-    photoUrl: 'https://example.com/photos/joao.png',
   },
 ];
 
@@ -54,7 +53,7 @@ function buildSeedUser(data: SeedUserData, pwdHash: string): User {
     passwordHash: pwdHash,
     type: data.type,
     registrationNumber: data.registrationNumber ?? null,
-    photoUrl: data.photoUrl ?? null,
+    photo: data.type === UserType.STUDENT ? UserPhoto.fromBytes(placeholderPhotoBytes()) : null,
   });
   user.activate();
 
@@ -71,7 +70,11 @@ export async function seedUser(
     logger.log(`User ${data.email} already exists. Skipping.`);
     return false;
   }
-  await repo.save(buildSeedUser(data, pwdHash));
+  const user = buildSeedUser(data, pwdHash);
+  const saved = await repo.save(user);
+  if (user.pendingPhoto) {
+    await ds.getRepository(UserPhoto).save(Object.assign(user.pendingPhoto, { userId: saved.id }));
+  }
   logger.log(`Created ${data.type} user: ${data.email}`);
   return true;
 }

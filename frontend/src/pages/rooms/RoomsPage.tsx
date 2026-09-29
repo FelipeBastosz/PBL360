@@ -1,19 +1,11 @@
 import { useState } from 'react';
 import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { BrandHeader } from '@/components/layout/BrandHeader';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/utils/cn';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/routes/paths';
-
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  const parts = name.split(' ').filter(Boolean);
-  return parts
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
 
 function RoomsHeader() {
   const { user } = useAuth();
@@ -23,9 +15,7 @@ function RoomsHeader() {
       <div className="text-white">
         <BrandHeader />
       </div>
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(user?.nome)}
-      </div>
+      <UserAvatar user={user} />
     </header>
   );
 }

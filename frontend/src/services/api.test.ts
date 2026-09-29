@@ -24,7 +24,7 @@ function saveSession(): void {
       email: 'carlos@uefs.br',
       tipo: 'PROFESSOR',
       matricula: null,
-      fotoUrl: null,
+      possuiFoto: false,
       ativo: true,
       criadoEm: '2026-09-01T10:00:00.000Z',
     },

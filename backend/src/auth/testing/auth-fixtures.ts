@@ -1,5 +1,6 @@
 import { User } from '@/users/domain/entities/user.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { buildPhoto } from '@/users/testing/photo-fixtures';
 import type { UserRepository } from '@/users/domain/repositories/user.repository';
 
 export const userRepositoryStub = (): jest.Mocked<UserRepository> => ({
@@ -15,7 +16,7 @@ export const buildStudent = (overrides: Partial<User> = {}): User => {
     passwordHash: 'stored-hash',
     type: UserType.STUDENT,
     registrationNumber: '20240001',
-    photoUrl: 'https://example.com/ana.png',
+    photo: buildPhoto(),
   });
 
   return Object.assign(user, { id: 'user-1' }, overrides);

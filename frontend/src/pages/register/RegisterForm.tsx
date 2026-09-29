@@ -1,43 +1,53 @@
 import type { FormEvent } from 'react';
 import { Alert } from '@/components/ui/Alert';
+import { AvatarPicker } from '@/components/ui/AvatarPicker';
 import { Button } from '@/components/ui/Button';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { TextField } from '@/components/ui/TextField';
 import type { FieldErrors } from '@/hooks/useForm';
-import type { UserTypePayload } from '@/types/auth';
 import type { RegisterFormValues } from '@/utils/authForms';
-import { ProfileToggle } from './ProfileToggle';
 
 type RegisterFormProps = {
   values: RegisterFormValues;
   errors: FieldErrors<RegisterFormValues>;
-  onChange: (field: keyof RegisterFormValues, value: string) => void;
+  onChange: <K extends keyof RegisterFormValues>(field: K, value: RegisterFormValues[K]) => void;
   onSubmit: () => void;
   isLoading: boolean;
   errorMessages?: string[];
 };
 
-function StudentFields({ values, errors, onChange }: RegisterFormProps) {
+function IdentityFields({ values, errors, onChange }: RegisterFormProps) {
+  const isStudent = values.tipo === 'ALUNO';
+
   return (
     <>
       <TextField
+        label="Nome completo"
+        autoComplete="name"
+        placeholder="Seu nome completo"
+        value={values.nome}
+        onChange={(value) => onChange('nome', value)}
+        error={errors.nome}
+      />
+      <TextField
+        label="Email Institucional"
+        type="email"
+        inputMode="email"
+        autoComplete="email"
+        placeholder={isStudent ? 'matricula@discente.uefs.br' : 'seunome@uefs.br'}
+        value={values.email}
+        onChange={(value) => onChange('email', value)}
+        error={errors.email}
+      />
+      <TextField
         label="Matrícula"
+        optional={!isStudent}
         inputMode="numeric"
         maxLength={8}
-        placeholder="00000000"
+        placeholder="Número de matrícula"
         value={values.matricula}
         onChange={(value) => onChange('matricula', value.replace(/\D/g, ''))}
         error={errors.matricula}
-      />
-      <TextField
-        label="Link da foto"
-        type="url"
-        inputMode="url"
-        placeholder="https://..."
-        hint="Endereço público de uma foto sua, usada para identificação nas sessões."
-        value={values.fotoUrl}
-        onChange={(value) => onChange('fotoUrl', value)}
-        error={errors.fotoUrl}
       />
     </>
   );
@@ -56,7 +66,7 @@ function PasswordFields({ values, errors, onChange }: RegisterFormProps) {
         error={errors.senha}
       />
       <PasswordField
-        label="Confirmar Senha"
+        label="Confirmar a Senha"
         autoComplete="new-password"
         placeholder="Repita a senha"
         value={values.confirmacao}
@@ -76,37 +86,23 @@ export function RegisterForm(props: RegisterFormProps) {
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form noValidate onSubmit={handleSubmit} className="stagger-in flex flex-col gap-5">
+      <AvatarPicker
+        value={values.foto}
+        onChange={(file) => onChange('foto', file)}
+        error={errors.foto}
+        optional={values.tipo !== 'ALUNO'}
+      />
       {errorMessages?.length ? (
-        <Alert tone="error">
-          {errorMessages.map((message) => (
-            <p key={message}>{message}</p>
-          ))}
-        </Alert>
+        <div className="animate-shake">
+          <Alert tone="error">
+            {errorMessages.map((message) => (
+              <p key={message}>{message}</p>
+            ))}
+          </Alert>
+        </div>
       ) : null}
-      <ProfileToggle
-        value={values.tipo}
-        onChange={(value: UserTypePayload) => onChange('tipo', value)}
-      />
-      <TextField
-        label="Nome completo"
-        autoComplete="name"
-        placeholder="Seu nome"
-        value={values.nome}
-        onChange={(value) => onChange('nome', value)}
-        error={errors.nome}
-      />
-      <TextField
-        label="Email Institucional"
-        type="email"
-        inputMode="email"
-        autoComplete="email"
-        placeholder="seuemail@uefs.br"
-        value={values.email}
-        onChange={(value) => onChange('email', value)}
-        error={errors.email}
-      />
-      {values.tipo === 'ALUNO' && <StudentFields {...props} />}
+      <IdentityFields {...props} />
       <PasswordFields {...props} />
       <Button type="submit" isLoading={isLoading} className="mt-2">
         Criar conta

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConflictError } from '@/shared/errors/application.error';
 import { User } from '@/users/domain/entities/user.entity';
+import { UserPhoto } from '@/users/domain/entities/user-photo.entity';
 import type { UserType } from '@/users/domain/enums/user-type.enum';
 import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
@@ -12,7 +13,7 @@ export interface RegisterUserInput {
   password: string;
   type: UserType;
   registrationNumber?: string | null;
-  photoUrl?: string | null;
+  photo?: Buffer | null;
 }
 
 @Injectable()
@@ -30,8 +31,14 @@ export class RegisterUserUseCase {
       throw new ConflictError('Já existe uma conta cadastrada com este e-mail.');
     }
 
+    const photo = input.photo ? UserPhoto.fromBytes(input.photo) : null;
     const user = await this.users.save(
-      User.create({ ...input, email, passwordHash: await this.passwords.hash(input.password) }),
+      User.create({
+        ...input,
+        email,
+        photo,
+        passwordHash: await this.passwords.hash(input.password),
+      }),
     );
 
     await this.verificationCodes.issueFor(user);

@@ -1,5 +1,6 @@
 import { PendingVerificationResponseDto } from '@/auth/application/dtos/pending-verification-response.dto';
 import { RegisterResponseDto } from '@/auth/application/dtos/register-response.dto';
+import { RegisterUserFormDto } from '@/auth/application/dtos/register-user-form.dto';
 import { SessionResponseDto } from '@/auth/application/dtos/session-response.dto';
 import { VerificationResponseDto } from '@/auth/application/dtos/verification-response.dto';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
@@ -8,11 +9,14 @@ import { PasswordResetTokenResponseDto } from '@/auth/application/dtos/password-
 import { applyDecorators } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiConflictResponse,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiPayloadTooLargeResponse,
   ApiUnauthorizedResponse,
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
@@ -29,13 +33,20 @@ export const RegisterAuthSwaggerDocs = applyDecorators(
     description:
       'Cria a conta inativa e envia um código de verificação para o e-mail institucional. ' +
       'Nenhum token é emitido aqui: use o `usuarioId` devolvido em /autenticacao/verificar-codigo ' +
-      'para ativar a conta. PROFESSOR pode omitir matrícula e foto; ALUNO precisa das duas.',
+      'para ativar a conta. PROFESSOR pode omitir matrícula e foto; ALUNO precisa das duas. ' +
+      'A foto vai no campo `foto` de um `multipart/form-data` e é gravada no banco.',
   }),
+  ApiConsumes('multipart/form-data', 'application/json'),
+  ApiBody({ type: RegisterUserFormDto }),
   ApiCreatedResponse({
     description: 'Conta criada, pendente de verificação.',
     type: RegisterResponseDto,
   }),
-  ApiBadRequestResponse({ description: 'Payload inválido.', type: ErrorResponseDto }),
+  ApiBadRequestResponse({
+    description: 'Payload inválido ou foto em formato não aceito.',
+    type: ErrorResponseDto,
+  }),
+  ApiPayloadTooLargeResponse({ description: 'Foto maior que 2 MB.', type: ErrorResponseDto }),
   ApiConflictResponse({ description: 'E-mail já cadastrado.', type: ErrorResponseDto }),
 );
 
