@@ -8,7 +8,6 @@ import { roomService } from '@/services/room.service';
 import type { UserResponse } from '@/types/auth';
 import type { Room } from '@/types/room';
 
-// 1. Mock do serviço de salas (regra de ouro: nunca mockar o axios direto)
 vi.mock('@/services/room.service', () => ({
   roomService: {
     list: vi.fn(),
@@ -45,7 +44,7 @@ const mockRooms: Room[] = [
     codigoSala: 'aB7kP2x9',
     semestre: '2026.2',
     ativo: true,
-    criadoEm: new Date(),
+    criadoEm: '2026-01-01T00:00:00.000Z',
     professorResponsavelId: '1',
   },
   {
@@ -55,7 +54,7 @@ const mockRooms: Room[] = [
     codigoSala: 'xY9zW1a2',
     semestre: '2026.2',
     ativo: true,
-    criadoEm: new Date(),
+    criadoEm: '2026-01-01T00:00:00.000Z',
     professorResponsavelId: '1',
   },
 ];
@@ -80,7 +79,6 @@ function renderWithUser(user: UserResponse = mockTeacher) {
 describe('RoomsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Por padrão, a API devolve lista vazia para não quebrar os testes de empty state
     vi.mocked(roomService.list).mockResolvedValue([]);
   });
 
@@ -100,15 +98,12 @@ describe('RoomsPage', () => {
       vi.mocked(roomService.list).mockResolvedValue(mockRooms);
       renderWithUser();
 
-      // Aguarda carregar as salas na tela
       expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
       expect(screen.getByText('MI - Algoritmos · TP02')).toBeInTheDocument();
 
-      // Digita 'Software' na busca
       const input = screen.getByPlaceholderText('Pesquisar turma');
       await userEvent.type(input, 'Software');
 
-      // Apenas a turma de Software deve continuar visível
       expect(screen.getByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
       expect(screen.queryByText('MI - Algoritmos · TP02')).not.toBeInTheDocument();
       expect(screen.getByText('Minhas turmas · 1')).toBeInTheDocument();
@@ -131,7 +126,6 @@ describe('RoomsPage', () => {
       vi.mocked(roomService.list).mockRejectedValue(new Error('Erro de conexão'));
       renderWithUser();
 
-      // Aguarda o Alert aparecer na tela
       const alert = await screen.findByRole('alert');
       expect(alert).toBeInTheDocument();
     });
@@ -152,7 +146,6 @@ describe('RoomsPage', () => {
       renderWithUser(mockTeacher);
 
       expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
-      // Verifica se o nome do professor apareceu no cartão
       expect(screen.getAllByText('Prof. Professor Fulano')).toHaveLength(2);
       expect(screen.getAllByText('0 alunos')).toHaveLength(2);
       expect(screen.getAllByText('0 problemas')).toHaveLength(2);
