@@ -70,6 +70,14 @@ export class PerformanceTable {
     return table;
   }
 
+  delete(): void {
+    if (this.deletedAt != null) {
+      throw new InvalidPerformanceTableError('A tabela de desempenho já foi excluída.');
+    }
+
+    this.deletedAt = new Date();
+  }
+
   private assertIsValid(): void {
     if (!this.tutorId) {
       throw new InvalidPerformanceTableError('O professor responsável é obrigatório.');

@@ -24,6 +24,31 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     });
   }
 
+  async findById(id: string): Promise<PerformanceTable | null> {
+    const [table] = await this.performanceTables.query<PerformanceTable[]>(
+      `SELECT id, tutor_id AS "tutorId", name, description, created_at AS "createdAt",
+              updated_at AS "updatedAt", deleted_at AS "deletedAt"
+         FROM performance_tables
+        WHERE id = $1 AND deleted_at IS NULL
+        LIMIT 1;`,
+      [id],
+    );
+
+    return table ? Object.assign(new PerformanceTable(), table) : null;
+  }
+
+  async softDelete(table: PerformanceTable): Promise<boolean> {
+    const rows = await this.performanceTables.query<{ id: string }[]>(
+      `UPDATE performance_tables
+          SET deleted_at = $2, updated_at = now()
+        WHERE id = $1 AND tutor_id = $3 AND deleted_at IS NULL
+        RETURNING id;`,
+      [table.id, table.deletedAt, table.tutorId],
+    );
+
+    return rows.length > 0;
+  }
+
   private async insertTable(
     manager: EntityManager,
     table: PerformanceTable,
