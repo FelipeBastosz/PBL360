@@ -9,17 +9,12 @@ import type { PerformanceTableService } from '../performance-table.service';
 const TUTOR_ID = 'mock-tutor-1';
 const NOW = '2026-09-01T10:00:00.000Z';
 
-function buildCriteria(
-  tableId: string,
-  items: Array<[string, 'CONTENT' | 'PARTICIPATION' | 'BEHAVIOR', number]>,
-) {
-  return items.map(([nome, categoria, peso], index) => ({
+function buildCriteria(tableId: string, items: Array<[string, number]>) {
+  return items.map(([nome, peso], index) => ({
     id: `${tableId}-criterion-${index + 1}`,
     nome,
     descricao: null,
-    categoria,
     peso,
-    notaMaxima: 10,
     ordem: index + 1,
   }));
 }
@@ -33,12 +28,12 @@ function seedTables(): PerformanceTable[] {
       descricao: 'Critérios padrão do módulo de Algoritmos.',
       quantidadeProblemas: 2,
       criterios: buildCriteria('mock-table-1', [
-        ['Domínio do tema', 'CONTENT', 3],
-        ['Uso de fontes', 'CONTENT', 2],
-        ['Contribuição', 'PARTICIPATION', 2],
-        ['Escuta ativa', 'PARTICIPATION', 1],
-        ['Pontualidade', 'BEHAVIOR', 1],
-        ['Postura', 'BEHAVIOR', 1],
+        ['Domínio do tema', 3],
+        ['Uso de fontes', 2],
+        ['Contribuição', 2],
+        ['Escuta ativa', 1],
+        ['Pontualidade', 1],
+        ['Postura', 1],
       ]),
       criadoEm: NOW,
       atualizadoEm: NOW,
@@ -50,9 +45,9 @@ function seedTables(): PerformanceTable[] {
       descricao: null,
       quantidadeProblemas: 0,
       criterios: buildCriteria('mock-table-2', [
-        ['Domínio do tema', 'CONTENT', 3],
-        ['Contribuição', 'PARTICIPATION', 2],
-        ['Postura', 'BEHAVIOR', 1],
+        ['Domínio do tema', 3],
+        ['Contribuição', 2],
+        ['Postura', 1],
       ]),
       criadoEm: NOW,
       atualizadoEm: NOW,
@@ -77,9 +72,7 @@ function withCriteria(tableId: string, payload: CreatePerformanceTablePayload['c
     id: `${tableId}-criterion-${index + 1}`,
     nome: criterion.nome,
     descricao: criterion.descricao ?? null,
-    categoria: criterion.categoria,
     peso: criterion.peso,
-    notaMaxima: criterion.notaMaxima,
     ordem: criterion.ordem,
   }));
 }

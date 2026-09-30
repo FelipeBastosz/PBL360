@@ -1,21 +1,15 @@
-export type CriterionCategory = 'CONTENT' | 'PARTICIPATION' | 'BEHAVIOR';
-
 export type Criterion = {
   id: string;
   nome: string;
   descricao: string | null;
-  categoria: CriterionCategory;
   peso: number;
-  notaMaxima: number;
   ordem: number;
 };
 
 export type CriterionInput = {
   nome: string;
   descricao?: string;
-  categoria: CriterionCategory;
   peso: number;
-  notaMaxima: number;
   ordem: number;
 };
 
@@ -48,14 +42,4 @@ export type CreatePerformanceTablePayload = {
 
 export type UpdatePerformanceTablePayload = Partial<CreatePerformanceTablePayload>;
 
-export const CRITERION_CATEGORIES: readonly CriterionCategory[] = [
-  'CONTENT',
-  'PARTICIPATION',
-  'BEHAVIOR',
-];
-
-export const CRITERION_CATEGORY_LABELS: Record<CriterionCategory, string> = {
-  CONTENT: 'Conteúdo',
-  PARTICIPATION: 'Participação',
-  BEHAVIOR: 'Comportamento',
-};
+export const CRITERION_MAX_SCORE = 10;

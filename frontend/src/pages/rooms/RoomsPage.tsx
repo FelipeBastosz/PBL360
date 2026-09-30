@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { roomService } from '@/services/room.service';
 import { ROUTES } from '@/routes/paths';
-import type { Room } from '@/types/room';
+import type { Room, StudentRoom } from '@/types/room';
 import { cn } from '@/utils/cn';
 
 function RoomsHeader() {
@@ -39,6 +39,19 @@ function RoomsSearch({ query, setQuery }: RoomsSearchProps) {
       />
     </div>
   );
+}
+
+function toRoom(studentRoom: StudentRoom): Room {
+  return {
+    id: studentRoom.salaId,
+    nome: studentRoom.nome,
+    semestre: studentRoom.semestre,
+    codigoDisciplina: '',
+    codigoSala: '',
+    professorResponsavelId: '',
+    ativo: true,
+    criadoEm: '',
+  };
 }
 
 function RoomsEmptyState({ isStudent }: { isStudent: boolean }) {
@@ -166,16 +179,7 @@ export default function RoomsPage() {
   const fetchRooms = useCallback(async (): Promise<Room[]> => {
     if (isStudent) {
       const studentRooms = roomService.listMyRooms ? await roomService.listMyRooms() : [];
-      return studentRooms.map((sr) => ({
-        id: sr.salaId,
-        nome: sr.nome,
-        semestre: sr.semestre,
-        codigoDisciplina: '',
-        codigoSala: '',
-        professorResponsavelId: '',
-        ativo: true,
-        criadoEm: '',
-      }));
+      return studentRooms.map(toRoom);
     }
     return roomService.list();
   }, [isStudent]);

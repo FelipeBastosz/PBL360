@@ -1,6 +1,5 @@
 import { Logger } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
-import { CriterionCategory } from '@/performance-tables/domain/enums/criterion-category.enum';
 import type { NewPerformanceCriterion } from '@/performance-tables/domain/entities/new-performance-table';
 import { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
 import { User } from '@/users/domain/entities/user.entity';
@@ -20,12 +19,42 @@ export const SEED_PERFORMANCE_TABLES: SeedPerformanceTableData[] = [
     name: 'Barema PBL',
     description: 'Critérios padrão do módulo de Algoritmos.',
     criteria: [
-      { name: 'Domínio do tema', category: CriterionCategory.CONTENT, weight: 3, maxScore: 10 },
-      { name: 'Uso de fontes', category: CriterionCategory.CONTENT, weight: 2, maxScore: 10 },
-      { name: 'Contribuição', category: CriterionCategory.PARTICIPATION, weight: 2, maxScore: 10 },
-      { name: 'Escuta ativa', category: CriterionCategory.PARTICIPATION, weight: 1, maxScore: 10 },
-      { name: 'Pontualidade', category: CriterionCategory.BEHAVIOR, weight: 1, maxScore: 10 },
-      { name: 'Postura', category: CriterionCategory.BEHAVIOR, weight: 1, maxScore: 10 },
+      {
+        name: 'Domínio do tema',
+        description: 'Demonstra domínio sobre o tema estudado.',
+        orderIndex: 1,
+        weight: 3,
+      },
+      {
+        name: 'Uso de fontes',
+        description: 'Utiliza fontes relevantes para fundamentar a discussão.',
+        orderIndex: 2,
+        weight: 2,
+      },
+      {
+        name: 'Contribuição',
+        description: 'Contribui ativamente para a construção coletiva.',
+        orderIndex: 3,
+        weight: 2,
+      },
+      {
+        name: 'Escuta ativa',
+        description: 'Demonstra atenção e consideração pelas contribuições dos colegas.',
+        orderIndex: 4,
+        weight: 1,
+      },
+      {
+        name: 'Pontualidade',
+        description: 'Cumpre os horários e prazos estabelecidos.',
+        orderIndex: 5,
+        weight: 1,
+      },
+      {
+        name: 'Postura',
+        description: 'Mantém postura adequada durante as atividades.',
+        orderIndex: 6,
+        weight: 1,
+      },
     ],
   },
   {
@@ -33,9 +62,24 @@ export const SEED_PERFORMANCE_TABLES: SeedPerformanceTableData[] = [
     name: 'Avaliação de sessão curta',
     description: 'Versão enxuta para sessões tutoriais rápidas.',
     criteria: [
-      { name: 'Domínio do tema', category: CriterionCategory.CONTENT, weight: 3, maxScore: 10 },
-      { name: 'Contribuição', category: CriterionCategory.PARTICIPATION, weight: 2, maxScore: 10 },
-      { name: 'Postura', category: CriterionCategory.BEHAVIOR, weight: 1, maxScore: 10 },
+      {
+        name: 'Domínio do tema',
+        description: 'Demonstra domínio sobre o tema estudado.',
+        orderIndex: 1,
+        weight: 3,
+      },
+      {
+        name: 'Contribuição',
+        description: 'Contribui ativamente para a construção coletiva.',
+        orderIndex: 2,
+        weight: 2,
+      },
+      {
+        name: 'Postura',
+        description: 'Mantém postura adequada durante as atividades.',
+        orderIndex: 3,
+        weight: 1,
+      },
     ],
   },
 ];

@@ -30,9 +30,7 @@ const table: PerformanceTable = {
       id: 'criterion-1',
       nome: 'Domínio do tema',
       descricao: null,
-      categoria: 'CONTENT',
       peso: 3,
-      notaMaxima: 10,
       ordem: 1,
     },
   ],
@@ -45,9 +43,7 @@ const payload = {
   criterios: [
     {
       nome: 'Domínio do tema',
-      categoria: 'CONTENT' as const,
       peso: 3,
-      notaMaxima: 10,
       ordem: 1,
     },
   ],

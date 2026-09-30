@@ -1,4 +1,3 @@
-import { CriterionCategory } from '../enums/criterion-category.enum';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { NewPerformanceTable } from './new-performance-table';
 import { PerformanceTable } from './performance-table.entity';
@@ -7,7 +6,14 @@ function validTableData(): NewPerformanceTable {
   return {
     tutorId: 'tutor-123',
     name: 'Avaliação tutorial',
-    criteria: [{ name: 'Participação', orderIndex: 1, weight: 0.5 }],
+    criteria: [
+      {
+        name: 'Participação',
+        description: 'Envolvimento nas atividades',
+        orderIndex: 1,
+        weight: 0.5,
+      },
+    ],
   };
 }
 
@@ -17,7 +23,12 @@ describe('PerformanceTable', () => {
 
     expect(table.name).toBe('Avaliação tutorial');
     expect(table.criteria).toEqual([
-      expect.objectContaining({ name: 'Participação', orderIndex: 1, weight: 0.5 }),
+      expect.objectContaining({
+        name: 'Participação',
+        description: 'Envolvimento nas atividades',
+        orderIndex: 1,
+        weight: 0.5,
+      }),
     ]);
   });
 
@@ -25,12 +36,24 @@ describe('PerformanceTable', () => {
     const table = PerformanceTable.create({
       ...validTableData(),
       name: '  Avaliação tutorial  ',
-      criteria: [{ name: '  Participação  ', orderIndex: 1, weight: 0.5 }],
+      criteria: [
+        {
+          name: '  Participação  ',
+          description: '  Envolvimento nas atividades  ',
+          orderIndex: 1,
+          weight: 0.5,
+        },
+      ],
     });
 
     expect(table.name).toBe('Avaliação tutorial');
     expect(table.criteria).toEqual([
-      expect.objectContaining({ name: 'Participação', orderIndex: 1, weight: 0.5 }),
+      expect.objectContaining({
+        name: 'Participação',
+        description: 'Envolvimento nas atividades',
+        orderIndex: 1,
+        weight: 0.5,
+      }),
     ]);
   });
 
@@ -67,49 +90,57 @@ describe('PerformanceTable', () => {
     ).toThrow(InvalidPerformanceTableError);
   });
 
-  it('defaults the description, category and max score of a criterion', () => {
-    const table = PerformanceTable.create(validTableData());
+  it('defaults the description, order and weight of a criterion', () => {
+    const table = PerformanceTable.create({
+      ...validTableData(),
+      criteria: [{ name: 'Participação' }],
+    });
 
     expect(table.description).toBeNull();
     expect(table.criteria[0]).toEqual(
-      expect.objectContaining({ category: CriterionCategory.CONTENT, maxScore: 10 }),
+      expect.objectContaining({ description: null, orderIndex: 1, weight: 1 }),
     );
   });
 
-  it('keeps the description, category and max score informed', () => {
+  it('keeps the criterion description, order and weight informed', () => {
     const table = PerformanceTable.create({
       ...validTableData(),
       description: '  Critérios do módulo  ',
       criteria: [
         {
           name: 'Postura',
-          category: CriterionCategory.BEHAVIOR,
+          description: '  Participação durante as discussões  ',
+          orderIndex: 2,
           weight: 2,
-          maxScore: 5,
         },
       ],
     });
 
     expect(table.description).toBe('Critérios do módulo');
     expect(table.criteria[0]).toEqual(
-      expect.objectContaining({ category: CriterionCategory.BEHAVIOR, maxScore: 5 }),
+      expect.objectContaining({
+        name: 'Postura',
+        description: 'Participação durante as discussões',
+        orderIndex: 2,
+        weight: 2,
+      }),
     );
   });
 
-  it('rejects a criterion with an unknown category', () => {
+  it.each([0, -1, 1.5])('rejects a criterion with invalid order %s', (orderIndex) => {
     expect(() =>
       PerformanceTable.create({
         ...validTableData(),
-        criteria: [{ name: 'Postura', category: 'OTHER' as CriterionCategory }],
+        criteria: [{ name: 'Postura', orderIndex }],
       }),
     ).toThrow(InvalidPerformanceTableError);
   });
 
-  it.each([0, -1])('rejects a criterion with max score %s', (maxScore) => {
+  it.each([0, 10, -1])('rejects a criterion with invalid weight %s', (weight) => {
     expect(() =>
       PerformanceTable.create({
         ...validTableData(),
-        criteria: [{ name: 'Postura', maxScore }],
+        criteria: [{ name: 'Postura', weight }],
       }),
     ).toThrow(InvalidPerformanceTableError);
   });
