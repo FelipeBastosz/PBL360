@@ -102,7 +102,7 @@ describe('RoomProblemsPage', () => {
 
       await userEvent.click(fab);
       expect(screen.getByRole('button', { name: 'Criar novo problema' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Editar um problema' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Editar um problema' })).toBeInTheDocument();
     });
     it('renders problem cards when room has problems', async () => {
       const mockProblems = [

@@ -1,4 +1,9 @@
-import type { CreateProblemPayload, Problem, UpdateProblemPayload } from '@/types/problem';
+import type {
+  CreateProblemPayload,
+  Problem,
+  UpdateProblemPayload,
+  ProblemDeletionImpact,
+} from '@/types/problem';
 import { api } from './api';
 
 const problemsOf = (roomId: string) => `/salas/${roomId}/problemas`;
@@ -14,4 +19,12 @@ export const problemService = {
 
   update: (roomId: string, problemId: string, payload: UpdateProblemPayload) =>
     api.patch<Problem>(`${problemsOf(roomId)}/${problemId}`, payload).then((r) => r.data),
+
+  getDeletionImpact: (roomId: string, problemId: string) =>
+    api
+      .get<ProblemDeletionImpact>(`${problemsOf(roomId)}/${problemId}/impacto-exclusao`)
+      .then((r) => r.data),
+
+  remove: (roomId: string, problemId: string) =>
+    api.delete<void>(`${problemsOf(roomId)}/${problemId}`).then(() => undefined),
 };

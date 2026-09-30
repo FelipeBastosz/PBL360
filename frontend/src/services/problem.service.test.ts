@@ -34,6 +34,13 @@ const problem = {
   atualizadoEm: '2026-09-01T10:00:00.000Z',
 };
 
+const mockImpact = {
+  sessoes: 2,
+  notas: 5,
+  feedbacks: 0,
+  avaliacoes: 1,
+};
+
 describe('problemService', () => {
   it('lists the problems of a room', async () => {
     const adapter = respondWith([problem]);
@@ -63,6 +70,7 @@ describe('problemService', () => {
     });
     expect(JSON.parse(adapter.mock.calls[0][0].data as string)).toEqual(payload);
   });
+
   it('updates a problem of the room', async () => {
     const updatedProblem = { ...problem, titulo: 'Problema 1 Atualizado' };
     const adapter = respondWith(updatedProblem);
@@ -77,5 +85,27 @@ describe('problemService', () => {
       url: '/salas/room-1/problemas/problem-1',
     });
     expect(JSON.parse(adapter.mock.calls[0][0].data as string)).toEqual(payload);
+  });
+
+  it('fetches deletion impact of a problem', async () => {
+    const adapter = respondWith(mockImpact);
+
+    await expect(problemService.getDeletionImpact('room-1', 'problem-1')).resolves.toEqual(
+      mockImpact,
+    );
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'get',
+      url: '/salas/room-1/problemas/problem-1/impacto-exclusao',
+    });
+  });
+
+  it('deletes a problem of the room', async () => {
+    const adapter = respondWith(undefined, 204);
+
+    await expect(problemService.remove('room-1', 'problem-1')).resolves.toBeUndefined();
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'delete',
+      url: '/salas/room-1/problemas/problem-1',
+    });
   });
 });

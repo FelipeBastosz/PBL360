@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
@@ -32,13 +32,13 @@ function ProblemsSearch({ query, setQuery }: { query: string; setQuery: (v: stri
   );
 }
 
-function ProblemsFabMenu({
-  isProfessor,
-  onOpenCreate,
-}: {
+type FabMenuProps = {
   isProfessor: boolean;
+  roomId: string;
   onOpenCreate: () => void;
-}) {
+};
+
+function ProblemsFabMenu({ isProfessor, roomId, onOpenCreate }: FabMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   if (!isProfessor) return null;
 
@@ -46,10 +46,14 @@ function ProblemsFabMenu({
     <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3">
       {isOpen && (
         <div className="flex animate-fade-up flex-col items-end gap-2">
-          <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
+          <Link
+            to={`/turmas/${roomId}/problemas/gerenciar`}
+            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+          >
             Editar um problema
-          </button>
+          </Link>
           <button
+            type="button"
             onClick={() => {
               setIsOpen(false);
               onOpenCreate();
@@ -158,7 +162,11 @@ export default function RoomProblemsPage() {
         isLoading={isLoading}
         problems={filtered}
       />
-      <ProblemsFabMenu isProfessor={isProfessor} onOpenCreate={() => setIsCreateModalOpen(true)} />
+      <ProblemsFabMenu
+        isProfessor={isProfessor}
+        roomId={id ?? ''}
+        onOpenCreate={() => setIsCreateModalOpen(true)}
+      />
       <ProblemFormModal
         isOpen={isCreateModalOpen}
         roomId={id ?? ''}
