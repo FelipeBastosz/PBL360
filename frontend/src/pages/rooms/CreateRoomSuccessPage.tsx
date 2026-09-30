@@ -79,7 +79,7 @@ function SuccessActions({ roomId, inviteUrl }: { roomId: string; inviteUrl: stri
 
   return (
     <div className="mt-8 flex w-full flex-col gap-4">
-      <Button onClick={() => navigate(`${ROUTES.rooms}/${roomId}`)}>Ir para a turma</Button>
+      <Button onClick={() => navigate(`/turmas/${roomId}/problemas`)}>Ir para a turma</Button>
       <Button variant="outline" onClick={handleShare}>
         Compartilhar link
       </Button>

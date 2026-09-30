@@ -15,4 +15,5 @@ export const ROUTES = {
   createRoomSuccess: '/turmas/nova/sucesso',
   manageRooms: '/turmas/gerenciar',
   editRoom: '/turmas/:id/editar',
+  roomProblems: '/turmas/:id/problemas',
 } as const;
