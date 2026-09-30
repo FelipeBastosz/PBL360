@@ -103,6 +103,10 @@ describe('Performance tables (e2e)', () => {
       [tableId],
     );
 
+    if (!table || !criteria || !problems) {
+      throw new Error('Expected table, criterion, and problem rows.');
+    }
+
     expect(table.deleted_at).not.toBeNull();
     expect(criteria.count).toBe(1);
     expect(problems.count).toBe(1);
@@ -115,6 +119,8 @@ describe('Performance tables (e2e)', () => {
       'SELECT deleted_at FROM performance_tables WHERE id = $1;',
       [tableId],
     );
+
+    if (!table) throw new Error('Expected table row.');
     expect(table.deleted_at).toBeNull();
   });
 

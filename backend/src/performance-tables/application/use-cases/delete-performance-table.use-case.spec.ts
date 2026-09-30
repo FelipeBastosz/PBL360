@@ -12,6 +12,7 @@ describe('DeletePerformanceTableUseCase', () => {
   beforeEach(() => {
     repository = {
       create: jest.fn(),
+      findSummariesByTutorId: jest.fn(),
       findById: jest.fn(),
       softDelete: jest.fn(),
     };

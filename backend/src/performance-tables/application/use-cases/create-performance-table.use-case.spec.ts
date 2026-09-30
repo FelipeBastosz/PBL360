@@ -11,6 +11,7 @@ describe('CreatePerformanceTableUseCase', () => {
 
     const repository: jest.Mocked<PerformanceTableRepository> = {
       create: createMock,
+      findSummariesByTutorId: jest.fn(),
       findById: jest.fn(),
       softDelete: jest.fn(),
     };
