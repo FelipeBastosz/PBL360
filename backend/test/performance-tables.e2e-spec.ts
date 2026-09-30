@@ -3,6 +3,8 @@ import { type TestingModule } from '@nestjs/testing';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
+import { type PerformanceTableResponseDto } from '@/performance-tables/application/dtos/performance-table-response.dto';
+import { type ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
 import { signAccessToken } from './helpers/fixtures';
@@ -86,6 +88,57 @@ describe('Performance tables (e2e)', () => {
     request(app.getHttpServer() as Server)
       .delete(`/api/tabelas-desempenho/${tableId}`)
       .set('Authorization', `Bearer ${token}`);
+
+  const getTable = (id: string, token: string) =>
+    request(app.getHttpServer() as Server)
+      .get(`/api/tabelas-desempenho/${id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+  it('retrieves performance table with criteria sorted by order_index and linked problems count', async () => {
+    await dataSource.query('DELETE FROM performance_criteria WHERE performance_table_id = $1;', [
+      tableId,
+    ]);
+    await dataSource.query(
+      `INSERT INTO performance_criteria (performance_table_id, name, order_index, weight)
+       VALUES ($1, 'Segundo Critério', 2, 5), ($1, 'Primeiro Critério', 1, 3);`,
+      [tableId],
+    );
+
+    const res = await getTable(tableId, ownerToken).expect(200);
+    const body = res.body as PerformanceTableResponseDto;
+
+    expect(body).toMatchObject({
+      id: tableId,
+      professorId: ownerId,
+      nome: 'Tabela de teste',
+      quantidadeProblemas: 1,
+    });
+    expect(body.criterios).toHaveLength(2);
+    expect(body.criterios[0]).toMatchObject({
+      nome: 'Primeiro Critério',
+      ordem: 1,
+      peso: 3,
+    });
+    expect(body.criterios[1]).toMatchObject({
+      nome: 'Segundo Critério',
+      ordem: 2,
+      peso: 5,
+    });
+  });
+
+  it('rejects retrieval by a tutor who does not own the table', async () => {
+    const res = await getTable(tableId, otherTutorToken).expect(403);
+    const body = res.body as ErrorResponseDto;
+    expect(body.message).toBe('Você não tem permissão para acessar esta tabela de desempenho.');
+  });
+
+  it('allows only tutors to retrieve a performance table', async () => {
+    await getTable(tableId, studentToken).expect(403);
+  });
+
+  it('returns 404 when retrieving a non-existent table', async () => {
+    await getTable('00000000-0000-0000-0000-000000000000', ownerToken).expect(404);
+  });
 
   it('soft deletes only the table and preserves criteria and linked problems', async () => {
     await deleteTable(ownerToken).expect(204);
