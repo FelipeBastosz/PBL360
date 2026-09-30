@@ -2,9 +2,31 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
-import type { PerformanceTableRepository } from '../../domain/repositories/performance-table.repository';
+import type {
+  PerformanceTableRepository,
+  PerformanceTableSummary,
+} from '../../domain/repositories/performance-table.repository';
 
 const CRITERION_COLUMNS = 5;
+
+const PERFORMANCE_TABLE_SUMMARY_QUERY = `SELECT performance_tables.id,
+              performance_tables.tutor_id AS "tutorId",
+              performance_tables.name,
+              performance_tables.description,
+              COUNT(DISTINCT performance_criteria.id)::int AS "criteriaCount",
+              COUNT(DISTINCT problems.id)::int AS "problemCount",
+              performance_tables.created_at AS "createdAt",
+              performance_tables.updated_at AS "updatedAt"
+         FROM performance_tables
+         LEFT JOIN performance_criteria
+           ON performance_criteria.performance_table_id = performance_tables.id
+          AND performance_criteria.deleted_at IS NULL
+         LEFT JOIN problems
+           ON problems.performance_table_id = performance_tables.id
+        WHERE performance_tables.tutor_id = $1
+          AND performance_tables.deleted_at IS NULL
+        GROUP BY performance_tables.id
+        ORDER BY performance_tables.created_at ASC, performance_tables.id ASC;`;
 
 @Injectable()
 export class PgPerformanceTableRepository implements PerformanceTableRepository {
@@ -16,12 +38,22 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
   create(table: PerformanceTable): Promise<PerformanceTable> {
     return this.performanceTables.manager.transaction(async (manager) => {
       const persistedTable = await this.insertTable(manager, table);
-      await this.insertCriteria(manager, persistedTable.id, table);
+      const persistedCriteria = await this.insertCriteria(manager, persistedTable.id, table);
+      table.criteria.forEach((criterion, index) => {
+        criterion.id = persistedCriteria[index]!.id;
+      });
 
       return Object.assign(new PerformanceTable(), persistedTable, {
         criteria: table.criteria,
       });
     });
+  }
+
+  async findSummariesByTutorId(tutorId: string): Promise<PerformanceTableSummary[]> {
+    return this.performanceTables.query<PerformanceTableSummary[]>(
+      PERFORMANCE_TABLE_SUMMARY_QUERY,
+      [tutorId],
+    );
   }
 
   private async insertTable(
@@ -47,14 +79,15 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     manager: EntityManager,
     tableId: string,
     table: PerformanceTable,
-  ): Promise<unknown> {
+  ): Promise<Array<{ id: string }>> {
     const criteria = this.buildCriteriaValues(tableId, table);
     const placeholders = this.buildCriteriaPlaceholders(criteria.length);
 
-    return manager.query(
+    return manager.query<Array<{ id: string }>>(
       `INSERT INTO performance_criteria
          (performance_table_id, name, description, order_index, weight)
-       VALUES ${placeholders};`,
+       VALUES ${placeholders}
+       RETURNING id;`,
       criteria.flat(),
     );
   }

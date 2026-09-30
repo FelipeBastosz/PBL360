@@ -9,6 +9,7 @@ import {
 export interface CreatePerformanceTableInput {
   tutorId: string;
   name: string;
+  description?: string | null;
   criteria: NewPerformanceCriterion[];
 }
 
