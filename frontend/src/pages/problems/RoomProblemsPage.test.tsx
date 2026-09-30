@@ -9,6 +9,12 @@ import type { UserResponse } from '@/types/auth';
 import type { Room } from '@/types/room';
 import RoomProblemsPage from './RoomProblemsPage';
 
+vi.mock('@/hooks/useToast', () => ({
+  useToast: () => ({
+    notify: vi.fn(),
+  }),
+}));
+
 vi.mock('@/services/room.service', () => ({
   roomService: {
     getById: vi.fn(),

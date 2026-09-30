@@ -10,13 +10,16 @@ import {
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { roomService } from '@/services/room.service';
 import { problemService } from '@/services/problem.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
+import type { Problem } from '@/types/problem';
 import { cn } from '@/utils/cn';
 import { ProblemsEmptyState } from './ProblemsEmptyState';
+import { ProblemFormModal } from './ProblemFormModal';
 
 function getInitials(name?: string) {
   if (!name) return 'U';
@@ -112,7 +115,13 @@ function ProblemsSearch({ query, setQuery }: { query: string; setQuery: (v: stri
   );
 }
 
-function ProblemsFabMenu({ isProfessor }: { isProfessor: boolean }) {
+function ProblemsFabMenu({
+  isProfessor,
+  onOpenCreate,
+}: {
+  isProfessor: boolean;
+  onOpenCreate: () => void;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   if (!isProfessor) return null;
 
@@ -123,7 +132,13 @@ function ProblemsFabMenu({ isProfessor }: { isProfessor: boolean }) {
           <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
             Editar um problema
           </button>
-          <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              onOpenCreate();
+            }}
+            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+          >
             Criar novo problema
           </button>
         </div>
@@ -142,19 +157,37 @@ function ProblemsFabMenu({ isProfessor }: { isProfessor: boolean }) {
   );
 }
 
+type MainContentProps = {
+  isLoading: boolean;
+  problemsCount: number;
+  isProfessor: boolean;
+};
+
+function RoomProblemsContent({ isLoading, problemsCount, isProfessor }: MainContentProps) {
+  if (isLoading) {
+    return (
+      <div className="mt-10 flex justify-center">
+        <Spinner className="size-8 text-brand-900" />
+      </div>
+    );
+  }
+  if (problemsCount === 0) {
+    return <ProblemsEmptyState isProfessor={isProfessor} />;
+  }
+  return <div className="mt-2 flex flex-col gap-3">{/* Lista de problemas futura */}</div>;
+}
+
 export default function RoomProblemsPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { notify } = useToast();
   const [room, setRoom] = useState<Room | null>(null);
-  const [problems, setProblems] = useState<unknown[]>([]);
+  const [problems, setProblems] = useState<Problem[]>([]);
   const [query, setQuery] = useState('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const isProfessor = user?.tipo === 'PROFESSOR';
-  const {
-    run: fetchRoom,
-    isLoading: isLoadingRoom,
-    error: roomError,
-  } = useAsyncAction(roomService.getById);
+  const { run: fetchRoom, error: roomError } = useAsyncAction(roomService.getById);
   const { run: fetchProblems, isLoading: isLoadingProblems } = useAsyncAction(problemService.list);
 
   useEffect(() => {
@@ -163,12 +196,16 @@ export default function RoomProblemsPage() {
         if (res.ok) setRoom(res.data);
       });
       fetchProblems(id).then((res) => {
-        if (res.ok) setProblems(res.data);
+        if (res.ok) setProblems(res.data as Problem[]);
       });
     }
   }, [id, fetchRoom, fetchProblems]);
 
-  const isLoading = isLoadingRoom || isLoadingProblems;
+  function handleProblemCreated(newProblem: Problem) {
+    setProblems((current) => [...current, newProblem]);
+    setIsCreateModalOpen(false);
+    notify({ tone: 'success', message: 'Problema criado com sucesso!' });
+  }
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
@@ -177,17 +214,20 @@ export default function RoomProblemsPage() {
         {roomError && <Alert tone="error">{roomError.message}</Alert>}
         <RoomTopActions isProfessor={isProfessor} roomId={id ?? ''} />
         <ProblemsSearch query={query} setQuery={setQuery} />
-        {isLoading ? (
-          <div className="mt-10 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
-          </div>
-        ) : problems.length === 0 ? (
-          <ProblemsEmptyState isProfessor={isProfessor} />
-        ) : (
-          <div className="mt-2 flex flex-col gap-3">{/* Lista de problemas futura */}</div>
-        )}
+        <RoomProblemsContent
+          isLoading={isLoadingProblems}
+          problemsCount={problems.length}
+          isProfessor={isProfessor}
+        />
       </main>
-      <ProblemsFabMenu isProfessor={isProfessor} />
+      <ProblemsFabMenu isProfessor={isProfessor} onOpenCreate={() => setIsCreateModalOpen(true)} />
+      <ProblemFormModal
+        isOpen={isCreateModalOpen}
+        roomId={id ?? ''}
+        initialData={null}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleProblemCreated}
+      />
     </div>
   );
 }

@@ -63,4 +63,19 @@ describe('problemService', () => {
     });
     expect(JSON.parse(adapter.mock.calls[0][0].data as string)).toEqual(payload);
   });
+  it('updates a problem of the room', async () => {
+    const updatedProblem = { ...problem, titulo: 'Problema 1 Atualizado' };
+    const adapter = respondWith(updatedProblem);
+    const payload = { titulo: 'Problema 1 Atualizado' };
+
+    await expect(problemService.update('room-1', 'problem-1', payload)).resolves.toEqual(
+      updatedProblem,
+    );
+
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'patch',
+      url: '/salas/room-1/problemas/problem-1',
+    });
+    expect(JSON.parse(adapter.mock.calls[0][0].data as string)).toEqual(payload);
+  });
 });

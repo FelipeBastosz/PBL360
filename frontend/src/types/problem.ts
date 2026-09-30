@@ -23,3 +23,7 @@ export type CreateProblemPayload = {
   dataFim?: string;
   tabelaId?: string;
 };
+
+export type UpdateProblemPayload = {
+  titulo: string;
+};
