@@ -22,6 +22,8 @@ describe('ListPerformanceTablesUseCase', () => {
       findById: jest.fn(),
       update: jest.fn(),
       softDelete: jest.fn(),
+      findUsageById: jest.fn(),
+      findByIdIncludingDeleted: jest.fn(),
     };
 
     repository.findSummariesByTutorId.mockResolvedValue(summaries);

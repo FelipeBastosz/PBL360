@@ -16,6 +16,8 @@ describe('GetPerformanceTableUseCase', () => {
       findById: findByIdMock,
       softDelete: jest.fn(),
       update: jest.fn(),
+      findUsageById: jest.fn(),
+      findByIdIncludingDeleted: jest.fn(),
     };
 
     useCase = new GetPerformanceTableUseCase(repository);

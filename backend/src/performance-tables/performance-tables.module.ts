@@ -10,6 +10,7 @@ import { PerformanceTable } from './domain/entities/performance-table.entity';
 import { PERFORMANCE_TABLE_REPOSITORY } from './domain/repositories/performance-table.repository';
 import { PgPerformanceTableRepository } from './infrastructure/database/pg-performance-table.repository';
 import { PerformanceTablesController } from './infrastructure/http/performance-tables.controller';
+import { GetPerformanceTableUsageUseCase } from './application/use-cases/get-performance-table-usage.use-case';
 
 @Module({
   imports: [TypeOrmModule.forFeature([PerformanceTable, PerformanceCriterion])],
@@ -20,6 +21,7 @@ import { PerformanceTablesController } from './infrastructure/http/performance-t
     ListPerformanceTablesUseCase,
     GetPerformanceTableUseCase,
     UpdatePerformanceTableUseCase,
+    GetPerformanceTableUsageUseCase,
     {
       provide: PERFORMANCE_TABLE_REPOSITORY,
       useClass: PgPerformanceTableRepository,

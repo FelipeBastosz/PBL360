@@ -81,3 +81,36 @@ export const INSERT_PERFORMANCE_TABLE_QUERY = `
     updated_at AS "updatedAt",
     deleted_at AS "deletedAt";
 `;
+
+export const FIND_PERFORMANCE_TABLE_USAGE_QUERY = `
+  SELECT COUNT(*)::int AS "problemCount"
+    FROM problems
+   WHERE performance_table_id = $1;
+`;
+
+export const FIND_PERFORMANCE_TABLE_BY_ID_INCLUDING_DELETED_QUERY = `
+  SELECT pt.id,
+         pt.tutor_id AS "tutorId",
+         pt.name,
+         pt.description,
+         pt.created_at AS "createdAt",
+         pt.updated_at AS "updatedAt",
+         pt.deleted_at AS "deletedAt",
+         (
+           SELECT COUNT(*)::int
+             FROM problems p
+            WHERE p.performance_table_id = pt.id
+         ) AS "problemCount",
+         pc.id AS "criterionId",
+         pc.name AS "criterionName",
+         pc.description AS "criterionDescription",
+         pc.order_index AS "criterionOrderIndex",
+         pc.weight AS "criterionWeight"
+    FROM performance_tables pt
+    LEFT JOIN performance_criteria pc
+      ON pc.performance_table_id = pt.id
+     AND pc.deleted_at IS NULL
+   WHERE pt.id = $1
+   ORDER BY pc.order_index ASC,
+            pc.created_at ASC;
+`;

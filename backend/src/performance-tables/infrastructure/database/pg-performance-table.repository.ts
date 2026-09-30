@@ -6,6 +6,7 @@ import { PerformanceTable } from '../../domain/entities/performance-table.entity
 import type {
   PerformanceTableRepository,
   PerformanceTableSummary,
+  PerformanceTableUsage,
 } from '../../domain/repositories/performance-table.repository';
 
 import {
@@ -19,6 +20,8 @@ import {
   PERFORMANCE_TABLE_SUMMARY_QUERY,
   UPDATE_PERFORMANCE_TABLE_QUERY,
   INSERT_PERFORMANCE_TABLE_QUERY,
+  FIND_PERFORMANCE_TABLE_USAGE_QUERY,
+  FIND_PERFORMANCE_TABLE_BY_ID_INCLUDING_DELETED_QUERY,
 } from './performance-table.queries';
 
 const CRITERION_COLUMNS = 5;
@@ -165,5 +168,23 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
 
       return `(${placeholders.join(', ')})`;
     }).join(', ');
+  }
+
+  async findUsageById(id: string): Promise<PerformanceTableUsage> {
+    const [usage] = await this.performanceTables.query<PerformanceTableUsage[]>(
+      FIND_PERFORMANCE_TABLE_USAGE_QUERY,
+      [id],
+    );
+
+    return usage ?? { problemCount: 0 };
+  }
+
+  async findByIdIncludingDeleted(id: string): Promise<PerformanceTable | null> {
+    const rows = await this.performanceTables.query<PerformanceTableDetailRow[]>(
+      FIND_PERFORMANCE_TABLE_BY_ID_INCLUDING_DELETED_QUERY,
+      [id],
+    );
+
+    return rows.length > 0 ? toPerformanceTableWithCriteria(rows) : null;
   }
 }
