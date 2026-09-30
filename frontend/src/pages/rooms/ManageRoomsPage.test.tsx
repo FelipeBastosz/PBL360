@@ -8,7 +8,6 @@ import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import ManageRoomsPage from './ManageRoomsPage';
 
-// 1. Mock do roomService
 vi.mock('@/services/room.service', () => ({
   roomService: {
     list: vi.fn(),
@@ -16,14 +15,12 @@ vi.mock('@/services/room.service', () => ({
   },
 }));
 
-// 2. Mock do useAuth
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     user: { nome: 'Professor Fulano' },
   }),
 }));
 
-// 3. Mock do useNavigate
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof Router>('react-router-dom');
@@ -76,7 +73,10 @@ describe('ManageRoomsPage', () => {
     expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
     expect(screen.getByText('MI - Algoritmos · TP02')).toBeInTheDocument();
 
-    // Ações inferiores
+    expect(
+      screen.getByRole('link', { name: 'Editar MI - Engenharia de Software · TP01' }),
+    ).toHaveAttribute('href', '/turmas/room-1/editar');
+
     expect(screen.getByRole('button', { name: 'Concluir edição' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
   });
@@ -87,7 +87,6 @@ describe('ManageRoomsPage', () => {
 
     expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
 
-    // Clica na lixeira da primeira turma
     await user.click(
       screen.getByRole('button', { name: 'Excluir MI - Engenharia de Software · TP01' }),
     );
@@ -104,7 +103,6 @@ describe('ManageRoomsPage', () => {
 
     expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
 
-    // Abre o modal e confirma
     await user.click(
       screen.getByRole('button', { name: 'Excluir MI - Engenharia de Software · TP01' }),
     );
@@ -112,9 +110,7 @@ describe('ManageRoomsPage', () => {
 
     await waitFor(() => {
       expect(roomService.remove).toHaveBeenCalledWith('room-1');
-      // O card da turma excluída deve sumir da tela
       expect(screen.queryByText('MI - Engenharia de Software · TP01')).not.toBeInTheDocument();
-      // O modal fecha
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
   });
