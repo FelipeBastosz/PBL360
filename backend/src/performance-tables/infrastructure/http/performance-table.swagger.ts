@@ -66,6 +66,25 @@ export const CreatePerformanceTableSwaggerDocs = applyDecorators(
   FORBIDDEN,
 );
 
+export const GetPerformanceTableSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Busca os detalhes de uma tabela de desempenho',
+    description:
+      'Retorna uma tabela de desempenho do professor autenticado com todos os seus critérios ativos ordenados.',
+  }),
+  ApiOkResponse({
+    description: 'Tabela de desempenho encontrada com seus critérios.',
+    type: PerformanceTableResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Tabela de desempenho não encontrada.',
+    type: ErrorResponseDto,
+  }),
+  UNAUTHORIZED,
+  FORBIDDEN,
+);
+
 export const DeletePerformanceTableSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({

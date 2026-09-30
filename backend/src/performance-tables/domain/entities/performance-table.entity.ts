@@ -52,6 +52,8 @@ export class PerformanceTable {
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, default: null })
   deletedAt: Date | null;
 
+  problemCount?: number;
+
   static create(props: NewPerformanceTable): PerformanceTable {
     const table = new PerformanceTable();
     table.tutorId = props.tutorId?.trim();

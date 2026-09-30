@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
 } from 'class-validator';
@@ -56,4 +57,13 @@ export class CreateProblemDto {
   @Matches(CALENDAR_DATE, { message: 'A data de término deve estar no formato AAAA-MM-DD.' })
   @IsDateString({ strict: true }, { message: 'A data de término deve ser uma data válida.' })
   dataFim?: string;
+
+  @ApiPropertyOptional({
+    description: 'ID da tabela de desempenho vinculada ao problema.',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    format: 'uuid',
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'O ID da tabela de desempenho deve ser um UUID válido.' })
+  tabelaId?: string;
 }
