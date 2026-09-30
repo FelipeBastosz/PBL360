@@ -126,6 +126,13 @@ describe('Rooms (e2e)', () => {
 
       expect((mine.body as RoomBody[]).map((r) => r.id)).toEqual([room.id]);
       expect(theirs.body).toEqual([]);
+
+      await api(app, owner)
+        .post(`/salas/${room.id}/professores`, { professorId: colleague.id })
+        .expect(201);
+
+      const linkedTutorRooms = await api(app, colleague).get('/salas').expect(200);
+      expect((linkedTutorRooms.body as RoomBody[]).map((r) => r.id)).toEqual([room.id]);
     });
   });
 
