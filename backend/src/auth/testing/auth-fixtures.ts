@@ -4,6 +4,7 @@ import { buildPhoto } from '@/users/testing/photo-fixtures';
 import type { UserRepository } from '@/users/domain/repositories/user.repository';
 
 export const userRepositoryStub = (): jest.Mocked<UserRepository> => ({
+  searchTutors: jest.fn(),
   findByEmail: jest.fn(),
   findById: jest.fn(),
   save: jest.fn((user: User) => Promise.resolve(user)),

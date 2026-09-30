@@ -1,3 +1,5 @@
+import { TutorsController } from './infrastructure/http/tutors.controller';
+import { SearchTutorsUseCase } from './application/use-cases/search-tutors.use-case';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GetUserPhotoUseCase } from './application/use-cases/get-user-photo.use-case';
@@ -11,9 +13,10 @@ import { UsersController } from './infrastructure/http/users.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, UserPhoto])],
-  controllers: [UsersController],
+  controllers: [UsersController, TutorsController],
   providers: [
     GetUserPhotoUseCase,
+    SearchTutorsUseCase,
     {
       provide: USER_REPOSITORY,
       useClass: PgUserRepository,

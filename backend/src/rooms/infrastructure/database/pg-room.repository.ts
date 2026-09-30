@@ -11,6 +11,7 @@ import { ROOM_COLUMNS, type RoomRow } from './room-row';
 import { addRoomTutor, hasRoomTutor, removeRoomTutor } from './room-tutor-queries';
 import type {
   RoomRepository,
+  RoomTutor,
   RoomStudentSummary,
   StudentRoomSummary,
 } from '../../domain/repositories/room.repository';
@@ -141,6 +142,19 @@ export class PgRoomRepository implements RoomRepository {
 
   async hasTutor(roomId: string, tutorId: string): Promise<boolean> {
     return hasRoomTutor(this.rooms, roomId, tutorId);
+  }
+
+  listTutors(roomId: string): Promise<RoomTutor[]> {
+    return this.rooms.query<RoomTutor[]>(
+      `SELECT u.id, u.name, u.email,
+          (u.id = r.tutor_id) AS "isResponsible"
+        FROM room_tutors rt
+        JOIN users u ON u.id = rt.tutor_id
+        JOIN rooms r ON r.id = rt.room_id
+        WHERE rt.room_id = $1 AND r.deleted_at IS NULL
+        ORDER BY "isResponsible" DESC, u.name ASC, u.id ASC;`,
+      [roomId],
+    );
   }
 
   async removeTutor(roomId: string, tutorId: string, actorId: string): Promise<boolean> {
