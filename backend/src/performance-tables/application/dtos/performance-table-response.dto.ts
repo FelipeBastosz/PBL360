@@ -17,6 +17,13 @@ export class PerformanceTableResponseDto {
   @ApiProperty({ type: PerformanceCriterionResponseDto, isArray: true })
   criterios: PerformanceCriterionResponseDto[];
 
+  @ApiPropertyOptional({
+    type: Number,
+    example: 0,
+    description: 'Quantidade de problemas que utilizam esta tabela de desempenho.',
+  })
+  quantidadeProblemas?: number;
+
   @ApiProperty({ format: 'date-time' })
   criadoEm: Date;
 

@@ -2,17 +2,19 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post } from '@nest
 import { ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
-import { UserType } from '@/users/domain/enums/user-type.enum';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
+import { UserType } from '@/users/domain/enums/user-type.enum';
 import { CreatePerformanceTableDto } from '../../application/dtos/create-performance-table.dto';
 import { PerformanceTableResponseDto } from '../../application/dtos/performance-table-response.dto';
 import { PerformanceTableSummaryResponseDto } from '../../application/dtos/performance-table-summary-response.dto';
 import { CreatePerformanceTableUseCase } from '../../application/use-cases/create-performance-table.use-case';
 import { DeletePerformanceTableUseCase } from '../../application/use-cases/delete-performance-table.use-case';
+import { GetPerformanceTableUseCase } from '../../application/use-cases/get-performance-table.use-case';
 import { ListPerformanceTablesUseCase } from '../../application/use-cases/list-performance-tables.use-case';
 import {
   CreatePerformanceTableSwaggerDocs,
   DeletePerformanceTableSwaggerDocs,
+  GetPerformanceTableSwaggerDocs,
   ListPerformanceTablesSwaggerDocs,
 } from './performance-table.swagger';
 import {
@@ -27,6 +29,7 @@ export class PerformanceTablesController {
   constructor(
     private readonly createPerformanceTableUseCase: CreatePerformanceTableUseCase,
     private readonly listPerformanceTablesUseCase: ListPerformanceTablesUseCase,
+    private readonly getPerformanceTableUseCase: GetPerformanceTableUseCase,
     private readonly deletePerformanceTableUseCase: DeletePerformanceTableUseCase,
   ) {}
 
@@ -60,6 +63,17 @@ export class PerformanceTablesController {
       criadoEm: table.createdAt,
       atualizadoEm: table.updatedAt,
     }));
+  }
+
+  @Get(':id')
+  @GetPerformanceTableSwaggerDocs
+  async getById(
+    @UuidParam('id') id: string,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<PerformanceTableResponseDto> {
+    const table = await this.getPerformanceTableUseCase.execute({ tableId: id, tutorId });
+
+    return toPerformanceTableResponse(table);
   }
 
   @Delete(':id')

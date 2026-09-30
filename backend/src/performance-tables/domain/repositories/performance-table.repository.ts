@@ -19,6 +19,5 @@ export interface PerformanceTableRepository {
   findSummariesByTutorId(tutorId: string): Promise<PerformanceTableSummary[]>;
 
   findById(id: string): Promise<PerformanceTable | null>;
-
   softDelete(table: PerformanceTable): Promise<boolean>;
 }
