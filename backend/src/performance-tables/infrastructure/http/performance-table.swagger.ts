@@ -5,6 +5,8 @@ import {
   ApiBody,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
@@ -62,4 +64,28 @@ export const CreatePerformanceTableSwaggerDocs = applyDecorators(
   }),
   UNAUTHORIZED,
   FORBIDDEN,
+);
+
+export const DeletePerformanceTableSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Exclui uma tabela de desempenho',
+    description:
+      'Realiza a exclusão lógica da tabela sem remover critérios ou problemas vinculados. ' +
+      'Apenas o professor responsável pode excluí-la.',
+  }),
+  ApiNoContentResponse({ description: 'Tabela de desempenho excluída com sucesso.' }),
+  ApiBadRequestResponse({
+    description: 'O identificador da tabela não é um UUID válido.',
+    type: ErrorResponseDto,
+  }),
+  UNAUTHORIZED,
+  ApiForbiddenResponse({
+    description: 'Apenas o professor responsável pode excluir esta tabela.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Tabela não encontrada ou já excluída.',
+    type: ErrorResponseDto,
+  }),
 );
