@@ -8,7 +8,6 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
@@ -16,7 +15,10 @@ import type { NewPerformanceCriterion } from './new-performance-table';
 import { PerformanceTable } from './performance-table.entity';
 
 @Entity('performance_criteria')
-@Unique('uq_performance_criteria_table_order', ['performanceTableId', 'orderIndex'])
+@Index('uq_performance_criteria_table_order_active', ['performanceTableId', 'orderIndex'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 @Check('chk_performance_criteria_weight', '"weight" >= 0 AND "weight" <= 10')
 export class PerformanceCriterion {
   @PrimaryGeneratedColumn('uuid')

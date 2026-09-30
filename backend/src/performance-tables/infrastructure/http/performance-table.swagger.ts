@@ -18,6 +18,7 @@ import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { CreatePerformanceTableDto } from '../../application/dtos/create-performance-table.dto';
 import { PerformanceTableResponseDto } from '../../application/dtos/performance-table-response.dto';
 import { PerformanceTableSummaryResponseDto } from '../../application/dtos/performance-table-summary-response.dto';
+import { UpdatePerformanceTableDto } from '../../application/dtos/update-performance-table.dto';
 
 const UNAUTHORIZED = ApiUnauthorizedResponse({
   description: 'JWT não informado, inválido ou expirado.',
@@ -105,6 +106,39 @@ export const DeletePerformanceTableSwaggerDocs = applyDecorators(
   }),
   ApiNotFoundResponse({
     description: 'Tabela não encontrada ou já excluída.',
+    type: ErrorResponseDto,
+  }),
+);
+
+export const UpdatePerformanceTableSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Edita uma tabela de desempenho',
+    description:
+      'Atualiza nome, descrição e critérios da tabela. ' +
+      'Os critérios anteriores são preservados como histórico.',
+  }),
+  ApiBody({
+    type: UpdatePerformanceTableDto,
+  }),
+  ApiOkResponse({
+    description: 'Tabela de desempenho atualizada com sucesso.',
+    type: PerformanceTableResponseDto,
+  }),
+  ApiBadRequestResponse({
+    description: 'Dados inválidos para atualização.',
+    type: ErrorResponseDto,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiForbiddenResponse({
+    description: 'Apenas o professor responsável pode editar esta tabela.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Tabela de desempenho não encontrada.',
     type: ErrorResponseDto,
   }),
 );

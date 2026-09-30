@@ -20,4 +20,6 @@ export interface PerformanceTableRepository {
 
   findById(id: string): Promise<PerformanceTable | null>;
   softDelete(table: PerformanceTable): Promise<boolean>;
+
+  update(table: PerformanceTable): Promise<PerformanceTable>;
 }

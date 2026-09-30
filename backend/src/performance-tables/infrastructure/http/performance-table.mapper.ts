@@ -2,6 +2,8 @@ import type { CreatePerformanceTableDto } from '../../application/dtos/create-pe
 import type { PerformanceTableResponseDto } from '../../application/dtos/performance-table-response.dto';
 import type { CreatePerformanceTableInput } from '../../application/use-cases/create-performance-table.use-case';
 import type { PerformanceTable } from '../../domain/entities/performance-table.entity';
+import type { UpdatePerformanceTableDto } from '../../application/dtos/update-performance-table.dto';
+import type { UpdatePerformanceTable } from '../../domain/entities/update-performance-table';
 
 export const toCreatePerformanceTableInput = (
   dto: CreatePerformanceTableDto,
@@ -35,4 +37,17 @@ export const toPerformanceTableResponse = (
   })),
   criadoEm: table.createdAt,
   atualizadoEm: table.updatedAt,
+});
+
+export const toUpdatePerformanceTableInput = (
+  dto: UpdatePerformanceTableDto,
+): UpdatePerformanceTable => ({
+  name: dto.nome,
+  description: dto.descricao,
+  criteria: dto.criterios.map((criterion) => ({
+    name: criterion.nome,
+    description: criterion.descricao,
+    orderIndex: criterion.ordem,
+    weight: criterion.peso,
+  })),
 });

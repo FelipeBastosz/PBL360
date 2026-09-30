@@ -15,13 +15,21 @@ describe('ListPerformanceTablesUseCase', () => {
         updatedAt: new Date('2026-01-01T00:00:00.000Z'),
       },
     ];
+
     const repository: jest.Mocked<PerformanceTableRepository> = {
       create: jest.fn(),
-      findSummariesByTutorId: jest.fn().mockResolvedValue(summaries),
+      findSummariesByTutorId: jest.fn(),
+      findById: jest.fn(),
+      update: jest.fn(),
+      softDelete: jest.fn(),
     };
+
+    repository.findSummariesByTutorId.mockResolvedValue(summaries);
+
     const useCase = new ListPerformanceTablesUseCase(repository);
 
     await expect(useCase.execute('tutor-1')).resolves.toEqual(summaries);
+
     expect(repository.findSummariesByTutorId).toHaveBeenCalledWith('tutor-1');
   });
 });
