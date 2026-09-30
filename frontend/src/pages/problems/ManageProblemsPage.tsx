@@ -129,6 +129,50 @@ function ManageProblemModals({
   );
 }
 
+type DeleteHandlerParams = {
+  id: string | undefined;
+  p: Problem;
+  setProblemToDelete: (p: Problem | null) => void;
+  setImpact: (i: ProblemDeletionImpact | null) => void;
+};
+
+type ConfirmDeleteParams = {
+  id: string | undefined;
+  problemToDelete: Problem | null;
+  deleteProblem: (
+    ...args: [string, string]
+  ) => Promise<{ ok: true; data: void } | { ok: false; error: unknown }>;
+  setProblems: React.Dispatch<React.SetStateAction<Problem[]>>;
+  setProblemToDelete: (p: Problem | null) => void;
+  notify: (toast: { tone: 'success' | 'error' | 'info'; message: string }) => void;
+};
+
+async function handleOpenDelete({ id, p, setProblemToDelete, setImpact }: DeleteHandlerParams) {
+  setProblemToDelete(p);
+  if (!id) return;
+  const data = await problemService
+    .getDeletionImpact(id, p.id)
+    .catch(() => ({ sessoes: 0, notas: 0, feedbacks: 0, avaliacoes: 0 }));
+  setImpact(data);
+}
+
+async function handleConfirmDelete({
+  id,
+  problemToDelete,
+  deleteProblem,
+  setProblems,
+  setProblemToDelete,
+  notify,
+}: ConfirmDeleteParams) {
+  if (!id || !problemToDelete) return;
+  const res = await deleteProblem(id, problemToDelete.id);
+  if (res.ok) {
+    setProblems((curr) => curr.filter((item) => item.id !== problemToDelete.id));
+    setProblemToDelete(null);
+    notify({ tone: 'success', message: 'Problema excluído com sucesso!' });
+  }
+}
+
 function useManageProblems(id: string | undefined) {
   const { notify } = useToast();
   const [room, setRoom] = useState<Room | null>(null);
@@ -147,31 +191,6 @@ function useManageProblems(id: string | undefined) {
     fetchProblems(id).then((r) => r.ok && setProblems(r.data as Problem[]));
   }, [id, fetchRoom, fetchProblems]);
 
-  async function handleOpenDelete(p: Problem) {
-    setProblemToDelete(p);
-    if (!id) return;
-    const data = await problemService
-      .getDeletionImpact(id, p.id)
-      .catch(() => ({ sessoes: 0, notas: 0, feedbacks: 0, avaliacoes: 0 }));
-    setImpact(data);
-  }
-
-  async function handleConfirmDelete() {
-    if (!id || !problemToDelete) return;
-    const res = await deleteProblem(id, problemToDelete.id);
-    if (res.ok) {
-      setProblems((curr) => curr.filter((p) => p.id !== problemToDelete.id));
-      setProblemToDelete(null);
-      notify({ tone: 'success', message: 'Problema excluído com sucesso!' });
-    }
-  }
-
-  function handleEditSuccess(updated: Problem) {
-    setProblems((curr) => curr.map((p) => (p.id === updated.id ? updated : p)));
-    setProblemToEdit(null);
-    notify({ tone: 'success', message: 'Problema atualizado com sucesso!' });
-  }
-
   return {
     room,
     problems,
@@ -182,9 +201,21 @@ function useManageProblems(id: string | undefined) {
     problemToDelete,
     setProblemToDelete,
     impact,
-    handleOpenDelete,
-    handleConfirmDelete,
-    handleEditSuccess,
+    onOpenDelete: (p: Problem) => handleOpenDelete({ id, p, setProblemToDelete, setImpact }),
+    onConfirmDelete: () =>
+      handleConfirmDelete({
+        id,
+        problemToDelete,
+        deleteProblem,
+        setProblems,
+        setProblemToDelete,
+        notify,
+      }),
+    handleEditSuccess: (updated: Problem) => {
+      setProblems((curr) => curr.map((item) => (item.id === updated.id ? updated : item)));
+      setProblemToEdit(null);
+      notify({ tone: 'success', message: 'Problema atualizado com sucesso!' });
+    },
   };
 }
 
@@ -201,7 +232,7 @@ export default function ManageProblemsPage() {
         isLoading={state.isLoading}
         problems={state.problems}
         onEdit={state.setProblemToEdit}
-        onDelete={state.handleOpenDelete}
+        onDelete={state.onOpenDelete}
       />
       <ManageFooter onFinish={() => navigate(`/turmas/${id}/problemas`)} />
       <ManageProblemModals
@@ -210,7 +241,7 @@ export default function ManageProblemsPage() {
         impact={state.impact}
         isDeleting={state.isDeleting}
         problemToEdit={state.problemToEdit}
-        onConfirmDelete={state.handleConfirmDelete}
+        onConfirmDelete={state.onConfirmDelete}
         onCancelDelete={() => state.setProblemToDelete(null)}
         onEditSuccess={state.handleEditSuccess}
         onCloseEdit={() => state.setProblemToEdit(null)}
