@@ -104,6 +104,35 @@ describe('RoomProblemsPage', () => {
       expect(screen.getByRole('button', { name: 'Criar novo problema' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Editar um problema' })).toBeInTheDocument();
     });
+    it('renders problem cards when room has problems', async () => {
+      const mockProblems = [
+        {
+          id: 'prob-1',
+          salaId: 'room-1',
+          titulo: 'Problema 1 - Introdução',
+          descricao: null,
+          ordem: 1,
+          dataInicio: null,
+          dataFim: null,
+          tabelaId: null,
+          autoavaliacaoLiberada: true,
+          avaliacaoEntreParesLiberada: false,
+          liberadoEm: null,
+          prazoAutoavaliacao: null,
+          criadoPor: 'tutor-1',
+          criadoEm: '2026-01-01',
+          atualizadoEm: '2026-01-01',
+        },
+      ];
+      vi.mocked(problemService.list).mockResolvedValue(mockProblems);
+
+      renderComponent(mockTeacher);
+
+      expect(await screen.findByText('Problema 1 - Introdução')).toBeInTheDocument();
+      expect(screen.getByText('Autoavaliação disponível')).toBeInTheDocument();
+
+      expect(screen.queryByText('Nenhum problema cadastrado nesta turma.')).not.toBeInTheDocument();
+    });
   });
 
   describe('when user is a student', () => {

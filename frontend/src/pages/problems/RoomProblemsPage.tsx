@@ -1,12 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import {
-  ChevronLeftIcon,
-  DocumentTextIcon,
-  UserGroupIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-} from '@heroicons/react/24/outline';
+import { useParams } from 'react-router-dom';
+import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,91 +8,14 @@ import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { roomService } from '@/services/room.service';
 import { problemService } from '@/services/problem.service';
-import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
 import { cn } from '@/utils/cn';
 import { ProblemsEmptyState } from './ProblemsEmptyState';
 import { ProblemFormModal } from './ProblemFormModal';
-
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
-
-function parseRoomName(fullName?: string) {
-  if (!fullName) return { disciplina: 'Turma', turma: '' };
-  const parts = fullName.split(' - ');
-  if (parts.length > 1) {
-    const turma = parts.pop() || '';
-    return { disciplina: parts.join(' - '), turma };
-  }
-  return { disciplina: fullName, turma: '' };
-}
-
-function RoomProblemsHeader({ room, userNome }: { room: Room | null; userNome?: string }) {
-  const { disciplina, turma } = parseRoomName(room?.nome);
-
-  return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
-      <div className="flex items-center gap-3">
-        <Link
-          to={ROUTES.rooms}
-          aria-label="Voltar para as turmas"
-          className="rounded-md p-1 hover:bg-white/10"
-        >
-          <ChevronLeftIcon className="size-6" />
-        </Link>
-        <div className="flex flex-col">
-          <h1 className="text-base font-semibold leading-tight">{disciplina}</h1>
-          {turma && <span className="text-xs text-white/70">{turma}</span>}
-        </div>
-      </div>
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(userNome)}
-      </div>
-    </header>
-  );
-}
-
-function RoomTopActions({ isProfessor, roomId }: { isProfessor: boolean; roomId: string }) {
-  return (
-    <div className="flex flex-col gap-3">
-      {isProfessor && (
-        <button
-          type="button"
-          onClick={() => {}}
-          className="flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md text-left"
-        >
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-900">
-            <DocumentTextIcon className="size-6" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-ink">Relatório Final</h3>
-            <p className="text-xs text-muted">Notas de todos os problemas</p>
-          </div>
-        </button>
-      )}
-
-      <Link
-        to={`${ROUTES.rooms}/${roomId}/participantes`}
-        className="flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md text-left"
-      >
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-900">
-          <UserGroupIcon className="size-6" />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-ink">Turma</h3>
-          <p className="text-xs text-muted">Participantes da turma</p>
-        </div>
-      </Link>
-    </div>
-  );
-}
+import { ProblemCard } from './ProblemCard';
+import { RoomProblemsHeader } from './RoomProblemsHeader';
+import { RoomTopActions } from './RoomTopActions';
 
 function ProblemsSearch({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
   return (
@@ -157,24 +74,49 @@ function ProblemsFabMenu({
   );
 }
 
-type MainContentProps = {
-  isLoading: boolean;
-  problemsCount: number;
+type MainProps = {
+  roomError: { message: string } | null;
   isProfessor: boolean;
+  roomId: string;
+  query: string;
+  setQuery: (q: string) => void;
+  isLoading: boolean;
+  problems: Problem[];
 };
 
-function RoomProblemsContent({ isLoading, problemsCount, isProfessor }: MainContentProps) {
-  if (isLoading) {
-    return (
-      <div className="mt-10 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
-      </div>
-    );
-  }
-  if (problemsCount === 0) {
-    return <ProblemsEmptyState isProfessor={isProfessor} />;
-  }
-  return <div className="mt-2 flex flex-col gap-3">{/* Lista de problemas futura */}</div>;
+function RoomProblemsMain({
+  roomError,
+  isProfessor,
+  roomId,
+  query,
+  setQuery,
+  isLoading,
+  problems,
+}: MainProps) {
+  return (
+    <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">
+      {roomError && <Alert tone="error">{roomError.message}</Alert>}
+      <RoomTopActions isProfessor={isProfessor} roomId={roomId} />
+      <ProblemsSearch query={query} setQuery={setQuery} />
+      {isLoading ? (
+        <div className="mt-10 flex justify-center">
+          <Spinner className="size-8 text-brand-900" />
+        </div>
+      ) : problems.length === 0 ? (
+        query ? (
+          <p className="mt-10 text-center text-sm text-muted">Nenhum problema encontrado.</p>
+        ) : (
+          <ProblemsEmptyState isProfessor={isProfessor} />
+        )
+      ) : (
+        <div className="mt-2 flex flex-col gap-3">
+          {problems.map((p) => (
+            <ProblemCard key={p.id} problem={p} roomId={roomId} />
+          ))}
+        </div>
+      )}
+    </main>
+  );
 }
 
 export default function RoomProblemsPage() {
@@ -188,45 +130,41 @@ export default function RoomProblemsPage() {
 
   const isProfessor = user?.tipo === 'PROFESSOR';
   const { run: fetchRoom, error: roomError } = useAsyncAction(roomService.getById);
-  const { run: fetchProblems, isLoading: isLoadingProblems } = useAsyncAction(problemService.list);
+  const { run: fetchProblems, isLoading } = useAsyncAction(problemService.list);
 
   useEffect(() => {
-    if (id) {
-      fetchRoom(id).then((res) => {
-        if (res.ok) setRoom(res.data);
-      });
-      fetchProblems(id).then((res) => {
-        if (res.ok) setProblems(res.data as Problem[]);
-      });
-    }
+    if (!id) return;
+    fetchRoom(id).then((res) => res.ok && setRoom(res.data));
+    fetchProblems(id).then((res) => res.ok && setProblems(res.data as Problem[]));
   }, [id, fetchRoom, fetchProblems]);
 
-  function handleProblemCreated(newProblem: Problem) {
-    setProblems((current) => [...current, newProblem]);
+  function handleSuccess(newProblem: Problem) {
+    setProblems((curr) => [...curr, newProblem]);
     setIsCreateModalOpen(false);
     notify({ tone: 'success', message: 'Problema criado com sucesso!' });
   }
 
+  const filtered = problems.filter((p) => p.titulo.toLowerCase().includes(query.toLowerCase()));
+
   return (
     <div className="min-h-dvh bg-surface pb-24">
       <RoomProblemsHeader room={room} userNome={user?.nome} />
-      <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">
-        {roomError && <Alert tone="error">{roomError.message}</Alert>}
-        <RoomTopActions isProfessor={isProfessor} roomId={id ?? ''} />
-        <ProblemsSearch query={query} setQuery={setQuery} />
-        <RoomProblemsContent
-          isLoading={isLoadingProblems}
-          problemsCount={problems.length}
-          isProfessor={isProfessor}
-        />
-      </main>
+      <RoomProblemsMain
+        roomError={roomError}
+        isProfessor={isProfessor}
+        roomId={id ?? ''}
+        query={query}
+        setQuery={setQuery}
+        isLoading={isLoading}
+        problems={filtered}
+      />
       <ProblemsFabMenu isProfessor={isProfessor} onOpenCreate={() => setIsCreateModalOpen(true)} />
       <ProblemFormModal
         isOpen={isCreateModalOpen}
         roomId={id ?? ''}
         initialData={null}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={handleProblemCreated}
+        onSuccess={handleSuccess}
       />
     </div>
   );
