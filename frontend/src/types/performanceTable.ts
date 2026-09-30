@@ -21,6 +21,7 @@ export type PerformanceTableSummary = {
   quantidadeProblemas: number;
   criadoEm: string;
   atualizadoEm: string;
+  isDefault?: boolean;
 };
 
 export type PerformanceTable = {
@@ -32,6 +33,8 @@ export type PerformanceTable = {
   criterios: Criterion[];
   criadoEm: string;
   atualizadoEm: string;
+  isDefault?: boolean;
+  ativo?: boolean;
 };
 
 export type CreatePerformanceTablePayload = {

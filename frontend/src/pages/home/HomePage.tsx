@@ -37,8 +37,9 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col gap-3">
           <Button onClick={() => navigate(ROUTES.rooms)}>Ver Minhas Turmas</Button>
+          <Button onClick={() => navigate(ROUTES.formulas)}>Fórmulas (Temporário)</Button>
         </div>
       </main>
     </div>

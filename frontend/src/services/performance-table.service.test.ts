@@ -112,7 +112,7 @@ describe('mockPerformanceTableService', () => {
     expect(
       tables.map((item) => [item.nome, item.quantidadeCriterios, item.quantidadeProblemas]),
     ).toEqual([
-      ['Barema PBL', 6, 2],
+      ['Fórmula Padrão', 3, 2],
       ['Avaliação de sessão curta', 3, 0],
     ]);
   });

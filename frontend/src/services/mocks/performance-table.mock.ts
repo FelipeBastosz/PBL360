@@ -24,16 +24,14 @@ function seedTables(): PerformanceTable[] {
     {
       id: 'mock-table-1',
       professorId: TUTOR_ID,
-      nome: 'Barema PBL',
+      nome: 'Fórmula Padrão',
       descricao: 'Critérios padrão do módulo de Algoritmos.',
+      isDefault: true,
       quantidadeProblemas: 2,
       criterios: buildCriteria('mock-table-1', [
-        ['Domínio do tema', 3],
-        ['Uso de fontes', 2],
-        ['Contribuição', 2],
-        ['Escuta ativa', 1],
-        ['Pontualidade', 1],
-        ['Postura', 1],
+        ['Seguimento', 3],
+        ['Comportamento', 2],
+        ['Participação', 5],
       ]),
       criadoEm: NOW,
       atualizadoEm: NOW,
@@ -64,6 +62,7 @@ function toSummary(table: PerformanceTable): PerformanceTableSummary {
     quantidadeProblemas: table.quantidadeProblemas,
     criadoEm: table.criadoEm,
     atualizadoEm: table.atualizadoEm,
+    isDefault: table.isDefault,
   };
 }
 

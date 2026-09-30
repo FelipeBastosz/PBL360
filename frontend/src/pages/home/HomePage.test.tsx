@@ -41,4 +41,15 @@ describe('HomePage', () => {
     expect(await screen.findByText('AS')).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: 'Foto de Ana Souza' })).not.toBeInTheDocument();
   });
+
+  it('renders the button directing to the formulas page and navigates on click', async () => {
+    sessionStore.save(sessionFor(studentUser));
+    const { user } = renderApp('/inicio');
+
+    const formulasButton = await screen.findByRole('button', { name: /fórmulas/i });
+    expect(formulasButton).toBeInTheDocument();
+
+    await user.click(formulasButton);
+    expect(await screen.findByRole('heading', { name: /fórmulas/i })).toBeInTheDocument();
+  });
 });
