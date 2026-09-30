@@ -14,6 +14,9 @@ describe('CreatePerformanceTableUseCase', () => {
       findSummariesByTutorId: jest.fn(),
       findById: jest.fn(),
       softDelete: jest.fn(),
+      update: jest.fn(),
+      findUsageById: jest.fn(),
+      findByIdIncludingDeleted: jest.fn(),
     };
 
     useCase = new CreatePerformanceTableUseCase(repository);

@@ -6,6 +6,7 @@ import type { DeletePerformanceTableUseCase } from '../../application/use-cases/
 import type { GetPerformanceTableUseCase } from '../../application/use-cases/get-performance-table.use-case';
 import type { ListPerformanceTablesUseCase } from '../../application/use-cases/list-performance-tables.use-case';
 import { PerformanceTablesController } from './performance-tables.controller';
+import type { UpdatePerformanceTableUseCase } from '../../application/use-cases/update-performance-table.use-case';
 
 describe('PerformanceTablesController', () => {
   let controller: PerformanceTablesController;
@@ -13,6 +14,7 @@ describe('PerformanceTablesController', () => {
   let listUseCase: jest.Mocked<ListPerformanceTablesUseCase>;
   let getUseCase: jest.Mocked<GetPerformanceTableUseCase>;
   let deleteUseCase: jest.Mocked<DeletePerformanceTableUseCase>;
+  let updateUseCase: jest.Mocked<UpdatePerformanceTableUseCase>;
 
   const mockDate = new Date('2026-03-01T12:00:00Z');
 
@@ -33,11 +35,16 @@ describe('PerformanceTablesController', () => {
       execute: jest.fn(),
     } as unknown as jest.Mocked<DeletePerformanceTableUseCase>;
 
+    updateUseCase = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<UpdatePerformanceTableUseCase>;
+
     controller = new PerformanceTablesController(
       createUseCase,
       listUseCase,
       getUseCase,
       deleteUseCase,
+      updateUseCase,
     );
   });
 
