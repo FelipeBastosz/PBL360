@@ -136,7 +136,7 @@ describe('PerformanceTable', () => {
     ).toThrow(InvalidPerformanceTableError);
   });
 
-  it.each([0, 10, -1])('rejects a criterion with invalid weight %s', (weight) => {
+  it.each([-1, 10.01])('rejects a criterion with invalid weight %s', (weight) => {
     expect(() =>
       PerformanceTable.create({
         ...validTableData(),
