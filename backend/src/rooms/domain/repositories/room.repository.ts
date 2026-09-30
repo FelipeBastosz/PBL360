@@ -27,11 +27,11 @@ export interface RoomRepository {
 
   softDelete(room: Room): Promise<void>;
 
-  addTutor(roomId: string, tutorId: string): Promise<boolean>;
+  addTutor(roomId: string, tutorId: string, actorId: string): Promise<boolean>;
 
   hasTutor(roomId: string, tutorId: string): Promise<boolean>;
 
-  removeTutor(roomId: string, tutorId: string): Promise<boolean>;
+  removeTutor(roomId: string, tutorId: string, actorId: string): Promise<boolean>;
 
   findForStudent(studentId: string): Promise<StudentRoomSummary[]>;
 
