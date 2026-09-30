@@ -89,6 +89,12 @@ describe('Rooms (e2e)', () => {
         ativo: true,
       });
       expect(room.codigoSala).toMatch(/^[A-Za-z0-9]{8}$/);
+
+      const [membership] = await dataSource.query<[{ tutorId: string }]>(
+        'SELECT tutor_id AS "tutorId" FROM room_tutors WHERE room_id = $1;',
+        [room.id],
+      );
+      expect(membership).toEqual({ tutorId: owner.id });
     });
 
     it('refuses a tutor id sent in the body', async () => {
