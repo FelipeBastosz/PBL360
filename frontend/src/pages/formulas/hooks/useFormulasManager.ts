@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { PerformanceTable, PerformanceTableSummary } from '@/types/performanceTable';
 import type { DraftFormula } from '../components/FormulaAccordionCard';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
@@ -22,7 +22,7 @@ function useFormulaDraftState() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftFormula | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
-  const [currentFormulaId, setCurrentFormulaId] = useState<string | null>('mock-table-1');
+  const [currentFormulaId, setCurrentFormulaId] = useState<string | null>(null);
   return {
     expandedId,
     setExpandedId,
@@ -123,7 +123,7 @@ function useFormulaSubmit(
   dialogs: DialogsHook,
 ) {
   return async (draftToSave: DraftFormula) => {
-    const check = validateDraft(state.draft);
+    const check = validateDraft(draftToSave);
     if (!check.isValid) {
       dialogs.setModal({
         isOpen: true,
@@ -153,6 +153,17 @@ export function useFormulasManager(list: ListHook, dialogs: DialogsHook) {
   const { run: deleteFormula, isLoading: isDeleting } = useAsyncAction(
     performanceTableService.remove,
   );
+
+  // Ao carregar a lista, define automaticamente a fórmula padrão como ativa
+  const { currentFormulaId, setCurrentFormulaId } = state;
+  useEffect(() => {
+    if (currentFormulaId === null && list.filteredSummaries.length > 0) {
+      const defaultFormula = list.filteredSummaries.find((s) => s.isDefault);
+      if (defaultFormula) {
+        setCurrentFormulaId(defaultFormula.id);
+      }
+    }
+  }, [currentFormulaId, list.filteredSummaries, setCurrentFormulaId]);
 
   const handleExpand = useFormulaExpand(state, list, dialogs);
   const handleSave = useFormulaSubmit(state, save, dialogs);

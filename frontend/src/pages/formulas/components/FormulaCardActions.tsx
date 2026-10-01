@@ -1,5 +1,4 @@
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
 
 type ActionsProps = {
@@ -16,16 +15,18 @@ type ActionsProps = {
 function EditingActions({ onCancel, onSave }: { onCancel: () => void; onSave: () => void }) {
   return (
     <div className="flex items-center justify-between p-4 bg-[#e6e6e6]">
-      <Button
-        variant="link"
+      <button
         onClick={onCancel}
-        className="text-[#e29e9e] font-bold text-sm bg-[#f2d7d7] px-4 py-2 rounded-xl"
+        className="text-[#e29e9e] font-bold text-sm bg-[#f2d7d7] px-4 py-2 rounded-xl hover:bg-[#eed0d0] transition-colors"
       >
         Cancelar
-      </Button>
-      <Button onClick={onSave} className="px-6 py-2 rounded-xl text-sm">
+      </button>
+      <button
+        onClick={onSave}
+        className="bg-brand-900 text-white font-bold text-sm px-6 py-2 rounded-xl hover:bg-brand-700 transition-colors"
+      >
         Salvar
-      </Button>
+      </button>
     </div>
   );
 }
