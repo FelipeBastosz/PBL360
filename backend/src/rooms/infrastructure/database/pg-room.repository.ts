@@ -7,36 +7,16 @@ import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 
 import { Room } from '../../domain/entities/room.entity';
 import { RoomCodeInUseError } from '../../domain/errors/room-code-in-use.error';
+import { ROOM_COLUMNS, type RoomRow } from './room-row';
+import { addRoomTutor, hasRoomTutor, removeRoomTutor } from './room-tutor-queries';
 import type {
   RoomRepository,
+  RoomTutor,
   RoomStudentSummary,
   StudentRoomSummary,
 } from '../../domain/repositories/room.repository';
 
 export const ROOM_CODE_CONSTRAINT = 'uq_rooms_room_code';
-
-interface RoomRow {
-  id: string;
-  tutorId: string;
-  name: string;
-  courseCode: string;
-  roomCode: string;
-  semester: string;
-  active: boolean;
-  createdAt: Date;
-  deletedAt: Date | null;
-}
-
-const ROOM_COLUMNS = `
-  id,
-  tutor_id AS "tutorId",
-  name,
-  course_code AS "courseCode",
-  room_code AS "roomCode",
-  semester,
-  active,
-  created_at AS "createdAt",
-  deleted_at AS "deletedAt"`;
 
 @Injectable()
 export class PgRoomRepository implements RoomRepository {
@@ -156,42 +136,29 @@ export class PgRoomRepository implements RoomRepository {
     );
   }
 
-  async addTutor(roomId: string, tutorId: string): Promise<boolean> {
-    const rows = await this.rooms.query<unknown[]>(
-      `INSERT INTO room_tutors (room_id, tutor_id)
-        VALUES ($1, $2)
-        ON CONFLICT DO NOTHING
-        RETURNING room_id;`,
-      [roomId, tutorId],
-    );
-
-    return rows.length > 0;
+  async addTutor(roomId: string, tutorId: string, actorId: string): Promise<boolean> {
+    return addRoomTutor(this.rooms, roomId, tutorId, actorId);
   }
 
   async hasTutor(roomId: string, tutorId: string): Promise<boolean> {
-    const rows = await this.rooms.query<{ exists: boolean }[]>(
-      `SELECT EXISTS (
-          SELECT 1
-          FROM room_tutors
-          WHERE room_id = $1
-            AND tutor_id = $2
-        ) AS "exists";`,
-      [roomId, tutorId],
-    );
-
-    return rows[0]?.exists ?? false;
+    return hasRoomTutor(this.rooms, roomId, tutorId);
   }
 
-  async removeTutor(roomId: string, tutorId: string): Promise<boolean> {
-    const [rows] = await this.rooms.query<[unknown[], number]>(
-      `DELETE FROM room_tutors
-        WHERE room_id = $1
-          AND tutor_id = $2
-        RETURNING tutor_id;`,
-      [roomId, tutorId],
+  listTutors(roomId: string): Promise<RoomTutor[]> {
+    return this.rooms.query<RoomTutor[]>(
+      `SELECT u.id, u.name, u.email,
+          (u.id = r.tutor_id) AS "isResponsible"
+        FROM room_tutors rt
+        JOIN users u ON u.id = rt.tutor_id
+        JOIN rooms r ON r.id = rt.room_id
+        WHERE rt.room_id = $1 AND r.deleted_at IS NULL
+        ORDER BY "isResponsible" DESC, u.name ASC, u.id ASC;`,
+      [roomId],
     );
+  }
 
-    return rows.length > 0;
+  async removeTutor(roomId: string, tutorId: string, actorId: string): Promise<boolean> {
+    return removeRoomTutor(this.rooms, roomId, tutorId, actorId);
   }
 
   private async insertWithOwner(manager: EntityManager, room: Room): Promise<Room> {
@@ -207,6 +174,11 @@ export class PgRoomRepository implements RoomRepository {
       row.id,
       room.tutorId,
     ]);
+    await manager.query(
+      `INSERT INTO room_tutor_events (room_id, tutor_id, actor_id, action)
+        VALUES ($1, $2, $2, 'ADDED');`,
+      [row.id, room.tutorId],
+    );
 
     return this.toEntity(row);
   }

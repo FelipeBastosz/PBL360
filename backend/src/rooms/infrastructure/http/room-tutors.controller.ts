@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
@@ -12,6 +12,11 @@ import { AddTutorToRoomUseCase } from '../../application/use-cases/add-tutor-to-
 import { RemoveTutorFromRoomUseCase } from '../../application/use-cases/remove-tutor-from-room.use-case';
 import { AddTutorToRoomSwaggerDocs, RemoveTutorFromRoomSwaggerDocs } from './room-tutor.swagger';
 
+import { ListRoomTutorsUseCase } from '../../application/use-cases/list-room-tutors.use-case';
+import type { RoomTutorResponseDto } from '../../application/dtos/room-tutor-response.dto';
+import { toRoomTutorResponse } from './room.mapper';
+import { ListRoomTutorsSwaggerDocs } from './room-tutor.swagger';
+
 const TUTOR_ADDED = 'Professor associado à sala com sucesso.';
 const TUTOR_REMOVED = 'Professor removido da sala com sucesso.';
 
@@ -20,9 +25,20 @@ const TUTOR_REMOVED = 'Professor removido da sala com sucesso.';
 @Roles(UserType.TUTOR)
 export class RoomTutorsController {
   constructor(
+    private readonly listRoomTutorsUseCase: ListRoomTutorsUseCase,
     private readonly addTutorToRoomUseCase: AddTutorToRoomUseCase,
     private readonly removeTutorFromRoomUseCase: RemoveTutorFromRoomUseCase,
   ) {}
+
+  @Get(':id/professores')
+  @ListRoomTutorsSwaggerDocs
+  async listTutors(
+    @UuidParam('id') roomId: string,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<RoomTutorResponseDto[]> {
+    const tutors = await this.listRoomTutorsUseCase.execute(roomId, tutorId);
+    return tutors.map(toRoomTutorResponse);
+  }
 
   @Post(':id/professores')
   @HttpCode(HttpStatus.CREATED)

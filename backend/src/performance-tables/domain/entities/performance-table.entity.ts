@@ -14,6 +14,7 @@ import { User } from '@/users/domain/entities/user.entity';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { NewPerformanceTable } from './new-performance-table';
 import { PerformanceCriterion } from './performance-criterion.entity';
+import type { UpdatePerformanceTable } from './update-performance-table';
 
 @Entity('performance_tables')
 export class PerformanceTable {
@@ -52,6 +53,8 @@ export class PerformanceTable {
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, default: null })
   deletedAt: Date | null;
 
+  problemCount?: number;
+
   static create(props: NewPerformanceTable): PerformanceTable {
     const table = new PerformanceTable();
     table.tutorId = props.tutorId?.trim();
@@ -68,6 +71,32 @@ export class PerformanceTable {
     table.assertIsValid();
 
     return table;
+  }
+
+  update(props: UpdatePerformanceTable): void {
+    this.name = props.name?.trim();
+    this.description = props.description?.trim() || null;
+    this.criteria = (props.criteria ?? []).map((criterion, index) => {
+      const entity = PerformanceCriterion.create({
+        ...criterion,
+        orderIndex: criterion.orderIndex ?? index + 1,
+      });
+
+      entity.performanceTable = this;
+      entity.performanceTableId = this.id;
+
+      return entity;
+    });
+
+    this.assertIsValid();
+  }
+
+  delete(): void {
+    if (this.deletedAt != null) {
+      throw new InvalidPerformanceTableError('A tabela de desempenho já foi excluída.');
+    }
+
+    this.deletedAt = new Date();
   }
 
   private assertIsValid(): void {

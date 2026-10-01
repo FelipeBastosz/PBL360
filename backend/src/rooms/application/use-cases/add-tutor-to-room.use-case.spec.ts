@@ -24,7 +24,12 @@ describe('AddTutorToRoomUseCase', () => {
 
   beforeEach(() => {
     rooms = roomRepositoryStub();
-    users = { findByEmail: jest.fn(), findById: jest.fn(), save: jest.fn() };
+    users = {
+      searchTutors: jest.fn(),
+      findByEmail: jest.fn(),
+      findById: jest.fn(),
+      save: jest.fn(),
+    };
     access = roomAccessStub();
     access.assertTutorIsRoomOwner.mockResolvedValue(buildRoom());
     useCase = new AddTutorToRoomUseCase(rooms, users, access as unknown as RoomAccessService);
@@ -37,7 +42,7 @@ describe('AddTutorToRoomUseCase', () => {
     await useCase.execute(ROOM_ID, OWNER_ID, NEW_TUTOR_ID);
 
     expect(access.assertTutorIsRoomOwner).toHaveBeenCalledWith(ROOM_ID, OWNER_ID);
-    expect(rooms.addTutor).toHaveBeenCalledWith(ROOM_ID, NEW_TUTOR_ID);
+    expect(rooms.addTutor).toHaveBeenCalledWith(ROOM_ID, NEW_TUTOR_ID, OWNER_ID);
   });
 
   it('only lets the owner add tutors', async () => {

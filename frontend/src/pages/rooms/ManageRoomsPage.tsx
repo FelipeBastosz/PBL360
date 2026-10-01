@@ -11,6 +11,7 @@ import { roomService } from '@/services/room.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import { DeleteRoomModal } from './DeleteRoomModal';
+import { Link } from 'react-router-dom';
 
 function getInitials(name?: string) {
   if (!name) return 'U';
@@ -63,14 +64,13 @@ function ManageRoomCard({
         <div className="mt-1 flex items-center justify-between">
           <span className="text-sm text-muted">0 alunos</span>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              disabled
+            <Link
+              to={ROUTES.editRoom.replace(':id', room.id)}
               aria-label={`Editar ${room.nome}`}
-              className="p-1 text-ink/70 hover:text-brand-900 opacity-60 cursor-not-allowed"
+              className="p-1 text-ink/70 hover:text-brand-900 focus-visible:outline-2 focus-visible:outline-brand-900"
             >
               <PencilIcon className="size-5" />
-            </button>
+            </Link>
             <button
               type="button"
               onClick={() => onDeleteRequest(room)}

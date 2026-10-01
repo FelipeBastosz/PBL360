@@ -23,6 +23,9 @@ const RoomsPage = lazy(() => import('@/pages/rooms/RoomsPage'));
 const CreateRoomPage = lazy(() => import('@/pages/rooms/CreateRoomPage'));
 const CreateRoomSuccessPage = lazy(() => import('@/pages/rooms/CreateRoomSuccessPage'));
 const ManageRoomsPage = lazy(() => import('@/pages/rooms/ManageRoomsPage'));
+const EditRoomPage = lazy(() => import('@/pages/rooms/EditRoomPage'));
+const RoomProblemsPage = lazy(() => import('@/pages/problems/RoomProblemsPage'));
+const ManageProblemsPage = lazy(() => import('@/pages/problems/ManageProblemsPage'));
 const FormulasPage = lazy(() => import('@/pages/formulas/FormulasPage'));
 
 export function AppRoutes() {
@@ -47,6 +50,9 @@ export function AppRoutes() {
           <Route path={ROUTES.createRoom} element={<CreateRoomPage />} />
           <Route path={ROUTES.createRoomSuccess} element={<CreateRoomSuccessPage />} />
           <Route path={ROUTES.manageRooms} element={<ManageRoomsPage />} />
+          <Route path={ROUTES.editRoom} element={<EditRoomPage />} />
+          <Route path={ROUTES.roomProblems} element={<RoomProblemsPage />} />
+          <Route path={ROUTES.manageProblems} element={<ManageProblemsPage />} />
           <Route path={ROUTES.formulas} element={<FormulasPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

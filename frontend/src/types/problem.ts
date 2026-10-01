@@ -23,3 +23,14 @@ export type CreateProblemPayload = {
   dataFim?: string;
   tabelaId?: string;
 };
+
+export type UpdateProblemPayload = {
+  titulo: string;
+};
+
+export type ProblemDeletionImpact = {
+  sessoes: number;
+  notas: number;
+  feedbacks: number;
+  avaliacoes: number;
+};

@@ -55,6 +55,7 @@ export class ProblemsController {
       description: dto.descricao,
       startDate: dto.dataInicio ?? null,
       endDate: dto.dataFim ?? null,
+      performanceTableId: dto.tabelaId ?? null,
     });
 
     return toProblemResponse(problem);

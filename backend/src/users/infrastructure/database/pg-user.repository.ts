@@ -6,7 +6,7 @@ import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 import { ConflictError } from '@/shared/errors/application.error';
 import type { UserType } from '../../domain/enums/user-type.enum';
-import type { UserRepository } from '../../domain/repositories/user.repository';
+import type { UserRepository, TutorSummary } from '../../domain/repositories/user.repository';
 
 interface UserRow {
   id: string;
@@ -43,6 +43,18 @@ const WRITABLE_COLUMNS = `name, email, password_hash, registration_number, type,
 @Injectable()
 export class PgUserRepository implements UserRepository {
   constructor(@InjectRepository(User) private readonly users: Repository<User>) {}
+
+  searchTutors(query: string): Promise<TutorSummary[]> {
+    return this.users.query<TutorSummary[]>(
+      `SELECT id, name, email
+        FROM users
+        WHERE type = 'TUTOR'
+          AND POSITION(LOWER($1) IN LOWER(email)) > 0
+        ORDER BY name ASC, id ASC
+        LIMIT 20;`,
+      [query],
+    );
+  }
 
   async findByEmail(email: string): Promise<User | null> {
     return this.queryOne(
