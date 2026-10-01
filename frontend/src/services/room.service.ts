@@ -2,9 +2,11 @@ import type { MessageResponse } from '@/types/auth';
 import type {
   AddTutorToRoomPayload,
   CreateRoomPayload,
+  JoinRoomPayload,
   Room,
-  UpdateRoomPayload,
+  RoomStudent,
   StudentRoom,
+  UpdateRoomPayload,
 } from '@/types/room';
 import { api } from './api';
 
@@ -29,4 +31,10 @@ export const roomService = {
     api.delete<MessageResponse>(`${BASE}/${roomId}/professores/${tutorId}`).then((r) => r.data),
 
   listMyRooms: () => api.get<StudentRoom[]>(`${BASE}/minhas`).then((r) => r.data),
+
+  join: (payload: JoinRoomPayload) =>
+    api.post<MessageResponse>(`${BASE}/entrar`, payload).then((r) => r.data),
+
+  listStudents: (roomId: string) =>
+    api.get<RoomStudent[]>(`${BASE}/${roomId}/alunos`).then((r) => r.data),
 };

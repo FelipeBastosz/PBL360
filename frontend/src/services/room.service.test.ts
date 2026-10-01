@@ -94,4 +94,35 @@ describe('roomService', () => {
       url: '/salas/room-1/professores/tutor-2',
     });
   });
+
+  it('lists the rooms of the authenticated student', async () => {
+    const studentRooms = [
+      { salaId: 'room-1', nome: 'Engenharia de Software', semestre: '2026.2', totalAlunos: 30 },
+    ];
+    const adapter = respondWith(studentRooms);
+
+    await expect(roomService.listMyRooms()).resolves.toEqual(studentRooms);
+    expect(sentRequest(adapter)).toMatchObject({ method: 'get', url: '/salas/minhas' });
+  });
+
+  it('joins a room using an invite code', async () => {
+    const adapter = respondWith({ mensagem: 'Entrada na sala realizada com sucesso.' });
+    const payload = { codigo: 'aB7kP2x9' };
+
+    await expect(roomService.join(payload)).resolves.toEqual({
+      mensagem: 'Entrada na sala realizada com sucesso.',
+    });
+    expect(sentRequest(adapter)).toMatchObject({ method: 'post', url: '/salas/entrar' });
+    expect(JSON.parse(sentRequest(adapter).data as string)).toEqual(payload);
+  });
+
+  it('lists students enrolled in a room', async () => {
+    const students = [
+      { id: 'student-1', nome: 'Aluno Um', dataEntrada: '2026-09-01T10:00:00.000Z' },
+    ];
+    const adapter = respondWith(students);
+
+    await expect(roomService.listStudents('room-1')).resolves.toEqual(students);
+    expect(sentRequest(adapter)).toMatchObject({ method: 'get', url: '/salas/room-1/alunos' });
+  });
 });
