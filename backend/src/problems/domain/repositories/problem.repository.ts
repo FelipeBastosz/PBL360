@@ -7,5 +7,7 @@ export interface ProblemRepository {
   save(problem: Problem): Promise<Problem>;
   findById(id: string): Promise<Problem | null>;
   findByRoomId(roomId: string): Promise<Problem[]>;
+  hasSessions(problemId: string): Promise<boolean>;
+  countSessions(problemId: string): Promise<number>;
   delete(id: string, roomId: string): Promise<void>;
 }

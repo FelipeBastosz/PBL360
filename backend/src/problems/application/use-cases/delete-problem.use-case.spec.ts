@@ -10,11 +10,13 @@ import { DeleteProblemUseCase } from './delete-problem.use-case';
 describe('DeleteProblemUseCase', () => {
   let useCase: DeleteProblemUseCase;
   let findByIdMock: jest.Mock;
+  let hasSessionsMock: jest.Mock;
   let deleteMock: jest.Mock;
   let assertTutorIsRoomOwnerMock: jest.Mock;
 
   beforeEach(() => {
     findByIdMock = jest.fn();
+    hasSessionsMock = jest.fn().mockResolvedValue(false);
     deleteMock = jest.fn();
     assertTutorIsRoomOwnerMock = jest.fn();
 
@@ -22,6 +24,8 @@ describe('DeleteProblemUseCase', () => {
       create: jest.fn(),
       findById: findByIdMock,
       findByRoomId: jest.fn(),
+      hasSessions: hasSessionsMock,
+      countSessions: jest.fn().mockResolvedValue(0),
       delete: deleteMock,
     } as unknown as jest.Mocked<ProblemRepository>;
 
@@ -125,5 +129,22 @@ describe('DeleteProblemUseCase', () => {
     expect(assertTutorIsRoomOwnerMock).toHaveBeenCalledWith('room-1', 'tutor-owner');
     expect(findByIdMock).toHaveBeenCalledWith(problem.id);
     expect(deleteMock).toHaveBeenCalledWith(problem.id, 'room-1');
+  });
+
+  it('rejects deletion when the problem has sessions', async () => {
+    assertTutorIsRoomOwnerMock.mockResolvedValueOnce(new Room());
+    const problem = Problem.create({
+      roomId: 'room-1',
+      createdBy: 'tutor-owner',
+      title: 'Problem',
+    });
+    problem.id = 'prob-1';
+    findByIdMock.mockResolvedValueOnce(problem);
+    hasSessionsMock.mockResolvedValueOnce(true);
+
+    await expect(
+      useCase.execute({ roomId: 'room-1', problemId: problem.id, tutorId: 'tutor-owner' }),
+    ).rejects.toThrow('O problema possui sessões e não pode ser excluído.');
+    expect(deleteMock).not.toHaveBeenCalled();
   });
 });

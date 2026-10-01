@@ -32,10 +32,8 @@ export class GetProblemDeletionImpactUseCase {
       throw new NotFoundError('Problema não encontrado.');
     }
 
-    // Registros dependentes serão criados nas próximas sprints (sessões, notas, etc.).
-    // O retorno inicial é zero com o formato definitivo estabelecido.
     return {
-      sessoes: 0,
+      sessoes: await this.problemRepository.countSessions(problem.id),
       notas: 0,
       feedbacks: 0,
       avaliacoes: 0,
