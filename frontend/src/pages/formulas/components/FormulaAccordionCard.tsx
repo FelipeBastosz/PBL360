@@ -21,6 +21,15 @@ type CardProps = {
   onDeleteCriterion: (id: string, name: string) => void;
 };
 
+function CriteriaListHeader() {
+  return (
+    <div className="flex items-center justify-between px-4 py-2 bg-black/5 border-b border-black/10 text-xs font-bold text-brand-900/60 uppercase tracking-wider select-none">
+      <span>Critério</span>
+      <span className="min-w-[48px] text-center">Peso</span>
+    </div>
+  );
+}
+
 function AddCriterionButton({ onClick }: { onClick: () => void }) {
   return (
     <button
@@ -34,11 +43,13 @@ function AddCriterionButton({ onClick }: { onClick: () => void }) {
 
 function AccordionBody(
   props: CardProps & {
+    isDefault: boolean;
     onNameChange: (id: string, name: string) => void;
     onWeightChange: (id: string, val: string) => void;
   },
 ) {
-  const { formula, draft, isEditing, onNameChange, onWeightChange, onDeleteCriterion } = props;
+  const { formula, draft, isEditing, isDefault, onNameChange, onWeightChange, onDeleteCriterion } =
+    props;
   const criteria = isEditing ? draft?.criterios : formula?.criterios;
 
   const handleAddCriterion = () => {
@@ -54,22 +65,23 @@ function AccordionBody(
 
   return (
     <div className="flex flex-col bg-[#e6e6e6] animate-slide-down">
+      <CriteriaListHeader />
       {criteria?.map((item, idx) => (
         <FormulaCriterionRow
           key={item.id || idx}
           criterion={item}
           index={idx}
           isEditing={isEditing}
-          isDefault={formula?.isDefault}
+          isDefault={isDefault}
           onNameChange={onNameChange}
           onWeightChange={onWeightChange}
           onDelete={onDeleteCriterion}
         />
       ))}
-      {isEditing && !formula?.isDefault && <AddCriterionButton onClick={handleAddCriterion} />}
+      {isEditing && !isDefault && <AddCriterionButton onClick={handleAddCriterion} />}
       <FormulaCardActions
         isEditing={isEditing}
-        isDefault={formula?.isDefault}
+        isDefault={isDefault}
         isCurrent={formula?.ativo}
         onCancelEdit={props.onCancelEdit}
         onSaveEdit={() => draft && props.onSaveEdit(draft)}
@@ -84,9 +96,15 @@ function AccordionBody(
 export function FormulaAccordionCard(props: CardProps) {
   const { formula, draft, isExpanded, isEditing, onExpand, onUpdateDraft } = props;
 
+  const isDefault = Boolean(
+    formula?.isDefault || formula?.nome?.toLowerCase() === 'fórmula padrão',
+  );
+
   const onWeightChange = (id: string, val: string) => {
     if (!draft) return;
-    const peso = parseInt(val.replace(/\D/g, ''), 10) || 0;
+    const normalized = val.replace(',', '.');
+    const parsed = parseFloat(normalized);
+    const peso = isNaN(parsed) ? 0 : parsed;
     onUpdateDraft({
       ...draft,
       criterios: draft.criterios.map((c) => (c.id === id ? { ...c, peso } : c)),
@@ -110,13 +128,18 @@ export function FormulaAccordionCard(props: CardProps) {
         draftName={draft?.nome}
         isExpanded={isExpanded}
         isEditing={isEditing}
-        isDefault={formula?.isDefault}
+        isDefault={isDefault}
         isCurrent={formula?.ativo}
         onExpand={onExpand}
         onNameChange={(name) => draft && onUpdateDraft({ ...draft, nome: name })}
       />
       {isExpanded && (
-        <AccordionBody {...props} onNameChange={onNameChange} onWeightChange={onWeightChange} />
+        <AccordionBody
+          {...props}
+          isDefault={isDefault}
+          onNameChange={onNameChange}
+          onWeightChange={onWeightChange}
+        />
       )}
     </div>
   );

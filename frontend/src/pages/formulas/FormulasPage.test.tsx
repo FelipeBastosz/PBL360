@@ -51,9 +51,9 @@ describe('FormulasPage', () => {
       criadoEm: '2026-09-01T10:00:00.000Z',
       atualizadoEm: '2026-09-01T10:00:00.000Z',
       criterios: [
-        { id: 'c1', nome: 'Seguimento', peso: 30, ordem: 1, descricao: null },
-        { id: 'c2', nome: 'Comportamento', peso: 20, ordem: 2, descricao: null },
-        { id: 'c3', nome: 'Participação', peso: 50, ordem: 3, descricao: null },
+        { id: 'c1', nome: 'Seguimento', peso: 2, ordem: 1, descricao: null },
+        { id: 'c2', nome: 'Comportamento', peso: 3, ordem: 2, descricao: null },
+        { id: 'c3', nome: 'Participação', peso: 5, ordem: 3, descricao: null },
       ],
     },
     'mock-table-2': {
@@ -64,7 +64,7 @@ describe('FormulasPage', () => {
       quantidadeProblemas: 0,
       criadoEm: '2026-09-01T10:00:00.000Z',
       atualizadoEm: '2026-09-01T10:00:00.000Z',
-      criterios: [{ id: 'c4', nome: 'Participação', peso: 100, ordem: 1, descricao: null }],
+      criterios: [{ id: 'c4', nome: 'Participação', peso: 10, ordem: 1, descricao: null }],
     },
   };
 
@@ -146,24 +146,30 @@ describe('FormulasPage', () => {
     expect(screen.queryByPlaceholderText('Nome do critério')).not.toBeInTheDocument();
   });
 
-  it('allows editing weights and validates 100% sum', async () => {
+  it('allows editing weights and validates 10 sum', async () => {
     renderComponent();
 
-    const defaultFormula = await screen.findByText('Fórmula Padrão');
-    fireEvent.click(defaultFormula);
-    await screen.findByText('Seguimento');
+    const customFormula = await screen.findByText('Apenas participação');
+    fireEvent.click(customFormula);
+    await screen.findByText('Participação');
 
-    const editBtns = screen.getAllByRole('button');
-    fireEvent.click(editBtns[1]);
+    const buttons = await screen.findAllByRole('button');
+    const editBtn = buttons.find(
+      (b) =>
+        b.innerHTML.includes('path') &&
+        !b.innerHTML.includes('Trash') &&
+        !b.textContent?.includes('Criar'),
+    );
+    if (editBtn) fireEvent.click(editBtn);
 
-    const weightInputs = await screen.findAllByDisplayValue(/%/);
-    expect(weightInputs).toHaveLength(3);
+    const weightInputs = await screen.findAllByRole('spinbutton');
+    expect(weightInputs.length).toBeGreaterThanOrEqual(1);
 
-    fireEvent.change(weightInputs[0], { target: { value: '10%' } });
+    fireEvent.change(weightInputs[0], { target: { value: '8' } });
     fireEvent.click(screen.getByText('Salvar'));
 
     expect(
-      await screen.findByText('A soma dos critérios deve ser igual a 100% para salvar.'),
+      await screen.findByText('A soma dos critérios deve ser igual a 10 para salvar.'),
     ).toBeInTheDocument();
   });
 });

@@ -45,16 +45,19 @@ export function FormulaCriterionRow(props: Props) {
           {criterion.nome}
         </span>
       )}
-      <div className="flex items-center justify-center bg-black/10 rounded-full px-3 py-1">
+      <div className="flex items-center justify-center bg-black/10 rounded-full px-3 py-1 min-w-[48px]">
         {isEditing ? (
           <input
-            type="text"
-            value={`${criterion.peso}%`}
+            type="number"
+            min="0"
+            max="10"
+            step="0.5"
+            value={criterion.peso}
             onChange={(e) => onWeightChange(criterion.id, e.target.value)}
-            className="bg-transparent text-sm font-bold text-brand-900 w-12 text-center border-none outline-none p-0"
+            className="bg-transparent text-sm font-bold text-brand-900 w-12 text-center border-none outline-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         ) : (
-          <span className="text-sm font-bold text-brand-900">{criterion.peso}%</span>
+          <span className="text-sm font-bold text-brand-900">{criterion.peso}</span>
         )}
       </div>
     </div>

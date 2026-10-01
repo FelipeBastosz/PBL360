@@ -1,4 +1,4 @@
-import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/utils/cn';
 
 type ActionsProps = {
@@ -44,9 +44,11 @@ function ViewActions(props: Omit<ActionsProps, 'isEditing' | 'onCancelEdit' | 'o
         {isCurrent ? 'Fórmula atual' : 'Aplicar formula'}
       </button>
       <div className="flex items-center gap-2">
-        <button onClick={onEdit} className="p-1.5 text-brand-900 hover:bg-black/5 rounded-md">
-          <PencilSquareIcon className="size-6" strokeWidth={2} />
-        </button>
+        {!isDefault && (
+          <button onClick={onEdit} className="p-1.5 text-brand-900 hover:bg-black/5 rounded-md">
+            <PencilIcon className="size-6" strokeWidth={2} />
+          </button>
+        )}
         {!isDefault && (
           <button
             onClick={onDeleteFormula}

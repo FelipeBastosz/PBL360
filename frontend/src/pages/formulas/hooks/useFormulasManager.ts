@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { PerformanceTable, PerformanceTableSummary } from '@/types/performanceTable';
 import type { DraftFormula } from '../components/FormulaAccordionCard';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
@@ -9,6 +9,16 @@ import type { useFormulaDialogs } from './useFormulaDialogs';
 
 type ListHook = ReturnType<typeof useFormulaList>;
 type DialogsHook = ReturnType<typeof useFormulaDialogs>;
+
+const ACTIVE_FORMULA_STORAGE_KEY = 'pbl360:active_formula_id';
+
+function getStoredActiveFormulaId(): string | null {
+  try {
+    return localStorage.getItem(ACTIVE_FORMULA_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
 function toPayload(draft: DraftFormula) {
   return {
@@ -22,7 +32,7 @@ function useFormulaDraftState() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftFormula | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
-  const [currentFormulaId, setCurrentFormulaId] = useState<string | null>(null);
+  const [currentFormulaId, setCurrentFormulaId] = useState<string | null>(getStoredActiveFormulaId);
   return {
     expandedId,
     setExpandedId,
@@ -154,16 +164,21 @@ export function useFormulasManager(list: ListHook, dialogs: DialogsHook) {
     performanceTableService.remove,
   );
 
-  // Ao carregar a lista, define automaticamente a fórmula padrão como ativa
-  const { currentFormulaId, setCurrentFormulaId } = state;
-  useEffect(() => {
-    if (currentFormulaId === null && list.filteredSummaries.length > 0) {
-      const defaultFormula = list.filteredSummaries.find((s) => s.isDefault);
-      if (defaultFormula) {
-        setCurrentFormulaId(defaultFormula.id);
-      }
+  const defaultFormula =
+    list.filteredSummaries.find((s) => s.isDefault || s.nome.toLowerCase() === 'fórmula padrão') ??
+    list.filteredSummaries[0];
+
+  const isStoredIdValid = list.filteredSummaries.some((s) => s.id === state.currentFormulaId);
+  const activeFormulaId = isStoredIdValid ? state.currentFormulaId : (defaultFormula?.id ?? null);
+
+  const handleApplyFormula = (id: string) => {
+    state.setCurrentFormulaId(id);
+    try {
+      localStorage.setItem(ACTIVE_FORMULA_STORAGE_KEY, id);
+    } catch {
+      // Ignore the error if the storage is locked.
     }
-  }, [currentFormulaId, list.filteredSummaries, setCurrentFormulaId]);
+  };
 
   const handleExpand = useFormulaExpand(state, list, dialogs);
   const handleSave = useFormulaSubmit(state, save, dialogs);
@@ -177,6 +192,8 @@ export function useFormulasManager(list: ListHook, dialogs: DialogsHook) {
 
   return {
     ...state,
+    currentFormulaId: activeFormulaId,
+    setCurrentFormulaId: handleApplyFormula,
     handleExpand,
     handleSave,
     deleteFormula,

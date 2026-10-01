@@ -38,9 +38,15 @@ export function validateDraft(draft: DraftFormula | null): {
     return { isValid: false, message: 'Preencha o nome do critério antes de salvar.' };
   }
 
+  const hasInvalidScore = draft.criterios.some((c) => c.peso < 0 || c.peso > 10);
+  if (hasInvalidScore) {
+    return { isValid: false, message: 'Cada critério deve ter nota entre 0 e 10.' };
+  }
+
   const weightSum = draft.criterios.reduce((acc, c) => acc + c.peso, 0);
-  if (weightSum !== 100) {
-    return { isValid: false, message: 'A soma dos critérios deve ser igual a 100% para salvar.' };
+  // Tolera pequenas variações de ponto flutuante (ex: 9.99999999)
+  if (Math.abs(weightSum - 10) > 0.01) {
+    return { isValid: false, message: 'A soma dos critérios deve ser igual a 10 para salvar.' };
   }
 
   return { isValid: true };

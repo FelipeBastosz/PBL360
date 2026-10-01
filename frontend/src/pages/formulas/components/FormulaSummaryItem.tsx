@@ -15,6 +15,10 @@ function buildFormulaProp(
   full?: PerformanceTable,
   isCurrent?: boolean,
 ): PerformanceTable {
+  const isDefault = Boolean(
+    full?.isDefault ?? summary.isDefault ?? summary.nome.toLowerCase() === 'fórmula padrão',
+  );
+
   return {
     ...(full || {
       id: summary.id,
@@ -25,8 +29,9 @@ function buildFormulaProp(
       criterios: [],
       criadoEm: summary.criadoEm,
       atualizadoEm: summary.atualizadoEm,
-      isDefault: summary.isDefault,
+      isDefault,
     }),
+    isDefault,
     ativo: isCurrent,
   };
 }
@@ -35,7 +40,7 @@ export function FormulaSummaryItem({ summary, full, manager, onRemove, showSnack
   const formulaProp = buildFormulaProp(summary, full, summary.id === manager.currentFormulaId);
 
   const handleEdit = () => {
-    if (!full) return;
+    if (!full || formulaProp.isDefault) return;
     manager.setEditingId(summary.id);
     manager.setDraft({
       nome: full.nome,
@@ -44,6 +49,7 @@ export function FormulaSummaryItem({ summary, full, manager, onRemove, showSnack
   };
 
   const handleDelete = async () => {
+    if (formulaProp.isDefault) return;
     const res = await manager.deleteFormula(summary.id);
     if (res.ok) onRemove(summary.id);
   };

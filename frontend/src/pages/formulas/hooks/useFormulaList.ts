@@ -13,8 +13,18 @@ export function useFormulaList() {
 
   const loadList = useCallback(async () => {
     const res = await fetchList();
-    if (res.ok) setSummaries(res.data);
-  }, [fetchList]);
+    if (res.ok) {
+      setSummaries(res.data);
+      // Busca automaticamente os critérios da fórmula que tiver isDefault: true no banco
+      const defaultTable = res.data.find((item) => item.isDefault) ?? res.data[0];
+      if (defaultTable) {
+        const detailsRes = await fetchDetails(defaultTable.id);
+        if (detailsRes.ok) {
+          setLoadedDetails((prev) => ({ ...prev, [defaultTable.id]: detailsRes.data }));
+        }
+      }
+    }
+  }, [fetchList, fetchDetails]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -26,9 +36,7 @@ export function useFormulaList() {
   const loadDetails = async (id: string) => {
     if (!loadedDetails[id]) {
       const res = await fetchDetails(id);
-      if (res.ok) {
-        setLoadedDetails((prev) => ({ ...prev, [id]: res.data }));
-      }
+      if (res.ok) setLoadedDetails((prev) => ({ ...prev, [id]: res.data }));
     }
   };
 

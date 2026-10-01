@@ -29,8 +29,8 @@ function seedTables(): PerformanceTable[] {
       isDefault: true,
       quantidadeProblemas: 2,
       criterios: buildCriteria('mock-table-1', [
-        ['Seguimento', 3],
-        ['Comportamento', 2],
+        ['Seguimento', 2],
+        ['Comportamento', 3],
         ['Participação', 5],
       ]),
       criadoEm: NOW,
@@ -43,9 +43,9 @@ function seedTables(): PerformanceTable[] {
       descricao: null,
       quantidadeProblemas: 0,
       criterios: buildCriteria('mock-table-2', [
-        ['Domínio do tema', 3],
-        ['Contribuição', 2],
-        ['Postura', 1],
+        ['Domínio do tema', 5],
+        ['Contribuição', 3],
+        ['Postura', 2],
       ]),
       criadoEm: NOW,
       atualizadoEm: NOW,
