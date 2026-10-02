@@ -40,7 +40,7 @@ export default function HomePage() {
         <div className="mt-4 flex flex-wrap gap-4">
           <Button onClick={() => navigate(ROUTES.rooms)}>Ver Minhas Turmas</Button>
           {user?.tipo !== 'ALUNO' && (
-            <Button variant="outline" onClick={() => navigate('/formulas')}>
+            <Button variant="outline" onClick={() => navigate(ROUTES.performanceTables)}>
               Ver Minhas Fórmulas
             </Button>
           )}
