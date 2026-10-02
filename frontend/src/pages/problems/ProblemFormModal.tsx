@@ -91,10 +91,12 @@ export function ProblemFormModal({
   const { setValue } = form;
 
   const { run, isLoading, error, clearError } = useAsyncAction(async () => {
-    const payload = { titulo: form.values.titulo.trim() };
+    const payload = { title: form.values.titulo.trim() };
+
     const result = isEditing
       ? await problemService.update(roomId, initialData!.id, payload)
-      : await problemService.create(roomId, payload);
+      : await problemService.create(roomId, { titulo: form.values.titulo.trim() });
+
     onSuccess(result);
   });
 

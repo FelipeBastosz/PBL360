@@ -211,8 +211,16 @@ function useManageProblems(id: string | undefined) {
         setProblemToDelete,
         notify,
       }),
-    handleEditSuccess: (updated: Problem) => {
-      setProblems((curr) => curr.map((item) => (item.id === updated.id ? updated : item)));
+    handleEditSuccess: (updated: Problem & { title?: string }) => {
+      const tituloCorreto = updated.titulo || updated.title || '';
+
+      const problemNormalizado = {
+        ...updated,
+        titulo: tituloCorreto,
+      };
+      setProblems((curr) =>
+        curr.map((item) => (item.id === problemNormalizado.id ? problemNormalizado : item)),
+      );
       setProblemToEdit(null);
       notify({ tone: 'success', message: 'Problema atualizado com sucesso!' });
     },

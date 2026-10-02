@@ -25,7 +25,7 @@ export type CreateProblemPayload = {
 };
 
 export type UpdateProblemPayload = {
-  titulo: string;
+  title: string;
 };
 
 export type ProblemDeletionImpact = {

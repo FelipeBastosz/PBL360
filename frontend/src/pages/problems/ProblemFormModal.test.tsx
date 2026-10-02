@@ -102,7 +102,7 @@ describe('ProblemFormModal', () => {
 
       await waitFor(() => {
         expect(problemService.update).toHaveBeenCalledWith(roomId, 'prob-99', {
-          titulo: 'Titulo Editado',
+          title: 'Titulo Editado',
         });
         expect(mockOnSuccess).toHaveBeenCalledWith(mockResult);
       });

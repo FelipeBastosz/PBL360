@@ -18,7 +18,7 @@ export const problemService = {
     api.post<Problem>(problemsOf(roomId), payload).then((r) => r.data),
 
   update: (roomId: string, problemId: string, payload: UpdateProblemPayload) =>
-    api.patch<Problem>(`${problemsOf(roomId)}/${problemId}`, payload).then((r) => r.data),
+    api.put<Problem>(`${problemsOf(roomId)}/${problemId}`, payload).then((r) => r.data),
 
   getDeletionImpact: (roomId: string, problemId: string) =>
     api
