@@ -74,6 +74,29 @@ function ModalActions({ onClose }: { onClose: () => void }) {
   );
 }
 
+function FormHeader({ errorMsg }: { errorMsg: string | null }) {
+  return (
+    <>
+      <h2 className="text-base font-bold text-brand-900">Novo Critério</h2>
+      {errorMsg && <p className="text-xs font-semibold text-danger">{errorMsg}</p>}
+    </>
+  );
+}
+
+function validateCriterion(nome: string, peso: string, currentTotal: number) {
+  if (!nome.trim()) return { error: 'O nome do critério é obrigatório.' };
+  const parsed = Number(peso);
+  if (Number.isNaN(parsed) || parsed < 1 || parsed > 10) {
+    return { error: 'O peso do critério deve estar entre 1 e 10.' };
+  }
+  if (currentTotal + parsed > 10) {
+    return {
+      error: `A soma total dos pesos não pode ultrapassar 10. Restante: ${10 - currentTotal}.`,
+    };
+  }
+  return { weight: parsed };
+}
+
 function useAddCriterionForm(
   onAdd: (c: CriterionInput) => void,
   onClose: () => void,
@@ -87,32 +110,17 @@ function useAddCriterionForm(
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nome.trim()) {
-      setErrorMsg('O nome do critério é obrigatório.');
+    const result = validateCriterion(nome, peso, currentTotalWeight);
+    if (result.error) {
+      setErrorMsg(result.error);
       return;
     }
-    const parsedWeight = Number(peso);
-    if (Number.isNaN(parsedWeight) || parsedWeight < 1 || parsedWeight > 10) {
-      setErrorMsg('O peso do critério deve estar entre 1 e 10.');
-      return;
-    }
-    if (currentTotalWeight + parsedWeight > 10) {
-      setErrorMsg(
-        `A soma total dos pesos não pode ultrapassar 10. Restante: ${10 - currentTotalWeight}.`,
-      );
-      return;
-    }
-
     onAdd({
       nome: nome.trim(),
       descricao: descricao.trim() || undefined,
-      peso: parsedWeight,
+      peso: result.weight!,
       ordem: nextOrder,
     });
-    setNome('');
-    setDescricao('');
-    setPeso('1');
-    setErrorMsg(null);
     onClose();
   }
 
@@ -144,8 +152,7 @@ function AddCriterionForm({
 
   return (
     <form onSubmit={form.handleSubmit} className="flex flex-col gap-3 pt-2">
-      <h2 className="text-base font-bold text-brand-900">Novo Critério</h2>
-      {form.errorMsg && <p className="text-xs font-semibold text-danger">{form.errorMsg}</p>}
+      <FormHeader errorMsg={form.errorMsg} />
       <CriterionField
         id="criterion-name"
         label="Nome do critério"
