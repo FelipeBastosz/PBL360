@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
   type ExceptionFilter,
   type HttpException,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import {
   InvalidRequestError,
   NotFoundError,
   UnauthorizedError,
+  UnprocessableEntityError,
 } from '../errors/application.error';
 import { DomainError } from '../errors/domain.error';
 
@@ -28,6 +30,7 @@ const HTTP_EXCEPTIONS: [abstract new (message: string) => Error, HttpExceptionCl
   [ForbiddenError, ForbiddenException],
   [NotFoundError, NotFoundException],
   [ConflictError, ConflictException],
+  [UnprocessableEntityError, UnprocessableEntityException],
 ];
 
 export const toHttpException = (error: DomainError | ApplicationError): HttpException => {

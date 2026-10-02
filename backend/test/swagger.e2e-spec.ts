@@ -103,4 +103,11 @@ describe('Swagger (e2e)', () => {
       'Sessões',
     ]);
   });
+
+  it('documents the problem update payload with the title property', () => {
+    expect(document.components.schemas.UpdateProblemDto).toBeDefined();
+    expect(Object.keys(document.components.schemas.UpdateProblemDto!.properties)).toEqual([
+      'title',
+    ]);
+  });
 });

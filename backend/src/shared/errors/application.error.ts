@@ -14,3 +14,5 @@ export class ForbiddenError extends ApplicationError {}
 export class NotFoundError extends ApplicationError {}
 
 export class ConflictError extends ApplicationError {}
+
+export class UnprocessableEntityError extends ApplicationError {}
