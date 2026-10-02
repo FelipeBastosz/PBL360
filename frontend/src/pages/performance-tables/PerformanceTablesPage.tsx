@@ -102,12 +102,9 @@ function PerformanceTableCard({ table }: CardProps) {
             <p className="mt-1 line-clamp-2 text-sm text-muted">{table.descricao}</p>
           )}
         </div>
-        <div className="mt-1 flex items-center justify-between text-xs font-semibold text-muted">
-          <span>
-            {table.quantidadeCriterios} {table.quantidadeCriterios === 1 ? 'critério' : 'critérios'}
-          </span>
+        <div className="mt-1 flex items-center justify-end text-xs font-semibold">
           <span className="rounded-full bg-brand-200 px-2.5 py-0.5 font-bold text-brand-900">
-            {table.quantidadeProblemas} {table.quantidadeProblemas === 1 ? 'problema' : 'problemas'}
+            {table.quantidadeCriterios} {table.quantidadeCriterios === 1 ? 'critério' : 'critérios'}
           </span>
         </div>
       </div>
@@ -187,3 +184,5 @@ export function PerformanceTablesPage() {
     </div>
   );
 }
+
+export default PerformanceTablesPage;
