@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeftIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -74,7 +74,7 @@ function CriterionRow({ item }: { item: CriterionInput }) {
             disabled
             className="text-brand-900 opacity-60"
           >
-            <PencilSquareIcon className="size-5" />
+            <PencilIcon className="size-5" />
           </button>
           <button
             type="button"
@@ -146,13 +146,22 @@ function FormActions({ onSave, onCancel }: { onSave: () => void; onCancel: () =>
   );
 }
 
-function validateFormula(nome: string, count: number) {
-  if (!nome.trim()) return { error: 'O título da fórmula é obrigatório.', fields: { nome: true } };
-  if (count === 0)
+function validateFormula(nome: string, count: number, totalWeight: number) {
+  if (!nome.trim()) {
+    return { error: 'O título da fórmula é obrigatório.', fields: { nome: true } };
+  }
+  if (count === 0) {
     return {
       error: 'A tabela de desempenho deve possuir ao menos um critério.',
       fields: { criterios: true },
     };
+  }
+  if (totalWeight > 10) {
+    return {
+      error: 'A soma dos pesos dos critérios não pode ser maior que 10.',
+      fields: { criterios: true },
+    };
+  }
   return null;
 }
 
@@ -168,9 +177,11 @@ function useCreatePerformanceTableForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ nome?: boolean; criterios?: boolean }>({});
 
+  const totalWeight = criterios.reduce((acc, c) => acc + c.peso, 0);
+
   async function handleSave() {
     setErrorMessage(null);
-    const validation = validateFormula(nome, criterios.length);
+    const validation = validateFormula(nome, criterios.length, totalWeight);
     if (validation) {
       setErrorMessage(validation.error);
       setFieldErrors(validation.fields);
@@ -193,6 +204,7 @@ function useCreatePerformanceTableForm() {
     setNome,
     criterios,
     setCriterios,
+    totalWeight,
     isModalOpen,
     setIsModalOpen,
     errorMessage,
@@ -238,6 +250,7 @@ export function CreatePerformanceTablePage() {
           form.setFieldErrors((prev) => ({ ...prev, criterios: false }));
         }}
         nextOrder={form.criterios.length + 1}
+        currentTotalWeight={form.totalWeight}
       />
     </div>
   );

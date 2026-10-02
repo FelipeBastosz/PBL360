@@ -44,12 +44,52 @@ describe('CreatePerformanceTablePage', () => {
     ).toBeInTheDocument();
   });
 
+  it('blocks criterion addition if weight is less than 1 or greater than 10', async () => {
+    renderPage({ nome: 'Barema Teste' });
+
+    await userEvent.click(screen.getByText('+Adicionar critério'));
+    await userEvent.type(screen.getByLabelText('Nome do critério'), 'Invalido');
+    await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
+    await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '0');
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+    expect(screen.getByText('O peso do critério deve estar entre 1 e 10.')).toBeInTheDocument();
+
+    await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
+    await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '11');
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+    expect(screen.getByText('O peso do critério deve estar entre 1 e 10.')).toBeInTheDocument();
+  });
+
+  it('blocks adding a criterion that causes total weight to exceed 10', async () => {
+    renderPage({ nome: 'Barema Teste' });
+
+    await userEvent.click(screen.getByText('+Adicionar critério'));
+    await userEvent.type(screen.getByLabelText('Nome do critério'), 'C1');
+    await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
+    await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '7');
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+    await userEvent.click(screen.getByText('+Adicionar critério'));
+    await userEvent.type(screen.getByLabelText('Nome do critério'), 'C2');
+    await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
+    await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '5');
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+    expect(
+      screen.getByText('A soma total dos pesos não pode ultrapassar 10. Restante: 3.'),
+    ).toBeInTheDocument();
+  });
+
   it('adds a criterion via modal and submits successfully', async () => {
     vi.mocked(performanceTableService.create).mockResolvedValue({} as never);
     renderPage({ nome: 'Barema Teste' });
 
     await userEvent.click(screen.getByText('+Adicionar critério'));
     await userEvent.type(screen.getByLabelText('Nome do critério'), 'Pontualidade');
+    await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
+    await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '10');
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
 
     expect(screen.getByText('Pontualidade')).toBeInTheDocument();
