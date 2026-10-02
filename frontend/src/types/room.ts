@@ -31,3 +31,13 @@ export type StudentRoom = {
   semestre: string;
   totalAlunos: number;
 };
+
+export type JoinRoomPayload = {
+  codigo: string;
+};
+
+export type RoomStudent = {
+  id: string;
+  nome: string;
+  dataEntrada: string;
+};
