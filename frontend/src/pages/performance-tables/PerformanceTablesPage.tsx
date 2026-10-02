@@ -6,7 +6,8 @@ import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
-import type { PerformanceTable } from '@/types/performanceTable';
+import { performanceTableService } from '@/services/performance-table.service';
+import type { PerformanceTableSummary } from '@/types/performanceTable';
 import { cn } from '@/utils/cn';
 
 function PerformanceTablesHeader() {
@@ -89,7 +90,32 @@ function PerformanceTablesFabMenu() {
   );
 }
 
-type ListProps = { isLoading: boolean; tables: PerformanceTable[]; hasFilter: boolean };
+type CardProps = { table: PerformanceTableSummary };
+function PerformanceTableCard({ table }: CardProps) {
+  return (
+    <div className="flex flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-shadow hover:shadow-md">
+      <div className="h-1.5 w-full bg-brand-900" />
+      <div className="flex flex-col gap-3 p-4">
+        <div>
+          <h3 className="line-clamp-2 text-base font-bold text-brand-900">{table.nome}</h3>
+          {table.descricao && (
+            <p className="mt-1 line-clamp-2 text-sm text-muted">{table.descricao}</p>
+          )}
+        </div>
+        <div className="mt-1 flex items-center justify-between text-xs font-semibold text-muted">
+          <span>
+            {table.quantidadeCriterios} {table.quantidadeCriterios === 1 ? 'critério' : 'critérios'}
+          </span>
+          <span className="rounded-full bg-brand-200 px-2.5 py-0.5 font-bold text-brand-900">
+            {table.quantidadeProblemas} {table.quantidadeProblemas === 1 ? 'problema' : 'problemas'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type ListProps = { isLoading: boolean; tables: PerformanceTableSummary[]; hasFilter: boolean };
 function PerformanceTablesList({ isLoading, tables, hasFilter }: ListProps) {
   if (isLoading) {
     return (
@@ -108,17 +134,20 @@ function PerformanceTablesList({ isLoading, tables, hasFilter }: ListProps) {
   }
 
   return (
-    <div className="mt-4 flex flex-col gap-4">{/* Cards serão inseridos aqui futuramente */}</div>
+    <div className="mt-4 flex flex-col gap-4">
+      {tables.map((table) => (
+        <PerformanceTableCard key={table.id} table={table} />
+      ))}
+    </div>
   );
 }
 
 export function PerformanceTablesPage() {
-  const [tables, setTables] = useState<PerformanceTable[]>([]);
+  const [tables, setTables] = useState<PerformanceTableSummary[]>([]);
   const [query, setQuery] = useState('');
 
-  // Fetch mockado devolvendo array vazio para exibir o Empty State inicialmente, conforme a task
-  const fetchTables = useCallback(async (): Promise<PerformanceTable[]> => {
-    return [];
+  const fetchTables = useCallback(async (): Promise<PerformanceTableSummary[]> => {
+    return performanceTableService.list();
   }, []);
 
   const { run, isLoading, error } = useAsyncAction(fetchTables);
@@ -129,7 +158,7 @@ export function PerformanceTablesPage() {
     });
   }, [run]);
 
-  const filteredTables = tables.filter((t) => t.nome?.toLowerCase().includes(query.toLowerCase()));
+  const filteredTables = tables.filter((t) => t.nome.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
@@ -137,6 +166,11 @@ export function PerformanceTablesPage() {
       <PerformanceTablesSearch query={query} setQuery={setQuery} />
 
       <main className="mx-auto mt-6 w-full max-w-md px-4">
+        {tables.length > 0 && (
+          <h2 className="text-xs font-bold uppercase tracking-widest text-muted">
+            Minhas fórmulas · {filteredTables.length}
+          </h2>
+        )}
         {error && (
           <Alert tone="error" className="mt-4">
             {error.message}
