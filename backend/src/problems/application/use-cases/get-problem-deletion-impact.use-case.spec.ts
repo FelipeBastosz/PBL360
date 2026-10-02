@@ -20,6 +20,8 @@ describe('GetProblemDeletionImpactUseCase', () => {
       create: jest.fn(),
       findById: findByIdMock,
       findByRoomId: jest.fn(),
+      hasSessions: jest.fn().mockResolvedValue(false),
+      countSessions: jest.fn().mockResolvedValue(0),
       delete: jest.fn(),
     } as unknown as jest.Mocked<ProblemRepository>;
 

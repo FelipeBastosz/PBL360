@@ -3,6 +3,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -154,6 +155,10 @@ export const DeleteProblemSwaggerDocs = applyDecorators(
       'Apenas o professor responsável pela sala possui permissão para excluir problemas.',
   }),
   ApiNoContentResponse({ description: 'Problema excluído com sucesso.' }),
+  ApiConflictResponse({
+    description: 'O problema possui sessões e não pode ser excluído.',
+    type: ErrorResponseDto,
+  }),
   ApiUnauthorizedResponse({
     description: 'JWT não informado, inválido ou expirado.',
     type: ErrorResponseDto,

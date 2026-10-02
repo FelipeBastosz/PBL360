@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
-import { NotFoundError } from '@/shared/errors/application.error';
+import { ConflictError, NotFoundError } from '@/shared/errors/application.error';
 
 import {
   PROBLEM_REPOSITORY,
@@ -30,6 +30,10 @@ export class DeleteProblemUseCase {
 
     if (!problem || problem.roomId !== input.roomId) {
       throw new NotFoundError('Problema não encontrado.');
+    }
+
+    if (await this.problemRepository.hasSessions(problem.id)) {
+      throw new ConflictError('O problema possui sessões e não pode ser excluído.');
     }
 
     await this.problemRepository.delete(problem.id, input.roomId);

@@ -1,0 +1,157 @@
+import { ConflictError } from '@/shared/errors/application.error';
+import { Session } from '../../domain/entities/session.entity';
+import type { SessionRepository } from '../../domain/repositories/session.repository';
+import type { SessionAccessService } from '../services/session-access.service';
+import { CreateSessionUseCase } from './create-session.use-case';
+import { DeleteSessionUseCase } from './delete-session.use-case';
+import { GetSessionDeletionImpactUseCase } from './get-session-deletion-impact.use-case';
+import { GetSessionUseCase } from './get-session.use-case';
+import { ListSessionsUseCase } from './list-sessions.use-case';
+import { UpdateSessionUseCase } from './update-session.use-case';
+
+describe('Session use cases', () => {
+  const session = Session.create({
+    problemId: 'problem-1',
+    title: 'Session',
+    description: null,
+    date: '2026-10-15',
+  });
+  let repository: jest.Mocked<SessionRepository>;
+  let access: jest.Mocked<SessionAccessService>;
+
+  beforeEach(() => {
+    repository = {
+      create: jest.fn().mockResolvedValue(session),
+      save: jest.fn().mockResolvedValue(session),
+      findById: jest.fn(),
+      findByProblemId: jest.fn().mockResolvedValue([session]),
+      getDeletionImpact: jest.fn().mockResolvedValue({
+        chamada: 0,
+        papeis: 0,
+        observacoes: 0,
+        avaliacoes: 0,
+        feedbacks: 0,
+      }),
+      delete: jest.fn().mockResolvedValue(undefined),
+    };
+    access = {
+      assertTutorCanAccessProblem: jest.fn().mockResolvedValue(undefined),
+      assertTutorCanAccessSession: jest.fn().mockResolvedValue(session),
+    } as unknown as jest.Mocked<SessionAccessService>;
+  });
+
+  it('creates a session after validating problem access', async () => {
+    const useCase = new CreateSessionUseCase(repository, access);
+    await useCase.execute({
+      roomId: 'room-1',
+      problemId: 'problem-1',
+      tutorId: 'tutor-1',
+      title: ' Session ',
+      description: null,
+      date: '2026-10-15',
+    });
+    expect(access.assertTutorCanAccessProblem).toHaveBeenCalledWith(
+      'room-1',
+      'problem-1',
+      'tutor-1',
+    );
+    expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ title: 'Session' }));
+  });
+
+  it('lists sessions only after validating problem access', async () => {
+    const useCase = new ListSessionsUseCase(repository, access);
+    await expect(
+      useCase.execute({ roomId: 'room-1', problemId: 'problem-1', tutorId: 'tutor-1' }),
+    ).resolves.toEqual([session]);
+    expect(repository.findByProblemId).toHaveBeenCalledWith('problem-1');
+  });
+
+  it('returns deletion impact and derives whether the session is empty', async () => {
+    repository.getDeletionImpact.mockResolvedValueOnce({
+      chamada: 1,
+      papeis: 0,
+      observacoes: 0,
+      avaliacoes: 0,
+      feedbacks: 0,
+    });
+    const useCase = new GetSessionDeletionImpactUseCase(repository, access);
+    await expect(
+      useCase.execute({
+        roomId: 'room-1',
+        problemId: 'problem-1',
+        sessionId: 'session-1',
+        tutorId: 'tutor-1',
+      }),
+    ).resolves.toEqual({
+      podeExcluir: false,
+      chamada: 1,
+      papeis: 0,
+      observacoes: 0,
+      avaliacoes: 0,
+      feedbacks: 0,
+    });
+  });
+
+  it('blocks deletion when linked records exist', async () => {
+    repository.getDeletionImpact.mockResolvedValueOnce({
+      chamada: 0,
+      papeis: 0,
+      observacoes: 0,
+      avaliacoes: 1,
+      feedbacks: 0,
+    });
+    const useCase = new DeleteSessionUseCase(repository, access);
+    await expect(
+      useCase.execute({
+        roomId: 'room-1',
+        problemId: 'problem-1',
+        sessionId: 'session-1',
+        tutorId: 'tutor-1',
+      }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.delete).not.toHaveBeenCalled();
+  });
+
+  it('deletes an empty session', async () => {
+    const useCase = new DeleteSessionUseCase(repository, access);
+    await useCase.execute({
+      roomId: 'room-1',
+      problemId: 'problem-1',
+      sessionId: 'session-1',
+      tutorId: 'tutor-1',
+    });
+    expect(repository.delete).toHaveBeenCalledWith(session.id, 'problem-1');
+  });
+
+  it('updates the session after validating its parent path', async () => {
+    const useCase = new UpdateSessionUseCase(repository, access);
+    await useCase.execute({
+      roomId: 'room-1',
+      problemId: 'problem-1',
+      sessionId: 'session-1',
+      tutorId: 'tutor-1',
+      title: 'Updated',
+      description: 'Details',
+      date: '2026-10-16',
+    });
+    expect(access.assertTutorCanAccessSession).toHaveBeenCalledWith(
+      'room-1',
+      'problem-1',
+      'session-1',
+      'tutor-1',
+    );
+    expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({ title: 'Updated' }));
+  });
+
+  it('gets a session through the shared access service', async () => {
+    const useCase = new GetSessionUseCase(access);
+    await expect(
+      useCase.execute({
+        roomId: 'room-1',
+        problemId: 'problem-1',
+        sessionId: 'session-1',
+        tutorId: 'tutor-1',
+      }),
+    ).resolves.toBe(session);
+  });
+});

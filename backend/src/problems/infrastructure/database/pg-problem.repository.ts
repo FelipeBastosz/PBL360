@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
 
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
+import { ConflictError } from '@/shared/errors/application.error';
 
 import { Problem } from '../../domain/entities/problem.entity';
 import type { ProblemRepository } from '../../domain/repositories/problem.repository';
@@ -77,6 +78,22 @@ export class PgProblemRepository implements ProblemRepository {
     return rows.map((row) => this.toEntity(row));
   }
 
+  async hasSessions(problemId: string): Promise<boolean> {
+    const rows = await this.problems.query<Array<{ exists: boolean }>>(
+      `SELECT EXISTS (SELECT 1 FROM sessions WHERE problem_id = $1) AS exists;`,
+      [problemId],
+    );
+    return firstRowOrNull(rows)?.exists ?? false;
+  }
+
+  async countSessions(problemId: string): Promise<number> {
+    const rows = await this.problems.query<Array<{ count: string }>>(
+      `SELECT COUNT(*)::int AS count FROM sessions WHERE problem_id = $1;`,
+      [problemId],
+    );
+    return Number(firstRowOrNull(rows)?.count ?? 0);
+  }
+
   save(problem: Problem): Promise<Problem> {
     return this.problems.save(problem);
   }
@@ -93,7 +110,7 @@ export class PgProblemRepository implements ProblemRepository {
     await this.problems.manager.transaction(async (manager): Promise<void> => {
       await manager.query(`SELECT id FROM rooms WHERE id = $1 FOR UPDATE;`, [roomId]);
       const targetRows = await manager.query<Array<{ orderIndex: number }>>(
-        `SELECT order_index AS "orderIndex" FROM problems WHERE id = $1 AND room_id = $2;`,
+        `SELECT order_index AS "orderIndex" FROM problems WHERE id = $1 AND room_id = $2 FOR UPDATE;`,
         [id, roomId],
       );
 
@@ -102,11 +119,26 @@ export class PgProblemRepository implements ProblemRepository {
         return;
       }
 
+      if (await this.hasSessionsInTransaction(manager, id)) {
+        throw new ConflictError('O problema possui sessões e não pode ser excluído.');
+      }
+
       const orderIndex = Number(target.orderIndex);
 
       await manager.query(`DELETE FROM problems WHERE id = $1 AND room_id = $2;`, [id, roomId]);
       await this.decrementFollowingOrders(manager, roomId, orderIndex);
     });
+  }
+
+  private async hasSessionsInTransaction(
+    manager: EntityManager,
+    problemId: string,
+  ): Promise<boolean> {
+    const rows = await manager.query<Array<{ exists: boolean }>>(
+      `SELECT EXISTS (SELECT 1 FROM sessions WHERE problem_id = $1) AS exists;`,
+      [problemId],
+    );
+    return firstRowOrNull(rows)?.exists ?? false;
   }
 
   private async decrementFollowingOrders(
