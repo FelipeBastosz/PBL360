@@ -15,7 +15,7 @@ export interface TestUser {
 
 export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
   await dataSource.query(
-    'TRUNCATE problems, room_students, room_tutor_events, room_tutors, rooms, password_reset_codes, email_verification_codes, user_photos, users CASCADE;',
+    'TRUNCATE sessions, problems, room_students, room_tutor_events, room_tutors, rooms, password_reset_codes, email_verification_codes, user_photos, users CASCADE;',
   );
 };
 
@@ -55,6 +55,7 @@ export const api = (app: INestApplication, user?: TestUser) => {
   return {
     get: (path: string) => auth(server.get(`/api${path}`)),
     post: (path: string, body: object = {}) => auth(server.post(`/api${path}`)).send(body),
+    put: (path: string, body: object = {}) => auth(server.put(`/api${path}`)).send(body),
     patch: (path: string, body: object = {}) => auth(server.patch(`/api${path}`)).send(body),
     delete: (path: string) => auth(server.delete(`/api${path}`)),
   };
