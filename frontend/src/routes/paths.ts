@@ -21,4 +21,5 @@ export const ROUTES = {
   editProblem: '/turmas/:roomId/problemas/:problemId/editar',
   performanceTables: '/formulas',
   createPerformanceTable: '/formulas/nova',
+  performanceTableDetail: '/formulas/:id',
 } as const;

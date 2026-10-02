@@ -61,7 +61,7 @@ function CriterionRow({ item }: { item: CriterionInput }) {
     <div className="border-b border-black/5 px-4 py-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-brand-900">{item.nome}</span>
-        <span className="rounded-full bg-brand-soft px-3 py-0.5 text-xs font-bold text-brand-900">
+        <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-ink">
           {item.peso}
         </span>
       </div>

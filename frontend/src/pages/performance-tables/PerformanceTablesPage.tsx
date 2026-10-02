@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { MagnifyingGlassIcon, PlusIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spinner } from '@/components/ui/Spinner';
@@ -101,7 +101,10 @@ function PerformanceTablesFabMenu({ onOpenCreateModal }: { onOpenCreateModal: ()
 type CardProps = { table: PerformanceTableSummary };
 function PerformanceTableCard({ table }: CardProps) {
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-shadow hover:shadow-md">
+    <Link
+      to={`${ROUTES.performanceTables}/${table.id}`}
+      className="flex flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-shadow hover:shadow-md"
+    >
       <div className="h-1.5 w-full bg-brand-900" />
       <div className="flex flex-col gap-3 p-4">
         <div>
@@ -116,7 +119,7 @@ function PerformanceTableCard({ table }: CardProps) {
           </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
