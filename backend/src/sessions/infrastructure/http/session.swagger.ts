@@ -17,7 +17,7 @@ import { SessionDeletionImpactDto } from '../../application/dtos/session-deletio
 import {
   SessionCreatedResponseDto,
   SessionDetailResponseDto,
-  SessionResponseDto,
+  SessionListResponseDto,
 } from '../../application/dtos/session-response.dto';
 
 const secured = ApiBearerAuth(JWT_SECURITY_SCHEME);
@@ -52,7 +52,7 @@ export const ListSessionsSwaggerDocs = applyDecorators(
   ApiOperation({ summary: 'Lista as sessões do problema por data e ordem' }),
   ApiOkResponse({
     description: 'Sessões listadas com sucesso.',
-    type: SessionResponseDto,
+    type: SessionListResponseDto,
     isArray: true,
   }),
   unauthorized,

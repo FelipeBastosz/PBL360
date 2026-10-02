@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class SessionResponseDto {
+export class SessionListResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
 
@@ -20,7 +20,7 @@ export class SessionResponseDto {
   status: string;
 }
 
-export class SessionDetailResponseDto extends SessionResponseDto {
+export class SessionDetailResponseDto extends SessionListResponseDto {
   @ApiProperty({ format: 'uuid' })
   problemaId: string;
 
@@ -28,7 +28,7 @@ export class SessionDetailResponseDto extends SessionResponseDto {
   salaId: string;
 }
 
-export class SessionCreatedResponseDto extends SessionResponseDto {
+export class SessionCreatedResponseDto extends SessionListResponseDto {
   @ApiProperty({ format: 'uuid' })
   problemaId: string;
 }
