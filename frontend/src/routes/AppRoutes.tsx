@@ -26,10 +26,11 @@ const ManageRoomsPage = lazy(() => import('@/pages/rooms/ManageRoomsPage'));
 const EditRoomPage = lazy(() => import('@/pages/rooms/EditRoomPage'));
 const RoomProblemsPage = lazy(() => import('@/pages/problems/RoomProblemsPage'));
 const ManageProblemsPage = lazy(() => import('@/pages/problems/ManageProblemsPage'));
-const PerformanceTablesPage = lazy(() =>
-  import('@/pages/performance-tables/PerformanceTablesPage').then((m) => ({
-    default: m.PerformanceTablesPage,
-  })),
+const PerformanceTablesPage = lazy(
+  () => import('@/pages/performance-tables/PerformanceTablesPage'),
+);
+const CreatePerformanceTablePage = lazy(
+  () => import('@/pages/performance-tables/CreatePerformanceTablePage'),
 );
 
 export function AppRoutes() {
@@ -58,6 +59,7 @@ export function AppRoutes() {
           <Route path={ROUTES.roomProblems} element={<RoomProblemsPage />} />
           <Route path={ROUTES.manageProblems} element={<ManageProblemsPage />} />
           <Route path={ROUTES.performanceTables} element={<PerformanceTablesPage />} />
+          <Route path={ROUTES.createPerformanceTable} element={<CreatePerformanceTablePage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

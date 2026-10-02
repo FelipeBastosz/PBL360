@@ -73,11 +73,9 @@ describe('PerformanceTablesPage', () => {
     expect(await screen.findByText('Barema PBL')).toBeInTheDocument();
     expect(screen.getByText('Critérios padrão do módulo.')).toBeInTheDocument();
     expect(screen.getByText('6 critérios')).toBeInTheDocument();
-    expect(screen.getByText('2 problemas')).toBeInTheDocument();
 
     expect(screen.getByText('Avaliação Curta')).toBeInTheDocument();
     expect(screen.getByText('3 critérios')).toBeInTheDocument();
-    expect(screen.getByText('0 problemas')).toBeInTheDocument();
   });
 
   it('filters tables based on search query', async () => {

@@ -7,8 +7,10 @@ import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
+import { ROUTES } from '@/routes/paths';
 import type { PerformanceTableSummary } from '@/types/performanceTable';
 import { cn } from '@/utils/cn';
+import { CreateFormulaModal } from './components/CreateFormulaModal';
 
 function PerformanceTablesHeader() {
   const { user } = useAuth();
@@ -58,7 +60,7 @@ function PerformanceTablesEmptyState() {
   );
 }
 
-function PerformanceTablesFabMenu() {
+function PerformanceTablesFabMenu({ onOpenCreateModal }: { onOpenCreateModal: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -71,7 +73,13 @@ function PerformanceTablesFabMenu() {
           <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
             Editar uma fórmula
           </button>
-          <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              onOpenCreateModal();
+            }}
+            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+          >
             Criar nova fórmula
           </button>
         </div>
@@ -140,8 +148,10 @@ function PerformanceTablesList({ isLoading, tables, hasFilter }: ListProps) {
 }
 
 export function PerformanceTablesPage() {
+  const navigate = useNavigate();
   const [tables, setTables] = useState<PerformanceTableSummary[]>([]);
   const [query, setQuery] = useState('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const fetchTables = useCallback(async (): Promise<PerformanceTableSummary[]> => {
     return performanceTableService.list();
@@ -180,7 +190,16 @@ export function PerformanceTablesPage() {
         />
       </main>
 
-      <PerformanceTablesFabMenu />
+      <PerformanceTablesFabMenu onOpenCreateModal={() => setIsCreateModalOpen(true)} />
+
+      <CreateFormulaModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={(data) => {
+          setIsCreateModalOpen(false);
+          navigate(ROUTES.createPerformanceTable, { state: data });
+        }}
+      />
     </div>
   );
 }
