@@ -17,8 +17,6 @@ type FieldProps = {
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
-  min?: string;
-  max?: string;
   hasError?: boolean;
 };
 
@@ -29,8 +27,6 @@ function CriterionField({
   onChange,
   placeholder,
   type = 'text',
-  min,
-  max,
   hasError,
 }: FieldProps) {
   return (
@@ -41,8 +37,6 @@ function CriterionField({
       <input
         id={id}
         type={type}
-        min={min}
-        max={max}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -121,6 +115,10 @@ function useAddCriterionForm(
       peso: result.weight!,
       ordem: nextOrder,
     });
+    setNome('');
+    setDescricao('');
+    setPeso('1');
+    setErrorMsg(null);
     onClose();
   }
 
@@ -151,7 +149,7 @@ function AddCriterionForm({
   const form = useAddCriterionForm(onAdd, onClose, nextOrder, currentTotalWeight);
 
   return (
-    <form onSubmit={form.handleSubmit} className="flex flex-col gap-3 pt-2">
+    <form noValidate onSubmit={form.handleSubmit} className="flex flex-col gap-3 pt-2">
       <FormHeader errorMsg={form.errorMsg} />
       <CriterionField
         id="criterion-name"
@@ -175,8 +173,6 @@ function AddCriterionForm({
         id="criterion-weight"
         label="Peso (1 a 10)"
         type="number"
-        min="1"
-        max="10"
         value={form.peso}
         onChange={(v) => {
           form.setPeso(v);

@@ -156,9 +156,9 @@ function validateFormula(nome: string, count: number, totalWeight: number) {
       fields: { criterios: true },
     };
   }
-  if (totalWeight > 10) {
+  if (totalWeight !== 10) {
     return {
-      error: 'A soma dos pesos dos critérios não pode ser maior que 10.',
+      error: 'A soma dos pesos dos critérios deve ser exatamente 10.',
       fields: { criterios: true },
     };
   }

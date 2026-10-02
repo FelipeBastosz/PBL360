@@ -44,6 +44,22 @@ describe('CreatePerformanceTablePage', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows error message if criteria weights sum to less than 10 on save', async () => {
+    renderPage({ nome: 'Barema Teste' });
+
+    await userEvent.click(screen.getByText('+Adicionar critério'));
+    await userEvent.type(screen.getByLabelText('Nome do critério'), 'Critério 1');
+    await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
+    await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '6');
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar Fórmula' }));
+
+    expect(
+      screen.getByText('A soma dos pesos dos critérios deve ser exatamente 10.'),
+    ).toBeInTheDocument();
+  });
+
   it('blocks criterion addition if weight is less than 1 or greater than 10', async () => {
     renderPage({ nome: 'Barema Teste' });
 
@@ -82,7 +98,7 @@ describe('CreatePerformanceTablePage', () => {
     ).toBeInTheDocument();
   });
 
-  it('adds a criterion via modal and submits successfully', async () => {
+  it('adds a criterion via modal and submits successfully when weights equal 10', async () => {
     vi.mocked(performanceTableService.create).mockResolvedValue({} as never);
     renderPage({ nome: 'Barema Teste' });
 
