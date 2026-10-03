@@ -22,6 +22,7 @@ export const roomRepositoryStub = (): jest.Mocked<RoomRepository> => ({
   findByRoomCode: jest.fn(),
   joinStudent: jest.fn(),
   findByTutorId: jest.fn(),
+  findSummariesByTutorId: jest.fn(),
   update: jest.fn(),
   softDelete: jest.fn(),
   addTutor: jest.fn(),

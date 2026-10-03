@@ -5,6 +5,13 @@ export interface StudentRoomSummary {
   name: string;
   semester: string;
   totalStudents: number;
+  totalProblems: number;
+}
+
+export interface TutorRoomSummary {
+  room: Room;
+  totalStudents: number;
+  totalProblems: number;
 }
 
 export interface RoomStudentSummary {
@@ -29,6 +36,8 @@ export interface RoomRepository {
   joinStudent(roomId: string, studentId: string): Promise<void>;
 
   findByTutorId(tutorId: string): Promise<Room[]>;
+
+  findSummariesByTutorId(tutorId: string): Promise<TutorRoomSummary[]>;
 
   update(room: Room): Promise<Room>;
 

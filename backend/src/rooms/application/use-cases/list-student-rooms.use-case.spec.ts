@@ -11,7 +11,9 @@ describe('ListStudentRoomsUseCase', () => {
   });
 
   it('returns rooms associated with the requested student', async () => {
-    const expected = [{ roomId: 'room-id', name: 'PBL', semester: '2026.1', totalStudents: 8 }];
+    const expected = [
+      { roomId: 'room-id', name: 'PBL', semester: '2026.1', totalStudents: 8, totalProblems: 3 },
+    ];
     rooms.findForStudent.mockResolvedValue(expected);
 
     await expect(useCase.execute('student-id')).resolves.toEqual(expected);
