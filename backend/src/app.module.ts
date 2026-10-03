@@ -16,6 +16,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { ProblemsModule } from './problems/problems.module';
 import { PerformanceTablesModule } from './performance-tables/performance-tables.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { FeedbacksModule } from './feedbacks/feedbacks.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SessionsModule } from './sessions/sessions.module';
     ProblemsModule,
     PerformanceTablesModule,
     SessionsModule,
+    FeedbacksModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
