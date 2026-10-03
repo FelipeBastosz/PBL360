@@ -278,4 +278,73 @@ describe('Sessions Swagger Documentation (e2e)', () => {
       ]);
     });
   });
+
+  describe('Session Roles Swagger Documentation', () => {
+    const rolesBasePath = '/api/sessoes/{sessionId}/papeis';
+    const rolesStudentPath = '/api/sessoes/{sessionId}/papeis/{studentId}';
+
+    it('documents session roles endpoints under the "Papéis da sessão" tag', () => {
+      const paths = Object.keys(document.paths);
+      expect(paths).toContain(rolesBasePath);
+      expect(paths).toContain(rolesStudentPath);
+
+      expect(document.paths[rolesBasePath]?.get?.tags).toEqual(['Papéis da sessão']);
+      expect(document.paths[rolesStudentPath]?.put?.tags).toEqual(['Papéis da sessão']);
+    });
+
+    it('documents operation summaries for session roles', () => {
+      expect(document.paths[rolesBasePath]?.get?.summary).toBe(
+        'Lista os papéis atribuídos na sessão',
+      );
+      expect(document.paths[rolesStudentPath]?.put?.summary).toBe(
+        'Atribui, troca ou remove o papel de um aluno',
+      );
+    });
+
+    it('documents security requirements for session roles endpoints', () => {
+      expect(document.paths[rolesBasePath]?.get?.security).toEqual(
+        expect.arrayContaining([{ jwt: [] }]),
+      );
+      expect(document.paths[rolesStudentPath]?.put?.security).toEqual(
+        expect.arrayContaining([{ jwt: [] }]),
+      );
+    });
+
+    it('documents response codes for listing and assigning session roles', () => {
+      const listResponses = Object.keys(document.paths[rolesBasePath]!.get!.responses);
+      expect(listResponses).toEqual(expect.arrayContaining(['200', '401', '403', '404']));
+
+      const putResponses = Object.keys(document.paths[rolesStudentPath]!.put!.responses);
+      expect(putResponses).toEqual(
+        expect.arrayContaining(['200', '400', '401', '403', '404', '409', '422']),
+      );
+    });
+
+    it('publishes UpdateSessionRoleDto, SessionRoleResponseDto and AssignedSessionRoleResponseDto schemas', () => {
+      const updateSchema = document.components.schemas.UpdateSessionRoleDto;
+      expect(updateSchema).toBeDefined();
+      expect(Object.keys(updateSchema?.properties ?? {})).toEqual([
+        'papel',
+        'notaAdicional',
+        'transferir',
+      ]);
+
+      const roleResponseSchema = document.components.schemas.SessionRoleResponseDto;
+      expect(roleResponseSchema).toBeDefined();
+      expect(Object.keys(roleResponseSchema?.properties ?? {})).toEqual([
+        'alunoId',
+        'nome',
+        'papel',
+        'notaAdicional',
+      ]);
+
+      const assignedRoleSchema = document.components.schemas.AssignedSessionRoleResponseDto;
+      expect(assignedRoleSchema).toBeDefined();
+      expect(Object.keys(assignedRoleSchema?.properties ?? {})).toEqual([
+        'alunoId',
+        'papel',
+        'notaAdicional',
+      ]);
+    });
+  });
 });

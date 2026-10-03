@@ -3,9 +3,11 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
@@ -15,10 +17,21 @@ import {
   SessionRoleResponseDto,
 } from '../../application/dtos/session-role.dto';
 
-const common = [
-  ApiBearerAuth(JWT_SECURITY_SCHEME),
-  ApiNotFoundResponse({ description: 'Sessão não encontrada.', type: ErrorResponseDto }),
-];
+const secured = ApiBearerAuth(JWT_SECURITY_SCHEME);
+const unauthorized = ApiUnauthorizedResponse({
+  description: 'JWT não informado, inválido ou expirado.',
+  type: ErrorResponseDto,
+});
+const forbidden = ApiForbiddenResponse({
+  description: 'Acesso negado. O professor não possui permissão nesta sala.',
+  type: ErrorResponseDto,
+});
+const notFound = ApiNotFoundResponse({
+  description: 'Sessão não encontrada.',
+  type: ErrorResponseDto,
+});
+
+const common = [secured, unauthorized, forbidden, notFound];
 
 export const ListSessionRolesSwaggerDocs = applyDecorators(
   ApiOperation({ summary: 'Lista os papéis atribuídos na sessão' }),
