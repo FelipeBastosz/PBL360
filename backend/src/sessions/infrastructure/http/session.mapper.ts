@@ -2,12 +2,12 @@ import type { Session } from '../../domain/entities/session.entity';
 import type {
   SessionCreatedResponseDto,
   SessionDetailResponseDto,
-  SessionResponseDto,
+  SessionListResponseDto,
 } from '../../application/dtos/session-response.dto';
 import type { UpdateSessionDto } from '../../application/dtos/update-session.dto';
 import type { UpdateSessionInput } from '../../application/use-cases/update-session.use-case';
 
-export const toSessionResponse = (session: Session): SessionResponseDto => ({
+export const toSessionResponse = (session: Session): SessionListResponseDto => ({
   id: session.id,
   titulo: session.title,
   descricao: session.description,

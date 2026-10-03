@@ -244,8 +244,8 @@ describe('Sessions Swagger Documentation (e2e)', () => {
       expect(schema?.properties?.data?.format).toBe('date');
     });
 
-    it('publishes SessionResponseDto with expected fields', () => {
-      const schema = document.components.schemas.SessionResponseDto;
+    it('publishes SessionListResponseDto with expected fields', () => {
+      const schema = document.components.schemas.SessionListResponseDto;
       expect(schema).toBeDefined();
       expect(Object.keys(schema?.properties ?? {})).toEqual([
         'id',
