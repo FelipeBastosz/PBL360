@@ -57,14 +57,6 @@ export const UPDATE_PERFORMANCE_TABLE_QUERY = `
      AND deleted_at IS NULL;
 `;
 
-export const ARCHIVE_PERFORMANCE_CRITERIA_QUERY = `
-  UPDATE performance_criteria
-     SET deleted_at = now(),
-         updated_at = now()
-   WHERE performance_table_id = $1
-     AND deleted_at IS NULL;
-`;
-
 export const INSERT_PERFORMANCE_TABLE_QUERY = `
   INSERT INTO performance_tables (
     tutor_id,

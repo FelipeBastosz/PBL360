@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
+import { NotFoundError } from '@/shared/errors/application.error';
+import { syncPerformanceCriteria } from './performance-criteria.persistence';
 
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
 import type {
@@ -15,7 +17,6 @@ import {
 } from './performance-table-detail.mapper';
 
 import {
-  ARCHIVE_PERFORMANCE_CRITERIA_QUERY,
   FIND_PERFORMANCE_TABLE_BY_ID_QUERY,
   PERFORMANCE_TABLE_SUMMARY_QUERY,
   UPDATE_PERFORMANCE_TABLE_QUERY,
@@ -49,15 +50,11 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
 
   update(table: PerformanceTable): Promise<PerformanceTable> {
     return this.performanceTables.manager.transaction(async (manager) => {
+      await this.lockTable(manager, table);
       await this.updateTable(manager, table);
-      await this.archiveCurrentCriteria(manager, table.id);
+      await syncPerformanceCriteria(manager, table);
 
-      const persistedCriteria = await this.insertCriteria(manager, table.id, table);
-
-      this.assignPersistedCriteriaIds(table, persistedCriteria);
-      table.updatedAt = new Date();
-
-      return table;
+      return this.readUpdatedTable(manager, table.id);
     });
   }
 
@@ -96,8 +93,23 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     await manager.query(UPDATE_PERFORMANCE_TABLE_QUERY, [table.id, table.name, table.description]);
   }
 
-  private async archiveCurrentCriteria(manager: EntityManager, tableId: string): Promise<void> {
-    await manager.query(ARCHIVE_PERFORMANCE_CRITERIA_QUERY, [tableId]);
+  private async lockTable(manager: EntityManager, table: PerformanceTable): Promise<void> {
+    const rows = await manager.query<{ id: string }[]>(
+      `SELECT id FROM performance_tables
+        WHERE id = $1 AND tutor_id = $2 AND deleted_at IS NULL FOR UPDATE;`,
+      [table.id, table.tutorId],
+    );
+    if (rows.length === 0) {
+      throw new NotFoundError('Tabela de desempenho não encontrada.');
+    }
+  }
+
+  private async readUpdatedTable(manager: EntityManager, id: string): Promise<PerformanceTable> {
+    const rows = await manager.query<PerformanceTableDetailRow[]>(
+      FIND_PERFORMANCE_TABLE_BY_ID_QUERY,
+      [id],
+    );
+    return toPerformanceTableWithCriteria(rows);
   }
 
   private assignPersistedCriteriaIds(

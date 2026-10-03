@@ -142,4 +142,67 @@ describe('UpdatePerformanceTableUseCase', () => {
 
     expect(repository.update).not.toHaveBeenCalled();
   });
+
+  it('persists retained ids and new criteria while omitting removed criteria', async () => {
+    const table = PerformanceTable.create({
+      tutorId,
+      name: 'Barema',
+      criteria: [{ name: 'Participação' }, { name: 'Postura' }],
+    });
+    table.id = tableId;
+    table.criteria[0]!.id = 'retained-id';
+    table.criteria[1]!.id = 'removed-id';
+    repository.findById.mockResolvedValue(table);
+    repository.update.mockImplementation((updated) => Promise.resolve(updated));
+
+    const result = await useCase.execute(tableId, tutorId, {
+      name: 'Barema atualizado',
+      criteria: [{ id: 'retained-id', name: 'Participação nas discussões' }, { name: 'Evolução' }],
+    });
+
+    expect(repository.update).toHaveBeenCalledWith(table);
+    expect(result.criteria.map((criterion) => criterion.id)).toEqual(['retained-id', undefined]);
+    expect(result.criteria[0]!.name).toBe('Participação nas discussões');
+  });
+
+  it.each([
+    { criteria: [{ id: 'foreign-id', name: 'Outro critério' }] },
+    {
+      criteria: [
+        { id: 'criterion-1', name: 'Primeiro' },
+        { id: 'criterion-1', name: 'Segundo' },
+      ],
+    },
+  ])('does not persist invalid criterion identities: %j', async ({ criteria }) => {
+    const table = PerformanceTable.create({
+      tutorId,
+      name: 'Barema',
+      criteria: [{ name: 'Postura' }],
+    });
+    table.criteria[0]!.id = 'criterion-1';
+    repository.findById.mockResolvedValue(table);
+
+    await expect(
+      useCase.execute(tableId, tutorId, { name: 'Novo nome', criteria }),
+    ).rejects.toThrow(InvalidPerformanceTableError);
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('propagates a persistence failure instead of returning success', async () => {
+    const table = PerformanceTable.create({
+      tutorId,
+      name: 'Barema',
+      criteria: [{ name: 'Postura' }],
+    });
+    repository.findById.mockResolvedValue(table);
+    const failure = new Error('Database unavailable');
+    repository.update.mockRejectedValue(failure);
+
+    await expect(
+      useCase.execute(tableId, tutorId, {
+        name: 'Novo nome',
+        criteria: [{ name: 'Evolução' }],
+      }),
+    ).rejects.toBe(failure);
+  });
 });
