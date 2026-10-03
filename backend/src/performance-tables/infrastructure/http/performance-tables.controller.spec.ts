@@ -188,4 +188,40 @@ describe('PerformanceTablesController', () => {
 
     expect(deleteUseCase.execute).toHaveBeenCalledWith('table-uuid-1', 'tutor-uuid-1');
   });
+
+  it('forwards criterion ids when updating a table', async () => {
+    const table = PerformanceTable.create({
+      tutorId: 'tutor-1',
+      name: 'Barema',
+      criteria: [{ name: 'Participação' }],
+    });
+    table.id = 'table-1';
+    table.criteria[0]!.id = 'criterion-1';
+    updateUseCase.execute.mockResolvedValue(table);
+
+    const result = await controller.update(
+      'table-1',
+      {
+        nome: 'Barema',
+        descricao: null,
+        criterios: [{ id: 'criterion-1', nome: 'Participação', peso: 2, ordem: 1 }],
+      },
+      'tutor-1',
+    );
+
+    expect(updateUseCase.execute).toHaveBeenCalledWith('table-1', 'tutor-1', {
+      name: 'Barema',
+      description: null,
+      criteria: [
+        {
+          id: 'criterion-1',
+          name: 'Participação',
+          description: undefined,
+          weight: 2,
+          orderIndex: 1,
+        },
+      ],
+    });
+    expect(result.criterios[0]!.id).toBe('criterion-1');
+  });
 });

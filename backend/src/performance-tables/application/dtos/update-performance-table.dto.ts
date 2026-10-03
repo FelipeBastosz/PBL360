@@ -9,7 +9,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CreatePerformanceCriterionDto } from './create-performance-table.dto';
+import { UpdatePerformanceCriterionDto } from './update-performance-criterion.dto';
 
 export class UpdatePerformanceTableDto {
   @ApiProperty({ example: 'Barema PBL atualizado', maxLength: 120 })
@@ -19,14 +19,16 @@ export class UpdatePerformanceTableDto {
   nome: string;
 
   @ApiPropertyOptional({
+    type: String,
+    nullable: true,
     example: 'Critérios atualizados para as próximas avaliações.',
   })
   @IsOptional()
   @IsString()
-  descricao?: string;
+  descricao?: string | null;
 
   @ApiProperty({
-    type: CreatePerformanceCriterionDto,
+    type: UpdatePerformanceCriterionDto,
     isArray: true,
     minItems: 1,
   })
@@ -35,6 +37,6 @@ export class UpdatePerformanceTableDto {
     message: 'A tabela de desempenho deve possuir ao menos um critério.',
   })
   @ValidateNested({ each: true })
-  @Type(() => CreatePerformanceCriterionDto)
-  criterios: CreatePerformanceCriterionDto[];
+  @Type(() => UpdatePerformanceCriterionDto)
+  criterios: UpdatePerformanceCriterionDto[];
 }

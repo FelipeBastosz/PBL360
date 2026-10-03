@@ -115,8 +115,10 @@ export const UpdatePerformanceTableSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Edita uma tabela de desempenho',
     description:
-      'Atualiza nome, descrição e critérios da tabela. ' +
-      'Os critérios anteriores são preservados como histórico.',
+      'Atualiza nome, descrição e a lista completa de critérios ativos. ' +
+      'Critérios com ID são atualizados; critérios sem ID são criados. ' +
+      'Critérios omitidos são excluídos logicamente. ' +
+      'A tabela deve manter ao menos um critério.',
   }),
   ApiBody({
     type: UpdatePerformanceTableDto,
@@ -126,7 +128,8 @@ export const UpdatePerformanceTableSwaggerDocs = applyDecorators(
     type: PerformanceTableResponseDto,
   }),
   ApiBadRequestResponse({
-    description: 'Dados inválidos para atualização.',
+    description:
+      'Dados inválidos, IDs repetidos ou critérios que não pertencem à configuração ativa da tabela.',
     type: ErrorResponseDto,
   }),
   ApiUnauthorizedResponse({
