@@ -21,6 +21,7 @@ interface StudentRoomBody {
   nome: string;
   semestre: string;
   totalAlunos: number;
+  totalProblemas: number;
 }
 
 interface RoomStudentBody {
@@ -140,6 +141,24 @@ describe('Rooms (e2e)', () => {
       const linkedTutorRooms = await api(app, colleague).get('/salas').expect(200);
       expect((linkedTutorRooms.body as RoomBody[]).map((r) => r.id)).toEqual([room.id]);
     });
+
+    it('includes the student and problem totals for each room', async () => {
+      const room = await createRoom();
+      await dataSource.query('INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);', [
+        room.id,
+        student.id,
+      ]);
+      await api(app, owner)
+        .post(`/salas/${room.id}/problemas`)
+        .send({ titulo: 'Problema 1' })
+        .expect(201);
+
+      const response = await api(app, owner).get('/salas').expect(200);
+
+      expect(response.body).toEqual([
+        expect.objectContaining({ id: room.id, totalAlunos: 1, totalProblemas: 1 }),
+      ]);
+    });
   });
 
   describe('GET /salas/minhas', () => {
@@ -157,6 +176,10 @@ describe('Rooms (e2e)', () => {
         'INSERT INTO room_students (room_id, student_id) VALUES ($1, $2), ($1, $3), ($4, $3);',
         [room.id, student.id, secondStudent.id, unrelatedRoomBody.id],
       );
+      await api(app, owner)
+        .post(`/salas/${room.id}/problemas`)
+        .send({ titulo: 'Problema 1' })
+        .expect(201);
 
       const response = await api(app, student).get('/salas/minhas').expect(200);
       const listedRooms = response.body as StudentRoomBody[];
@@ -167,6 +190,7 @@ describe('Rooms (e2e)', () => {
           nome: room.nome,
           semestre: room.semestre,
           totalAlunos: 2,
+          totalProblemas: 1,
         },
       ]);
     });

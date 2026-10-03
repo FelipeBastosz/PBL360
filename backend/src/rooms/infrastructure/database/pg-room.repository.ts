@@ -14,9 +14,23 @@ import type {
   RoomTutor,
   RoomStudentSummary,
   StudentRoomSummary,
+  TutorRoomSummary,
 } from '../../domain/repositories/room.repository';
 
 export const ROOM_CODE_CONSTRAINT = 'uq_rooms_room_code';
+
+const TUTOR_ROOM_SUMMARIES_QUERY = `SELECT ${ROOM_COLUMNS},
+              (SELECT COUNT(*)::int FROM room_students members WHERE members.room_id = rooms.id) AS "totalStudents",
+              (SELECT COUNT(*)::int FROM problems WHERE problems.room_id = rooms.id) AS "totalProblems"
+         FROM rooms
+        WHERE deleted_at IS NULL
+          AND EXISTS (
+            SELECT 1
+            FROM room_tutors
+            WHERE room_tutors.room_id = rooms.id
+              AND room_tutors.tutor_id = $1
+          )
+        ORDER BY created_at ASC, id ASC;`;
 
 @Injectable()
 export class PgRoomRepository implements RoomRepository {
@@ -84,10 +98,23 @@ export class PgRoomRepository implements RoomRepository {
     return rows.map((row) => this.toEntity(row));
   }
 
+  async findSummariesByTutorId(tutorId: string): Promise<TutorRoomSummary[]> {
+    const rows = await this.rooms.query<
+      Array<RoomRow & { totalStudents: number; totalProblems: number }>
+    >(TUTOR_ROOM_SUMMARIES_QUERY, [tutorId]);
+
+    return rows.map(({ totalStudents, totalProblems, ...row }) => ({
+      room: this.toEntity(row),
+      totalStudents,
+      totalProblems,
+    }));
+  }
+
   async findForStudent(studentId: string): Promise<StudentRoomSummary[]> {
     const rows = await this.rooms.query<StudentRoomSummary[]>(
       `SELECT rooms.id AS "roomId", rooms.name, rooms.semester,
-              COUNT(members.student_id)::int AS "totalStudents"
+              COUNT(members.student_id)::int AS "totalStudents",
+              (SELECT COUNT(*)::int FROM problems WHERE problems.room_id = rooms.id) AS "totalProblems"
          FROM room_students enrollment
          JOIN rooms ON rooms.id = enrollment.room_id
          JOIN room_students members ON members.room_id = rooms.id

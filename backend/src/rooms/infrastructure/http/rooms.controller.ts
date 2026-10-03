@@ -17,7 +17,10 @@ import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { CreateRoomDto } from '../../application/dtos/create-room.dto';
-import type { RoomResponseDto } from '../../application/dtos/room-response.dto';
+import type {
+  RoomResponseDto,
+  RoomSummaryResponseDto,
+} from '../../application/dtos/room-response.dto';
 import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 import { CreateRoomUseCase } from '../../application/use-cases/create-room.use-case';
 import { DeleteRoomUseCase } from '../../application/use-cases/delete-room.use-case';
@@ -107,6 +110,7 @@ export class RoomsController {
       nome: room.name,
       semestre: room.semester,
       totalAlunos: room.totalStudents,
+      totalProblemas: room.totalProblems,
     }));
   }
 
@@ -123,10 +127,14 @@ export class RoomsController {
 
   @Get()
   @ListRoomsSwaggerDocs
-  async list(@AuthenticatedUserId() tutorId: string): Promise<RoomResponseDto[]> {
+  async list(@AuthenticatedUserId() tutorId: string): Promise<RoomSummaryResponseDto[]> {
     const rooms = await this.listRoomsUseCase.execute(tutorId);
 
-    return rooms.map(toRoomResponse);
+    return rooms.map(({ room, totalStudents, totalProblems }) => ({
+      ...toRoomResponse(room),
+      totalAlunos: totalStudents,
+      totalProblemas: totalProblems,
+    }));
   }
 
   @Get(':id')
