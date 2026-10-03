@@ -13,6 +13,13 @@ export class ForbiddenError extends ApplicationError {}
 
 export class NotFoundError extends ApplicationError {}
 
-export class ConflictError extends ApplicationError {}
+export class ConflictError extends ApplicationError {
+  constructor(
+    message: string,
+    readonly details?: Record<string, unknown>,
+  ) {
+    super(message);
+  }
+}
 
 export class UnprocessableEntityError extends ApplicationError {}

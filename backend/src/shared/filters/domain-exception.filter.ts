@@ -41,7 +41,14 @@ export const toHttpException = (error: DomainError | ApplicationError): HttpExce
   const match = HTTP_EXCEPTIONS.find(([errorClass]) => error instanceof errorClass);
   const HttpExceptionClass = match?.[1] ?? BadRequestException;
 
-  return new HttpExceptionClass(error.message);
+  const exception = new HttpExceptionClass(error.message);
+  if (error instanceof ConflictError && error.details) {
+    const response = exception.getResponse();
+    if (typeof response === 'object' && response !== null) {
+      Object.assign(response, error.details);
+    }
+  }
+  return exception;
 };
 
 @Catch(DomainError, ApplicationError)
