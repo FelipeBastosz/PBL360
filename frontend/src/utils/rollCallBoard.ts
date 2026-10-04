@@ -76,6 +76,19 @@ export function setStudentStatus(
   }));
 }
 
+export function setAttendance(
+  board: RollCallBoard,
+  studentId: string,
+  status: AttendanceStatus,
+  justificativa: string | null = null,
+): RollCallBoard {
+  const student = board.students.find((item) => item.alunoId === studentId);
+  const seat = freeSeats(board)[0];
+  const needsSeat = SEATED.includes(status) && student?.lugar === null && seat !== undefined;
+  const seated = needsSeat ? seatStudent(board, studentId, seat) : board;
+  return setStudentStatus(seated, studentId, status, justificativa);
+}
+
 export function freeSeats(board: RollCallBoard): number[] {
   const taken = new Set(board.students.map((student) => student.lugar));
   return Array.from({ length: board.seats }, (_, index) => index + 1).filter(

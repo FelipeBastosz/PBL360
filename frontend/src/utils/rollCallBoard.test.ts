@@ -8,6 +8,7 @@ import {
   savedBaseline,
   seatEveryone,
   seatStudent,
+  setAttendance,
   setStudentStatus,
   toAttendanceRecords,
   unseatStudent,
@@ -102,6 +103,53 @@ describe('setStudentStatus', () => {
     );
 
     expect(find(next, 'ana')).toMatchObject({ lugar: 3, status: 'ATRASADO' });
+  });
+});
+
+describe('setAttendance', () => {
+  it('seats an excused student back in the first free seat when marked present', () => {
+    const current = board(
+      student('ana', { lugar: 1, status: 'PRESENTE' }),
+      student('bruno', { status: 'JUSTIFICADO', justificativa: 'Atestado' }),
+    );
+
+    const next = setAttendance(current, 'bruno', 'ATRASADO');
+
+    expect(find(next, 'bruno')).toMatchObject({
+      lugar: 2,
+      status: 'ATRASADO',
+      justificativa: null,
+    });
+  });
+
+  it('keeps a present student off the table when every seat is taken', () => {
+    const full = {
+      seats: 1,
+      students: [
+        student('ana', { lugar: 1, status: 'PRESENTE' }),
+        student('bruno', { status: 'AUSENTE' }),
+      ],
+    };
+
+    expect(find(setAttendance(full, 'bruno', 'PRESENTE'), 'bruno')).toMatchObject({
+      lugar: null,
+      status: 'PRESENTE',
+    });
+  });
+
+  it('takes the student off the table when excused', () => {
+    const next = setAttendance(
+      board(student('ana', { lugar: 1, status: 'PRESENTE' })),
+      'ana',
+      'JUSTIFICADO',
+      'Atestado',
+    );
+
+    expect(find(next, 'ana')).toMatchObject({
+      lugar: null,
+      status: 'JUSTIFICADO',
+      justificativa: 'Atestado',
+    });
   });
 });
 

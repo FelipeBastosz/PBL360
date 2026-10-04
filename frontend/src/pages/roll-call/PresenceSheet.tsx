@@ -99,11 +99,11 @@ export function PresenceSheet({
   const isSeated = student.lugar !== null;
   const options: AttendanceStatus[] = isSeated
     ? ['PRESENTE', 'ATRASADO', 'JUSTIFICADO']
-    : ['JUSTIFICADO', 'AUSENTE'];
+    : ['PRESENTE', 'ATRASADO', 'JUSTIFICADO', 'AUSENTE'];
 
   function pick(status: AttendanceStatus) {
-    if (status === 'JUSTIFICADO') setIsJustifying(true);
-    else onStatus(status);
+    setIsJustifying(status === 'JUSTIFICADO');
+    if (status !== 'JUSTIFICADO') onStatus(status);
   }
 
   return (

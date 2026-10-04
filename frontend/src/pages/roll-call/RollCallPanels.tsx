@@ -2,7 +2,7 @@ import type { useSessionRoles } from '@/hooks/useSessionRoles';
 import type { useTableInteractions } from '@/hooks/useTableInteractions';
 import { useToast } from '@/hooks/useToast';
 import type { AttendanceStatus, SessionRole } from '@/types/session';
-import { setStudentStatus, unseatStudent, type RollCallBoard } from '@/utils/rollCallBoard';
+import { setAttendance, unseatStudent, type RollCallBoard } from '@/utils/rollCallBoard';
 import { PresenceSheet } from './PresenceSheet';
 import { RoleSheet } from './RoleSheet';
 
@@ -22,7 +22,7 @@ export function RollCallPanels({ board, change, table, roles }: RollCallPanelsPr
 
   function setStatus(status: AttendanceStatus, justificativa?: string) {
     if (!panelStudent) return;
-    change((current) => setStudentStatus(current, panelStudent.alunoId, status, justificativa));
+    change((current) => setAttendance(current, panelStudent.alunoId, status, justificativa));
     if (status === 'JUSTIFICADO' || status === 'AUSENTE') table.closePanel();
   }
 
