@@ -36,7 +36,7 @@ function CopyRow({
       <button
         onClick={handleCopy}
         aria-label={`Copiar ${label}`}
-        className="shrink-0 rounded-md p-1 transition-[color,transform] duration-200 hover:text-brand-700 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
+        className="shrink-0 rounded-md p-1 transition-[color,scale] duration-200 hover:text-brand-700 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
       >
         {copied ? (
           <CheckIcon
