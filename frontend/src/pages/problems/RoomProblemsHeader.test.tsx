@@ -19,7 +19,10 @@ describe('RoomProblemsHeader', () => {
   it('splits and renders discipline and class code from room name', () => {
     render(
       <MemoryRouter>
-        <RoomProblemsHeader room={mockRoom} userNome="Professor Silva" />
+        <RoomProblemsHeader
+          room={mockRoom}
+          user={{ id: 'u1', nome: 'Professor Silva', possuiFoto: false }}
+        />
       </MemoryRouter>,
     );
 
@@ -32,7 +35,7 @@ describe('RoomProblemsHeader', () => {
   it('renders fallback title when room is null', () => {
     render(
       <MemoryRouter>
-        <RoomProblemsHeader room={null} userNome="Fulano" />
+        <RoomProblemsHeader room={null} user={{ id: 'u2', nome: 'Fulano', possuiFoto: false }} />
       </MemoryRouter>,
     );
 

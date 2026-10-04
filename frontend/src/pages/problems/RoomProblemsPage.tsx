@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Spinner } from '@/components/ui/Spinner';
 import { FabMenu } from '@/components/ui/FabMenu';
 import { SearchField } from '@/components/ui/SearchField';
+import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -49,7 +51,7 @@ function RoomProblemsMain({
   problems,
 }: MainProps) {
   return (
-    <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">
+    <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
       {roomError && <Alert tone="error">{roomError.message}</Alert>}
       <RoomTopActions isProfessor={isProfessor} roomId={roomId} />
       <SearchField label="Pesquisar problema" value={query} onChange={setQuery} className="mt-2" />
@@ -64,7 +66,7 @@ function RoomProblemsMain({
           <ProblemsEmptyState isProfessor={isProfessor} />
         )
       ) : (
-        <div className="mt-2 flex flex-col gap-3">
+        <div className={cn(CARD_GRID_CLASS, 'mt-2')}>
           {problems.map((p) => (
             <ProblemCard key={p.id} problem={p} roomId={roomId} />
           ))}
@@ -103,7 +105,7 @@ export default function RoomProblemsPage() {
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
-      <RoomProblemsHeader room={room} userNome={user?.nome} />
+      <RoomProblemsHeader room={room} user={user} />
       <RoomProblemsMain
         roomError={roomError}
         isProfessor={isProfessor}

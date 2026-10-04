@@ -1,9 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { HorizontalLogo } from '@/components/ui/HorizontalLogo';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { FabMenu, type FabAction } from '@/components/ui/FabMenu';
 import { SearchField } from '@/components/ui/SearchField';
+import {
+  CARD_ACCENT_CLASS,
+  CARD_GRID_CLASS,
+  INTERACTIVE_CARD_CLASS,
+  PAGE_CONTAINER_CLASS,
+} from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,17 +18,6 @@ import { roomService } from '@/services/room.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room, StudentRoom } from '@/types/room';
 import { countLabel } from '@/utils/countLabel';
-
-function RoomsHeader() {
-  const { user } = useAuth();
-
-  return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4">
-      <HorizontalLogo />
-      <UserAvatar user={user} />
-    </header>
-  );
-}
 
 function toRoom(studentRoom: StudentRoom): Room {
   return {
@@ -64,11 +59,8 @@ function RoomsEmptyState({ isStudent }: { isStudent: boolean }) {
 type RoomCardProps = { room: Room; professorNome?: string };
 function RoomCard({ room, professorNome }: RoomCardProps) {
   return (
-    <Link
-      to={`${ROUTES.rooms}/${room.id}/problemas`}
-      className="flex flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-brand-900"
-    >
-      <div className="h-1.5 w-full bg-brand-900" />
+    <Link to={`${ROUTES.rooms}/${room.id}/problemas`} className={INTERACTIVE_CARD_CLASS}>
+      <div className={CARD_ACCENT_CLASS} />
       <div className="flex flex-col gap-3 p-4">
         <div>
           <h3 className="line-clamp-2 text-base font-bold text-brand-900">{room.nome}</h3>
@@ -113,7 +105,7 @@ function RoomsList({ isLoading, rooms, isStudent, hasFilter, userNome }: RoomsLi
   }
 
   return (
-    <div className="mt-4 flex flex-col gap-4">
+    <div className={cn(CARD_GRID_CLASS, 'mt-4')}>
       {rooms.map((room) => (
         <RoomCard key={room.id} room={room} professorNome={isStudent ? undefined : userNome} />
       ))}
@@ -147,15 +139,12 @@ export default function RoomsPage() {
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
-      <RoomsHeader />
-      <SearchField
-        label="Pesquisar turma"
-        value={query}
-        onChange={setQuery}
-        className="mx-4 mt-4"
-      />
+      <AppHeader />
+      <div className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
+        <SearchField label="Pesquisar turma" value={query} onChange={setQuery} />
+      </div>
 
-      <main className="mx-auto mt-6 w-full max-w-md px-4">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6')}>
         <h2 className="text-xs font-bold uppercase tracking-widest text-muted">
           Minhas turmas · {filteredRooms.length}
         </h2>
