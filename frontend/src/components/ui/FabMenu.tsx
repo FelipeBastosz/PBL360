@@ -63,10 +63,10 @@ export function FabMenu({ label, actions }: FabMenuProps) {
           tabIndex={-1}
           aria-hidden
           onClick={close}
-          className="fixed inset-0 cursor-default bg-ink/10 backdrop-blur-[1px] animate-fade-up [animation-duration:200ms]"
+          className="fixed inset-0 z-20 cursor-default bg-ink/10 backdrop-blur-[1px] animate-fade-in"
         />
       )}
-      <div className="fixed right-6 bottom-6 flex flex-col items-end gap-3 pb-[env(safe-area-inset-bottom)]">
+      <div className="fixed right-6 bottom-6 z-20 flex flex-col items-end gap-3 pb-[env(safe-area-inset-bottom)]">
         {isOpen && (
           <div className="flex flex-col items-end gap-2">
             {actions.map((action, index) => (

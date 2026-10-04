@@ -27,6 +27,16 @@
   --animate-develop: develop 700ms ease-out both;
   --animate-shake: shake 360ms ease-in-out;
   --animate-slide-down: slide-down 220ms ease-out both;
+  --animate-fade-in: fade-in 200ms ease-out both;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 
   @keyframes pop-in {
     from {
