@@ -20,6 +20,11 @@ import { SESSION_REPOSITORY } from './domain/repositories/session.repository';
 import { PgSessionRepository } from './infrastructure/database/pg-session.repository';
 import { SessionsController } from './infrastructure/http/sessions.controller';
 import { SessionRolesController } from './infrastructure/http/session-roles.controller';
+import { RollCallController } from './infrastructure/http/roll-call.controller';
+import { GetRollCallUseCase } from './application/use-cases/get-roll-call.use-case';
+import { RecordRollCallUseCase } from './application/use-cases/record-roll-call.use-case';
+import { ATTENDANCE_REPOSITORY } from './domain/repositories/attendance.repository';
+import { PgAttendanceRepository } from './infrastructure/database/pg-attendance.repository';
 
 @Module({
   imports: [
@@ -27,7 +32,7 @@ import { SessionRolesController } from './infrastructure/http/session-roles.cont
     RoomsModule,
     ProblemsModule,
   ],
-  controllers: [SessionsController, SessionRolesController],
+  controllers: [SessionsController, SessionRolesController, RollCallController],
   providers: [
     CreateSessionUseCase,
     ListSessionsUseCase,
@@ -38,8 +43,11 @@ import { SessionRolesController } from './infrastructure/http/session-roles.cont
     SessionAccessService,
     ListSessionRolesUseCase,
     AssignSessionRoleUseCase,
+    GetRollCallUseCase,
+    RecordRollCallUseCase,
     { provide: SESSION_REPOSITORY, useClass: PgSessionRepository },
     { provide: SESSION_ROLE_REPOSITORY, useClass: PgSessionRoleRepository },
+    { provide: ATTENDANCE_REPOSITORY, useClass: PgAttendanceRepository },
   ],
   exports: [SESSION_REPOSITORY, SessionAccessService],
 })
