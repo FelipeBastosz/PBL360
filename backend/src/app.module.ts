@@ -17,6 +17,7 @@ import { ProblemsModule } from './problems/problems.module';
 import { PerformanceTablesModule } from './performance-tables/performance-tables.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { FeedbacksModule } from './feedbacks/feedbacks.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { FeedbacksModule } from './feedbacks/feedbacks.module';
     PerformanceTablesModule,
     SessionsModule,
     FeedbacksModule,
+    HealthModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
