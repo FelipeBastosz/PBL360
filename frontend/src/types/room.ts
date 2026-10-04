@@ -23,6 +23,19 @@ export type UpdateRoomPayload = {
   ativo?: boolean;
 };
 
+export type RoomTutor = {
+  id: string;
+  nome: string;
+  email: string;
+  responsavel: boolean;
+};
+
+export type TutorSummary = {
+  id: string;
+  nome: string;
+  email: string;
+};
+
 export type AddTutorToRoomPayload = {
   professorId: string;
 };
