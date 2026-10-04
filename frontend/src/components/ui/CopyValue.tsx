@@ -5,9 +5,10 @@ type CopyValueProps = {
   label: string;
   value: string;
   displayValue?: string;
+  isCode?: boolean;
 };
 
-export function CopyValue({ label, value, displayValue }: CopyValueProps) {
+export function CopyValue({ label, value, displayValue, isCode }: CopyValueProps) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -29,7 +30,9 @@ export function CopyValue({ label, value, displayValue }: CopyValueProps) {
     <div className="flex items-center justify-between gap-2 text-sm text-brand-900">
       <p className="truncate">
         <span className="font-semibold">{label}:</span>{' '}
-        <span className="[font-feature-settings:'calt'_0]">{displayValue ?? value}</span>
+        <span className={isCode ? 'font-mono font-semibold' : "[font-feature-settings:'calt'_0]"}>
+          {displayValue ?? value}
+        </span>
       </p>
       <button
         type="button"

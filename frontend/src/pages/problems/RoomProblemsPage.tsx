@@ -19,6 +19,7 @@ import { ProblemFormModal } from './ProblemFormModal';
 import { ProblemCard } from './ProblemCard';
 import { RoomProblemsHeader } from './RoomProblemsHeader';
 import { RoomTopActions } from './RoomTopActions';
+import { RoomInviteSheet } from '../rooms/invite/RoomInviteSheet';
 
 function ProblemsFab({ roomId, onCreate }: { roomId: string; onCreate: () => void }) {
   return (
@@ -56,6 +57,7 @@ type MainProps = {
   setQuery: (q: string) => void;
   isLoading: boolean;
   problems: Problem[];
+  onInvite: () => void;
 };
 
 function RoomProblemsMain({
@@ -66,12 +68,13 @@ function RoomProblemsMain({
   setQuery,
   isLoading,
   problems,
+  onInvite,
 }: MainProps) {
   if (roomError) return <RoomUnavailable message={roomError.message} />;
 
   return (
     <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
-      <RoomTopActions isProfessor={isProfessor} roomId={roomId} />
+      <RoomTopActions isProfessor={isProfessor} roomId={roomId} onInvite={onInvite} />
       <SearchField label="Pesquisar problema" value={query} onChange={setQuery} className="mt-2" />
       {isLoading ? (
         <div className="mt-10 flex justify-center">
@@ -94,16 +97,9 @@ function RoomProblemsMain({
   );
 }
 
-export default function RoomProblemsPage() {
-  const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const { notify } = useToast();
+function useRoomWithProblems(id: string | undefined) {
   const [room, setRoom] = useState<Room | null>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
-  const [query, setQuery] = useState('');
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  const isProfessor = user?.tipo === 'PROFESSOR';
   const { run: fetchRoom, error: roomError } = useAsyncAction(roomService.getById);
   const { run: fetchProblems, isLoading } = useAsyncAction(problemService.list);
 
@@ -112,6 +108,19 @@ export default function RoomProblemsPage() {
     fetchRoom(id).then((res) => res.ok && setRoom(res.data));
     fetchProblems(id).then((res) => res.ok && setProblems(res.data as Problem[]));
   }, [id, fetchRoom, fetchProblems]);
+
+  return { room, problems, setProblems, roomError, isLoading };
+}
+
+export default function RoomProblemsPage() {
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const { notify } = useToast();
+  const { room, problems, setProblems, roomError, isLoading } = useRoomWithProblems(id);
+  const [query, setQuery] = useState('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const isProfessor = user?.tipo === 'PROFESSOR';
 
   function handleSuccess(newProblem: Problem) {
     setProblems((curr) => [...curr, newProblem]);
@@ -132,6 +141,7 @@ export default function RoomProblemsPage() {
         setQuery={setQuery}
         isLoading={isLoading}
         problems={filtered}
+        onInvite={() => setIsInviteOpen(true)}
       />
       {isProfessor && <ProblemsFab roomId={id ?? ''} onCreate={() => setIsCreateModalOpen(true)} />}
       <ProblemFormModal
@@ -141,6 +151,16 @@ export default function RoomProblemsPage() {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleSuccess}
       />
+      {room && isProfessor && (
+        <RoomInviteSheet
+          isOpen={isInviteOpen}
+          onClose={() => setIsInviteOpen(false)}
+          roomId={room.id}
+          roomName={room.nome}
+          roomCode={room.codigoSala}
+          isOwner={room.professorResponsavelId === user?.id}
+        />
+      )}
     </div>
   );
 }
