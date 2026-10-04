@@ -17,6 +17,7 @@ const ResetPasswordPage = lazy(() => import('@/pages/password-reset/ResetPasswor
 const ResetPasswordSuccessPage = lazy(
   () => import('@/pages/password-reset/ResetPasswordSuccessPage'),
 );
+const RollCallPage = lazy(() => import('@/pages/roll-call/RollCallPage'));
 const NotFoundPage = lazy(() => import('@/pages/not-found/NotFoundPage'));
 const HomePage = lazy(() => import('@/pages/home/HomePage'));
 const RoomsPage = lazy(() => import('@/pages/rooms/RoomsPage'));
@@ -52,6 +53,7 @@ export function AppRoutes() {
           <Route path={ROUTES.editRoom} element={<EditRoomPage />} />
           <Route path={ROUTES.roomProblems} element={<RoomProblemsPage />} />
           <Route path={ROUTES.manageProblems} element={<ManageProblemsPage />} />
+          <Route path={ROUTES.rollCall} element={<RollCallPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

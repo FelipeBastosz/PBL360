@@ -50,11 +50,11 @@ function StatusOptions({ options, current, onPick }: StatusOptionsProps) {
             aria-checked={current === status}
             onClick={() => onPick(status)}
             className={cn(
-              'flex h-12 items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold transition-[background-color,border-color,color,scale] duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-900',
+              'flex h-12 min-w-0 items-center justify-center gap-1 rounded-xl border px-1 text-[0.8125rem] font-semibold sm:gap-1.5 sm:text-sm transition-[background-color,border-color,color,scale] duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-900',
               current === status ? active : 'border-black/10 bg-white text-muted hover:bg-black/5',
             )}
           >
-            <Icon className="size-4" strokeWidth={2.5} aria-hidden />
+            <Icon className="size-4 shrink-0 max-[359px]:hidden" strokeWidth={2.5} aria-hidden />
             {STATUS_LABEL[status]}
           </button>
         );
