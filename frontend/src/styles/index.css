@@ -20,6 +20,9 @@
   --color-danger-soft: #fef3f2;
   --color-success: #067647;
   --color-success-soft: #ecfdf3;
+  --color-warning: #b54708;
+  --color-warning-soft: #fff4e5;
+  --color-warning-line: #f2b84b;
 
   --animate-fade-up: fade-up 600ms ease-out both;
   --animate-pop-in: pop-in 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
