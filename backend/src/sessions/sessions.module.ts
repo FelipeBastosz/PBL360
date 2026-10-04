@@ -9,6 +9,7 @@ import { GetSessionUseCase } from './application/use-cases/get-session.use-case'
 import { ListSessionsUseCase } from './application/use-cases/list-sessions.use-case';
 import { UpdateSessionUseCase } from './application/use-cases/update-session.use-case';
 import { SessionAccessService } from './application/services/session-access.service';
+import { Attendance } from './domain/entities/attendance.entity';
 import { Session } from './domain/entities/session.entity';
 import { SessionRoleAssignment } from './domain/entities/session-role.entity';
 import { SESSION_ROLE_REPOSITORY } from './domain/repositories/session-role.repository';
@@ -22,7 +23,7 @@ import { SessionRolesController } from './infrastructure/http/session-roles.cont
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Session, SessionRoleAssignment]),
+    TypeOrmModule.forFeature([Session, SessionRoleAssignment, Attendance]),
     RoomsModule,
     ProblemsModule,
   ],
