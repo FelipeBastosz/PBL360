@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { useParams } from 'react-router-dom';
 import { Spinner } from '@/components/ui/Spinner';
+import { FabMenu } from '@/components/ui/FabMenu';
+import { SearchField } from '@/components/ui/SearchField';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -10,71 +11,21 @@ import { roomService } from '@/services/room.service';
 import { problemService } from '@/services/problem.service';
 import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
-import { cn } from '@/utils/cn';
 import { ProblemsEmptyState } from './ProblemsEmptyState';
 import { ProblemFormModal } from './ProblemFormModal';
 import { ProblemCard } from './ProblemCard';
 import { RoomProblemsHeader } from './RoomProblemsHeader';
 import { RoomTopActions } from './RoomTopActions';
 
-function ProblemsSearch({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
+function ProblemsFab({ roomId, onCreate }: { roomId: string; onCreate: () => void }) {
   return (
-    <div className="relative mt-2">
-      <input
-        type="text"
-        placeholder="Pesquisar problema"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="h-12 w-full rounded-[10px] border border-black/10 bg-white pl-10 pr-4 text-ink placeholder:text-placeholder focus:border-brand-900 focus:outline-none"
-      />
-      <MagnifyingGlassIcon className="pointer-events-none absolute left-3.5 top-3.5 size-5 text-placeholder" />
-    </div>
-  );
-}
-
-type FabMenuProps = {
-  isProfessor: boolean;
-  roomId: string;
-  onOpenCreate: () => void;
-};
-
-function ProblemsFabMenu({ isProfessor, roomId, onOpenCreate }: FabMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  if (!isProfessor) return null;
-
-  return (
-    <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3">
-      {isOpen && (
-        <div className="flex animate-fade-up flex-col items-end gap-2">
-          <Link
-            to={`/turmas/${roomId}/problemas/gerenciar`}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
-          >
-            Editar um problema
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(false);
-              onOpenCreate();
-            }}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
-          >
-            Criar novo problema
-          </button>
-        </div>
-      )}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          'flex size-14 items-center justify-center rounded-full bg-brand-900 text-white shadow-lg transition-transform',
-          isOpen ? 'rotate-45 bg-danger' : '',
-        )}
-        aria-label="Ações de problema"
-      >
-        <PlusIcon className="size-6" strokeWidth={2.5} />
-      </button>
-    </div>
+    <FabMenu
+      label="Ações de problema"
+      actions={[
+        { label: 'Editar um problema', to: `/turmas/${roomId}/problemas/gerenciar` },
+        { label: 'Criar novo problema', onClick: onCreate },
+      ]}
+    />
   );
 }
 
@@ -101,7 +52,7 @@ function RoomProblemsMain({
     <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">
       {roomError && <Alert tone="error">{roomError.message}</Alert>}
       <RoomTopActions isProfessor={isProfessor} roomId={roomId} />
-      <ProblemsSearch query={query} setQuery={setQuery} />
+      <SearchField label="Pesquisar problema" value={query} onChange={setQuery} className="mt-2" />
       {isLoading ? (
         <div className="mt-10 flex justify-center">
           <Spinner className="size-8 text-brand-900" />
@@ -162,11 +113,7 @@ export default function RoomProblemsPage() {
         isLoading={isLoading}
         problems={filtered}
       />
-      <ProblemsFabMenu
-        isProfessor={isProfessor}
-        roomId={id ?? ''}
-        onOpenCreate={() => setIsCreateModalOpen(true)}
-      />
+      {isProfessor && <ProblemsFab roomId={id ?? ''} onCreate={() => setIsCreateModalOpen(true)} />}
       <ProblemFormModal
         isOpen={isCreateModalOpen}
         roomId={id ?? ''}

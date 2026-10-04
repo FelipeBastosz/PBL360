@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MagnifyingGlassIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { HorizontalLogo } from '@/components/ui/HorizontalLogo';
 import { Button } from '@/components/ui/Button';
+import { SearchField } from '@/components/ui/SearchField';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,21 +33,6 @@ function ManageRoomsHeader() {
         {getInitials(user?.nome)}
       </div>
     </header>
-  );
-}
-
-function ManageRoomsSearch({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
-  return (
-    <div className="relative mt-4 px-4">
-      <input
-        type="text"
-        placeholder="Pesquisar turma"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="h-12 w-full rounded-[10px] border border-black/10 bg-white pl-10 pr-4 text-ink placeholder:text-placeholder focus:border-brand-900 focus:outline-none"
-      />
-      <MagnifyingGlassIcon className="pointer-events-none absolute left-7 top-3.5 size-5 text-placeholder" />
-    </div>
   );
 }
 
@@ -166,7 +152,12 @@ export default function ManageRoomsPage() {
   return (
     <div className="min-h-dvh bg-surface pb-36">
       <ManageRoomsHeader />
-      <ManageRoomsSearch query={query} setQuery={setQuery} />
+      <SearchField
+        label="Pesquisar turma"
+        value={query}
+        onChange={setQuery}
+        className="mx-4 mt-4"
+      />
       <ManageRoomsContent
         isLoading={isLoading}
         rooms={filteredRooms}
