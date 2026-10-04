@@ -10,6 +10,7 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { roomService } from '@/services/room.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
+import { countLabel } from '@/utils/countLabel';
 import { DeleteRoomModal } from './DeleteRoomModal';
 import { Link } from 'react-router-dom';
 
@@ -62,7 +63,9 @@ function ManageRoomCard({
       <div className="flex flex-col gap-3 p-4">
         <h3 className="line-clamp-2 text-base font-bold text-brand-900">{room.nome}</h3>
         <div className="mt-1 flex items-center justify-between">
-          <span className="text-sm text-muted">0 alunos</span>
+          <span className="text-sm text-muted">
+            {countLabel(room.totalAlunos ?? 0, 'aluno', 'alunos')}
+          </span>
           <div className="flex items-center gap-3">
             <Link
               to={ROUTES.editRoom.replace(':id', room.id)}

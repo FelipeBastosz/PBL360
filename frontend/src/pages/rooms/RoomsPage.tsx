@@ -11,6 +11,7 @@ import { roomService } from '@/services/room.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room, StudentRoom } from '@/types/room';
 import { cn } from '@/utils/cn';
+import { countLabel } from '@/utils/countLabel';
 
 function RoomsHeader() {
   const { user } = useAuth();
@@ -51,6 +52,8 @@ function toRoom(studentRoom: StudentRoom): Room {
     professorResponsavelId: '',
     ativo: true,
     criadoEm: '',
+    totalAlunos: studentRoom.totalAlunos,
+    totalProblemas: studentRoom.totalProblemas,
   };
 }
 
@@ -123,12 +126,14 @@ function RoomCard({ room, professorNome }: RoomCardProps) {
       <div className="flex flex-col gap-3 p-4">
         <div>
           <h3 className="line-clamp-2 text-base font-bold text-brand-900">{room.nome}</h3>
-          <p className="text-sm text-muted">Prof. {professorNome || 'Responsável'}</p>
+          {professorNome && <p className="text-sm text-muted">Prof. {professorNome}</p>}
         </div>
         <div className="mt-1 flex items-center justify-between">
-          <span className="text-sm text-muted">0 alunos</span>
+          <span className="text-sm text-muted">
+            {countLabel(room.totalAlunos ?? 0, 'aluno', 'alunos')}
+          </span>
           <span className="rounded-full bg-brand-200 px-2.5 py-0.5 text-xs font-bold text-brand-900">
-            0 problemas
+            {countLabel(room.totalProblemas ?? 0, 'problema', 'problemas')}
           </span>
         </div>
       </div>
