@@ -30,4 +30,28 @@ describe('BehaviorTag (Domain)', () => {
 
     expect(tag.ativa).toBe(false);
   });
+
+  it('trims the new name on rename', () => {
+    const tag = BehaviorTag.create({ nome: 'Atraso', tutorId: 'tutor-1' });
+
+    tag.rename('  Chegou tarde  ');
+
+    expect(tag.nome).toBe('Chegou tarde');
+  });
+
+  describe('isOwnedBy', () => {
+    it('is true for the tutor who created the tag', () => {
+      expect(BehaviorTag.create({ nome: 'X', tutorId: 'tutor-1' }).isOwnedBy('tutor-1')).toBe(true);
+    });
+
+    it('is false for another tutor', () => {
+      expect(BehaviorTag.create({ nome: 'X', tutorId: 'tutor-1' }).isOwnedBy('tutor-2')).toBe(
+        false,
+      );
+    });
+
+    it('is false for a predefined tag', () => {
+      expect(BehaviorTag.create({ nome: 'Atraso' }).isOwnedBy('tutor-1')).toBe(false);
+    });
+  });
 });

@@ -49,6 +49,14 @@ export class BehaviorTag {
     return this.tutorId === null;
   }
 
+  isOwnedBy(tutorId: string): boolean {
+    return this.tutorId === tutorId;
+  }
+
+  rename(nome: string): void {
+    this.nome = nome.trim();
+  }
+
   deactivate(): void {
     this.ativa = false;
   }
