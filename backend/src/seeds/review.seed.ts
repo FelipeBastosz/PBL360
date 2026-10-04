@@ -24,18 +24,18 @@ async function findReviewUsers(ds: DataSource): Promise<ReviewUsers | null> {
 }
 
 async function findOrCreateReviewRoom(ds: DataSource, tutorId: string): Promise<string> {
-  const existing = await ds.query<[{ id: string }]>(
+  const existing = await ds.query<Array<{ id: string }>>(
     `SELECT id FROM rooms WHERE course_code = 'EXA123' AND name = 'Engenharia de Software - Turma A' LIMIT 1;`,
   );
   if (existing[0]?.id) return existing[0].id;
 
-  const [created] = await ds.query<[{ id: string }]>(
+  const created = await ds.query<Array<{ id: string }>>(
     `INSERT INTO rooms (tutor_id, name, course_code, room_code, semester, active)
      VALUES ($1, 'Engenharia de Software - Turma A', 'EXA123', 'ROOM2026A', '2026.2', true)
      RETURNING id;`,
     [tutorId],
   );
-  return created.id;
+  return created[0]?.id ?? '';
 }
 
 async function associateReviewRoomMembers(
@@ -54,22 +54,22 @@ async function associateReviewRoomMembers(
 }
 
 async function seedReviewProblem(ds: DataSource, roomId: string, tutorId: string): Promise<string> {
-  const table = await ds.query<[{ id: string }]>(
+  const table = await ds.query<Array<{ id: string }>>(
     `SELECT id FROM performance_tables WHERE name = 'Barema PBL' AND deleted_at IS NULL LIMIT 1;`,
   );
-  const existing = await ds.query<[{ id: string }]>(
+  const existing = await ds.query<Array<{ id: string }>>(
     `SELECT id FROM problems WHERE room_id = $1 AND title = 'Problema 1 - Prontuário Eletrônico' LIMIT 1;`,
     [roomId],
   );
   if (existing[0]?.id) return existing[0].id;
 
-  const [created] = await ds.query<[{ id: string }]>(
+  const created = await ds.query<Array<{ id: string }>>(
     `INSERT INTO problems (room_id, title, description, order_index, performance_table_id, created_by)
      VALUES ($1, 'Problema 1 - Prontuário Eletrônico', 'Desenvolvimento de prontuário com PBL.', 1, $2, $3)
      RETURNING id;`,
     [roomId, table[0]?.id ?? null, tutorId],
   );
-  return created.id;
+  return created[0]?.id ?? '';
 }
 
 async function seedSession(
@@ -80,7 +80,7 @@ async function seedSession(
   date: string,
   status: string,
 ): Promise<string> {
-  const existing = await ds.query<[{ id: string }]>(
+  const existing = await ds.query<Array<{ id: string }>>(
     `SELECT id FROM sessions WHERE problem_id = $1 AND order_index = $2 LIMIT 1;`,
     [problemId, orderIndex],
   );
@@ -102,13 +102,13 @@ async function seedReviewRoles(
   const [s1, s2] = sessionIds;
   await ds.query(
     `INSERT INTO session_roles (session_id, student_id, role, bonus_score)
-     VALUES ($1, $2, 'coordenador', 0.5), ($1, $3, 'relator', 0.5)
+     VALUES ($1, $2, 'COORDINATOR', 0.5), ($1, $3, 'TABLE_SECRETARY', 0.5)
      ON CONFLICT (session_id, student_id) DO UPDATE SET role = EXCLUDED.role;`,
     [s1, users.student1.id, users.student2.id],
   );
   await ds.query(
     `INSERT INTO session_roles (session_id, student_id, role, bonus_score)
-     VALUES ($1, $2, 'relator', 0.5), ($1, $3, 'coordenador', 0.5)
+     VALUES ($1, $2, 'TABLE_SECRETARY', 0.5), ($1, $3, 'COORDINATOR', 0.5)
      ON CONFLICT (session_id, student_id) DO UPDATE SET role = EXCLUDED.role;`,
     [s2, users.student1.id, users.student2.id],
   );
@@ -141,7 +141,7 @@ async function seedProblemFeedbacks(
   );
   await ds.query(
     `INSERT INTO feedback (autor_id, problema_id, escopo, texto)
-     VALUES ($1, $2, 'GERAL', 'A turma demonstrou maturidade na resolução do problema.');`,
+     VALUES ($1, $2, 'PROBLEMA', 'A turma demonstrou maturidade na resolução do problema.');`,
     [users.tutor.id, problemId],
   );
 }
@@ -152,7 +152,7 @@ async function seedReviewFeedbacksIfEmpty(
   s1: string,
   users: ReviewUsers,
 ): Promise<void> {
-  const existingFb = await ds.query<[{ id: string }]>(
+  const existingFb = await ds.query<Array<{ id: string }>>(
     `SELECT id FROM feedback WHERE problema_id = $1 LIMIT 1;`,
     [problemId],
   );
