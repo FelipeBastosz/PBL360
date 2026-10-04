@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Spinner } from '@/components/ui/Spinner';
 import { FabMenu } from '@/components/ui/FabMenu';
 import { SearchField } from '@/components/ui/SearchField';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { roomService } from '@/services/room.service';
 import { problemService } from '@/services/problem.service';
+import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
 import { ProblemsEmptyState } from './ProblemsEmptyState';
@@ -28,6 +29,22 @@ function ProblemsFab({ roomId, onCreate }: { roomId: string; onCreate: () => voi
         { label: 'Criar novo problema', onClick: onCreate },
       ]}
     />
+  );
+}
+
+function RoomUnavailable({ message }: { message: string }) {
+  return (
+    <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col items-center gap-6')}>
+      <div className="w-full animate-shake">
+        <Alert tone="error">{message}</Alert>
+      </div>
+      <Link
+        to={ROUTES.rooms}
+        className="rounded-xl border border-brand-900 bg-white px-5 py-3 font-semibold text-brand-900 transition-[background-color,scale] duration-200 hover:bg-brand-50 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-brand-900"
+      >
+        Ver minhas turmas
+      </Link>
+    </main>
   );
 }
 
@@ -50,9 +67,10 @@ function RoomProblemsMain({
   isLoading,
   problems,
 }: MainProps) {
+  if (roomError) return <RoomUnavailable message={roomError.message} />;
+
   return (
     <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
-      {roomError && <Alert tone="error">{roomError.message}</Alert>}
       <RoomTopActions isProfessor={isProfessor} roomId={roomId} />
       <SearchField label="Pesquisar problema" value={query} onChange={setQuery} className="mt-2" />
       {isLoading ? (

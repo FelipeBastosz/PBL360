@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
+import { ApiError } from '@/services/apiError';
 import { roomService } from '@/services/room.service';
 import { problemService } from '@/services/problem.service';
 import type { UserResponse } from '@/types/auth';
@@ -149,6 +150,22 @@ describe('RoomProblemsPage', () => {
       ).toBeInTheDocument();
 
       expect(screen.queryByRole('button', { name: /ações de problema/i })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('when the room cannot be opened', () => {
+    it('shows only the access notice and a way back to the rooms', async () => {
+      vi.mocked(roomService.getById).mockRejectedValue(
+        new ApiError(403, ['Acesso negado para o seu perfil de usuário.']),
+      );
+      renderComponent(mockStudent);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Acesso negado para o seu perfil de usuário.',
+      );
+      expect(screen.getByRole('link', { name: 'Ver minhas turmas' })).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('Pesquisar problema')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Nenhum problema disponível/)).not.toBeInTheDocument();
     });
   });
 });
