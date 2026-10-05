@@ -92,6 +92,7 @@ describe('Roll call (e2e)', () => {
   });
 
   afterAll(async () => {
+    await cleanDatabase(dataSource);
     await app.close();
   });
 

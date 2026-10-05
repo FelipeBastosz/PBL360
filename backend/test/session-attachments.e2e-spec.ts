@@ -56,6 +56,7 @@ describe('Session attachments (e2e)', () => {
   });
 
   afterAll(async () => {
+    await cleanDatabase(dataSource);
     await app.close();
   });
 
