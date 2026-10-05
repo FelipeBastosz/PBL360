@@ -20,12 +20,12 @@ function CriterionRow({
       </div>
       <div className="mt-1 flex items-center justify-between">
         <span className="text-xs text-muted">{item.descricao || 'Sem descrição'}</span>
-        <div className="flex items-center gap-2">
+        <div className="-mr-2 flex items-center">
           <button
             type="button"
             onClick={onEdit}
             aria-label={`Editar critério ${item.nome}`}
-            className="text-brand-900 hover:opacity-80"
+            className="inline-flex size-11 items-center justify-center rounded-full transition-[background-color,scale] duration-200 active:scale-90 focus-visible:outline-2 text-brand-900 hover:bg-brand-50 focus-visible:outline-brand-900"
           >
             <PencilIcon className="size-5" />
           </button>
@@ -33,7 +33,7 @@ function CriterionRow({
             type="button"
             onClick={onDelete}
             aria-label={`Excluir critério ${item.nome}`}
-            className="text-danger hover:opacity-80"
+            className="inline-flex size-11 items-center justify-center rounded-full transition-[background-color,scale] duration-200 active:scale-90 focus-visible:outline-2 text-danger hover:bg-danger-soft focus-visible:outline-danger"
           >
             <TrashIcon className="size-5" />
           </button>
