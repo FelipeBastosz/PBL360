@@ -33,6 +33,17 @@ export const studentUser: UserResponse = {
   criadoEm: '2026-09-01T10:00:00.000Z',
 };
 
+export const tutorUser: UserResponse = {
+  id: 'c8b7f4d3-1d2e-5c9f-0a7b-2b3c4d5e6f7a',
+  nome: 'Carlos Oliveira',
+  email: 'carlos@uefs.br',
+  tipo: 'PROFESSOR',
+  matricula: null,
+  possuiFoto: false,
+  ativo: true,
+  criadoEm: '2026-09-01T10:00:00.000Z',
+};
+
 export function sessionFor(usuario: UserResponse, expiresInMs = 60 * 60 * 1000): SessionResponse {
   return {
     token: 'jwt-token',

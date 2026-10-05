@@ -18,7 +18,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-dvh bg-surface">
-      <header className="flex h-20 items-center justify-between px-6 bg-card shadow-sm lg:px-10">
+      <header className="flex h-20 items-center justify-between bg-card px-6 shadow-sm lg:px-10">
         <BrandHeader />
         <Button variant="link" onClick={handleLogout} className="gap-1">
           <ArrowRightStartOnRectangleIcon className="size-5" aria-hidden />
@@ -40,8 +40,13 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mt-4 sm:max-w-xs">
-          <Button onClick={() => navigate(ROUTES.rooms)}>Ver minhas turmas</Button>
+        <div className="mt-4 flex flex-wrap gap-4">
+          <Button onClick={() => navigate(ROUTES.rooms)}>Ver Minhas Turmas</Button>
+          {user?.tipo === 'PROFESSOR' && (
+            <Button variant="outline" onClick={() => navigate(ROUTES.performanceTables)}>
+              Ver Minhas Fórmulas
+            </Button>
+          )}
         </div>
       </main>
     </div>

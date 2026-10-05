@@ -7,8 +7,9 @@ export type Criterion = {
 };
 
 export type CriterionInput = {
+  id?: string;
   nome: string;
-  descricao?: string;
+  descricao?: string | null;
   peso: number;
   ordem: number;
 };
@@ -40,6 +41,10 @@ export type CreatePerformanceTablePayload = {
   criterios: CriterionInput[];
 };
 
-export type UpdatePerformanceTablePayload = Partial<CreatePerformanceTablePayload>;
+export type UpdatePerformanceTablePayload = {
+  nome: string;
+  descricao?: string | null;
+  criterios: CriterionInput[];
+};
 
 export const CRITERION_MAX_SCORE = 10;

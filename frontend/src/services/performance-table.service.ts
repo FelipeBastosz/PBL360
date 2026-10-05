@@ -25,7 +25,7 @@ const httpPerformanceTableService: PerformanceTableService = {
   create: (payload) => api.post<PerformanceTable>(BASE, payload).then((r) => r.data),
 
   update: (tableId, payload) =>
-    api.patch<PerformanceTable>(`${BASE}/${tableId}`, payload).then((r) => r.data),
+    api.put<PerformanceTable>(`${BASE}/${tableId}`, payload).then((r) => r.data),
 
   remove: (tableId) => api.delete<void>(`${BASE}/${tableId}`).then(() => undefined),
 };
