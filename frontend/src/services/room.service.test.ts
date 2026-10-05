@@ -78,6 +78,14 @@ describe('roomService', () => {
     expect(sentRequest(adapter).data).toBeUndefined();
   });
 
+  it('lists the tutors of a room', async () => {
+    const tutors = [{ id: 'tutor-1', nome: 'Ana', email: 'ana@uefs.br', responsavel: true }];
+    const adapter = respondWith(tutors);
+
+    await expect(roomService.listTutors('room-1')).resolves.toEqual(tutors);
+    expect(sentRequest(adapter)).toMatchObject({ method: 'get', url: '/salas/room-1/professores' });
+  });
+
   it('links and unlinks tutors', async () => {
     const adapter = respondWith({ mensagem: 'ok' });
 

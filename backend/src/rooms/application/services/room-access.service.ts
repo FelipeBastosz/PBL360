@@ -2,6 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
 import type { Room } from '../../domain/entities/room.entity';
+import { UserType } from '@/users/domain/enums/user-type.enum';
+
+export interface RoomMember {
+  id: string;
+  type: UserType;
+}
 
 @Injectable()
 export class RoomAccessService {
@@ -11,11 +17,7 @@ export class RoomAccessService {
   ) {}
 
   async assertTutorCanAccessRoom(roomId: string, tutorId: string): Promise<Room> {
-    const room = await this.roomRepository.findById(roomId);
-
-    if (!room || room.isDeleted()) {
-      throw new NotFoundError('Sala não encontrada.');
-    }
+    const room = await this.findActiveRoom(roomId);
 
     if (room.tutorId === tutorId) {
       return room;
@@ -30,15 +32,35 @@ export class RoomAccessService {
     return room;
   }
 
+  async assertMemberCanAccessRoom(roomId: string, member: RoomMember): Promise<Room> {
+    if (member.type === UserType.TUTOR) {
+      return this.assertTutorCanAccessRoom(roomId, member.id);
+    }
+
+    const room = await this.findActiveRoom(roomId);
+
+    if (!(await this.roomRepository.hasStudent(roomId, member.id))) {
+      throw new ForbiddenError('Você não participa desta sala.');
+    }
+
+    return room;
+  }
+
   async assertTutorIsRoomOwner(roomId: string, tutorId: string): Promise<Room> {
+    const room = await this.findActiveRoom(roomId);
+
+    if (room.tutorId !== tutorId) {
+      throw new ForbiddenError('Apenas o professor responsável pode realizar esta ação.');
+    }
+
+    return room;
+  }
+
+  private async findActiveRoom(roomId: string): Promise<Room> {
     const room = await this.roomRepository.findById(roomId);
 
     if (!room || room.isDeleted()) {
       throw new NotFoundError('Sala não encontrada.');
-    }
-
-    if (room.tutorId !== tutorId) {
-      throw new ForbiddenError('Apenas o professor responsável pode realizar esta ação.');
     }
 
     return room;

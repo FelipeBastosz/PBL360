@@ -17,6 +17,8 @@ const ResetPasswordPage = lazy(() => import('@/pages/password-reset/ResetPasswor
 const ResetPasswordSuccessPage = lazy(
   () => import('@/pages/password-reset/ResetPasswordSuccessPage'),
 );
+const RollCallPage = lazy(() => import('@/pages/roll-call/RollCallPage'));
+const MemberSessionPage = lazy(() => import('@/pages/sessions/MemberSessionPage'));
 const NotFoundPage = lazy(() => import('@/pages/not-found/NotFoundPage'));
 const HomePage = lazy(() => import('@/pages/home/HomePage'));
 const RoomsPage = lazy(() => import('@/pages/rooms/RoomsPage'));
@@ -26,6 +28,24 @@ const ManageRoomsPage = lazy(() => import('@/pages/rooms/ManageRoomsPage'));
 const EditRoomPage = lazy(() => import('@/pages/rooms/EditRoomPage'));
 const RoomProblemsPage = lazy(() => import('@/pages/problems/RoomProblemsPage'));
 const ManageProblemsPage = lazy(() => import('@/pages/problems/ManageProblemsPage'));
+const PerformanceTablesPage = lazy(
+  () => import('@/pages/performance-tables/PerformanceTablesPage'),
+);
+const CreatePerformanceTablePage = lazy(
+  () => import('@/pages/performance-tables/CreatePerformanceTablePage'),
+);
+const PerformanceTableDetailPage = lazy(
+  () => import('@/pages/performance-tables/PerformanceTableDetailPage'),
+);
+const ManagePerformanceTablesPage = lazy(
+  () => import('@/pages/performance-tables/ManagePerformanceTablesPage'),
+);
+const EditPerformanceTablePage = lazy(
+  () => import('@/pages/performance-tables/EditPerformanceTablePage'),
+);
+const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
+const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
+const SessionHubPage = lazy(() => import('@/pages/sessions/SessionHubPage'));
 
 export function AppRoutes() {
   return (
@@ -52,6 +72,17 @@ export function AppRoutes() {
           <Route path={ROUTES.editRoom} element={<EditRoomPage />} />
           <Route path={ROUTES.roomProblems} element={<RoomProblemsPage />} />
           <Route path={ROUTES.manageProblems} element={<ManageProblemsPage />} />
+          <Route path={ROUTES.performanceTables} element={<PerformanceTablesPage />} />
+          <Route path={ROUTES.createPerformanceTable} element={<CreatePerformanceTablePage />} />
+          <Route path={ROUTES.performanceTableDetail} element={<PerformanceTableDetailPage />} />
+          <Route path={ROUTES.managePerformanceTables} element={<ManagePerformanceTablesPage />} />
+          <Route path={ROUTES.editPerformanceTable} element={<EditPerformanceTablePage />} />
+          <Route path={ROUTES.problemSessions} element={<ProblemSessionsPage />} />
+          <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />
+          <Route path={ROUTES.sessionHub} element={<SessionHubPage />} />
+          <Route path={ROUTES.rollCall} element={<RollCallPage />} />
+          <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
+          <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

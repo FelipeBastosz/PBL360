@@ -1,53 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MagnifyingGlassIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { HorizontalLogo } from '@/components/ui/HorizontalLogo';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/Button';
+import { SearchField } from '@/components/ui/SearchField';
+import { CARD_CLASS, CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
-import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { roomService } from '@/services/room.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
+import { countLabel } from '@/utils/countLabel';
 import { DeleteRoomModal } from './DeleteRoomModal';
 import { Link } from 'react-router-dom';
-
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
-
-function ManageRoomsHeader() {
-  const { user } = useAuth();
-  return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4">
-      <HorizontalLogo />
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(user?.nome)}
-      </div>
-    </header>
-  );
-}
-
-function ManageRoomsSearch({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
-  return (
-    <div className="relative mt-4 px-4">
-      <input
-        type="text"
-        placeholder="Pesquisar turma"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="h-12 w-full rounded-[10px] border border-black/10 bg-white pl-10 pr-4 text-ink placeholder:text-placeholder focus:border-brand-900 focus:outline-none"
-      />
-      <MagnifyingGlassIcon className="pointer-events-none absolute left-7 top-3.5 size-5 text-placeholder" />
-    </div>
-  );
-}
 
 function ManageRoomCard({
   room,
@@ -57,12 +24,14 @@ function ManageRoomCard({
   onDeleteRequest: (room: Room) => void;
 }) {
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm">
-      <div className="h-1.5 w-full bg-brand-900" />
+    <div className={CARD_CLASS}>
+      <div className="h-1 w-full bg-brand-900" />
       <div className="flex flex-col gap-3 p-4">
         <h3 className="line-clamp-2 text-base font-bold text-brand-900">{room.nome}</h3>
         <div className="mt-1 flex items-center justify-between">
-          <span className="text-sm text-muted">0 alunos</span>
+          <span className="text-sm text-muted">
+            {countLabel(room.totalAlunos ?? 0, 'aluno', 'alunos')}
+          </span>
           <div className="flex items-center gap-3">
             <Link
               to={ROUTES.editRoom.replace(':id', room.id)}
@@ -116,7 +85,7 @@ function ManageRoomsContent({ isLoading, rooms, error, onDeleteRequest }: Manage
   }
 
   return (
-    <main className="mx-auto mt-6 w-full max-w-md px-4">
+    <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6')}>
       <h2 className="text-xs font-bold uppercase tracking-widest text-muted">
         Minhas turmas · {rooms.length}
       </h2>
@@ -125,7 +94,7 @@ function ManageRoomsContent({ isLoading, rooms, error, onDeleteRequest }: Manage
           {error.message}
         </Alert>
       )}
-      <div className="mt-4 flex flex-col gap-4">
+      <div className={cn(CARD_GRID_CLASS, 'mt-4')}>
         {rooms.map((room) => (
           <ManageRoomCard key={room.id} room={room} onDeleteRequest={onDeleteRequest} />
         ))}
@@ -162,8 +131,10 @@ export default function ManageRoomsPage() {
 
   return (
     <div className="min-h-dvh bg-surface pb-36">
-      <ManageRoomsHeader />
-      <ManageRoomsSearch query={query} setQuery={setQuery} />
+      <AppHeader />
+      <div className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
+        <SearchField label="Pesquisar turma" value={query} onChange={setQuery} />
+      </div>
       <ManageRoomsContent
         isLoading={isLoading}
         rooms={filteredRooms}
