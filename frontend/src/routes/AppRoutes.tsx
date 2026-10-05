@@ -26,6 +26,21 @@ const ManageRoomsPage = lazy(() => import('@/pages/rooms/ManageRoomsPage'));
 const EditRoomPage = lazy(() => import('@/pages/rooms/EditRoomPage'));
 const RoomProblemsPage = lazy(() => import('@/pages/problems/RoomProblemsPage'));
 const ManageProblemsPage = lazy(() => import('@/pages/problems/ManageProblemsPage'));
+const PerformanceTablesPage = lazy(
+  () => import('@/pages/performance-tables/PerformanceTablesPage'),
+);
+const CreatePerformanceTablePage = lazy(
+  () => import('@/pages/performance-tables/CreatePerformanceTablePage'),
+);
+const PerformanceTableDetailPage = lazy(
+  () => import('@/pages/performance-tables/PerformanceTableDetailPage'),
+);
+const ManagePerformanceTablesPage = lazy(
+  () => import('@/pages/performance-tables/ManagePerformanceTablesPage'),
+);
+const EditPerformanceTablePage = lazy(
+  () => import('@/pages/performance-tables/EditPerformanceTablePage'),
+);
 
 export function AppRoutes() {
   return (
@@ -52,6 +67,11 @@ export function AppRoutes() {
           <Route path={ROUTES.editRoom} element={<EditRoomPage />} />
           <Route path={ROUTES.roomProblems} element={<RoomProblemsPage />} />
           <Route path={ROUTES.manageProblems} element={<ManageProblemsPage />} />
+          <Route path={ROUTES.performanceTables} element={<PerformanceTablesPage />} />
+          <Route path={ROUTES.createPerformanceTable} element={<CreatePerformanceTablePage />} />
+          <Route path={ROUTES.performanceTableDetail} element={<PerformanceTableDetailPage />} />
+          <Route path={ROUTES.managePerformanceTables} element={<ManagePerformanceTablesPage />} />
+          <Route path={ROUTES.editPerformanceTable} element={<EditPerformanceTablePage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

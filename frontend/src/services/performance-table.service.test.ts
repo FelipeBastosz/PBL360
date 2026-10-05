@@ -84,11 +84,11 @@ describe('performanceTableService', () => {
   it('updates a table', async () => {
     const adapter = respondWith(table);
 
-    await performanceTableService.update('table-1', { nome: 'Novo nome' });
+    await performanceTableService.update('table-1', { nome: 'Novo nome', criterios: [] });
 
     const config = adapter.mock.calls[0]![0];
-    expect(config).toMatchObject({ method: 'patch', url: '/tabelas-desempenho/table-1' });
-    expect(JSON.parse(config.data as string)).toEqual({ nome: 'Novo nome' });
+    expect(config).toMatchObject({ method: 'put', url: '/tabelas-desempenho/table-1' });
+    expect(JSON.parse(config.data as string)).toEqual({ nome: 'Novo nome', criterios: [] });
   });
 
   it('removes a table', async () => {
@@ -124,7 +124,10 @@ describe('mockPerformanceTableService', () => {
     expect(created.criterios).toHaveLength(1);
     expect(await service.list()).toHaveLength(3);
 
-    const updated = await service.update(created.id, { nome: 'Renomeada' });
+    const updated = await service.update(created.id, {
+      nome: 'Renomeada',
+      criterios: created.criterios,
+    });
     expect(updated.nome).toBe('Renomeada');
     expect(updated.criterios).toEqual(created.criterios);
 

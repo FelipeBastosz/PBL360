@@ -19,4 +19,9 @@ export const ROUTES = {
   problemDetail: '/turmas/:roomId/problemas/:problemId',
   manageProblems: '/turmas/:id/problemas/gerenciar',
   editProblem: '/turmas/:roomId/problemas/:problemId/editar',
+  performanceTables: '/formulas',
+  createPerformanceTable: '/formulas/nova',
+  performanceTableDetail: '/formulas/:id',
+  managePerformanceTables: '/formulas/gerenciar',
+  editPerformanceTable: '/formulas/:id/editar',
 } as const;
