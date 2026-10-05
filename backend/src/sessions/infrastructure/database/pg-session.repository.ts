@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
+import { ConflictError } from '@/shared/errors/application.error';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { Session } from '../../domain/entities/session.entity';
 import type {
@@ -66,8 +67,17 @@ export class PgSessionRepository implements SessionRepository {
     return rows.map((row) => this.toEntity(row));
   }
 
-  getDeletionImpact(_sessionId: string): Promise<SessionDeletionImpact> {
-    return Promise.resolve({ chamada: 0, papeis: 0, observacoes: 0, avaliacoes: 0, feedbacks: 0 });
+  async getDeletionImpact(sessionId: string): Promise<SessionDeletionImpact> {
+    const evaluations = await this.countEvaluations(this.sessions.manager, sessionId);
+    return { chamada: 0, papeis: 0, observacoes: 0, avaliacoes: evaluations, feedbacks: 0 };
+  }
+
+  private async countEvaluations(manager: EntityManager, sessionId: string): Promise<number> {
+    const [row] = await manager.query<{ count: string }[]>(
+      'SELECT COUNT(*) AS count FROM evaluations WHERE session_id = $1;',
+      [sessionId],
+    );
+    return Number(row?.count ?? 0);
   }
 
   async delete(id: string, problemId: string): Promise<void> {
@@ -79,6 +89,9 @@ export class PgSessionRepository implements SessionRepository {
       );
       const target = firstRowOrNull(targetRows);
       if (!target) return;
+      if (await this.countEvaluations(manager, id)) {
+        throw new ConflictError('A sessão possui avaliações e não pode ser excluída.');
+      }
       await manager.query(`DELETE FROM sessions WHERE id = $1;`, [id]);
       await this.decrementFollowingOrders(manager, problemId, Number(target.orderIndex));
     });

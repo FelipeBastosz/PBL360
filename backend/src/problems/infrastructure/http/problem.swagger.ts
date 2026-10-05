@@ -103,11 +103,15 @@ export const GetProblemSwaggerDocs = applyDecorators(
 export const UpdateProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
-    summary: 'Atualiza título de um problema',
+    summary: 'Atualiza o título e a tabela de um problema',
     description:
-      'Permite que o professor atualize o título de um problema existente na sala. Apenas o campo "title" é editável.',
+      'Preserva o campo obrigatório title e permite vincular uma tabela própria com tabelaId. Omitir tabelaId preserva o vínculo; null remove. Após a primeira avaliação, inclusive rascunho, trocar ou remover a tabela retorna 409.',
   }),
   ApiOkResponse({ description: 'Problema atualizado com sucesso.' }),
+  ApiConflictResponse({
+    description: 'O problema já possui avaliações; o vínculo com a tabela não pode mudar.',
+    type: ErrorResponseDto,
+  }),
   ApiBadRequestResponse({
     description: 'Dados inválidos ou erro de validação.',
     type: ErrorResponseDto,
