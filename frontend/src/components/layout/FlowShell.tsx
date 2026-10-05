@@ -26,7 +26,7 @@ export function FlowShell({
         <Link
           to={backTo}
           aria-label={backLabel}
-          className="-ml-2 rounded-full p-2 transition-[background-color,transform] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
+          className="-ml-2 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
         >
           <ChevronLeftIcon className="size-7" aria-hidden />
         </Link>

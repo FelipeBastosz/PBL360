@@ -1,0 +1,29 @@
+import { Inject, Injectable } from '@nestjs/common';
+import type { RoomMember } from '@/rooms/application/services/room-access.service';
+import { NotFoundError } from '@/shared/errors/application.error';
+import {
+  SESSION_ATTACHMENT_REPOSITORY,
+  type SessionAttachmentFile,
+  type SessionAttachmentRepository,
+} from '../../domain/repositories/session-attachment.repository';
+import { SessionAccessService } from '../services/session-access.service';
+
+@Injectable()
+export class DownloadSessionAttachmentUseCase {
+  constructor(
+    private readonly access: SessionAccessService,
+    @Inject(SESSION_ATTACHMENT_REPOSITORY)
+    private readonly attachments: SessionAttachmentRepository,
+  ) {}
+
+  async execute(
+    sessionId: string,
+    attachmentId: string,
+    member: RoomMember,
+  ): Promise<SessionAttachmentFile> {
+    await this.access.assertMemberCanAccessSession(sessionId, member);
+    const file = await this.attachments.findFile(sessionId, attachmentId);
+    if (!file) throw new NotFoundError('Anexo não encontrado.');
+    return file;
+  }
+}

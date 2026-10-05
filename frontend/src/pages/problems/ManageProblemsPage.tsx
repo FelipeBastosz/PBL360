@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { CARD_CLASS, CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
@@ -24,7 +26,7 @@ function ManageProblemCard({
   onDelete: (p: Problem) => void;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
+    <div className={cn(CARD_CLASS, 'flex-row items-center justify-between gap-3 p-4')}>
       <h3 className="font-bold text-ink">{problem.titulo}</h3>
       <div className="flex items-center gap-3">
         <button
@@ -77,7 +79,7 @@ function ManageProblemsContent({ isLoading, problems, onEdit, onDelete }: Conten
     );
   }
   return (
-    <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-3 px-4">
+    <main className={cn(PAGE_CONTAINER_CLASS, CARD_GRID_CLASS, 'mt-6')}>
       {problems.map((p) => (
         <ManageProblemCard key={p.id} problem={p} onEdit={onEdit} onDelete={onDelete} />
       ))}
@@ -235,7 +237,7 @@ export default function ManageProblemsPage() {
 
   return (
     <div className="min-h-dvh bg-surface pb-36">
-      <RoomProblemsHeader room={state.room} userNome={user?.nome} />
+      <RoomProblemsHeader room={state.room} user={user} />
       <ManageProblemsContent
         isLoading={state.isLoading}
         problems={state.problems}

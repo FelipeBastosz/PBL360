@@ -15,7 +15,7 @@ vi.mock('@/services/problem.service', () => ({
 }));
 
 vi.mock('@/services/session.service', () => ({
-  sessionService: { getById: vi.fn() },
+  sessionService: { getById: vi.fn(), listAttachments: vi.fn().mockResolvedValue([]) },
 }));
 
 vi.mock('@/hooks/useToast', () => ({

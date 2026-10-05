@@ -14,12 +14,12 @@ export function ManageSessionCard({ session, onEdit, onDelete }: CardProps) {
         <h3 className="font-bold text-ink">{session.titulo}</h3>
         <p className="text-xs text-muted">{session.data}</p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="-mr-2 flex items-center">
         <button
           type="button"
           onClick={() => onEdit(session)}
           aria-label={`Editar ${session.titulo}`}
-          className="p-1 text-ink/70 hover:text-brand-900 focus-visible:outline-2"
+          className="inline-flex size-11 items-center justify-center rounded-full transition-[background-color,scale] duration-200 active:scale-90 focus-visible:outline-2 text-ink/70 hover:bg-black/5 hover:text-brand-900 focus-visible:outline-brand-900"
         >
           <PencilIcon className="size-5" />
         </button>
@@ -27,7 +27,7 @@ export function ManageSessionCard({ session, onEdit, onDelete }: CardProps) {
           type="button"
           onClick={() => onDelete(session)}
           aria-label={`Excluir ${session.titulo}`}
-          className="p-1 text-danger hover:text-danger/80 focus-visible:outline-2 focus-visible:outline-danger"
+          className="inline-flex size-11 items-center justify-center rounded-full transition-[background-color,scale] duration-200 active:scale-90 focus-visible:outline-2 text-danger hover:bg-danger-soft focus-visible:outline-danger"
         >
           <TrashIcon className="size-5" />
         </button>

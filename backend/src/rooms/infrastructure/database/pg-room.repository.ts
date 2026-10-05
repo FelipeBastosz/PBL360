@@ -9,6 +9,7 @@ import { Room } from '../../domain/entities/room.entity';
 import { RoomCodeInUseError } from '../../domain/errors/room-code-in-use.error';
 import { ROOM_COLUMNS, type RoomRow } from './room-row';
 import { addRoomTutor, hasRoomTutor, removeRoomTutor } from './room-tutor-queries';
+import { hasRoomStudent } from './room-student-queries';
 import type {
   RoomRepository,
   RoomTutor,
@@ -169,6 +170,10 @@ export class PgRoomRepository implements RoomRepository {
 
   async hasTutor(roomId: string, tutorId: string): Promise<boolean> {
     return hasRoomTutor(this.rooms, roomId, tutorId);
+  }
+
+  hasStudent(roomId: string, studentId: string): Promise<boolean> {
+    return hasRoomStudent(this.rooms, roomId, studentId);
   }
 
   listTutors(roomId: string): Promise<RoomTutor[]> {

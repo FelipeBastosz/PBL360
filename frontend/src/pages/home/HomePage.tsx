@@ -26,9 +26,12 @@ export default function HomePage() {
         </Button>
       </header>
 
-      <main className="mx-auto flex max-w-3xl flex-col gap-4 px-6 py-10">
+      <main className="stagger-in mx-auto flex max-w-3xl flex-col gap-4 px-6 py-10">
         <div className="flex items-center gap-5">
-          <UserAvatar user={user} className="size-20 text-2xl" />
+          <UserAvatar
+            user={user}
+            className="size-20 text-2xl ring-4 ring-brand-100 animate-pop-in [animation-delay:150ms]"
+          />
           <div className="flex min-w-0 flex-col gap-2">
             <h1 className="text-[1.75rem] font-semibold text-ink">Olá, {user?.nome}!</h1>
             <p className="text-brand-300">

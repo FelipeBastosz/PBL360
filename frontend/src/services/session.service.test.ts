@@ -1,4 +1,4 @@
-import type { AxiosAdapter, AxiosResponse } from 'axios';
+import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api } from './api';
 import { sessionService } from './session.service';
@@ -12,6 +12,9 @@ function respondWith(data: unknown, status = 200) {
   api.defaults.adapter = adapter;
   return adapter;
 }
+
+const sent = (adapter: ReturnType<typeof respondWith>): InternalAxiosRequestConfig =>
+  adapter.mock.calls[0][0];
 
 afterEach(() => {
   api.defaults.adapter = originalAdapter;
@@ -98,5 +101,66 @@ describe('sessionService', () => {
       method: 'delete',
       url: '/salas/room-1/problemas/prob-1/sessoes/sess-1',
     });
+  });
+
+  it('reads the roll call of a session', async () => {
+    const adapter = respondWith({ sessaoId: 's1' });
+
+    await expect(sessionService.getRollCall('s1')).resolves.toEqual({ sessaoId: 's1' });
+    expect(sent(adapter)).toMatchObject({ method: 'get', url: '/sessoes/s1/chamada' });
+  });
+
+  it('saves the roll call as a batch of records', async () => {
+    const adapter = respondWith({ sessaoId: 's1', origem: 'REGISTRADA' });
+    const registros = [
+      { alunoId: 'a1', status: 'PRESENTE' as const, lugar: 1, justificativa: null },
+    ];
+
+    await sessionService.saveRollCall('s1', registros);
+
+    expect(sent(adapter)).toMatchObject({ method: 'put', url: '/sessoes/s1/chamada' });
+    expect(JSON.parse(sent(adapter).data as string)).toEqual({ registros });
+  });
+
+  it('lists and assigns session roles', async () => {
+    const adapter = respondWith([]);
+    await sessionService.listRoles('s1');
+    expect(sent(adapter)).toMatchObject({ method: 'get', url: '/sessoes/s1/papeis' });
+
+    const assign = respondWith({ alunoId: 'a1', papel: 'COORDENADOR', notaAdicional: 0.5 });
+    const payload = { papel: 'COORDENADOR' as const, notaAdicional: 0.5, transferir: true };
+    await sessionService.assignRole('s1', 'a1', payload);
+    expect(sent(assign)).toMatchObject({ method: 'put', url: '/sessoes/s1/papeis/a1' });
+    expect(JSON.parse(sent(assign).data as string)).toEqual(payload);
+  });
+
+  it('reads a session and the sessions of a room as a member', async () => {
+    const adapter = respondWith({});
+    await sessionService.getForMember('s1');
+    expect(sent(adapter)).toMatchObject({ method: 'get', url: '/sessoes/s1' });
+
+    const rooms = respondWith([]);
+    await sessionService.listForRoom('r1');
+    expect(sent(rooms)).toMatchObject({ method: 'get', url: '/salas/r1/sessoes' });
+  });
+
+  it('uploads a PDF as multipart form data in the arquivo field', async () => {
+    const adapter = respondWith({ id: 'a1' }, 201);
+    const file = new File(['%PDF-1.7'], 'Relatório.pdf', { type: 'application/pdf' });
+
+    await sessionService.uploadAttachment('s1', file);
+
+    expect(sent(adapter)).toMatchObject({ method: 'post', url: '/sessoes/s1/anexos' });
+    expect((sent(adapter).data as FormData).get('arquivo')).toBeInstanceOf(File);
+  });
+
+  it('lists and downloads attachments', async () => {
+    const list = respondWith([]);
+    await sessionService.listAttachments('s1');
+    expect(sent(list)).toMatchObject({ method: 'get', url: '/sessoes/s1/anexos' });
+
+    const download = respondWith(new Blob(['%PDF']));
+    await sessionService.downloadAttachment('s1', 'a1');
+    expect(sent(download)).toMatchObject({ url: '/sessoes/s1/anexos/a1', responseType: 'blob' });
   });
 });

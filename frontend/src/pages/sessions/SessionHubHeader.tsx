@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import type { UserResponse } from '@/types/auth';
 import type { Problem } from '@/types/problem';
 import type { Session } from '@/types/session';
 
@@ -12,23 +14,15 @@ function formatSessionDate(dateString?: string) {
   return `${dayStr} ${monthStr}`;
 }
 
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
-
 type HeaderProps = {
   session: Session | null;
   problem: Problem | null;
   userNome?: string;
+  user?: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
   backUrl: string;
 };
 
-export function SessionHubHeader({ session, problem, userNome, backUrl }: HeaderProps) {
+export function SessionHubHeader({ session, problem, userNome, user, backUrl }: HeaderProps) {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
       <div className="flex items-center gap-3">
@@ -46,9 +40,10 @@ export function SessionHubHeader({ session, problem, userNome, backUrl }: Header
           <span className="text-xs text-white/70">{problem?.titulo || 'Problema'}</span>
         </div>
       </div>
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(userNome)}
-      </div>
+      <UserAvatar
+        user={user ?? { id: '', nome: userNome ?? '', possuiFoto: false }}
+        className="ring-2 ring-white/20"
+      />
     </header>
   );
 }

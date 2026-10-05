@@ -4,7 +4,7 @@ export function ProblemTopActions({ isProfessor }: { isProfessor: boolean }) {
   if (!isProfessor) return null;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="grid gap-3 sm:grid-cols-2">
       <button
         type="button"
         onClick={() => {}}

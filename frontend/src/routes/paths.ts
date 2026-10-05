@@ -27,4 +27,7 @@ export const ROUTES = {
   problemSessions: '/turmas/:roomId/problemas/:problemId',
   manageSessions: '/turmas/:roomId/problemas/:problemId/sessoes/gerenciar',
   sessionHub: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId',
+  rollCall: '/sessoes/:sessaoId/chamada',
+  memberSession: '/sessoes/:sessaoId',
+  sessionRollCall: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/chamada',
 } as const;

@@ -31,7 +31,7 @@ function ModalDialog({
       role="dialog"
       aria-modal="true"
       aria-labelledby="problem-form-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in"
     >
       <div className="relative w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl animate-pop-in">
         <button

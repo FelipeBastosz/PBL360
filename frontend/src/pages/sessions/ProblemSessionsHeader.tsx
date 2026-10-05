@@ -1,16 +1,9 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import type { UserResponse } from '@/types/auth';
 import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
-
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
 
 function parseRoomTurma(fullName?: string) {
   if (!fullName) return '';
@@ -22,10 +15,12 @@ export function ProblemSessionsHeader({
   room,
   problem,
   userNome,
+  user,
 }: {
   room: Room | null;
   problem: Problem | null;
   userNome?: string;
+  user?: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
 }) {
   const turma = parseRoomTurma(room?.nome);
 
@@ -44,9 +39,10 @@ export function ProblemSessionsHeader({
           {turma && <span className="text-xs text-white/70">{turma}</span>}
         </div>
       </div>
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(userNome)}
-      </div>
+      <UserAvatar
+        user={user ?? { id: '', nome: userNome ?? '', possuiFoto: false }}
+        className="ring-2 ring-white/20"
+      />
     </header>
   );
 }

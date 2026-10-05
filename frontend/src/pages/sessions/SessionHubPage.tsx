@@ -11,8 +11,11 @@ import type { Session } from '@/types/session';
 import { SessionHubHeader } from './SessionHubHeader';
 import { SessionActionGrid } from './SessionActionGrid';
 import { SessionEvaluationsCard } from './SessionEvaluationsCard';
+import { SessionAttachments } from './SessionAttachments';
 
-function SessionHubContent({ isLoading, basePath }: { isLoading: boolean; basePath: string }) {
+type SessionHubContentProps = { isLoading: boolean; basePath: string; sessionId: string };
+
+function SessionHubContent({ isLoading, basePath, sessionId }: SessionHubContentProps) {
   if (isLoading) {
     return (
       <div className="mt-10 flex justify-center">
@@ -25,6 +28,7 @@ function SessionHubContent({ isLoading, basePath }: { isLoading: boolean; basePa
     <>
       <SessionActionGrid basePath={basePath} />
       <SessionEvaluationsCard />
+      <SessionAttachments sessionId={sessionId} canUpload />
       <div className="mt-4 flex flex-col gap-2">
         <Button
           type="button"
@@ -69,10 +73,11 @@ export default function SessionHubPage() {
         session={session}
         problem={problem}
         userNome={user?.nome}
+        user={user}
         backUrl={backUrl}
       />
       <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">
-        <SessionHubContent isLoading={isLoading} basePath={basePath} />
+        <SessionHubContent isLoading={isLoading} basePath={basePath} sessionId={sessionId ?? ''} />
       </main>
     </div>
   );

@@ -167,7 +167,12 @@ export default function ManageSessionsPage() {
 
   return (
     <div className="min-h-dvh bg-surface pb-36">
-      <ManageSessionsHeader problem={state.problem} userNome={user?.nome} backUrl={backUrl} />
+      <ManageSessionsHeader
+        problem={state.problem}
+        userNome={user?.nome}
+        user={user}
+        backUrl={backUrl}
+      />
       <ManageSessionsContent
         isLoading={state.isLoading}
         sessions={state.sessions}
