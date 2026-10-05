@@ -77,9 +77,12 @@ function RoomsFabMenu({ isStudent }: { isStudent: boolean }) {
       {isOpen && (
         <div className="flex animate-fade-up flex-col items-end gap-2">
           {isStudent ? (
-            <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
+            <Link
+              to={ROUTES.joinRoom}
+              className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+            >
               Entrar em uma turma
-            </button>
+            </Link>
           ) : (
             <>
               <Link

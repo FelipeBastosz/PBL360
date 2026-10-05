@@ -161,7 +161,7 @@ describe('RoomsPage', () => {
 
       expect(screen.getByRole('link', { name: 'Criar nova turma' })).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Editar uma turma' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Entrar em uma turma' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Entrar em uma turma' })).not.toBeInTheDocument();
     });
   });
 
@@ -181,9 +181,12 @@ describe('RoomsPage', () => {
       const fab = screen.getByRole('button', { name: /ações de turma/i });
       await userEvent.click(fab);
 
-      expect(screen.getByRole('button', { name: 'Entrar em uma turma' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Criar nova turma' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Editar uma turma' })).not.toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Entrar em uma turma' })).toHaveAttribute(
+        'href',
+        '/turmas/entrar',
+      );
+      expect(screen.queryByRole('link', { name: 'Criar nova turma' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Editar uma turma' })).not.toBeInTheDocument();
     });
 
     it('renders room cards for student when rooms exist', async () => {
