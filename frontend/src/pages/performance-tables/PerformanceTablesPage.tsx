@@ -62,15 +62,19 @@ function PerformanceTablesEmptyState() {
 
 function PerformanceTablesFabMenu({ onOpenCreateModal }: { onOpenCreateModal: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3">
       {isOpen && (
         <div className="flex animate-fade-up flex-col items-end gap-2">
-          <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
-            Ordenar fórmulas
-          </button>
-          <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              navigate(ROUTES.managePerformanceTables);
+            }}
+            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+          >
             Editar uma fórmula
           </button>
           <button

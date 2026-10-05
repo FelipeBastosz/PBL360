@@ -22,4 +22,6 @@ export const ROUTES = {
   performanceTables: '/formulas',
   createPerformanceTable: '/formulas/nova',
   performanceTableDetail: '/formulas/:id',
+  managePerformanceTables: '/formulas/gerenciar',
+  editPerformanceTable: '/formulas/:id/editar',
 } as const;

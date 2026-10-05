@@ -121,7 +121,6 @@ describe('PerformanceTablesPage', () => {
     await userEvent.click(fabButton);
     expect(screen.getByText('Criar nova fórmula')).toBeInTheDocument();
     expect(screen.getByText('Editar uma fórmula')).toBeInTheDocument();
-    expect(screen.getByText('Ordenar fórmulas')).toBeInTheDocument();
 
     await userEvent.click(fabButton);
     expect(screen.queryByText('Criar nova fórmula')).not.toBeInTheDocument();
