@@ -2,13 +2,13 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useAuth } from '@/hooks/useAuth';
 
-type RollCallHeaderProps = {
+type BackHeaderProps = {
   title: string;
   subtitle: string;
   onBack: () => void;
 };
 
-export function RollCallHeader({ title, subtitle, onBack }: RollCallHeaderProps) {
+export function BackHeader({ title, subtitle, onBack }: BackHeaderProps) {
   const { user } = useAuth();
 
   return (

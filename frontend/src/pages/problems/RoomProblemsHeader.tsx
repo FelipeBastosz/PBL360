@@ -6,7 +6,7 @@ import type { UserResponse } from '@/types/auth';
 import type { Room } from '@/types/room';
 
 type RoomProblemsHeaderProps = {
-  room: Room | null;
+  room: Pick<Room, 'nome'> | null;
   user: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
 };
 

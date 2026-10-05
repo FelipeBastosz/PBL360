@@ -6,7 +6,7 @@ import { useRollCall } from '@/hooks/useRollCall';
 import { useRollCallTitle } from '@/hooks/useRollCallTitle';
 import { ROUTES } from '@/routes/paths';
 import { LeaveDialog } from './LeaveDialog';
-import { RollCallHeader } from './RollCallHeader';
+import { BackHeader } from '@/components/layout/BackHeader';
 import { RollCallScreen } from './RollCallScreen';
 
 type RollCallLocationState = { titulo?: string; subtitulo?: string } | null;
@@ -35,11 +35,7 @@ export default function RollCallPage() {
 
   return (
     <div className="min-h-dvh bg-surface">
-      <RollCallHeader
-        title={heading.title}
-        subtitle={heading.subtitle}
-        onBack={guard.requestLeave}
-      />
+      <BackHeader title={heading.title} subtitle={heading.subtitle} onBack={guard.requestLeave} />
       {rollCall.error && (
         <div className="mx-auto mt-6 max-w-md px-4 animate-shake">
           <Alert tone="error">{rollCall.error.message}</Alert>

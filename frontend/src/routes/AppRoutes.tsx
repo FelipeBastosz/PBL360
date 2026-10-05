@@ -18,6 +18,7 @@ const ResetPasswordSuccessPage = lazy(
   () => import('@/pages/password-reset/ResetPasswordSuccessPage'),
 );
 const RollCallPage = lazy(() => import('@/pages/roll-call/RollCallPage'));
+const MemberSessionPage = lazy(() => import('@/pages/sessions/MemberSessionPage'));
 const NotFoundPage = lazy(() => import('@/pages/not-found/NotFoundPage'));
 const HomePage = lazy(() => import('@/pages/home/HomePage'));
 const RoomsPage = lazy(() => import('@/pages/rooms/RoomsPage'));
@@ -80,6 +81,7 @@ export function AppRoutes() {
           <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />
           <Route path={ROUTES.sessionHub} element={<SessionHubPage />} />
           <Route path={ROUTES.rollCall} element={<RollCallPage />} />
+          <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
           <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

@@ -19,6 +19,7 @@ import { ProblemFormModal } from './ProblemFormModal';
 import { ProblemCard } from './ProblemCard';
 import { RoomProblemsHeader } from './RoomProblemsHeader';
 import { RoomTopActions } from './RoomTopActions';
+import { StudentRoomSessions } from './StudentRoomSessions';
 import { RoomInviteSheet } from '../rooms/invite/RoomInviteSheet';
 
 function ProblemsFab({ roomId, onCreate }: { roomId: string; onCreate: () => void }) {
@@ -113,6 +114,13 @@ function useRoomWithProblems(id: string | undefined) {
 }
 
 export default function RoomProblemsPage() {
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  if (user?.tipo === 'ALUNO') return <StudentRoomSessions roomId={id ?? ''} />;
+  return <TutorRoomProblems />;
+}
+
+function TutorRoomProblems() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { notify } = useToast();
