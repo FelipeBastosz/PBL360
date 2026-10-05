@@ -38,6 +38,9 @@ const PerformanceTableDetailPage = lazy(
 const ManagePerformanceTablesPage = lazy(
   () => import('@/pages/performance-tables/ManagePerformanceTablesPage'),
 );
+const EditPerformanceTablePage = lazy(
+  () => import('@/pages/performance-tables/EditPerformanceTablePage'),
+);
 
 export function AppRoutes() {
   return (
@@ -68,6 +71,7 @@ export function AppRoutes() {
           <Route path={ROUTES.createPerformanceTable} element={<CreatePerformanceTablePage />} />
           <Route path={ROUTES.performanceTableDetail} element={<PerformanceTableDetailPage />} />
           <Route path={ROUTES.managePerformanceTables} element={<ManagePerformanceTablesPage />} />
+          <Route path={ROUTES.editPerformanceTable} element={<EditPerformanceTablePage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
