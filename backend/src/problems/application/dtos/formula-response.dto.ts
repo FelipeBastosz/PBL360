@@ -1,4 +1,4 @@
-import { FormulaScope } from '../../domain/entities/formula.entity';
+import type { FormulaScope } from '../../domain/entities/formula.entity';
 
 export class FormulaComponentResponseDto {
   tipo: string;

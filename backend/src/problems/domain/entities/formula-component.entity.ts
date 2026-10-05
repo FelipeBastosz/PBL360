@@ -1,10 +1,4 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Formula, FormulaScope } from './formula.entity';
 import { InvalidProblemError } from '../errors/invalid-problem.error';
 
@@ -47,34 +41,33 @@ export class FormulaComponent {
     if (this.weight < 0 || this.weight > 100) {
       throw new InvalidProblemError('O peso de um componente deve estar entre 0 e 100.');
     }
-
     if (scope === FormulaScope.SESSAO) {
-      if (this.type !== FormulaComponentType.CRITERIO) {
-        throw new InvalidProblemError(
-          'Fórmulas de sessão só podem conter componentes do tipo CRITERIO.',
-        );
-      }
-      if (!this.referenceId) {
-        throw new InvalidProblemError('Componentes do tipo CRITERIO exigem um critério de referência.');
-      }
+      this.assertSessionScope();
+    } else {
+      this.assertProblemScope();
     }
+  }
 
-    if (scope === FormulaScope.PROBLEMA) {
-      const validProblemTypes = [
-        FormulaComponentType.MEDIA_SESSOES,
-        FormulaComponentType.AUTOAVALIACAO,
-        FormulaComponentType.PARES,
-      ];
-      if (!validProblemTypes.includes(this.type as FormulaComponentType)) {
-        throw new InvalidProblemError(
-          'Componente inválido para a fórmula da nota final do problema.',
-        );
-      }
-      if (this.referenceId) {
-        throw new InvalidProblemError(
-          'Componentes da nota final do problema não utilizam referência de critério.',
-        );
-      }
+  private assertSessionScope(): void {
+    if (this.type !== FormulaComponentType.CRITERIO) {
+      throw new InvalidProblemError('Fórmulas de sessão só podem conter componentes do tipo CRITERIO.');
+    }
+    if (!this.referenceId) {
+      throw new InvalidProblemError('Componentes do tipo CRITERIO exigem um critério de referência.');
+    }
+  }
+
+  private assertProblemScope(): void {
+    const validProblemTypes = [
+      FormulaComponentType.MEDIA_SESSOES,
+      FormulaComponentType.AUTOAVALIACAO,
+      FormulaComponentType.PARES,
+    ];
+    if (!validProblemTypes.includes(this.type as FormulaComponentType)) {
+      throw new InvalidProblemError('Componente inválido para a fórmula da nota final do problema.');
+    }
+    if (this.referenceId) {
+      throw new InvalidProblemError('Componentes da nota final do problema não utilizam referência de critério.');
     }
   }
 }

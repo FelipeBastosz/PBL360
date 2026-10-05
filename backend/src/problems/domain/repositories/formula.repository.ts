@@ -1,4 +1,4 @@
-import { Formula, FormulaScope } from '../entities/formula.entity';
+import type { Formula, FormulaScope } from '../entities/formula.entity';
 
 export const FORMULA_REPOSITORY = Symbol('FORMULA_REPOSITORY');
 
