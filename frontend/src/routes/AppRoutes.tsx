@@ -41,6 +41,9 @@ const ManagePerformanceTablesPage = lazy(
 const EditPerformanceTablePage = lazy(
   () => import('@/pages/performance-tables/EditPerformanceTablePage'),
 );
+const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
+const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
+const SessionHubPage = lazy(() => import('@/pages/sessions/SessionHubPage'));
 
 export function AppRoutes() {
   return (
@@ -72,6 +75,9 @@ export function AppRoutes() {
           <Route path={ROUTES.performanceTableDetail} element={<PerformanceTableDetailPage />} />
           <Route path={ROUTES.managePerformanceTables} element={<ManagePerformanceTablesPage />} />
           <Route path={ROUTES.editPerformanceTable} element={<EditPerformanceTablePage />} />
+          <Route path={ROUTES.problemSessions} element={<ProblemSessionsPage />} />
+          <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />
+          <Route path={ROUTES.sessionHub} element={<SessionHubPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
