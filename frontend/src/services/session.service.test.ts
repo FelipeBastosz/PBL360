@@ -133,4 +133,34 @@ describe('sessionService', () => {
     expect(sent(assign)).toMatchObject({ method: 'put', url: '/sessoes/s1/papeis/a1' });
     expect(JSON.parse(sent(assign).data as string)).toEqual(payload);
   });
+
+  it('reads a session and the sessions of a room as a member', async () => {
+    const adapter = respondWith({});
+    await sessionService.getForMember('s1');
+    expect(sent(adapter)).toMatchObject({ method: 'get', url: '/sessoes/s1' });
+
+    const rooms = respondWith([]);
+    await sessionService.listForRoom('r1');
+    expect(sent(rooms)).toMatchObject({ method: 'get', url: '/salas/r1/sessoes' });
+  });
+
+  it('uploads a PDF as multipart form data in the arquivo field', async () => {
+    const adapter = respondWith({ id: 'a1' }, 201);
+    const file = new File(['%PDF-1.7'], 'Relatório.pdf', { type: 'application/pdf' });
+
+    await sessionService.uploadAttachment('s1', file);
+
+    expect(sent(adapter)).toMatchObject({ method: 'post', url: '/sessoes/s1/anexos' });
+    expect((sent(adapter).data as FormData).get('arquivo')).toBeInstanceOf(File);
+  });
+
+  it('lists and downloads attachments', async () => {
+    const list = respondWith([]);
+    await sessionService.listAttachments('s1');
+    expect(sent(list)).toMatchObject({ method: 'get', url: '/sessoes/s1/anexos' });
+
+    const download = respondWith(new Blob(['%PDF']));
+    await sessionService.downloadAttachment('s1', 'a1');
+    expect(sent(download)).toMatchObject({ url: '/sessoes/s1/anexos/a1', responseType: 'blob' });
+  });
 });

@@ -90,3 +90,28 @@ export type AssignedSessionRole = {
 export type RoleConflictResponse = {
   ocupadoPor?: { studentId: string; name: string };
 };
+
+export type SessionAttachment = {
+  id: string;
+  nomeArquivo: string;
+  tipo: string;
+  tamanho: number;
+  enviadoPor: { id: string; nome: string };
+  enviadoEm: string;
+};
+
+export type MemberSession = Session & {
+  problemaId: string;
+  salaId: string;
+  problemaTitulo: string;
+};
+
+export type RoomSession = {
+  id: string;
+  titulo: string;
+  data: string;
+  ordem: number;
+  status: string;
+  problemaId: string;
+  problemaTitulo: string;
+};
