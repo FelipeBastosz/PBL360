@@ -17,6 +17,8 @@ import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 
 import { ProblemDeletionImpactDto } from '../../application/dtos/problem-deletion-impact.dto';
 import { ProblemResponseDto } from '../../application/dtos/problem-response.dto';
+import { ProblemPerformanceTableResponseDto } from '../../application/dtos/problem-performance-table-response.dto';
+import { ApiUnprocessableEntityResponse } from '@nestjs/swagger';
 
 export const CreateProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
@@ -169,6 +171,44 @@ export const DeleteProblemSwaggerDocs = applyDecorators(
   }),
   ApiNotFoundResponse({
     description: 'Problema ou sala não encontrada.',
+    type: ErrorResponseDto,
+  }),
+);
+
+export const ChangeProblemPerformanceTableSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Vincula ou troca a tabela de desempenho do problema',
+    description:
+      'Permite que um professor vincule ou altere a tabela de desempenho usada num problema. ' +
+      'A tabela precisa pertencer a um professor da mesma sala.',
+  }),
+  ApiOkResponse({
+    description: 'Tabela de desempenho vinculada com sucesso.',
+    type: ProblemPerformanceTableResponseDto,
+  }),
+  ApiBadRequestResponse({
+    description: 'Dados inválidos ou erro de validação.',
+    type: ErrorResponseDto,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiForbiddenResponse({
+    description: 'Acesso negado. O professor não possui permissão nesta sala.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Problema ou sala não encontrada.',
+    type: ErrorResponseDto,
+  }),
+  ApiConflictResponse({
+    description: 'Problema já possui avaliações e não pode ter a tabela alterada.',
+    type: ErrorResponseDto,
+  }),
+  ApiUnprocessableEntityResponse({
+    description: 'A tabela informada é inválida, inativa, ou o seu autor não pertence à sala.',
     type: ErrorResponseDto,
   }),
 );
