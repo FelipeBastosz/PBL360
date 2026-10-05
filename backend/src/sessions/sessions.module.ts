@@ -25,6 +25,11 @@ import { GetRollCallUseCase } from './application/use-cases/get-roll-call.use-ca
 import { RecordRollCallUseCase } from './application/use-cases/record-roll-call.use-case';
 import { ATTENDANCE_REPOSITORY } from './domain/repositories/attendance.repository';
 import { PgAttendanceRepository } from './infrastructure/database/pg-attendance.repository';
+import { MemberSessionsController } from './infrastructure/http/member-sessions.controller';
+import { ListRoomSessionsUseCase } from './application/use-cases/list-room-sessions.use-case';
+import { GetMemberSessionUseCase } from './application/use-cases/get-member-session.use-case';
+import { ROOM_SESSION_REPOSITORY } from './domain/repositories/room-session.repository';
+import { PgRoomSessionRepository } from './infrastructure/database/pg-room-session.repository';
 
 @Module({
   imports: [
@@ -32,7 +37,12 @@ import { PgAttendanceRepository } from './infrastructure/database/pg-attendance.
     RoomsModule,
     ProblemsModule,
   ],
-  controllers: [SessionsController, SessionRolesController, RollCallController],
+  controllers: [
+    SessionsController,
+    SessionRolesController,
+    RollCallController,
+    MemberSessionsController,
+  ],
   providers: [
     CreateSessionUseCase,
     ListSessionsUseCase,
@@ -45,9 +55,12 @@ import { PgAttendanceRepository } from './infrastructure/database/pg-attendance.
     AssignSessionRoleUseCase,
     GetRollCallUseCase,
     RecordRollCallUseCase,
+    ListRoomSessionsUseCase,
+    GetMemberSessionUseCase,
     { provide: SESSION_REPOSITORY, useClass: PgSessionRepository },
     { provide: SESSION_ROLE_REPOSITORY, useClass: PgSessionRoleRepository },
     { provide: ATTENDANCE_REPOSITORY, useClass: PgAttendanceRepository },
+    { provide: ROOM_SESSION_REPOSITORY, useClass: PgRoomSessionRepository },
   ],
   exports: [SESSION_REPOSITORY, SessionAccessService],
 })
