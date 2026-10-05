@@ -1,14 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
-import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { roomService } from '@/services/room.service';
-import { problemService } from '@/services/problem.service';
-import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
 import { cn } from '@/utils/cn';
 import { ProblemsEmptyState } from './ProblemsEmptyState';
@@ -16,6 +12,7 @@ import { ProblemFormModal } from './ProblemFormModal';
 import { ProblemCard } from './ProblemCard';
 import { RoomProblemsHeader } from './RoomProblemsHeader';
 import { RoomTopActions } from './RoomTopActions';
+import { useRoomProblemsData } from './hooks/useRoomProblemsData';
 
 function ProblemsSearch({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
   return (
@@ -127,23 +124,17 @@ export default function RoomProblemsPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { notify } = useToast();
-  const [room, setRoom] = useState<Room | null>(null);
-  const [problems, setProblems] = useState<Problem[]>([]);
   const [query, setQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const isProfessor = user?.tipo === 'PROFESSOR';
-  const { run: fetchRoom, error: roomError } = useAsyncAction(roomService.getById);
-  const { run: fetchProblems, isLoading } = useAsyncAction(problemService.list);
-
-  useEffect(() => {
-    if (!id) return;
-    fetchRoom(id).then((res) => res.ok && setRoom(res.data));
-    fetchProblems(id).then((res) => res.ok && setProblems(res.data as Problem[]));
-  }, [id, fetchRoom, fetchProblems]);
+  const { roomName, problems, addProblem, roomError, isLoading } = useRoomProblemsData(
+    id,
+    isProfessor,
+  );
 
   function handleSuccess(newProblem: Problem) {
-    setProblems((curr) => [...curr, newProblem]);
+    addProblem(newProblem);
     setIsCreateModalOpen(false);
     notify({ tone: 'success', message: 'Problema criado com sucesso!' });
   }
@@ -152,7 +143,7 @@ export default function RoomProblemsPage() {
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
-      <RoomProblemsHeader room={room} userNome={user?.nome} />
+      <RoomProblemsHeader roomName={roomName} user={user} />
       <RoomProblemsMain
         roomError={roomError}
         isProfessor={isProfessor}

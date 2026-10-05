@@ -235,7 +235,7 @@ export default function ManageProblemsPage() {
 
   return (
     <div className="min-h-dvh bg-surface pb-36">
-      <RoomProblemsHeader room={state.room} userNome={user?.nome} />
+      <RoomProblemsHeader roomName={state.room?.nome} user={user} />
       <ManageProblemsContent
         isLoading={state.isLoading}
         problems={state.problems}

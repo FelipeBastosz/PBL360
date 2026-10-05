@@ -1,16 +1,8 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ROUTES } from '@/routes/paths';
-import type { Room } from '@/types/room';
-
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
+import type { UserResponse } from '@/types/auth';
 
 function parseRoomName(fullName?: string) {
   if (!fullName) return { disciplina: 'Turma', turma: '' };
@@ -22,8 +14,13 @@ function parseRoomName(fullName?: string) {
   return { disciplina: fullName, turma: '' };
 }
 
-export function RoomProblemsHeader({ room, userNome }: { room: Room | null; userNome?: string }) {
-  const { disciplina, turma } = parseRoomName(room?.nome);
+type RoomProblemsHeaderProps = {
+  roomName?: string;
+  user: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
+};
+
+export function RoomProblemsHeader({ roomName, user }: RoomProblemsHeaderProps) {
+  const { disciplina, turma } = parseRoomName(roomName);
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
@@ -40,9 +37,7 @@ export function RoomProblemsHeader({ room, userNome }: { room: Room | null; user
           {turma && <span className="text-xs text-white/70">{turma}</span>}
         </div>
       </div>
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(userNome)}
-      </div>
+      <UserAvatar user={user} />
     </header>
   );
 }

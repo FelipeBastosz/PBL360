@@ -1,25 +1,24 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
-import type { Room } from '@/types/room';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { userService } from '@/services/user.service';
 import { RoomProblemsHeader } from './RoomProblemsHeader';
 
-const mockRoom: Room = {
-  id: 'room-1',
-  nome: 'MI - Algoritmos - TP02',
-  codigoDisciplina: 'EXA801',
-  codigoSala: 'aB7kP2x9',
-  semestre: '2026.2',
-  ativo: true,
-  criadoEm: '2026-01-01',
-  professorResponsavelId: '1',
-};
+vi.mock('@/services/user.service');
+
+afterEach(() => {
+  vi.resetAllMocks();
+});
+
+const professor = { id: 'tutor-1', nome: 'Professor Silva', possuiFoto: false };
+
+const roomName = 'MI - Algoritmos - TP02';
 
 describe('RoomProblemsHeader', () => {
   it('splits and renders discipline and class code from room name', () => {
     render(
       <MemoryRouter>
-        <RoomProblemsHeader room={mockRoom} userNome="Professor Silva" />
+        <RoomProblemsHeader roomName={roomName} user={professor} />
       </MemoryRouter>,
     );
 
@@ -29,13 +28,27 @@ describe('RoomProblemsHeader', () => {
     expect(screen.getByRole('link', { name: /voltar para as turmas/i })).toBeInTheDocument();
   });
 
-  it('renders fallback title when room is null', () => {
+  it('renders fallback title when the room name is not loaded yet', () => {
     render(
       <MemoryRouter>
-        <RoomProblemsHeader room={null} userNome="Fulano" />
+        <RoomProblemsHeader user={{ ...professor, nome: 'Fulano' }} />
       </MemoryRouter>,
     );
 
     expect(screen.getByText('Turma')).toBeInTheDocument();
+  });
+
+  it('shows the photo of the signed-in user when they have one', async () => {
+    vi.mocked(userService.getPhoto).mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
+    render(
+      <MemoryRouter>
+        <RoomProblemsHeader roomName={roomName} user={{ ...professor, possuiFoto: true }} />
+      </MemoryRouter>,
+    );
+
+    const photo = await screen.findByRole('img', { name: 'Foto de Professor Silva' });
+
+    expect(photo.getAttribute('src')).toMatch(/^data:image\/png;base64,/);
+    expect(userService.getPhoto).toHaveBeenCalledWith('tutor-1');
   });
 });

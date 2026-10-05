@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
+import { ApiError } from '@/services/apiError';
 import { roomService } from '@/services/room.service';
 import { problemService } from '@/services/problem.service';
 import type { UserResponse } from '@/types/auth';
@@ -18,6 +19,7 @@ vi.mock('@/hooks/useToast', () => ({
 vi.mock('@/services/room.service', () => ({
   roomService: {
     getById: vi.fn(),
+    listMyRooms: vi.fn(),
   },
 }));
 
@@ -84,6 +86,9 @@ describe('RoomProblemsPage', () => {
     vi.clearAllMocks();
     vi.mocked(roomService.getById).mockResolvedValue(mockRoom);
     vi.mocked(problemService.list).mockResolvedValue([]);
+    vi.mocked(roomService.listMyRooms).mockResolvedValue([
+      { salaId: 'room-1', nome: 'MI - Algoritmos - TP02', semestre: '2026.2', totalAlunos: 3 },
+    ]);
   });
 
   describe('when user is a professor', () => {
@@ -149,6 +154,36 @@ describe('RoomProblemsPage', () => {
       ).toBeInTheDocument();
 
       expect(screen.queryByRole('button', { name: /ações de problema/i })).not.toBeInTheDocument();
+    });
+
+    it('never calls the tutor-only endpoints', async () => {
+      renderComponent(mockStudent);
+
+      expect(await screen.findByText('MI - Algoritmos')).toBeInTheDocument();
+      expect(roomService.listMyRooms).toHaveBeenCalled();
+      expect(roomService.getById).not.toHaveBeenCalled();
+      expect(problemService.list).not.toHaveBeenCalled();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('tells the student when they are not part of the room', async () => {
+      vi.mocked(roomService.listMyRooms).mockResolvedValue([]);
+      renderComponent(mockStudent);
+
+      expect(await screen.findByText('Você não faz parte desta turma.')).toBeInTheDocument();
+    });
+  });
+
+  describe('when the professor cannot access the room', () => {
+    it('shows the error returned by the API', async () => {
+      vi.mocked(roomService.getById).mockRejectedValue(
+        new ApiError(403, ['Você não tem permissão para acessar ou modificar esta sala.']),
+      );
+      renderComponent(mockTeacher);
+
+      expect(
+        await screen.findByText('Você não tem permissão para acessar ou modificar esta sala.'),
+      ).toBeInTheDocument();
     });
   });
 });
