@@ -10,6 +10,7 @@ import { ListSessionsUseCase } from './application/use-cases/list-sessions.use-c
 import { UpdateSessionUseCase } from './application/use-cases/update-session.use-case';
 import { SessionAccessService } from './application/services/session-access.service';
 import { Attendance } from './domain/entities/attendance.entity';
+import { SessionAttachment } from './domain/entities/session-attachment.entity';
 import { Session } from './domain/entities/session.entity';
 import { SessionRoleAssignment } from './domain/entities/session-role.entity';
 import { SESSION_ROLE_REPOSITORY } from './domain/repositories/session-role.repository';
@@ -33,7 +34,7 @@ import { PgRoomSessionRepository } from './infrastructure/database/pg-room-sessi
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Session, SessionRoleAssignment, Attendance]),
+    TypeOrmModule.forFeature([Session, SessionRoleAssignment, Attendance, SessionAttachment]),
     RoomsModule,
     ProblemsModule,
   ],
