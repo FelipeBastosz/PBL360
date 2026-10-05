@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { HorizontalLogo } from '@/components/ui/HorizontalLogo';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
@@ -13,23 +14,12 @@ import type { Room } from '@/types/room';
 import { DeleteRoomModal } from './DeleteRoomModal';
 import { Link } from 'react-router-dom';
 
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
-
 function ManageRoomsHeader() {
   const { user } = useAuth();
   return (
     <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4">
       <HorizontalLogo />
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(user?.nome)}
-      </div>
+      <UserAvatar user={user} />
     </header>
   );
 }
