@@ -136,7 +136,16 @@ describe('roomService', () => {
   });
 
   it('lists students enrolled in a room', async () => {
-    const students = [{ nome: 'Aluno Um', dataEntrada: '2026-09-01T10:00:00.000Z' }];
+    const students = [
+      {
+        id: 'student-1',
+        nome: 'Aluno Um',
+        email: '20240001@discente.uefs.br',
+        matricula: '20240001',
+        possuiFoto: false,
+        dataEntrada: '2026-09-01T10:00:00.000Z',
+      },
+    ];
     const adapter = respondWith(students);
 
     await expect(roomService.listStudents('room-1')).resolves.toEqual(students);

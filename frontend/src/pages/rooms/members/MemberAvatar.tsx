@@ -6,7 +6,7 @@ import { avatarColor } from '@/utils/members';
 
 type MemberAvatarProps = {
   name: string;
-  // Students come without an id from the API, so only tutors can show a photo.
+  // Set only when the person may have a photo; otherwise the initials are shown right away.
   photoUserId?: string;
   className?: string;
 };

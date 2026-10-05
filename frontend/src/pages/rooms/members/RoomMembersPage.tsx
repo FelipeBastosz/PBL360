@@ -33,8 +33,9 @@ function MembersList({ members, query, onSelect }: MembersListProps) {
       >
         {students.map((student) => (
           <MemberCard
-            key={`${student.nome}-${student.dataEntrada}`}
+            key={student.id}
             name={student.nome}
+            photoUserId={student.possuiFoto ? student.id : undefined}
             onSelect={() => onSelect({ kind: 'student', student })}
           />
         ))}

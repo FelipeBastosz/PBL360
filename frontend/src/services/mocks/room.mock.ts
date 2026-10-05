@@ -23,15 +23,27 @@ export const mockStudentRooms: StudentRoom[] = [
 
 export const mockRoomStudents: RoomStudent[] = [
   {
+    id: 'mock-student-1',
     nome: 'Ana Beatriz Souza',
+    email: '20240001@discente.uefs.br',
+    matricula: '20240001',
+    possuiFoto: false,
     dataEntrada: '2026-09-01T10:00:00.000Z',
   },
   {
+    id: 'mock-student-2',
     nome: 'Carlos Eduardo Oliveira',
+    email: '20240002@discente.uefs.br',
+    matricula: '20240002',
+    possuiFoto: false,
     dataEntrada: '2026-09-02T14:30:00.000Z',
   },
   {
+    id: 'mock-student-3',
     nome: 'Mariana Lima Santos',
+    email: '20240003@discente.uefs.br',
+    matricula: '20240003',
+    possuiFoto: false,
     dataEntrada: '2026-09-03T09:15:00.000Z',
   },
 ];

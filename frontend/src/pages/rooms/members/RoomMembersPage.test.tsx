@@ -34,8 +34,22 @@ const student: UserResponse = { ...tutor, id: 's9', tipo: 'ALUNO', matricula: '2
 const room = { id: 'room-1', nome: 'MI - Algoritmos - TP02' } as Room;
 
 const students: RoomStudent[] = [
-  { nome: 'Ana Silva Santos', dataEntrada: '2026-09-01T15:00:00.000Z' },
-  { nome: 'João Pedro Lima', dataEntrada: '2026-09-02T15:00:00.000Z' },
+  {
+    id: 's1',
+    nome: 'Ana Silva Santos',
+    email: '20231002@discente.uefs.br',
+    matricula: '20231002',
+    possuiFoto: true,
+    dataEntrada: '2026-09-01T15:00:00.000Z',
+  },
+  {
+    id: 's2',
+    nome: 'João Pedro Lima',
+    email: '20231003@discente.uefs.br',
+    matricula: '20231003',
+    possuiFoto: false,
+    dataEntrada: '2026-09-02T15:00:00.000Z',
+  },
 ];
 
 const tutors: RoomTutor[] = [
@@ -91,7 +105,17 @@ describe('RoomMembersPage', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Detalhes do Aluno' });
     expect(within(dialog).getByText('Ana Silva Santos')).toBeInTheDocument();
+    expect(within(dialog).getByText('20231002')).toBeInTheDocument();
+    expect(within(dialog).getByText('20231002@discente.uefs.br')).toBeInTheDocument();
     expect(within(dialog).getByText('01/09/2026')).toBeInTheDocument();
+  });
+
+  it('loads photos only for students who have one', async () => {
+    renderPage();
+    await screen.findByText('Ana');
+
+    expect(userService.getPhoto).toHaveBeenCalledWith('s1');
+    expect(userService.getPhoto).not.toHaveBeenCalledWith('s2');
   });
 
   it('shows the tutor details without any performance score', async () => {

@@ -32,6 +32,10 @@ function MemberDetails({ member }: { member: SelectedMember }) {
     return (
       <dl className="divide-y divide-black/5">
         <FullName name={member.student.nome} />
+        {member.student.matricula && (
+          <DetailRow label="Matrícula" value={member.student.matricula} />
+        )}
+        <DetailRow label="E-mail" value={member.student.email} />
         <DetailRow label="Na turma desde" value={formatFullDate(member.student.dataEntrada)} />
       </dl>
     );
@@ -51,6 +55,14 @@ function MemberDetails({ member }: { member: SelectedMember }) {
 const memberName = (member: SelectedMember) =>
   member.kind === 'student' ? member.student.nome : member.tutor.nome;
 
+// Tutors carry no photo flag, so their photo is always attempted (as in the invite sheet).
+const memberPhotoId = (member: SelectedMember) =>
+  member.kind === 'tutor'
+    ? member.tutor.id
+    : member.student.possuiFoto
+      ? member.student.id
+      : undefined;
+
 type MemberDetailsSheetProps = {
   member: SelectedMember | null;
   onClose: () => void;
@@ -65,7 +77,7 @@ export function MemberDetailsSheet({ member, onClose }: MemberDetailsSheetProps)
         <div className="flex flex-col items-center gap-2">
           <MemberAvatar
             name={memberName(member)}
-            photoUserId={member.kind === 'tutor' ? member.tutor.id : undefined}
+            photoUserId={memberPhotoId(member)}
             className="size-20 text-2xl"
           />
           <div className="w-full">
