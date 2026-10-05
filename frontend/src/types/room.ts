@@ -56,8 +56,8 @@ export type JoinRoomByLinkPayload = {
   link: string;
 };
 
+// GET /salas/:id/alunos returns only these fields; there is no student id in the payload.
 export type RoomStudent = {
-  id: string;
   nome: string;
   dataEntrada: string;
 };

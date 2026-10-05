@@ -136,9 +136,7 @@ describe('roomService', () => {
   });
 
   it('lists students enrolled in a room', async () => {
-    const students = [
-      { id: 'student-1', nome: 'Aluno Um', dataEntrada: '2026-09-01T10:00:00.000Z' },
-    ];
+    const students = [{ nome: 'Aluno Um', dataEntrada: '2026-09-01T10:00:00.000Z' }];
     const adapter = respondWith(students);
 
     await expect(roomService.listStudents('room-1')).resolves.toEqual(students);

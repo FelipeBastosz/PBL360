@@ -6,6 +6,11 @@ export function formatDayShortMonth(isoDate: string): string {
   return name && day ? `${Number(day)} ${name}` : isoDate;
 }
 
+export function formatFullDate(isoDateTime: string): string {
+  const date = new Date(isoDateTime);
+  return Number.isNaN(date.getTime()) ? isoDateTime : date.toLocaleDateString('pt-BR');
+}
+
 export function formatDayMonth(isoDate: string): string {
   const [, month, day] = isoDate.split('-');
   return month && day ? `${day}/${month}` : isoDate;

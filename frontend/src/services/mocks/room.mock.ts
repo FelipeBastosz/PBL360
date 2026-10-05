@@ -23,17 +23,14 @@ export const mockStudentRooms: StudentRoom[] = [
 
 export const mockRoomStudents: RoomStudent[] = [
   {
-    id: 'mock-student-1',
     nome: 'Ana Beatriz Souza',
     dataEntrada: '2026-09-01T10:00:00.000Z',
   },
   {
-    id: 'mock-student-2',
     nome: 'Carlos Eduardo Oliveira',
     dataEntrada: '2026-09-02T14:30:00.000Z',
   },
   {
-    id: 'mock-student-3',
     nome: 'Mariana Lima Santos',
     dataEntrada: '2026-09-03T09:15:00.000Z',
   },
