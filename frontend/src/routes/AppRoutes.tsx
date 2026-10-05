@@ -27,6 +27,7 @@ const EditRoomPage = lazy(() => import('@/pages/rooms/EditRoomPage'));
 const RoomProblemsPage = lazy(() => import('@/pages/problems/RoomProblemsPage'));
 const ManageProblemsPage = lazy(() => import('@/pages/problems/ManageProblemsPage'));
 const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
+const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
 
 export function AppRoutes() {
   return (
@@ -54,6 +55,7 @@ export function AppRoutes() {
           <Route path={ROUTES.roomProblems} element={<RoomProblemsPage />} />
           <Route path={ROUTES.manageProblems} element={<ManageProblemsPage />} />
           <Route path={ROUTES.problemSessions} element={<ProblemSessionsPage />} />
+          <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

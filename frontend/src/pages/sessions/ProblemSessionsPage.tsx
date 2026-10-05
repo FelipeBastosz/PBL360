@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import {
-  ChevronLeftIcon,
-  DocumentTextIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-} from '@heroicons/react/24/outline';
+import { useParams } from 'react-router-dom';
+import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,6 +9,7 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { roomService } from '@/services/room.service';
 import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
+import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
 import type { Session } from '@/types/session';
@@ -21,76 +17,8 @@ import { cn } from '@/utils/cn';
 import { SessionsEmptyState } from './SessionsEmptyState';
 import { SessionFormModal } from './SessionFormModal';
 import { SessionCard } from './SessionCard';
-
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0].toUpperCase())
-    .join('');
-}
-
-function parseRoomTurma(fullName?: string) {
-  if (!fullName) return '';
-  const parts = fullName.split(' - ');
-  return parts.length > 1 ? parts.pop() : '';
-}
-
-function ProblemSessionsHeader({
-  room,
-  problem,
-  userNome,
-}: {
-  room: Room | null;
-  problem: Problem | null;
-  userNome?: string;
-}) {
-  const turma = parseRoomTurma(room?.nome);
-
-  return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
-      <div className="flex items-center gap-3">
-        <Link
-          to={`/turmas/${room?.id}/problemas`}
-          aria-label="Voltar para os problemas"
-          className="rounded-md p-1 hover:bg-white/10"
-        >
-          <ChevronLeftIcon className="size-6" />
-        </Link>
-        <div className="flex flex-col">
-          <h1 className="text-base font-semibold leading-tight">{problem?.titulo || 'Problema'}</h1>
-          {turma && <span className="text-xs text-white/70">{turma}</span>}
-        </div>
-      </div>
-      <div className="flex size-9 items-center justify-center rounded-full bg-brand-200 text-sm font-semibold text-brand-900">
-        {getInitials(userNome)}
-      </div>
-    </header>
-  );
-}
-
-function ProblemTopActions({ isProfessor }: { isProfessor: boolean }) {
-  if (!isProfessor) return null;
-
-  return (
-    <div className="flex flex-col gap-3">
-      <button
-        type="button"
-        onClick={() => {}}
-        className="flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md text-left"
-      >
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-900">
-          <DocumentTextIcon className="size-6" />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-ink">Relatório Final</h3>
-          <p className="text-xs text-muted">Nota final do problema</p>
-        </div>
-      </button>
-    </div>
-  );
-}
+import { ProblemSessionsHeader } from './ProblemSessionsHeader';
+import { ProblemTopActions } from './ProblemTopActions';
 
 function SessionsSearch({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
   return (
@@ -107,13 +35,14 @@ function SessionsSearch({ query, setQuery }: { query: string; setQuery: (v: stri
   );
 }
 
-function SessionsFabMenu({
-  isProfessor,
-  onOpenCreate,
-}: {
+type FabMenuProps = {
   isProfessor: boolean;
+  roomId: string;
+  problemId: string;
   onOpenCreate: () => void;
-}) {
+};
+
+function SessionsFabMenu({ isProfessor, roomId, problemId, onOpenCreate }: FabMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   if (!isProfessor) return null;
 
@@ -121,10 +50,14 @@ function SessionsFabMenu({
     <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3">
       {isOpen && (
         <div className="flex animate-fade-up flex-col items-end gap-2">
-          <button className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50">
+          <a
+            href={ROUTES.manageSessions.replace(':roomId', roomId).replace(':problemId', problemId)}
+            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+          >
             Editar uma sessão
-          </button>
+          </a>
           <button
+            type="button"
             onClick={() => {
               setIsOpen(false);
               onOpenCreate();
@@ -196,7 +129,6 @@ function ProblemSessionsMain({
   );
 }
 
-// Hook extraído para aliviar a função da página
 function useProblemSessions(roomId?: string, problemId?: string, onCreatedSuccess?: () => void) {
   const { notify } = useToast();
   const [room, setRoom] = useState<Room | null>(null);
@@ -225,14 +157,17 @@ function useProblemSessions(roomId?: string, problemId?: string, onCreatedSucces
 }
 
 export default function ProblemSessionsPage() {
-  const { roomId, problemId } = useParams<{ roomId: string; problemId: string }>();
+  const params = useParams<{ roomId?: string; id?: string; problemId: string }>();
+  const currentRoomId = params.roomId || params.id || '';
+  const problemId = params.problemId || '';
+
   const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const isProfessor = user?.tipo === 'PROFESSOR';
   const { room, problem, sessions, isLoading, error, handleSessionCreated } = useProblemSessions(
-    roomId,
+    currentRoomId,
     problemId,
     () => setIsCreateModalOpen(false),
   );
@@ -249,14 +184,19 @@ export default function ProblemSessionsPage() {
         setQuery={setQuery}
         isLoading={isLoading}
         sessions={filtered}
-        roomId={roomId ?? ''}
-        problemId={problemId ?? ''}
+        roomId={currentRoomId}
+        problemId={problemId}
       />
-      <SessionsFabMenu isProfessor={isProfessor} onOpenCreate={() => setIsCreateModalOpen(true)} />
+      <SessionsFabMenu
+        isProfessor={isProfessor}
+        roomId={currentRoomId}
+        problemId={problemId}
+        onOpenCreate={() => setIsCreateModalOpen(true)}
+      />
       <SessionFormModal
         isOpen={isCreateModalOpen}
-        roomId={roomId ?? ''}
-        problemId={problemId ?? ''}
+        roomId={currentRoomId}
+        problemId={problemId}
         initialData={null}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleSessionCreated}

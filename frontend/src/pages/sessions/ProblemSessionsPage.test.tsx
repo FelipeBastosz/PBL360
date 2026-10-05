@@ -123,6 +123,7 @@ describe('ProblemSessionsPage', () => {
 
       await userEvent.click(fab);
       expect(screen.getByRole('button', { name: 'Criar nova sessão' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Editar uma sessão' })).toBeInTheDocument();
     });
 
     it('renders session cards when sessions exist', async () => {
