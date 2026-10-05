@@ -1,0 +1,81 @@
+import { Link } from 'react-router-dom';
+import {
+  ClipboardDocumentCheckIcon,
+  StarIcon,
+  AdjustmentsHorizontalIcon,
+  ClockIcon,
+} from '@heroicons/react/24/outline';
+import type { ComponentType } from 'react';
+
+type CardItemProps = {
+  to: string;
+  title: string;
+  desc: string;
+  color: string;
+  Icon: ComponentType<{ className?: string }>;
+};
+
+function ActionCard({ to, title, desc, color, Icon }: CardItemProps) {
+  return (
+    <Link
+      to={to}
+      className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md"
+    >
+      <div className={`flex size-11 items-center justify-center rounded-xl ${color}`}>
+        <Icon className="size-6" />
+      </div>
+      <div>
+        <h3 className="text-sm font-bold text-ink">{title}</h3>
+        <p className="mt-1 text-xs text-muted leading-relaxed">{desc}</p>
+      </div>
+    </Link>
+  );
+}
+
+function DisabledHistoryCard() {
+  return (
+    <div className="relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm opacity-60 cursor-not-allowed">
+      <span className="absolute right-3 top-3 rounded-full bg-black/5 px-2.5 py-0.5 text-xs font-semibold text-muted">
+        Em breve
+      </span>
+      <div className="flex size-11 items-center justify-center rounded-xl bg-gray-100 text-gray-500">
+        <ClockIcon className="size-6" />
+      </div>
+      <div>
+        <h3 className="text-sm font-bold text-ink">Histórico de avaliações</h3>
+        <p className="mt-1 text-xs text-muted leading-relaxed">
+          Comparar e ajustar com justificativa
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function SessionActionGrid({ basePath }: { basePath: string }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <ActionCard
+        to={`${basePath}/chamada`}
+        title="Chamada"
+        desc="Mesa tutorial, papéis e horário"
+        color="bg-blue-50 text-blue-600"
+        Icon={ClipboardDocumentCheckIcon}
+      />
+      <ActionCard
+        to={`${basePath}/avaliar`}
+        title="Avaliar alunos"
+        desc="Critérios, marcações e feedback"
+        color="bg-emerald-50 text-emerald-600"
+        Icon={StarIcon}
+      />
+      <ActionCard
+        to={`${basePath}/formulas`}
+        title="Fórmulas"
+        desc="Pesos da sessão e da nota final"
+        color="bg-amber-50 text-amber-600"
+        Icon={AdjustmentsHorizontalIcon}
+      />
+      <DisabledHistoryCard />
+    </div>
+  );
+}

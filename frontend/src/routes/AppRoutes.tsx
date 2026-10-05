@@ -17,6 +17,8 @@ const ResetPasswordPage = lazy(() => import('@/pages/password-reset/ResetPasswor
 const ResetPasswordSuccessPage = lazy(
   () => import('@/pages/password-reset/ResetPasswordSuccessPage'),
 );
+const RollCallPage = lazy(() => import('@/pages/roll-call/RollCallPage'));
+const MemberSessionPage = lazy(() => import('@/pages/sessions/MemberSessionPage'));
 const NotFoundPage = lazy(() => import('@/pages/not-found/NotFoundPage'));
 const HomePage = lazy(() => import('@/pages/home/HomePage'));
 const RoomsPage = lazy(() => import('@/pages/rooms/RoomsPage'));
@@ -42,6 +44,9 @@ const ManagePerformanceTablesPage = lazy(
 const EditPerformanceTablePage = lazy(
   () => import('@/pages/performance-tables/EditPerformanceTablePage'),
 );
+const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
+const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
+const SessionHubPage = lazy(() => import('@/pages/sessions/SessionHubPage'));
 
 export function AppRoutes() {
   return (
@@ -74,6 +79,12 @@ export function AppRoutes() {
           <Route path={ROUTES.performanceTableDetail} element={<PerformanceTableDetailPage />} />
           <Route path={ROUTES.managePerformanceTables} element={<ManagePerformanceTablesPage />} />
           <Route path={ROUTES.editPerformanceTable} element={<EditPerformanceTablePage />} />
+          <Route path={ROUTES.problemSessions} element={<ProblemSessionsPage />} />
+          <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />
+          <Route path={ROUTES.sessionHub} element={<SessionHubPage />} />
+          <Route path={ROUTES.rollCall} element={<RollCallPage />} />
+          <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
+          <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

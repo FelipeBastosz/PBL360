@@ -47,6 +47,8 @@ export interface RoomRepository {
 
   hasTutor(roomId: string, tutorId: string): Promise<boolean>;
 
+  hasStudent(roomId: string, studentId: string): Promise<boolean>;
+
   listTutors(roomId: string): Promise<RoomTutor[]>;
 
   removeTutor(roomId: string, tutorId: string, actorId: string): Promise<boolean>;

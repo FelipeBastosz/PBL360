@@ -153,6 +153,16 @@ describe('RoomsPage', () => {
       expect(screen.getAllByText('0 problemas')).toHaveLength(2);
     });
 
+    it('shows the real student and problem counts of each room', async () => {
+      vi.mocked(roomService.list).mockResolvedValue([
+        { ...mockRooms[0], totalAlunos: 1, totalProblemas: 3 },
+      ]);
+      renderWithUser(mockTeacher);
+
+      expect(await screen.findByText('1 aluno')).toBeInTheDocument();
+      expect(screen.getByText('3 problemas')).toBeInTheDocument();
+    });
+
     it('shows creation and edit actions in fab menu', async () => {
       renderWithUser(mockTeacher);
 

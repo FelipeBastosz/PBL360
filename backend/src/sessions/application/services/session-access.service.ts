@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { RoomAccessService } from '@/rooms/application/services/room-access.service';
+import {
+  RoomAccessService,
+  type RoomMember,
+} from '@/rooms/application/services/room-access.service';
+import type { Problem } from '@/problems/domain/entities/problem.entity';
 import { NotFoundError } from '@/shared/errors/application.error';
 import {
   ProblemRepository,
@@ -54,6 +58,17 @@ export class SessionAccessService {
     if (!problem) throw new NotFoundError('Sessão não encontrada.');
     await this.roomAccess.assertTutorCanAccessRoom(problem.roomId, tutorId);
     return { session, roomId: problem.roomId };
+  }
+
+  async assertMemberCanAccessSession(
+    sessionId: string,
+    member: RoomMember,
+  ): Promise<{ session: Session; problem: Problem; roomId: string }> {
+    const session = await this.sessions.findById(sessionId);
+    const problem = session ? await this.problems.findById(session.problemId) : null;
+    if (!session || !problem) throw new NotFoundError('Sessão não encontrada.');
+    await this.roomAccess.assertMemberCanAccessRoom(problem.roomId, member);
+    return { session, problem, roomId: problem.roomId };
   }
 
   private async assertProblemBelongsToRoom(problemId: string, roomId: string): Promise<void> {

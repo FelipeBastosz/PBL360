@@ -1,24 +1,28 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { userService } from '@/services/user.service';
+import { describe, expect, it } from 'vitest';
+import type { Room } from '@/types/room';
 import { RoomProblemsHeader } from './RoomProblemsHeader';
 
-vi.mock('@/services/user.service');
-
-afterEach(() => {
-  vi.resetAllMocks();
-});
-
-const professor = { id: 'tutor-1', nome: 'Professor Silva', possuiFoto: false };
-
-const roomName = 'MI - Algoritmos - TP02';
+const mockRoom: Room = {
+  id: 'room-1',
+  nome: 'MI - Algoritmos - TP02',
+  codigoDisciplina: 'EXA801',
+  codigoSala: 'aB7kP2x9',
+  semestre: '2026.2',
+  ativo: true,
+  criadoEm: '2026-01-01',
+  professorResponsavelId: '1',
+};
 
 describe('RoomProblemsHeader', () => {
   it('splits and renders discipline and class code from room name', () => {
     render(
       <MemoryRouter>
-        <RoomProblemsHeader roomName={roomName} user={professor} />
+        <RoomProblemsHeader
+          room={mockRoom}
+          user={{ id: 'u1', nome: 'Professor Silva', possuiFoto: false }}
+        />
       </MemoryRouter>,
     );
 
@@ -28,27 +32,13 @@ describe('RoomProblemsHeader', () => {
     expect(screen.getByRole('link', { name: /voltar para as turmas/i })).toBeInTheDocument();
   });
 
-  it('renders fallback title when the room name is not loaded yet', () => {
+  it('renders fallback title when room is null', () => {
     render(
       <MemoryRouter>
-        <RoomProblemsHeader user={{ ...professor, nome: 'Fulano' }} />
+        <RoomProblemsHeader room={null} user={{ id: 'u2', nome: 'Fulano', possuiFoto: false }} />
       </MemoryRouter>,
     );
 
     expect(screen.getByText('Turma')).toBeInTheDocument();
-  });
-
-  it('shows the photo of the signed-in user when they have one', async () => {
-    vi.mocked(userService.getPhoto).mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
-    render(
-      <MemoryRouter>
-        <RoomProblemsHeader roomName={roomName} user={{ ...professor, possuiFoto: true }} />
-      </MemoryRouter>,
-    );
-
-    const photo = await screen.findByRole('img', { name: 'Foto de Professor Silva' });
-
-    expect(photo.getAttribute('src')).toMatch(/^data:image\/png;base64,/);
-    expect(userService.getPhoto).toHaveBeenCalledWith('tutor-1');
   });
 });

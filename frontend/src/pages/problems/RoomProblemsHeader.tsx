@@ -3,6 +3,12 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ROUTES } from '@/routes/paths';
 import type { UserResponse } from '@/types/auth';
+import type { Room } from '@/types/room';
+
+type RoomProblemsHeaderProps = {
+  room: Pick<Room, 'nome'> | null;
+  user: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
+};
 
 function parseRoomName(fullName?: string) {
   if (!fullName) return { disciplina: 'Turma', turma: '' };
@@ -14,30 +20,25 @@ function parseRoomName(fullName?: string) {
   return { disciplina: fullName, turma: '' };
 }
 
-type RoomProblemsHeaderProps = {
-  roomName?: string;
-  user: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
-};
-
-export function RoomProblemsHeader({ roomName, user }: RoomProblemsHeaderProps) {
-  const { disciplina, turma } = parseRoomName(roomName);
+export function RoomProblemsHeader({ room, user }: RoomProblemsHeaderProps) {
+  const { disciplina, turma } = parseRoomName(room?.nome);
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-10 bg-brand-900 text-white shadow-[0_6px_18px_-12px_rgb(0_0_119/0.8)]">
+      <div className="mx-auto flex h-20 w-full max-w-5xl items-center gap-3 px-4">
         <Link
           to={ROUTES.rooms}
           aria-label="Voltar para as turmas"
-          className="rounded-md p-1 hover:bg-white/10"
+          className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
         >
-          <ChevronLeftIcon className="size-6" />
+          <ChevronLeftIcon className="size-6" aria-hidden />
         </Link>
-        <div className="flex flex-col">
-          <h1 className="text-base font-semibold leading-tight">{disciplina}</h1>
-          {turma && <span className="text-xs text-white/70">{turma}</span>}
+        <div className="flex min-w-0 flex-1 flex-col animate-slide-down">
+          <h1 className="truncate text-xl leading-tight font-semibold">{disciplina}</h1>
+          {turma && <span className="truncate text-sm text-white/70">{turma}</span>}
         </div>
+        <UserAvatar user={user} className="animate-pop-in ring-2 ring-white/20" />
       </div>
-      <UserAvatar user={user} />
     </header>
   );
 }

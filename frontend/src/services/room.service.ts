@@ -6,6 +6,7 @@ import type {
   JoinRoomByLinkPayload,
   Room,
   RoomStudent,
+  RoomTutor,
   StudentRoom,
   UpdateRoomPayload,
 } from '@/types/room';
@@ -24,6 +25,9 @@ export const roomService = {
     api.patch<Room>(`${BASE}/${roomId}`, payload).then((r) => r.data),
 
   remove: (roomId: string) => api.delete<void>(`${BASE}/${roomId}`).then(() => undefined),
+
+  listTutors: (roomId: string) =>
+    api.get<RoomTutor[]>(`${BASE}/${roomId}/professores`).then((r) => r.data),
 
   addTutor: (roomId: string, payload: AddTutorToRoomPayload) =>
     api.post<MessageResponse>(`${BASE}/${roomId}/professores`, payload).then((r) => r.data),
