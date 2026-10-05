@@ -44,6 +44,18 @@ export class SessionAccessService {
     return session;
   }
 
+  async assertTutorCanAccessSessionById(
+    sessionId: string,
+    tutorId: string,
+  ): Promise<{ session: Session; roomId: string }> {
+    const session = await this.sessions.findById(sessionId);
+    if (!session) throw new NotFoundError('Sessão não encontrada.');
+    const problem = await this.problems.findById(session.problemId);
+    if (!problem) throw new NotFoundError('Sessão não encontrada.');
+    await this.roomAccess.assertTutorCanAccessRoom(problem.roomId, tutorId);
+    return { session, roomId: problem.roomId };
+  }
+
   private async assertProblemBelongsToRoom(problemId: string, roomId: string): Promise<void> {
     const problem = await this.problems.findById(problemId);
     if (!problem || problem.roomId !== roomId) {

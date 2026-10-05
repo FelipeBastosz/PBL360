@@ -16,7 +16,7 @@ import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 
 import { CreateRoomDto } from '../../application/dtos/create-room.dto';
-import { RoomResponseDto } from '../../application/dtos/room-response.dto';
+import { RoomResponseDto, RoomSummaryResponseDto } from '../../application/dtos/room-response.dto';
 import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 
 const UNAUTHORIZED = ApiUnauthorizedResponse({
@@ -42,7 +42,7 @@ export const ListRoomsSwaggerDocs = applyDecorators(
   }),
   ApiOkResponse({
     description: 'Salas do professor. Retorna uma lista vazia quando não houver salas.',
-    type: RoomResponseDto,
+    type: RoomSummaryResponseDto,
     isArray: true,
   }),
   UNAUTHORIZED,

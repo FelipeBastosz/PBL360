@@ -32,3 +32,11 @@ export class RoomResponseDto {
   @ApiProperty({ format: 'date-time' })
   criadoEm: Date;
 }
+
+export class RoomSummaryResponseDto extends RoomResponseDto {
+  @ApiProperty({ example: 24 })
+  totalAlunos: number;
+
+  @ApiProperty({ example: 8 })
+  totalProblemas: number;
+}

@@ -45,6 +45,7 @@ export const toUpdatePerformanceTableInput = (
   name: dto.nome,
   description: dto.descricao,
   criteria: dto.criterios.map((criterion) => ({
+    id: criterion.id,
     name: criterion.nome,
     description: criterion.descricao,
     orderIndex: criterion.ordem,

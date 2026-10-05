@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
@@ -84,7 +84,7 @@ export class PerformanceTablesController {
     return toPerformanceTableResponse(table);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UpdatePerformanceTableSwaggerDocs
   async update(
     @UuidParam('id') tableId: string,

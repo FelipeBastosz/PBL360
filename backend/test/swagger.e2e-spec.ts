@@ -86,4 +86,28 @@ describe('Swagger (e2e)', () => {
       'criadoEm',
     ]);
   });
+
+  it('documents sessions endpoints under the Sessões tag', () => {
+    const sessionPaths = [
+      '/api/salas/{roomId}/problemas/{problemId}/sessoes',
+      '/api/salas/{roomId}/problemas/{problemId}/sessoes/{sessionId}',
+      '/api/salas/{roomId}/problemas/{problemId}/sessoes/{sessionId}/impacto-exclusao',
+    ];
+
+    expect(Object.keys(document.paths)).toEqual(expect.arrayContaining(sessionPaths));
+
+    expect(document.paths['/api/salas/{roomId}/problemas/{problemId}/sessoes']!.post!.tags).toEqual(
+      ['Sessões'],
+    );
+    expect(document.paths['/api/salas/{roomId}/problemas/{problemId}/sessoes']!.get!.tags).toEqual([
+      'Sessões',
+    ]);
+  });
+
+  it('documents the problem update payload with the title property', () => {
+    expect(document.components.schemas.UpdateProblemDto).toBeDefined();
+    expect(Object.keys(document.components.schemas.UpdateProblemDto!.properties)).toEqual([
+      'title',
+    ]);
+  });
 });

@@ -4,6 +4,12 @@ import type { Server } from 'node:http';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { type PerformanceTableResponseDto } from '@/performance-tables/application/dtos/performance-table-response.dto';
+import type { UpdatePerformanceTableDto } from '@/performance-tables/application/dtos/update-performance-table.dto';
+import {
+  PERFORMANCE_TABLE_REPOSITORY,
+  type PerformanceTableRepository,
+} from '@/performance-tables/domain/repositories/performance-table.repository';
+import { InvalidPerformanceTableError } from '@/performance-tables/domain/errors/invalid-performance-table.error';
 import { type ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
@@ -179,5 +185,212 @@ describe('Performance tables (e2e)', () => {
 
   it('allows only tutors to use the delete operation', async () => {
     await deleteTable(studentToken).expect(403);
+  });
+
+  const updateTable = (payload: UpdatePerformanceTableDto, token = ownerToken) =>
+    request(app.getHttpServer() as Server)
+      .put(`/api/tabelas-desempenho/${tableId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(payload);
+
+  const readCriteria = () =>
+    dataSource.query<
+      {
+        id: string;
+        name: string;
+        order_index: number;
+        weight: string;
+        deleted_at: Date | null;
+        created_at: Date;
+        updated_at: Date;
+      }[]
+    >(
+      `SELECT id, name, order_index, weight, deleted_at, created_at, updated_at
+       FROM performance_criteria WHERE performance_table_id = $1 ORDER BY id;`,
+      [tableId],
+    );
+
+  it('updates an existing criterion by id and inserts only the new criterion', async () => {
+    const [original] = await readCriteria();
+    const response = await updateTable({
+      nome: 'Tabela atualizada',
+      descricao: null,
+      criterios: [
+        { id: original!.id, nome: 'Participação', peso: 3, ordem: 1 },
+        { nome: 'Evolução', peso: 2, ordem: 2 },
+      ],
+    }).expect(200);
+    const body = response.body as PerformanceTableResponseDto;
+    const rows = await readCriteria();
+
+    expect(body.nome).toBe('Tabela atualizada');
+    expect(body.descricao).toBeNull();
+    expect(body.criterios).toHaveLength(2);
+    expect(body.criterios[0]).toMatchObject({ id: original!.id, nome: 'Participação', peso: 3 });
+    expect(body.criterios[1]!.id).not.toBe(original!.id);
+    expect(rows).toHaveLength(2);
+    expect(rows.find((row) => row.id === original!.id)).toMatchObject({
+      created_at: original!.created_at,
+      deleted_at: null,
+    });
+  });
+
+  it('archives only omitted criteria and excludes them from the current table', async () => {
+    const [retained] = await readCriteria();
+    const [removed] = await dataSource.query<{ id: string }[]>(
+      `INSERT INTO performance_criteria (performance_table_id, name, order_index)
+       VALUES ($1, 'Autonomia', 2) RETURNING id;`,
+      [tableId],
+    );
+
+    await updateTable({
+      nome: 'Tabela',
+      criterios: [{ id: retained!.id, nome: 'Participação' }],
+    }).expect(200);
+
+    const rows = await readCriteria();
+    expect(rows).toHaveLength(2);
+    expect(rows.find((row) => row.id === retained!.id)!.deleted_at).toBeNull();
+    expect(rows.find((row) => row.id === removed!.id)).toMatchObject({
+      name: 'Autonomia',
+      order_index: 2,
+      deleted_at: expect.any(Date) as Date,
+    });
+    const response = await getTable(tableId, ownerToken).expect(200);
+    const body = response.body as PerformanceTableResponseDto;
+    expect(body.criterios.map((criterion) => criterion.id)).toEqual([retained!.id]);
+  });
+
+  it('archives all previous criteria when every submitted criterion is new', async () => {
+    const [original] = await readCriteria();
+    const response = await updateTable({
+      nome: 'Tabela',
+      criterios: [{ nome: 'Evolução' }],
+    }).expect(200);
+    const body = response.body as PerformanceTableResponseDto;
+    const rows = await readCriteria();
+
+    expect(rows).toHaveLength(2);
+    expect(rows.find((row) => row.id === original!.id)!.deleted_at).not.toBeNull();
+    expect(body.criterios).toHaveLength(1);
+    expect(body.criterios[0]!.id).not.toBe(original!.id);
+    expect(body.criterios[0]!.ordem).toBe(1);
+  });
+
+  it('swaps criterion positions without changing their ids', async () => {
+    const [first] = await readCriteria();
+    const [second] = await dataSource.query<{ id: string }[]>(
+      `INSERT INTO performance_criteria (performance_table_id, name, order_index)
+       VALUES ($1, 'Segundo', 2) RETURNING id;`,
+      [tableId],
+    );
+    const response = await updateTable({
+      nome: 'Tabela',
+      criterios: [
+        { id: first!.id, nome: 'Primeiro', ordem: 2 },
+        { id: second!.id, nome: 'Segundo', ordem: 1 },
+      ],
+    }).expect(200);
+    const body = response.body as PerformanceTableResponseDto;
+
+    expect(body.criterios.map((criterion) => criterion.id)).toEqual([second!.id, first!.id]);
+    expect(body.criterios.map((criterion) => criterion.ordem)).toEqual([1, 2]);
+    expect((await readCriteria()).every((row) => row.deleted_at === null)).toBe(true);
+  });
+
+  it('rejects duplicate criterion ids without modifying the stored configuration', async () => {
+    const before = await readCriteria();
+    await updateTable({
+      nome: 'Não salvar',
+      criterios: [
+        { id: before[0]!.id, nome: 'Primeiro', ordem: 1 },
+        { id: before[0]!.id, nome: 'Segundo', ordem: 2 },
+      ],
+    }).expect(400);
+
+    expect(await readCriteria()).toEqual(before);
+    const response = await getTable(tableId, ownerToken).expect(200);
+    expect((response.body as PerformanceTableResponseDto).nome).toBe('Tabela de teste');
+  });
+
+  it('rejects criterion ids from another table', async () => {
+    const [otherTable] = await dataSource.query<{ id: string }[]>(
+      `INSERT INTO performance_tables (tutor_id, name) VALUES ($1, 'Outra tabela') RETURNING id;`,
+      [otherTutorId],
+    );
+    const [foreign] = await dataSource.query<{ id: string }[]>(
+      `INSERT INTO performance_criteria (performance_table_id, name)
+       VALUES ($1, 'Outro critério') RETURNING id;`,
+      [otherTable!.id],
+    );
+    const before = await readCriteria();
+    await updateTable({
+      nome: 'Tabela',
+      criterios: [{ id: foreign!.id, nome: 'Alterado' }],
+    }).expect(400);
+    expect(await readCriteria()).toEqual(before);
+  });
+
+  it('does not reactivate a previously archived criterion', async () => {
+    const [original] = await readCriteria();
+    await updateTable({ nome: 'Tabela', criterios: [{ nome: 'Novo' }] }).expect(200);
+    const before = await readCriteria();
+
+    await updateTable({ nome: 'Tabela', criterios: [{ id: original!.id, nome: 'Antigo' }] }).expect(
+      400,
+    );
+    expect(await readCriteria()).toEqual(before);
+  });
+
+  it('rejects removal of the last criterion', async () => {
+    const before = await readCriteria();
+    await updateTable({ nome: 'Tabela', criterios: [] }).expect(400);
+    expect(await readCriteria()).toEqual(before);
+  });
+
+  it('requires ownership and the tutor role to update a table', async () => {
+    const before = await readCriteria();
+    const payload = { nome: 'Tabela', criterios: [{ nome: 'Novo' }] };
+    await updateTable(payload, otherTutorToken).expect(403);
+    await updateTable(payload, studentToken).expect(403);
+    expect(await readCriteria()).toEqual(before);
+  });
+
+  it('rolls back table changes, archival and reordering when persistence fails', async () => {
+    const repository = moduleRef.get<PerformanceTableRepository>(PERFORMANCE_TABLE_REPOSITORY);
+    const [removed] = await dataSource.query<{ id: string }[]>(
+      `INSERT INTO performance_criteria (performance_table_id, name, order_index)
+       VALUES ($1, 'Removido', 2) RETURNING id;`,
+      [tableId],
+    );
+    const before = await readCriteria();
+    const table = (await repository.findById(tableId))!;
+    const retained = table.criteria.find((criterion) => criterion.id !== removed!.id)!;
+    table.update({
+      name: 'Não salvar',
+      criteria: [
+        { id: retained.id, name: 'Alterado', orderIndex: 2 },
+        { name: 'Novo', orderIndex: 1 },
+      ],
+    });
+    // Bypass domain validation to force a database constraint failure after earlier writes.
+    table.criteria[1]!.weight = 11;
+
+    await expect(repository.update(table)).rejects.toThrow();
+    expect(await readCriteria()).toEqual(before);
+    expect((await repository.findById(tableId))!.name).toBe('Tabela de teste');
+  });
+
+  it('rechecks active ids after the initial read and does not restore removed criteria', async () => {
+    const repository = moduleRef.get<PerformanceTableRepository>(PERFORMANCE_TABLE_REPOSITORY);
+    const stale = (await repository.findById(tableId))!;
+    const originalId = stale.criteria[0]!.id;
+    await updateTable({ nome: 'Configuração recente', criterios: [{ nome: 'Novo' }] }).expect(200);
+    const before = await readCriteria();
+    stale.update({ name: 'Configuração antiga', criteria: [{ id: originalId, name: 'Antigo' }] });
+
+    await expect(repository.update(stale)).rejects.toThrow(InvalidPerformanceTableError);
+    expect(await readCriteria()).toEqual(before);
+    expect((await repository.findById(tableId))!.name).toBe('Configuração recente');
   });
 });

@@ -5,6 +5,7 @@ import {
   InvalidRequestError,
   NotFoundError,
   UnauthorizedError,
+  UnprocessableEntityError,
 } from '../errors/application.error';
 import { DomainError } from '../errors/domain.error';
 import { DomainExceptionFilter } from './domain-exception.filter';
@@ -42,6 +43,7 @@ describe('DomainExceptionFilter', () => {
     [new ForbiddenError('x'), 403, 'Forbidden'],
     [new NotFoundError('x'), 404, 'Not Found'],
     [new ConflictError('x'), 409, 'Conflict'],
+    [new UnprocessableEntityError('x'), 422, 'Unprocessable Entity'],
   ])('maps %p to %i', (error, statusCode, label) => {
     new DomainExceptionFilter().catch(error, hostWith(status));
 

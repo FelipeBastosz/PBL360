@@ -14,7 +14,10 @@ import { User } from '@/users/domain/entities/user.entity';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { NewPerformanceTable } from './new-performance-table';
 import { PerformanceCriterion } from './performance-criterion.entity';
-import type { UpdatePerformanceTable } from './update-performance-table';
+import type {
+  UpdatePerformanceCriterion,
+  UpdatePerformanceTable,
+} from './update-performance-table';
 
 @Entity('performance_tables')
 export class PerformanceTable {
@@ -74,21 +77,33 @@ export class PerformanceTable {
   }
 
   update(props: UpdatePerformanceTable): void {
-    this.name = props.name?.trim();
-    this.description = props.description?.trim() || null;
-    this.criteria = (props.criteria ?? []).map((criterion, index) => {
-      const entity = PerformanceCriterion.create({
-        ...criterion,
-        orderIndex: criterion.orderIndex ?? index + 1,
-      });
-
-      entity.performanceTable = this;
-      entity.performanceTableId = this.id;
-
-      return entity;
+    this.assertCriterionIdsAreValid(props.criteria ?? []);
+    const candidate = PerformanceTable.create({ ...props, tutorId: this.tutorId });
+    candidate.criteria.forEach((criterion, index) => {
+      const id = props.criteria[index]!.id;
+      if (id !== undefined) criterion.id = id;
+      criterion.performanceTableId = this.id;
+      criterion.performanceTable = this;
     });
 
-    this.assertIsValid();
+    this.name = candidate.name;
+    this.description = candidate.description;
+    this.criteria = candidate.criteria;
+  }
+
+  private assertCriterionIdsAreValid(criteria: UpdatePerformanceCriterion[]): void {
+    const ids = criteria.flatMap((criterion) => (criterion.id === undefined ? [] : [criterion.id]));
+    const currentIds = new Set(this.criteria.map((criterion) => criterion.id));
+    if (new Set(ids).size !== ids.length) {
+      throw new InvalidPerformanceTableError(
+        'Os critérios da tabela não podem repetir o identificador.',
+      );
+    }
+    if (ids.some((id) => !currentIds.has(id))) {
+      throw new InvalidPerformanceTableError(
+        'Um ou mais critérios não pertencem à configuração ativa desta tabela.',
+      );
+    }
   }
 
   delete(): void {
