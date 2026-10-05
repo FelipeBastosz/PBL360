@@ -126,9 +126,9 @@ function RoomCard({ room, professorNome }: RoomCardProps) {
           <p className="text-sm text-muted">Prof. {professorNome || 'Responsável'}</p>
         </div>
         <div className="mt-1 flex items-center justify-between">
-          <span className="text-sm text-muted">0 alunos</span>
+          <span className="text-sm text-muted">{room.totalAlunos ?? 0} alunos</span>
           <span className="rounded-full bg-brand-200 px-2.5 py-0.5 text-xs font-bold text-brand-900">
-            0 problemas
+            {room.totalProblemas ?? 0} problemas
           </span>
         </div>
       </div>
