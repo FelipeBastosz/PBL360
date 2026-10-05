@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeftIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
@@ -11,75 +11,23 @@ import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
 import type { CriterionInput } from '@/types/performanceTable';
 import { EditCriteriaCard } from './components/EditCriteriaCard';
+import { DescriptionCard, EditActions } from './components/EditPerformanceTableCards';
 import { EditPerformanceTableModals } from './components/EditPerformanceTableModals';
+import { DiscardChangesModal } from './components/DiscardChangesModal';
 
-function Header({ title }: { title: string }) {
+function Header({ title, onBack }: { title: string; onBack: () => void }) {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Voltar" className="p-1">
+        <button onClick={onBack} aria-label="Voltar" className="p-1">
           <ChevronLeftIcon className="size-6" strokeWidth={2} />
         </button>
         <h1 className="text-lg font-bold">{title}</h1>
       </div>
       <UserAvatar user={user} />
     </header>
-  );
-}
-
-function DescriptionCard({
-  description,
-  onOpenEdit,
-}: {
-  description: string;
-  onOpenEdit: () => void;
-}) {
-  return (
-    <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
-        <button
-          type="button"
-          onClick={onOpenEdit}
-          aria-label="Editar descrição e título"
-          className="text-brand-900"
-        >
-          <PencilIcon className="size-5" />
-        </button>
-      </div>
-      <p className="mt-1 text-sm text-muted">{description || 'Sem descrição'}</p>
-    </div>
-  );
-}
-
-function EditActions({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) {
-  return (
-    <div className="mt-8 flex flex-col gap-3">
-      <button
-        type="button"
-        disabled
-        className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg opacity-80"
-      >
-        Excluir essa fórmula
-      </button>
-      <button
-        type="button"
-        onClick={onSave}
-        className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg hover:bg-brand-800"
-      >
-        Concluir edição
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="text-center text-sm font-semibold text-brand-900 underline"
-      >
-        Cancelar
-      </button>
-    </div>
   );
 }
 
@@ -90,13 +38,38 @@ function validateEditFormula(nome: string, count: number, totalWeight: number) {
   return null;
 }
 
-function useEditPerformanceTableForm(id: string) {
-  const navigate = useNavigate();
-  const { notify } = useToast();
+function checkIsDirty(
+  current: { nome: string; descricao: string; criterios: CriterionInput[] },
+  initial: { nome: string; descricao: string; criterios: CriterionInput[] } | null,
+) {
+  if (!initial) return false;
+  return (
+    current.nome !== initial.nome ||
+    current.descricao !== initial.descricao ||
+    JSON.stringify(current.criterios) !== JSON.stringify(initial.criterios)
+  );
+}
+
+async function submitUpdate(
+  id: string,
+  payload: { nome: string; descricao: string | null; criterios: CriterionInput[] },
+  notify: (t: { tone: 'success'; message: string }) => void,
+  navigate: (to: string, opts?: { replace?: boolean }) => void,
+) {
+  await performanceTableService.update(id, payload);
+  notify({ tone: 'success', message: 'Fórmula atualizada com sucesso.' });
+  navigate(ROUTES.performanceTables, { replace: true });
+}
+
+function useFetchTableInitialData(id: string) {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [criterios, setCriterios] = useState<CriterionInput[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [initialData, setInitialData] = useState<{
+    nome: string;
+    descricao: string;
+    criterios: CriterionInput[];
+  } | null>(null);
 
   const fetchTable = useCallback(() => performanceTableService.getById(id), [id]);
   const { run, isLoading, error } = useAsyncAction(fetchTable);
@@ -107,28 +80,14 @@ function useEditPerformanceTableForm(id: string) {
         setNome(res.data.nome);
         setDescricao(res.data.descricao || '');
         setCriterios(res.data.criterios);
+        setInitialData({
+          nome: res.data.nome,
+          descricao: res.data.descricao || '',
+          criterios: res.data.criterios,
+        });
       }
     });
   }, [run]);
-
-  async function handleSave() {
-    setErrorMessage(null);
-    const totalWeight = criterios.reduce((sum, c) => sum + c.peso, 0);
-    const err = validateEditFormula(nome, criterios.length, totalWeight);
-    if (err) return setErrorMessage(err);
-
-    try {
-      await performanceTableService.update(id, {
-        nome: nome.trim(),
-        descricao: descricao.trim() || null,
-        criterios,
-      });
-      notify({ tone: 'success', message: 'Fórmula atualizada com sucesso.' });
-      navigate(ROUTES.performanceTables, { replace: true });
-    } catch (caught: unknown) {
-      setErrorMessage(caught instanceof Error ? caught.message : 'Erro ao atualizar a fórmula.');
-    }
-  }
 
   return {
     nome,
@@ -137,12 +96,49 @@ function useEditPerformanceTableForm(id: string) {
     setDescricao,
     criterios,
     setCriterios,
-    errorMessage,
+    initialData,
     isLoading,
     error,
-    handleSave,
-    navigate,
   };
+}
+
+function useEditPerformanceTableForm(id: string) {
+  const navigate = useNavigate();
+  const { notify } = useToast();
+  const data = useFetchTableInitialData(id);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const isDirty = useMemo(
+    () =>
+      checkIsDirty(
+        { nome: data.nome, descricao: data.descricao, criterios: data.criterios },
+        data.initialData,
+      ),
+    [data.nome, data.descricao, data.criterios, data.initialData],
+  );
+
+  async function handleSave() {
+    setErrorMessage(null);
+    const totalWeight = data.criterios.reduce((sum, c) => sum + c.peso, 0);
+    const err = validateEditFormula(data.nome, data.criterios.length, totalWeight);
+    if (err) return setErrorMessage(err);
+    try {
+      await submitUpdate(
+        id,
+        {
+          nome: data.nome.trim(),
+          descricao: data.descricao.trim() || null,
+          criterios: data.criterios,
+        },
+        notify,
+        navigate,
+      );
+    } catch (caught: unknown) {
+      setErrorMessage(caught instanceof Error ? caught.message : 'Erro ao atualizar a fórmula.');
+    }
+  }
+
+  return { ...data, errorMessage, isDirty, handleSave, navigate };
 }
 
 function useEditModals(setCriterios: React.Dispatch<React.SetStateAction<CriterionInput[]>>) {
@@ -172,9 +168,10 @@ type MainContentProps = {
   onOpenInfo: () => void;
   onOpenAdd: () => void;
   onOpenEdit: (c: CriterionInput) => void;
+  onExit: () => void;
 };
 
-function EditMainContent({ form, onOpenInfo, onOpenAdd, onOpenEdit }: MainContentProps) {
+function EditMainContent({ form, onOpenInfo, onOpenAdd, onOpenEdit, onExit }: MainContentProps) {
   if (form.isLoading) {
     return (
       <div className="mt-12 flex justify-center">
@@ -187,19 +184,19 @@ function EditMainContent({ form, onOpenInfo, onOpenAdd, onOpenEdit }: MainConten
     <>
       <DescriptionCard description={form.descricao} onOpenEdit={onOpenInfo} />
       <EditCriteriaCard items={form.criterios} onOpenAdd={onOpenAdd} onOpenEdit={onOpenEdit} />
-      <EditActions onSave={form.handleSave} onCancel={() => form.navigate(-1)} />
+      <EditActions onSave={form.handleSave} onCancel={onExit} />
     </>
   );
 }
 
-type ModalsSectionProps = {
+type ModalsProps = {
   form: ReturnType<typeof useEditPerformanceTableForm>;
   modals: ReturnType<typeof useEditModals>;
   totalWeight: number;
   otherWeightsSum: number;
 };
 
-function EditModalsSection({ form, modals, totalWeight, otherWeightsSum }: ModalsSectionProps) {
+function EditModalsSection({ form, modals, totalWeight, otherWeightsSum }: ModalsProps) {
   return (
     <EditPerformanceTableModals
       isInfoModalOpen={modals.isInfoModalOpen}
@@ -227,15 +224,24 @@ export function EditPerformanceTablePage() {
   const { id } = useParams<{ id: string }>();
   const form = useEditPerformanceTableForm(id!);
   const modals = useEditModals(form.setCriterios);
+  const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
 
   const totalWeight = form.criterios.reduce((sum, c) => sum + c.peso, 0);
   const otherWeightsSum = modals.editingCriterion
     ? totalWeight - modals.editingCriterion.peso
     : totalWeight;
 
+  function handleExit() {
+    if (form.isDirty) {
+      setIsDiscardModalOpen(true);
+    } else {
+      form.navigate(-1);
+    }
+  }
+
   return (
     <div className="min-h-dvh bg-surface pb-12">
-      <Header title={form.nome || 'Sessão de apresentação'} />
+      <Header title={form.nome || 'Sessão de apresentação'} onBack={handleExit} />
       <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4">
         {(form.errorMessage || form.error) && (
           <Alert tone="error">{form.errorMessage || form.error?.message}</Alert>
@@ -245,6 +251,7 @@ export function EditPerformanceTablePage() {
           onOpenInfo={() => modals.setIsInfoModalOpen(true)}
           onOpenAdd={() => modals.setIsAddModalOpen(true)}
           onOpenEdit={modals.setEditingCriterion}
+          onExit={handleExit}
         />
       </main>
       <EditModalsSection
@@ -252,6 +259,11 @@ export function EditPerformanceTablePage() {
         modals={modals}
         totalWeight={totalWeight}
         otherWeightsSum={otherWeightsSum}
+      />
+      <DiscardChangesModal
+        isOpen={isDiscardModalOpen}
+        onConfirm={() => form.navigate(-1)}
+        onCancel={() => setIsDiscardModalOpen(false)}
       />
     </div>
   );

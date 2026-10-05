@@ -57,7 +57,7 @@ describe('EditPerformanceTablePage', () => {
     expect(screen.getByText('Domínio')).toBeInTheDocument();
   });
 
-  it('opens modal to edit title and description', async () => {
+  it('warns about unsaved changes when user modified form and tries to cancel', async () => {
     renderPage();
 
     await screen.findByRole('heading', { name: 'Sessão de apresentação' });
@@ -65,10 +65,20 @@ describe('EditPerformanceTablePage', () => {
 
     const titleInput = screen.getByLabelText('Título da Fórmula');
     await userEvent.clear(titleInput);
-    await userEvent.type(titleInput, 'Novo Nome');
+    await userEvent.type(titleInput, 'Nome Modificado');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar Edição' }));
 
-    expect(screen.getByRole('heading', { name: 'Novo Nome' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.getByText('Descartar alterações?')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'As alterações feitas nesta fórmula não foram salvas e serão perdidas se você sair agora.',
+      ),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar editando' }));
+    expect(screen.queryByText('Descartar alterações?')).not.toBeInTheDocument();
   });
 
   it('opens modal to edit a specific criterion and saves changes', async () => {
