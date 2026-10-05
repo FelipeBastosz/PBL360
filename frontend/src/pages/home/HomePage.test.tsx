@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
-import { renderApp, sessionFor, studentUser } from '@/testing/renderApp';
+import { renderApp, sessionFor, studentUser, tutorUser } from '@/testing/renderApp';
 
 vi.mock('@/services/user.service');
 
@@ -43,15 +43,14 @@ describe('HomePage', () => {
   });
 
   it('shows the formulas button only for tutors', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sessionStore.save(sessionFor({ ...studentUser, tipo: 'TUTOR' as any, possuiFoto: false }));
+    sessionStore.save(sessionFor(tutorUser));
     renderApp('/inicio');
 
     expect(await screen.findByRole('button', { name: 'Ver Minhas Fórmulas' })).toBeInTheDocument();
   });
 
   it('does not show the formulas button for students', async () => {
-    sessionStore.save(sessionFor({ ...studentUser, tipo: 'ALUNO', possuiFoto: false }));
+    sessionStore.save(sessionFor(studentUser));
     renderApp('/inicio');
 
     expect(
