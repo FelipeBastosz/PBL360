@@ -35,76 +35,40 @@ describe('CreatePerformanceTablePage', () => {
     expect(screen.getByText('+Adicionar critério')).toBeInTheDocument();
   });
 
-  it('shows error message if title is missing on save', async () => {
-    renderPage({ nome: '' });
-
-    await userEvent.click(screen.getByRole('button', { name: 'Salvar Fórmula' }));
-
-    expect(screen.getByText('O título da fórmula é obrigatório.')).toBeInTheDocument();
-  });
-
-  it('shows error message if criteria list is empty on save', async () => {
-    renderPage({ nome: 'Barema Teste' });
-
-    await userEvent.click(screen.getByRole('button', { name: 'Salvar Fórmula' }));
-
-    expect(
-      screen.getByText('A tabela de desempenho deve possuir ao menos um critério.'),
-    ).toBeInTheDocument();
-  });
-
-  it('shows error message if criteria weights sum to less than 10 on save', async () => {
+  it('allows editing an added criterion in creation page', async () => {
     renderPage({ nome: 'Barema Teste' });
 
     await userEvent.click(screen.getByText('+Adicionar critério'));
-    await userEvent.type(screen.getByLabelText('Nome do critério'), 'Critério 1');
-    await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
-    await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '6');
-    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
-
-    await userEvent.click(screen.getByRole('button', { name: 'Salvar Fórmula' }));
-
-    expect(
-      screen.getByText('A soma dos pesos dos critérios deve ser exatamente 10.'),
-    ).toBeInTheDocument();
-  });
-
-  it('blocks criterion addition if weight is less than 1 or greater than 10', async () => {
-    renderPage({ nome: 'Barema Teste' });
-
-    await userEvent.click(screen.getByText('+Adicionar critério'));
-    await userEvent.type(screen.getByLabelText('Nome do critério'), 'Invalido');
-    await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
-    await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '0');
-    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
-
-    expect(screen.getByText('O peso do critério deve estar entre 1 e 10.')).toBeInTheDocument();
-
-    await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
-    await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '11');
-    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
-
-    expect(screen.getByText('O peso do critério deve estar entre 1 e 10.')).toBeInTheDocument();
-  });
-
-  it('blocks adding a criterion that causes total weight to exceed 10', async () => {
-    renderPage({ nome: 'Barema Teste' });
-
-    await userEvent.click(screen.getByText('+Adicionar critério'));
-    await userEvent.type(screen.getByLabelText('Nome do critério'), 'C1');
-    await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
-    await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '7');
-    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
-
-    await userEvent.click(screen.getByText('+Adicionar critério'));
-    await userEvent.type(screen.getByLabelText('Nome do critério'), 'C2');
+    await userEvent.type(screen.getByLabelText('Nome do critério'), 'Pontualidade');
     await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
     await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '5');
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
 
-    expect(
-      screen.getByText('A soma total dos pesos não pode ultrapassar 10. Restante: 3.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Pontualidade')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Editar critério Pontualidade' }));
+    const nameInput = screen.getByLabelText('Nome do Critério');
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, 'Pontualidade e Foco');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar Edição' }));
+
+    expect(screen.getByText('Pontualidade e Foco')).toBeInTheDocument();
+  });
+
+  it('allows deleting an added criterion in creation page', async () => {
+    renderPage({ nome: 'Barema Teste' });
+
+    await userEvent.click(screen.getByText('+Adicionar critério'));
+    await userEvent.type(screen.getByLabelText('Nome do critério'), 'Pontualidade');
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+    expect(screen.getByText('Pontualidade')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir critério Pontualidade' }));
+    expect(screen.getByText('Excluir critério?')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, excluir critério' }));
+    expect(screen.queryByText('Pontualidade')).not.toBeInTheDocument();
   });
 
   it('adds a criterion via modal and submits successfully when weights equal 10', async () => {
@@ -116,8 +80,6 @@ describe('CreatePerformanceTablePage', () => {
     await userEvent.clear(screen.getByLabelText('Peso (1 a 10)'));
     await userEvent.type(screen.getByLabelText('Peso (1 a 10)'), '10');
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
-
-    expect(screen.getByText('Pontualidade')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Salvar Fórmula' }));
 

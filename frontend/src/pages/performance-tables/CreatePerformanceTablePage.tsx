@@ -1,23 +1,20 @@
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/useToast';
-import { performanceTableService } from '@/services/performance-table.service';
-import { ROUTES } from '@/routes/paths';
 import type { CriterionInput } from '@/types/performanceTable';
-import { AddCriterionModal } from './components/AddCriterionModal';
+import { TitleCard, FormActions } from './components/CreatePerformanceTableCards';
+import { CreatePerformanceTableModals } from './components/CreatePerformanceTableModals';
+import { useCreatePerformanceTableForm } from './hooks/useCreatePerformanceTableForm';
 
-function Header({ title }: { title: string }) {
+function Header({ title, onBack }: { title: string; onBack: () => void }) {
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Voltar" className="p-1">
+        <button onClick={onBack} aria-label="Voltar" className="p-1">
           <ChevronLeftIcon className="size-6" strokeWidth={2} />
         </button>
         <h1 className="text-lg font-bold">{title}</h1>
@@ -27,37 +24,15 @@ function Header({ title }: { title: string }) {
   );
 }
 
-function TitleCard({
-  value,
-  onChange,
-  hasError,
+function CriterionRow({
+  item,
+  onEdit,
+  onDelete,
 }: {
-  value: string;
-  onChange: (v: string) => void;
-  hasError: boolean;
+  item: CriterionInput;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
-  return (
-    <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
-      <label htmlFor="title-input" className="text-sm font-semibold text-brand-900">
-        Título da Fórmula
-      </label>
-      <input
-        id="title-input"
-        type="text"
-        placeholder="Fórmula Padrão"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`mt-2 h-12 w-full rounded-[10px] border px-4 text-sm text-ink placeholder:text-placeholder focus:outline-none focus:ring-1 ${
-          hasError
-            ? 'border-danger focus:border-danger focus:ring-danger'
-            : 'border-black/10 focus:border-brand-900 focus:ring-brand-900'
-        }`}
-      />
-    </div>
-  );
-}
-
-function CriterionRow({ item }: { item: CriterionInput }) {
   return (
     <div className="border-b border-black/5 px-4 py-3">
       <div className="flex items-center justify-between">
@@ -71,17 +46,17 @@ function CriterionRow({ item }: { item: CriterionInput }) {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            aria-label="Editar critério"
-            disabled
-            className="text-brand-900 opacity-60"
+            onClick={onEdit}
+            aria-label={`Editar critério ${item.nome}`}
+            className="text-brand-900 hover:opacity-80"
           >
             <PencilIcon className="size-5" />
           </button>
           <button
             type="button"
-            aria-label="Excluir critério"
-            disabled
-            className="text-danger opacity-60"
+            onClick={onDelete}
+            aria-label={`Excluir critério ${item.nome}`}
+            className="text-danger hover:opacity-80"
           >
             <TrashIcon className="size-5" />
           </button>
@@ -93,11 +68,15 @@ function CriterionRow({ item }: { item: CriterionInput }) {
 
 function CriteriaCard({
   items,
-  onOpenModal,
+  onOpenAdd,
+  onOpenEdit,
+  onOpenDelete,
   hasError,
 }: {
   items: CriterionInput[];
-  onOpenModal: () => void;
+  onOpenAdd: () => void;
+  onOpenEdit: (criterion: CriterionInput) => void;
+  onOpenDelete: (criterion: CriterionInput) => void;
   hasError: boolean;
 }) {
   return (
@@ -112,12 +91,17 @@ function CriteriaCard({
       </div>
       <div>
         {items.map((item, index) => (
-          <CriterionRow key={`${item.nome}-${index}`} item={item} />
+          <CriterionRow
+            key={`${item.nome}-${index}`}
+            item={item}
+            onEdit={() => onOpenEdit(item)}
+            onDelete={() => onOpenDelete(item)}
+          />
         ))}
       </div>
       <button
         type="button"
-        onClick={onOpenModal}
+        onClick={onOpenAdd}
         className="w-full px-4 py-3 text-left text-sm font-semibold text-brand-900 transition-colors hover:bg-brand-50"
       >
         +Adicionar critério
@@ -126,107 +110,72 @@ function CriteriaCard({
   );
 }
 
-function FormActions({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) {
-  return (
-    <div className="mt-8 flex flex-col gap-3">
-      <button
-        type="button"
-        onClick={onSave}
-        className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 active:scale-[0.98]"
-      >
-        Salvar Fórmula
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="text-center text-sm font-semibold text-brand-900 underline hover:opacity-80"
-      >
-        Cancelar
-      </button>
-    </div>
-  );
-}
+function useCreateCriteriaModals(
+  setCriterios: React.Dispatch<React.SetStateAction<CriterionInput[]>>,
+  totalWeight: number,
+) {
+  const [editingCriterion, setEditingCriterion] = useState<CriterionInput | null>(null);
+  const [criterionToDelete, setCriterionToDelete] = useState<CriterionInput | null>(null);
 
-function validateFormula(nome: string, count: number, totalWeight: number) {
-  if (!nome.trim()) {
-    return { error: 'O título da fórmula é obrigatório.', fields: { nome: true } };
+  const otherWeightsSum = editingCriterion ? totalWeight - editingCriterion.peso : totalWeight;
+
+  function handleSaveCriterion(upd: CriterionInput) {
+    setCriterios((prev) => prev.map((c) => (c.ordem === upd.ordem ? upd : c)));
   }
-  if (count === 0) {
-    return {
-      error: 'A tabela de desempenho deve possuir ao menos um critério.',
-      fields: { criterios: true },
-    };
-  }
-  if (totalWeight !== 10) {
-    return {
-      error: 'A soma dos pesos dos critérios deve ser exatamente 10.',
-      fields: { criterios: true },
-    };
-  }
-  return null;
-}
 
-function useCreatePerformanceTableForm() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { notify } = useToast();
-  const initialData = (location.state as { nome?: string; descricao?: string }) || {};
-
-  const [nome, setNome] = useState(initialData.nome || '');
-  const [descricao] = useState(initialData.descricao || '');
-  const [criterios, setCriterios] = useState<CriterionInput[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ nome?: boolean; criterios?: boolean }>({});
-
-  const totalWeight = criterios.reduce((acc, c) => acc + c.peso, 0);
-
-  async function handleSave() {
-    setErrorMessage(null);
-    const validation = validateFormula(nome, criterios.length, totalWeight);
-    if (validation) {
-      setErrorMessage(validation.error);
-      setFieldErrors(validation.fields);
-      return;
-    }
-    try {
-      await performanceTableService.create({
-        nome: nome.trim(),
-        descricao: descricao.trim() || undefined,
-        criterios,
-      });
-      notify({ tone: 'success', message: 'Fórmula criada com sucesso.' });
-      navigate(ROUTES.performanceTables, { replace: true });
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'Ocorreu um erro ao salvar a fórmula.');
-    }
+  function handleDeleteCriterion() {
+    if (!criterionToDelete) return;
+    setCriterios((prev) => prev.filter((c) => c.ordem !== criterionToDelete.ordem));
+    setCriterionToDelete(null);
   }
 
   return {
-    nome,
-    setNome,
-    criterios,
-    setCriterios,
-    totalWeight,
-    isModalOpen,
-    setIsModalOpen,
-    errorMessage,
-    fieldErrors,
-    setFieldErrors,
-    handleSave,
-    navigate,
+    editingCriterion,
+    setEditingCriterion,
+    criterionToDelete,
+    setCriterionToDelete,
+    otherWeightsSum,
+    handleSaveCriterion,
+    handleDeleteCriterion,
   };
+}
+
+type ModalsSectionProps = {
+  form: ReturnType<typeof useCreatePerformanceTableForm>;
+  modals: ReturnType<typeof useCreateCriteriaModals>;
+};
+
+function CreateModalsSection({ form, modals }: ModalsSectionProps) {
+  return (
+    <CreatePerformanceTableModals
+      isAddModalOpen={form.isModalOpen}
+      onCloseAddModal={() => form.setIsModalOpen(false)}
+      onAddCriterion={(c) => {
+        form.setCriterios((prev) => [...prev, c]);
+        form.setFieldErrors((prev) => ({ ...prev, criterios: false }));
+      }}
+      nextOrder={form.criterios.length + 1}
+      totalWeight={form.totalWeight}
+      editingCriterion={modals.editingCriterion}
+      onCloseEditModal={() => modals.setEditingCriterion(null)}
+      onSaveCriterion={modals.handleSaveCriterion}
+      otherWeightsSum={modals.otherWeightsSum}
+      criterionToDelete={modals.criterionToDelete}
+      onCloseDeleteCriterion={() => modals.setCriterionToDelete(null)}
+      onConfirmDeleteCriterion={modals.handleDeleteCriterion}
+    />
+  );
 }
 
 export function CreatePerformanceTablePage() {
   const form = useCreatePerformanceTableForm();
+  const modals = useCreateCriteriaModals(form.setCriterios, form.totalWeight);
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
-      <Header title={form.nome || 'Sessão de apresentação'} />
+      <Header title={form.nome || 'Sessão de apresentação'} onBack={() => form.navigate(-1)} />
       <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4">
         {form.errorMessage && <Alert tone="error">{form.errorMessage}</Alert>}
-
         <TitleCard
           value={form.nome}
           onChange={(v) => {
@@ -235,26 +184,16 @@ export function CreatePerformanceTablePage() {
           }}
           hasError={Boolean(form.fieldErrors.nome)}
         />
-
         <CriteriaCard
           items={form.criterios}
-          onOpenModal={() => form.setIsModalOpen(true)}
+          onOpenAdd={() => form.setIsModalOpen(true)}
+          onOpenEdit={modals.setEditingCriterion}
+          onOpenDelete={modals.setCriterionToDelete}
           hasError={Boolean(form.fieldErrors.criterios)}
         />
-
         <FormActions onSave={form.handleSave} onCancel={() => form.navigate(-1)} />
       </main>
-
-      <AddCriterionModal
-        isOpen={form.isModalOpen}
-        onClose={() => form.setIsModalOpen(false)}
-        onAdd={(c) => {
-          form.setCriterios((prev) => [...prev, c]);
-          form.setFieldErrors((prev) => ({ ...prev, criterios: false }));
-        }}
-        nextOrder={form.criterios.length + 1}
-        currentTotalWeight={form.totalWeight}
-      />
+      <CreateModalsSection form={form} modals={modals} />
     </div>
   );
 }
