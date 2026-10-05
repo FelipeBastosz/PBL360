@@ -8,4 +8,4 @@ export const CARD_ACCENT_CLASS =
 
 export const PAGE_CONTAINER_CLASS = 'mx-auto w-full max-w-md px-4 sm:max-w-2xl lg:max-w-5xl';
 
-export const CARD_GRID_CLASS = 'stagger-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3';
+export const CARD_GRID_CLASS = 'stagger-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0';
