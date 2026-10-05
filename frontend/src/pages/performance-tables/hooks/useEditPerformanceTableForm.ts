@@ -77,6 +77,49 @@ function useFetchTableInitialData(id: string) {
   };
 }
 
+function useSaveExecution(
+  id: string,
+  data: ReturnType<typeof useFetchTableInitialData>,
+  notify: (t: { tone: 'success'; message: string }) => void,
+  navigate: (to: string, opts?: { replace?: boolean }) => void,
+  setErrorMessage: (msg: string | null) => void,
+) {
+  const [isSaving, setIsSaving] = useState(false);
+
+  function prepareSave(): boolean {
+    setErrorMessage(null);
+    const totalWeight = data.criterios.reduce((sum, c) => sum + c.peso, 0);
+    const err = validateEditFormula(data.nome, data.criterios.length, totalWeight);
+    if (err) {
+      setErrorMessage(err);
+      return false;
+    }
+    return true;
+  }
+
+  async function executeSave() {
+    setIsSaving(true);
+    try {
+      await submitUpdate(
+        id,
+        {
+          nome: data.nome.trim(),
+          descricao: data.descricao.trim() || null,
+          criterios: data.criterios,
+        },
+        notify,
+        navigate,
+      );
+    } catch (caught: unknown) {
+      setErrorMessage(caught instanceof Error ? caught.message : 'Erro ao atualizar a fórmula.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return { isSaving, prepareSave, executeSave };
+}
+
 export function useEditPerformanceTableForm(id: string) {
   const navigate = useNavigate();
   const { notify } = useToast();
@@ -92,26 +135,7 @@ export function useEditPerformanceTableForm(id: string) {
     [data.nome, data.descricao, data.criterios, data.initialData],
   );
 
-  async function handleSave() {
-    setErrorMessage(null);
-    const totalWeight = data.criterios.reduce((sum, c) => sum + c.peso, 0);
-    const err = validateEditFormula(data.nome, data.criterios.length, totalWeight);
-    if (err) return setErrorMessage(err);
-    try {
-      await submitUpdate(
-        id,
-        {
-          nome: data.nome.trim(),
-          descricao: data.descricao.trim() || null,
-          criterios: data.criterios,
-        },
-        notify,
-        navigate,
-      );
-    } catch (caught: unknown) {
-      setErrorMessage(caught instanceof Error ? caught.message : 'Erro ao atualizar a fórmula.');
-    }
-  }
+  const save = useSaveExecution(id, data, notify, navigate, setErrorMessage);
 
-  return { ...data, errorMessage, setErrorMessage, isDirty, handleSave, navigate };
+  return { ...data, ...save, errorMessage, setErrorMessage, isDirty, navigate };
 }

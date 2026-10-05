@@ -57,6 +57,28 @@ describe('EditPerformanceTablePage', () => {
     expect(screen.getByText('Domínio')).toBeInTheDocument();
   });
 
+  it('prompts user with warning modal before saving formula alterations', async () => {
+    vi.mocked(performanceTableService.update).mockResolvedValue(mockTable);
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Sessão de apresentação' });
+    await userEvent.click(screen.getByRole('button', { name: 'Concluir edição' }));
+
+    expect(screen.getByText('Salvar alterações na fórmula?')).toBeInTheDocument();
+    expect(screen.getByText(/sessões que já foram avaliadas com esta fórmula/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar e salvar' }));
+
+    expect(performanceTableService.update).toHaveBeenCalledWith(
+      'table-1',
+      expect.objectContaining({ nome: 'Sessão de apresentação' }),
+    );
+    expect(mockNotify).toHaveBeenCalledWith({
+      tone: 'success',
+      message: 'Fórmula atualizada com sucesso.',
+    });
+  });
+
   it('opens modal to delete a criterion and removes it when confirmed', async () => {
     renderPage();
 
