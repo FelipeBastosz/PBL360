@@ -69,6 +69,7 @@ export default function SessionHubPage() {
         session={session}
         problem={problem}
         userNome={user?.nome}
+        user={user}
         backUrl={backUrl}
       />
       <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">

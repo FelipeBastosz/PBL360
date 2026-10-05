@@ -169,7 +169,7 @@ export default function ProblemSessionsPage() {
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
-      <ProblemSessionsHeader room={room} problem={problem} userNome={user?.nome} />
+      <ProblemSessionsHeader room={room} problem={problem} userNome={user?.nome} user={user} />
       <ProblemSessionsMain
         error={error}
         isProfessor={isProfessor}
