@@ -7,6 +7,8 @@ export type Room = {
   semestre: string;
   ativo: boolean;
   criadoEm: string;
+  totalAlunos?: number;
+  totalProblemas?: number;
 };
 
 export type CreateRoomPayload = {
