@@ -25,13 +25,21 @@ export function DescriptionCard({
   );
 }
 
-export function EditActions({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) {
+export function EditActions({
+  onSave,
+  onCancel,
+  onDeleteFormula,
+}: {
+  onSave: () => void;
+  onCancel: () => void;
+  onDeleteFormula: () => void;
+}) {
   return (
     <div className="mt-8 flex flex-col gap-3">
       <button
         type="button"
-        disabled
-        className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg opacity-80"
+        onClick={onDeleteFormula}
+        className="w-full rounded-[14px] bg-danger py-3.5 text-base font-bold text-white shadow-lg hover:bg-danger/90"
       >
         Excluir essa fórmula
       </button>

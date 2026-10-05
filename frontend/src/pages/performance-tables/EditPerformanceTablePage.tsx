@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
-import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
 import type { CriterionInput } from '@/types/performanceTable';
@@ -14,6 +13,7 @@ import { EditCriteriaCard } from './components/EditCriteriaCard';
 import { DescriptionCard, EditActions } from './components/EditPerformanceTableCards';
 import { EditPerformanceTableModals } from './components/EditPerformanceTableModals';
 import { DiscardChangesModal } from './components/DiscardChangesModal';
+import { useEditPerformanceTableForm } from './hooks/useEditPerformanceTableForm';
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {
   const { user } = useAuth();
@@ -31,120 +31,12 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
   );
 }
 
-function validateEditFormula(nome: string, count: number, totalWeight: number) {
-  if (!nome.trim()) return 'O título da fórmula é obrigatório.';
-  if (count === 0) return 'A tabela deve possuir ao menos um critério.';
-  if (totalWeight !== 10) return 'A soma dos pesos dos critérios deve ser exatamente 10.';
-  return null;
-}
-
-function checkIsDirty(
-  current: { nome: string; descricao: string; criterios: CriterionInput[] },
-  initial: { nome: string; descricao: string; criterios: CriterionInput[] } | null,
-) {
-  if (!initial) return false;
-  return (
-    current.nome !== initial.nome ||
-    current.descricao !== initial.descricao ||
-    JSON.stringify(current.criterios) !== JSON.stringify(initial.criterios)
-  );
-}
-
-async function submitUpdate(
-  id: string,
-  payload: { nome: string; descricao: string | null; criterios: CriterionInput[] },
-  notify: (t: { tone: 'success'; message: string }) => void,
-  navigate: (to: string, opts?: { replace?: boolean }) => void,
-) {
-  await performanceTableService.update(id, payload);
-  notify({ tone: 'success', message: 'Fórmula atualizada com sucesso.' });
-  navigate(ROUTES.performanceTables, { replace: true });
-}
-
-function useFetchTableInitialData(id: string) {
-  const [nome, setNome] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [criterios, setCriterios] = useState<CriterionInput[]>([]);
-  const [initialData, setInitialData] = useState<{
-    nome: string;
-    descricao: string;
-    criterios: CriterionInput[];
-  } | null>(null);
-
-  const fetchTable = useCallback(() => performanceTableService.getById(id), [id]);
-  const { run, isLoading, error } = useAsyncAction(fetchTable);
-
-  useEffect(() => {
-    run().then((res) => {
-      if (res.ok) {
-        setNome(res.data.nome);
-        setDescricao(res.data.descricao || '');
-        setCriterios(res.data.criterios);
-        setInitialData({
-          nome: res.data.nome,
-          descricao: res.data.descricao || '',
-          criterios: res.data.criterios,
-        });
-      }
-    });
-  }, [run]);
-
-  return {
-    nome,
-    setNome,
-    descricao,
-    setDescricao,
-    criterios,
-    setCriterios,
-    initialData,
-    isLoading,
-    error,
-  };
-}
-
-function useEditPerformanceTableForm(id: string) {
-  const navigate = useNavigate();
-  const { notify } = useToast();
-  const data = useFetchTableInitialData(id);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const isDirty = useMemo(
-    () =>
-      checkIsDirty(
-        { nome: data.nome, descricao: data.descricao, criterios: data.criterios },
-        data.initialData,
-      ),
-    [data.nome, data.descricao, data.criterios, data.initialData],
-  );
-
-  async function handleSave() {
-    setErrorMessage(null);
-    const totalWeight = data.criterios.reduce((sum, c) => sum + c.peso, 0);
-    const err = validateEditFormula(data.nome, data.criterios.length, totalWeight);
-    if (err) return setErrorMessage(err);
-    try {
-      await submitUpdate(
-        id,
-        {
-          nome: data.nome.trim(),
-          descricao: data.descricao.trim() || null,
-          criterios: data.criterios,
-        },
-        notify,
-        navigate,
-      );
-    } catch (caught: unknown) {
-      setErrorMessage(caught instanceof Error ? caught.message : 'Erro ao atualizar a fórmula.');
-    }
-  }
-
-  return { ...data, errorMessage, isDirty, handleSave, navigate };
-}
-
 function useEditModals(setCriterios: React.Dispatch<React.SetStateAction<CriterionInput[]>>) {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCriterion, setEditingCriterion] = useState<CriterionInput | null>(null);
+  const [criterionToDelete, setCriterionToDelete] = useState<CriterionInput | null>(null);
+  const [isDeleteFormulaOpen, setIsDeleteFormulaOpen] = useState(false);
 
   const handleSaveCriterion = (upd: CriterionInput) => {
     setCriterios((prev) =>
@@ -159,19 +51,61 @@ function useEditModals(setCriterios: React.Dispatch<React.SetStateAction<Criteri
     setIsAddModalOpen,
     editingCriterion,
     setEditingCriterion,
+    criterionToDelete,
+    setCriterionToDelete,
+    isDeleteFormulaOpen,
+    setIsDeleteFormulaOpen,
     handleSaveCriterion,
   };
 }
 
+function useEditPageDeletion(
+  id: string,
+  form: ReturnType<typeof useEditPerformanceTableForm>,
+  modals: ReturnType<typeof useEditModals>,
+  notify: (t: { tone: 'success'; message: string }) => void,
+) {
+  const [isDeletingFormula, setIsDeletingFormula] = useState(false);
+
+  function handleConfirmDeleteCriterion() {
+    if (!modals.criterionToDelete) return;
+    if (form.criterios.length <= 1) {
+      form.setErrorMessage('A fórmula deve possuir ao menos um critério.');
+      modals.setCriterionToDelete(null);
+      return;
+    }
+    form.setCriterios((prev) =>
+      prev.filter((c) =>
+        c.id ? c.id !== modals.criterionToDelete!.id : c.ordem !== modals.criterionToDelete!.ordem,
+      ),
+    );
+    modals.setCriterionToDelete(null);
+  }
+
+  async function handleConfirmDeleteFormula() {
+    setIsDeletingFormula(true);
+    try {
+      await performanceTableService.remove(id);
+      notify({ tone: 'success', message: 'Fórmula excluída com sucesso.' });
+      form.navigate(ROUTES.performanceTables, { replace: true });
+    } catch (err: unknown) {
+      form.setErrorMessage(err instanceof Error ? err.message : 'Erro ao excluir a fórmula.');
+    } finally {
+      setIsDeletingFormula(false);
+      modals.setIsDeleteFormulaOpen(false);
+    }
+  }
+
+  return { isDeletingFormula, handleConfirmDeleteCriterion, handleConfirmDeleteFormula };
+}
+
 type MainContentProps = {
   form: ReturnType<typeof useEditPerformanceTableForm>;
-  onOpenInfo: () => void;
-  onOpenAdd: () => void;
-  onOpenEdit: (c: CriterionInput) => void;
+  modals: ReturnType<typeof useEditModals>;
   onExit: () => void;
 };
 
-function EditMainContent({ form, onOpenInfo, onOpenAdd, onOpenEdit, onExit }: MainContentProps) {
+function EditMainContent({ form, modals, onExit }: MainContentProps) {
   if (form.isLoading) {
     return (
       <div className="mt-12 flex justify-center">
@@ -182,21 +116,40 @@ function EditMainContent({ form, onOpenInfo, onOpenAdd, onOpenEdit, onExit }: Ma
 
   return (
     <>
-      <DescriptionCard description={form.descricao} onOpenEdit={onOpenInfo} />
-      <EditCriteriaCard items={form.criterios} onOpenAdd={onOpenAdd} onOpenEdit={onOpenEdit} />
-      <EditActions onSave={form.handleSave} onCancel={onExit} />
+      <DescriptionCard
+        description={form.descricao}
+        onOpenEdit={() => modals.setIsInfoModalOpen(true)}
+      />
+      <EditCriteriaCard
+        items={form.criterios}
+        onOpenAdd={() => modals.setIsAddModalOpen(true)}
+        onOpenEdit={modals.setEditingCriterion}
+        onOpenDelete={modals.setCriterionToDelete}
+      />
+      <EditActions
+        onSave={form.handleSave}
+        onCancel={onExit}
+        onDeleteFormula={() => modals.setIsDeleteFormulaOpen(true)}
+      />
     </>
   );
 }
 
-type ModalsProps = {
+type ModalsSectionProps = {
   form: ReturnType<typeof useEditPerformanceTableForm>;
   modals: ReturnType<typeof useEditModals>;
+  deletion: ReturnType<typeof useEditPageDeletion>;
   totalWeight: number;
   otherWeightsSum: number;
 };
 
-function EditModalsSection({ form, modals, totalWeight, otherWeightsSum }: ModalsProps) {
+function ModalsSection({
+  form,
+  modals,
+  deletion,
+  totalWeight,
+  otherWeightsSum,
+}: ModalsSectionProps) {
   return (
     <EditPerformanceTableModals
       isInfoModalOpen={modals.isInfoModalOpen}
@@ -216,6 +169,13 @@ function EditModalsSection({ form, modals, totalWeight, otherWeightsSum }: Modal
       onCloseEditModal={() => modals.setEditingCriterion(null)}
       onSaveCriterion={modals.handleSaveCriterion}
       otherWeightsSum={otherWeightsSum}
+      criterionToDelete={modals.criterionToDelete}
+      onCloseDeleteCriterion={() => modals.setCriterionToDelete(null)}
+      onConfirmDeleteCriterion={deletion.handleConfirmDeleteCriterion}
+      isDeleteFormulaOpen={modals.isDeleteFormulaOpen}
+      isDeletingFormula={deletion.isDeletingFormula}
+      onCloseDeleteFormula={() => modals.setIsDeleteFormulaOpen(false)}
+      onConfirmDeleteFormula={deletion.handleConfirmDeleteFormula}
     />
   );
 }
@@ -224,20 +184,15 @@ export function EditPerformanceTablePage() {
   const { id } = useParams<{ id: string }>();
   const form = useEditPerformanceTableForm(id!);
   const modals = useEditModals(form.setCriterios);
+  const { notify } = useToast();
   const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
+  const deletion = useEditPageDeletion(id!, form, modals, notify);
 
   const totalWeight = form.criterios.reduce((sum, c) => sum + c.peso, 0);
   const otherWeightsSum = modals.editingCriterion
     ? totalWeight - modals.editingCriterion.peso
     : totalWeight;
-
-  function handleExit() {
-    if (form.isDirty) {
-      setIsDiscardModalOpen(true);
-    } else {
-      form.navigate(-1);
-    }
-  }
+  const handleExit = () => (form.isDirty ? setIsDiscardModalOpen(true) : form.navigate(-1));
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
@@ -246,17 +201,12 @@ export function EditPerformanceTablePage() {
         {(form.errorMessage || form.error) && (
           <Alert tone="error">{form.errorMessage || form.error?.message}</Alert>
         )}
-        <EditMainContent
-          form={form}
-          onOpenInfo={() => modals.setIsInfoModalOpen(true)}
-          onOpenAdd={() => modals.setIsAddModalOpen(true)}
-          onOpenEdit={modals.setEditingCriterion}
-          onExit={handleExit}
-        />
+        <EditMainContent form={form} modals={modals} onExit={handleExit} />
       </main>
-      <EditModalsSection
+      <ModalsSection
         form={form}
         modals={modals}
+        deletion={deletion}
         totalWeight={totalWeight}
         otherWeightsSum={otherWeightsSum}
       />

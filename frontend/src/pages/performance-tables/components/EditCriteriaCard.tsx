@@ -1,7 +1,15 @@
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { CriterionInput } from '@/types/performanceTable';
 
-function CriterionRow({ item, onEdit }: { item: CriterionInput; onEdit: () => void }) {
+function CriterionRow({
+  item,
+  onEdit,
+  onDelete,
+}: {
+  item: CriterionInput;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   return (
     <div className="border-b border-black/5 px-4 py-3">
       <div className="flex items-center justify-between">
@@ -23,9 +31,9 @@ function CriterionRow({ item, onEdit }: { item: CriterionInput; onEdit: () => vo
           </button>
           <button
             type="button"
-            aria-label="Excluir critério"
-            disabled
-            className="text-danger opacity-60"
+            onClick={onDelete}
+            aria-label={`Excluir critério ${item.nome}`}
+            className="text-danger hover:opacity-80"
           >
             <TrashIcon className="size-5" />
           </button>
@@ -39,10 +47,12 @@ export function EditCriteriaCard({
   items,
   onOpenAdd,
   onOpenEdit,
+  onOpenDelete,
 }: {
   items: CriterionInput[];
   onOpenAdd: () => void;
   onOpenEdit: (criterion: CriterionInput) => void;
+  onOpenDelete: (criterion: CriterionInput) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-[14px] border border-black/5 bg-white shadow-sm">
@@ -56,6 +66,7 @@ export function EditCriteriaCard({
             key={item.id ?? `${item.nome}-${index}`}
             item={item}
             onEdit={() => onOpenEdit(item)}
+            onDelete={() => onOpenDelete(item)}
           />
         ))}
       </div>

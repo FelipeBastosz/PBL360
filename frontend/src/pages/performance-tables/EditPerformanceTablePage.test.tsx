@@ -57,57 +57,33 @@ describe('EditPerformanceTablePage', () => {
     expect(screen.getByText('Domínio')).toBeInTheDocument();
   });
 
-  it('warns about unsaved changes when user modified form and tries to cancel', async () => {
+  it('opens modal to delete a criterion and removes it when confirmed', async () => {
     renderPage();
 
     await screen.findByRole('heading', { name: 'Sessão de apresentação' });
-    await userEvent.click(screen.getByRole('button', { name: 'Editar descrição e título' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir critério Comportamento' }));
 
-    const titleInput = screen.getByLabelText('Título da Fórmula');
-    await userEvent.clear(titleInput);
-    await userEvent.type(titleInput, 'Nome Modificado');
-    await userEvent.click(screen.getByRole('button', { name: 'Salvar Edição' }));
+    expect(screen.getByText('Excluir critério?')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, excluir critério' }));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-
-    expect(screen.getByText('Descartar alterações?')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'As alterações feitas nesta fórmula não foram salvas e serão perdidas se você sair agora.',
-      ),
-    ).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Continuar editando' }));
-    expect(screen.queryByText('Descartar alterações?')).not.toBeInTheDocument();
+    expect(screen.queryByText('Comportamento')).not.toBeInTheDocument();
+    expect(screen.getByText('Domínio')).toBeInTheDocument();
   });
 
-  it('opens modal to edit a specific criterion and saves changes', async () => {
-    vi.mocked(performanceTableService.update).mockResolvedValue(mockTable);
+  it('opens modal to delete the entire formula and deletes via service', async () => {
+    vi.mocked(performanceTableService.remove).mockResolvedValue();
     renderPage();
 
     await screen.findByRole('heading', { name: 'Sessão de apresentação' });
-    await userEvent.click(screen.getByRole('button', { name: 'Editar critério Comportamento' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir essa fórmula' }));
 
-    const nameInput = screen.getByLabelText('Nome do Critério');
-    await userEvent.clear(nameInput);
-    await userEvent.type(nameInput, 'Participação Geral');
-    await userEvent.click(screen.getByRole('button', { name: 'Salvar Edição' }));
+    expect(screen.getByText('Excluir fórmula?')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, excluir fórmula' }));
 
-    expect(screen.getByText('Participação Geral')).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Concluir edição' }));
-
-    expect(performanceTableService.update).toHaveBeenCalledWith(
-      'table-1',
-      expect.objectContaining({
-        criterios: expect.arrayContaining([
-          expect.objectContaining({ id: 'c1', nome: 'Participação Geral' }),
-        ]),
-      }),
-    );
+    expect(performanceTableService.remove).toHaveBeenCalledWith('table-1');
     expect(mockNotify).toHaveBeenCalledWith({
       tone: 'success',
-      message: 'Fórmula atualizada com sucesso.',
+      message: 'Fórmula excluída com sucesso.',
     });
   });
 });
