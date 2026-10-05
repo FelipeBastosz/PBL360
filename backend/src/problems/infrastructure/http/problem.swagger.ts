@@ -24,11 +24,29 @@ export const CreateProblemSwaggerDocs = applyDecorators(
 
 export const ListProblemsSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
-  ApiOperation({ summary: 'Lista os problemas de uma sala' }),
-  ApiOkResponse({ description: 'Lista retornada.', type: ProblemResponseDto, isArray: true }),
-  ApiUnauthorizedResponse({ description: 'JWT não informado.', type: ErrorResponseDto }),
-  ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
-  ApiNotFoundResponse({ description: 'Sala não encontrada.', type: ErrorResponseDto }),
+  ApiOperation({
+    summary: 'Lista os problemas de uma sala',
+    description:
+      'Retorna os problemas da sala informada, na ordem sequencial definida para a sala. ' +
+      'Caso a sala não possua problemas cadastrados, devolve uma lista vazia.',
+  }),
+  ApiOkResponse({
+    description: 'Lista de problemas da sala retornada com sucesso.',
+    type: ProblemResponseDto,
+    isArray: true,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiForbiddenResponse({
+    description: 'Acesso negado. O usuário não possui permissão nesta sala.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Sala não encontrada.',
+    type: ErrorResponseDto,
+  }),
 );
 
 export const GetProblemSwaggerDocs = applyDecorators(

@@ -10,6 +10,8 @@ type TextFieldProps = {
   placeholder?: string;
   autoComplete?: string;
   inputMode?: 'text' | 'email' | 'numeric' | 'url';
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  spellCheck?: boolean;
   maxLength?: number;
   error?: string;
   hint?: string;
