@@ -3,6 +3,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
 import { useLeaveGuard } from '@/hooks/useLeaveGuard';
 import { useRollCall } from '@/hooks/useRollCall';
+import { useRollCallTitle } from '@/hooks/useRollCallTitle';
 import { ROUTES } from '@/routes/paths';
 import { LeaveDialog } from './LeaveDialog';
 import { RollCallHeader } from './RollCallHeader';
@@ -10,17 +11,33 @@ import { RollCallScreen } from './RollCallScreen';
 
 type RollCallLocationState = { titulo?: string; subtitulo?: string } | null;
 
+type RollCallParams = {
+  sessaoId?: string;
+  sessionId?: string;
+  roomId?: string;
+  problemId?: string;
+};
+
 export default function RollCallPage() {
-  const { sessaoId = '' } = useParams<{ sessaoId: string }>();
+  const { sessaoId, sessionId, roomId, problemId } = useParams<RollCallParams>();
+  const id = sessaoId ?? sessionId ?? '';
   const state = useLocation().state as RollCallLocationState;
-  const rollCall = useRollCall(sessaoId);
-  const guard = useLeaveGuard(rollCall.isDirty, ROUTES.rooms);
+  const heading = useRollCallTitle({
+    roomId,
+    problemId,
+    sessionId: id,
+    fallback: { title: state?.titulo ?? 'Chamada', subtitle: state?.subtitulo ?? 'Sessão' },
+  });
+  const rollCall = useRollCall(id);
+  const backPath =
+    roomId && problemId ? `/turmas/${roomId}/problemas/${problemId}/sessoes/${id}` : ROUTES.rooms;
+  const guard = useLeaveGuard(rollCall.isDirty, backPath);
 
   return (
     <div className="min-h-dvh bg-surface">
       <RollCallHeader
-        title={state?.titulo ?? 'Chamada'}
-        subtitle={state?.subtitulo ?? 'Sessão'}
+        title={heading.title}
+        subtitle={heading.subtitle}
         onBack={guard.requestLeave}
       />
       {rollCall.error && (
@@ -36,7 +53,7 @@ export default function RollCallPage() {
       {rollCall.rollCall && rollCall.board && (
         <RollCallScreen
           {...rollCall}
-          sessionId={sessaoId}
+          sessionId={id}
           rollCall={rollCall.rollCall}
           board={rollCall.board}
         />

@@ -1,6 +1,7 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
+import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
 import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
@@ -9,6 +10,7 @@ import type { UserResponse } from '@/types/auth';
 import type { RollCall, RollCallStudent } from '@/types/session';
 
 vi.mock('@/services/session.service');
+vi.mock('@/services/problem.service');
 vi.mock('@/services/user.service');
 
 const tutor: UserResponse = {
@@ -304,6 +306,27 @@ describe('RollCallPage', () => {
       transferir: true,
     });
     expect(await screen.findByText('Papel atribuído.')).toBeInTheDocument();
+  });
+
+  it('opens from the session screen address with the problem and session in the header', async () => {
+    vi.mocked(sessionService.getRollCall).mockResolvedValue(rollCall([ana]));
+    vi.mocked(problemService.getById).mockResolvedValue({
+      titulo: 'Sistema de biblioteca',
+    } as never);
+    vi.mocked(sessionService.getById).mockResolvedValue({
+      titulo: 'Abertura',
+      data: '2026-08-12',
+    } as never);
+    sessionStore.save(sessionFor(tutor));
+
+    renderApp('/turmas/r1/problemas/p1/sessoes/s1/chamada');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Chamada - Sistema de biblioteca' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Abertura · 12/08')).toBeInTheDocument();
+    expect(sessionService.getRollCall).toHaveBeenCalledWith('s1');
+    expect(screen.getByRole('button', { name: 'Ana Souza, fora da mesa' })).toBeInTheDocument();
   });
 
   it('asks before leaving with unsaved changes', async () => {

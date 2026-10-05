@@ -80,6 +80,7 @@ export function AppRoutes() {
           <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />
           <Route path={ROUTES.sessionHub} element={<SessionHubPage />} />
           <Route path={ROUTES.rollCall} element={<RollCallPage />} />
+          <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
