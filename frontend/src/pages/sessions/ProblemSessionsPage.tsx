@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { SearchField } from '@/components/ui/SearchField';
+import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,16 +24,7 @@ import { ProblemTopActions } from './ProblemTopActions';
 
 function SessionsSearch({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
   return (
-    <div className="relative mt-2">
-      <input
-        type="text"
-        placeholder="Pesquisar sessão"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="h-12 w-full rounded-[10px] border border-black/10 bg-white pl-10 pr-4 text-ink placeholder:text-placeholder focus:border-brand-900 focus:outline-none"
-      />
-      <MagnifyingGlassIcon className="pointer-events-none absolute left-3.5 top-3.5 size-5 text-placeholder" />
-    </div>
+    <SearchField label="Pesquisar sessão" value={query} onChange={setQuery} className="mt-2" />
   );
 }
 
@@ -104,7 +97,7 @@ function ProblemSessionsMain({
   problemId,
 }: MainProps) {
   return (
-    <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">
+    <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
       {error && <Alert tone="error">{error.message}</Alert>}
       <ProblemTopActions isProfessor={isProfessor} />
       <SessionsSearch query={query} setQuery={setQuery} />
@@ -119,7 +112,7 @@ function ProblemSessionsMain({
           <SessionsEmptyState isProfessor={isProfessor} />
         )
       ) : (
-        <div className="mt-2 flex flex-col gap-3">
+        <div className={cn(CARD_GRID_CLASS, 'mt-2')}>
           {sessions.map((session) => (
             <SessionCard key={session.id} session={session} roomId={roomId} problemId={problemId} />
           ))}
