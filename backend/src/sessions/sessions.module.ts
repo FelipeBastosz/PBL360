@@ -31,6 +31,12 @@ import { ListRoomSessionsUseCase } from './application/use-cases/list-room-sessi
 import { GetMemberSessionUseCase } from './application/use-cases/get-member-session.use-case';
 import { ROOM_SESSION_REPOSITORY } from './domain/repositories/room-session.repository';
 import { PgRoomSessionRepository } from './infrastructure/database/pg-room-session.repository';
+import { SessionAttachmentsController } from './infrastructure/http/session-attachments.controller';
+import { UploadSessionAttachmentUseCase } from './application/use-cases/upload-session-attachment.use-case';
+import { ListSessionAttachmentsUseCase } from './application/use-cases/list-session-attachments.use-case';
+import { DownloadSessionAttachmentUseCase } from './application/use-cases/download-session-attachment.use-case';
+import { SESSION_ATTACHMENT_REPOSITORY } from './domain/repositories/session-attachment.repository';
+import { PgSessionAttachmentRepository } from './infrastructure/database/pg-session-attachment.repository';
 
 @Module({
   imports: [
@@ -43,6 +49,7 @@ import { PgRoomSessionRepository } from './infrastructure/database/pg-room-sessi
     SessionRolesController,
     RollCallController,
     MemberSessionsController,
+    SessionAttachmentsController,
   ],
   providers: [
     CreateSessionUseCase,
@@ -58,10 +65,14 @@ import { PgRoomSessionRepository } from './infrastructure/database/pg-room-sessi
     RecordRollCallUseCase,
     ListRoomSessionsUseCase,
     GetMemberSessionUseCase,
+    UploadSessionAttachmentUseCase,
+    ListSessionAttachmentsUseCase,
+    DownloadSessionAttachmentUseCase,
     { provide: SESSION_REPOSITORY, useClass: PgSessionRepository },
     { provide: SESSION_ROLE_REPOSITORY, useClass: PgSessionRoleRepository },
     { provide: ATTENDANCE_REPOSITORY, useClass: PgAttendanceRepository },
     { provide: ROOM_SESSION_REPOSITORY, useClass: PgRoomSessionRepository },
+    { provide: SESSION_ATTACHMENT_REPOSITORY, useClass: PgSessionAttachmentRepository },
   ],
   exports: [SESSION_REPOSITORY, SessionAccessService],
 })
