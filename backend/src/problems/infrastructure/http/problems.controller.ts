@@ -1,6 +1,10 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
+import {
+  AuthenticatedUser,
+  type AuthenticatedUserRef,
+} from '@/shared/decorators/authenticated-user.decorator';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
@@ -62,12 +66,13 @@ export class ProblemsController {
   }
 
   @Get()
+  @Roles(UserType.TUTOR, UserType.STUDENT)
   @ListProblemsSwaggerDocs
   async list(
     @UuidParam('roomId') roomId: string,
-    @AuthenticatedUserId() tutorId: string,
+    @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<ProblemResponseDto[]> {
-    const problems = await this.listProblemsByRoomUseCase.execute({ roomId, tutorId });
+    const problems = await this.listProblemsByRoomUseCase.execute({ roomId, member });
 
     return problems.map(toProblemResponse);
   }

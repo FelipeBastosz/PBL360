@@ -316,8 +316,25 @@ describe('Problems (e2e)', () => {
       await getProblems(roomId).expect(401);
     });
 
-    it('returns 403 Forbidden when a student attempts to list problems', async () => {
-      await getProblems(roomId, studentToken).expect(403);
+    it('returns 403 Forbidden when a student is not enrolled in the room', async () => {
+      const response = await getProblems(roomId, studentToken).expect(403);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe('Você não participa desta sala.');
+    });
+
+    it('returns 200 OK with problems when a student is enrolled in the room', async () => {
+      await dataSource.query('INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);', [
+        roomId,
+        studentId,
+      ]);
+      await postProblem(roomId, { titulo: 'Problema Para Aluno' }, tutor1Token).expect(201);
+
+      const response = await getProblems(roomId, studentToken).expect(200);
+      const body = response.body as ProblemResponseBody[];
+
+      expect(body).toHaveLength(1);
+      expect(body[0]?.titulo).toBe('Problema Para Aluno');
+      expect(body[0]?.ordem).toBe(1);
     });
 
     it('returns 403 Forbidden when tutor has no permission in the room', async () => {

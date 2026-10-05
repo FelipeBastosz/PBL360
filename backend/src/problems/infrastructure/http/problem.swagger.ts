@@ -66,7 +66,7 @@ export const ListProblemsSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
   ApiForbiddenResponse({
-    description: 'Acesso negado. O professor não possui permissão nesta sala.',
+    description: 'Acesso negado. O usuário não possui permissão nesta sala.',
     type: ErrorResponseDto,
   }),
   ApiNotFoundResponse({
