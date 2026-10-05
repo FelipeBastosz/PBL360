@@ -8,7 +8,7 @@ describe('DeactivateBehaviorTagUseCase', () => {
   let useCase: DeactivateBehaviorTagUseCase;
 
   const customTag = (): BehaviorTag =>
-    Object.assign(BehaviorTag.create({ nome: 'Liderou', tutorId: 'tutor-1' }), { id: 'tag-1' });
+    Object.assign(BehaviorTag.create({ name: 'Liderou', tutorId: 'tutor-1' }), { id: 'tag-1' });
 
   beforeEach(() => {
     repository = {
@@ -26,12 +26,12 @@ describe('DeactivateBehaviorTagUseCase', () => {
 
     await useCase.execute('tag-1', 'tutor-1');
 
-    expect(tag.ativa).toBe(false);
+    expect(tag.active).toBe(false);
     expect(repository.save).toHaveBeenCalledWith(tag);
   });
 
   it('rejects deactivating a predefined tag', async () => {
-    repository.findById.mockResolvedValue(BehaviorTag.create({ nome: 'Atraso' }));
+    repository.findById.mockResolvedValue(BehaviorTag.create({ name: 'Atraso' }));
 
     await expect(useCase.execute('tag-1', 'tutor-1')).rejects.toBeInstanceOf(ForbiddenError);
     expect(repository.save).not.toHaveBeenCalled();

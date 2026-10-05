@@ -11,7 +11,7 @@ import {
 import { User } from '@/users/domain/entities/user.entity';
 
 @Entity('behavior_tags')
-@Unique('uq_behavior_tags_tutor_nome', ['tutorId', 'nome'])
+@Unique('uq_behavior_tags_tutor_name', ['tutorId', 'name'])
 export class BehaviorTag {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -29,19 +29,22 @@ export class BehaviorTag {
   tutor: User | null;
 
   @Column({ type: 'varchar', length: 80 })
-  nome: string;
+  name: string;
+
+  @Column({ type: 'varchar', length: 7, nullable: true })
+  color: string | null;
 
   @Column({ type: 'boolean', default: true })
-  ativa: boolean;
+  active: boolean;
 
-  @CreateDateColumn({ name: 'criado_em', type: 'timestamptz' })
-  criadoEm: Date;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
 
   static create(props: NewBehaviorTag): BehaviorTag {
     const tag = new BehaviorTag();
     tag.tutorId = props.tutorId ?? null;
-    tag.nome = props.nome.trim();
-    tag.ativa = true;
+    tag.name = props.name.trim();
+    tag.active = true;
     return tag;
   }
 
@@ -53,16 +56,16 @@ export class BehaviorTag {
     return this.tutorId === tutorId;
   }
 
-  rename(nome: string): void {
-    this.nome = nome.trim();
+  rename(name: string): void {
+    this.name = name.trim();
   }
 
   deactivate(): void {
-    this.ativa = false;
+    this.active = false;
   }
 }
 
 export interface NewBehaviorTag {
   tutorId?: string | null;
-  nome: string;
+  name: string;
 }

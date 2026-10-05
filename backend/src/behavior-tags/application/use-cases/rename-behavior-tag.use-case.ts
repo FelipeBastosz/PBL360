@@ -13,10 +13,10 @@ export class RenameBehaviorTagUseCase {
     private readonly behaviorTags: BehaviorTagRepository,
   ) {}
 
-  async execute(id: string, tutorId: string, nome: string): Promise<BehaviorTag> {
+  async execute(id: string, tutorId: string, name: string): Promise<BehaviorTag> {
     const tag = await this.findOwnedTag(id, tutorId);
-    tag.rename(nome);
-    if (await this.behaviorTags.existsForTutorWithName(tutorId, tag.nome, tag.id)) {
+    tag.rename(name);
+    if (await this.behaviorTags.existsForTutorWithName(tutorId, tag.name, tag.id)) {
       throw new ConflictError('Você já tem uma marcação com esse nome.');
     }
 
@@ -25,7 +25,7 @@ export class RenameBehaviorTagUseCase {
 
   private async findOwnedTag(id: string, tutorId: string): Promise<BehaviorTag> {
     const tag = await this.behaviorTags.findById(id);
-    if (!tag?.ativa) throw new NotFoundError('Marcação não encontrada.');
+    if (!tag?.active) throw new NotFoundError('Marcação não encontrada.');
     if (!tag.isOwnedBy(tutorId)) {
       throw new ForbiddenError('Só é possível alterar as suas marcações personalizadas.');
     }

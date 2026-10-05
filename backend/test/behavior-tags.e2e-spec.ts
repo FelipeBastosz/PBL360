@@ -43,7 +43,7 @@ describe('Behavior tags (e2e)', () => {
     otherTutor = await insertUser(app, database, 'other@uefs.br');
     student = await insertUser(app, database, 'aluno@discente.uefs.br', UserType.STUDENT);
     const [row] = await database.query<[{ id: string }]>(
-      "INSERT INTO behavior_tags (nome) VALUES ('Atraso') RETURNING id;",
+      "INSERT INTO behavior_tags (name) VALUES ('Atraso') RETURNING id;",
     );
     predefinedId = row.id;
   });
@@ -137,11 +137,11 @@ describe('Behavior tags (e2e)', () => {
 
       await api(app, tutor).delete(`/marcacoes/${tag.id}`).expect(204);
 
-      const rows = await database.query<{ ativa: boolean }[]>(
-        'SELECT ativa FROM behavior_tags WHERE id = $1;',
+      const rows = await database.query<{ active: boolean }[]>(
+        'SELECT active FROM behavior_tags WHERE id = $1;',
         [tag.id],
       );
-      expect(rows).toEqual([{ ativa: false }]);
+      expect(rows).toEqual([{ active: false }]);
       await api(app, tutor).delete(`/marcacoes/${tag.id}`).expect(404);
     });
 

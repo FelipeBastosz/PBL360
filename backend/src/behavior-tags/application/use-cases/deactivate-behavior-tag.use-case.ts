@@ -14,7 +14,7 @@ export class DeactivateBehaviorTagUseCase {
 
   async execute(id: string, tutorId: string): Promise<void> {
     const tag = await this.behaviorTags.findById(id);
-    if (!tag?.ativa) throw new NotFoundError('Marcação não encontrada.');
+    if (!tag?.active) throw new NotFoundError('Marcação não encontrada.');
     if (!tag.isOwnedBy(tutorId)) {
       throw new ForbiddenError('Só é possível excluir as suas marcações personalizadas.');
     }

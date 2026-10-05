@@ -23,8 +23,8 @@ describe('CreateBehaviorTagUseCase', () => {
     const tag = await useCase.execute('tutor-1', 'Liderou o grupo');
 
     expect(tag.tutorId).toBe('tutor-1');
-    expect(tag.nome).toBe('Liderou o grupo');
-    expect(tag.ativa).toBe(true);
+    expect(tag.name).toBe('Liderou o grupo');
+    expect(tag.active).toBe(true);
     expect(repository.save).toHaveBeenCalledWith(tag);
   });
 

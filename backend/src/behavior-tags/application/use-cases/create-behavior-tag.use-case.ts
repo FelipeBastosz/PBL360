@@ -13,9 +13,9 @@ export class CreateBehaviorTagUseCase {
     private readonly behaviorTags: BehaviorTagRepository,
   ) {}
 
-  async execute(tutorId: string, nome: string): Promise<BehaviorTag> {
-    const tag = BehaviorTag.create({ tutorId, nome });
-    if (await this.behaviorTags.existsForTutorWithName(tutorId, tag.nome)) {
+  async execute(tutorId: string, name: string): Promise<BehaviorTag> {
+    const tag = BehaviorTag.create({ tutorId, name });
+    if (await this.behaviorTags.existsForTutorWithName(tutorId, tag.name)) {
       throw new ConflictError('Você já tem uma marcação com esse nome.');
     }
 

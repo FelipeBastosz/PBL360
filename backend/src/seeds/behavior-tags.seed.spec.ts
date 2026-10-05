@@ -19,7 +19,7 @@ describe('behavior-tags.seed', () => {
 
     const saved = tagRepo.save.mock.calls[0]![0] as BehaviorTag;
     expect(created).toBe(true);
-    expect(saved.nome).toBe('Atraso');
+    expect(saved.name).toBe('Atraso');
     expect(saved.isPredefined()).toBe(true);
   });
 
@@ -28,11 +28,11 @@ describe('behavior-tags.seed', () => {
 
     await seedBehaviorTag('Atraso', dataSource);
 
-    expect(tagRepo.findOneBy).toHaveBeenCalledWith({ nome: 'Atraso', tutorId: IsNull() });
+    expect(tagRepo.findOneBy).toHaveBeenCalledWith({ name: 'Atraso', tutorId: IsNull() });
   });
 
   it('skips a tag that already exists', async () => {
-    tagRepo.findOneBy.mockResolvedValueOnce(BehaviorTag.create({ nome: 'Atraso' }));
+    tagRepo.findOneBy.mockResolvedValueOnce(BehaviorTag.create({ name: 'Atraso' }));
 
     const created = await seedBehaviorTag('Atraso', dataSource);
 

@@ -14,10 +14,10 @@ export class PgBehaviorTagRepository implements BehaviorTagRepository {
   findAvailableForTutor(tutorId: string): Promise<BehaviorTag[]> {
     return this.tags.find({
       where: [
-        { tutorId: IsNull(), ativa: true },
-        { tutorId, ativa: true },
+        { tutorId: IsNull(), active: true },
+        { tutorId, active: true },
       ],
-      order: { nome: 'ASC' },
+      order: { name: 'ASC' },
     });
   }
 
@@ -25,10 +25,10 @@ export class PgBehaviorTagRepository implements BehaviorTagRepository {
     return this.tags.findOneBy({ id });
   }
 
-  existsForTutorWithName(tutorId: string, nome: string, ignoreId?: string): Promise<boolean> {
+  existsForTutorWithName(tutorId: string, name: string, ignoreId?: string): Promise<boolean> {
     return this.tags.existsBy({
       tutorId,
-      nome,
+      name,
       ...(ignoreId ? { id: Not(ignoreId) } : {}),
     });
   }

@@ -12,20 +12,20 @@ export const SEED_BEHAVIOR_TAGS = [
   'Contribuição relevante',
 ];
 
-export async function seedBehaviorTag(nome: string, ds: DataSource): Promise<boolean> {
+export async function seedBehaviorTag(name: string, ds: DataSource): Promise<boolean> {
   const repo = ds.getRepository(BehaviorTag);
-  if (await repo.findOneBy({ nome, tutorId: IsNull() })) {
-    logger.log(`Behavior tag ${nome} already exists. Skipping.`);
+  if (await repo.findOneBy({ name, tutorId: IsNull() })) {
+    logger.log(`Behavior tag ${name} already exists. Skipping.`);
     return false;
   }
 
-  await repo.save(BehaviorTag.create({ nome }));
-  logger.log(`Created behavior tag: ${nome}`);
+  await repo.save(BehaviorTag.create({ name }));
+  logger.log(`Created behavior tag: ${name}`);
   return true;
 }
 
 export async function seedAllBehaviorTags(ds: DataSource): Promise<void> {
-  for (const nome of SEED_BEHAVIOR_TAGS) {
-    await seedBehaviorTag(nome, ds);
+  for (const name of SEED_BEHAVIOR_TAGS) {
+    await seedBehaviorTag(name, ds);
   }
 }

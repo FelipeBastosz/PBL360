@@ -5,8 +5,8 @@ import { ListBehaviorTagsUseCase } from './list-behavior-tags.use-case';
 describe('ListBehaviorTagsUseCase', () => {
   it('lists the tags available to the authenticated tutor', async () => {
     const tags = [
-      BehaviorTag.create({ nome: 'Atraso' }),
-      BehaviorTag.create({ nome: 'Liderou o grupo', tutorId: 'tutor-1' }),
+      BehaviorTag.create({ name: 'Atraso' }),
+      BehaviorTag.create({ name: 'Liderou o grupo', tutorId: 'tutor-1' }),
     ];
     const repository: jest.Mocked<BehaviorTagRepository> = {
       findAvailableForTutor: jest.fn(),

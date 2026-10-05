@@ -8,7 +8,7 @@ describe('RenameBehaviorTagUseCase', () => {
   let useCase: RenameBehaviorTagUseCase;
 
   const customTag = (): BehaviorTag =>
-    Object.assign(BehaviorTag.create({ nome: 'Liderou', tutorId: 'tutor-1' }), { id: 'tag-1' });
+    Object.assign(BehaviorTag.create({ name: 'Liderou', tutorId: 'tutor-1' }), { id: 'tag-1' });
 
   beforeEach(() => {
     repository = {
@@ -26,7 +26,7 @@ describe('RenameBehaviorTagUseCase', () => {
 
     const tag = await useCase.execute('tag-1', 'tutor-1', '  Liderou o grupo ');
 
-    expect(tag.nome).toBe('Liderou o grupo');
+    expect(tag.name).toBe('Liderou o grupo');
     expect(repository.save).toHaveBeenCalledWith(tag);
   });
 
@@ -50,7 +50,7 @@ describe('RenameBehaviorTagUseCase', () => {
   });
 
   it('rejects renaming a predefined tag', async () => {
-    repository.findById.mockResolvedValue(BehaviorTag.create({ nome: 'Atraso' }));
+    repository.findById.mockResolvedValue(BehaviorTag.create({ name: 'Atraso' }));
 
     await expect(useCase.execute('tag-1', 'tutor-1', 'X')).rejects.toBeInstanceOf(ForbiddenError);
     expect(repository.save).not.toHaveBeenCalled();
