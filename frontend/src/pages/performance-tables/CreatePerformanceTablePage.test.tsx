@@ -1,9 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { performanceTableService } from '@/services/performance-table.service';
 import { CreatePerformanceTablePage } from './CreatePerformanceTablePage';
+
+const mockNotify = vi.fn();
+vi.mock('@/hooks/useToast', () => ({
+  useToast: () => ({ notify: mockNotify }),
+}));
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { nome: 'Professor Fulano', tipo: 'TUTOR' } }),
@@ -12,6 +17,10 @@ vi.mock('@/hooks/useAuth', () => ({
 vi.mock('@/services/performance-table.service');
 
 describe('CreatePerformanceTablePage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   function renderPage(state = {}) {
     return render(
       <MemoryRouter initialEntries={[{ pathname: '/formulas/nova', state }]}>
@@ -118,5 +127,9 @@ describe('CreatePerformanceTablePage', () => {
         criterios: [expect.objectContaining({ nome: 'Pontualidade', peso: 10 })],
       }),
     );
+    expect(mockNotify).toHaveBeenCalledWith({
+      tone: 'success',
+      message: 'Fórmula criada com sucesso.',
+    });
   });
 });

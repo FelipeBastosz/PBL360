@@ -4,6 +4,7 @@ import { ChevronLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outl
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
 import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
 import type { CriterionInput } from '@/types/performanceTable';
@@ -168,6 +169,7 @@ function validateFormula(nome: string, count: number, totalWeight: number) {
 function useCreatePerformanceTableForm() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { notify } = useToast();
   const initialData = (location.state as { nome?: string; descricao?: string }) || {};
 
   const [nome, setNome] = useState(initialData.nome || '');
@@ -193,6 +195,7 @@ function useCreatePerformanceTableForm() {
         descricao: descricao.trim() || undefined,
         criterios,
       });
+      notify({ tone: 'success', message: 'Fórmula criada com sucesso.' });
       navigate(ROUTES.performanceTables, { replace: true });
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Ocorreu um erro ao salvar a fórmula.');
