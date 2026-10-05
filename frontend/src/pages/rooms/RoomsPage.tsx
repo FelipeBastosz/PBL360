@@ -18,6 +18,7 @@ import { roomService } from '@/services/room.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room, StudentRoom } from '@/types/room';
 import { countLabel } from '@/utils/countLabel';
+import { JoinRoomSheet } from './JoinRoomSheet';
 
 function toRoom(studentRoom: StudentRoom): Room {
   return {
@@ -38,8 +39,6 @@ const TUTOR_ACTIONS: FabAction[] = [
   { label: 'Editar uma turma', to: ROUTES.manageRooms },
   { label: 'Criar nova turma', to: ROUTES.createRoom },
 ];
-
-const STUDENT_ACTIONS: FabAction[] = [{ label: 'Entrar em uma turma', to: ROUTES.joinRoom }];
 
 function RoomsEmptyState({ isStudent }: { isStudent: boolean }) {
   return (
@@ -113,11 +112,8 @@ function RoomsList({ isLoading, rooms, isStudent, hasFilter, userNome }: RoomsLi
   );
 }
 
-export default function RoomsPage() {
-  const { user } = useAuth();
+function useRooms(isStudent: boolean) {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [query, setQuery] = useState('');
-  const isStudent = user?.tipo === 'ALUNO';
 
   const fetchRooms = useCallback(async (): Promise<Room[]> => {
     if (isStudent) {
@@ -129,11 +125,31 @@ export default function RoomsPage() {
 
   const { run, isLoading, error } = useAsyncAction(fetchRooms);
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     run().then((result) => {
       if (result.ok) setRooms(result.data);
     });
   }, [run]);
+
+  useEffect(() => reload(), [reload]);
+
+  return { rooms, isLoading, error, reload };
+}
+
+export default function RoomsPage() {
+  const { user } = useAuth();
+  const [query, setQuery] = useState('');
+  const isStudent = user?.tipo === 'ALUNO';
+  const { rooms, isLoading, error, reload } = useRooms(isStudent);
+  const [isJoinOpen, setIsJoinOpen] = useState(false);
+  const studentActions: FabAction[] = [
+    { label: 'Entrar em uma turma', onClick: () => setIsJoinOpen(true) },
+  ];
+
+  function handleJoined() {
+    setIsJoinOpen(false);
+    reload();
+  }
 
   const filteredRooms = rooms.filter((r) => r.nome.toLowerCase().includes(query.toLowerCase()));
 
@@ -162,7 +178,14 @@ export default function RoomsPage() {
         />
       </main>
 
-      <FabMenu label="Ações de turma" actions={isStudent ? STUDENT_ACTIONS : TUTOR_ACTIONS} />
+      <FabMenu label="Ações de turma" actions={isStudent ? studentActions : TUTOR_ACTIONS} />
+      {isStudent && (
+        <JoinRoomSheet
+          isOpen={isJoinOpen}
+          onClose={() => setIsJoinOpen(false)}
+          onJoined={handleJoined}
+        />
+      )}
     </div>
   );
 }

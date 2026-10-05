@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import RoomsPage from './RoomsPage';
 import { AuthContext } from '@/contexts/authContext';
+import { ToastProvider } from '@/contexts/ToastProvider';
 import { roomService } from '@/services/room.service';
 import type { UserResponse } from '@/types/auth';
 import type { Room } from '@/types/room';
@@ -12,6 +13,7 @@ vi.mock('@/services/room.service', () => ({
   roomService: {
     list: vi.fn(),
     listMyRooms: vi.fn(),
+    joinByCode: vi.fn(),
   },
 }));
 
@@ -70,9 +72,11 @@ function renderWithUser(user: UserResponse = mockTeacher) {
         logout: vi.fn(),
       }}
     >
-      <MemoryRouter>
-        <RoomsPage />
-      </MemoryRouter>
+      <ToastProvider>
+        <MemoryRouter>
+          <RoomsPage />
+        </MemoryRouter>
+      </ToastProvider>
     </AuthContext.Provider>,
   );
 }
@@ -171,7 +175,7 @@ describe('RoomsPage', () => {
 
       expect(screen.getByRole('link', { name: 'Criar nova turma' })).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Editar uma turma' })).toBeInTheDocument();
-      expect(screen.queryByRole('link', { name: 'Entrar em uma turma' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Entrar em uma turma' })).not.toBeInTheDocument();
     });
   });
 
@@ -191,12 +195,25 @@ describe('RoomsPage', () => {
       const fab = screen.getByRole('button', { name: /ações de turma/i });
       await userEvent.click(fab);
 
-      expect(screen.getByRole('link', { name: 'Entrar em uma turma' })).toHaveAttribute(
-        'href',
-        '/turmas/entrar',
-      );
+      expect(screen.getByRole('button', { name: 'Entrar em uma turma' })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: 'Criar nova turma' })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: 'Editar uma turma' })).not.toBeInTheDocument();
+    });
+
+    it('opens the join sheet over the list and reloads the rooms after joining', async () => {
+      vi.mocked(roomService.joinByCode).mockResolvedValue({ mensagem: 'ok' });
+      renderWithUser(mockStudent);
+      await screen.findByText('Você ainda não faz parte de nenhuma turma.');
+
+      await userEvent.click(screen.getByRole('button', { name: /ações de turma/i }));
+      await userEvent.click(screen.getByRole('button', { name: 'Entrar em uma turma' }));
+      expect(screen.getByRole('dialog', { name: 'Entrar na turma' })).toBeInTheDocument();
+
+      await userEvent.type(screen.getByLabelText('Código da Turma'), 'aB7kP2x9');
+      await userEvent.click(screen.getByRole('button', { name: 'Ir para a turma' }));
+
+      await waitFor(() => expect(roomService.listMyRooms).toHaveBeenCalledTimes(2));
+      expect(screen.queryByRole('dialog', { name: 'Entrar na turma' })).not.toBeInTheDocument();
     });
 
     it('renders room cards for student when rooms exist', async () => {

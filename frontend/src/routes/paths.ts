@@ -12,7 +12,6 @@ export const ROUTES = {
   home: '/inicio',
   rooms: '/turmas',
   createRoom: '/turmas/nova',
-  joinRoom: '/turmas/entrar',
   createRoomSuccess: '/turmas/nova/sucesso',
   manageRooms: '/turmas/gerenciar',
   editRoom: '/turmas/:id/editar',

@@ -1,22 +1,23 @@
 import type { FormEvent } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { FlowBrand } from '@/components/layout/FlowBrand';
-import { FlowShell } from '@/components/layout/FlowShell';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
 import { TextField } from '@/components/ui/TextField';
-import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { useAuth } from '@/hooks/useAuth';
 import { useForm } from '@/hooks/useForm';
 import { useToast } from '@/hooks/useToast';
 import { roomService } from '@/services/room.service';
-import { ROUTES } from '@/routes/paths';
 import {
   type JoinRoomRequest,
   toJoinRoomRequest,
   validateJoinRoomForm,
 } from '@/utils/joinRoomForm';
+
+type JoinRoomSheetProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  onJoined: () => void;
+};
 
 function joinRoom(request: JoinRoomRequest) {
   return request.kind === 'code'
@@ -24,8 +25,8 @@ function joinRoom(request: JoinRoomRequest) {
     : roomService.joinByLink({ link: request.link });
 }
 
-function JoinRoomForm() {
-  const navigate = useNavigate();
+// Mounted only while the sheet is open, so every opening starts with an empty form.
+function JoinRoomForm({ onJoined }: { onJoined: () => void }) {
   const { notify } = useToast();
   const form = useForm({ codigo: '' }, validateJoinRoomForm);
   const { run, isLoading, error } = useAsyncAction(joinRoom);
@@ -37,7 +38,7 @@ function JoinRoomForm() {
     const result = await run(request);
     if (!result.ok) return;
     notify({ tone: 'success', message: 'Pronto! Você entrou na turma.' });
-    navigate(ROUTES.rooms, { replace: true });
+    onJoined();
   }
 
   return (
@@ -50,32 +51,25 @@ function JoinRoomForm() {
       <TextField
         label="Código da Turma"
         placeholder="ex.: aB7kP2x9"
-        hint="Digite o código fornecido pelo professor para entrar na turma"
+        hint="Digite o código ou cole o link fornecido pelo professor para entrar na turma"
         autoComplete="off"
         autoCapitalize="none"
         spellCheck={false}
         value={form.values.codigo}
         onChange={(value) => form.setValue('codigo', value)}
         error={form.errors.codigo}
-        autoFocus
       />
-      <Button type="submit" isLoading={isLoading} className="mt-8">
+      <Button type="submit" isLoading={isLoading}>
         Ir para a turma
       </Button>
     </form>
   );
 }
 
-export default function JoinRoomPage() {
-  const { user } = useAuth();
-
-  // Only students can join rooms; the API answers 403 to anyone else.
-  if (user?.tipo !== 'ALUNO') return <Navigate to={ROUTES.rooms} replace />;
-
+export function JoinRoomSheet({ isOpen, onClose, onJoined }: JoinRoomSheetProps) {
   return (
-    <FlowShell title="Entrar na turma" backTo={ROUTES.rooms} trailing={<UserAvatar user={user} />}>
-      <FlowBrand />
-      <JoinRoomForm />
-    </FlowShell>
+    <Sheet isOpen={isOpen} title="Entrar na turma" onClose={onClose}>
+      <JoinRoomForm onJoined={onJoined} />
+    </Sheet>
   );
 }
