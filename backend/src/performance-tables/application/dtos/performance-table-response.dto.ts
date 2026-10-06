@@ -11,6 +11,9 @@ export class PerformanceTableResponseDto {
   @ApiProperty({ example: 'Barema PBL' })
   nome: string;
 
+  @ApiProperty({ example: false, description: 'Indica se esta é a tabela padrão protegida.' })
+  isDefault: boolean;
+
   @ApiPropertyOptional({ nullable: true })
   descricao: string | null;
 

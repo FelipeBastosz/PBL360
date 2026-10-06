@@ -14,8 +14,8 @@ describe('UpdatePerformanceTableDto', () => {
     await expect(
       validatePayload(
         [
-          { id: criterionId, nome: 'Participação', peso: 3, ordem: 1 },
-          { nome: 'Evolução', peso: 2, ordem: 2 },
+          { id: criterionId, nome: 'Participação', peso: 6, ordem: 1 },
+          { nome: 'Evolução', peso: 4, ordem: 2 },
         ],
         { descricao: null },
       ),

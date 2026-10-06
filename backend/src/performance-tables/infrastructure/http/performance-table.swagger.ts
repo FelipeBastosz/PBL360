@@ -52,7 +52,7 @@ export const CreatePerformanceTableSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Cria uma tabela de desempenho',
     description:
-      'Cria uma tabela para o professor autenticado com ao menos um critério. A ordem e o peso recebem valores padrão quando não informados.',
+      'Cria uma tabela editável para o professor autenticado. A soma dos pesos de todos os critérios deve ser igual a 10. A tabela padrão é criada automaticamente no cadastro do tutor e não pode ser criada manualmente.',
   }),
   ApiBody({ type: CreatePerformanceTableDto }),
   ApiCreatedResponse({
@@ -92,7 +92,7 @@ export const DeletePerformanceTableSwaggerDocs = applyDecorators(
     summary: 'Exclui uma tabela de desempenho',
     description:
       'Realiza a exclusão lógica da tabela sem remover critérios ou problemas vinculados. ' +
-      'Apenas o professor responsável pode excluí-la.',
+      'Apenas o professor responsável pode excluí-la. A tabela padrão não pode ser excluída.',
   }),
   ApiNoContentResponse({ description: 'Tabela de desempenho excluída com sucesso.' }),
   ApiBadRequestResponse({
@@ -118,7 +118,8 @@ export const UpdatePerformanceTableSwaggerDocs = applyDecorators(
       'Atualiza nome, descrição e a lista completa de critérios ativos. ' +
       'Critérios com ID são atualizados; critérios sem ID são criados. ' +
       'Critérios omitidos são excluídos logicamente. ' +
-      'A tabela deve manter ao menos um critério.',
+      'A soma dos pesos de todos os critérios deve ser igual a 10. ' +
+      'A tabela deve manter ao menos um critério. Na tabela padrão, nome, descrição, nomes, descrições e ordens dos critérios não podem ser alterados; somente os pesos podem ser modificados.',
   }),
   ApiBody({
     type: UpdatePerformanceTableDto,

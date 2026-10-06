@@ -10,6 +10,9 @@ export class PerformanceTableSummaryResponseDto {
   @ApiProperty({ example: 'Tabela de Desempenho 1' })
   nome: string;
 
+  @ApiProperty({ example: false, description: 'Indica se esta é a tabela padrão protegida.' })
+  isDefault: boolean;
+
   @ApiProperty({
     format: 'string',
     description: 'Descrição da tabela de desempenho.',
