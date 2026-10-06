@@ -61,6 +61,5 @@ export type RoomStudent = {
   nome: string;
   email: string;
   matricula: string | null;
-  possuiFoto: boolean;
   dataEntrada: string;
 };
