@@ -5,6 +5,11 @@ import {
   type ObservationRepository,
 } from '../../domain/repositories/observation.repository';
 
+export interface UndoObservationInput {
+  id: string;
+  tutorId: string;
+}
+
 @Injectable()
 export class UndoObservationUseCase {
   constructor(
@@ -12,7 +17,7 @@ export class UndoObservationUseCase {
     private readonly observations: ObservationRepository,
   ) {}
 
-  async execute(id: string, tutorId: string): Promise<void> {
+  async execute({ id, tutorId }: UndoObservationInput): Promise<void> {
     const observation = await this.observations.findById(id);
     if (!observation) throw new NotFoundError('Observação não encontrada.');
     if (!observation.isAuthoredBy(tutorId)) {

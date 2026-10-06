@@ -15,7 +15,11 @@ describe('ComplementObservationUseCase', () => {
   it('replaces the text of an observation by its author', async () => {
     repository.findById.mockResolvedValue(anObservation());
 
-    const observation = await useCase.execute('observation-1', 'tutor-1', '  Usou o celular ');
+    const observation = await useCase.execute({
+      id: 'observation-1',
+      tutorId: 'tutor-1',
+      text: '  Usou o celular ',
+    });
 
     expect(observation.text).toBe('Usou o celular');
     expect(repository.updateText).toHaveBeenCalledWith(observation);
@@ -24,17 +28,17 @@ describe('ComplementObservationUseCase', () => {
   it('rejects another tutor', async () => {
     repository.findById.mockResolvedValue(anObservation());
 
-    await expect(useCase.execute('observation-1', 'tutor-2', 'X')).rejects.toBeInstanceOf(
-      ForbiddenError,
-    );
+    await expect(
+      useCase.execute({ id: 'observation-1', tutorId: 'tutor-2', text: 'X' }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(repository.updateText).not.toHaveBeenCalled();
   });
 
   it('reports a missing observation', async () => {
     repository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('observation-1', 'tutor-1', 'X')).rejects.toBeInstanceOf(
-      NotFoundError,
-    );
+    await expect(
+      useCase.execute({ id: 'observation-1', tutorId: 'tutor-1', text: 'X' }),
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 });

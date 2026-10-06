@@ -33,7 +33,11 @@ export class StudentObservationsController {
     @UuidParam('alunoId') studentId: string,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<StudentObservationsResponseDto> {
-    const result = await this.listStudentObservations.execute(sessionId, studentId, tutorId);
+    const result = await this.listStudentObservations.execute({
+      sessionId,
+      studentId,
+      tutorId,
+    });
     return toStudentObservationsResponse(result);
   }
 

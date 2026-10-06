@@ -28,7 +28,11 @@ describe('ListStudentObservationsUseCase', () => {
     ];
     repository.findForStudentInSession.mockResolvedValue(observations);
 
-    const result = await useCase.execute('session-1', 'student-1', 'tutor-1');
+    const result = await useCase.execute({
+      sessionId: 'session-1',
+      studentId: 'student-1',
+      tutorId: 'tutor-1',
+    });
 
     expect(result.observations).toBe(observations);
     expect(result.tagCounts).toEqual({ 'tag-1': 2, 'tag-2': 1 });
@@ -38,9 +42,9 @@ describe('ListStudentObservationsUseCase', () => {
   it('stops when the tutor cannot access the session', async () => {
     sessionAccess.assertTutorCanAccessSessionById.mockRejectedValue(new ForbiddenError('x'));
 
-    await expect(useCase.execute('session-1', 'student-1', 'tutor-2')).rejects.toBeInstanceOf(
-      ForbiddenError,
-    );
+    await expect(
+      useCase.execute({ sessionId: 'session-1', studentId: 'student-1', tutorId: 'tutor-2' }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(repository.findForStudentInSession).not.toHaveBeenCalled();
   });
 });

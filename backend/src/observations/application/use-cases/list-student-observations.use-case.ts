@@ -6,6 +6,12 @@ import {
   type ObservationRepository,
 } from '../../domain/repositories/observation.repository';
 
+export interface ListStudentObservationsInput {
+  sessionId: string;
+  studentId: string;
+  tutorId: string;
+}
+
 export interface StudentObservations {
   observations: Observation[];
   tagCounts: Record<string, number>;
@@ -19,11 +25,11 @@ export class ListStudentObservationsUseCase {
     private readonly sessionAccess: SessionAccessService,
   ) {}
 
-  async execute(
-    sessionId: string,
-    studentId: string,
-    tutorId: string,
-  ): Promise<StudentObservations> {
+  async execute({
+    sessionId,
+    studentId,
+    tutorId,
+  }: ListStudentObservationsInput): Promise<StudentObservations> {
     await this.sessionAccess.assertTutorCanAccessSessionById(sessionId, tutorId);
     const observations = await this.observations.findForStudentInSession(sessionId, studentId);
 
