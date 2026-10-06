@@ -24,7 +24,7 @@ describe('DeleteRoomUseCase', () => {
     const room = buildRoom();
     access.assertTutorIsRoomOwner.mockResolvedValue(room);
 
-    await useCase.execute(ROOM_ID, OWNER_ID);
+    await useCase.execute({ roomId: ROOM_ID, tutorId: OWNER_ID });
 
     expect(access.assertTutorIsRoomOwner).toHaveBeenCalledWith(ROOM_ID, OWNER_ID);
     expect(rooms.softDelete).toHaveBeenCalledWith(room);
@@ -35,7 +35,9 @@ describe('DeleteRoomUseCase', () => {
   it('does not delete when the tutor is not the owner', async () => {
     access.assertTutorIsRoomOwner.mockRejectedValue(new ForbiddenError('negado'));
 
-    await expect(useCase.execute(ROOM_ID, 'other')).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(useCase.execute({ roomId: ROOM_ID, tutorId: 'other' })).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
     expect(rooms.softDelete).not.toHaveBeenCalled();
   });
 });

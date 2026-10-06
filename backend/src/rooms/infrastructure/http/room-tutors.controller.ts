@@ -41,7 +41,7 @@ export class RoomTutorsController {
     @UuidParam('id') roomId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<RoomTutorResponseDto[]> {
-    const tutors = await this.listRoomTutorsUseCase.execute(roomId, member);
+    const tutors = await this.listRoomTutorsUseCase.execute({ roomId, member });
     return tutors.map(toRoomTutorResponse);
   }
 
@@ -53,7 +53,11 @@ export class RoomTutorsController {
     @Body() dto: AddTutorToRoomDto,
     @AuthenticatedUserId() authenticatedTutorId: string,
   ): Promise<MessageResponseDto> {
-    await this.addTutorToRoomUseCase.execute(roomId, authenticatedTutorId, dto.professorId);
+    await this.addTutorToRoomUseCase.execute({
+      roomId,
+      authenticatedTutorId,
+      tutorId: dto.professorId,
+    });
 
     return { mensagem: TUTOR_ADDED };
   }
@@ -66,7 +70,7 @@ export class RoomTutorsController {
     @UuidParam('professorId') tutorId: string,
     @AuthenticatedUserId() authenticatedTutorId: string,
   ): Promise<MessageResponseDto> {
-    await this.removeTutorFromRoomUseCase.execute(roomId, authenticatedTutorId, tutorId);
+    await this.removeTutorFromRoomUseCase.execute({ roomId, authenticatedTutorId, tutorId });
 
     return { mensagem: TUTOR_REMOVED };
   }
