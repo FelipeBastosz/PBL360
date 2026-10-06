@@ -16,6 +16,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { ProblemsModule } from './problems/problems.module';
 import { PerformanceTablesModule } from './performance-tables/performance-tables.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { EvaluationsModule } from './evaluations/evaluations.module';
 import { FeedbacksModule } from './feedbacks/feedbacks.module';
 import { HealthModule } from './health/health.module';
 import { BehaviorTagsModule } from './behavior-tags/behavior-tags.module';
@@ -42,6 +43,7 @@ import { GradesModule } from './grades/grades.module';
     PerformanceTablesModule,
     SessionsModule,
     FeedbacksModule,
+    EvaluationsModule,
     HealthModule,
     BehaviorTagsModule,
     ObservationsModule,

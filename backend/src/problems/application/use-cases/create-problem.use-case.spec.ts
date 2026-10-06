@@ -25,6 +25,11 @@ describe('CreateProblemUseCase', () => {
     assertTutorCanAccessRoomMock = jest.fn();
 
     const problemRepository: jest.Mocked<ProblemRepository> = {
+      hasEvaluations: jest.fn(),
+      updateDetails: jest.fn(),
+      hasSessions: jest.fn(),
+      countSessions: jest.fn(),
+      delete: jest.fn(),
       create: saveMock,
       save: jest.fn(),
       findById: jest.fn(),

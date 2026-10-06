@@ -5,8 +5,13 @@ import { type EntityManager, Repository } from 'typeorm';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { ConflictError } from '@/shared/errors/application.error';
 
+import { hasProblemEvaluations, updateProblemDetails } from './problem-update.persistence';
+
 import { Problem } from '../../domain/entities/problem.entity';
-import type { ProblemRepository } from '../../domain/repositories/problem.repository';
+import type {
+  ProblemRepository,
+  UpdateProblemDetails,
+} from '../../domain/repositories/problem.repository';
 
 interface ProblemRow {
   id: string;
@@ -92,6 +97,21 @@ export class PgProblemRepository implements ProblemRepository {
       [problemId],
     );
     return Number(firstRowOrNull(rows)?.count ?? 0);
+  }
+
+  hasEvaluations(problemId: string): Promise<boolean> {
+    return hasProblemEvaluations(this.problems.manager, problemId);
+  }
+
+  updateDetails(input: UpdateProblemDetails): Promise<Problem> {
+    return this.problems.manager.transaction(async (manager) => {
+      await updateProblemDetails(manager, input);
+      const rows = await manager.query<ProblemRow[]>(
+        `SELECT ${PROBLEM_COLUMNS} FROM problems WHERE id = $1;`,
+        [input.id],
+      );
+      return this.toEntity(requireFirstRow(rows, 'Failed to update problem.'));
+    });
   }
 
   save(problem: Problem): Promise<Problem> {

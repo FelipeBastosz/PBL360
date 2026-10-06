@@ -67,10 +67,24 @@ export const GetProblemSwaggerDocs = applyDecorators(
 
 export const UpdateProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
-  ApiOperation({ summary: 'Atualiza título de um problema' }),
+  ApiOperation({
+    summary: 'Atualiza o título e a tabela de um problema',
+    description:
+      'Preserva o campo obrigatório title e permite vincular uma tabela própria com tabelaId. Omitir tabelaId preserva o vínculo; null remove. Após a primeira avaliação, inclusive rascunho, trocar ou remover a tabela retorna 409.',
+  }),
   ApiOkResponse({ description: 'Problema atualizado com sucesso.' }),
-  ApiBadRequestResponse({ description: 'Dados inválidos.', type: ErrorResponseDto }),
-  ApiUnauthorizedResponse({ description: 'JWT não informado.', type: ErrorResponseDto }),
+  ApiConflictResponse({
+    description: 'O problema já possui avaliações; o vínculo com a tabela não pode mudar.',
+    type: ErrorResponseDto,
+  }),
+  ApiBadRequestResponse({
+    description: 'Dados inválidos ou erro de validação.',
+    type: ErrorResponseDto,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
   ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
   ApiNotFoundResponse({ description: 'Problema não encontrado.', type: ErrorResponseDto }),
 );

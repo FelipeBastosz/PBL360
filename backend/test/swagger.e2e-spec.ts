@@ -6,7 +6,9 @@ import { createTestApp } from './helpers/create-test-app';
 interface OpenApiDocument {
   info: { title: string; version: string };
   paths: Record<string, Record<string, { tags?: string[]; responses: Record<string, unknown> }>>;
-  components: { schemas: Record<string, { properties: Record<string, unknown> }> };
+  components: {
+    schemas: Record<string, { properties: Record<string, unknown>; required?: string[] }>;
+  };
 }
 
 describe('Swagger (e2e)', () => {
@@ -104,10 +106,16 @@ describe('Swagger (e2e)', () => {
     ]);
   });
 
-  it('documents the problem update payload with the title property', () => {
-    expect(document.components.schemas.UpdateProblemDto).toBeDefined();
-    expect(Object.keys(document.components.schemas.UpdateProblemDto!.properties)).toEqual([
-      'title',
-    ]);
+  it('documents the required title and optional nullable table UUID in the problem update', () => {
+    const schema = document.components.schemas.UpdateProblemDto!;
+
+    expect(schema).toBeDefined();
+    expect(Object.keys(schema.properties).sort()).toEqual(['tabelaId', 'title']);
+    expect(schema.required).toEqual(['title']);
+    expect(schema.properties.tabelaId).toMatchObject({
+      type: 'string',
+      format: 'uuid',
+      nullable: true,
+    });
   });
 });
