@@ -13,7 +13,6 @@ import { FormulaResponseDto } from '../dtos/formula-response.dto';
 import type { Problem } from '../../domain/entities/problem.entity';
 import type { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
 
-
 interface Input {
   roomId: string;
   problemId: string;
