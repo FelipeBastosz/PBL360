@@ -24,7 +24,7 @@ describe('DeactivateBehaviorTagUseCase', () => {
     const tag = customTag();
     repository.findById.mockResolvedValue(tag);
 
-    await useCase.execute('tag-1', 'tutor-1');
+    await useCase.execute({ id: 'tag-1', tutorId: 'tutor-1' });
 
     expect(tag.active).toBe(false);
     expect(repository.save).toHaveBeenCalledWith(tag);
@@ -33,14 +33,18 @@ describe('DeactivateBehaviorTagUseCase', () => {
   it('rejects deactivating a predefined tag', async () => {
     repository.findById.mockResolvedValue(BehaviorTag.create({ name: 'Atraso' }));
 
-    await expect(useCase.execute('tag-1', 'tutor-1')).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(useCase.execute({ id: 'tag-1', tutorId: 'tutor-1' })).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
     expect(repository.save).not.toHaveBeenCalled();
   });
 
   it("rejects deactivating another tutor's tag", async () => {
     repository.findById.mockResolvedValue(customTag());
 
-    await expect(useCase.execute('tag-1', 'tutor-2')).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(useCase.execute({ id: 'tag-1', tutorId: 'tutor-2' })).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
     expect(repository.save).not.toHaveBeenCalled();
   });
 
@@ -49,7 +53,11 @@ describe('DeactivateBehaviorTagUseCase', () => {
     deactivated.deactivate();
     repository.findById.mockResolvedValueOnce(null).mockResolvedValueOnce(deactivated);
 
-    await expect(useCase.execute('tag-1', 'tutor-1')).rejects.toBeInstanceOf(NotFoundError);
-    await expect(useCase.execute('tag-1', 'tutor-1')).rejects.toBeInstanceOf(NotFoundError);
+    await expect(useCase.execute({ id: 'tag-1', tutorId: 'tutor-1' })).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+    await expect(useCase.execute({ id: 'tag-1', tutorId: 'tutor-1' })).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 });

@@ -6,6 +6,11 @@ import {
   type BehaviorTagRepository,
 } from '../../domain/repositories/behavior-tag.repository';
 
+export interface CreateBehaviorTagInput {
+  tutorId: string;
+  name: string;
+}
+
 @Injectable()
 export class CreateBehaviorTagUseCase {
   constructor(
@@ -13,7 +18,7 @@ export class CreateBehaviorTagUseCase {
     private readonly behaviorTags: BehaviorTagRepository,
   ) {}
 
-  async execute(tutorId: string, name: string): Promise<BehaviorTag> {
+  async execute({ tutorId, name }: CreateBehaviorTagInput): Promise<BehaviorTag> {
     const tag = BehaviorTag.create({ tutorId, name });
     if (await this.behaviorTags.existsForTutorWithName(tutorId, tag.name)) {
       throw new ConflictError('Você já tem uma marcação com esse nome.');

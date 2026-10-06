@@ -5,6 +5,11 @@ import {
   type BehaviorTagRepository,
 } from '../../domain/repositories/behavior-tag.repository';
 
+export interface DeactivateBehaviorTagInput {
+  id: string;
+  tutorId: string;
+}
+
 @Injectable()
 export class DeactivateBehaviorTagUseCase {
   constructor(
@@ -12,7 +17,7 @@ export class DeactivateBehaviorTagUseCase {
     private readonly behaviorTags: BehaviorTagRepository,
   ) {}
 
-  async execute(id: string, tutorId: string): Promise<void> {
+  async execute({ id, tutorId }: DeactivateBehaviorTagInput): Promise<void> {
     const tag = await this.behaviorTags.findById(id);
     if (!tag?.active) throw new NotFoundError('Marcação não encontrada.');
     if (!tag.isOwnedBy(tutorId)) {
