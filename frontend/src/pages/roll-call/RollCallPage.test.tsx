@@ -269,7 +269,7 @@ describe('RollCallPage', () => {
     fireEvent.pointerUp(chip, { clientX: 5, clientY: 5 });
 
     expect(
-      screen.getByText((content, element) => {
+      screen.getByText((_content, element) => {
         return element?.textContent === 'Fora da mesa • Sem registro';
       }),
     ).toBeInTheDocument();

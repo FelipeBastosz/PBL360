@@ -11,7 +11,7 @@ import { RoomAccessService } from '@/rooms/application/services/room-access.serv
 import type { CustomizeFormulaDto } from '../dtos/customize-formula.dto';
 import { GetProblemFormulaUseCase } from './get-problem-formula.use-case';
 import type { FormulaResponseDto } from '../dtos/formula-response.dto';
-import { InvalidProblemError } from '../../errors/invalid-problem.error';
+
 import type { Problem } from '../../domain/entities/problem.entity';
 
 interface Input {

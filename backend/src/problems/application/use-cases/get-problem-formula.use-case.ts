@@ -12,7 +12,7 @@ import { RoomAccessService } from '@/rooms/application/services/room-access.serv
 import { FormulaResponseDto } from '../dtos/formula-response.dto';
 import type { Problem } from '../../domain/entities/problem.entity';
 import type { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
-import type { PerformanceTableCriteria } from '@/performance-tables/domain/entities/performance-table-criteria.entity';
+
 
 interface Input {
   roomId: string;
@@ -134,7 +134,9 @@ export class GetProblemFormulaUseCase {
     };
   }
 
-  private createCriteriaComponents(table: { criteria: Array<{ id: string; name: string; weight: string | number }> }) {
+  private createCriteriaComponents(table: {
+    criteria: Array<{ id: string; name: string; weight: string | number }>;
+  }) {
     const totalWeight = table.criteria.reduce((sum, c) => sum + Number(c.weight), 0);
     return table.criteria.map((c) => ({
       tipo: FormulaComponentType.CRITERIO as const,
