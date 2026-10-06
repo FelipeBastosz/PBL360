@@ -25,7 +25,7 @@ export class SessionRolesController {
   @Get(':sessionId/papeis')
   @ListSessionRolesSwaggerDocs
   async list(@UuidParam('sessionId') sessionId: string, @AuthenticatedUserId() tutorId: string) {
-    const roles = await this.listSessionRoles.execute(sessionId, tutorId);
+    const roles = await this.listSessionRoles.execute({ sessionId, tutorId });
     return roles.map((item) => ({
       alunoId: item.studentId,
       nome: item.name,

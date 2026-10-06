@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { SessionAccessService } from '../services/session-access.service';
-import { SessionDeletionImpactDto } from '../dtos/session-deletion-impact.dto';
 import {
   SESSION_REPOSITORY,
   SessionRepository,
@@ -13,6 +12,15 @@ export interface GetSessionDeletionImpactInput {
   tutorId: string;
 }
 
+export interface GetSessionDeletionImpactOutput {
+  canDelete: boolean;
+  rollCall: number;
+  roles: number;
+  observations: number;
+  evaluations: number;
+  feedbacks: number;
+}
+
 @Injectable()
 export class GetSessionDeletionImpactUseCase {
   constructor(
@@ -20,7 +28,7 @@ export class GetSessionDeletionImpactUseCase {
     private readonly access: SessionAccessService,
   ) {}
 
-  async execute(input: GetSessionDeletionImpactInput): Promise<SessionDeletionImpactDto> {
+  async execute(input: GetSessionDeletionImpactInput): Promise<GetSessionDeletionImpactOutput> {
     const session = await this.access.assertTutorCanAccessSession(
       input.roomId,
       input.problemId,
@@ -28,6 +36,13 @@ export class GetSessionDeletionImpactUseCase {
       input.tutorId,
     );
     const impact = await this.sessions.getDeletionImpact(session.id);
-    return { podeExcluir: Object.values(impact).every((count) => count === 0), ...impact };
+    return {
+      canDelete: Object.values(impact).every((count) => count === 0),
+      rollCall: impact.chamada,
+      roles: impact.papeis,
+      observations: impact.observacoes,
+      evaluations: impact.avaliacoes,
+      feedbacks: impact.feedbacks,
+    };
   }
 }

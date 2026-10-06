@@ -83,11 +83,11 @@ describe('Session use cases', () => {
         tutorId: 'tutor-1',
       }),
     ).resolves.toEqual({
-      podeExcluir: false,
-      chamada: 1,
-      papeis: 0,
-      observacoes: 0,
-      avaliacoes: 0,
+      canDelete: false,
+      rollCall: 1,
+      roles: 0,
+      observations: 0,
+      evaluations: 0,
       feedbacks: 0,
     });
   });
