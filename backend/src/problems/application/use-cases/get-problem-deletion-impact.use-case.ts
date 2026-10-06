@@ -3,7 +3,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import { NotFoundError } from '@/shared/errors/application.error';
 
-import type { ProblemDeletionImpactDto } from '../dtos/problem-deletion-impact.dto';
 import {
   PROBLEM_REPOSITORY,
   type ProblemRepository,
@@ -15,6 +14,13 @@ export interface GetProblemDeletionImpactInput {
   tutorId: string;
 }
 
+export interface GetProblemDeletionImpactOutput {
+  sessions: number;
+  grades: number;
+  feedbacks: number;
+  evaluations: number;
+}
+
 @Injectable()
 export class GetProblemDeletionImpactUseCase {
   constructor(
@@ -23,7 +29,7 @@ export class GetProblemDeletionImpactUseCase {
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(input: GetProblemDeletionImpactInput): Promise<ProblemDeletionImpactDto> {
+  async execute(input: GetProblemDeletionImpactInput): Promise<GetProblemDeletionImpactOutput> {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
 
     const problem = await this.problemRepository.findById(input.problemId);
@@ -33,10 +39,10 @@ export class GetProblemDeletionImpactUseCase {
     }
 
     return {
-      sessoes: await this.problemRepository.countSessions(problem.id),
-      notas: 0,
+      sessions: await this.problemRepository.countSessions(problem.id),
+      grades: 0,
       feedbacks: 0,
-      avaliacoes: 0,
+      evaluations: 0,
     };
   }
 }

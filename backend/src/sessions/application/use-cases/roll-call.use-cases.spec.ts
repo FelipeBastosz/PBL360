@@ -43,7 +43,10 @@ describe('Roll call use cases', () => {
 
   describe('GetRollCallUseCase', () => {
     const getRollCall = () =>
-      new GetRollCallUseCase(access, attendances).execute('session-2', 'tutor-1');
+      new GetRollCallUseCase(access, attendances).execute({
+        sessionId: 'session-2',
+        tutorId: 'tutor-1',
+      });
 
     it('checks the tutor access before reading anything', async () => {
       access.assertTutorCanAccessSessionById.mockRejectedValue(new ForbiddenError('negado'));

@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Header,
   HttpCode,
@@ -18,6 +19,7 @@ import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { FileUpload, type UploadedFileBuffer } from '@/shared/http/file-upload';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import type { SessionAttachmentResponseDto } from '../../application/dtos/session-attachment.dto';
+import { DeleteSessionAttachmentUseCase } from '../../application/use-cases/delete-session-attachment.use-case';
 import { DownloadSessionAttachmentUseCase } from '../../application/use-cases/download-session-attachment.use-case';
 import { ListSessionAttachmentsUseCase } from '../../application/use-cases/list-session-attachments.use-case';
 import {
@@ -27,6 +29,7 @@ import {
 import { MAX_ATTACHMENT_BYTES } from '../../domain/entities/session-attachment.entity';
 import type { SessionAttachmentSummary } from '../../domain/repositories/session-attachment.repository';
 import {
+  DeleteSessionAttachmentSwaggerDocs,
   DownloadSessionAttachmentSwaggerDocs,
   ListSessionAttachmentsSwaggerDocs,
   UploadSessionAttachmentSwaggerDocs,
@@ -68,6 +71,7 @@ export class SessionAttachmentsController {
     private readonly uploadAttachment: UploadSessionAttachmentUseCase,
     private readonly listAttachments: ListSessionAttachmentsUseCase,
     private readonly downloadAttachment: DownloadSessionAttachmentUseCase,
+    private readonly deleteAttachment: DeleteSessionAttachmentUseCase,
   ) {}
 
   @Post()
@@ -92,7 +96,7 @@ export class SessionAttachmentsController {
     @UuidParam('sessaoId') sessionId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<SessionAttachmentResponseDto[]> {
-    return (await this.listAttachments.execute(sessionId, member)).map(toResponse);
+    return (await this.listAttachments.execute({ sessionId, member })).map(toResponse);
   }
 
   @Get(':anexoId')
@@ -103,11 +107,22 @@ export class SessionAttachmentsController {
     @UuidParam('anexoId') attachmentId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<StreamableFile> {
-    const file = await this.downloadAttachment.execute(sessionId, attachmentId, member);
+    const file = await this.downloadAttachment.execute({ sessionId, attachmentId, member });
     return new StreamableFile(file.content, {
       type: file.mimeType,
       length: file.content.length,
       disposition: contentDisposition(file.fileName),
     });
+  }
+
+  @Delete(':anexoId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @DeleteSessionAttachmentSwaggerDocs
+  async delete(
+    @UuidParam('sessaoId') sessionId: string,
+    @UuidParam('anexoId') attachmentId: string,
+    @AuthenticatedUser() member: AuthenticatedUserRef,
+  ): Promise<void> {
+    await this.deleteAttachment.execute({ sessionId, attachmentId, member });
   }
 }

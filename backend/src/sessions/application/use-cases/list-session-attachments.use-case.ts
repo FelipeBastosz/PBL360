@@ -7,6 +7,11 @@ import {
 } from '../../domain/repositories/session-attachment.repository';
 import { SessionAccessService } from '../services/session-access.service';
 
+export interface ListSessionAttachmentsInput {
+  sessionId: string;
+  member: RoomMember;
+}
+
 @Injectable()
 export class ListSessionAttachmentsUseCase {
   constructor(
@@ -15,7 +20,10 @@ export class ListSessionAttachmentsUseCase {
     private readonly attachments: SessionAttachmentRepository,
   ) {}
 
-  async execute(sessionId: string, member: RoomMember): Promise<SessionAttachmentSummary[]> {
+  async execute({
+    sessionId,
+    member,
+  }: ListSessionAttachmentsInput): Promise<SessionAttachmentSummary[]> {
     await this.access.assertMemberCanAccessSession(sessionId, member);
     return this.attachments.listBySession(sessionId);
   }

@@ -65,6 +65,7 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
               updated_at = now()
         WHERE id = $1
           AND tutor_id = $3
+          AND is_default = FALSE
           AND deleted_at IS NULL
         RETURNING id;`,
       [table.id, table.deletedAt, table.tutorId],
@@ -128,7 +129,7 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
   ): Promise<PerformanceTable> {
     const [persistedTable] = await manager.query<PerformanceTable[]>(
       INSERT_PERFORMANCE_TABLE_QUERY,
-      [table.tutorId, table.name, table.description],
+      [table.tutorId, table.name, table.description, table.isDefault],
     );
 
     if (!persistedTable) {

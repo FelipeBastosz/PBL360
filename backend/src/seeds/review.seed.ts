@@ -88,8 +88,8 @@ async function seedSession(
 
   const created = await ds.query<Array<{ id: string }>>(
     `INSERT INTO sessions (problem_id, title, description, date, order_index, status)
-     VALUES ($1, $2, $2, $3, $4, $5) RETURNING id;`,
-    [problemId, title, date, orderIndex, status],
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`,
+    [problemId, title, title, date, orderIndex, status],
   );
   return created[0]?.id ?? '';
 }

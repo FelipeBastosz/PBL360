@@ -26,6 +26,8 @@ describe('Session attachment use cases', () => {
         .mockImplementation((attachment) => Promise.resolve({ id: 'a1', ...attachment })),
       listBySession: jest.fn().mockResolvedValue([]),
       findFile: jest.fn(),
+      findUploader: jest.fn(),
+      delete: jest.fn(),
     };
   });
 
@@ -71,18 +73,21 @@ describe('Session attachment use cases', () => {
   });
 
   it('lists the attachments of the session for a member', async () => {
-    await new ListSessionAttachmentsUseCase(asAccess(), attachments).execute('session-1', student);
+    await new ListSessionAttachmentsUseCase(asAccess(), attachments).execute({
+      sessionId: 'session-1',
+      member: student,
+    });
 
     expect(attachments.listBySession).toHaveBeenCalledWith('session-1');
   });
 
   describe('DownloadSessionAttachmentUseCase', () => {
     const download = () =>
-      new DownloadSessionAttachmentUseCase(asAccess(), attachments).execute(
-        'session-1',
-        'a1',
-        student,
-      );
+      new DownloadSessionAttachmentUseCase(asAccess(), attachments).execute({
+        sessionId: 'session-1',
+        attachmentId: 'a1',
+        member: student,
+      });
 
     it('returns the file of the session', async () => {
       attachments.findFile.mockResolvedValue({

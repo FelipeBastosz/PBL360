@@ -27,6 +27,6 @@ export const ListRoomStudentsSwaggerDocs = applyDecorators(
   ApiOkResponse({ type: RoomStudentResponseDto, isArray: true }),
   ApiBadRequestResponse({ description: 'Identificador da sala inválido.', type: ErrorResponseDto }),
   ApiUnauthorizedResponse({ description: 'JWT não informado, inválido ou expirado.' }),
-  ApiForbiddenResponse({ description: 'O professor não está vinculado à sala.' }),
+  ApiForbiddenResponse({ description: 'O usuário não é membro autorizado da sala.' }),
   ApiNotFoundResponse({ description: 'Sala não encontrada ou excluída.' }),
 );

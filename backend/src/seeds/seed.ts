@@ -7,6 +7,7 @@ import { User } from '@/users/domain/entities/user.entity';
 import { UserPhoto } from '@/users/domain/entities/user-photo.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { placeholderPhotoBytes } from './placeholder-photo';
+import { seedAllBehaviorTags } from './behavior-tags.seed';
 import { seedAllPerformanceTables } from './performance-tables.seed';
 import { seedReviewData } from './review.seed';
 
@@ -105,6 +106,7 @@ async function seedAllUsers(ds: DataSource, env: NodeJS.ProcessEnv): Promise<voi
 async function executeSeeds(ds: DataSource, env: NodeJS.ProcessEnv): Promise<void> {
   await seedAllUsers(ds, env);
   await seedAllPerformanceTables(ds);
+  await seedAllBehaviorTags(ds);
   await seedReviewData(ds);
 }
 

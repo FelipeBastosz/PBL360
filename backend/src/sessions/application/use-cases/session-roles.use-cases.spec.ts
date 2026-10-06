@@ -34,7 +34,9 @@ describe('Session role use cases', () => {
 
   it('lists roles only after validating tutor access', async () => {
     const useCase = new ListSessionRolesUseCase(access, repository);
-    await expect(useCase.execute('session-1', 'tutor-1')).resolves.toHaveLength(1);
+    await expect(
+      useCase.execute({ sessionId: 'session-1', tutorId: 'tutor-1' }),
+    ).resolves.toHaveLength(1);
     expect(access.assertTutorCanAccessSessionById).toHaveBeenCalledWith('session-1', 'tutor-1');
     expect(repository.list).toHaveBeenCalledWith('session-1');
   });

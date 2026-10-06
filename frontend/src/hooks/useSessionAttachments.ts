@@ -19,10 +19,9 @@ function saveBlob(blob: Blob, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
-export function useSessionAttachments(sessionId: string) {
+function useAttachmentList(sessionId: string) {
   const [attachments, setAttachments] = useState<SessionAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     sessionService
@@ -31,6 +30,13 @@ export function useSessionAttachments(sessionId: string) {
       .catch(() => setAttachments([]))
       .finally(() => setIsLoading(false));
   }, [sessionId]);
+
+  return { attachments, setAttachments, isLoading };
+}
+
+export function useSessionAttachments(sessionId: string) {
+  const { attachments, setAttachments, isLoading } = useAttachmentList(sessionId);
+  const [isUploading, setIsUploading] = useState(false);
 
   const upload = useCallback(
     async (file: File): Promise<string | null> => {
@@ -47,7 +53,7 @@ export function useSessionAttachments(sessionId: string) {
         setIsUploading(false);
       }
     },
-    [sessionId],
+    [sessionId, setAttachments],
   );
 
   const download = useCallback(
@@ -60,5 +66,18 @@ export function useSessionAttachments(sessionId: string) {
     [sessionId],
   );
 
-  return { attachments, isLoading, isUploading, upload, download };
+  const remove = useCallback(
+    async (attachment: SessionAttachment): Promise<string | null> => {
+      try {
+        await sessionService.deleteAttachment(sessionId, attachment.id);
+        setAttachments((current) => current.filter((item) => item.id !== attachment.id));
+        return null;
+      } catch (caught) {
+        return toApiError(caught).message;
+      }
+    },
+    [sessionId, setAttachments],
+  );
+
+  return { attachments, isLoading, isUploading, upload, download, remove };
 }

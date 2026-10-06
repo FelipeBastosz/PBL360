@@ -5,6 +5,11 @@ import {
   type PerformanceTableRepository,
 } from '../../domain/repositories/performance-table.repository';
 
+export interface DeletePerformanceTableInput {
+  tableId: string;
+  tutorId: string;
+}
+
 @Injectable()
 export class DeletePerformanceTableUseCase {
   constructor(
@@ -12,7 +17,7 @@ export class DeletePerformanceTableUseCase {
     private readonly performanceTableRepository: PerformanceTableRepository,
   ) {}
 
-  async execute(tableId: string, tutorId: string): Promise<void> {
+  async execute({ tableId, tutorId }: DeletePerformanceTableInput): Promise<void> {
     const table = await this.performanceTableRepository.findById(tableId);
     if (!table) throw new NotFoundError('Tabela de desempenho não encontrada.');
     if (table.tutorId !== tutorId) {

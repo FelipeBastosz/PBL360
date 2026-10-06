@@ -26,6 +26,7 @@ export const toPerformanceTableResponse = (
   id: table.id,
   professorId: table.tutorId,
   nome: table.name,
+  isDefault: table.isDefault,
   descricao: table.description,
   quantidadeProblemas: table.problemCount ?? 0,
   criterios: table.criteria.map((criterion) => ({

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import type * as Router from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { roomService } from '@/services/room.service';
+import { userService } from '@/services/user.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import ManageRoomsPage from './ManageRoomsPage';
@@ -15,9 +16,15 @@ vi.mock('@/services/room.service', () => ({
   },
 }));
 
+vi.mock('@/services/user.service', () => ({
+  userService: {
+    getPhoto: vi.fn(),
+  },
+}));
+
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
-    user: { nome: 'Professor Fulano' },
+    user: { id: 'tutor-1', nome: 'Professor Fulano', possuiFoto: true },
   }),
 }));
 
@@ -57,6 +64,20 @@ describe('ManageRoomsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(roomService.list).mockResolvedValue(mockRooms);
+    vi.mocked(userService.getPhoto).mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
+  });
+
+  it('shows the photo of the signed-in user in the header', async () => {
+    render(
+      <MemoryRouter>
+        <ManageRoomsPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByRole('img', { name: 'Foto de Professor Fulano' }),
+    ).toBeInTheDocument();
+    expect(userService.getPhoto).toHaveBeenCalledWith('tutor-1');
   });
 
   const renderComponent = () => {

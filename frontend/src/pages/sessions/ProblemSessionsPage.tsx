@@ -8,12 +8,12 @@ import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { roomService } from '@/services/room.service';
-import { problemService } from '@/services/problem.service';
-import { sessionService } from '@/services/session.service';
+import {
+  memberRoomService,
+  type ProblemHeading,
+  type RoomHeading,
+} from '@/services/memberRoom.service';
 import { ROUTES } from '@/routes/paths';
-import type { Room } from '@/types/room';
-import type { Problem } from '@/types/problem';
 import type { Session } from '@/types/session';
 import { cn } from '@/utils/cn';
 import { SessionsEmptyState } from './SessionsEmptyState';
@@ -122,23 +122,28 @@ function ProblemSessionsMain({
   );
 }
 
-function useProblemSessions(roomId?: string, problemId?: string, onCreatedSuccess?: () => void) {
+function useProblemSessions(
+  isProfessor: boolean,
+  roomId?: string,
+  problemId?: string,
+  onCreatedSuccess?: () => void,
+) {
   const { notify } = useToast();
-  const [room, setRoom] = useState<Room | null>(null);
-  const [problem, setProblem] = useState<Problem | null>(null);
+  const [room, setRoom] = useState<RoomHeading | null>(null);
+  const [problem, setProblem] = useState<ProblemHeading | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
 
-  const { run: fetchRoom } = useAsyncAction(roomService.getById);
-  const { run: fetchProblem } = useAsyncAction(problemService.getById);
-  const { run: fetchSessions, isLoading, error } = useAsyncAction(sessionService.list);
+  const { run: fetchRoom } = useAsyncAction(memberRoomService.room);
+  const { run: fetchProblem } = useAsyncAction(memberRoomService.problem);
+  const { run: fetchSessions, isLoading, error } = useAsyncAction(memberRoomService.sessions);
 
   useEffect(() => {
     if (roomId && problemId) {
-      fetchRoom(roomId).then((res) => res.ok && setRoom(res.data));
-      fetchProblem(roomId, problemId).then((res) => res.ok && setProblem(res.data));
-      fetchSessions(roomId, problemId).then((res) => res.ok && setSessions(res.data as Session[]));
+      fetchRoom(roomId, isProfessor).then((res) => res.ok && setRoom(res.data));
+      fetchProblem(roomId, problemId, isProfessor).then((res) => res.ok && setProblem(res.data));
+      fetchSessions(roomId, problemId, isProfessor).then((res) => res.ok && setSessions(res.data));
     }
-  }, [roomId, problemId, fetchRoom, fetchProblem, fetchSessions]);
+  }, [isProfessor, roomId, problemId, fetchRoom, fetchProblem, fetchSessions]);
 
   function handleSessionCreated(newSession: Session) {
     setSessions((curr) => [...curr, newSession]);
@@ -160,6 +165,7 @@ export default function ProblemSessionsPage() {
 
   const isProfessor = user?.tipo === 'PROFESSOR';
   const { room, problem, sessions, isLoading, error, handleSessionCreated } = useProblemSessions(
+    isProfessor,
     currentRoomId,
     problemId,
     () => setIsCreateModalOpen(false),

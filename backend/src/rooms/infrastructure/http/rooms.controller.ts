@@ -12,6 +12,10 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
+import {
+  AuthenticatedUser,
+  type AuthenticatedUserRef,
+} from '@/shared/decorators/authenticated-user.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -115,14 +119,21 @@ export class RoomsController {
   }
 
   @Get(':id/alunos')
+  @Roles(UserType.TUTOR, UserType.STUDENT)
   @ListRoomStudentsSwaggerDocs
   async listRoomStudents(
     @UuidParam('id') roomId: string,
-    @AuthenticatedUserId() tutorId: string,
+    @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<RoomStudentResponseDto[]> {
-    const students = await this.listRoomStudentsUseCase.execute(roomId, tutorId);
+    const students = await this.listRoomStudentsUseCase.execute({ roomId, member });
 
-    return students.map((student) => ({ nome: student.name, dataEntrada: student.joinedAt }));
+    return students.map((student) => ({
+      id: student.id,
+      nome: student.name,
+      dataEntrada: student.joinedAt,
+      email: student.email,
+      matricula: student.registrationNumber,
+    }));
   }
 
   @Get()
@@ -143,7 +154,7 @@ export class RoomsController {
     @UuidParam('id') roomId: string,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<RoomResponseDto> {
-    return toRoomResponse(await this.getRoomDetailUseCase.execute(roomId, tutorId));
+    return toRoomResponse(await this.getRoomDetailUseCase.execute({ roomId, tutorId }));
   }
 
   @Post()
@@ -170,7 +181,7 @@ export class RoomsController {
     @AuthenticatedUserId() tutorId: string,
   ): Promise<RoomResponseDto> {
     return toRoomResponse(
-      await this.updateRoomUseCase.execute(roomId, tutorId, toRoomChanges(dto)),
+      await this.updateRoomUseCase.execute({ roomId, tutorId, changes: toRoomChanges(dto) }),
     );
   }
 
@@ -178,6 +189,6 @@ export class RoomsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @DeleteRoomSwaggerDocs
   delete(@UuidParam('id') roomId: string, @AuthenticatedUserId() tutorId: string): Promise<void> {
-    return this.deleteRoomUseCase.execute(roomId, tutorId);
+    return this.deleteRoomUseCase.execute({ roomId, tutorId });
   }
 }

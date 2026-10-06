@@ -1,0 +1,32 @@
+export type GradeRow = Record<string, string | number | null | undefined>;
+
+export interface ProblemGradeData {
+  sessions: GradeRow[];
+  students: GradeRow[];
+  formulas: GradeRow[];
+  scores: GradeRow[];
+  attendances: GradeRow[];
+  roles: GradeRow[];
+  criteria: GradeRow[];
+}
+
+export interface GradePersistenceData {
+  sessionRows: GradeRow[];
+  problemRows: GradeRow[];
+}
+
+export interface GradesRepository {
+  findProblem(problemId: string, roomId: string): Promise<GradeRow | null>;
+
+  findProblemData(
+    roomId: string,
+    problemId: string,
+    performanceTableId: unknown,
+  ): Promise<ProblemGradeData>;
+
+  findFormulaComponents(formulaIds: unknown[]): Promise<GradeRow[]>;
+
+  saveGrades(problemId: string, result: GradePersistenceData): Promise<void>;
+}
+
+export const GRADES_REPOSITORY = Symbol('GradesRepository');

@@ -33,7 +33,7 @@ describe('UpdatePerformanceTableUseCase', () => {
         {
           name: 'Participação',
           orderIndex: 1,
-          weight: 2,
+          weight: 10,
         },
       ],
     });
@@ -43,21 +43,25 @@ describe('UpdatePerformanceTableUseCase', () => {
     repository.findById.mockResolvedValue(table);
     repository.update.mockImplementation((table) => Promise.resolve(table));
 
-    const result = await useCase.execute(tableId, tutorId, {
-      name: 'Barema atualizado',
-      description: 'Nova configuração',
-      criteria: [
-        {
-          name: 'Domínio do conteúdo',
-          orderIndex: 1,
-          weight: 4,
-        },
-        {
-          name: 'Participação',
-          orderIndex: 2,
-          weight: 3,
-        },
-      ],
+    const result = await useCase.execute({
+      tableId,
+      tutorId,
+      changes: {
+        name: 'Barema atualizado',
+        description: 'Nova configuração',
+        criteria: [
+          {
+            name: 'Domínio do conteúdo',
+            orderIndex: 1,
+            weight: 6,
+          },
+          {
+            name: 'Participação',
+            orderIndex: 2,
+            weight: 4,
+          },
+        ],
+      },
     });
 
     expect(repository.findById).toHaveBeenCalledWith(tableId);
@@ -74,9 +78,13 @@ describe('UpdatePerformanceTableUseCase', () => {
     repository.findById.mockResolvedValue(null);
 
     await expect(
-      useCase.execute(tableId, tutorId, {
-        name: 'Barema atualizado',
-        criteria: [{ name: 'Participação' }],
+      useCase.execute({
+        tableId,
+        tutorId,
+        changes: {
+          name: 'Barema atualizado',
+          criteria: [{ name: 'Participação', weight: 10 }],
+        },
       }),
     ).rejects.toThrow(NotFoundError);
 
@@ -87,16 +95,20 @@ describe('UpdatePerformanceTableUseCase', () => {
     const table = PerformanceTable.create({
       tutorId: 'another-tutor',
       name: 'Barema',
-      criteria: [{ name: 'Participação' }],
+      criteria: [{ name: 'Participação', weight: 10 }],
     });
 
     table.id = tableId;
     repository.findById.mockResolvedValue(table);
 
     await expect(
-      useCase.execute(tableId, tutorId, {
-        name: 'Barema atualizado',
-        criteria: [{ name: 'Participação' }],
+      useCase.execute({
+        tableId,
+        tutorId,
+        changes: {
+          name: 'Barema atualizado',
+          criteria: [{ name: 'Participação', weight: 10 }],
+        },
       }),
     ).rejects.toThrow(ForbiddenError);
 
@@ -107,16 +119,20 @@ describe('UpdatePerformanceTableUseCase', () => {
     const table = PerformanceTable.create({
       tutorId,
       name: 'Barema',
-      criteria: [{ name: 'Participação' }],
+      criteria: [{ name: 'Participação', weight: 10 }],
     });
 
     table.id = tableId;
     repository.findById.mockResolvedValue(table);
 
     await expect(
-      useCase.execute(tableId, tutorId, {
-        name: '   ',
-        criteria: [{ name: 'Participação' }],
+      useCase.execute({
+        tableId,
+        tutorId,
+        changes: {
+          name: '   ',
+          criteria: [{ name: 'Participação', weight: 10 }],
+        },
       }),
     ).rejects.toThrow(InvalidPerformanceTableError);
 
@@ -127,16 +143,43 @@ describe('UpdatePerformanceTableUseCase', () => {
     const table = PerformanceTable.create({
       tutorId,
       name: 'Barema',
-      criteria: [{ name: 'Participação' }],
+      criteria: [{ name: 'Participação', weight: 10 }],
     });
 
     table.id = tableId;
     repository.findById.mockResolvedValue(table);
 
     await expect(
-      useCase.execute(tableId, tutorId, {
-        name: 'Barema atualizado',
-        criteria: [],
+      useCase.execute({
+        tableId,
+        tutorId,
+        changes: {
+          name: 'Barema atualizado',
+          criteria: [],
+        },
+      }),
+    ).rejects.toThrow(InvalidPerformanceTableError);
+
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects updating a table when criteria weights do not sum to 10', async () => {
+    const table = PerformanceTable.create({
+      tutorId,
+      name: 'Barema',
+      criteria: [{ name: 'Postura', weight: 10 }],
+    });
+    table.id = tableId;
+    repository.findById.mockResolvedValue(table);
+
+    await expect(
+      useCase.execute({
+        tableId,
+        tutorId,
+        changes: {
+          name: 'Barema atualizado',
+          criteria: [{ name: 'Postura', weight: 8 }],
+        },
       }),
     ).rejects.toThrow(InvalidPerformanceTableError);
 
@@ -147,7 +190,10 @@ describe('UpdatePerformanceTableUseCase', () => {
     const table = PerformanceTable.create({
       tutorId,
       name: 'Barema',
-      criteria: [{ name: 'Participação' }, { name: 'Postura' }],
+      criteria: [
+        { name: 'Participação', weight: 5 },
+        { name: 'Postura', weight: 5 },
+      ],
     });
     table.id = tableId;
     table.criteria[0]!.id = 'retained-id';
@@ -155,9 +201,16 @@ describe('UpdatePerformanceTableUseCase', () => {
     repository.findById.mockResolvedValue(table);
     repository.update.mockImplementation((updated) => Promise.resolve(updated));
 
-    const result = await useCase.execute(tableId, tutorId, {
-      name: 'Barema atualizado',
-      criteria: [{ id: 'retained-id', name: 'Participação nas discussões' }, { name: 'Evolução' }],
+    const result = await useCase.execute({
+      tableId,
+      tutorId,
+      changes: {
+        name: 'Barema atualizado',
+        criteria: [
+          { id: 'retained-id', name: 'Participação nas discussões', weight: 6 },
+          { name: 'Evolução', weight: 4 },
+        ],
+      },
     });
 
     expect(repository.update).toHaveBeenCalledWith(table);
@@ -166,24 +219,24 @@ describe('UpdatePerformanceTableUseCase', () => {
   });
 
   it.each([
-    { criteria: [{ id: 'foreign-id', name: 'Outro critério' }] },
+    { criteria: [{ id: 'foreign-id', name: 'Outro critério', weight: 10 }] },
     {
       criteria: [
-        { id: 'criterion-1', name: 'Primeiro' },
-        { id: 'criterion-1', name: 'Segundo' },
+        { id: 'criterion-1', name: 'Primeiro', weight: 5 },
+        { id: 'criterion-1', name: 'Segundo', weight: 5 },
       ],
     },
   ])('does not persist invalid criterion identities: %j', async ({ criteria }) => {
     const table = PerformanceTable.create({
       tutorId,
       name: 'Barema',
-      criteria: [{ name: 'Postura' }],
+      criteria: [{ name: 'Postura', weight: 10 }],
     });
     table.criteria[0]!.id = 'criterion-1';
     repository.findById.mockResolvedValue(table);
 
     await expect(
-      useCase.execute(tableId, tutorId, { name: 'Novo nome', criteria }),
+      useCase.execute({ tableId, tutorId, changes: { name: 'Novo nome', criteria } }),
     ).rejects.toThrow(InvalidPerformanceTableError);
     expect(repository.update).not.toHaveBeenCalled();
   });
@@ -192,16 +245,20 @@ describe('UpdatePerformanceTableUseCase', () => {
     const table = PerformanceTable.create({
       tutorId,
       name: 'Barema',
-      criteria: [{ name: 'Postura' }],
+      criteria: [{ name: 'Postura', weight: 10 }],
     });
     repository.findById.mockResolvedValue(table);
     const failure = new Error('Database unavailable');
     repository.update.mockRejectedValue(failure);
 
     await expect(
-      useCase.execute(tableId, tutorId, {
-        name: 'Novo nome',
-        criteria: [{ name: 'Evolução' }],
+      useCase.execute({
+        tableId,
+        tutorId,
+        changes: {
+          name: 'Novo nome',
+          criteria: [{ name: 'Evolução', weight: 10 }],
+        },
       }),
     ).rejects.toBe(failure);
   });

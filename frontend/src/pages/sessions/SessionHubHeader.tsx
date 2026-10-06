@@ -16,7 +16,7 @@ function formatSessionDate(dateString?: string) {
 
 type HeaderProps = {
   session: Session | null;
-  problem: Problem | null;
+  problem: Pick<Problem, 'titulo'> | null;
   userNome?: string;
   user?: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
   backUrl: string;

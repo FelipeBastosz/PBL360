@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDayMonth, formatDayShortMonth } from './formatDate';
+import { formatDayMonth, formatDayShortMonth, formatFullDate } from './formatDate';
 
 describe('formatDayMonth', () => {
   it('shows a calendar date as day and month', () => {
@@ -8,6 +8,16 @@ describe('formatDayMonth', () => {
 
   it('keeps an unexpected value as it is', () => {
     expect(formatDayMonth('ontem')).toBe('ontem');
+  });
+});
+
+describe('formatFullDate', () => {
+  it('shows a timestamp as a full Brazilian date', () => {
+    expect(formatFullDate('2026-09-01T15:00:00.000Z')).toBe('01/09/2026');
+  });
+
+  it('keeps an unexpected value as it is', () => {
+    expect(formatFullDate('ontem')).toBe('ontem');
   });
 });
 

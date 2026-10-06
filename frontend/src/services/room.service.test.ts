@@ -115,18 +115,35 @@ describe('roomService', () => {
 
   it('joins a room using an invite code', async () => {
     const adapter = respondWith({ mensagem: 'Entrada na sala realizada com sucesso.' });
-    const payload = { codigo: 'aB7kP2x9' };
+    const payload = { codigoSala: 'aB7kP2x9' };
 
-    await expect(roomService.join(payload)).resolves.toEqual({
+    await expect(roomService.joinByCode(payload)).resolves.toEqual({
       mensagem: 'Entrada na sala realizada com sucesso.',
     });
-    expect(sentRequest(adapter)).toMatchObject({ method: 'post', url: '/salas/entrar' });
+    expect(sentRequest(adapter)).toMatchObject({ method: 'post', url: '/salas/ingressar/codigo' });
+    expect(JSON.parse(sentRequest(adapter).data as string)).toEqual(payload);
+  });
+
+  it('joins a room using an invite link', async () => {
+    const adapter = respondWith({ mensagem: 'Entrada na sala realizada com sucesso.' });
+    const payload = { link: 'https://pbl360.com/salas/aB7kP2x9' };
+
+    await expect(roomService.joinByLink(payload)).resolves.toEqual({
+      mensagem: 'Entrada na sala realizada com sucesso.',
+    });
+    expect(sentRequest(adapter)).toMatchObject({ method: 'post', url: '/salas/ingressar/link' });
     expect(JSON.parse(sentRequest(adapter).data as string)).toEqual(payload);
   });
 
   it('lists students enrolled in a room', async () => {
     const students = [
-      { id: 'student-1', nome: 'Aluno Um', dataEntrada: '2026-09-01T10:00:00.000Z' },
+      {
+        id: 'student-1',
+        nome: 'Aluno Um',
+        email: '20240001@discente.uefs.br',
+        matricula: '20240001',
+        dataEntrada: '2026-09-01T10:00:00.000Z',
+      },
     ];
     const adapter = respondWith(students);
 

@@ -1,10 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { RoomAccessService } from '../services/room-access.service';
+import { RoomAccessService, type RoomMember } from '../services/room-access.service';
 import {
   ROOM_REPOSITORY,
   type RoomRepository,
   type RoomStudentSummary,
 } from '../../domain/repositories/room.repository';
+
+export interface ListRoomStudentsInput {
+  roomId: string;
+  member: RoomMember;
+}
 
 @Injectable()
 export class ListRoomStudentsUseCase {
@@ -13,8 +18,8 @@ export class ListRoomStudentsUseCase {
     private readonly roomAccess: RoomAccessService,
   ) {}
 
-  async execute(roomId: string, tutorId: string): Promise<RoomStudentSummary[]> {
-    await this.roomAccess.assertTutorCanAccessRoom(roomId, tutorId);
+  async execute({ roomId, member }: ListRoomStudentsInput): Promise<RoomStudentSummary[]> {
+    await this.roomAccess.assertMemberCanAccessRoom(roomId, member);
     return this.rooms.findStudents(roomId);
   }
 }
