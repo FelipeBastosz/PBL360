@@ -20,6 +20,7 @@ import { FeedbacksModule } from './feedbacks/feedbacks.module';
 import { HealthModule } from './health/health.module';
 import { BehaviorTagsModule } from './behavior-tags/behavior-tags.module';
 import { ObservationsModule } from './observations/observations.module';
+import { GradesModule } from './grades/grades.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ObservationsModule } from './observations/observations.module';
     HealthModule,
     BehaviorTagsModule,
     ObservationsModule,
+    GradesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

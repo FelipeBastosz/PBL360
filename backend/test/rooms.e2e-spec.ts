@@ -278,13 +278,14 @@ describe('Rooms (e2e)', () => {
       expect(listedStudents.every((entry) => Number.isFinite(Date.parse(entry.dataEntrada)))).toBe(
         true,
       );
-      expect(listedStudents[0]).toMatchObject({
+      const listedStudent = listedStudents.find((entry) => entry.id === student.id);
+      expect(listedStudent).toMatchObject({
         id: student.id,
         nome: 'Usuário de Teste',
         email: student.email,
         matricula: '20240001',
       });
-      expect(Object.keys(listedStudents[0])).toEqual([
+      expect(Object.keys(listedStudent ?? {})).toEqual([
         'id',
         'nome',
         'dataEntrada',
