@@ -21,4 +21,6 @@ export interface SessionAttachmentRepository {
   create(attachment: SessionAttachment): Promise<SessionAttachmentSummary>;
   listBySession(sessionId: string): Promise<SessionAttachmentSummary[]>;
   findFile(sessionId: string, attachmentId: string): Promise<SessionAttachmentFile | null>;
+  findUploader(sessionId: string, attachmentId: string): Promise<string | null>;
+  delete(attachmentId: string): Promise<void>;
 }

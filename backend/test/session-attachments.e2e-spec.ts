@@ -201,4 +201,41 @@ describe('Session attachments (e2e)', () => {
         .expect(404);
     });
   });
+
+  describe('deleting', () => {
+    const sendAs = async (user: TestUser) =>
+      ((await upload(user, pdf()).expect(201)).body as AttachmentBody).id;
+
+    it('lets a student delete an attachment they sent', async () => {
+      const id = await sendAs(student);
+
+      await api(app, student).delete(`${attachmentsPath()}/${id}`).expect(204);
+
+      const list = await api(app, tutor).get(attachmentsPath()).expect(200);
+      expect(list.body).toEqual([]);
+    });
+
+    it('keeps a student from deleting an attachment sent by the tutor', async () => {
+      const id = await sendAs(tutor);
+
+      const response = await api(app, student).delete(`${attachmentsPath()}/${id}`).expect(403);
+
+      expect((response.body as ErrorBody).message).toBe(
+        'Você só pode excluir os anexos que você enviou.',
+      );
+    });
+
+    it('lets the tutor delete an attachment sent by a student', async () => {
+      const id = await sendAs(student);
+
+      await api(app, tutor).delete(`${attachmentsPath()}/${id}`).expect(204);
+      await api(app, tutor).get(`${attachmentsPath()}/${id}`).expect(404);
+    });
+
+    it('keeps a student who is not enrolled from deleting', async () => {
+      const id = await sendAs(student);
+
+      await api(app, stranger).delete(`${attachmentsPath()}/${id}`).expect(403);
+    });
+  });
 });
