@@ -137,7 +137,13 @@ describe('roomService', () => {
 
   it('lists students enrolled in a room', async () => {
     const students = [
-      { id: 'student-1', nome: 'Aluno Um', dataEntrada: '2026-09-01T10:00:00.000Z' },
+      {
+        id: 'student-1',
+        nome: 'Aluno Um',
+        email: '20240001@discente.uefs.br',
+        matricula: '20240001',
+        dataEntrada: '2026-09-01T10:00:00.000Z',
+      },
     ];
     const adapter = respondWith(students);
 

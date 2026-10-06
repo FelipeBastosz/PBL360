@@ -17,8 +17,8 @@ export function ProblemSessionsHeader({
   userNome,
   user,
 }: {
-  room: Room | null;
-  problem: Problem | null;
+  room: Pick<Room, 'id' | 'nome'> | null;
+  problem: Pick<Problem, 'titulo'> | null;
   userNome?: string;
   user?: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
 }) {

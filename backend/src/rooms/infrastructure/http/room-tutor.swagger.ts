@@ -90,7 +90,7 @@ export const ListRoomTutorsSwaggerDocs = applyDecorators(
   ApiBadRequestResponse({ description: 'Identificador inválido.', type: ErrorResponseDto }),
   ApiUnauthorizedResponse({ description: 'Autenticação obrigatória.', type: ErrorResponseDto }),
   ApiForbiddenResponse({
-    description: 'Sem permissão para acessar a sala.',
+    description: 'Apenas professores vinculados e alunos matriculados podem ver os professores.',
     type: ErrorResponseDto,
   }),
   ApiNotFoundResponse({ description: 'Sala não encontrada.', type: ErrorResponseDto }),

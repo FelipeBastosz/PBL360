@@ -59,5 +59,7 @@ export type JoinRoomByLinkPayload = {
 export type RoomStudent = {
   id: string;
   nome: string;
+  email: string;
+  matricula: string | null;
   dataEntrada: string;
 };

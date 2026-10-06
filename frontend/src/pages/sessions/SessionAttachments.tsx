@@ -1,66 +1,39 @@
 import { useRef } from 'react';
-import { ArrowDownTrayIcon, DocumentTextIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { useAuth } from '@/hooks/useAuth';
 import { useSessionAttachments } from '@/hooks/useSessionAttachments';
 import { useToast } from '@/hooks/useToast';
 import type { SessionAttachment } from '@/types/session';
 import { countLabel } from '@/utils/countLabel';
-import { formatRelativeTime } from '@/utils/formatRelativeTime';
+import { SessionAttachmentRow } from './SessionAttachmentRow';
 
 type SessionAttachmentsProps = {
   sessionId: string;
   canUpload?: boolean;
 };
 
-function AttachmentRow({
-  attachment,
-  onDownload,
-}: {
-  attachment: SessionAttachment;
-  onDownload: () => void;
-}) {
-  return (
-    <li className="flex items-center gap-3 rounded-xl border border-black/5 bg-surface p-3 animate-fade-up [animation-duration:260ms]">
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-danger-soft text-danger">
-        <DocumentTextIcon className="size-5" aria-hidden />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-ink">{attachment.nomeArquivo}</p>
-        <p className="truncate text-xs text-muted">
-          Enviado por {attachment.enviadoPor.nome.split(' ')[0]} •{' '}
-          {formatRelativeTime(attachment.enviadoEm)}
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onDownload}
-        aria-label={`Baixar ${attachment.nomeArquivo}`}
-        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-brand-900 transition-[background-color,scale] duration-200 hover:bg-brand-50 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
-      >
-        <ArrowDownTrayIcon className="size-5" aria-hidden />
-      </button>
-    </li>
-  );
-}
-
-function AttachmentList({
-  attachments,
-  onDownload,
-}: {
+type AttachmentListProps = {
   attachments: SessionAttachment[];
+  canDelete: (a: SessionAttachment) => boolean;
   onDownload: (a: SessionAttachment) => void;
-}) {
+  onDelete: (a: SessionAttachment) => Promise<void>;
+};
+
+function AttachmentList({ attachments, canDelete, onDownload, onDelete }: AttachmentListProps) {
   if (!attachments.length) {
     return <p className="py-2 text-center text-sm text-muted">Nenhum documento anexado ainda.</p>;
   }
   return (
     <ul className="flex flex-col gap-3">
       {attachments.map((attachment) => (
-        <AttachmentRow
+        <SessionAttachmentRow
           key={attachment.id}
           attachment={attachment}
+          canDelete={canDelete(attachment)}
           onDownload={() => onDownload(attachment)}
+          onDelete={() => onDelete(attachment)}
         />
       ))}
     </ul>
@@ -99,26 +72,42 @@ function UploadControl({
   );
 }
 
-export function SessionAttachments({ sessionId, canUpload = false }: SessionAttachmentsProps) {
+function useAttachmentActions(sessionId: string) {
   const { notify } = useToast();
-  const { attachments, isLoading, isUploading, upload, download } =
+  const { user } = useAuth();
+  const { attachments, isLoading, isUploading, upload, download, remove } =
     useSessionAttachments(sessionId);
+  const report = (error: string | null, success: string) =>
+    notify(error ? { tone: 'error', message: error } : { tone: 'success', message: success });
 
-  async function handleFile(file: File | undefined) {
-    if (!file) return;
-    const error = await upload(file);
-    notify(
-      error
-        ? { tone: 'error', message: error }
-        : { tone: 'success', message: 'Documento anexado.' },
-    );
-  }
+  return {
+    attachments,
+    isLoading,
+    isUploading,
+    canDelete: (attachment: SessionAttachment) =>
+      user?.tipo === 'PROFESSOR' || attachment.enviadoPor.id === user?.id,
+    handleFile: async (file: File | undefined) => {
+      if (file) report(await upload(file), 'Documento anexado.');
+    },
+    handleDownload: (attachment: SessionAttachment) =>
+      download(attachment).catch(() =>
+        notify({ tone: 'error', message: 'Não foi possível baixar o documento.' }),
+      ),
+    handleDelete: async (attachment: SessionAttachment) =>
+      report(await remove(attachment), 'Documento excluído.'),
+  };
+}
 
-  async function handleDownload(attachment: SessionAttachment) {
-    await download(attachment).catch(() =>
-      notify({ tone: 'error', message: 'Não foi possível baixar o documento.' }),
-    );
-  }
+export function SessionAttachments({ sessionId, canUpload = false }: SessionAttachmentsProps) {
+  const {
+    attachments,
+    isLoading,
+    isUploading,
+    canDelete,
+    handleFile,
+    handleDownload,
+    handleDelete,
+  } = useAttachmentActions(sessionId);
 
   return (
     <section aria-labelledby="session-attachments-title" className="flex flex-col gap-3">
@@ -134,7 +123,12 @@ export function SessionAttachments({ sessionId, canUpload = false }: SessionAtta
         {isLoading ? (
           <Spinner className="mx-auto size-6 text-brand-900" />
         ) : (
-          <AttachmentList attachments={attachments} onDownload={(a) => void handleDownload(a)} />
+          <AttachmentList
+            attachments={attachments}
+            canDelete={canDelete}
+            onDownload={(a) => void handleDownload(a)}
+            onDelete={handleDelete}
+          />
         )}
         {canUpload && (
           <UploadControl isUploading={isUploading} onFile={(file) => void handleFile(file)} />

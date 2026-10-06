@@ -6,6 +6,7 @@ import {
   ApiConsumes,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -58,5 +59,16 @@ export const DownloadSessionAttachmentSwaggerDocs = applyDecorators(
   ApiOperation({ summary: 'Baixa um anexo da sessão' }),
   ApiProduces('application/pdf'),
   ApiOkResponse({ description: 'O arquivo PDF.', schema: { type: 'string', format: 'binary' } }),
+  ...COMMON,
+);
+
+export const DeleteSessionAttachmentSwaggerDocs = applyDecorators(
+  ApiOperation({
+    summary: 'Exclui um anexo da sessão',
+    description:
+      'O professor vinculado à sala pode excluir qualquer anexo; o aluno só pode excluir os ' +
+      'anexos que ele mesmo enviou.',
+  }),
+  ApiNoContentResponse({ description: 'Anexo excluído.' }),
   ...COMMON,
 );

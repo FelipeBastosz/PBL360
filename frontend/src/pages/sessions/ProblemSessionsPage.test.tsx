@@ -12,9 +12,15 @@ import type { Problem } from '@/types/problem';
 import type { Session } from '@/types/session';
 import ProblemSessionsPage from './ProblemSessionsPage';
 
-vi.mock('@/services/room.service', () => ({ roomService: { getById: vi.fn() } }));
-vi.mock('@/services/problem.service', () => ({ problemService: { getById: vi.fn() } }));
-vi.mock('@/services/session.service', () => ({ sessionService: { list: vi.fn() } }));
+vi.mock('@/services/room.service', () => ({
+  roomService: { getById: vi.fn(), listMyRooms: vi.fn() },
+}));
+vi.mock('@/services/problem.service', () => ({
+  problemService: { getById: vi.fn(), list: vi.fn() },
+}));
+vi.mock('@/services/session.service', () => ({
+  sessionService: { list: vi.fn(), listForRoom: vi.fn() },
+}));
 
 vi.mock('@/hooks/useToast', () => ({
   useToast: () => ({ notify: vi.fn() }),
@@ -136,6 +142,14 @@ describe('ProblemSessionsPage', () => {
   });
 
   describe('when user is a student', () => {
+    beforeEach(() => {
+      vi.mocked(roomService.listMyRooms).mockResolvedValue([
+        { salaId: 'room-1', nome: 'MI - Algoritmos - TP02', semestre: '2026.2', totalAlunos: 3 },
+      ]);
+      vi.mocked(problemService.list).mockResolvedValue([mockProblem]);
+      vi.mocked(sessionService.listForRoom).mockResolvedValue([]);
+    });
+
     it('does not render Relatório Final nor fab menu', async () => {
       renderPage(mockStudent);
 
@@ -145,6 +159,37 @@ describe('ProblemSessionsPage', () => {
       expect(
         screen.getByText('Nenhuma sessão disponível neste problema no momento.'),
       ).toBeInTheDocument();
+    });
+
+    it('lists the sessions of the problem through the student routes', async () => {
+      vi.mocked(sessionService.listForRoom).mockResolvedValue([
+        {
+          id: 'sess-1',
+          titulo: 'Primeira sessão',
+          data: '2026-08-12',
+          ordem: 1,
+          status: 'agendada',
+          problemaId: 'prob-1',
+          problemaTitulo: 'Problema 01',
+        },
+        {
+          id: 'sess-9',
+          titulo: 'Sessão de outro problema',
+          data: '2026-08-13',
+          ordem: 1,
+          status: 'agendada',
+          problemaId: 'prob-2',
+          problemaTitulo: 'Problema 02',
+        },
+      ]);
+      renderPage(mockStudent);
+
+      expect(await screen.findByText(/Primeira sessão · 12 ago/i)).toBeInTheDocument();
+      expect(screen.getByText('TP02')).toBeInTheDocument();
+      expect(screen.queryByText(/Sessão de outro problema/)).not.toBeInTheDocument();
+      expect(roomService.getById).not.toHaveBeenCalled();
+      expect(problemService.getById).not.toHaveBeenCalled();
+      expect(sessionService.list).not.toHaveBeenCalled();
     });
   });
 });
