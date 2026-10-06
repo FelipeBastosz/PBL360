@@ -176,6 +176,11 @@ describe('SessionHubPage', () => {
       expect(screen.getByText('Problema 01 - Diagnóstico')).toBeInTheDocument();
       expect(await screen.findByRole('heading', { name: 'Anexos da Sessão' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Adicionar Documento/ })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Central de Avaliações' })).toBeInTheDocument();
+      expect(screen.getByText('Autoavaliação')).toBeInTheDocument();
+      expect(screen.getByText('Avaliar Colegas')).toBeInTheDocument();
+      expect(screen.getByText('Notas e Feedbacks')).toBeInTheDocument();
+      expect(screen.getAllByText('Em breve')).toHaveLength(3);
       expect(screen.queryByRole('link', { name: /chamada/i })).not.toBeInTheDocument();
       expect(screen.queryByText('Autoavaliação e pares')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Encerrar sessão' })).not.toBeInTheDocument();

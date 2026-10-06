@@ -14,6 +14,7 @@ import { SessionHubHeader } from './SessionHubHeader';
 import { SessionActionGrid } from './SessionActionGrid';
 import { SessionEvaluationsCard } from './SessionEvaluationsCard';
 import { SessionAttachments } from './SessionAttachments';
+import { StudentEvaluationCenter } from './StudentEvaluationCenter';
 
 type SessionHubContentProps = {
   isLoading: boolean;
@@ -36,7 +37,14 @@ function SessionHubContent({
     );
   }
 
-  if (!isProfessor) return <SessionAttachments sessionId={sessionId} canUpload />;
+  if (!isProfessor) {
+    return (
+      <>
+        <StudentEvaluationCenter />
+        <SessionAttachments sessionId={sessionId} canUpload />
+      </>
+    );
+  }
 
   return (
     <>
