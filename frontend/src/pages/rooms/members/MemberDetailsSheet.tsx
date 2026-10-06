@@ -4,7 +4,8 @@ import { formatFullDate } from '@/utils/formatDate';
 import { MemberAvatar } from './MemberAvatar';
 
 export type SelectedMember =
-  { kind: 'student'; student: RoomStudent } | { kind: 'tutor'; tutor: RoomTutor };
+  | { kind: 'student'; student: RoomStudent; photoUserId?: string }
+  | { kind: 'tutor'; tutor: RoomTutor };
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
@@ -57,11 +58,7 @@ const memberName = (member: SelectedMember) =>
 
 // Tutors carry no photo flag, so their photo is always attempted (as in the invite sheet).
 const memberPhotoId = (member: SelectedMember) =>
-  member.kind === 'tutor'
-    ? member.tutor.id
-    : member.student.possuiFoto
-      ? member.student.id
-      : undefined;
+  member.kind === 'tutor' ? member.tutor.id : member.photoUserId;
 
 type MemberDetailsSheetProps = {
   member: SelectedMember | null;

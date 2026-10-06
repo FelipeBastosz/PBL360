@@ -68,7 +68,17 @@ describe('Tutor directory (e2e)', () => {
     await api(app, outsider).get(`/salas/${roomId}/professores`).expect(403);
   });
 
-  it('rejects students from the room list', async () => {
+  it('lets an enrolled student list the room tutors', async () => {
+    await database.query('INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);', [
+      roomId,
+      student.id,
+    ]);
+
+    const response = await api(app, student).get(`/salas/${roomId}/professores`).expect(200);
+    expect((response.body as TutorBody[]).map(({ id }) => id)).toEqual([owner.id, colleague.id]);
+  });
+
+  it('rejects students outside the room', async () => {
     await api(app, student).get(`/salas/${roomId}/professores`).expect(403);
   });
 

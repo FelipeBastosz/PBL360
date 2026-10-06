@@ -44,7 +44,6 @@ const students: RoomStudent[] = [
     nome: 'Ana Silva Santos',
     email: '20231002@discente.uefs.br',
     matricula: '20231002',
-    possuiFoto: true,
     dataEntrada: '2026-09-01T15:00:00.000Z',
   },
   {
@@ -52,7 +51,6 @@ const students: RoomStudent[] = [
     nome: 'João Pedro Lima',
     email: '20231003@discente.uefs.br',
     matricula: '20231003',
-    possuiFoto: false,
     dataEntrada: '2026-09-02T15:00:00.000Z',
   },
 ];
@@ -115,12 +113,12 @@ describe('RoomMembersPage', () => {
     expect(within(dialog).getByText('01/09/2026')).toBeInTheDocument();
   });
 
-  it('loads photos only for students who have one', async () => {
+  it('loads every student photo for a tutor', async () => {
     renderPage();
     await screen.findByText('Ana');
 
     expect(userService.getPhoto).toHaveBeenCalledWith('s1');
-    expect(userService.getPhoto).not.toHaveBeenCalledWith('s2');
+    expect(userService.getPhoto).toHaveBeenCalledWith('s2');
   });
 
   it('shows the tutor details without any performance score', async () => {
@@ -162,22 +160,58 @@ describe('RoomMembersPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('tells students the list is not available yet, without calling the tutor-only routes', async () => {
-    vi.mocked(roomService.listMyRooms).mockResolvedValue([
-      { salaId: 'room-1', nome: 'MI - Algoritmos - TP02', semestre: '2026.2', totalAlunos: 2 },
-    ]);
-    renderPage(student);
+  describe('when a student opens it', () => {
+    const classmate = { ...student, id: 's2', nome: 'João Pedro Lima' };
 
-    expect(
-      await screen.findByText('A lista de participantes ainda não está disponível para alunos.'),
-    ).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'MI - Algoritmos' })).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Voltar para a turma' })[0]).toHaveAttribute(
-      'href',
-      '/turmas/room-1/problemas',
-    );
-    expect(roomService.listStudents).not.toHaveBeenCalled();
-    expect(roomService.listTutors).not.toHaveBeenCalled();
-    expect(roomService.getById).not.toHaveBeenCalled();
+    beforeEach(() => {
+      vi.mocked(roomService.listMyRooms).mockResolvedValue([
+        { salaId: 'room-1', nome: 'MI - Algoritmos - TP02', semestre: '2026.2', totalAlunos: 2 },
+      ]);
+    });
+
+    it('lists the classmates and the room tutors', async () => {
+      renderPage(classmate);
+
+      const studentsSection = await screen.findByRole('region', { name: 'Alunos' });
+      const tutorsSection = screen.getByRole('region', { name: 'Professores' });
+      expect(within(studentsSection).getByText('Ana')).toBeInTheDocument();
+      expect(within(studentsSection).getByText('João')).toBeInTheDocument();
+      expect(within(tutorsSection).getByText('Bruno')).toBeInTheDocument();
+      expect(within(tutorsSection).getByText('Responsável')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'MI - Algoritmos' })).toBeInTheDocument();
+      expect(roomService.listStudents).toHaveBeenCalledWith('room-1');
+      expect(roomService.listTutors).toHaveBeenCalledWith('room-1');
+      expect(roomService.getById).not.toHaveBeenCalled();
+    });
+
+    it('opens a tutor details popup', async () => {
+      const user = userEvent.setup();
+      renderPage(classmate);
+
+      await user.click(await screen.findByRole('button', { name: 'Ver detalhes de Bruno Reis' }));
+
+      const dialog = screen.getByRole('dialog', { name: 'Detalhes do Professor' });
+      expect(within(dialog).getByText('bruno@uefs.br')).toBeInTheDocument();
+    });
+
+    it('opens a classmate details popup', async () => {
+      const user = userEvent.setup();
+      renderPage(classmate);
+
+      await user.click(
+        await screen.findByRole('button', { name: 'Ver detalhes de Ana Silva Santos' }),
+      );
+
+      const dialog = screen.getByRole('dialog', { name: 'Detalhes do Aluno' });
+      expect(within(dialog).getByText('20231002')).toBeInTheDocument();
+    });
+
+    it('only loads the photo of the student who is signed in', async () => {
+      renderPage(classmate);
+      await screen.findByText('Ana');
+
+      expect(userService.getPhoto).toHaveBeenCalledWith('s2');
+      expect(userService.getPhoto).not.toHaveBeenCalledWith('s1');
+    });
   });
 });
