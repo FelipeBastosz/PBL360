@@ -80,6 +80,8 @@ describe('RollCallPage', () => {
   beforeEach(() => {
     vi.mocked(userService.getPhoto).mockRejectedValue(new ApiError(404, ['Foto não encontrada.']));
     vi.mocked(sessionService.listRoles).mockResolvedValue([]);
+    vi.mocked(problemService.getById).mockResolvedValue({} as never);
+    vi.mocked(sessionService.getById).mockResolvedValue({} as never);
   });
 
   afterEach(() => {
@@ -266,7 +268,11 @@ describe('RollCallPage', () => {
     await vi.advanceTimersByTimeAsync(600);
     fireEvent.pointerUp(chip, { clientX: 5, clientY: 5 });
 
-    expect(screen.getByText('Fora da mesa • Sem registro')).toBeInTheDocument();
+    expect(
+      screen.getByText((content, element) => {
+        return element?.textContent === 'Fora da mesa • Sem registro';
+      }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tirar da mesa' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('radio', { name: 'Ausente' }));
     expect(

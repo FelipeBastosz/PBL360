@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { NotFoundError, UnprocessableEntityError } from '@/shared/errors/application.error';
-import { FormulaScope } from '../../domain/entities/formula.entity';
+import { Formula, FormulaScope } from '../../domain/entities/formula.entity';
 import { FormulaComponentType } from '../../domain/entities/formula-component.entity';
 import { FORMULA_REPOSITORY } from '../../domain/repositories/formula.repository';
 import type { FormulaRepository } from '../../domain/repositories/formula.repository';
@@ -100,27 +100,31 @@ export class GetProblemFormulaUseCase {
       escopo: FormulaScope.PROBLEMA,
       padrao: true,
       versao: null,
-      componentes: [
-        {
-          tipo: FormulaComponentType.MEDIA_SESSOES,
-          referenciaId: null,
-          nome: 'Média das Sessões',
-          peso: 100,
-        },
-        {
-          tipo: FormulaComponentType.AUTOAVALIACAO,
-          referenciaId: null,
-          nome: 'Autoavaliação',
-          peso: 0,
-        },
-        {
-          tipo: FormulaComponentType.PARES,
-          referenciaId: null,
-          nome: 'Avaliação por Pares',
-          peso: 0,
-        },
-      ],
+      componentes: this.getProblemScopeComponents(),
     };
+  }
+
+  private getProblemScopeComponents() {
+    return [
+      {
+        tipo: FormulaComponentType.MEDIA_SESSOES,
+        referenciaId: null,
+        nome: 'Média das Sessões',
+        peso: 100,
+      },
+      {
+        tipo: FormulaComponentType.AUTOAVALIACAO,
+        referenciaId: null,
+        nome: 'Autoavaliação',
+        peso: 0,
+      },
+      {
+        tipo: FormulaComponentType.PARES,
+        referenciaId: null,
+        nome: 'Avaliação por Pares',
+        peso: 0,
+      },
+    ];
   }
 
   private buildSessionScopeFormula(table: PerformanceTable | null): FormulaResponseDto {
@@ -135,19 +139,13 @@ export class GetProblemFormulaUseCase {
       0,
     );
     const componentes = table.criteria.map((c: PerformanceTableCriteria) => ({
-      tipo: FormulaComponentType.CRITERIO,
+      tipo: FormulaComponentType.CRITERIO as const,
       referenciaId: c.id,
       nome: c.name,
       peso: Number(((Number(c.weight) / totalWeight) * 100).toFixed(2)),
     }));
 
-    const sum = componentes.reduce((acc: number, c) => acc + c.peso, 0);
-    if (sum !== 100 && componentes.length > 0) {
-      componentes[componentes.length - 1].peso += Number((100 - sum).toFixed(2));
-      componentes[componentes.length - 1].peso = Number(
-        componentes[componentes.length - 1].peso.toFixed(2),
-      );
-    }
+    this.adjustComponentWeights(componentes);
 
     return {
       escopo: FormulaScope.SESSAO,
@@ -157,14 +155,26 @@ export class GetProblemFormulaUseCase {
     };
   }
 
+  private adjustComponentWeights(componentes: Array<{ peso: number }>): void {
+    const sum = componentes.reduce((acc: number, c) => acc + c.peso, 0);
+    if (sum !== 100 && componentes.length > 0) {
+      componentes[componentes.length - 1].peso += Number((100 - sum).toFixed(2));
+      componentes[componentes.length - 1].peso = Number(
+        componentes[componentes.length - 1].peso.toFixed(2),
+      );
+    }
+  }
+
   private getDefaultNameForType(type: string): string | null {
-    switch (type) {
+    switch (type as FormulaComponentType) {
       case FormulaComponentType.MEDIA_SESSOES:
         return 'Média das Sessões';
       case FormulaComponentType.AUTOAVALIACAO:
         return 'Autoavaliação';
       case FormulaComponentType.PARES:
         return 'Avaliação por Pares';
+      case FormulaComponentType.CRITERIO:
+        return null;
       default:
         return null;
     }

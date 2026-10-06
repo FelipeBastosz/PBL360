@@ -45,9 +45,7 @@ export class CustomizeProblemFormulaUseCase {
       const candidate = this.createFormulaCandidate(input, oldFormula);
       await this.formulas.saveNewVersion(oldFormula, candidate);
     } catch (error) {
-      if (error instanceof InvalidProblemError) throw new UnprocessableEntityError(error.message);
-      if (error instanceof Error) throw new UnprocessableEntityError(error.message);
-      throw error;
+      this.handleFormulaError(error);
     }
 
     return this.getFormulaUseCase.execute({
@@ -56,6 +54,16 @@ export class CustomizeProblemFormulaUseCase {
       tutorId: input.tutorId,
       scope: input.dto.escopo,
     });
+  }
+
+  private handleFormulaError(error: unknown): never {
+    if (error instanceof InvalidProblemError) {
+      throw new UnprocessableEntityError(error.message);
+    }
+    if (error instanceof Error) {
+      throw new UnprocessableEntityError(error.message);
+    }
+    throw new UnprocessableEntityError(String(error));
   }
 
   private async validateProblem(input: Input) {

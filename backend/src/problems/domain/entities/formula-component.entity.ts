@@ -49,7 +49,7 @@ export class FormulaComponent {
   }
 
   private assertSessionScope(): void {
-    if (this.type !== FormulaComponentType.CRITERIO) {
+    if ((this.type as FormulaComponentType) !== FormulaComponentType.CRITERIO) {
       throw new InvalidProblemError(
         'Fórmulas de sessão só podem conter componentes do tipo CRITERIO.',
       );
