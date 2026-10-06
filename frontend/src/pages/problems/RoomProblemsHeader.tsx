@@ -8,6 +8,8 @@ import type { Room } from '@/types/room';
 type RoomProblemsHeaderProps = {
   room: Pick<Room, 'nome'> | null;
   user: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
+  backTo?: string;
+  backLabel?: string;
 };
 
 function parseRoomName(fullName?: string) {
@@ -20,15 +22,20 @@ function parseRoomName(fullName?: string) {
   return { disciplina: fullName, turma: '' };
 }
 
-export function RoomProblemsHeader({ room, user }: RoomProblemsHeaderProps) {
+export function RoomProblemsHeader({
+  room,
+  user,
+  backTo = ROUTES.rooms,
+  backLabel = 'Voltar para as turmas',
+}: RoomProblemsHeaderProps) {
   const { disciplina, turma } = parseRoomName(room?.nome);
 
   return (
     <header className="sticky top-0 z-10 bg-brand-900 text-white shadow-[0_6px_18px_-12px_rgb(0_0_119/0.8)]">
       <div className="mx-auto flex h-20 w-full max-w-5xl items-center gap-3 px-4">
         <Link
-          to={ROUTES.rooms}
-          aria-label="Voltar para as turmas"
+          to={backTo}
+          aria-label={backLabel}
           className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
         >
           <ChevronLeftIcon className="size-6" aria-hidden />

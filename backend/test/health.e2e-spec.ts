@@ -1,5 +1,5 @@
 import type { Server } from 'node:http';
-import { type INestApplication } from '@nestjs/common';
+import { Logger, type INestApplication } from '@nestjs/common';
 import { type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
@@ -15,6 +15,7 @@ describe('Health Check (e2e)', () => {
   let app: INestApplication;
   let moduleRef: TestingModule;
   let dataSource: DataSource;
+  let errorLog: jest.SpyInstance;
 
   beforeAll(async () => {
     ({ app, moduleRef } = await createTestApp());
@@ -23,6 +24,14 @@ describe('Health Check (e2e)', () => {
 
   afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(() => {
+    errorLog = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+  });
+
+  afterEach(() => {
+    errorLog.mockRestore();
   });
 
   it('responds with 200 ok on /saude without authentication', async () => {
@@ -64,6 +73,7 @@ describe('Health Check (e2e)', () => {
       banco: 'indisponivel',
     });
     expect(typeof body.versao).toBe('string');
+    expect(errorLog).toHaveBeenCalledWith(expect.stringContaining('GET /api/saude 503'));
 
     querySpy.mockRestore();
   });

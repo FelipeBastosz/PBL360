@@ -26,6 +26,7 @@ const CreateRoomPage = lazy(() => import('@/pages/rooms/CreateRoomPage'));
 const CreateRoomSuccessPage = lazy(() => import('@/pages/rooms/CreateRoomSuccessPage'));
 const ManageRoomsPage = lazy(() => import('@/pages/rooms/ManageRoomsPage'));
 const EditRoomPage = lazy(() => import('@/pages/rooms/EditRoomPage'));
+const RoomMembersPage = lazy(() => import('@/pages/rooms/members/RoomMembersPage'));
 const RoomProblemsPage = lazy(() => import('@/pages/problems/RoomProblemsPage'));
 const ManageProblemsPage = lazy(() => import('@/pages/problems/ManageProblemsPage'));
 const PerformanceTablesPage = lazy(
@@ -71,6 +72,7 @@ export function AppRoutes() {
           <Route path={ROUTES.manageRooms} element={<ManageRoomsPage />} />
           <Route path={ROUTES.editRoom} element={<EditRoomPage />} />
           <Route path={ROUTES.roomProblems} element={<RoomProblemsPage />} />
+          <Route path={ROUTES.roomMembers} element={<RoomMembersPage />} />
           <Route path={ROUTES.manageProblems} element={<ManageProblemsPage />} />
           <Route path={ROUTES.performanceTables} element={<PerformanceTablesPage />} />
           <Route path={ROUTES.createPerformanceTable} element={<CreatePerformanceTablePage />} />

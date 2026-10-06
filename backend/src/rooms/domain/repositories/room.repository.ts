@@ -15,8 +15,11 @@ export interface TutorRoomSummary {
 }
 
 export interface RoomStudentSummary {
+  id: string;
   name: string;
   joinedAt: Date;
+  email: string;
+  registrationNumber: string;
 }
 
 export interface RoomTutor {

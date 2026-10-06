@@ -131,7 +131,8 @@ export class PgRoomRepository implements RoomRepository {
 
   async findStudents(roomId: string): Promise<RoomStudentSummary[]> {
     return this.rooms.query<RoomStudentSummary[]>(
-      `SELECT users.name, enrollment.joined_at AS "joinedAt"
+      `SELECT users.id, users.name, enrollment.joined_at AS "joinedAt",
+              users.email, users.registration_number AS "registrationNumber"
          FROM room_students enrollment
          JOIN users ON users.id = enrollment.student_id
         WHERE enrollment.room_id = $1
