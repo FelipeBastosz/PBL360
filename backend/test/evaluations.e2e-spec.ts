@@ -87,7 +87,7 @@ describe('Tutor evaluations (e2e)', () => {
       secondStudent.id,
     ]);
     const [table] = await db.query<[{ id: string }]>(
-      "INSERT INTO performance_tables (tutor_id, name) VALUES ($1, 'Critérios') RETURNING id;",
+      "INSERT INTO performance_tables (tutor_id, name, is_default) VALUES ($1, 'Critérios', FALSE) RETURNING id;",
       [owner.id],
     );
     tableId = table.id;
