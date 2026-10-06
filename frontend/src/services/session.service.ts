@@ -77,4 +77,7 @@ export const sessionService = {
     api
       .get<Blob>(`${BASE}/${sessionId}/anexos/${attachmentId}`, { responseType: 'blob' })
       .then((r) => r.data),
+
+  deleteAttachment: (sessionId: string, attachmentId: string) =>
+    api.delete<void>(`${BASE}/${sessionId}/anexos/${attachmentId}`).then(() => undefined),
 };
