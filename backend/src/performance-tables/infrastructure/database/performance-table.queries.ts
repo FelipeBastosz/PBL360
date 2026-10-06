@@ -3,6 +3,7 @@ export const PERFORMANCE_TABLE_SUMMARY_QUERY = `
          performance_tables.tutor_id AS "tutorId",
          performance_tables.name,
          performance_tables.description,
+         performance_tables.is_default AS "isDefault",
          COUNT(DISTINCT performance_criteria.id)::int AS "criteriaCount",
          COUNT(DISTINCT problems.id)::int AS "problemCount",
          performance_tables.created_at AS "createdAt",
@@ -25,6 +26,7 @@ export const FIND_PERFORMANCE_TABLE_BY_ID_QUERY = `
          pt.tutor_id AS "tutorId",
          pt.name,
          pt.description,
+         pt.is_default AS "isDefault",
          pt.created_at AS "createdAt",
          pt.updated_at AS "updatedAt",
          pt.deleted_at AS "deletedAt",
@@ -61,14 +63,16 @@ export const INSERT_PERFORMANCE_TABLE_QUERY = `
   INSERT INTO performance_tables (
     tutor_id,
     name,
-    description
+    description,
+    is_default
   )
-  VALUES ($1, $2, $3)
+  VALUES ($1, $2, $3, $4)
   RETURNING
     id,
     tutor_id AS "tutorId",
     name,
     description,
+    is_default AS "isDefault",
     created_at AS "createdAt",
     updated_at AS "updatedAt",
     deleted_at AS "deletedAt";
@@ -85,6 +89,7 @@ export const FIND_PERFORMANCE_TABLE_BY_ID_INCLUDING_DELETED_QUERY = `
          pt.tutor_id AS "tutorId",
          pt.name,
          pt.description,
+         pt.is_default AS "isDefault",
          pt.created_at AS "createdAt",
          pt.updated_at AS "updatedAt",
          pt.deleted_at AS "deletedAt",

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule, type JwtSignOptions } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '@/users/users.module';
+import { PerformanceTablesModule } from '@/performance-tables/performance-tables.module';
 import { EmailVerificationCodes } from './application/services/email-verification-codes';
 import { PasswordResetCodes } from './application/services/password-reset-codes';
 import { LoginUseCase } from './application/use-cases/login.use-case';
@@ -39,6 +40,7 @@ type TokenTtl = NonNullable<JwtSignOptions['expiresIn']>;
   imports: [
     TypeOrmModule.forFeature([EmailVerificationCode, PasswordResetCode]),
     UsersModule,
+    PerformanceTablesModule,
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

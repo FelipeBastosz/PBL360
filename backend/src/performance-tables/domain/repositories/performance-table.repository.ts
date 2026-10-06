@@ -11,6 +11,7 @@ export interface PerformanceTableSummary {
   tutorId: string;
   name: string;
   description: string | null;
+  isDefault: boolean;
   criteriaCount: number;
   problemCount: number;
   createdAt: Date;

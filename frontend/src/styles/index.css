@@ -20,6 +20,9 @@
   --color-danger-soft: #fef3f2;
   --color-success: #067647;
   --color-success-soft: #ecfdf3;
+  --color-warning: #b54708;
+  --color-warning-soft: #fff4e5;
+  --color-warning-line: #f2b84b;
 
   --animate-fade-up: fade-up 600ms ease-out both;
   --animate-pop-in: pop-in 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -27,6 +30,26 @@
   --animate-develop: develop 700ms ease-out both;
   --animate-shake: shake 360ms ease-in-out;
   --animate-slide-down: slide-down 220ms ease-out both;
+  --animate-fade-in: fade-in 200ms ease-out both;
+  --animate-sheet-up: sheet-up 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+  @keyframes sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 
   @keyframes pop-in {
     from {

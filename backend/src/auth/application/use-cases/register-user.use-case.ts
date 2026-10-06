@@ -6,6 +6,7 @@ import type { UserType } from '@/users/domain/enums/user-type.enum';
 import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositories/user.repository';
 import { PASSWORD_HASHER, type PasswordHasher } from '../../domain/services/password-hasher';
 import { EmailVerificationCodes } from '../services/email-verification-codes';
+import { CreatePerformanceTableUseCase } from '@/performance-tables/application/use-cases/create-performance-table.use-case';
 
 export interface RegisterUserInput {
   name: string;
@@ -22,6 +23,7 @@ export class RegisterUserUseCase {
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     @Inject(PASSWORD_HASHER) private readonly passwords: PasswordHasher,
     private readonly verificationCodes: EmailVerificationCodes,
+    private readonly createPerformanceTable: CreatePerformanceTableUseCase,
   ) {}
 
   async execute(input: RegisterUserInput): Promise<User> {
@@ -42,6 +44,9 @@ export class RegisterUserUseCase {
     );
 
     await this.verificationCodes.issueFor(user);
+    if (user.isTutor()) {
+      await this.createPerformanceTable.executeDefault(user.id);
+    }
 
     return user;
   }

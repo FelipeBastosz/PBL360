@@ -2,9 +2,11 @@ import type { MessageResponse } from '@/types/auth';
 import type {
   AddTutorToRoomPayload,
   CreateRoomPayload,
-  JoinRoomPayload,
+  JoinRoomByCodePayload,
+  JoinRoomByLinkPayload,
   Room,
   RoomStudent,
+  RoomTutor,
   StudentRoom,
   UpdateRoomPayload,
 } from '@/types/room';
@@ -24,6 +26,9 @@ export const roomService = {
 
   remove: (roomId: string) => api.delete<void>(`${BASE}/${roomId}`).then(() => undefined),
 
+  listTutors: (roomId: string) =>
+    api.get<RoomTutor[]>(`${BASE}/${roomId}/professores`).then((r) => r.data),
+
   addTutor: (roomId: string, payload: AddTutorToRoomPayload) =>
     api.post<MessageResponse>(`${BASE}/${roomId}/professores`, payload).then((r) => r.data),
 
@@ -32,8 +37,11 @@ export const roomService = {
 
   listMyRooms: () => api.get<StudentRoom[]>(`${BASE}/minhas`).then((r) => r.data),
 
-  join: (payload: JoinRoomPayload) =>
-    api.post<MessageResponse>(`${BASE}/entrar`, payload).then((r) => r.data),
+  joinByCode: (payload: JoinRoomByCodePayload) =>
+    api.post<MessageResponse>(`${BASE}/ingressar/codigo`, payload).then((r) => r.data),
+
+  joinByLink: (payload: JoinRoomByLinkPayload) =>
+    api.post<MessageResponse>(`${BASE}/ingressar/link`, payload).then((r) => r.data),
 
   listStudents: (roomId: string) =>
     api.get<RoomStudent[]>(`${BASE}/${roomId}/alunos`).then((r) => r.data),

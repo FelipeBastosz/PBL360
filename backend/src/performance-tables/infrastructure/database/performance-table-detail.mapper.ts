@@ -6,6 +6,7 @@ export interface PerformanceTableDetailRow {
   tutorId: string;
   name: string;
   description: string | null;
+  isDefault: boolean;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -27,6 +28,7 @@ export function toPerformanceTableWithCriteria(
   table.tutorId = first.tutorId;
   table.name = first.name;
   table.description = first.description;
+  table.isDefault = first.isDefault;
   table.createdAt = first.createdAt;
   table.updatedAt = first.updatedAt;
   table.deletedAt = first.deletedAt;

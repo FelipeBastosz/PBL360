@@ -2,6 +2,7 @@ import type { DataSource, Repository } from 'typeorm';
 import { DEFAULT_PASSWORD, runSeed, SEED_USERS, seedUser } from './seed';
 
 const TEST_ENV = { NODE_ENV: 'test', BCRYPT_ROUNDS: '4' };
+import { BehaviorTag } from '@/behavior-tags/domain/entities/behavior-tag.entity';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserPhoto } from '@/users/domain/entities/user-photo.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -9,6 +10,7 @@ import { UserType } from '@/users/domain/enums/user-type.enum';
 describe('seed.ts', () => {
   let mockUserRepo: jest.Mocked<Pick<Repository<User>, 'findOneBy' | 'save'>>;
   let mockPhotoRepo: jest.Mocked<Pick<Repository<UserPhoto>, 'save'>>;
+  let mockTagRepo: jest.Mocked<Pick<Repository<BehaviorTag>, 'findOneBy' | 'save'>>;
   let mockDataSource: jest.Mocked<Pick<DataSource, 'getRepository' | 'initialize' | 'destroy'>> & {
     isInitialized: boolean;
   };
@@ -19,14 +21,15 @@ describe('seed.ts', () => {
       save: jest.fn(),
     };
     mockPhotoRepo = { save: jest.fn() };
+    mockTagRepo = { findOneBy: jest.fn().mockResolvedValue(null), save: jest.fn() };
 
     mockDataSource = {
       isInitialized: false,
-      getRepository: jest
-        .fn()
-        .mockImplementation((entity: unknown) =>
-          entity === UserPhoto ? mockPhotoRepo : mockUserRepo,
-        ),
+      getRepository: jest.fn().mockImplementation((entity: unknown) => {
+        if (entity === UserPhoto) return mockPhotoRepo;
+        if (entity === BehaviorTag) return mockTagRepo;
+        return mockUserRepo;
+      }),
       initialize: jest.fn().mockImplementation(() => {
         mockDataSource.isInitialized = true;
         return Promise.resolve();

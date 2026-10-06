@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
-import { renderApp, sessionFor, studentUser } from '@/testing/renderApp';
+import { renderApp, sessionFor, studentUser, tutorUser } from '@/testing/renderApp';
 
 vi.mock('@/services/user.service');
 
@@ -40,5 +40,22 @@ describe('HomePage', () => {
 
     expect(await screen.findByText('AS')).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: 'Foto de Ana Souza' })).not.toBeInTheDocument();
+  });
+
+  it('shows the formulas button only for tutors', async () => {
+    sessionStore.save(sessionFor(tutorUser));
+    renderApp('/inicio');
+
+    expect(await screen.findByRole('button', { name: 'Ver Minhas Fórmulas' })).toBeInTheDocument();
+  });
+
+  it('does not show the formulas button for students', async () => {
+    sessionStore.save(sessionFor(studentUser));
+    renderApp('/inicio');
+
+    expect(
+      await screen.findByRole('heading', { name: `Olá, ${studentUser.nome}!` }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ver Minhas Fórmulas' })).not.toBeInTheDocument();
   });
 });

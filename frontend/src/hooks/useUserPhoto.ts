@@ -9,8 +9,13 @@ export function useUserPhoto(userId: string | undefined, hasPhoto: boolean): Blo
   useEffect(() => {
     if (!userId || !hasPhoto) return undefined;
     let active = true;
-    userService
-      .getPhoto(userId)
+    const photoPromise = userService.getPhoto(userId);
+
+    if (!photoPromise || typeof photoPromise.then !== 'function') {
+      return undefined;
+    }
+
+    photoPromise
       .then((blob) => {
         if (active) setPhoto({ userId, blob });
       })

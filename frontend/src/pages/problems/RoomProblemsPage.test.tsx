@@ -3,9 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
+import { ApiError } from '@/services/apiError';
 import { roomService } from '@/services/room.service';
 import { problemService } from '@/services/problem.service';
 import type { UserResponse } from '@/types/auth';
+import type { Problem } from '@/types/problem';
 import type { Room } from '@/types/room';
 import RoomProblemsPage from './RoomProblemsPage';
 
@@ -18,6 +20,7 @@ vi.mock('@/hooks/useToast', () => ({
 vi.mock('@/services/room.service', () => ({
   roomService: {
     getById: vi.fn(),
+    listMyRooms: vi.fn(),
   },
 }));
 
@@ -58,6 +61,24 @@ const mockRoom: Room = {
   ativo: true,
   criadoEm: '2026-01-01T00:00:00.000Z',
   professorResponsavelId: '1',
+};
+
+const mockProblem: Problem = {
+  id: 'prob-1',
+  salaId: 'room-1',
+  titulo: 'Problema 1 - Introdução',
+  descricao: null,
+  ordem: 1,
+  dataInicio: null,
+  dataFim: null,
+  tabelaId: null,
+  autoavaliacaoLiberada: false,
+  avaliacaoEntreParesLiberada: false,
+  liberadoEm: null,
+  prazoAutoavaliacao: null,
+  criadoPor: 'tutor-1',
+  criadoEm: '2026-01-01',
+  atualizadoEm: '2026-01-01',
 };
 
 function renderComponent(user: UserResponse = mockTeacher) {
@@ -136,19 +157,49 @@ describe('RoomProblemsPage', () => {
   });
 
   describe('when user is a student', () => {
-    it('does not render Relatório Final card nor fab menu', async () => {
+    beforeEach(() => {
+      vi.mocked(roomService.listMyRooms).mockResolvedValue([
+        { salaId: 'room-1', nome: 'MI - Algoritmos - TP02', semestre: '2026.2', totalAlunos: 3 },
+      ]);
+    });
+
+    it('lists the room problems like the tutor, without the tutor actions', async () => {
+      vi.mocked(problemService.list).mockResolvedValue([mockProblem]);
       renderComponent(mockStudent);
 
       expect(await screen.findByText('MI - Algoritmos')).toBeInTheDocument();
-
+      expect(await screen.findByRole('link', { name: /Problema 1 - Introdução/ })).toHaveAttribute(
+        'href',
+        '/turmas/room-1/problemas/prob-1',
+      );
       expect(screen.getByRole('link', { name: /participantes da turma/i })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /relatório final/i })).not.toBeInTheDocument();
-
-      expect(
-        screen.getByText('Nenhum problema disponível nesta turma no momento.'),
-      ).toBeInTheDocument();
-
+      expect(screen.queryByRole('button', { name: /convidar/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /ações de problema/i })).not.toBeInTheDocument();
+      expect(roomService.getById).not.toHaveBeenCalled();
+    });
+
+    it('shows the access notice when the student is not in the room', async () => {
+      vi.mocked(roomService.listMyRooms).mockResolvedValue([]);
+      renderComponent(mockStudent);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Você não faz parte desta turma.');
+    });
+  });
+
+  describe('when the room cannot be opened', () => {
+    it('shows only the access notice and a way back to the rooms', async () => {
+      vi.mocked(roomService.getById).mockRejectedValue(
+        new ApiError(403, ['Acesso negado para o seu perfil de usuário.']),
+      );
+      renderComponent(mockTeacher);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Acesso negado para o seu perfil de usuário.',
+      );
+      expect(screen.getByRole('link', { name: 'Ver minhas turmas' })).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('Pesquisar problema')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Nenhum problema disponível/)).not.toBeInTheDocument();
     });
   });
 });

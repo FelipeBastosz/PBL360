@@ -15,8 +15,11 @@ export interface TutorRoomSummary {
 }
 
 export interface RoomStudentSummary {
+  id: string;
   name: string;
   joinedAt: Date;
+  email: string;
+  registrationNumber: string;
 }
 
 export interface RoomTutor {
@@ -46,6 +49,8 @@ export interface RoomRepository {
   addTutor(roomId: string, tutorId: string, actorId: string): Promise<boolean>;
 
   hasTutor(roomId: string, tutorId: string): Promise<boolean>;
+
+  hasStudent(roomId: string, studentId: string): Promise<boolean>;
 
   listTutors(roomId: string): Promise<RoomTutor[]>;
 

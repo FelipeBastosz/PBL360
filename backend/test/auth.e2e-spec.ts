@@ -194,9 +194,9 @@ describe('Auth (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('DELETE FROM email_verification_codes;');
-    await dataSource.query('DELETE FROM password_reset_codes;');
-    await dataSource.query('DELETE FROM users;');
+    await dataSource.query(
+      'TRUNCATE performance_criteria, performance_tables, email_verification_codes, password_reset_codes, users CASCADE;',
+    );
   });
 
   describe(`POST ${REGISTER}`, () => {

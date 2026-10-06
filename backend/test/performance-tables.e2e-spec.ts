@@ -67,12 +67,12 @@ describe('Performance tables (e2e)', () => {
     );
     studentId = student.id;
     const [table] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO performance_tables (tutor_id, name) VALUES ($1, 'Tabela de teste') RETURNING id;`,
+      `INSERT INTO performance_tables (tutor_id, name, is_default) VALUES ($1, 'Tabela de teste', FALSE) RETURNING id;`,
       [ownerId],
     );
     tableId = table.id;
     await dataSource.query(
-      `INSERT INTO performance_criteria (performance_table_id, name) VALUES ($1, 'Critério');`,
+      `INSERT INTO performance_criteria (performance_table_id, name, weight) VALUES ($1, 'Critério', 10);`,
       [tableId],
     );
     const [room] = await dataSource.query<[{ id: string }]>(
@@ -106,7 +106,7 @@ describe('Performance tables (e2e)', () => {
     ]);
     await dataSource.query(
       `INSERT INTO performance_criteria (performance_table_id, name, order_index, weight)
-       VALUES ($1, 'Segundo Critério', 2, 5), ($1, 'Primeiro Critério', 1, 3);`,
+       VALUES ($1, 'Segundo Critério', 2, 7), ($1, 'Primeiro Critério', 1, 3);`,
       [tableId],
     );
 
@@ -128,7 +128,7 @@ describe('Performance tables (e2e)', () => {
     expect(body.criterios[1]).toMatchObject({
       nome: 'Segundo Critério',
       ordem: 2,
-      peso: 5,
+      peso: 7,
     });
   });
 
@@ -216,8 +216,8 @@ describe('Performance tables (e2e)', () => {
       nome: 'Tabela atualizada',
       descricao: null,
       criterios: [
-        { id: original!.id, nome: 'Participação', peso: 3, ordem: 1 },
-        { nome: 'Evolução', peso: 2, ordem: 2 },
+        { id: original!.id, nome: 'Participação', peso: 6, ordem: 1 },
+        { nome: 'Evolução', peso: 4, ordem: 2 },
       ],
     }).expect(200);
     const body = response.body as PerformanceTableResponseDto;
@@ -226,7 +226,7 @@ describe('Performance tables (e2e)', () => {
     expect(body.nome).toBe('Tabela atualizada');
     expect(body.descricao).toBeNull();
     expect(body.criterios).toHaveLength(2);
-    expect(body.criterios[0]).toMatchObject({ id: original!.id, nome: 'Participação', peso: 3 });
+    expect(body.criterios[0]).toMatchObject({ id: original!.id, nome: 'Participação', peso: 6 });
     expect(body.criterios[1]!.id).not.toBe(original!.id);
     expect(rows).toHaveLength(2);
     expect(rows.find((row) => row.id === original!.id)).toMatchObject({
@@ -238,14 +238,14 @@ describe('Performance tables (e2e)', () => {
   it('archives only omitted criteria and excludes them from the current table', async () => {
     const [retained] = await readCriteria();
     const [removed] = await dataSource.query<{ id: string }[]>(
-      `INSERT INTO performance_criteria (performance_table_id, name, order_index)
-       VALUES ($1, 'Autonomia', 2) RETURNING id;`,
+      `INSERT INTO performance_criteria (performance_table_id, name, order_index, weight)
+       VALUES ($1, 'Autonomia', 2, 5) RETURNING id;`,
       [tableId],
     );
 
     await updateTable({
       nome: 'Tabela',
-      criterios: [{ id: retained!.id, nome: 'Participação' }],
+      criterios: [{ id: retained!.id, nome: 'Participação', peso: 10 }],
     }).expect(200);
 
     const rows = await readCriteria();
@@ -265,7 +265,7 @@ describe('Performance tables (e2e)', () => {
     const [original] = await readCriteria();
     const response = await updateTable({
       nome: 'Tabela',
-      criterios: [{ nome: 'Evolução' }],
+      criterios: [{ nome: 'Evolução', peso: 10 }],
     }).expect(200);
     const body = response.body as PerformanceTableResponseDto;
     const rows = await readCriteria();
@@ -280,15 +280,15 @@ describe('Performance tables (e2e)', () => {
   it('swaps criterion positions without changing their ids', async () => {
     const [first] = await readCriteria();
     const [second] = await dataSource.query<{ id: string }[]>(
-      `INSERT INTO performance_criteria (performance_table_id, name, order_index)
-       VALUES ($1, 'Segundo', 2) RETURNING id;`,
+      `INSERT INTO performance_criteria (performance_table_id, name, order_index, weight)
+       VALUES ($1, 'Segundo', 2, 5) RETURNING id;`,
       [tableId],
     );
     const response = await updateTable({
       nome: 'Tabela',
       criterios: [
-        { id: first!.id, nome: 'Primeiro', ordem: 2 },
-        { id: second!.id, nome: 'Segundo', ordem: 1 },
+        { id: first!.id, nome: 'Primeiro', ordem: 2, peso: 5 },
+        { id: second!.id, nome: 'Segundo', ordem: 1, peso: 5 },
       ],
     }).expect(200);
     const body = response.body as PerformanceTableResponseDto;
@@ -303,8 +303,8 @@ describe('Performance tables (e2e)', () => {
     await updateTable({
       nome: 'Não salvar',
       criterios: [
-        { id: before[0]!.id, nome: 'Primeiro', ordem: 1 },
-        { id: before[0]!.id, nome: 'Segundo', ordem: 2 },
+        { id: before[0]!.id, nome: 'Primeiro', ordem: 1, peso: 5 },
+        { id: before[0]!.id, nome: 'Segundo', ordem: 2, peso: 5 },
       ],
     }).expect(400);
 
@@ -315,30 +315,31 @@ describe('Performance tables (e2e)', () => {
 
   it('rejects criterion ids from another table', async () => {
     const [otherTable] = await dataSource.query<{ id: string }[]>(
-      `INSERT INTO performance_tables (tutor_id, name) VALUES ($1, 'Outra tabela') RETURNING id;`,
+      `INSERT INTO performance_tables (tutor_id, name, is_default) VALUES ($1, 'Outra tabela', FALSE) RETURNING id;`,
       [otherTutorId],
     );
     const [foreign] = await dataSource.query<{ id: string }[]>(
-      `INSERT INTO performance_criteria (performance_table_id, name)
-       VALUES ($1, 'Outro critério') RETURNING id;`,
+      `INSERT INTO performance_criteria (performance_table_id, name, weight)
+       VALUES ($1, 'Outro critério', 10) RETURNING id;`,
       [otherTable!.id],
     );
     const before = await readCriteria();
     await updateTable({
       nome: 'Tabela',
-      criterios: [{ id: foreign!.id, nome: 'Alterado' }],
+      criterios: [{ id: foreign!.id, nome: 'Alterado', peso: 10 }],
     }).expect(400);
     expect(await readCriteria()).toEqual(before);
   });
 
   it('does not reactivate a previously archived criterion', async () => {
     const [original] = await readCriteria();
-    await updateTable({ nome: 'Tabela', criterios: [{ nome: 'Novo' }] }).expect(200);
+    await updateTable({ nome: 'Tabela', criterios: [{ nome: 'Novo', peso: 10 }] }).expect(200);
     const before = await readCriteria();
 
-    await updateTable({ nome: 'Tabela', criterios: [{ id: original!.id, nome: 'Antigo' }] }).expect(
-      400,
-    );
+    await updateTable({
+      nome: 'Tabela',
+      criterios: [{ id: original!.id, nome: 'Antigo', peso: 10 }],
+    }).expect(400);
     expect(await readCriteria()).toEqual(before);
   });
 
@@ -350,7 +351,7 @@ describe('Performance tables (e2e)', () => {
 
   it('requires ownership and the tutor role to update a table', async () => {
     const before = await readCriteria();
-    const payload = { nome: 'Tabela', criterios: [{ nome: 'Novo' }] };
+    const payload = { nome: 'Tabela', criterios: [{ nome: 'Novo', peso: 10 }] };
     await updateTable(payload, otherTutorToken).expect(403);
     await updateTable(payload, studentToken).expect(403);
     expect(await readCriteria()).toEqual(before);
@@ -359,8 +360,8 @@ describe('Performance tables (e2e)', () => {
   it('rolls back table changes, archival and reordering when persistence fails', async () => {
     const repository = moduleRef.get<PerformanceTableRepository>(PERFORMANCE_TABLE_REPOSITORY);
     const [removed] = await dataSource.query<{ id: string }[]>(
-      `INSERT INTO performance_criteria (performance_table_id, name, order_index)
-       VALUES ($1, 'Removido', 2) RETURNING id;`,
+      `INSERT INTO performance_criteria (performance_table_id, name, order_index, weight)
+       VALUES ($1, 'Removido', 2, 5) RETURNING id;`,
       [tableId],
     );
     const before = await readCriteria();
@@ -369,11 +370,11 @@ describe('Performance tables (e2e)', () => {
     table.update({
       name: 'Não salvar',
       criteria: [
-        { id: retained.id, name: 'Alterado', orderIndex: 2 },
-        { name: 'Novo', orderIndex: 1 },
+        { id: retained.id, name: 'Alterado', orderIndex: 2, weight: 5 },
+        { name: 'Novo', orderIndex: 1, weight: 5 },
       ],
     });
-    // Bypass domain validation to force a database constraint failure after earlier writes.
+
     table.criteria[1]!.weight = 11;
 
     await expect(repository.update(table)).rejects.toThrow();
@@ -385,12 +386,46 @@ describe('Performance tables (e2e)', () => {
     const repository = moduleRef.get<PerformanceTableRepository>(PERFORMANCE_TABLE_REPOSITORY);
     const stale = (await repository.findById(tableId))!;
     const originalId = stale.criteria[0]!.id;
-    await updateTable({ nome: 'Configuração recente', criterios: [{ nome: 'Novo' }] }).expect(200);
+    await updateTable({
+      nome: 'Configuração recente',
+      criterios: [{ nome: 'Novo', peso: 10 }],
+    }).expect(200);
     const before = await readCriteria();
-    stale.update({ name: 'Configuração antiga', criteria: [{ id: originalId, name: 'Antigo' }] });
+    stale.update({
+      name: 'Configuração antiga',
+      criteria: [{ id: originalId, name: 'Antigo', weight: 10 }],
+    });
 
     await expect(repository.update(stale)).rejects.toThrow(InvalidPerformanceTableError);
     expect(await readCriteria()).toEqual(before);
     expect((await repository.findById(tableId))!.name).toBe('Configuração recente');
+  });
+
+  it('rejects creating a table when the sum of criteria weights is not 10', async () => {
+    const res = await request(app.getHttpServer() as Server)
+      .post('/api/tabelas-desempenho')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({
+        nome: 'Tabela Inválida',
+        criterios: [
+          { nome: 'Critério 1', peso: 4 },
+          { nome: 'Critério 2', peso: 5 },
+        ],
+      })
+      .expect(400);
+
+    const body = res.body as ErrorResponseDto;
+    expect(body.message).toContain('A soma dos pesos dos critérios deve ser igual a 10.');
+  });
+
+  it('rejects updating a table when the sum of criteria weights is not 10', async () => {
+    const [original] = await readCriteria();
+    const res = await updateTable({
+      nome: 'Tabela Inválida',
+      criterios: [{ id: original!.id, nome: 'Critério', peso: 7 }],
+    }).expect(400);
+
+    const body = res.body as ErrorResponseDto;
+    expect(body.message).toContain('A soma dos pesos dos critérios deve ser igual a 10.');
   });
 });

@@ -18,6 +18,9 @@ import { PerformanceTablesModule } from './performance-tables/performance-tables
 import { SessionsModule } from './sessions/sessions.module';
 import { EvaluationsModule } from './evaluations/evaluations.module';
 import { FeedbacksModule } from './feedbacks/feedbacks.module';
+import { HealthModule } from './health/health.module';
+import { BehaviorTagsModule } from './behavior-tags/behavior-tags.module';
+import { ObservationsModule } from './observations/observations.module';
 
 @Module({
   imports: [
@@ -40,6 +43,9 @@ import { FeedbacksModule } from './feedbacks/feedbacks.module';
     SessionsModule,
     FeedbacksModule,
     EvaluationsModule,
+    HealthModule,
+    BehaviorTagsModule,
+    ObservationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

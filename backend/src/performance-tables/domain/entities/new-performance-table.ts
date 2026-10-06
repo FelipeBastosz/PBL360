@@ -2,6 +2,7 @@ export interface NewPerformanceTable {
   tutorId: string;
   name: string;
   description?: string | null;
+  isDefault?: boolean;
   criteria: NewPerformanceCriterion[];
 }
 

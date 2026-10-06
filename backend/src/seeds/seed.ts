@@ -7,7 +7,9 @@ import { User } from '@/users/domain/entities/user.entity';
 import { UserPhoto } from '@/users/domain/entities/user-photo.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { placeholderPhotoBytes } from './placeholder-photo';
+import { seedAllBehaviorTags } from './behavior-tags.seed';
 import { seedAllPerformanceTables } from './performance-tables.seed';
+import { seedReviewData } from './review.seed';
 
 export interface SeedUserData {
   name: string;
@@ -101,6 +103,13 @@ async function seedAllUsers(ds: DataSource, env: NodeJS.ProcessEnv): Promise<voi
   }
 }
 
+async function executeSeeds(ds: DataSource, env: NodeJS.ProcessEnv): Promise<void> {
+  await seedAllUsers(ds, env);
+  await seedAllPerformanceTables(ds);
+  await seedAllBehaviorTags(ds);
+  await seedReviewData(ds);
+}
+
 export async function runSeed(
   ds: DataSource = dataSource,
   env: NodeJS.ProcessEnv = process.env,
@@ -112,8 +121,7 @@ export async function runSeed(
     await ds.initialize();
   }
   try {
-    await seedAllUsers(ds, env);
-    await seedAllPerformanceTables(ds);
+    await executeSeeds(ds, env);
   } finally {
     if (initializedHere) {
       await ds.destroy();
