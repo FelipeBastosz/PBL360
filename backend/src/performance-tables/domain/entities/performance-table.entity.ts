@@ -20,6 +20,10 @@ import type {
 } from './update-performance-table';
 
 @Entity('performance_tables')
+@Index('uq_performance_tables_tutor_default', ['tutorId'], {
+  unique: true,
+  where: '"is_default" = TRUE AND "deleted_at" IS NULL',
+})
 export class PerformanceTable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
