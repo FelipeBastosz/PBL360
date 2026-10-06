@@ -9,7 +9,7 @@ import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { roomService } from '@/services/room.service';
+import { memberRoomService, type RoomHeading } from '@/services/memberRoom.service';
 import { problemService } from '@/services/problem.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
@@ -19,7 +19,6 @@ import { ProblemFormModal } from './ProblemFormModal';
 import { ProblemCard } from './ProblemCard';
 import { RoomProblemsHeader } from './RoomProblemsHeader';
 import { RoomTopActions } from './RoomTopActions';
-import { StudentRoomSessions } from './StudentRoomSessions';
 import { RoomInviteSheet } from '../rooms/invite/RoomInviteSheet';
 
 function ProblemsFab({ roomId, onCreate }: { roomId: string; onCreate: () => void }) {
@@ -98,29 +97,26 @@ function RoomProblemsMain({
   );
 }
 
+const isFullRoom = (room: Room | RoomHeading | null): room is Room =>
+  !!room && 'codigoSala' in room;
+
 function useRoomWithProblems(id: string | undefined) {
-  const [room, setRoom] = useState<Room | null>(null);
+  const isProfessor = useAuth().user?.tipo === 'PROFESSOR';
+  const [room, setRoom] = useState<Room | RoomHeading | null>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
-  const { run: fetchRoom, error: roomError } = useAsyncAction(roomService.getById);
+  const { run: fetchRoom, error: roomError } = useAsyncAction(memberRoomService.room);
   const { run: fetchProblems, isLoading } = useAsyncAction(problemService.list);
 
   useEffect(() => {
     if (!id) return;
-    fetchRoom(id).then((res) => res.ok && setRoom(res.data));
+    fetchRoom(id, isProfessor).then((res) => res.ok && setRoom(res.data));
     fetchProblems(id).then((res) => res.ok && setProblems(res.data as Problem[]));
-  }, [id, fetchRoom, fetchProblems]);
+  }, [id, isProfessor, fetchRoom, fetchProblems]);
 
   return { room, problems, setProblems, roomError, isLoading };
 }
 
 export default function RoomProblemsPage() {
-  const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  if (user?.tipo === 'ALUNO') return <StudentRoomSessions roomId={id ?? ''} />;
-  return <TutorRoomProblems />;
-}
-
-function TutorRoomProblems() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { notify } = useToast();
@@ -159,7 +155,7 @@ function TutorRoomProblems() {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleSuccess}
       />
-      {room && isProfessor && (
+      {isFullRoom(room) && isProfessor && (
         <RoomInviteSheet
           isOpen={isInviteOpen}
           onClose={() => setIsInviteOpen(false)}

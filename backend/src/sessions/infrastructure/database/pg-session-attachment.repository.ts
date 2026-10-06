@@ -42,6 +42,12 @@ const FILE_SQL = `
   SELECT file_name AS "fileName", mime_type AS "mimeType", content
   FROM session_attachments WHERE session_id = $1 AND id = $2;`;
 
+const UPLOADER_SQL = `
+  SELECT uploaded_by AS "uploadedBy"
+  FROM session_attachments WHERE session_id = $1 AND id = $2;`;
+
+const DELETE_SQL = 'DELETE FROM session_attachments WHERE id = $1;';
+
 const toSummary = (row: SummaryRow): SessionAttachmentSummary => ({
   id: row.id,
   fileName: row.fileName,
@@ -81,5 +87,17 @@ export class PgSessionAttachmentRepository implements SessionAttachmentRepositor
       attachmentId,
     ]);
     return firstRowOrNull(rows);
+  }
+
+  async findUploader(sessionId: string, attachmentId: string): Promise<string | null> {
+    const rows = await this.attachments.query<{ uploadedBy: string }[]>(UPLOADER_SQL, [
+      sessionId,
+      attachmentId,
+    ]);
+    return firstRowOrNull(rows)?.uploadedBy ?? null;
+  }
+
+  async delete(attachmentId: string): Promise<void> {
+    await this.attachments.query(DELETE_SQL, [attachmentId]);
   }
 }
