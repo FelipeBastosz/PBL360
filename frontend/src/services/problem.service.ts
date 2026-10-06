@@ -3,6 +3,7 @@ import type {
   Problem,
   UpdateProblemPayload,
   ProblemDeletionImpact,
+  ProblemPerformanceTable,
 } from '@/types/problem';
 import { api } from './api';
 
@@ -23,6 +24,14 @@ export const problemService = {
   getDeletionImpact: (roomId: string, problemId: string) =>
     api
       .get<ProblemDeletionImpact>(`${problemsOf(roomId)}/${problemId}/impacto-exclusao`)
+      .then((r) => r.data),
+
+  // Only allowed while the problem has no sessions; the API answers 409 afterwards.
+  changePerformanceTable: (roomId: string, problemId: string, tabelaId: string) =>
+    api
+      .put<ProblemPerformanceTable>(`${problemsOf(roomId)}/${problemId}/tabela-desempenho`, {
+        tabelaId,
+      })
       .then((r) => r.data),
 
   remove: (roomId: string, problemId: string) =>

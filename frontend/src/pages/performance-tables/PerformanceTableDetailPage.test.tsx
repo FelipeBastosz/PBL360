@@ -1,8 +1,10 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { performanceTableService } from '@/services/performance-table.service';
+import { problemService } from '@/services/problem.service';
 import type { PerformanceTable } from '@/types/performanceTable';
 import { PerformanceTableDetailPage } from './PerformanceTableDetailPage';
 
@@ -11,6 +13,16 @@ vi.mock('@/hooks/useAuth', () => ({
 }));
 
 vi.mock('@/services/performance-table.service');
+vi.mock('@/services/problem.service', () => ({
+  problemService: { changePerformanceTable: vi.fn() },
+}));
+
+const mockNotify = vi.fn();
+vi.mock('@/hooks/useToast', () => ({
+  useToast: () => ({ notify: mockNotify }),
+}));
+
+const target = { roomId: 'room-1', problemId: 'problem-1' };
 
 const mockTable: PerformanceTable = {
   id: 'table-1',
@@ -46,11 +58,16 @@ const mockTable: PerformanceTable = {
 };
 
 describe('PerformanceTableDetailPage', () => {
-  function renderPage(id = 'table-1') {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function renderPage(id = 'table-1', state: unknown = target) {
     return render(
-      <MemoryRouter initialEntries={[`/formulas/${id}`]}>
+      <MemoryRouter initialEntries={[{ pathname: `/formulas/${id}`, state }]}>
         <Routes>
           <Route path="/formulas/:id" element={<PerformanceTableDetailPage />} />
+          <Route path="/turmas/:roomId/problemas/:problemId" element={<p>Página do problema</p>} />
         </Routes>
       </MemoryRouter>,
     );
@@ -86,5 +103,53 @@ describe('PerformanceTableDetailPage', () => {
     renderPage('not-found');
 
     expect(await screen.findByText('Tabela de desempenho não encontrada.')).toBeInTheDocument();
+  });
+
+  it('links the table to the problem the tutor came from', async () => {
+    const user = userEvent.setup();
+    vi.mocked(performanceTableService.getById).mockResolvedValue(mockTable);
+    vi.mocked(problemService.changePerformanceTable).mockResolvedValue({
+      problemaId: 'problem-1',
+      tabela: { id: 'table-1', nome: 'Sessão de apresentação' },
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Aplicar fórmula' }));
+
+    expect(problemService.changePerformanceTable).toHaveBeenCalledWith(
+      'room-1',
+      'problem-1',
+      'table-1',
+    );
+    expect(mockNotify).toHaveBeenCalledWith({
+      tone: 'success',
+      message: 'Fórmula aplicada ao problema.',
+    });
+    expect(await screen.findByText('Página do problema')).toBeInTheDocument();
+  });
+
+  it('shows the API message when the problem already has sessions', async () => {
+    const user = userEvent.setup();
+    const message = 'Não é possível alterar a tabela de um problema que já possui avaliações.';
+    vi.mocked(performanceTableService.getById).mockResolvedValue(mockTable);
+    vi.mocked(problemService.changePerformanceTable).mockRejectedValue(
+      new ApiError(409, [message]),
+    );
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Aplicar fórmula' }));
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(screen.queryByText('Página do problema')).not.toBeInTheDocument();
+  });
+
+  it('hides "Aplicar fórmula" when no problem was chosen', async () => {
+    vi.mocked(performanceTableService.getById).mockResolvedValue(mockTable);
+    renderPage('table-1', null);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Sessão de apresentação' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Aplicar fórmula' })).not.toBeInTheDocument();
   });
 });
