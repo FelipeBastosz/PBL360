@@ -42,6 +42,9 @@ export class PerformanceTable {
   @Column({ type: 'text', nullable: true, default: null })
   description: string | null;
 
+  @Column({ name: 'is_default', type: 'boolean' })
+  isDefault: boolean;
+
   @OneToMany(() => PerformanceCriterion, (criterion) => criterion.performanceTable, {
     cascade: ['insert'],
   })
@@ -63,6 +66,7 @@ export class PerformanceTable {
     table.tutorId = props.tutorId?.trim();
     table.name = props.name?.trim();
     table.description = props.description?.trim() || null;
+    table.isDefault = props.isDefault ?? false;
     table.criteria = (props.criteria ?? []).map((criterion, index) => {
       const entity = PerformanceCriterion.create({
         ...criterion,
@@ -86,6 +90,7 @@ export class PerformanceTable {
       criterion.performanceTable = this;
     });
 
+    this.assertDefaultTableCanBeUpdated(candidate);
     this.name = candidate.name;
     this.description = candidate.description;
     this.criteria = candidate.criteria;
@@ -110,8 +115,45 @@ export class PerformanceTable {
     if (this.deletedAt != null) {
       throw new InvalidPerformanceTableError('A tabela de desempenho já foi excluída.');
     }
+    if (this.isDefault) {
+      throw new InvalidPerformanceTableError(
+        'A tabela de desempenho padrão não pode ser excluída.',
+      );
+    }
 
     this.deletedAt = new Date();
+  }
+
+  private assertDefaultTableCanBeUpdated(candidate: PerformanceTable): void {
+    if (!this.isDefault) return;
+
+    if (candidate.name !== this.name || candidate.description !== this.description) {
+      throw new InvalidPerformanceTableError(
+        'O nome e a descrição da tabela padrão não podem ser alterados.',
+      );
+    }
+
+    this.assertDefaultCriteriaUnchanged(candidate);
+  }
+
+  private assertDefaultCriteriaUnchanged(candidate: PerformanceTable): void {
+    const currentCriteria = new Map(this.criteria.map((criterion) => [criterion.id, criterion]));
+    if (
+      candidate.criteria.length !== this.criteria.length ||
+      candidate.criteria.some((criterion) => {
+        const current = currentCriteria.get(criterion.id);
+        return (
+          !current ||
+          criterion.name !== current.name ||
+          criterion.description !== current.description ||
+          criterion.orderIndex !== current.orderIndex
+        );
+      })
+    ) {
+      throw new InvalidPerformanceTableError(
+        'Os nomes, descrições e ordens dos critérios da tabela padrão não podem ser alterados.',
+      );
+    }
   }
 
   private assertIsValid(): void {
@@ -136,6 +178,7 @@ export class PerformanceTable {
     }
 
     this.criteriaHaveUniqueOrderIndexes();
+    this.assertCriteriaWeightsSumToTen();
   }
 
   private criteriaHaveUniqueOrderIndexes(): void {
@@ -144,6 +187,17 @@ export class PerformanceTable {
       throw new InvalidPerformanceTableError(
         'Os critérios da tabela de desempenho não podem repetir a ordem.',
       );
+    }
+  }
+
+  private assertCriteriaWeightsSumToTen(): void {
+    const totalWeight = this.criteria.reduce(
+      (sum, criterion) => sum + Number(criterion.weight ?? 0),
+      0,
+    );
+
+    if (Number.isNaN(totalWeight) || Math.abs(totalWeight - 10) > 0.0001) {
+      throw new InvalidPerformanceTableError('A soma dos pesos dos critérios deve ser igual a 10.');
     }
   }
 }

@@ -54,12 +54,13 @@ describe('PerformanceTablesController', () => {
     table.tutorId = 'tutor-uuid-1';
     table.name = 'Barema PBL';
     table.description = 'Desc';
+    table.isDefault = false;
     const criterion = Object.assign(new PerformanceCriterion(), {
       id: 'crit-1',
       name: 'Domínio',
       description: null,
       orderIndex: 1,
-      weight: 3,
+      weight: 10,
     });
     table.criteria = [criterion];
     table.createdAt = mockDate;
@@ -71,7 +72,7 @@ describe('PerformanceTablesController', () => {
       {
         nome: 'Barema PBL',
         descricao: 'Desc',
-        criterios: [{ nome: 'Domínio', ordem: 1, peso: 3 }],
+        criterios: [{ nome: 'Domínio', ordem: 1, peso: 10 }],
       },
       'tutor-uuid-1',
     );
@@ -80,12 +81,13 @@ describe('PerformanceTablesController', () => {
       tutorId: 'tutor-uuid-1',
       name: 'Barema PBL',
       description: 'Desc',
-      criteria: [{ name: 'Domínio', description: undefined, orderIndex: 1, weight: 3 }],
+      criteria: [{ name: 'Domínio', description: undefined, orderIndex: 1, weight: 10 }],
     });
     expect(result).toEqual({
       id: 'table-uuid-1',
       professorId: 'tutor-uuid-1',
       nome: 'Barema PBL',
+      isDefault: false,
       descricao: 'Desc',
       quantidadeProblemas: 0,
       criterios: [
@@ -94,7 +96,7 @@ describe('PerformanceTablesController', () => {
           nome: 'Domínio',
           descricao: null,
           ordem: 1,
-          peso: 3,
+          peso: 10,
         },
       ],
       criadoEm: mockDate,
@@ -109,6 +111,7 @@ describe('PerformanceTablesController', () => {
         tutorId: 'tutor-uuid-1',
         name: 'Barema PBL',
         description: null,
+        isDefault: false,
         criteriaCount: 3,
         problemCount: 2,
         createdAt: mockDate,
@@ -126,6 +129,7 @@ describe('PerformanceTablesController', () => {
         id: 'table-uuid-1',
         professorId: 'tutor-uuid-1',
         nome: 'Barema PBL',
+        isDefault: false,
         descricao: null,
         quantidadeCriterios: 3,
         quantidadeProblemas: 2,
@@ -141,6 +145,7 @@ describe('PerformanceTablesController', () => {
     table.tutorId = 'tutor-uuid-1';
     table.name = 'Barema PBL';
     table.description = null;
+    table.isDefault = false;
     table.problemCount = 2;
     const criterion = Object.assign(new PerformanceCriterion(), {
       id: 'crit-1',
@@ -164,6 +169,7 @@ describe('PerformanceTablesController', () => {
     expect(result).toEqual({
       id: 'table-uuid-1',
       professorId: 'tutor-uuid-1',
+      isDefault: false,
       nome: 'Barema PBL',
       descricao: null,
       quantidadeProblemas: 2,
@@ -193,7 +199,7 @@ describe('PerformanceTablesController', () => {
     const table = PerformanceTable.create({
       tutorId: 'tutor-1',
       name: 'Barema',
-      criteria: [{ name: 'Participação' }],
+      criteria: [{ name: 'Participação', weight: 10 }],
     });
     table.id = 'table-1';
     table.criteria[0]!.id = 'criterion-1';
@@ -204,7 +210,7 @@ describe('PerformanceTablesController', () => {
       {
         nome: 'Barema',
         descricao: null,
-        criterios: [{ id: 'criterion-1', nome: 'Participação', peso: 2, ordem: 1 }],
+        criterios: [{ id: 'criterion-1', nome: 'Participação', peso: 10, ordem: 1 }],
       },
       'tutor-1',
     );
@@ -217,7 +223,7 @@ describe('PerformanceTablesController', () => {
           id: 'criterion-1',
           name: 'Participação',
           description: undefined,
-          weight: 2,
+          weight: 10,
           orderIndex: 1,
         },
       ],

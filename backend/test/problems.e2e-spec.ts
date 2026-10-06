@@ -49,7 +49,7 @@ describe('Problems (e2e)', () => {
     await dataSource.query('DELETE FROM problems;');
     await dataSource.query('DELETE FROM room_tutors;');
     await dataSource.query('DELETE FROM rooms;');
-    await dataSource.query('DELETE FROM users;');
+    await dataSource.query('TRUNCATE performance_criteria, performance_tables, users CASCADE;');
   };
 
   afterAll(async () => {

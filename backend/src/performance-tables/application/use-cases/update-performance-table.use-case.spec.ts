@@ -33,7 +33,7 @@ describe('UpdatePerformanceTableUseCase', () => {
         {
           name: 'Participação',
           orderIndex: 1,
-          weight: 2,
+          weight: 10,
         },
       ],
     });
@@ -50,12 +50,12 @@ describe('UpdatePerformanceTableUseCase', () => {
         {
           name: 'Domínio do conteúdo',
           orderIndex: 1,
-          weight: 4,
+          weight: 6,
         },
         {
           name: 'Participação',
           orderIndex: 2,
-          weight: 3,
+          weight: 4,
         },
       ],
     });
@@ -76,7 +76,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     await expect(
       useCase.execute(tableId, tutorId, {
         name: 'Barema atualizado',
-        criteria: [{ name: 'Participação' }],
+        criteria: [{ name: 'Participação', weight: 10 }],
       }),
     ).rejects.toThrow(NotFoundError);
 
@@ -87,7 +87,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     const table = PerformanceTable.create({
       tutorId: 'another-tutor',
       name: 'Barema',
-      criteria: [{ name: 'Participação' }],
+      criteria: [{ name: 'Participação', weight: 10 }],
     });
 
     table.id = tableId;
@@ -96,7 +96,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     await expect(
       useCase.execute(tableId, tutorId, {
         name: 'Barema atualizado',
-        criteria: [{ name: 'Participação' }],
+        criteria: [{ name: 'Participação', weight: 10 }],
       }),
     ).rejects.toThrow(ForbiddenError);
 
@@ -107,7 +107,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     const table = PerformanceTable.create({
       tutorId,
       name: 'Barema',
-      criteria: [{ name: 'Participação' }],
+      criteria: [{ name: 'Participação', weight: 10 }],
     });
 
     table.id = tableId;
@@ -116,7 +116,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     await expect(
       useCase.execute(tableId, tutorId, {
         name: '   ',
-        criteria: [{ name: 'Participação' }],
+        criteria: [{ name: 'Participação', weight: 10 }],
       }),
     ).rejects.toThrow(InvalidPerformanceTableError);
 
@@ -127,7 +127,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     const table = PerformanceTable.create({
       tutorId,
       name: 'Barema',
-      criteria: [{ name: 'Participação' }],
+      criteria: [{ name: 'Participação', weight: 10 }],
     });
 
     table.id = tableId;
@@ -143,11 +143,33 @@ describe('UpdatePerformanceTableUseCase', () => {
     expect(repository.update).not.toHaveBeenCalled();
   });
 
+  it('rejects updating a table when criteria weights do not sum to 10', async () => {
+    const table = PerformanceTable.create({
+      tutorId,
+      name: 'Barema',
+      criteria: [{ name: 'Postura', weight: 10 }],
+    });
+    table.id = tableId;
+    repository.findById.mockResolvedValue(table);
+
+    await expect(
+      useCase.execute(tableId, tutorId, {
+        name: 'Barema atualizado',
+        criteria: [{ name: 'Postura', weight: 8 }],
+      }),
+    ).rejects.toThrow(InvalidPerformanceTableError);
+
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
   it('persists retained ids and new criteria while omitting removed criteria', async () => {
     const table = PerformanceTable.create({
       tutorId,
       name: 'Barema',
-      criteria: [{ name: 'Participação' }, { name: 'Postura' }],
+      criteria: [
+        { name: 'Participação', weight: 5 },
+        { name: 'Postura', weight: 5 },
+      ],
     });
     table.id = tableId;
     table.criteria[0]!.id = 'retained-id';
@@ -157,7 +179,10 @@ describe('UpdatePerformanceTableUseCase', () => {
 
     const result = await useCase.execute(tableId, tutorId, {
       name: 'Barema atualizado',
-      criteria: [{ id: 'retained-id', name: 'Participação nas discussões' }, { name: 'Evolução' }],
+      criteria: [
+        { id: 'retained-id', name: 'Participação nas discussões', weight: 6 },
+        { name: 'Evolução', weight: 4 },
+      ],
     });
 
     expect(repository.update).toHaveBeenCalledWith(table);
@@ -166,18 +191,18 @@ describe('UpdatePerformanceTableUseCase', () => {
   });
 
   it.each([
-    { criteria: [{ id: 'foreign-id', name: 'Outro critério' }] },
+    { criteria: [{ id: 'foreign-id', name: 'Outro critério', weight: 10 }] },
     {
       criteria: [
-        { id: 'criterion-1', name: 'Primeiro' },
-        { id: 'criterion-1', name: 'Segundo' },
+        { id: 'criterion-1', name: 'Primeiro', weight: 5 },
+        { id: 'criterion-1', name: 'Segundo', weight: 5 },
       ],
     },
   ])('does not persist invalid criterion identities: %j', async ({ criteria }) => {
     const table = PerformanceTable.create({
       tutorId,
       name: 'Barema',
-      criteria: [{ name: 'Postura' }],
+      criteria: [{ name: 'Postura', weight: 10 }],
     });
     table.criteria[0]!.id = 'criterion-1';
     repository.findById.mockResolvedValue(table);
@@ -192,7 +217,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     const table = PerformanceTable.create({
       tutorId,
       name: 'Barema',
-      criteria: [{ name: 'Postura' }],
+      criteria: [{ name: 'Postura', weight: 10 }],
     });
     repository.findById.mockResolvedValue(table);
     const failure = new Error('Database unavailable');
@@ -201,7 +226,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     await expect(
       useCase.execute(tableId, tutorId, {
         name: 'Novo nome',
-        criteria: [{ name: 'Evolução' }],
+        criteria: [{ name: 'Evolução', weight: 10 }],
       }),
     ).rejects.toBe(failure);
   });

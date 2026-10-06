@@ -43,7 +43,7 @@ describe('User repository (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('DELETE FROM users;');
+    await dataSource.query('TRUNCATE performance_criteria, performance_tables, users CASCADE;');
   });
 
   describe('save, on a user without id', () => {

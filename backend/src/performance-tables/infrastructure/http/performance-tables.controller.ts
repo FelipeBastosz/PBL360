@@ -62,6 +62,7 @@ export class PerformanceTablesController {
       id: table.id,
       professorId: table.tutorId,
       nome: table.name,
+      isDefault: table.isDefault,
       descricao: table.description,
       quantidadeCriterios: table.criteriaCount,
       quantidadeProblemas: table.problemCount,

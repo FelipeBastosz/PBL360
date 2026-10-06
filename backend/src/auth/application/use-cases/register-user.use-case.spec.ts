@@ -7,6 +7,7 @@ import type { EmailVerificationCodes } from '../services/email-verification-code
 import type { PasswordHasher } from '../../domain/services/password-hasher';
 import { buildStudent, codeServiceStub, userRepositoryStub } from '../../testing/auth-fixtures';
 import { RegisterUserUseCase } from './register-user.use-case';
+import type { CreatePerformanceTableUseCase } from '@/performance-tables/application/use-cases/create-performance-table.use-case';
 
 const tutorInput = {
   name: 'Carlos Mendes',
@@ -27,6 +28,7 @@ describe('RegisterUserUseCase', () => {
   let users: ReturnType<typeof userRepositoryStub>;
   let codes: ReturnType<typeof codeServiceStub>;
   let useCase: RegisterUserUseCase;
+  let createPerformanceTable: jest.Mocked<Pick<CreatePerformanceTableUseCase, 'executeDefault'>>;
 
   beforeEach(() => {
     users = userRepositoryStub();
@@ -35,12 +37,18 @@ describe('RegisterUserUseCase', () => {
       Promise.resolve(Object.assign(user, { id: 'u' })),
     );
     codes = codeServiceStub();
+    createPerformanceTable = { executeDefault: jest.fn().mockResolvedValue({}) };
     const passwords: PasswordHasher = {
       hash: jest.fn().mockResolvedValue('hashed'),
       matches: jest.fn(),
       compareWithDecoy: jest.fn(),
     };
-    useCase = new RegisterUserUseCase(users, passwords, codes as unknown as EmailVerificationCodes);
+    useCase = new RegisterUserUseCase(
+      users,
+      passwords,
+      codes as unknown as EmailVerificationCodes,
+      createPerformanceTable as unknown as CreatePerformanceTableUseCase,
+    );
   });
 
   it('stores a pending account with the hashed password and sends a code', async () => {
@@ -49,6 +57,7 @@ describe('RegisterUserUseCase', () => {
     expect(user).toMatchObject({ email: 'carlos@uefs.br', passwordHash: 'hashed', active: false });
     expect(user.isPendingVerification()).toBe(true);
     expect(codes.issueFor).toHaveBeenCalledWith(user);
+    expect(createPerformanceTable.executeDefault).toHaveBeenCalledWith('u');
   });
 
   it('rejects an e-mail already registered', async () => {
@@ -74,6 +83,7 @@ describe('RegisterUserUseCase', () => {
         pendingPhoto: expect.objectContaining({ mimeType: 'image/png' }) as unknown,
       }),
     );
+    expect(createPerformanceTable.executeDefault).not.toHaveBeenCalled();
   });
 
   it('rejects a student without a photo', async () => {
