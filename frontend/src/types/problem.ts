@@ -28,6 +28,12 @@ export type UpdateProblemPayload = {
   title: string;
 };
 
+// Mirrors PUT /salas/:roomId/problemas/:problemId/tabela-desempenho.
+export type ProblemPerformanceTable = {
+  problemaId: string;
+  tabela: { id: string; nome: string };
+};
+
 export type ProblemDeletionImpact = {
   sessoes: number;
   notas: number;

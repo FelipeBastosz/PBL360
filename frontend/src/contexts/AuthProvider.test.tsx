@@ -5,6 +5,9 @@ import { renderApp, sessionFor, studentUser, tutorUser } from '@/testing/renderA
 import type { SessionResponse } from '@/types/auth';
 
 vi.mock('@/services/user.service');
+vi.mock('@/services/room.service', () => ({
+  roomService: { list: async () => [], listMyRooms: async () => [] },
+}));
 
 afterEach(() => {
   vi.resetAllMocks();
@@ -23,14 +26,12 @@ function changeSessionInAnotherTab(session: SessionResponse | null) {
 describe('AuthProvider across tabs', () => {
   it('switches to the account signed in on another tab', async () => {
     sessionStore.save(sessionFor(studentUser));
-    renderApp('/inicio');
-    expect(await screen.findByRole('heading', { name: 'Olá, Ana Souza!' })).toBeInTheDocument();
+    renderApp('/turmas');
+    expect(await screen.findByText('AS')).toBeInTheDocument();
 
     changeSessionInAnotherTab(sessionFor(tutorUser));
 
-    expect(
-      await screen.findByRole('heading', { name: 'Olá, Carlos Oliveira!' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('CO')).toBeInTheDocument();
     expect(
       screen.getByText('Você entrou com outra conta em outra aba. Esta aba agora usa essa conta.'),
     ).toBeInTheDocument();
@@ -38,24 +39,24 @@ describe('AuthProvider across tabs', () => {
 
   it('signs out when another tab signs out', async () => {
     sessionStore.save(sessionFor(studentUser));
-    renderApp('/inicio');
-    expect(await screen.findByRole('heading', { name: 'Olá, Ana Souza!' })).toBeInTheDocument();
+    renderApp('/turmas');
+    expect(await screen.findByText('AS')).toBeInTheDocument();
 
     changeSessionInAnotherTab(null);
 
     expect(await screen.findByRole('button', { name: 'Entrar' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Olá, Ana Souza!' })).not.toBeInTheDocument();
+    expect(screen.queryByText('AS')).not.toBeInTheDocument();
   });
 
   it('ignores changes to unrelated storage keys', async () => {
     sessionStore.save(sessionFor(studentUser));
-    renderApp('/inicio');
-    expect(await screen.findByRole('heading', { name: 'Olá, Ana Souza!' })).toBeInTheDocument();
+    renderApp('/turmas');
+    expect(await screen.findByText('AS')).toBeInTheDocument();
 
     act(() => {
       window.dispatchEvent(new StorageEvent('storage', { key: 'outra-chave' }));
     });
 
-    expect(screen.getByRole('heading', { name: 'Olá, Ana Souza!' })).toBeInTheDocument();
+    expect(screen.getByText('AS')).toBeInTheDocument();
   });
 });

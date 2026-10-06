@@ -13,7 +13,7 @@ export default function SplashPage() {
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const target = isAuthenticated ? ROUTES.home : ROUTES.profileSelection;
+    const target = isAuthenticated ? ROUTES.rooms : ROUTES.profileSelection;
     const id = window.setTimeout(() => navigate(target, { replace: true }), SPLASH_DURATION_MS);
     return () => window.clearTimeout(id);
   }, [isAuthenticated, navigate]);

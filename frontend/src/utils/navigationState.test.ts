@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readStringFields } from './navigationState';
+import { readApplyTarget, readStringFields } from './navigationState';
 
 describe('readStringFields', () => {
   it('returns the state when every key holds a non-empty string', () => {
@@ -18,5 +18,15 @@ describe('readStringFields', () => {
   it('returns null for a missing state', () => {
     expect(readStringFields(null, ['email'])).toBeNull();
     expect(readStringFields(undefined, ['email'])).toBeNull();
+  });
+});
+
+describe('readApplyTarget', () => {
+  it('reads the room and the problem a table is applied to', () => {
+    expect(readApplyTarget({ roomId: 'room-1', problemId: 'problem-1' })).toEqual({
+      roomId: 'room-1',
+      problemId: 'problem-1',
+    });
+    expect(readApplyTarget({ roomId: 'room-1' })).toBeNull();
   });
 });

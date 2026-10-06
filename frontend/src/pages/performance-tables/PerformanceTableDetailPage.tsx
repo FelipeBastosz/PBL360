@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
+import { useToast } from '@/hooks/useToast';
+import { ROUTES } from '@/routes/paths';
 import { performanceTableService } from '@/services/performance-table.service';
+import { problemService } from '@/services/problem.service';
 import type { Criterion, PerformanceTable } from '@/types/performanceTable';
+import { readApplyTarget } from '@/utils/navigationState';
 
 function DetailHeader({ title }: { title: string }) {
   const { user } = useAuth();
@@ -65,16 +69,54 @@ function CriteriaListCard({ criteria }: { criteria: Criterion[] }) {
   );
 }
 
-function DetailActions() {
+type DetailActionsProps = { onApply: () => void; isApplying: boolean };
+
+function DetailActions({ onApply, isApplying }: DetailActionsProps) {
   return (
     <div className="mt-8">
       <button
         type="button"
-        className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 active:scale-[0.98]"
+        onClick={onApply}
+        disabled={isApplying}
+        className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
       >
         Aplicar fórmula
       </button>
     </div>
+  );
+}
+
+// Links the table to the problem the tutor came from (see readApplyTarget).
+function useApplyTable(tableId: string) {
+  const navigate = useNavigate();
+  const target = readApplyTarget(useLocation().state);
+  const { notify } = useToast();
+  const { run, isLoading, error } = useAsyncAction(problemService.changePerformanceTable);
+
+  async function apply() {
+    if (!target) return;
+    const result = await run(target.roomId, target.problemId, tableId);
+    if (!result.ok) return;
+    notify({ tone: 'success', message: 'Fórmula aplicada ao problema.' });
+    const problemPath = ROUTES.problemSessions
+      .replace(':roomId', target.roomId)
+      .replace(':problemId', target.problemId);
+    navigate(problemPath, { replace: true });
+  }
+
+  return { canApply: target !== null, apply, isApplying: isLoading, applyError: error };
+}
+
+function DetailContent({ table }: { table: PerformanceTable }) {
+  const { canApply, apply, isApplying, applyError } = useApplyTable(table.id);
+
+  return (
+    <>
+      {table.descricao && <DescriptionCard description={table.descricao} />}
+      <CriteriaListCard criteria={table.criterios} />
+      {applyError && <Alert tone="error">{applyError.message}</Alert>}
+      {canApply && <DetailActions onApply={apply} isApplying={isApplying} />}
+    </>
   );
 }
 
@@ -107,13 +149,7 @@ export function PerformanceTableDetailPage() {
 
         {error && <Alert tone="error">{error.message}</Alert>}
 
-        {table && (
-          <>
-            {table.descricao && <DescriptionCard description={table.descricao} />}
-            <CriteriaListCard criteria={table.criterios} />
-            <DetailActions />
-          </>
-        )}
+        {table && <DetailContent table={table} />}
       </main>
     </div>
   );

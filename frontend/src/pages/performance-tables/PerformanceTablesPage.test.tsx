@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { performanceTableService } from '@/services/performance-table.service';
@@ -124,5 +124,26 @@ describe('PerformanceTablesPage', () => {
 
     await userEvent.click(fabButton);
     expect(screen.queryByText('Criar nova fórmula')).not.toBeInTheDocument();
+  });
+
+  it('forwards the problem the tutor came from to the table detail', async () => {
+    const user = userEvent.setup();
+    vi.mocked(performanceTableService.list).mockResolvedValue(mockSummaries);
+    function DetailState() {
+      return <p>{JSON.stringify(useLocation().state)}</p>;
+    }
+    const target = { roomId: 'room-1', problemId: 'problem-1' };
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/formulas', state: target }]}>
+        <Routes>
+          <Route path="/formulas" element={<PerformanceTablesPage />} />
+          <Route path="/formulas/:id" element={<DetailState />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(await screen.findByText('Barema PBL'));
+
+    expect(screen.getByText(JSON.stringify(target))).toBeInTheDocument();
   });
 });
