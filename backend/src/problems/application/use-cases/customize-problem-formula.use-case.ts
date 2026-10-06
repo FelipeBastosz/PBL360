@@ -36,17 +36,7 @@ export class CustomizeProblemFormulaUseCase {
     const problem = await this.validateProblem(input);
     await this.validateFormulaScope(input, problem);
 
-    const oldFormula = await this.formulas.findActiveByProblemAndScope(
-      input.problemId,
-      input.dto.escopo,
-    );
-
-    try {
-      const candidate = this.createFormulaCandidate(input, oldFormula);
-      await this.formulas.saveNewVersion(oldFormula, candidate);
-    } catch (error) {
-      this.handleFormulaError(error);
-    }
+    await this.updateFormula(input);
 
     return this.getFormulaUseCase.execute({
       roomId: input.roomId,
@@ -56,14 +46,22 @@ export class CustomizeProblemFormulaUseCase {
     });
   }
 
+  private async updateFormula(input: Input): Promise<void> {
+    const oldFormula = await this.formulas.findActiveByProblemAndScope(
+      input.problemId,
+      input.dto.escopo,
+    );
+    try {
+      const candidate = this.createFormulaCandidate(input, oldFormula);
+      await this.formulas.saveNewVersion(oldFormula, candidate);
+    } catch (error) {
+      this.handleFormulaError(error);
+    }
+  }
+
   private handleFormulaError(error: unknown): never {
-    if (error instanceof InvalidProblemError) {
-      throw new UnprocessableEntityError(error.message);
-    }
-    if (error instanceof Error) {
-      throw new UnprocessableEntityError(error.message);
-    }
-    throw new UnprocessableEntityError(String(error));
+    const msg = error instanceof Error ? error.message : String(error);
+    throw new UnprocessableEntityError(msg);
   }
 
   private async validateProblem(input: Input) {

@@ -106,25 +106,14 @@ export class GetProblemFormulaUseCase {
 
   private getProblemScopeComponents() {
     return [
-      {
-        tipo: FormulaComponentType.MEDIA_SESSOES,
-        referenciaId: null,
-        nome: 'Média das Sessões',
-        peso: 100,
-      },
-      {
-        tipo: FormulaComponentType.AUTOAVALIACAO,
-        referenciaId: null,
-        nome: 'Autoavaliação',
-        peso: 0,
-      },
-      {
-        tipo: FormulaComponentType.PARES,
-        referenciaId: null,
-        nome: 'Avaliação por Pares',
-        peso: 0,
-      },
+      this.createComponent(FormulaComponentType.MEDIA_SESSOES, 'Média das Sessões', 100),
+      this.createComponent(FormulaComponentType.AUTOAVALIACAO, 'Autoavaliação', 0),
+      this.createComponent(FormulaComponentType.PARES, 'Avaliação por Pares', 0),
     ];
+  }
+
+  private createComponent(tipo: string, nome: string, peso: number) {
+    return { tipo, referenciaId: null, nome, peso };
   }
 
   private buildSessionScopeFormula(table: PerformanceTable | null): FormulaResponseDto {
@@ -134,17 +123,7 @@ export class GetProblemFormulaUseCase {
       );
     }
 
-    const totalWeight = table.criteria.reduce(
-      (sum: number, c: PerformanceTableCriteria) => sum + Number(c.weight),
-      0,
-    );
-    const componentes = table.criteria.map((c: PerformanceTableCriteria) => ({
-      tipo: FormulaComponentType.CRITERIO as const,
-      referenciaId: c.id,
-      nome: c.name,
-      peso: Number(((Number(c.weight) / totalWeight) * 100).toFixed(2)),
-    }));
-
+    const componentes = this.createCriteriaComponents(table);
     this.adjustComponentWeights(componentes);
 
     return {
@@ -153,6 +132,16 @@ export class GetProblemFormulaUseCase {
       versao: null,
       componentes,
     };
+  }
+
+  private createCriteriaComponents(table: { criteria: Array<{ id: string; name: string; weight: string | number }> }) {
+    const totalWeight = table.criteria.reduce((sum, c) => sum + Number(c.weight), 0);
+    return table.criteria.map((c) => ({
+      tipo: FormulaComponentType.CRITERIO as const,
+      referenciaId: c.id,
+      nome: c.name,
+      peso: Number(((Number(c.weight) / totalWeight) * 100).toFixed(2)),
+    }));
   }
 
   private adjustComponentWeights(componentes: Array<{ peso: number }>): void {
