@@ -117,10 +117,10 @@ describe('GetProblemDeletionImpactUseCase', () => {
     });
 
     expect(impact).toEqual({
-      sessoes: 0,
-      notas: 0,
+      sessions: 0,
+      grades: 0,
       feedbacks: 0,
-      avaliacoes: 0,
+      evaluations: 0,
     });
     expect(assertTutorCanAccessRoomMock).toHaveBeenCalledWith('room-1', 'tutor-1');
     expect(findByIdMock).toHaveBeenCalledWith(problem.id);

@@ -24,7 +24,11 @@ import { ChangeProblemPerformanceTableUseCase } from '../../application/use-case
 import { ChangeProblemPerformanceTableDto } from '../../application/dtos/change-problem-performance-table.dto';
 import { ProblemPerformanceTableResponseDto } from '../../application/dtos/problem-performance-table-response.dto';
 import type { Problem } from '../../domain/entities/problem.entity';
-import { toProblemResponse } from './problem.mapper';
+import {
+  toProblemDeletionImpactResponse,
+  toProblemPerformanceTableResponse,
+  toProblemResponse,
+} from './problem.mapper';
 import {
   CreateProblemSwaggerDocs,
   DeleteProblemSwaggerDocs,
@@ -112,7 +116,12 @@ export class ProblemsController {
     @UuidParam('problemId') problemId: string,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<ProblemDeletionImpactDto> {
-    return this.getProblemDeletionImpactUseCase.execute({ roomId, problemId, tutorId });
+    const impact = await this.getProblemDeletionImpactUseCase.execute({
+      roomId,
+      problemId,
+      tutorId,
+    });
+    return toProblemDeletionImpactResponse(impact);
   }
 
   @Delete(':problemId')
@@ -136,11 +145,12 @@ export class ProblemsController {
     @Body() dto: ChangeProblemPerformanceTableDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<ProblemPerformanceTableResponseDto> {
-    return this.changeProblemPerformanceTableUseCase.execute({
+    const change = await this.changeProblemPerformanceTableUseCase.execute({
       roomId,
       problemId,
       tutorId,
       performanceTableId: dto.tabelaId,
     });
+    return toProblemPerformanceTableResponse(change);
   }
 }

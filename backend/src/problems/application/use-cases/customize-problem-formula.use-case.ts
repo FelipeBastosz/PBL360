@@ -8,17 +8,25 @@ import type { ProblemRepository } from '../../domain/repositories/problem.reposi
 import { PERFORMANCE_TABLE_REPOSITORY } from '@/performance-tables/domain/repositories/performance-table.repository';
 import type { PerformanceTableRepository } from '@/performance-tables/domain/repositories/performance-table.repository';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
-import type { CustomizeFormulaDto } from '../dtos/customize-formula.dto';
-import { GetProblemFormulaUseCase } from './get-problem-formula.use-case';
-import type { FormulaResponseDto } from '../dtos/formula-response.dto';
+import {
+  GetProblemFormulaUseCase,
+  type ProblemFormulaOutput,
+} from './get-problem-formula.use-case';
 
 import type { Problem } from '../../domain/entities/problem.entity';
 
-interface Input {
+export interface CustomizeFormulaComponentInput {
+  type: string;
+  referenceId?: string | null;
+  weight: number;
+}
+
+export interface CustomizeProblemFormulaInput {
   roomId: string;
   problemId: string;
   tutorId: string;
-  dto: CustomizeFormulaDto;
+  scope: FormulaScope;
+  components: CustomizeFormulaComponentInput[];
 }
 
 @Injectable()
@@ -31,7 +39,7 @@ export class CustomizeProblemFormulaUseCase {
     private readonly getFormulaUseCase: GetProblemFormulaUseCase,
   ) {}
 
-  async execute(input: Input): Promise<FormulaResponseDto> {
+  async execute(input: CustomizeProblemFormulaInput): Promise<ProblemFormulaOutput> {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
     const problem = await this.validateProblem(input);
     await this.validateFormulaScope(input, problem);
@@ -42,14 +50,14 @@ export class CustomizeProblemFormulaUseCase {
       roomId: input.roomId,
       problemId: input.problemId,
       tutorId: input.tutorId,
-      scope: input.dto.escopo,
+      scope: input.scope,
     });
   }
 
-  private async updateFormula(input: Input): Promise<void> {
+  private async updateFormula(input: CustomizeProblemFormulaInput): Promise<void> {
     const oldFormula = await this.formulas.findActiveByProblemAndScope(
       input.problemId,
-      input.dto.escopo,
+      input.scope,
     );
     try {
       const candidate = this.createFormulaCandidate(input, oldFormula);
@@ -64,7 +72,7 @@ export class CustomizeProblemFormulaUseCase {
     throw new UnprocessableEntityError(msg);
   }
 
-  private async validateProblem(input: Input) {
+  private async validateProblem(input: CustomizeProblemFormulaInput) {
     const problem = await this.problems.findById(input.problemId);
     if (!problem || problem.roomId !== input.roomId) {
       throw new NotFoundError('Problema não encontrado na sala informada.');
@@ -72,16 +80,16 @@ export class CustomizeProblemFormulaUseCase {
     return problem;
   }
 
-  private async validateFormulaScope(input: Input, problem: Problem) {
-    if (input.dto.escopo === FormulaScope.SESSAO) {
+  private async validateFormulaScope(input: CustomizeProblemFormulaInput, problem: Problem) {
+    if (input.scope === FormulaScope.SESSAO) {
       if (!problem.performanceTableId) {
         throw new UnprocessableEntityError('O problema não possui uma tabela vinculada.');
       }
       const table = await this.tables.findByIdIncludingDeleted(problem.performanceTableId);
       const validCriteriaIds = new Set(table?.criteria.map((c) => c.id) || []);
 
-      for (const comp of input.dto.componentes) {
-        if (!validCriteriaIds.has(comp.referenciaId!)) {
+      for (const comp of input.components) {
+        if (!validCriteriaIds.has(comp.referenceId!)) {
           throw new UnprocessableEntityError(
             'Um ou mais critérios não pertencem à tabela deste problema.',
           );
@@ -90,17 +98,20 @@ export class CustomizeProblemFormulaUseCase {
     }
   }
 
-  private createFormulaCandidate(input: Input, oldFormula: Formula | null): Formula {
+  private createFormulaCandidate(
+    input: CustomizeProblemFormulaInput,
+    oldFormula: Formula | null,
+  ): Formula {
     return Formula.create({
       problemId: input.problemId,
-      scope: input.dto.escopo,
+      scope: input.scope,
       version: oldFormula ? oldFormula.version + 1 : 1,
       active: true,
       createdBy: input.tutorId,
-      components: input.dto.componentes.map((c) => ({
-        type: c.tipo,
-        referenceId: c.referenciaId,
-        weight: c.peso,
+      components: input.components.map((c) => ({
+        type: c.type,
+        referenceId: c.referenceId,
+        weight: c.weight,
       })),
     });
   }
