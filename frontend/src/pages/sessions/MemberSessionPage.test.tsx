@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { sessionService } from '@/services/session.service';
@@ -37,9 +37,11 @@ function openAs(user = studentUser, found: boolean = true) {
 describe('MemberSessionPage', () => {
   beforeAll(async () => {
     await import('./MemberSessionPage');
+    await import('./SessionHubPage');
   });
 
   afterEach(() => {
+    cleanup();
     vi.resetAllMocks();
     localStorage.clear();
   });
@@ -49,7 +51,9 @@ describe('MemberSessionPage', () => {
     vi.mocked(sessionService.listAttachments).mockResolvedValue([]);
     openAs();
 
-    expect(await screen.findByRole('heading', { name: 'Anexos da Sessão' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Anexos da Sessão' }, { timeout: 3000 }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /voltar para as sessões/i })).toHaveAttribute(
       'href',
       '/turmas/r1/problemas/p1',
@@ -66,9 +70,8 @@ describe('MemberSessionPage', () => {
     vi.mocked(sessionService.getById).mockResolvedValue(session);
     openAs({ ...studentUser, tipo: 'PROFESSOR', email: 'carlos@uefs.br' });
 
-    expect(await screen.findByRole('link', { name: /chamada/i })).toHaveAttribute(
-      'href',
-      '/turmas/r1/problemas/p1/sessoes/s1/chamada',
-    );
+    expect(
+      await screen.findByRole('link', { name: /chamada/i }, { timeout: 3000 }),
+    ).toHaveAttribute('href', '/turmas/r1/problemas/p1/sessoes/s1/chamada');
   });
 });

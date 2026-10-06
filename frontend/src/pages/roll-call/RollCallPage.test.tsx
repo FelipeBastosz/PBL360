@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { problemService } from '@/services/problem.service';
@@ -83,6 +83,8 @@ describe('RollCallPage', () => {
   });
 
   afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
     vi.resetAllMocks();
     localStorage.clear();
     Reflect.deleteProperty(document, 'elementFromPoint');
@@ -249,12 +251,11 @@ describe('RollCallPage', () => {
     fireEvent.pointerDown(chip, { button: 0, clientX: 5, clientY: 5 });
     await vi.advanceTimersByTimeAsync(600);
     fireEvent.pointerUp(chip, { clientX: 5, clientY: 5 });
-    fireEvent.click(screen.getByRole('radio', { name: 'Atrasado' }));
+    fireEvent.click(await screen.findByRole('radio', { name: 'Atrasado' }));
 
     expect(
-      screen.getByRole('button', { name: 'Lugar 1: Ana Souza, Atrasado' }),
+      await screen.findByRole('button', { name: 'Lugar 1: Ana Souza, Atrasado' }),
     ).toBeInTheDocument();
-    vi.useRealTimers();
   });
 
   it('lets a student off the table be marked absent with a long press', async () => {
@@ -266,13 +267,12 @@ describe('RollCallPage', () => {
     await vi.advanceTimersByTimeAsync(600);
     fireEvent.pointerUp(chip, { clientX: 5, clientY: 5 });
 
-    expect(screen.getByText('Fora da mesa • Sem registro')).toBeInTheDocument();
+    expect(await screen.findByText('Fora da mesa • Sem registro')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tirar da mesa' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('radio', { name: 'Ausente' }));
     expect(
-      screen.getByRole('button', { name: 'Ana Souza, fora da mesa, Ausente' }),
+      await screen.findByRole('button', { name: 'Ana Souza, fora da mesa, Ausente' }),
     ).toBeInTheDocument();
-    vi.useRealTimers();
   });
 
   it('offers to transfer a role that another student already holds', async () => {
