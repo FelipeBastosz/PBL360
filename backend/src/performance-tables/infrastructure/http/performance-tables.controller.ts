@@ -92,11 +92,11 @@ export class PerformanceTablesController {
     @Body() dto: UpdatePerformanceTableDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<PerformanceTableResponseDto> {
-    const table = await this.updatePerformanceTableUseCase.execute(
+    const table = await this.updatePerformanceTableUseCase.execute({
       tableId,
       tutorId,
-      toUpdatePerformanceTableInput(dto),
-    );
+      changes: toUpdatePerformanceTableInput(dto),
+    });
 
     return toPerformanceTableResponse(table);
   }
@@ -105,6 +105,6 @@ export class PerformanceTablesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @DeletePerformanceTableSwaggerDocs
   delete(@UuidParam('id') tableId: string, @AuthenticatedUserId() tutorId: string): Promise<void> {
-    return this.deletePerformanceTableUseCase.execute(tableId, tutorId);
+    return this.deletePerformanceTableUseCase.execute({ tableId, tutorId });
   }
 }

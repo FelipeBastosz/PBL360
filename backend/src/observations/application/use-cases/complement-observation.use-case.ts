@@ -6,6 +6,12 @@ import {
   type ObservationRepository,
 } from '../../domain/repositories/observation.repository';
 
+export interface ComplementObservationInput {
+  id: string;
+  tutorId: string;
+  text: string;
+}
+
 @Injectable()
 export class ComplementObservationUseCase {
   constructor(
@@ -13,7 +19,7 @@ export class ComplementObservationUseCase {
     private readonly observations: ObservationRepository,
   ) {}
 
-  async execute(id: string, tutorId: string, text: string): Promise<Observation> {
+  async execute({ id, tutorId, text }: ComplementObservationInput): Promise<Observation> {
     const observation = await this.observations.findById(id);
     if (!observation) throw new NotFoundError('Observação não encontrada.');
     if (!observation.isAuthoredBy(tutorId)) {

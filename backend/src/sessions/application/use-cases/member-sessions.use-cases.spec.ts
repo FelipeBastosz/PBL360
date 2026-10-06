@@ -27,7 +27,7 @@ describe('Member session use cases', () => {
     it('lists the sessions of the room for a member', async () => {
       roomSessions.findByRoom.mockResolvedValue([]);
 
-      await expect(useCase().execute('room-1', student)).resolves.toEqual([]);
+      await expect(useCase().execute({ roomId: 'room-1', member: student })).resolves.toEqual([]);
       expect(roomAccess.assertMemberCanAccessRoom).toHaveBeenCalledWith('room-1', student);
       expect(roomSessions.findByRoom).toHaveBeenCalledWith('room-1');
     });
@@ -36,7 +36,9 @@ describe('Member session use cases', () => {
       roomSessions.findByRoom.mockClear();
       roomAccess.assertMemberCanAccessRoom.mockRejectedValue(new ForbiddenError('negado'));
 
-      await expect(useCase().execute('room-1', student)).rejects.toBeInstanceOf(ForbiddenError);
+      await expect(useCase().execute({ roomId: 'room-1', member: student })).rejects.toBeInstanceOf(
+        ForbiddenError,
+      );
       expect(roomSessions.findByRoom).not.toHaveBeenCalled();
     });
   });
@@ -60,7 +62,7 @@ describe('Member session use cases', () => {
     });
 
     it('answers the session with its problem and room for a member', async () => {
-      const result = await useCase().execute('session-1', student);
+      const result = await useCase().execute({ sessionId: 'session-1', member: student });
 
       expect(result).toMatchObject({ session, problem, roomId: 'room-1' });
       expect(roomAccess.assertMemberCanAccessRoom).toHaveBeenCalledWith('room-1', student);
@@ -69,7 +71,9 @@ describe('Member session use cases', () => {
     it('answers not found for an unknown session', async () => {
       sessions.findById.mockResolvedValue(null);
 
-      await expect(useCase().execute('missing', student)).rejects.toBeInstanceOf(NotFoundError);
+      await expect(
+        useCase().execute({ sessionId: 'missing', member: student }),
+      ).rejects.toBeInstanceOf(NotFoundError);
       expect(roomAccess.assertMemberCanAccessRoom).not.toHaveBeenCalled();
     });
   });

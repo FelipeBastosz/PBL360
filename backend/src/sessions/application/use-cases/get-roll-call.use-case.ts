@@ -7,6 +7,11 @@ import { buildRollCall } from '../../domain/roll-call/build-roll-call';
 import type { RollCall } from '../../domain/roll-call/roll-call';
 import { SessionAccessService } from '../services/session-access.service';
 
+export interface GetRollCallInput {
+  sessionId: string;
+  tutorId: string;
+}
+
 @Injectable()
 export class GetRollCallUseCase {
   constructor(
@@ -14,7 +19,7 @@ export class GetRollCallUseCase {
     @Inject(ATTENDANCE_REPOSITORY) private readonly attendances: AttendanceRepository,
   ) {}
 
-  async execute(sessionId: string, tutorId: string): Promise<RollCall> {
+  async execute({ sessionId, tutorId }: GetRollCallInput): Promise<RollCall> {
     const { session, roomId } = await this.access.assertTutorCanAccessSessionById(
       sessionId,
       tutorId,

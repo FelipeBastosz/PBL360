@@ -6,6 +6,11 @@ import {
 } from '@/rooms/domain/repositories/room.repository';
 import { RoomAccessService, type RoomMember } from '../services/room-access.service';
 
+export interface ListRoomTutorsInput {
+  roomId: string;
+  member: RoomMember;
+}
+
 @Injectable()
 export class ListRoomTutorsUseCase {
   constructor(
@@ -15,7 +20,7 @@ export class ListRoomTutorsUseCase {
   ) {}
 
   // Linked tutors and students enrolled in the room can see who teaches it.
-  async execute(roomId: string, member: RoomMember): Promise<RoomTutor[]> {
+  async execute({ roomId, member }: ListRoomTutorsInput): Promise<RoomTutor[]> {
     await this.roomAccessService.assertMemberCanAccessRoom(roomId, member);
     return this.roomRepository.listTutors(roomId);
   }

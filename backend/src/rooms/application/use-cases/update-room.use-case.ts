@@ -3,6 +3,12 @@ import type { Room, RoomChanges } from '../../domain/entities/room.entity';
 import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
 import { RoomAccessService } from '../services/room-access.service';
 
+export interface UpdateRoomInput {
+  roomId: string;
+  tutorId: string;
+  changes: RoomChanges;
+}
+
 @Injectable()
 export class UpdateRoomUseCase {
   constructor(
@@ -11,7 +17,7 @@ export class UpdateRoomUseCase {
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(roomId: string, tutorId: string, changes: RoomChanges): Promise<Room> {
+  async execute({ roomId, tutorId, changes }: UpdateRoomInput): Promise<Room> {
     const room = await this.roomAccessService.assertTutorCanAccessRoom(roomId, tutorId);
 
     room.applyChanges(changes);

@@ -24,7 +24,11 @@ describe('RenameBehaviorTagUseCase', () => {
     repository.findById.mockResolvedValue(customTag());
     repository.existsForTutorWithName.mockResolvedValue(false);
 
-    const tag = await useCase.execute('tag-1', 'tutor-1', '  Liderou o grupo ');
+    const tag = await useCase.execute({
+      id: 'tag-1',
+      tutorId: 'tutor-1',
+      name: '  Liderou o grupo ',
+    });
 
     expect(tag.name).toBe('Liderou o grupo');
     expect(repository.save).toHaveBeenCalledWith(tag);
@@ -34,7 +38,7 @@ describe('RenameBehaviorTagUseCase', () => {
     repository.findById.mockResolvedValue(customTag());
     repository.existsForTutorWithName.mockResolvedValue(false);
 
-    await useCase.execute('tag-1', 'tutor-1', 'Liderou');
+    await useCase.execute({ id: 'tag-1', tutorId: 'tutor-1', name: 'Liderou' });
 
     expect(repository.existsForTutorWithName).toHaveBeenCalledWith('tutor-1', 'Liderou', 'tag-1');
   });
@@ -43,23 +47,27 @@ describe('RenameBehaviorTagUseCase', () => {
     repository.findById.mockResolvedValue(customTag());
     repository.existsForTutorWithName.mockResolvedValue(true);
 
-    await expect(useCase.execute('tag-1', 'tutor-1', 'Outra')).rejects.toBeInstanceOf(
-      ConflictError,
-    );
+    await expect(
+      useCase.execute({ id: 'tag-1', tutorId: 'tutor-1', name: 'Outra' }),
+    ).rejects.toBeInstanceOf(ConflictError);
     expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('rejects renaming a predefined tag', async () => {
     repository.findById.mockResolvedValue(BehaviorTag.create({ name: 'Atraso' }));
 
-    await expect(useCase.execute('tag-1', 'tutor-1', 'X')).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(
+      useCase.execute({ id: 'tag-1', tutorId: 'tutor-1', name: 'X' }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(repository.save).not.toHaveBeenCalled();
   });
 
   it("rejects renaming another tutor's tag", async () => {
     repository.findById.mockResolvedValue(customTag());
 
-    await expect(useCase.execute('tag-1', 'tutor-2', 'X')).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(
+      useCase.execute({ id: 'tag-1', tutorId: 'tutor-2', name: 'X' }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(repository.save).not.toHaveBeenCalled();
   });
 
@@ -68,7 +76,11 @@ describe('RenameBehaviorTagUseCase', () => {
     deactivated.deactivate();
     repository.findById.mockResolvedValueOnce(null).mockResolvedValueOnce(deactivated);
 
-    await expect(useCase.execute('tag-1', 'tutor-1', 'X')).rejects.toBeInstanceOf(NotFoundError);
-    await expect(useCase.execute('tag-1', 'tutor-1', 'X')).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      useCase.execute({ id: 'tag-1', tutorId: 'tutor-1', name: 'X' }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      useCase.execute({ id: 'tag-1', tutorId: 'tutor-1', name: 'X' }),
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 });

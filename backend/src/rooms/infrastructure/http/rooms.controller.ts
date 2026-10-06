@@ -125,7 +125,7 @@ export class RoomsController {
     @UuidParam('id') roomId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<RoomStudentResponseDto[]> {
-    const students = await this.listRoomStudentsUseCase.execute(roomId, member);
+    const students = await this.listRoomStudentsUseCase.execute({ roomId, member });
 
     return students.map((student) => ({
       id: student.id,
@@ -154,7 +154,7 @@ export class RoomsController {
     @UuidParam('id') roomId: string,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<RoomResponseDto> {
-    return toRoomResponse(await this.getRoomDetailUseCase.execute(roomId, tutorId));
+    return toRoomResponse(await this.getRoomDetailUseCase.execute({ roomId, tutorId }));
   }
 
   @Post()
@@ -181,7 +181,7 @@ export class RoomsController {
     @AuthenticatedUserId() tutorId: string,
   ): Promise<RoomResponseDto> {
     return toRoomResponse(
-      await this.updateRoomUseCase.execute(roomId, tutorId, toRoomChanges(dto)),
+      await this.updateRoomUseCase.execute({ roomId, tutorId, changes: toRoomChanges(dto) }),
     );
   }
 
@@ -189,6 +189,6 @@ export class RoomsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @DeleteRoomSwaggerDocs
   delete(@UuidParam('id') roomId: string, @AuthenticatedUserId() tutorId: string): Promise<void> {
-    return this.deleteRoomUseCase.execute(roomId, tutorId);
+    return this.deleteRoomUseCase.execute({ roomId, tutorId });
   }
 }

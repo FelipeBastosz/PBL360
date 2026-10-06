@@ -9,15 +9,28 @@ import type { ProblemRepository } from '../../domain/repositories/problem.reposi
 import { PERFORMANCE_TABLE_REPOSITORY } from '@/performance-tables/domain/repositories/performance-table.repository';
 import type { PerformanceTableRepository } from '@/performance-tables/domain/repositories/performance-table.repository';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
-import { FormulaResponseDto } from '../dtos/formula-response.dto';
 import type { Problem } from '../../domain/entities/problem.entity';
 import type { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
 
-interface Input {
+export interface GetProblemFormulaInput {
   roomId: string;
   problemId: string;
   tutorId: string;
   scope: FormulaScope;
+}
+
+export interface ProblemFormulaComponent {
+  type: string;
+  referenceId: string | null;
+  name: string | null;
+  weight: number;
+}
+
+export interface ProblemFormulaOutput {
+  scope: FormulaScope;
+  isDefault: boolean;
+  version: number | null;
+  components: ProblemFormulaComponent[];
 }
 
 @Injectable()
@@ -29,7 +42,7 @@ export class GetProblemFormulaUseCase {
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(input: Input): Promise<FormulaResponseDto> {
+  async execute(input: GetProblemFormulaInput): Promise<ProblemFormulaOutput> {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
 
     const problem = await this.validateProblem(input);
@@ -51,7 +64,7 @@ export class GetProblemFormulaUseCase {
     return this.buildDefaultFormula(input.scope, table);
   }
 
-  private async validateProblem(input: Input): Promise<Problem> {
+  private async validateProblem(input: GetProblemFormulaInput): Promise<Problem> {
     const problem = await this.problems.findById(input.problemId);
     if (!problem || problem.roomId !== input.roomId) {
       throw new NotFoundError('Problema não encontrado na sala informada.');
@@ -68,18 +81,18 @@ export class GetProblemFormulaUseCase {
     scope: FormulaScope,
     activeFormula: Formula,
     criteriaMap: Map<string, string>,
-  ): FormulaResponseDto {
+  ): ProblemFormulaOutput {
     return {
-      escopo: scope,
-      padrao: false,
-      versao: activeFormula.version,
-      componentes: activeFormula.components.map((c) => ({
-        tipo: c.type,
-        referenciaId: c.referenceId,
-        nome: c.referenceId
+      scope,
+      isDefault: false,
+      version: activeFormula.version,
+      components: activeFormula.components.map((c) => ({
+        type: c.type,
+        referenceId: c.referenceId,
+        name: c.referenceId
           ? criteriaMap.get(c.referenceId) || 'Critério Excluído'
           : this.getDefaultNameForType(c.type),
-        peso: Number(c.weight),
+        weight: Number(c.weight),
       })),
     };
   }
@@ -87,19 +100,19 @@ export class GetProblemFormulaUseCase {
   private buildDefaultFormula(
     scope: FormulaScope,
     table: PerformanceTable | null,
-  ): FormulaResponseDto {
+  ): ProblemFormulaOutput {
     if (scope === FormulaScope.PROBLEMA) {
       return this.buildProblemScopeFormula();
     }
     return this.buildSessionScopeFormula(table);
   }
 
-  private buildProblemScopeFormula(): FormulaResponseDto {
+  private buildProblemScopeFormula(): ProblemFormulaOutput {
     return {
-      escopo: FormulaScope.PROBLEMA,
-      padrao: true,
-      versao: null,
-      componentes: this.getProblemScopeComponents(),
+      scope: FormulaScope.PROBLEMA,
+      isDefault: true,
+      version: null,
+      components: this.getProblemScopeComponents(),
     };
   }
 
@@ -111,25 +124,25 @@ export class GetProblemFormulaUseCase {
     ];
   }
 
-  private createComponent(tipo: string, nome: string, peso: number) {
-    return { tipo, referenciaId: null, nome, peso };
+  private createComponent(type: string, name: string, weight: number): ProblemFormulaComponent {
+    return { type, referenceId: null, name, weight };
   }
 
-  private buildSessionScopeFormula(table: PerformanceTable | null): FormulaResponseDto {
+  private buildSessionScopeFormula(table: PerformanceTable | null): ProblemFormulaOutput {
     if (!table || table.criteria.length === 0) {
       throw new UnprocessableEntityError(
         'O problema não possui uma tabela de desempenho com critérios.',
       );
     }
 
-    const componentes = this.createCriteriaComponents(table);
-    this.adjustComponentWeights(componentes);
+    const components = this.createCriteriaComponents(table);
+    this.adjustComponentWeights(components);
 
     return {
-      escopo: FormulaScope.SESSAO,
-      padrao: true,
-      versao: null,
-      componentes,
+      scope: FormulaScope.SESSAO,
+      isDefault: true,
+      version: null,
+      components,
     };
   }
 
@@ -138,20 +151,20 @@ export class GetProblemFormulaUseCase {
   }) {
     const totalWeight = table.criteria.reduce((sum, c) => sum + Number(c.weight), 0);
     return table.criteria.map((c) => ({
-      tipo: FormulaComponentType.CRITERIO as const,
-      referenciaId: c.id,
-      nome: c.name,
-      peso: Number(((Number(c.weight) / totalWeight) * 100).toFixed(2)),
+      type: FormulaComponentType.CRITERIO as const,
+      referenceId: c.id,
+      name: c.name,
+      weight: Number(((Number(c.weight) / totalWeight) * 100).toFixed(2)),
     }));
   }
 
-  private adjustComponentWeights(componentes: Array<{ peso: number }>): void {
-    const sum = componentes.reduce((acc: number, c) => acc + c.peso, 0);
-    if (sum !== 100 && componentes.length > 0) {
-      const lastComponent = componentes[componentes.length - 1];
+  private adjustComponentWeights(components: Array<{ weight: number }>): void {
+    const sum = components.reduce((acc: number, c) => acc + c.weight, 0);
+    if (sum !== 100 && components.length > 0) {
+      const lastComponent = components[components.length - 1];
       if (lastComponent) {
-        lastComponent.peso += Number((100 - sum).toFixed(2));
-        lastComponent.peso = Number(lastComponent.peso.toFixed(2));
+        lastComponent.weight += Number((100 - sum).toFixed(2));
+        lastComponent.weight = Number(lastComponent.weight.toFixed(2));
       }
     }
   }

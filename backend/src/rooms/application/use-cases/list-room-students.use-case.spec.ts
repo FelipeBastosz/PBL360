@@ -27,7 +27,7 @@ describe('ListRoomStudentsUseCase', () => {
     ];
     rooms.findStudents.mockResolvedValue(students);
 
-    await expect(useCase.execute('room-id', member)).resolves.toEqual(students);
+    await expect(useCase.execute({ roomId: 'room-id', member })).resolves.toEqual(students);
     expect(access.assertMemberCanAccessRoom).toHaveBeenCalledWith('room-id', member);
     expect(rooms.findStudents).toHaveBeenCalledWith('room-id');
   });
@@ -38,7 +38,7 @@ describe('ListRoomStudentsUseCase', () => {
       access.assertMemberCanAccessRoom.mockRejectedValue(error);
 
       await expect(
-        useCase.execute('room-id', { id: 'other-user-id', type: 'STUDENT' }),
+        useCase.execute({ roomId: 'room-id', member: { id: 'other-user-id', type: 'STUDENT' } }),
       ).rejects.toBe(error);
       expect(rooms.findStudents).not.toHaveBeenCalled();
     },

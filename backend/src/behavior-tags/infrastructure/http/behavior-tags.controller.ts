@@ -42,7 +42,7 @@ export class BehaviorTagsController {
     @Body() dto: BehaviorTagNameDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<BehaviorTagResponseDto> {
-    return toBehaviorTagResponse(await this.createBehaviorTag.execute(tutorId, dto.nome));
+    return toBehaviorTagResponse(await this.createBehaviorTag.execute({ tutorId, name: dto.nome }));
   }
 
   @Put(':id')
@@ -52,13 +52,15 @@ export class BehaviorTagsController {
     @Body() dto: BehaviorTagNameDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<BehaviorTagResponseDto> {
-    return toBehaviorTagResponse(await this.renameBehaviorTag.execute(id, tutorId, dto.nome));
+    return toBehaviorTagResponse(
+      await this.renameBehaviorTag.execute({ id, tutorId, name: dto.nome }),
+    );
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @DeactivateBehaviorTagSwaggerDocs
   deactivate(@UuidParam('id') id: string, @AuthenticatedUserId() tutorId: string): Promise<void> {
-    return this.deactivateBehaviorTag.execute(id, tutorId);
+    return this.deactivateBehaviorTag.execute({ id, tutorId });
   }
 }

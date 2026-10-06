@@ -20,7 +20,7 @@ describe('CreateBehaviorTagUseCase', () => {
   it('creates an active custom tag owned by the tutor', async () => {
     repository.existsForTutorWithName.mockResolvedValue(false);
 
-    const tag = await useCase.execute('tutor-1', 'Liderou o grupo');
+    const tag = await useCase.execute({ tutorId: 'tutor-1', name: 'Liderou o grupo' });
 
     expect(tag.tutorId).toBe('tutor-1');
     expect(tag.name).toBe('Liderou o grupo');
@@ -31,7 +31,7 @@ describe('CreateBehaviorTagUseCase', () => {
   it('checks the trimmed name for duplicates', async () => {
     repository.existsForTutorWithName.mockResolvedValue(false);
 
-    await useCase.execute('tutor-1', '  Liderou o grupo  ');
+    await useCase.execute({ tutorId: 'tutor-1', name: '  Liderou o grupo  ' });
 
     expect(repository.existsForTutorWithName).toHaveBeenCalledWith('tutor-1', 'Liderou o grupo');
   });
@@ -39,9 +39,9 @@ describe('CreateBehaviorTagUseCase', () => {
   it('rejects a name the tutor already uses', async () => {
     repository.existsForTutorWithName.mockResolvedValue(true);
 
-    await expect(useCase.execute('tutor-1', 'Liderou o grupo')).rejects.toBeInstanceOf(
-      ConflictError,
-    );
+    await expect(
+      useCase.execute({ tutorId: 'tutor-1', name: 'Liderou o grupo' }),
+    ).rejects.toBeInstanceOf(ConflictError);
     expect(repository.save).not.toHaveBeenCalled();
   });
 });

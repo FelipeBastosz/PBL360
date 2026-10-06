@@ -15,7 +15,7 @@ describe('UndoObservationUseCase', () => {
   it('deletes an observation registered by mistake', async () => {
     repository.findById.mockResolvedValue(anObservation());
 
-    await useCase.execute('observation-1', 'tutor-1');
+    await useCase.execute({ id: 'observation-1', tutorId: 'tutor-1' });
 
     expect(repository.delete).toHaveBeenCalledWith('observation-1');
   });
@@ -23,15 +23,17 @@ describe('UndoObservationUseCase', () => {
   it('rejects another tutor', async () => {
     repository.findById.mockResolvedValue(anObservation());
 
-    await expect(useCase.execute('observation-1', 'tutor-2')).rejects.toBeInstanceOf(
-      ForbiddenError,
-    );
+    await expect(
+      useCase.execute({ id: 'observation-1', tutorId: 'tutor-2' }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(repository.delete).not.toHaveBeenCalled();
   });
 
   it('reports a missing observation', async () => {
     repository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute('observation-1', 'tutor-1')).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      useCase.execute({ id: 'observation-1', tutorId: 'tutor-1' }),
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 });

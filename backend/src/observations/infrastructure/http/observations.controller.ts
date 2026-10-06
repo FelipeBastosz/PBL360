@@ -30,13 +30,15 @@ export class ObservationsController {
     @Body() dto: ComplementObservationDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<ObservationResponseDto> {
-    return toObservationResponse(await this.complementObservation.execute(id, tutorId, dto.texto));
+    return toObservationResponse(
+      await this.complementObservation.execute({ id, tutorId, text: dto.texto }),
+    );
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UndoObservationSwaggerDocs
   undo(@UuidParam('id') id: string, @AuthenticatedUserId() tutorId: string): Promise<void> {
-    return this.undoObservation.execute(id, tutorId);
+    return this.undoObservation.execute({ id, tutorId });
   }
 }

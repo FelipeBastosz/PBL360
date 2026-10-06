@@ -14,6 +14,7 @@ import { GetProblemFormulaUseCase } from '../../application/use-cases/get-proble
 import { CustomizeProblemFormulaUseCase } from '../../application/use-cases/customize-problem-formula.use-case';
 import { RestoreDefaultFormulaUseCase } from '../../application/use-cases/restore-default-formula.use-case';
 
+import { toCustomizeFormulaComponents, toFormulaResponse } from './problem-formula.mapper';
 import {
   GetProblemFormulaSwaggerDocs,
   CustomizeProblemFormulaSwaggerDocs,
@@ -38,7 +39,13 @@ export class ProblemFormulasController {
     @Query('escopo') escopo: FormulaScope,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<FormulaResponseDto> {
-    return this.getFormulaUseCase.execute({ roomId, problemId, tutorId, scope: escopo });
+    const formula = await this.getFormulaUseCase.execute({
+      roomId,
+      problemId,
+      tutorId,
+      scope: escopo,
+    });
+    return toFormulaResponse(formula);
   }
 
   @Put()
@@ -50,7 +57,14 @@ export class ProblemFormulasController {
     @Body() dto: CustomizeFormulaDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<FormulaResponseDto> {
-    return this.customizeFormulaUseCase.execute({ roomId, problemId, tutorId, dto });
+    const formula = await this.customizeFormulaUseCase.execute({
+      roomId,
+      problemId,
+      tutorId,
+      scope: dto.escopo,
+      components: toCustomizeFormulaComponents(dto),
+    });
+    return toFormulaResponse(formula);
   }
 
   @Post('restaurar-padrao')
@@ -62,11 +76,12 @@ export class ProblemFormulasController {
     @Body() dto: RestoreDefaultFormulaDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<FormulaResponseDto> {
-    return this.restoreDefaultFormulaUseCase.execute({
+    const formula = await this.restoreDefaultFormulaUseCase.execute({
       roomId,
       problemId,
       tutorId,
       scope: dto.escopo,
     });
+    return toFormulaResponse(formula);
   }
 }

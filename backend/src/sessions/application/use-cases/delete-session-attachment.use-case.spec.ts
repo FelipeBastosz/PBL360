@@ -23,7 +23,7 @@ describe('DeleteSessionAttachmentUseCase', () => {
     new DeleteSessionAttachmentUseCase(
       access as unknown as SessionAccessService,
       attachments as unknown as SessionAttachmentRepository,
-    ).execute('session-1', 'a1', member);
+    ).execute({ sessionId: 'session-1', attachmentId: 'a1', member });
 
   it('lets a student delete an attachment they sent', async () => {
     await remove(student);

@@ -6,6 +6,12 @@ import {
   type BehaviorTagRepository,
 } from '../../domain/repositories/behavior-tag.repository';
 
+export interface RenameBehaviorTagInput {
+  id: string;
+  tutorId: string;
+  name: string;
+}
+
 @Injectable()
 export class RenameBehaviorTagUseCase {
   constructor(
@@ -13,7 +19,7 @@ export class RenameBehaviorTagUseCase {
     private readonly behaviorTags: BehaviorTagRepository,
   ) {}
 
-  async execute(id: string, tutorId: string, name: string): Promise<BehaviorTag> {
+  async execute({ id, tutorId, name }: RenameBehaviorTagInput): Promise<BehaviorTag> {
     const tag = await this.findOwnedTag(id, tutorId);
     tag.rename(name);
     if (await this.behaviorTags.existsForTutorWithName(tutorId, tag.name, tag.id)) {

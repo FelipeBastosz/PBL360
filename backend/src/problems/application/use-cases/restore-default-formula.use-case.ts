@@ -10,10 +10,12 @@ import {
   type ProblemRepository,
 } from '../../domain/repositories/problem.repository';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
-import { GetProblemFormulaUseCase } from './get-problem-formula.use-case';
-import { FormulaResponseDto } from '../dtos/formula-response.dto';
+import {
+  GetProblemFormulaUseCase,
+  type ProblemFormulaOutput,
+} from './get-problem-formula.use-case';
 
-interface Input {
+export interface RestoreDefaultFormulaInput {
   roomId: string;
   problemId: string;
   tutorId: string;
@@ -29,7 +31,7 @@ export class RestoreDefaultFormulaUseCase {
     private readonly getFormulaUseCase: GetProblemFormulaUseCase,
   ) {}
 
-  async execute(input: Input): Promise<FormulaResponseDto> {
+  async execute(input: RestoreDefaultFormulaInput): Promise<ProblemFormulaOutput> {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
 
     const problem = await this.problems.findById(input.problemId);

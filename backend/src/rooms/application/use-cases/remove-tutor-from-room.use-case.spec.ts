@@ -24,31 +24,31 @@ describe('RemoveTutorFromRoomUseCase', () => {
   it('unlinks the tutor from the room', async () => {
     rooms.removeTutor.mockResolvedValue(true);
 
-    await useCase.execute(ROOM_ID, OWNER_ID, 'tutor-2');
+    await useCase.execute({ roomId: ROOM_ID, authenticatedTutorId: OWNER_ID, tutorId: 'tutor-2' });
 
     expect(rooms.removeTutor).toHaveBeenCalledWith(ROOM_ID, 'tutor-2', OWNER_ID);
   });
 
   it('never removes the owner', async () => {
-    await expect(useCase.execute(ROOM_ID, OWNER_ID, OWNER_ID)).rejects.toThrow(
-      new ForbiddenError('O professor responsável não pode ser removido da sala.'),
-    );
+    await expect(
+      useCase.execute({ roomId: ROOM_ID, authenticatedTutorId: OWNER_ID, tutorId: OWNER_ID }),
+    ).rejects.toThrow(new ForbiddenError('O professor responsável não pode ser removido da sala.'));
     expect(rooms.removeTutor).not.toHaveBeenCalled();
   });
 
   it('reports a tutor that is not linked', async () => {
     rooms.removeTutor.mockResolvedValue(false);
 
-    await expect(useCase.execute(ROOM_ID, OWNER_ID, 'tutor-2')).rejects.toBeInstanceOf(
-      NotFoundError,
-    );
+    await expect(
+      useCase.execute({ roomId: ROOM_ID, authenticatedTutorId: OWNER_ID, tutorId: 'tutor-2' }),
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('only lets the owner remove tutors', async () => {
     access.assertTutorIsRoomOwner.mockRejectedValue(new ForbiddenError('negado'));
 
-    await expect(useCase.execute(ROOM_ID, 'other', 'tutor-2')).rejects.toBeInstanceOf(
-      ForbiddenError,
-    );
+    await expect(
+      useCase.execute({ roomId: ROOM_ID, authenticatedTutorId: 'other', tutorId: 'tutor-2' }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 });

@@ -10,16 +10,16 @@ import { RoomAccessService } from '@/rooms/application/services/room-access.serv
 import { PERFORMANCE_TABLE_REPOSITORY } from '@/performance-tables/domain/repositories/performance-table.repository';
 import type { PerformanceTableRepository } from '@/performance-tables/domain/repositories/performance-table.repository';
 
-interface Input {
+export interface ChangeProblemPerformanceTableInput {
   roomId: string;
   problemId: string;
   tutorId: string;
   performanceTableId: string;
 }
 
-interface Output {
-  problemaId: string;
-  tabela: { id: string; nome: string };
+export interface ChangeProblemPerformanceTableOutput {
+  problemId: string;
+  table: { id: string; name: string };
 }
 
 @Injectable()
@@ -31,7 +31,9 @@ export class ChangeProblemPerformanceTableUseCase {
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(input: Input): Promise<Output> {
+  async execute(
+    input: ChangeProblemPerformanceTableInput,
+  ): Promise<ChangeProblemPerformanceTableOutput> {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
 
     const problem = await this.validateProblem(input);
@@ -43,12 +45,12 @@ export class ChangeProblemPerformanceTableUseCase {
     await this.problems.save(problem);
 
     return {
-      problemaId: problem.id,
-      tabela: { id: table.id, nome: table.name },
+      problemId: problem.id,
+      table: { id: table.id, name: table.name },
     };
   }
 
-  private async validateProblem(input: Input) {
+  private async validateProblem(input: ChangeProblemPerformanceTableInput) {
     const problem = await this.problems.findById(input.problemId);
     if (!problem || problem.roomId !== input.roomId) {
       throw new NotFoundError('Problema não encontrado na sala informada.');
@@ -62,7 +64,7 @@ export class ChangeProblemPerformanceTableUseCase {
     return problem;
   }
 
-  private async validateTable(input: Input) {
+  private async validateTable(input: ChangeProblemPerformanceTableInput) {
     const table = await this.performanceTables.findById(input.performanceTableId);
     if (!table || table.deletedAt) {
       throw new UnprocessableEntityError(

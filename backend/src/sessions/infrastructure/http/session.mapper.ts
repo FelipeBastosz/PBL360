@@ -6,6 +6,8 @@ import type {
 } from '../../application/dtos/session-response.dto';
 import type { UpdateSessionDto } from '../../application/dtos/update-session.dto';
 import type { UpdateSessionInput } from '../../application/use-cases/update-session.use-case';
+import type { SessionDeletionImpactDto } from '../../application/dtos/session-deletion-impact.dto';
+import type { GetSessionDeletionImpactOutput } from '../../application/use-cases/get-session-deletion-impact.use-case';
 
 export const toSessionResponse = (session: Session): SessionListResponseDto => ({
   id: session.id,
@@ -45,4 +47,15 @@ export const toUpdateSessionInput = (
   title: dto.titulo,
   description: dto.descricao,
   date: dto.data,
+});
+
+export const toSessionDeletionImpactResponse = (
+  impact: GetSessionDeletionImpactOutput,
+): SessionDeletionImpactDto => ({
+  podeExcluir: impact.canDelete,
+  chamada: impact.rollCall,
+  papeis: impact.roles,
+  observacoes: impact.observations,
+  avaliacoes: impact.evaluations,
+  feedbacks: impact.feedbacks,
 });

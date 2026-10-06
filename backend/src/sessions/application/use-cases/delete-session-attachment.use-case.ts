@@ -8,6 +8,12 @@ import {
 } from '../../domain/repositories/session-attachment.repository';
 import { SessionAccessService } from '../services/session-access.service';
 
+export interface DeleteSessionAttachmentInput {
+  sessionId: string;
+  attachmentId: string;
+  member: RoomMember;
+}
+
 @Injectable()
 export class DeleteSessionAttachmentUseCase {
   constructor(
@@ -16,7 +22,7 @@ export class DeleteSessionAttachmentUseCase {
     private readonly attachments: SessionAttachmentRepository,
   ) {}
 
-  async execute(sessionId: string, attachmentId: string, member: RoomMember): Promise<void> {
+  async execute({ sessionId, attachmentId, member }: DeleteSessionAttachmentInput): Promise<void> {
     await this.access.assertMemberCanAccessSession(sessionId, member);
     const uploaderId = await this.attachments.findUploader(sessionId, attachmentId);
     if (!uploaderId) throw new NotFoundError('Anexo não encontrado.');

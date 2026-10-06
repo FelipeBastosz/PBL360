@@ -4,6 +4,12 @@ import { USER_REPOSITORY, type UserRepository } from '@/users/domain/repositorie
 import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
 import { RoomAccessService } from '../services/room-access.service';
 
+export interface AddTutorToRoomInput {
+  roomId: string;
+  authenticatedTutorId: string;
+  tutorId: string;
+}
+
 @Injectable()
 export class AddTutorToRoomUseCase {
   constructor(
@@ -14,7 +20,7 @@ export class AddTutorToRoomUseCase {
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(roomId: string, authenticatedTutorId: string, tutorId: string): Promise<void> {
+  async execute({ roomId, authenticatedTutorId, tutorId }: AddTutorToRoomInput): Promise<void> {
     await this.roomAccessService.assertTutorIsRoomOwner(roomId, authenticatedTutorId);
 
     const tutor = await this.userRepository.findById(tutorId);

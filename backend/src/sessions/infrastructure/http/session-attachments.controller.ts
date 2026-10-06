@@ -96,7 +96,7 @@ export class SessionAttachmentsController {
     @UuidParam('sessaoId') sessionId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<SessionAttachmentResponseDto[]> {
-    return (await this.listAttachments.execute(sessionId, member)).map(toResponse);
+    return (await this.listAttachments.execute({ sessionId, member })).map(toResponse);
   }
 
   @Get(':anexoId')
@@ -107,7 +107,7 @@ export class SessionAttachmentsController {
     @UuidParam('anexoId') attachmentId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<StreamableFile> {
-    const file = await this.downloadAttachment.execute(sessionId, attachmentId, member);
+    const file = await this.downloadAttachment.execute({ sessionId, attachmentId, member });
     return new StreamableFile(file.content, {
       type: file.mimeType,
       length: file.content.length,
@@ -123,6 +123,6 @@ export class SessionAttachmentsController {
     @UuidParam('anexoId') attachmentId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<void> {
-    await this.deleteAttachment.execute(sessionId, attachmentId, member);
+    await this.deleteAttachment.execute({ sessionId, attachmentId, member });
   }
 }
