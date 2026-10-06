@@ -5,6 +5,9 @@ import { authService } from '@/services/auth.service';
 import { renderApp, sessionFor, studentUser } from '@/testing/renderApp';
 
 vi.mock('@/services/auth.service');
+vi.mock('@/services/room.service', () => ({
+  roomService: { list: async () => [], listMyRooms: async () => [] },
+}));
 
 afterEach(() => {
   vi.resetAllMocks();
@@ -28,13 +31,15 @@ describe('LoginPage', () => {
     expect(authService.login).not.toHaveBeenCalled();
   });
 
-  it('stores the session and opens the home page on success', async () => {
+  it('stores the session and opens the rooms page on success', async () => {
     vi.mocked(authService.login).mockResolvedValue(sessionFor(studentUser));
     const { user } = renderApp('/entrar?perfil=aluno');
 
     await fillAndSubmit(user);
 
-    expect(await screen.findByRole('heading', { name: 'Olá, Ana Souza!' })).toBeInTheDocument();
+    expect(
+      await screen.findByText('Você ainda não faz parte de nenhuma turma.'),
+    ).toBeInTheDocument();
     expect(authService.login).toHaveBeenCalledWith({
       email: 'ana@discente.uefs.br',
       senha: 'senha-secreta',

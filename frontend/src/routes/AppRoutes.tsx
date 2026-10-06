@@ -20,7 +20,6 @@ const ResetPasswordSuccessPage = lazy(
 const RollCallPage = lazy(() => import('@/pages/roll-call/RollCallPage'));
 const MemberSessionPage = lazy(() => import('@/pages/sessions/MemberSessionPage'));
 const NotFoundPage = lazy(() => import('@/pages/not-found/NotFoundPage'));
-const HomePage = lazy(() => import('@/pages/home/HomePage'));
 const RoomsPage = lazy(() => import('@/pages/rooms/RoomsPage'));
 const CreateRoomPage = lazy(() => import('@/pages/rooms/CreateRoomPage'));
 const CreateRoomSuccessPage = lazy(() => import('@/pages/rooms/CreateRoomSuccessPage'));
@@ -65,7 +64,6 @@ export function AppRoutes() {
           <Route path={ROUTES.resetPasswordSuccess} element={<ResetPasswordSuccessPage />} />
         </Route>
         <Route element={<ProtectedRoute />}>
-          <Route path={ROUTES.home} element={<HomePage />} />
           <Route path={ROUTES.rooms} element={<RoomsPage />} />
           <Route path={ROUTES.createRoom} element={<CreateRoomPage />} />
           <Route path={ROUTES.createRoomSuccess} element={<CreateRoomSuccessPage />} />

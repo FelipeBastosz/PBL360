@@ -5,5 +5,5 @@ import { ROUTES } from './paths';
 export function PublicOnlyRoute() {
   const { isAuthenticated } = useAuth();
 
-  return isAuthenticated ? <Navigate to={ROUTES.home} replace /> : <Outlet />;
+  return isAuthenticated ? <Navigate to={ROUTES.rooms} replace /> : <Outlet />;
 }

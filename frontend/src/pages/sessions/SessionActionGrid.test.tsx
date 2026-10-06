@@ -21,10 +21,7 @@ describe('SessionActionGrid', () => {
       'href',
       `${basePath}/avaliar`,
     );
-    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute(
-      'href',
-      `${basePath}/formulas`,
-    );
+    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute('href', '/formulas');
   });
 
   it('renders disabled card for Histórico de avaliações with Em breve badge', () => {

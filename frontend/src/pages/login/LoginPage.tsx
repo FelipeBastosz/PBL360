@@ -16,7 +16,7 @@ type LocationState = { from?: string } | null;
 
 function redirectTarget(state: unknown): string {
   const from = (state as LocationState)?.from;
-  return from && from !== ROUTES.login ? from : ROUTES.home;
+  return from && from !== ROUTES.login ? from : ROUTES.rooms;
 }
 
 export default function LoginPage() {
