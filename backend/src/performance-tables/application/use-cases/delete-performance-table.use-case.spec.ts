@@ -27,7 +27,7 @@ describe('DeletePerformanceTableUseCase', () => {
     repository.findById.mockResolvedValue(table);
     repository.softDelete.mockResolvedValue(true);
 
-    await useCase.execute(tableId, tutorId);
+    await useCase.execute({ tableId, tutorId });
 
     expect(repository.softDelete).toHaveBeenCalledWith(table);
     expect(table.deletedAt).toBeInstanceOf(Date);
@@ -38,14 +38,14 @@ describe('DeletePerformanceTableUseCase', () => {
       Object.assign(new PerformanceTable(), { tutorId: 'another-tutor' }),
     );
 
-    await expect(useCase.execute(tableId, tutorId)).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(useCase.execute({ tableId, tutorId })).rejects.toBeInstanceOf(ForbiddenError);
     expect(repository.softDelete).not.toHaveBeenCalled();
   });
 
   it('reports missing and already deleted tables as not found', async () => {
     repository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute(tableId, tutorId)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(useCase.execute({ tableId, tutorId })).rejects.toBeInstanceOf(NotFoundError);
     expect(repository.softDelete).not.toHaveBeenCalled();
   });
 
@@ -55,6 +55,6 @@ describe('DeletePerformanceTableUseCase', () => {
     );
     repository.softDelete.mockRejectedValue(new Error('Database failure'));
 
-    await expect(useCase.execute(tableId, tutorId)).rejects.toThrow('Database failure');
+    await expect(useCase.execute({ tableId, tutorId })).rejects.toThrow('Database failure');
   });
 });

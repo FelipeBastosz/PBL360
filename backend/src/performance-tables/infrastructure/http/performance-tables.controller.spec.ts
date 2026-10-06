@@ -192,7 +192,10 @@ describe('PerformanceTablesController', () => {
 
     await controller.delete('table-uuid-1', 'tutor-uuid-1');
 
-    expect(deleteUseCase.execute).toHaveBeenCalledWith('table-uuid-1', 'tutor-uuid-1');
+    expect(deleteUseCase.execute).toHaveBeenCalledWith({
+      tableId: 'table-uuid-1',
+      tutorId: 'tutor-uuid-1',
+    });
   });
 
   it('forwards criterion ids when updating a table', async () => {
@@ -215,18 +218,22 @@ describe('PerformanceTablesController', () => {
       'tutor-1',
     );
 
-    expect(updateUseCase.execute).toHaveBeenCalledWith('table-1', 'tutor-1', {
-      name: 'Barema',
-      description: null,
-      criteria: [
-        {
-          id: 'criterion-1',
-          name: 'Participação',
-          description: undefined,
-          weight: 10,
-          orderIndex: 1,
-        },
-      ],
+    expect(updateUseCase.execute).toHaveBeenCalledWith({
+      tableId: 'table-1',
+      tutorId: 'tutor-1',
+      changes: {
+        name: 'Barema',
+        description: null,
+        criteria: [
+          {
+            id: 'criterion-1',
+            name: 'Participação',
+            description: undefined,
+            weight: 10,
+            orderIndex: 1,
+          },
+        ],
+      },
     });
     expect(result.criterios[0]!.id).toBe('criterion-1');
   });

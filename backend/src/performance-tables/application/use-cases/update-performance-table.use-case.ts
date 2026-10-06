@@ -7,6 +7,12 @@ import {
   type PerformanceTableRepository,
 } from '../../domain/repositories/performance-table.repository';
 
+export interface UpdatePerformanceTableInput {
+  tableId: string;
+  tutorId: string;
+  changes: UpdatePerformanceTable;
+}
+
 @Injectable()
 export class UpdatePerformanceTableUseCase {
   constructor(
@@ -14,11 +20,11 @@ export class UpdatePerformanceTableUseCase {
     private readonly performanceTableRepository: PerformanceTableRepository,
   ) {}
 
-  async execute(
-    tableId: string,
-    tutorId: string,
-    input: UpdatePerformanceTable,
-  ): Promise<PerformanceTable> {
+  async execute({
+    tableId,
+    tutorId,
+    changes: input,
+  }: UpdatePerformanceTableInput): Promise<PerformanceTable> {
     const table = await this.performanceTableRepository.findById(tableId);
 
     if (!table) {
