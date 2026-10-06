@@ -1,8 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { NotFoundError } from '@/shared/errors/application.error';
 import { FormulaScope } from '../../domain/entities/formula.entity';
-import { FORMULA_REPOSITORY, type FormulaRepository } from '../../domain/repositories/formula.repository';
-import { PROBLEM_REPOSITORY, type ProblemRepository } from '../../domain/repositories/problem.repository';
+import {
+  FORMULA_REPOSITORY,
+  type FormulaRepository,
+} from '../../domain/repositories/formula.repository';
+import {
+  PROBLEM_REPOSITORY,
+  type ProblemRepository,
+} from '../../domain/repositories/problem.repository';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import { GetProblemFormulaUseCase } from './get-problem-formula.use-case';
 import { FormulaResponseDto } from '../dtos/formula-response.dto';
@@ -31,7 +37,10 @@ export class RestoreDefaultFormulaUseCase {
       throw new NotFoundError('Problema não encontrado na sala informada.');
     }
 
-    const activeFormula = await this.formulas.findActiveByProblemAndScope(input.problemId, input.scope);
+    const activeFormula = await this.formulas.findActiveByProblemAndScope(
+      input.problemId,
+      input.scope,
+    );
     if (activeFormula) {
       await this.formulas.deactivate(activeFormula);
     }

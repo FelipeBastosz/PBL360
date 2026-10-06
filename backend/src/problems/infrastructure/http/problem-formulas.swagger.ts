@@ -18,7 +18,8 @@ export const GetProblemFormulaSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
     summary: 'Obtém a fórmula de avaliação (padrão ou personalizada)',
-    description: 'Retorna a fórmula de avaliação para o escopo pedido. Se o professor não tiver personalizado, retorna a fórmula padrão convertida a partir da tabela de desempenho vinculada.',
+    description:
+      'Retorna a fórmula de avaliação para o escopo pedido. Se o professor não tiver personalizado, retorna a fórmula padrão convertida a partir da tabela de desempenho vinculada.',
   }),
   ApiOkResponse({
     description: 'Fórmula retornada com sucesso.',
@@ -46,7 +47,8 @@ export const CustomizeProblemFormulaSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
     summary: 'Personaliza a fórmula de avaliação',
-    description: 'Salva uma nova versão personalizada da fórmula com os pesos informados. A soma deve ser exatamente 100.',
+    description:
+      'Salva uma nova versão personalizada da fórmula com os pesos informados. A soma deve ser exatamente 100.',
   }),
   ApiOkResponse({
     description: 'Fórmula personalizada salva com sucesso.',
@@ -69,7 +71,8 @@ export const CustomizeProblemFormulaSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
   ApiUnprocessableEntityResponse({
-    description: 'Soma dos pesos diferente de 100, componente de outro escopo ou critério inválido.',
+    description:
+      'Soma dos pesos diferente de 100, componente de outro escopo ou critério inválido.',
     type: ErrorResponseDto,
   }),
 );
@@ -78,7 +81,8 @@ export const RestoreDefaultFormulaSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
     summary: 'Restaura a fórmula padrão da avaliação',
-    description: 'Desativa a fórmula personalizada atual, fazendo o sistema voltar a usar a fórmula padrão em memória.',
+    description:
+      'Desativa a fórmula personalizada atual, fazendo o sistema voltar a usar a fórmula padrão em memória.',
   }),
   ApiOkResponse({
     description: 'Fórmula restaurada com sucesso para o padrão.',

@@ -59,7 +59,9 @@ describe('Formula', () => {
     };
 
     expect(() => Formula.create(invalidProps)).toThrow(InvalidProblemError);
-    expect(() => Formula.create(invalidProps)).toThrow('Fórmulas de sessão só podem conter componentes do tipo CRITERIO');
+    expect(() => Formula.create(invalidProps)).toThrow(
+      'Fórmulas de sessão só podem conter componentes do tipo CRITERIO',
+    );
   });
 
   it('deve lançar erro se escopo PROBLEMA contiver CRITERIO', () => {
@@ -74,6 +76,8 @@ describe('Formula', () => {
     };
 
     expect(() => Formula.create(invalidProps)).toThrow(InvalidProblemError);
-    expect(() => Formula.create(invalidProps)).toThrow('Componente inválido para a fórmula da nota final');
+    expect(() => Formula.create(invalidProps)).toThrow(
+      'Componente inválido para a fórmula da nota final',
+    );
   });
 });

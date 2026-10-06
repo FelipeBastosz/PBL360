@@ -12,6 +12,7 @@ import type { CustomizeFormulaDto } from '../dtos/customize-formula.dto';
 import { GetProblemFormulaUseCase } from './get-problem-formula.use-case';
 import type { FormulaResponseDto } from '../dtos/formula-response.dto';
 import { InvalidProblemError } from '../../errors/invalid-problem.error';
+import type { Problem } from '../../domain/entities/problem.entity';
 
 interface Input {
   roomId: string;
@@ -34,9 +35,12 @@ export class CustomizeProblemFormulaUseCase {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
     const problem = await this.validateProblem(input);
     await this.validateFormulaScope(input, problem);
-    
-    const oldFormula = await this.formulas.findActiveByProblemAndScope(input.problemId, input.dto.escopo);
-    
+
+    const oldFormula = await this.formulas.findActiveByProblemAndScope(
+      input.problemId,
+      input.dto.escopo,
+    );
+
     try {
       const candidate = this.createFormulaCandidate(input, oldFormula);
       await this.formulas.saveNewVersion(oldFormula, candidate);
@@ -62,30 +66,32 @@ export class CustomizeProblemFormulaUseCase {
     return problem;
   }
 
-  private async validateFormulaScope(input: Input, problem: any) {
+  private async validateFormulaScope(input: Input, problem: Problem) {
     if (input.dto.escopo === FormulaScope.SESSAO) {
       if (!problem.performanceTableId) {
         throw new UnprocessableEntityError('O problema não possui uma tabela vinculada.');
       }
       const table = await this.tables.findByIdIncludingDeleted(problem.performanceTableId);
-      const validCriteriaIds = new Set(table?.criteria.map((c: any) => c.id) || []);
-      
+      const validCriteriaIds = new Set(table?.criteria.map((c) => c.id) || []);
+
       for (const comp of input.dto.componentes) {
         if (!validCriteriaIds.has(comp.referenciaId!)) {
-          throw new UnprocessableEntityError('Um ou mais critérios não pertencem à tabela deste problema.');
+          throw new UnprocessableEntityError(
+            'Um ou mais critérios não pertencem à tabela deste problema.',
+          );
         }
       }
     }
   }
 
-  private createFormulaCandidate(input: Input, oldFormula: any): Formula {
+  private createFormulaCandidate(input: Input, oldFormula: Formula | null): Formula {
     return Formula.create({
       problemId: input.problemId,
       scope: input.dto.escopo,
       version: oldFormula ? oldFormula.version + 1 : 1,
       active: true,
       createdBy: input.tutorId,
-      components: input.dto.componentes.map(c => ({
+      components: input.dto.componentes.map((c) => ({
         type: c.tipo,
         referenceId: c.referenciaId,
         weight: c.peso,

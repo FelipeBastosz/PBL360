@@ -62,6 +62,11 @@ export class ProblemFormulasController {
     @Body() dto: RestoreDefaultFormulaDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<FormulaResponseDto> {
-    return this.restoreDefaultFormulaUseCase.execute({ roomId, problemId, tutorId, scope: dto.escopo });
+    return this.restoreDefaultFormulaUseCase.execute({
+      roomId,
+      problemId,
+      tutorId,
+      scope: dto.escopo,
+    });
   }
 }

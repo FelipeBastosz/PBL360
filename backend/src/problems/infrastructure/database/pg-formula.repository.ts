@@ -11,7 +11,10 @@ export class PgFormulaRepository implements FormulaRepository {
     private readonly typeOrmRepository: Repository<Formula>,
   ) {}
 
-  async findActiveByProblemAndScope(problemId: string, scope: FormulaScope): Promise<Formula | null> {
+  async findActiveByProblemAndScope(
+    problemId: string,
+    scope: FormulaScope,
+  ): Promise<Formula | null> {
     return this.typeOrmRepository.findOne({
       where: { problemId, scope, active: true },
       relations: ['components'],

@@ -28,16 +28,26 @@ export class CreateFormulas1791500000000 implements MigrationInterface {
       )
     `);
 
-    await queryRunner.query(`CREATE INDEX "idx_formulas_problem_scope" ON "formulas" ("problem_id", "scope")`);
+    await queryRunner.query(
+      `CREATE INDEX "idx_formulas_problem_scope" ON "formulas" ("problem_id", "scope")`,
+    );
     await queryRunner.query(`CREATE INDEX "idx_formulas_created_by" ON "formulas" ("created_by")`);
 
-    await queryRunner.query(`ALTER TABLE "formulas" ADD CONSTRAINT "fk_formulas_problem" FOREIGN KEY ("problem_id") REFERENCES "problems"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-    await queryRunner.query(`ALTER TABLE "formulas" ADD CONSTRAINT "fk_formulas_created_by" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-    await queryRunner.query(`ALTER TABLE "formula_components" ADD CONSTRAINT "fk_formula_components_formula" FOREIGN KEY ("formula_id") REFERENCES "formulas"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+    await queryRunner.query(
+      `ALTER TABLE "formulas" ADD CONSTRAINT "fk_formulas_problem" FOREIGN KEY ("problem_id") REFERENCES "problems"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "formulas" ADD CONSTRAINT "fk_formulas_created_by" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "formula_components" ADD CONSTRAINT "fk_formula_components_formula" FOREIGN KEY ("formula_id") REFERENCES "formulas"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "formula_components" DROP CONSTRAINT "fk_formula_components_formula"`);
+    await queryRunner.query(
+      `ALTER TABLE "formula_components" DROP CONSTRAINT "fk_formula_components_formula"`,
+    );
     await queryRunner.query(`ALTER TABLE "formulas" DROP CONSTRAINT "fk_formulas_created_by"`);
     await queryRunner.query(`ALTER TABLE "formulas" DROP CONSTRAINT "fk_formulas_problem"`);
     await queryRunner.query(`DROP INDEX "public"."idx_formulas_created_by"`);

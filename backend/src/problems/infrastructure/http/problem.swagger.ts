@@ -1,9 +1,16 @@
 import { applyDecorators } from '@nestjs/common';
 import {
-  ApiBadRequestResponse, ApiBearerAuth, ApiCreatedResponse,
-  ApiConflictResponse, ApiForbiddenResponse, ApiNoContentResponse,
-  ApiNotFoundResponse, ApiOkResponse, ApiOperation,
-  ApiUnauthorizedResponse, ApiUnprocessableEntityResponse,
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiConflictResponse,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
@@ -90,11 +97,17 @@ export const DeleteProblemSwaggerDocs = applyDecorators(
 export const ChangeProblemPerformanceTableSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({ summary: 'Vincula ou troca a tabela de desempenho do problema' }),
-  ApiOkResponse({ description: 'Tabela de desempenho vinculada.', type: ProblemPerformanceTableResponseDto }),
+  ApiOkResponse({
+    description: 'Tabela de desempenho vinculada.',
+    type: ProblemPerformanceTableResponseDto,
+  }),
   ApiBadRequestResponse({ description: 'Dados inválidos.', type: ErrorResponseDto }),
   ApiUnauthorizedResponse({ description: 'JWT não informado.', type: ErrorResponseDto }),
   ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
   ApiNotFoundResponse({ description: 'Problema ou sala não encontrada.', type: ErrorResponseDto }),
   ApiConflictResponse({ description: 'Problema possui avaliações.', type: ErrorResponseDto }),
-  ApiUnprocessableEntityResponse({ description: 'A tabela informada é inválida.', type: ErrorResponseDto }),
+  ApiUnprocessableEntityResponse({
+    description: 'A tabela informada é inválida.',
+    type: ErrorResponseDto,
+  }),
 );

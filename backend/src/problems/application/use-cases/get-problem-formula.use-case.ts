@@ -11,6 +11,8 @@ import type { PerformanceTableRepository } from '@/performance-tables/domain/rep
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import { FormulaResponseDto } from '../dtos/formula-response.dto';
 import type { Problem } from '../../domain/entities/problem.entity';
+import type { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
+import type { PerformanceTableCriteria } from '@/performance-tables/domain/entities/performance-table-criteria.entity';
 
 interface Input {
   roomId: string;
@@ -33,13 +35,16 @@ export class GetProblemFormulaUseCase {
 
     const problem = await this.validateProblem(input);
     const table = await this.fetchTable(problem);
-    
+
     const criteriaMap = new Map<string, string>();
     if (table) {
       table.criteria.forEach((c) => criteriaMap.set(c.id, c.name));
     }
 
-    const activeFormula = await this.formulas.findActiveByProblemAndScope(input.problemId, input.scope);
+    const activeFormula = await this.formulas.findActiveByProblemAndScope(
+      input.problemId,
+      input.scope,
+    );
     if (activeFormula) {
       return this.buildActiveFormula(input.scope, activeFormula, criteriaMap);
     }
@@ -60,21 +65,30 @@ export class GetProblemFormulaUseCase {
     return this.tables.findByIdIncludingDeleted(problem.performanceTableId);
   }
 
-  private buildActiveFormula(scope: FormulaScope, activeFormula: any, criteriaMap: Map<string, string>): FormulaResponseDto {
+  private buildActiveFormula(
+    scope: FormulaScope,
+    activeFormula: Formula,
+    criteriaMap: Map<string, string>,
+  ): FormulaResponseDto {
     return {
       escopo: scope,
       padrao: false,
       versao: activeFormula.version,
-      componentes: activeFormula.components.map((c: any) => ({
+      componentes: activeFormula.components.map((c) => ({
         tipo: c.type,
         referenciaId: c.referenceId,
-        nome: c.referenceId ? (criteriaMap.get(c.referenceId) || 'Critério Excluído') : this.getDefaultNameForType(c.type),
+        nome: c.referenceId
+          ? criteriaMap.get(c.referenceId) || 'Critério Excluído'
+          : this.getDefaultNameForType(c.type),
         peso: Number(c.weight),
       })),
     };
   }
 
-  private buildDefaultFormula(scope: FormulaScope, table: any): FormulaResponseDto {
+  private buildDefaultFormula(
+    scope: FormulaScope,
+    table: PerformanceTable | null,
+  ): FormulaResponseDto {
     if (scope === FormulaScope.PROBLEMA) {
       return this.buildProblemScopeFormula();
     }
@@ -87,30 +101,52 @@ export class GetProblemFormulaUseCase {
       padrao: true,
       versao: null,
       componentes: [
-        { tipo: FormulaComponentType.MEDIA_SESSOES, referenciaId: null, nome: 'Média das Sessões', peso: 100 },
-        { tipo: FormulaComponentType.AUTOAVALIACAO, referenciaId: null, nome: 'Autoavaliação', peso: 0 },
-        { tipo: FormulaComponentType.PARES, referenciaId: null, nome: 'Avaliação por Pares', peso: 0 },
+        {
+          tipo: FormulaComponentType.MEDIA_SESSOES,
+          referenciaId: null,
+          nome: 'Média das Sessões',
+          peso: 100,
+        },
+        {
+          tipo: FormulaComponentType.AUTOAVALIACAO,
+          referenciaId: null,
+          nome: 'Autoavaliação',
+          peso: 0,
+        },
+        {
+          tipo: FormulaComponentType.PARES,
+          referenciaId: null,
+          nome: 'Avaliação por Pares',
+          peso: 0,
+        },
       ],
     };
   }
 
-  private buildSessionScopeFormula(table: any): FormulaResponseDto {
+  private buildSessionScopeFormula(table: PerformanceTable | null): FormulaResponseDto {
     if (!table || table.criteria.length === 0) {
-      throw new UnprocessableEntityError('O problema não possui uma tabela de desempenho com critérios.');
+      throw new UnprocessableEntityError(
+        'O problema não possui uma tabela de desempenho com critérios.',
+      );
     }
 
-    const totalWeight = table.criteria.reduce((sum: number, c: any) => sum + Number(c.weight), 0);
-    const componentes = table.criteria.map((c: any) => ({
+    const totalWeight = table.criteria.reduce(
+      (sum: number, c: PerformanceTableCriteria) => sum + Number(c.weight),
+      0,
+    );
+    const componentes = table.criteria.map((c: PerformanceTableCriteria) => ({
       tipo: FormulaComponentType.CRITERIO,
       referenciaId: c.id,
       nome: c.name,
       peso: Number(((Number(c.weight) / totalWeight) * 100).toFixed(2)),
     }));
 
-    const sum = componentes.reduce((acc: number, c: any) => acc + c.peso, 0);
+    const sum = componentes.reduce((acc: number, c) => acc + c.peso, 0);
     if (sum !== 100 && componentes.length > 0) {
       componentes[componentes.length - 1].peso += Number((100 - sum).toFixed(2));
-      componentes[componentes.length - 1].peso = Number(componentes[componentes.length - 1].peso.toFixed(2));
+      componentes[componentes.length - 1].peso = Number(
+        componentes[componentes.length - 1].peso.toFixed(2),
+      );
     }
 
     return {
@@ -123,10 +159,14 @@ export class GetProblemFormulaUseCase {
 
   private getDefaultNameForType(type: string): string | null {
     switch (type) {
-      case FormulaComponentType.MEDIA_SESSOES: return 'Média das Sessões';
-      case FormulaComponentType.AUTOAVALIACAO: return 'Autoavaliação';
-      case FormulaComponentType.PARES: return 'Avaliação por Pares';
-      default: return null;
+      case FormulaComponentType.MEDIA_SESSOES:
+        return 'Média das Sessões';
+      case FormulaComponentType.AUTOAVALIACAO:
+        return 'Autoavaliação';
+      case FormulaComponentType.PARES:
+        return 'Avaliação por Pares';
+      default:
+        return null;
     }
   }
 }

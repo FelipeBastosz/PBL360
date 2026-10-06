@@ -1,5 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ConflictError, NotFoundError, UnprocessableEntityError } from '@/shared/errors/application.error';
+import {
+  ConflictError,
+  NotFoundError,
+  UnprocessableEntityError,
+} from '@/shared/errors/application.error';
 import { PROBLEM_REPOSITORY } from '../../domain/repositories/problem.repository';
 import type { ProblemRepository } from '../../domain/repositories/problem.repository';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
@@ -22,7 +26,8 @@ interface Output {
 export class ChangeProblemPerformanceTableUseCase {
   constructor(
     @Inject(PROBLEM_REPOSITORY) private readonly problems: ProblemRepository,
-    @Inject(PERFORMANCE_TABLE_REPOSITORY) private readonly performanceTables: PerformanceTableRepository,
+    @Inject(PERFORMANCE_TABLE_REPOSITORY)
+    private readonly performanceTables: PerformanceTableRepository,
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
@@ -50,7 +55,9 @@ export class ChangeProblemPerformanceTableUseCase {
     }
     const hasSessions = await this.problems.hasSessions(input.problemId);
     if (hasSessions) {
-      throw new ConflictError('Não é possível alterar a tabela de um problema que já possui avaliações.');
+      throw new ConflictError(
+        'Não é possível alterar a tabela de um problema que já possui avaliações.',
+      );
     }
     return problem;
   }
@@ -58,9 +65,11 @@ export class ChangeProblemPerformanceTableUseCase {
   private async validateTable(input: Input) {
     const table = await this.performanceTables.findById(input.performanceTableId);
     if (!table || table.deletedAt) {
-      throw new UnprocessableEntityError('A tabela de desempenho informada é inválida ou está inativa.');
+      throw new UnprocessableEntityError(
+        'A tabela de desempenho informada é inválida ou está inativa.',
+      );
     }
-    
+
     try {
       await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, table.tutorId);
     } catch {

@@ -50,10 +50,14 @@ export class FormulaComponent {
 
   private assertSessionScope(): void {
     if (this.type !== FormulaComponentType.CRITERIO) {
-      throw new InvalidProblemError('Fórmulas de sessão só podem conter componentes do tipo CRITERIO.');
+      throw new InvalidProblemError(
+        'Fórmulas de sessão só podem conter componentes do tipo CRITERIO.',
+      );
     }
     if (!this.referenceId) {
-      throw new InvalidProblemError('Componentes do tipo CRITERIO exigem um critério de referência.');
+      throw new InvalidProblemError(
+        'Componentes do tipo CRITERIO exigem um critério de referência.',
+      );
     }
   }
 
@@ -64,10 +68,14 @@ export class FormulaComponent {
       FormulaComponentType.PARES,
     ];
     if (!validProblemTypes.includes(this.type as FormulaComponentType)) {
-      throw new InvalidProblemError('Componente inválido para a fórmula da nota final do problema.');
+      throw new InvalidProblemError(
+        'Componente inválido para a fórmula da nota final do problema.',
+      );
     }
     if (this.referenceId) {
-      throw new InvalidProblemError('Componentes da nota final do problema não utilizam referência de critério.');
+      throw new InvalidProblemError(
+        'Componentes da nota final do problema não utilizam referência de critério.',
+      );
     }
   }
 }

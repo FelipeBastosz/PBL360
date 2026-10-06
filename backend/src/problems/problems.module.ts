@@ -25,7 +25,11 @@ import { ProblemsController } from './infrastructure/http/problems.controller';
 import { ProblemFormulasController } from './infrastructure/http/problem-formulas.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Problem, Formula, FormulaComponent]), RoomsModule, PerformanceTablesModule],
+  imports: [
+    TypeOrmModule.forFeature([Problem, Formula, FormulaComponent]),
+    RoomsModule,
+    PerformanceTablesModule,
+  ],
   controllers: [ProblemsController, ProblemFormulasController],
   providers: [
     CreateProblemUseCase,
