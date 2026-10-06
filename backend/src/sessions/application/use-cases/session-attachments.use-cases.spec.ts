@@ -26,6 +26,8 @@ describe('Session attachment use cases', () => {
         .mockImplementation((attachment) => Promise.resolve({ id: 'a1', ...attachment })),
       listBySession: jest.fn().mockResolvedValue([]),
       findFile: jest.fn(),
+      findUploader: jest.fn(),
+      delete: jest.fn(),
     };
   });
 
