@@ -148,10 +148,11 @@ export class GetProblemFormulaUseCase {
   private adjustComponentWeights(componentes: Array<{ peso: number }>): void {
     const sum = componentes.reduce((acc: number, c) => acc + c.peso, 0);
     if (sum !== 100 && componentes.length > 0) {
-      componentes[componentes.length - 1].peso += Number((100 - sum).toFixed(2));
-      componentes[componentes.length - 1].peso = Number(
-        componentes[componentes.length - 1].peso.toFixed(2),
-      );
+      const lastComponent = componentes[componentes.length - 1];
+      if (lastComponent) {
+        lastComponent.peso += Number((100 - sum).toFixed(2));
+        lastComponent.peso = Number(lastComponent.peso.toFixed(2));
+      }
     }
   }
 
