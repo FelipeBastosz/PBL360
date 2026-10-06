@@ -25,10 +25,10 @@ export function useSessionRoles(sessionId: string) {
   );
 
   useEffect(() => {
-    sessionService
-      .listRoles(sessionId)
-      .then(setRoles)
-      .catch(() => setRoles([]));
+    const rolesPromise = sessionService.listRoles(sessionId);
+    if (!rolesPromise || typeof rolesPromise.then !== 'function') return;
+
+    rolesPromise.then(setRoles).catch(() => setRoles([]));
   }, [sessionId]);
 
   const assign = useCallback(

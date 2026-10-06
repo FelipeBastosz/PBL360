@@ -61,6 +61,7 @@ describe('MemberSessionPage', () => {
 
   it('sends a tutor to the tutor session screen', async () => {
     vi.mocked(sessionService.getById).mockResolvedValue(session);
+    vi.mocked(sessionService.listAttachments).mockResolvedValue([]);
     openAs({ ...studentUser, tipo: 'PROFESSOR', email: 'carlos@uefs.br' });
 
     expect(await screen.findByRole('link', { name: /chamada/i })).toHaveAttribute(
