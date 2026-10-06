@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Alert } from '@/components/ui/Alert';
 import { SearchField } from '@/components/ui/SearchField';
 import { Spinner } from '@/components/ui/Spinner';
@@ -11,6 +11,7 @@ import { cn } from '@/utils/cn';
 import { matchesName } from '@/utils/members';
 import { MemberCard, MemberSection } from './MemberCard';
 import { MemberDetailsSheet, type SelectedMember } from './MemberDetailsSheet';
+import { StudentMembersNotice } from './StudentMembersNotice';
 import { type RoomMembers, useRoomMembers } from './useRoomMembers';
 
 type MembersListProps = {
@@ -84,12 +85,10 @@ function TutorRoomMembers({ roomId }: { roomId: string }) {
   );
 }
 
-// The member lists are tutor-only in the API; students go back to their room page.
 export default function RoomMembersPage() {
   const { id = '' } = useParams<{ id: string }>();
   const { user } = useAuth();
 
-  if (user?.tipo !== 'PROFESSOR')
-    return <Navigate to={`${ROUTES.rooms}/${id}/problemas`} replace />;
+  if (user?.tipo !== 'PROFESSOR') return <StudentMembersNotice roomId={id} />;
   return <TutorRoomMembers roomId={id} />;
 }

@@ -11,7 +11,12 @@ import type { Room, RoomStudent, RoomTutor } from '@/types/room';
 import RoomMembersPage from './RoomMembersPage';
 
 vi.mock('@/services/room.service', () => ({
-  roomService: { getById: vi.fn(), listStudents: vi.fn(), listTutors: vi.fn() },
+  roomService: {
+    getById: vi.fn(),
+    listStudents: vi.fn(),
+    listTutors: vi.fn(),
+    listMyRooms: vi.fn(),
+  },
 }));
 
 vi.mock('@/services/user.service', () => ({
@@ -157,10 +162,22 @@ describe('RoomMembersPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('sends students back to the room page', async () => {
+  it('tells students the list is not available yet, without calling the tutor-only routes', async () => {
+    vi.mocked(roomService.listMyRooms).mockResolvedValue([
+      { salaId: 'room-1', nome: 'MI - Algoritmos - TP02', semestre: '2026.2', totalAlunos: 2 },
+    ]);
     renderPage(student);
 
-    expect(await screen.findByText('Página da turma')).toBeInTheDocument();
+    expect(
+      await screen.findByText('A lista de participantes ainda não está disponível para alunos.'),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'MI - Algoritmos' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Voltar para a turma' })[0]).toHaveAttribute(
+      'href',
+      '/turmas/room-1/problemas',
+    );
     expect(roomService.listStudents).not.toHaveBeenCalled();
+    expect(roomService.listTutors).not.toHaveBeenCalled();
+    expect(roomService.getById).not.toHaveBeenCalled();
   });
 });
