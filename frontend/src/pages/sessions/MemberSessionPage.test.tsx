@@ -44,13 +44,16 @@ describe('MemberSessionPage', () => {
     localStorage.clear();
   });
 
-  it('shows the session with its attachments and the upload button to a student', async () => {
+  it('sends a student to the session screen inside the room and problem', async () => {
+    vi.mocked(sessionService.getForMember).mockResolvedValue(session);
+    vi.mocked(sessionService.listAttachments).mockResolvedValue([]);
     openAs();
 
-    expect(await screen.findByRole('heading', { name: 'Sessão · 12 ago' })).toBeInTheDocument();
-    expect(screen.getByText('Problema 1')).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Anexos da Sessão' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Adicionar Documento/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /voltar para as sessões/i })).toHaveAttribute(
+      'href',
+      '/turmas/r1/problemas/p1',
+    );
   });
 
   it('explains when the student cannot open the session', async () => {

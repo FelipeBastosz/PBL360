@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
+import { ApiError } from '@/services/apiError';
 import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
 import type { UserResponse } from '@/types/auth';
@@ -15,7 +16,11 @@ vi.mock('@/services/problem.service', () => ({
 }));
 
 vi.mock('@/services/session.service', () => ({
-  sessionService: { getById: vi.fn(), listAttachments: vi.fn().mockResolvedValue([]) },
+  sessionService: {
+    getById: vi.fn(),
+    getForMember: vi.fn(),
+    listAttachments: vi.fn().mockResolvedValue([]),
+  },
 }));
 
 vi.mock('@/hooks/useToast', () => ({
@@ -60,11 +65,20 @@ const mockSession: Session = {
   status: 'agendada',
 };
 
-function renderPage() {
+const mockStudent: UserResponse = {
+  ...mockTeacher,
+  id: '2',
+  nome: 'Aluno Ciclano',
+  email: 'aluno@test.com',
+  tipo: 'ALUNO',
+  matricula: '123456',
+};
+
+function renderPage(user: UserResponse = mockTeacher) {
   return render(
     <AuthContext.Provider
       value={{
-        user: mockTeacher,
+        user,
         isAuthenticated: true,
         login: vi.fn(),
         logout: vi.fn(),
@@ -143,5 +157,39 @@ describe('SessionHubPage', () => {
     const endBtn = await screen.findByRole('button', { name: 'Encerrar sessão' });
     expect(endBtn).toBeInTheDocument();
     expect(endBtn).toBeDisabled();
+  });
+
+  describe('when user is a student', () => {
+    beforeEach(() => {
+      vi.mocked(sessionService.getForMember).mockResolvedValue({
+        ...mockSession,
+        problemaId: 'prob-1',
+        salaId: 'room-1',
+        problemaTitulo: 'Problema 01 - Diagnóstico',
+      });
+    });
+
+    it('shows the session header and its attachments, without the tutor actions', async () => {
+      renderPage(mockStudent);
+
+      expect(await screen.findByText(/Sessão 1 · 12 ago/i)).toBeInTheDocument();
+      expect(screen.getByText('Problema 01 - Diagnóstico')).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { name: 'Anexos da Sessão' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Adicionar Documento/ })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /chamada/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('Autoavaliação e pares')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Encerrar sessão' })).not.toBeInTheDocument();
+      expect(sessionService.getById).not.toHaveBeenCalled();
+      expect(problemService.getById).not.toHaveBeenCalled();
+    });
+
+    it('explains when the student cannot open the session', async () => {
+      vi.mocked(sessionService.getForMember).mockRejectedValue(
+        new ApiError(403, ['Você não participa desta sala.']),
+      );
+      renderPage(mockStudent);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Você não participa desta sala.');
+    });
   });
 });
