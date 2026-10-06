@@ -6,7 +6,6 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline';
 import type { ComponentType } from 'react';
-import { ROUTES } from '@/routes/paths';
 
 type CardItemProps = {
   to: string;
@@ -70,7 +69,7 @@ export function SessionActionGrid({ basePath }: { basePath: string }) {
         Icon={StarIcon}
       />
       <ActionCard
-        to={ROUTES.performanceTables}
+        to={`${basePath}/formulas`}
         title="Fórmulas"
         desc="Pesos da sessão e da nota final"
         color="bg-amber-50 text-amber-600"

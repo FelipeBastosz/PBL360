@@ -128,7 +128,10 @@ describe('SessionHubPage', () => {
       'href',
       `${basePath}/avaliar`,
     );
-    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute('href', '/formulas');
+    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute(
+      'href',
+      `${basePath}/formulas`,
+    );
   });
 
   it('renders disabled card for Histórico de avaliações with Em breve badge', async () => {
