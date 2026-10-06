@@ -65,5 +65,9 @@ describe('review.seed.ts', () => {
     await seedReviewData(mockDataSource as unknown as DataSource);
 
     expect(mockDataSource.query).toHaveBeenCalled();
+    expect(mockDataSource.query).toHaveBeenCalledWith(
+      expect.stringContaining('VALUES ($1, $2, $3, $4, $5, $6)'),
+      ['problem-1', 'Sessão 1 - Abertura', 'Sessão 1 - Abertura', '2026-10-01', 1, 'concluida'],
+    );
   });
 });
