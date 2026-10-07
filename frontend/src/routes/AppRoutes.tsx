@@ -47,6 +47,9 @@ const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsP
 const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
 const SessionHubPage = lazy(() => import('@/pages/sessions/SessionHubPage'));
 const ProblemFormulaPage = lazy(() => import('@/pages/formulas/ProblemFormulaPage'));
+const SessionEvaluationsListPage = lazy(
+  () => import('@/pages/evaluations/SessionEvaluationsListPage'),
+);
 
 export function AppRoutes() {
   return (
@@ -85,6 +88,7 @@ export function AppRoutes() {
           <Route path={ROUTES.rollCall} element={<RollCallPage />} />
           <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
           <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
+          <Route path={ROUTES.sessionEvaluationsList} element={<SessionEvaluationsListPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
