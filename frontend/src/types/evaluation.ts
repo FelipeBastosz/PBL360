@@ -22,3 +22,37 @@ export type ProblemEvaluationCriteria = {
     ordem: number;
   }>;
 };
+
+export type CriterionScore = {
+  criterioId: string;
+  nota: number;
+};
+
+export type EvaluationCriterion = {
+  id: string;
+  nome: string;
+  peso: number;
+  ordem: number;
+  notaMaxima?: number;
+  descricao?: string | null;
+};
+
+export type TutorEvaluationData = {
+  status: EvaluationStatus;
+  enviadaEm: string | null;
+  itens: CriterionScore[];
+  criterios: EvaluationCriterion[];
+  notaSessao: number | null;
+};
+
+export type SaveTutorEvaluationPayload = {
+  itens: CriterionScore[];
+  enviar: boolean;
+  justificativa?: string;
+};
+
+export type SessionFeedbackResponse = {
+  id: string;
+  texto: string;
+  criadoEm: string;
+};

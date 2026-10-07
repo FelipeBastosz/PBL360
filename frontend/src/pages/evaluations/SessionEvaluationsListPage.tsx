@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { evaluationService } from '@/services/evaluation.service';
 import type { SessionEvaluationSummary, ProblemEvaluationCriteria } from '@/types/evaluation';
-import { StudentEvaluationCard } from './StudentEvaluationCard';
+import { StudentEvaluationCard } from './components/StudentEvaluationCard';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import type { UserResponse } from '@/types/auth';
 
@@ -35,12 +35,12 @@ function EvaluationsHeader({ user, backUrl }: { user: UserResponse | null; backU
 
 function MissingCriteriaAlert({ formulasUrl }: { formulasUrl: string }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 shadow-sm">
+    <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 shadow-sm flex flex-col gap-3">
       <div className="flex items-start gap-3">
-        <ExclamationTriangleIcon className="mt-0.5 size-6 shrink-0 text-amber-700" />
+        <ExclamationTriangleIcon className="size-6 text-amber-700 shrink-0 mt-0.5" />
         <div>
           <h3 className="text-sm font-bold text-amber-900">Problema sem tabela vinculada</h3>
-          <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
+          <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
             Este problema ainda não possui critérios de avaliação configurados. Vincule uma tabela
             de fórmulas para liberar o lançamento de notas.
           </p>
@@ -48,7 +48,7 @@ function MissingCriteriaAlert({ formulasUrl }: { formulasUrl: string }) {
       </div>
       <Link
         to={formulasUrl}
-        className="w-full rounded-xl bg-amber-700 py-2 text-center text-xs font-semibold text-white transition hover:bg-amber-800"
+        className="w-full text-center rounded-xl bg-amber-700 py-2 text-xs font-semibold text-white hover:bg-amber-800 transition"
       >
         Configurar Fórmulas
       </Link>
@@ -56,7 +56,14 @@ function MissingCriteriaAlert({ formulasUrl }: { formulasUrl: string }) {
   );
 }
 
-function useSessionEvaluations(sessionId?: string, roomId?: string, problemId?: string) {
+export default function SessionEvaluationsListPage() {
+  const { roomId, problemId, sessionId } = useParams<{
+    roomId: string;
+    problemId: string;
+    sessionId: string;
+  }>();
+  const { user } = useAuth();
+
   const [students, setStudents] = useState<SessionEvaluationSummary[]>([]);
   const [criteria, setCriteria] = useState<ProblemEvaluationCriteria | null>(null);
   const [hasCheckedCriteria, setHasCheckedCriteria] = useState(false);
@@ -71,10 +78,14 @@ function useSessionEvaluations(sessionId?: string, roomId?: string, problemId?: 
   );
 
   useEffect(() => {
-    if (sessionId) fetchStudents(sessionId).then((r) => r.ok && setStudents(r.data));
+    if (sessionId) {
+      fetchStudents(sessionId).then((r) => r.ok && setStudents(r.data));
+    }
     if (roomId && problemId) {
       fetchCriteria(roomId, problemId)
-        .then((r) => r.ok && setCriteria(r.data))
+        .then((r) => {
+          if (r.ok) setCriteria(r.data);
+        })
         .finally(() => setHasCheckedCriteria(true));
     }
   }, [sessionId, roomId, problemId, fetchStudents, fetchCriteria]);
@@ -82,77 +93,35 @@ function useSessionEvaluations(sessionId?: string, roomId?: string, problemId?: 
   const isLoading = isLoadingStudents || isLoadingCriteria;
   const hasMissingTable = hasCheckedCriteria && (!criteria || !criteria.tabela);
 
-  return { students, isLoading, error, hasMissingTable };
-}
-
-type ContentProps = {
-  isLoading: boolean;
-  error: { message: string } | null;
-  hasMissingTable: boolean;
-  formulasUrl: string;
-  students: SessionEvaluationSummary[];
-  sessionId: string;
-};
-
-function EvaluationsContent({
-  isLoading,
-  error,
-  hasMissingTable,
-  formulasUrl,
-  students,
-  sessionId,
-}: ContentProps) {
-  return (
-    <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">
-      {error && <Alert tone="error">{error.message}</Alert>}
-      {hasMissingTable && <MissingCriteriaAlert formulasUrl={formulasUrl} />}
-      {isLoading ? (
-        <div className="mt-10 flex justify-center">
-          <Spinner className="size-8 text-brand-900" />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {students.map((student) => (
-            <StudentEvaluationCard
-              key={student.alunoId}
-              student={student}
-              disabled={hasMissingTable}
-              evaluationUrl={`/sessoes/${sessionId}/avaliacao/${student.alunoId}`}
-            />
-          ))}
-        </div>
-      )}
-    </main>
-  );
-}
-
-export default function SessionEvaluationsListPage() {
-  const { roomId, problemId, sessionId } = useParams<{
-    roomId: string;
-    problemId: string;
-    sessionId: string;
-  }>();
-  const { user } = useAuth();
-  const { students, isLoading, error, hasMissingTable } = useSessionEvaluations(
-    sessionId,
-    roomId,
-    problemId,
-  );
-
   const backUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}`;
   const formulasUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}/formulas`;
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <EvaluationsHeader user={user} backUrl={backUrl} />
-      <EvaluationsContent
-        isLoading={isLoading}
-        error={error}
-        hasMissingTable={hasMissingTable}
-        formulasUrl={formulasUrl}
-        students={students}
-        sessionId={sessionId ?? ''}
-      />
+
+      <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">
+        {error && <Alert tone="error">{error.message}</Alert>}
+
+        {hasMissingTable && <MissingCriteriaAlert formulasUrl={formulasUrl} />}
+
+        {isLoading ? (
+          <div className="mt-10 flex justify-center">
+            <Spinner className="size-8 text-brand-900" />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {students.map((student) => (
+              <StudentEvaluationCard
+                key={student.alunoId}
+                student={student}
+                disabled={hasMissingTable}
+                evaluationUrl={`/sessoes/${sessionId}/avaliacao/${student.alunoId}`}
+              />
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

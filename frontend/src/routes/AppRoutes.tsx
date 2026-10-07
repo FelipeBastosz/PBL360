@@ -50,6 +50,7 @@ const ProblemFormulaPage = lazy(() => import('@/pages/formulas/ProblemFormulaPag
 const SessionEvaluationsListPage = lazy(
   () => import('@/pages/evaluations/SessionEvaluationsListPage'),
 );
+const StudentEvaluationPage = lazy(() => import('@/pages/evaluations/StudentEvaluationPage'));
 
 export function AppRoutes() {
   return (
@@ -89,6 +90,7 @@ export function AppRoutes() {
           <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
           <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
           <Route path={ROUTES.sessionEvaluationsList} element={<SessionEvaluationsListPage />} />
+          <Route path={ROUTES.studentEvaluation} element={<StudentEvaluationPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
