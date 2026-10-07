@@ -8,6 +8,44 @@ const DEFAULT_TAGS = [
   { id: '4', label: 'Contribuição relevante', Icon: CheckIcon },
 ];
 
+function TagButtons({
+  selectedTags,
+  onToggle,
+}: {
+  selectedTags: string[];
+  onToggle: (id: string) => void;
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {DEFAULT_TAGS.map(({ id, label, Icon }) => {
+        const isSelected = selectedTags.includes(id);
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onToggle(id)}
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+              isSelected
+                ? 'border-brand-900 bg-brand-50 text-brand-900'
+                : 'border-black/10 bg-white text-ink hover:bg-gray-50'
+            }`}
+          >
+            <Icon className="size-3.5 stroke-[2.5]" />
+            <span>{label}</span>
+          </button>
+        );
+      })}
+      <button
+        type="button"
+        disabled
+        className="rounded-xl border border-dashed border-brand-900/40 bg-brand-50/50 px-3 py-2 text-xs font-semibold text-brand-900 opacity-60"
+      >
+        + criar marcação
+      </button>
+    </div>
+  );
+}
+
 export function QuickObservationsCard({
   complement,
   onComplementChange,
@@ -24,38 +62,10 @@ export function QuickObservationsCard({
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
       <h2 className="text-base font-bold text-brand-900">Observações rápidas</h2>
-      <p className="mt-1 text-xs text-muted leading-relaxed">
+      <p className="mt-1 text-xs leading-relaxed text-muted">
         Toque para marcar. As marcações entram no histórico do aluno.
       </p>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {DEFAULT_TAGS.map(({ id, label, Icon }) => {
-          const isSelected = selectedTags.includes(id);
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => toggleTag(id)}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
-                isSelected
-                  ? 'border-brand-900 bg-brand-50 text-brand-900'
-                  : 'border-black/10 bg-white text-ink hover:bg-gray-50'
-              }`}
-            >
-              <Icon className="size-3.5 stroke-[2.5]" />
-              <span>{label}</span>
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          disabled
-          className="rounded-xl border border-dashed border-brand-900/40 bg-brand-50/50 px-3 py-2 text-xs font-semibold text-brand-900 opacity-60"
-        >
-          + criar marcação
-        </button>
-      </div>
-
+      <TagButtons selectedTags={selectedTags} onToggle={toggleTag} />
       <input
         type="text"
         placeholder="Observação complementar (texto livre)"

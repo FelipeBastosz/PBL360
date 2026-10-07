@@ -9,11 +9,17 @@ type Props = {
   onCancel: () => void;
 };
 
-export function JustificationModal({ isOpen, isLoading, onConfirm, onCancel }: Props) {
+function JustificationForm({
+  isLoading,
+  onConfirm,
+  onCancel,
+}: {
+  isLoading: boolean;
+  onConfirm: (val: string) => void;
+  onCancel: () => void;
+}) {
   const [justificativa, setJustificativa] = useState('');
   const [error, setError] = useState(false);
-
-  if (!isOpen) return null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,6 +29,41 @@ export function JustificationModal({ isOpen, isLoading, onConfirm, onCancel }: P
     }
     onConfirm(justificativa.trim());
   }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <h2 className="text-base font-bold text-brand-900">Justificativa da alteração</h2>
+      <p className="text-xs leading-relaxed text-muted">
+        Esta avaliação já havia sido enviada. Informe uma justificativa (mínimo de 10 caracteres)
+        para registrar o ajuste.
+      </p>
+      <textarea
+        rows={3}
+        value={justificativa}
+        onChange={(e) => {
+          setJustificativa(e.target.value);
+          setError(false);
+        }}
+        placeholder="Motivo da alteração das notas..."
+        className={`w-full rounded-xl border p-3 text-xs text-ink placeholder:text-placeholder focus:outline-none focus:ring-1 ${
+          error ? 'border-danger' : 'border-black/10 focus:border-brand-900 focus:ring-brand-900'
+        }`}
+      />
+      {error && <span className="text-xs text-danger">Mínimo de 10 caracteres.</span>}
+      <div className="mt-2 flex flex-col gap-2">
+        <Button type="submit" isLoading={isLoading}>
+          Confirmar e Enviar
+        </Button>
+        <Button type="button" variant="link" onClick={onCancel}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export function JustificationModal({ isOpen, isLoading, onConfirm, onCancel }: Props) {
+  if (!isOpen) return null;
 
   return (
     <div
@@ -40,40 +81,7 @@ export function JustificationModal({ isOpen, isLoading, onConfirm, onCancel }: P
         >
           <XMarkIcon className="size-6" />
         </button>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <h2 className="text-base font-bold text-brand-900">Justificativa da alteração</h2>
-          <p className="text-xs text-muted leading-relaxed">
-            Esta avaliação já havia sido enviada. Informe uma justificativa (mínimo de 10
-            caracteres) para registrar o ajuste.
-          </p>
-
-          <textarea
-            rows={3}
-            value={justificativa}
-            onChange={(e) => {
-              setJustificativa(e.target.value);
-              setError(false);
-            }}
-            placeholder="Motivo da alteração das notas..."
-            className={`w-full rounded-xl border p-3 text-xs text-ink placeholder:text-placeholder focus:outline-none focus:ring-1 ${
-              error
-                ? 'border-danger'
-                : 'border-black/10 focus:border-brand-900 focus:ring-brand-900'
-            }`}
-          />
-
-          {error && <span className="text-xs text-danger">Mínimo de 10 caracteres.</span>}
-
-          <div className="mt-2 flex flex-col gap-2">
-            <Button type="submit" isLoading={isLoading}>
-              Confirmar e Enviar
-            </Button>
-            <Button type="button" variant="link" onClick={onCancel}>
-              Cancelar
-            </Button>
-          </div>
-        </form>
+        <JustificationForm isLoading={isLoading} onConfirm={onConfirm} onCancel={onCancel} />
       </div>
     </div>
   );

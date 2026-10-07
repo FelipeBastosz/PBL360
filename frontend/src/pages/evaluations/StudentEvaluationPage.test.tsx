@@ -90,17 +90,28 @@ describe('StudentEvaluationPage', () => {
     expect(screen.getByDisplayValue('9')).toBeInTheDocument();
   });
 
-  it('renders quick observation tags and complementary text field', async () => {
+  it('saves evaluation as draft when clicking Salvar rascunho', async () => {
+    vi.mocked(evaluationService.saveEvaluation).mockResolvedValue(mockEvalData);
+
     renderPage();
 
-    expect(await screen.findByText('Observações rápidas')).toBeInTheDocument();
-    expect(screen.getByText('Celular fora de contexto')).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText('Observação complementar (texto livre)'),
-    ).toBeInTheDocument();
+    await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' });
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
+
+    await waitFor(() => {
+      expect(evaluationService.saveEvaluation).toHaveBeenCalledWith(
+        's1',
+        'st1',
+        expect.objectContaining({ enviar: false }),
+      );
+    });
+    expect(mockNotify).toHaveBeenCalledWith({
+      tone: 'info',
+      message: 'Rascunho salvo com sucesso.',
+    });
   });
 
-  it('renders feedback textarea and submits evaluation', async () => {
+  it('renders feedback textarea and submits final evaluation', async () => {
     vi.mocked(evaluationService.saveEvaluation).mockResolvedValue(mockEvalData);
     vi.mocked(evaluationService.saveFeedback).mockResolvedValue({
       id: 'fb1',
@@ -124,6 +135,10 @@ describe('StudentEvaluationPage', () => {
         'st1',
         expect.objectContaining({ enviar: true }),
       );
+    });
+    expect(mockNotify).toHaveBeenCalledWith({
+      tone: 'success',
+      message: 'Avaliação enviada com sucesso.',
     });
   });
 
