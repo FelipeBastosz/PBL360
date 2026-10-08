@@ -152,4 +152,59 @@ describe('Problem Entity', () => {
 
     expect(problem.endDate).toBe('2026-03-01');
   });
+
+  describe('evaluation releases', () => {
+    const now = new Date('2026-10-07T12:00:00Z');
+    const tomorrow = new Date('2026-10-08T12:00:00Z');
+    const yesterday = new Date('2026-10-06T12:00:00Z');
+
+    it('releases self evaluation with a deadline and records author and time', () => {
+      const problem = Problem.create(validProblemProps());
+
+      problem.changeRelease('self', { released: true, deadline: tomorrow }, 'tutor-uuid-2', now);
+
+      expect(problem.selfEvalReleased).toBe(true);
+      expect(problem.selfEvalDeadline).toBe(tomorrow);
+      expect(problem.peerEvalReleased).toBe(false);
+      expect(problem.releasedAt).toBe(now);
+      expect(problem.releasedBy).toBe('tutor-uuid-2');
+    });
+
+    it('releases peer evaluation without a deadline', () => {
+      const problem = Problem.create(validProblemProps());
+
+      problem.changeRelease('peer', { released: true, deadline: null }, 'tutor-uuid-1', now);
+
+      expect(problem.peerEvalReleased).toBe(true);
+      expect(problem.peerEvalDeadline).toBeNull();
+      expect(problem.selfEvalReleased).toBe(false);
+    });
+
+    it('rejects a deadline in the past', () => {
+      const problem = Problem.create(validProblemProps());
+
+      expect(() =>
+        problem.changeRelease('peer', { released: true, deadline: yesterday }, 'tutor-uuid-1', now),
+      ).toThrow(InvalidProblemError);
+      expect(problem.peerEvalReleased).toBe(false);
+    });
+
+    it('is open only while released and before the deadline', () => {
+      const problem = Problem.create(validProblemProps());
+      problem.changeRelease('self', { released: true, deadline: tomorrow }, 'tutor-uuid-1', now);
+
+      expect(problem.isReleaseOpen('self', now)).toBe(true);
+      expect(problem.isReleaseOpen('self', tomorrow)).toBe(false);
+      expect(problem.isReleaseOpen('peer', now)).toBe(false);
+    });
+
+    it('closes submissions when released is turned off', () => {
+      const problem = Problem.create(validProblemProps());
+      problem.changeRelease('self', { released: true, deadline: null }, 'tutor-uuid-1', now);
+
+      problem.changeRelease('self', { released: false, deadline: null }, 'tutor-uuid-1', now);
+
+      expect(problem.isReleaseOpen('self', now)).toBe(false);
+    });
+  });
 });
