@@ -4,7 +4,9 @@ import { type EntityManager, Repository } from 'typeorm';
 import { ConflictError } from '@/shared/errors/application.error';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { Session } from '../../domain/entities/session.entity';
+import { countReleaseSubmissions } from './evaluation-release.queries';
 import type {
+  ReleaseSubmissions,
   SessionDeletionImpact,
   SessionRepository,
 } from '../../domain/repositories/session.repository';
@@ -17,6 +19,12 @@ interface SessionRow {
   date: string;
   orderIndex: number;
   status: string;
+  selfEvalReleased: boolean;
+  peerEvalReleased: boolean;
+  selfEvalDeadline: Date | null;
+  peerEvalDeadline: Date | null;
+  releasedAt: Date | null;
+  releasedBy: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +37,12 @@ const SESSION_COLUMNS = `
   to_char(date, 'YYYY-MM-DD') AS date,
   order_index AS "orderIndex",
   status,
+  self_eval_released AS "selfEvalReleased",
+  peer_eval_released AS "peerEvalReleased",
+  self_eval_deadline AS "selfEvalDeadline",
+  peer_eval_deadline AS "peerEvalDeadline",
+  released_at AS "releasedAt",
+  released_by AS "releasedBy",
   created_at AS "createdAt",
   updated_at AS "updatedAt"`;
 
@@ -70,6 +84,10 @@ export class PgSessionRepository implements SessionRepository {
   async getDeletionImpact(sessionId: string): Promise<SessionDeletionImpact> {
     const evaluations = await this.countEvaluations(this.sessions.manager, sessionId);
     return { chamada: 0, papeis: 0, observacoes: 0, avaliacoes: evaluations, feedbacks: 0 };
+  }
+
+  countReleaseSubmissions(sessionId: string): Promise<ReleaseSubmissions> {
+    return countReleaseSubmissions(this.sessions.manager, sessionId);
   }
 
   private async countEvaluations(manager: EntityManager, sessionId: string): Promise<number> {
