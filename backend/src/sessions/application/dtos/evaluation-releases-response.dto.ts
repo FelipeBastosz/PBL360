@@ -4,7 +4,10 @@ export class EvaluationReleaseStatusResponseDto {
   @ApiProperty() liberada!: boolean;
   @ApiProperty({ type: String, format: 'date-time', nullable: true }) prazo!: Date | null;
   @ApiProperty({ description: 'Avaliações já enviadas.' }) enviadas!: number;
-  @ApiProperty({ description: 'Avaliações esperadas. Em pares, cada aluno avalia cada colega.' })
+  @ApiProperty({
+    description:
+      'Avaliações esperadas dos alunos presentes ou atrasados. Em pares, cada um avalia cada colega presente.',
+  })
   esperadas!: number;
 }
 

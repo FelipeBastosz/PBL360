@@ -2,6 +2,7 @@ import { applyDecorators } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -19,17 +20,18 @@ const commonErrors = [
     type: ErrorResponseDto,
   }),
   ApiForbiddenResponse({
-    description: 'O professor não participa desta sala.',
+    description: 'O professor não participa da sala da sessão.',
     type: ErrorResponseDto,
   }),
-  ApiNotFoundResponse({ description: 'Sala ou problema não encontrado.', type: ErrorResponseDto }),
+  ApiNotFoundResponse({ description: 'Sessão não encontrada.', type: ErrorResponseDto }),
 ];
 
 export const GetEvaluationReleasesSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
-    summary: 'Consulta as liberações de autoavaliação e de pares',
-    description: 'Devolve o estado das duas liberações do problema e a adesão dos alunos.',
+    summary: 'Consulta as liberações de autoavaliação e de pares da sessão',
+    description:
+      'Devolve o estado das duas liberações e a adesão dos alunos presentes ou atrasados na chamada.',
   }),
   ApiOkResponse({ description: 'Liberações retornadas.', type: EvaluationReleasesResponseDto }),
   ...commonErrors,
@@ -38,7 +40,7 @@ export const GetEvaluationReleasesSwaggerDocs = applyDecorators(
 export const UpdateEvaluationReleasesSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
-    summary: 'Liga, desliga ou altera o prazo das avaliações',
+    summary: 'Liga, desliga ou altera o prazo das avaliações da sessão',
     description:
       'Desligar bloqueia novos envios e edições, mas preserva o que já foi enviado. ' +
       'Depois do prazo o envio fica fechado; para reabrir, informe um prazo novo.',
@@ -46,6 +48,10 @@ export const UpdateEvaluationReleasesSwaggerDocs = applyDecorators(
   ApiOkResponse({ description: 'Liberações atualizadas.', type: EvaluationReleasesResponseDto }),
   ApiBadRequestResponse({
     description: 'Prazo no passado, corpo sem autoavaliação nem pares, ou dados inválidos.',
+    type: ErrorResponseDto,
+  }),
+  ApiConflictResponse({
+    description: 'A chamada da sessão ainda não foi salva.',
     type: ErrorResponseDto,
   }),
   ...commonErrors,

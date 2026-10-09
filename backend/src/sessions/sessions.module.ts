@@ -36,6 +36,9 @@ import { UploadSessionAttachmentUseCase } from './application/use-cases/upload-s
 import { ListSessionAttachmentsUseCase } from './application/use-cases/list-session-attachments.use-case';
 import { DeleteSessionAttachmentUseCase } from './application/use-cases/delete-session-attachment.use-case';
 import { DownloadSessionAttachmentUseCase } from './application/use-cases/download-session-attachment.use-case';
+import { GetEvaluationReleasesUseCase } from './application/use-cases/get-evaluation-releases.use-case';
+import { UpdateEvaluationReleasesUseCase } from './application/use-cases/update-evaluation-releases.use-case';
+import { EvaluationReleasesController } from './infrastructure/http/evaluation-releases.controller';
 import { SESSION_ATTACHMENT_REPOSITORY } from './domain/repositories/session-attachment.repository';
 import { PgSessionAttachmentRepository } from './infrastructure/database/pg-session-attachment.repository';
 
@@ -51,6 +54,7 @@ import { PgSessionAttachmentRepository } from './infrastructure/database/pg-sess
     RollCallController,
     MemberSessionsController,
     SessionAttachmentsController,
+    EvaluationReleasesController,
   ],
   providers: [
     CreateSessionUseCase,
@@ -70,6 +74,8 @@ import { PgSessionAttachmentRepository } from './infrastructure/database/pg-sess
     ListSessionAttachmentsUseCase,
     DownloadSessionAttachmentUseCase,
     DeleteSessionAttachmentUseCase,
+    GetEvaluationReleasesUseCase,
+    UpdateEvaluationReleasesUseCase,
     { provide: SESSION_REPOSITORY, useClass: PgSessionRepository },
     { provide: SESSION_ROLE_REPOSITORY, useClass: PgSessionRoleRepository },
     { provide: ATTENDANCE_REPOSITORY, useClass: PgAttendanceRepository },

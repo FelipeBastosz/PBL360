@@ -14,8 +14,6 @@ import { ChangeProblemPerformanceTableUseCase } from './application/use-cases/ch
 import { GetProblemFormulaUseCase } from './application/use-cases/get-problem-formula.use-case';
 import { CustomizeProblemFormulaUseCase } from './application/use-cases/customize-problem-formula.use-case';
 import { RestoreDefaultFormulaUseCase } from './application/use-cases/restore-default-formula.use-case';
-import { GetEvaluationReleasesUseCase } from './application/use-cases/get-evaluation-releases.use-case';
-import { UpdateEvaluationReleasesUseCase } from './application/use-cases/update-evaluation-releases.use-case';
 import { Problem } from './domain/entities/problem.entity';
 import { Formula } from './domain/entities/formula.entity';
 import { FormulaComponent } from './domain/entities/formula-component.entity';
@@ -25,7 +23,6 @@ import { PgProblemRepository } from './infrastructure/database/pg-problem.reposi
 import { PgFormulaRepository } from './infrastructure/database/pg-formula.repository';
 import { ProblemsController } from './infrastructure/http/problems.controller';
 import { ProblemFormulasController } from './infrastructure/http/problem-formulas.controller';
-import { EvaluationReleasesController } from './infrastructure/http/evaluation-releases.controller';
 
 @Module({
   imports: [
@@ -33,7 +30,7 @@ import { EvaluationReleasesController } from './infrastructure/http/evaluation-r
     RoomsModule,
     PerformanceTablesModule,
   ],
-  controllers: [ProblemsController, ProblemFormulasController, EvaluationReleasesController],
+  controllers: [ProblemsController, ProblemFormulasController],
   providers: [
     CreateProblemUseCase,
     GetProblemUseCase,
@@ -45,8 +42,6 @@ import { EvaluationReleasesController } from './infrastructure/http/evaluation-r
     GetProblemFormulaUseCase,
     CustomizeProblemFormulaUseCase,
     RestoreDefaultFormulaUseCase,
-    GetEvaluationReleasesUseCase,
-    UpdateEvaluationReleasesUseCase,
     {
       provide: PROBLEM_REPOSITORY,
       useClass: PgProblemRepository,

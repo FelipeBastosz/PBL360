@@ -21,7 +21,7 @@ import {
 } from './evaluation-releases.swagger';
 
 @ApiTags('Liberações de Avaliação')
-@Controller('salas/:roomId/problemas/:problemId/liberacoes')
+@Controller('sessoes')
 @Roles(UserType.TUTOR)
 export class EvaluationReleasesController {
   constructor(
@@ -29,28 +29,25 @@ export class EvaluationReleasesController {
     private readonly updateReleasesUseCase: UpdateEvaluationReleasesUseCase,
   ) {}
 
-  @Get()
+  @Get(':sessaoId/liberacoes')
   @GetEvaluationReleasesSwaggerDocs
   async get(
-    @UuidParam('roomId') roomId: string,
-    @UuidParam('problemId') problemId: string,
+    @UuidParam('sessaoId') sessionId: string,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<EvaluationReleasesResponseDto> {
-    const releases = await this.getReleasesUseCase.execute({ roomId, problemId, tutorId });
+    const releases = await this.getReleasesUseCase.execute({ sessionId, tutorId });
     return toEvaluationReleasesResponse(releases);
   }
 
-  @Put()
+  @Put(':sessaoId/liberacoes')
   @UpdateEvaluationReleasesSwaggerDocs
   async update(
-    @UuidParam('roomId') roomId: string,
-    @UuidParam('problemId') problemId: string,
+    @UuidParam('sessaoId') sessionId: string,
     @Body() dto: UpdateEvaluationReleasesDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<EvaluationReleasesResponseDto> {
     const releases = await this.updateReleasesUseCase.execute({
-      roomId,
-      problemId,
+      sessionId,
       tutorId,
       self: toEvaluationReleaseChange(dto.autoavaliacao),
       peer: toEvaluationReleaseChange(dto.pares),
