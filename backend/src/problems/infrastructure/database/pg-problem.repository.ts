@@ -5,13 +5,11 @@ import { type EntityManager, Repository } from 'typeorm';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { ConflictError } from '@/shared/errors/application.error';
 
-import { countReleaseSubmissions } from './evaluation-release.queries';
 import { hasProblemEvaluations, updateProblemDetails } from './problem-update.persistence';
 
 import { Problem } from '../../domain/entities/problem.entity';
 import type {
   ProblemRepository,
-  ReleaseSubmissions,
   UpdateProblemDetails,
 } from '../../domain/repositories/problem.repository';
 
@@ -27,8 +25,6 @@ interface ProblemRow {
   peerEvalReleased: boolean;
   releasedAt: Date | null;
   selfEvalDeadline: Date | null;
-  peerEvalDeadline: Date | null;
-  releasedBy: string | null;
   performanceTableId: string | null;
   createdBy: string;
   createdAt: Date;
@@ -48,8 +44,6 @@ const PROBLEM_COLUMNS = `
   peer_eval_released AS "peerEvalReleased",
   released_at AS "releasedAt",
   self_eval_deadline AS "selfEvalDeadline",
-  peer_eval_deadline AS "peerEvalDeadline",
-  released_by AS "releasedBy",
   performance_table_id AS "performanceTableId",
   created_by AS "createdBy",
   created_at AS "createdAt",
@@ -118,10 +112,6 @@ export class PgProblemRepository implements ProblemRepository {
       );
       return this.toEntity(requireFirstRow(rows, 'Failed to update problem.'));
     });
-  }
-
-  countReleaseSubmissions(problemId: string, roomId: string): Promise<ReleaseSubmissions> {
-    return countReleaseSubmissions(this.problems.manager, problemId, roomId);
   }
 
   save(problem: Problem): Promise<Problem> {
