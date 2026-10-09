@@ -1,10 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import {
+  isStudentParticipating,
+  listSessionPeers,
+  getPeerEvaluation,
+} from './peer-evaluation.reads';
+import { recordPeerEvaluation } from './peer-evaluation.persistence';
 import type {
   EvaluationRepository,
   EvaluationContext,
   EvaluationWrite,
   EvaluationSummary,
+  PeerEvaluationDetail,
+  PeerEvaluationSummary,
+  PeerEvaluationWrite,
 } from '../../domain/repositories/evaluation.repository';
 import { LIST_EVALUATIONS } from './evaluation.queries';
 import { readProblemConfig } from './session-evaluation-config.persistence';
@@ -52,5 +61,27 @@ export class PgEvaluationRepository implements EvaluationRepository {
 
   recordEvaluation(input: EvaluationWrite) {
     return this.dataSource.transaction((manager) => recordEvaluation(manager, input));
+  }
+
+  isStudentParticipating(sessionId: string, studentId: string): Promise<boolean> {
+    return isStudentParticipating(this.dataSource.manager, sessionId, studentId);
+  }
+
+  listSessionPeers(sessionId: string, evaluatorId: string): Promise<PeerEvaluationSummary[]> {
+    return listSessionPeers(this.dataSource.manager, sessionId, evaluatorId);
+  }
+
+  getPeerEvaluation(
+    context: EvaluationContext,
+    evaluatorId: string,
+    peerId: string,
+  ): Promise<PeerEvaluationDetail> {
+    return this.dataSource.transaction('REPEATABLE READ', (manager) =>
+      getPeerEvaluation(manager, context, evaluatorId, peerId),
+    );
+  }
+
+  recordPeerEvaluation(input: PeerEvaluationWrite): Promise<PeerEvaluationDetail> {
+    return recordPeerEvaluation(this.dataSource.manager, input);
   }
 }
