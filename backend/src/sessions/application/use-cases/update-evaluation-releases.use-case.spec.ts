@@ -1,25 +1,24 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 
-import { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import {
+  ConflictError,
   ForbiddenError,
   InvalidRequestError,
-  NotFoundError,
 } from '@/shared/errors/application.error';
 
-import { Problem } from '../../domain/entities/problem.entity';
-import { InvalidProblemError } from '../../domain/errors/invalid-problem.error';
-import { PROBLEM_REPOSITORY } from '../../domain/repositories/problem.repository';
+import { Session } from '../../domain/entities/session.entity';
+import { InvalidSessionError } from '../../domain/errors/invalid-session.error';
+import { SESSION_REPOSITORY } from '../../domain/repositories/session.repository';
+import { SessionAccessService } from '../services/session-access.service';
 import { UpdateEvaluationReleasesUseCase } from './update-evaluation-releases.use-case';
 
-const base = { roomId: 'room-1', problemId: 'prob-1', tutorId: 'tutor-1' };
+const base = { sessionId: 'session-1', tutorId: 'tutor-1' };
 const future = new Date(Date.now() + 24 * 60 * 60 * 1000);
 const past = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-const storedProblem = () =>
-  Object.assign(new Problem(), {
-    id: 'prob-1',
-    roomId: 'room-1',
+const storedSession = () =>
+  Object.assign(new Session(), {
+    id: 'session-1',
     selfEvalReleased: false,
     selfEvalDeadline: null,
     peerEvalReleased: false,
@@ -31,27 +30,30 @@ const storedProblem = () =>
 describe('UpdateEvaluationReleasesUseCase', () => {
   let useCase: UpdateEvaluationReleasesUseCase;
   let repository: {
-    findById: jest.Mock;
-    save: jest.Mock<Promise<Problem>, [Problem]>;
+    save: jest.Mock<Promise<Session>, [Session]>;
     countReleaseSubmissions: jest.Mock;
   };
-  let assertTutorCanAccessRoom: jest.Mock;
+  let assertTutorCanAccessSessionById: jest.Mock;
 
   beforeEach(async () => {
     repository = {
-      findById: jest.fn().mockResolvedValue(storedProblem()),
-      save: jest.fn<Promise<Problem>, [Problem]>((problem) => Promise.resolve(problem)),
-      countReleaseSubmissions: jest
-        .fn()
-        .mockResolvedValue({ students: 3, selfSubmitted: 1, peerSubmitted: 2 }),
+      save: jest.fn<Promise<Session>, [Session]>((session) => Promise.resolve(session)),
+      countReleaseSubmissions: jest.fn().mockResolvedValue({
+        rollCallSaved: true,
+        presentStudents: 3,
+        selfSubmitted: 1,
+        peerSubmitted: 2,
+      }),
     };
-    assertTutorCanAccessRoom = jest.fn().mockResolvedValue(undefined);
+    assertTutorCanAccessSessionById = jest
+      .fn()
+      .mockResolvedValue({ session: storedSession(), roomId: 'room-1' });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UpdateEvaluationReleasesUseCase,
-        { provide: PROBLEM_REPOSITORY, useValue: repository },
-        { provide: RoomAccessService, useValue: { assertTutorCanAccessRoom } },
+        { provide: SESSION_REPOSITORY, useValue: repository },
+        { provide: SessionAccessService, useValue: { assertTutorCanAccessSessionById } },
       ],
     }).compile();
 
@@ -76,9 +78,10 @@ describe('UpdateEvaluationReleasesUseCase', () => {
   });
 
   it('changes only the informed release', async () => {
-    repository.findById.mockResolvedValue(
-      Object.assign(storedProblem(), { peerEvalReleased: true, peerEvalDeadline: future }),
-    );
+    assertTutorCanAccessSessionById.mockResolvedValue({
+      session: Object.assign(storedSession(), { peerEvalReleased: true, peerEvalDeadline: future }),
+      roomId: 'room-1',
+    });
 
     const result = await useCase.execute({ ...base, self: { released: true, deadline: null } });
 
@@ -91,6 +94,20 @@ describe('UpdateEvaluationReleasesUseCase', () => {
     expect(repository.save).not.toHaveBeenCalled();
   });
 
+  it('rejects a session whose roll call was not saved', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: false,
+      presentStudents: 0,
+      selfSubmitted: 0,
+      peerSubmitted: 0,
+    });
+
+    await expect(
+      useCase.execute({ ...base, self: { released: true, deadline: null } }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
   it('rejects a deadline in the past without saving anything', async () => {
     await expect(
       useCase.execute({
@@ -98,24 +115,16 @@ describe('UpdateEvaluationReleasesUseCase', () => {
         self: { released: true, deadline: future },
         peer: { released: true, deadline: past },
       }),
-    ).rejects.toThrow(InvalidProblemError);
+    ).rejects.toThrow(InvalidSessionError);
     expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('rejects a tutor outside the room', async () => {
-    assertTutorCanAccessRoom.mockRejectedValue(new ForbiddenError('Acesso negado.'));
+    assertTutorCanAccessSessionById.mockRejectedValue(new ForbiddenError('Acesso negado.'));
 
     await expect(
       useCase.execute({ ...base, self: { released: true, deadline: null } }),
     ).rejects.toThrow(ForbiddenError);
     expect(repository.save).not.toHaveBeenCalled();
-  });
-
-  it('rejects a problem that does not exist', async () => {
-    repository.findById.mockResolvedValue(null);
-
-    await expect(
-      useCase.execute({ ...base, self: { released: true, deadline: null } }),
-    ).rejects.toThrow(NotFoundError);
   });
 });

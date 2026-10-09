@@ -12,13 +12,6 @@ export interface ProblemRepository {
   hasSessions(problemId: string): Promise<boolean>;
   countSessions(problemId: string): Promise<number>;
   delete(id: string, roomId: string): Promise<void>;
-  countReleaseSubmissions(problemId: string, roomId: string): Promise<ReleaseSubmissions>;
-}
-
-export interface ReleaseSubmissions {
-  students: number;
-  selfSubmitted: number;
-  peerSubmitted: number;
 }
 
 export interface UpdateProblemDetails {

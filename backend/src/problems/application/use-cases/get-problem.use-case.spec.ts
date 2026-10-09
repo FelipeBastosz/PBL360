@@ -18,7 +18,6 @@ describe('GetProblemUseCase', () => {
 
     const problemRepository: jest.Mocked<ProblemRepository> = {
       hasEvaluations: jest.fn(),
-      countReleaseSubmissions: jest.fn(),
       updateDetails: jest.fn(),
       hasSessions: jest.fn(),
       countSessions: jest.fn(),

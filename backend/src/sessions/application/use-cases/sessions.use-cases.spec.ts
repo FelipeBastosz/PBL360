@@ -25,6 +25,7 @@ describe('Session use cases', () => {
       save: jest.fn().mockResolvedValue(session),
       findById: jest.fn(),
       findByProblemId: jest.fn().mockResolvedValue([session]),
+      countReleaseSubmissions: jest.fn(),
       getDeletionImpact: jest.fn().mockResolvedValue({
         chamada: 0,
         papeis: 0,
