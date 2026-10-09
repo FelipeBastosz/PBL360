@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -21,31 +22,43 @@ describe('Evaluation releases (e2e)', () => {
   let app: INestApplication;
   let db: DataSource;
   let owner: TestUser, outsider: TestUser, students: TestUser[];
-  let roomId: string, problemId: string;
-  const path = () => `/salas/${roomId}/problemas/${problemId}/liberacoes`;
+  let sessionId: string, sessionWithoutRollCallId: string;
+  const path = (session = sessionId) => `/sessoes/${session}/liberacoes`;
   const future = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
   const insertEvaluation = async (
     type: 'SELF_ASSESSMENT' | 'PEER_ASSESSMENT',
     evaluator: TestUser,
     evaluated: TestUser,
-    tableId: string,
+    ids: { problemId: string; tableId: string },
     submitted = true,
   ) => {
     await db.query(
-      `INSERT INTO evaluations (evaluator_id, student_id, problem_id, performance_table_id,
-         type, status, submitted_at, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $1);`,
+      `INSERT INTO evaluations (evaluator_id, student_id, problem_id, session_id,
+         performance_table_id, type, status, submitted_at, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $1);`,
       [
         evaluator.id,
         evaluated.id,
-        problemId,
-        tableId,
+        ids.problemId,
+        sessionId,
+        ids.tableId,
         type,
         submitted ? 'SUBMITTED' : 'DRAFT',
         submitted ? new Date() : null,
       ],
     );
+  };
+
+  const seedRollCall = async () => {
+    const statuses = ['PRESENT', 'LATE', 'ABSENT'];
+    for (const [index, student] of students.entries()) {
+      await db.query(
+        `INSERT INTO attendances (session_id, student_id, recorded_by, status)
+         VALUES ($1, $2, $3, $4);`,
+        [sessionId, student.id, owner.id, statuses[index]],
+      );
+    }
   };
 
   beforeAll(async () => {
@@ -71,10 +84,9 @@ describe('Evaluation releases (e2e)', () => {
        VALUES ($1, 'Sala', 'EXA123', 'REL12345', '2026.2', true) RETURNING id;`,
       [owner.id],
     );
-    roomId = room.id;
     for (const student of students) {
       await db.query('INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);', [
-        roomId,
+        room.id,
         student.id,
       ]);
     }
@@ -85,21 +97,30 @@ describe('Evaluation releases (e2e)', () => {
     const [problem] = await db.query<[{ id: string }]>(
       `INSERT INTO problems (room_id, title, order_index, created_by, performance_table_id)
        VALUES ($1, 'Problema', 1, $2, $3) RETURNING id;`,
-      [roomId, owner.id, table.id],
+      [room.id, owner.id, table.id],
     );
-    problemId = problem.id;
-    const [first, second, third] = students as [TestUser, TestUser, TestUser];
-    await insertEvaluation('SELF_ASSESSMENT', first, first, table.id);
-    await insertEvaluation('PEER_ASSESSMENT', first, second, table.id);
-    await insertEvaluation('PEER_ASSESSMENT', first, third, table.id, false);
+    const sessions = await db.query<{ id: string }[]>(
+      `INSERT INTO sessions (problem_id, title, date, order_index, status)
+       VALUES ($1, 'Abertura', '2026-10-05', 1, 'agendada'), ($1, 'Fechamento', '2026-10-06', 2, 'agendada')
+       RETURNING id;`,
+      [problem.id],
+    );
+    sessionId = sessions[0]!.id;
+    sessionWithoutRollCallId = sessions[1]!.id;
+    await seedRollCall();
+    const [first, second] = students as [TestUser, TestUser];
+    const ids = { problemId: problem.id, tableId: table.id };
+    await insertEvaluation('SELF_ASSESSMENT', first, first, ids);
+    await insertEvaluation('PEER_ASSESSMENT', first, second, ids);
+    await insertEvaluation('PEER_ASSESSMENT', second, first, ids, false);
   });
 
-  it('returns closed releases with student adherence', async () => {
+  it('returns closed releases with the adherence of present and late students', async () => {
     const response = await api(app, owner).get(path()).expect(200);
 
     expect(response.body as ReleasesBody).toEqual({
-      autoavaliacao: { liberada: false, prazo: null, enviadas: 1, esperadas: 3 },
-      pares: { liberada: false, prazo: null, enviadas: 1, esperadas: 6 },
+      autoavaliacao: { liberada: false, prazo: null, enviadas: 1, esperadas: 2 },
+      pares: { liberada: false, prazo: null, enviadas: 1, esperadas: 2 },
       atualizadoEm: null,
       atualizadoPor: null,
     });
@@ -155,6 +176,12 @@ describe('Evaluation releases (e2e)', () => {
       .expect(400);
   });
 
+  it('rejects a release before the roll call is saved', async () => {
+    await api(app, owner)
+      .put(path(sessionWithoutRollCallId), { pares: { liberada: true } })
+      .expect(409);
+  });
+
   it('forbids a tutor outside the room', async () => {
     await api(app, outsider).get(path()).expect(403);
     await api(app, outsider)
@@ -164,5 +191,9 @@ describe('Evaluation releases (e2e)', () => {
 
   it('forbids students', async () => {
     await api(app, students[0]).get(path()).expect(403);
+  });
+
+  it('returns not found for an unknown session', async () => {
+    await api(app, owner).get(path(randomUUID())).expect(404);
   });
 });
