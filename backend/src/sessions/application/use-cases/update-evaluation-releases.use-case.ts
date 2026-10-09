@@ -44,6 +44,11 @@ export class UpdateEvaluationReleasesUseCase {
     const now = new Date();
     if (input.self) session.changeRelease('self', input.self, input.tutorId, now);
     if (input.peer) session.changeRelease('peer', input.peer, input.tutorId, now);
+    if (session.selfEvalReleased && session.peerEvalReleased) {
+      throw new ConflictError(
+        'A autoavaliação e os pares não podem ficar liberados ao mesmo tempo. Desligue um para ligar o outro.',
+      );
+    }
 
     return toEvaluationReleasesOutput(await this.repository.save(session), submissions);
   }

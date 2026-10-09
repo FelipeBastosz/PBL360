@@ -60,19 +60,19 @@ describe('UpdateEvaluationReleasesUseCase', () => {
     useCase = module.get(UpdateEvaluationReleasesUseCase);
   });
 
-  it('releases both evaluations and records the author', async () => {
+  it('releases one evaluation and records the author', async () => {
     const result = await useCase.execute({
       ...base,
       self: { released: true, deadline: future },
-      peer: { released: true, deadline: null },
+      peer: { released: false, deadline: null },
     });
 
     const [saved] = repository.save.mock.calls[0] ?? [];
     expect(saved?.selfEvalReleased).toBe(true);
-    expect(saved?.peerEvalReleased).toBe(true);
+    expect(saved?.peerEvalReleased).toBe(false);
     expect(saved?.releasedBy).toBe('tutor-1');
     expect(result.self).toEqual({ released: true, deadline: future, submitted: 1, expected: 3 });
-    expect(result.peer).toEqual({ released: true, deadline: null, submitted: 2, expected: 6 });
+    expect(result.peer).toEqual({ released: false, deadline: null, submitted: 2, expected: 6 });
     expect(result.updatedAt).toBeInstanceOf(Date);
     expect(result.updatedBy).toBe('tutor-1');
   });
@@ -83,10 +83,49 @@ describe('UpdateEvaluationReleasesUseCase', () => {
       roomId: 'room-1',
     });
 
-    const result = await useCase.execute({ ...base, self: { released: true, deadline: null } });
+    const result = await useCase.execute({ ...base, peer: { released: true, deadline: null } });
+
+    expect(result.self.released).toBe(false);
+    expect(result.peer).toMatchObject({ released: true, deadline: null });
+  });
+
+  it('switches from peer to self in a single call', async () => {
+    assertTutorCanAccessSessionById.mockResolvedValue({
+      session: Object.assign(storedSession(), { peerEvalReleased: true }),
+      roomId: 'room-1',
+    });
+
+    const result = await useCase.execute({
+      ...base,
+      self: { released: true, deadline: null },
+      peer: { released: false, deadline: null },
+    });
 
     expect(result.self.released).toBe(true);
-    expect(result.peer).toMatchObject({ released: true, deadline: future });
+    expect(result.peer.released).toBe(false);
+  });
+
+  it('rejects releasing both evaluations at once', async () => {
+    await expect(
+      useCase.execute({
+        ...base,
+        self: { released: true, deadline: null },
+        peer: { released: true, deadline: null },
+      }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects releasing one while the other is already released', async () => {
+    assertTutorCanAccessSessionById.mockResolvedValue({
+      session: Object.assign(storedSession(), { peerEvalReleased: true }),
+      roomId: 'room-1',
+    });
+
+    await expect(
+      useCase.execute({ ...base, self: { released: true, deadline: null } }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('rejects a body without any release', async () => {
@@ -112,7 +151,7 @@ describe('UpdateEvaluationReleasesUseCase', () => {
     await expect(
       useCase.execute({
         ...base,
-        self: { released: true, deadline: future },
+        self: { released: false, deadline: null },
         peer: { released: true, deadline: past },
       }),
     ).rejects.toThrow(InvalidSessionError);
