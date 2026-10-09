@@ -14,7 +14,6 @@ import { Room } from '@/rooms/domain/entities/room.entity';
 import { User } from '@/users/domain/entities/user.entity';
 import type { Auditable } from '@/shared/interfaces/auditable.interface';
 import { InvalidProblemError } from '../errors/invalid-problem.error';
-import type { EvaluationReleaseChange, EvaluationReleaseKind } from './evaluation-release';
 import type { NewProblem } from './new-problem';
 
 @Entity('problems')
@@ -60,20 +59,6 @@ export class Problem implements Auditable {
 
   @Column({ name: 'self_eval_deadline', type: 'timestamptz', nullable: true, default: null })
   selfEvalDeadline?: Date | null;
-
-  @Column({ name: 'peer_eval_deadline', type: 'timestamptz', nullable: true, default: null })
-  peerEvalDeadline?: Date | null;
-
-  @Column({ name: 'released_by', type: 'uuid', nullable: true, default: null })
-  releasedBy?: string | null;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({
-    name: 'released_by',
-    referencedColumnName: 'id',
-    foreignKeyConstraintName: 'fk_problems_released_by',
-  })
-  releaser?: User | null;
 
   @Index('idx_problems_performance_table_id')
   @Column({ name: 'performance_table_id', type: 'uuid', nullable: true, default: null })
@@ -136,35 +121,6 @@ export class Problem implements Auditable {
     problem.assertIsValid();
 
     return problem;
-  }
-
-  changeRelease(
-    kind: EvaluationReleaseKind,
-    change: EvaluationReleaseChange,
-    authorId: string,
-    now = new Date(),
-  ): void {
-    if (change.deadline && change.deadline <= now) {
-      throw new InvalidProblemError('O prazo deve ser uma data no futuro.');
-    }
-
-    if (kind === 'self') {
-      this.selfEvalReleased = change.released;
-      this.selfEvalDeadline = change.deadline;
-    } else {
-      this.peerEvalReleased = change.released;
-      this.peerEvalDeadline = change.deadline;
-    }
-
-    this.releasedAt = now;
-    this.releasedBy = authorId;
-  }
-
-  isReleaseOpen(kind: EvaluationReleaseKind, now = new Date()): boolean {
-    const released = kind === 'self' ? this.selfEvalReleased : this.peerEvalReleased;
-    const deadline = kind === 'self' ? this.selfEvalDeadline : this.peerEvalDeadline;
-
-    return released && (!deadline || deadline > now);
   }
 
   private assertIsValid(): void {
