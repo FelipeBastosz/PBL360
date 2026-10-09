@@ -43,24 +43,35 @@ describe('review.seed.ts', () => {
       .mockResolvedValueOnce(mockStudent1)
       .mockResolvedValueOnce(mockStudent2);
 
-    mockDataSource.query
-      .mockResolvedValueOnce([]) // select room -> none
-      .mockResolvedValueOnce([{ id: 'room-1' }]) // insert room
-      .mockResolvedValueOnce([]) // insert room_tutors
-      .mockResolvedValueOnce([]) // insert room_students
-      .mockResolvedValueOnce([{ id: 'table-1' }]) // select table
-      .mockResolvedValueOnce([]) // select problem -> none
-      .mockResolvedValueOnce([{ id: 'problem-1' }]) // insert problem
-      .mockResolvedValueOnce([]) // select session 1 -> none
-      .mockResolvedValueOnce([{ id: 'sess-1' }]) // insert session 1
-      .mockResolvedValueOnce([]) // select session 2 -> none
-      .mockResolvedValueOnce([{ id: 'sess-2' }]) // insert session 2
-      .mockResolvedValueOnce([]) // insert session_roles 1
-      .mockResolvedValueOnce([]) // insert session_roles 2
-      .mockResolvedValueOnce([]) // select feedbacks -> none
-      .mockResolvedValueOnce([]) // insert session feedbacks
-      .mockResolvedValueOnce([]) // insert student feedbacks
-      .mockResolvedValueOnce([]); // insert general feedback
+    mockDataSource.query.mockImplementation((sql: string, params?: unknown[]) => {
+      if (sql.includes('SELECT id FROM rooms')) return Promise.resolve([]);
+      if (sql.includes('INSERT INTO rooms')) return Promise.resolve([{ id: 'room-1' }]);
+      if (sql.includes('SELECT id FROM performance_tables'))
+        return Promise.resolve([{ id: 'table-1' }]);
+      if (sql.includes('SELECT id FROM problems')) return Promise.resolve([]);
+      if (sql.includes('INSERT INTO problems')) return Promise.resolve([{ id: 'problem-1' }]);
+      if (sql.includes('SELECT id FROM sessions')) return Promise.resolve([]);
+      if (sql.includes('INSERT INTO sessions')) {
+        const order = (params as unknown[])?.[4];
+        return Promise.resolve([{ id: `sess-${String(order)}` }]);
+      }
+      if (sql.includes('SELECT id, nome FROM behavior_tags')) {
+        return Promise.resolve([
+          { id: 'tag-1', nome: 'Liderança e Proatividade' },
+          { id: 'tag-2', nome: 'Síntese e Clareza' },
+        ]);
+      }
+      if (sql.includes('SELECT id FROM observations')) return Promise.resolve([]);
+      if (sql.includes('INSERT INTO observations')) return Promise.resolve([{ id: 'obs-1' }]);
+      if (sql.includes('SELECT pc.id, pc.name')) {
+        return Promise.resolve([
+          { id: 'crit-1', name: 'Domínio do tema' },
+          { id: 'crit-2', name: 'Uso de fontes' },
+        ]);
+      }
+      if (sql.includes('SELECT id FROM feedback')) return Promise.resolve([]);
+      return Promise.resolve([]);
+    });
 
     await seedReviewData(mockDataSource as unknown as DataSource);
 
@@ -68,6 +79,14 @@ describe('review.seed.ts', () => {
     expect(mockDataSource.query).toHaveBeenCalledWith(
       expect.stringContaining('VALUES ($1, $2, $3, $4, $5, $6)'),
       ['problem-1', 'Sessão 1 - Abertura', 'Sessão 1 - Abertura', '2026-10-01', 1, 'concluida'],
+    );
+    expect(mockDataSource.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO attendances'),
+      expect.any(Array),
+    );
+    expect(mockDataSource.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO criterion_grades'),
+      expect.any(Array),
     );
   });
 });
