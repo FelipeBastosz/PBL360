@@ -29,10 +29,36 @@ export interface EvaluationWrite {
   submit: boolean;
   justification?: string;
 }
+export interface PeerEvaluationSummary {
+  alunoId: string;
+  nome: string;
+  status: EvaluationStatus | null;
+}
+export interface PeerEvaluationDetail {
+  peer: { id: string; name: string };
+  config: SessionEvaluationConfig;
+  evaluation: Evaluation | null;
+}
+export interface PeerEvaluationWrite {
+  sessionId: string;
+  problemId: string;
+  evaluatorId: string;
+  peerId: string;
+  items: CriterionScore[];
+  submit: boolean;
+}
 export interface EvaluationRepository {
   getProblemCriteria(problemId: string): Promise<SessionEvaluationConfig>;
   isEnrolled(roomId: string, studentId: string): Promise<boolean>;
   list(context: EvaluationContext): Promise<EvaluationSummary[]>;
   get(context: EvaluationContext, studentId: string): Promise<EvaluationDetail>;
   recordEvaluation(input: EvaluationWrite): Promise<EvaluationDetail>;
+  isStudentParticipating(sessionId: string, studentId: string): Promise<boolean>;
+  listSessionPeers(sessionId: string, evaluatorId: string): Promise<PeerEvaluationSummary[]>;
+  getPeerEvaluation(
+    context: EvaluationContext,
+    evaluatorId: string,
+    peerId: string,
+  ): Promise<PeerEvaluationDetail>;
+  recordPeerEvaluation(input: PeerEvaluationWrite): Promise<PeerEvaluationDetail>;
 }
