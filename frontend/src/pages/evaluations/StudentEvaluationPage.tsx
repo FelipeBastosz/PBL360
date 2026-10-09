@@ -70,6 +70,7 @@ function EvaluationMainContent({ studentName, state, onSend, moreTagsUrl }: Main
         onIncrement={state.handleTagClick}
         onDecrement={state.handleTagDecrement}
         moreTagsUrl={moreTagsUrl}
+        studentName={studentName}
       />
       <EvaluationFeedbackCard feedback={state.feedback} onChange={state.setFeedback} />
       <EvaluationActionButtons

@@ -7,6 +7,7 @@ type Props = {
   onIncrement: (tagId: string) => void;
   onDecrement: (tagId: string) => void;
   moreTagsUrl: string;
+  studentName: string;
 };
 
 function ActiveTagRow({
@@ -54,6 +55,7 @@ export function QuickObservationsCard({
   onIncrement,
   onDecrement,
   moreTagsUrl,
+  studentName,
 }: Props) {
   const activeTags = tags.filter((t) => (counts[t.id] ?? 0) > 0);
 
@@ -82,6 +84,7 @@ export function QuickObservationsCard({
 
       <Link
         to={moreTagsUrl}
+        state={{ studentName }}
         className="mt-4 block w-full rounded-xl border border-brand-900 bg-white py-2.5 text-center text-xs font-bold text-brand-900 transition hover:bg-brand-50"
       >
         Ver outras marcações
