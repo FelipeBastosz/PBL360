@@ -35,6 +35,7 @@ export const ROUTES = {
   studentEvaluation: '/sessoes/:sessionId/avaliacao/:studentId',
   sessionStudentEvaluation:
     '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId',
+  studentSelfEvaluation: '/sessoes/:sessionId/autoavaliacao',
   studentObservationTags: '/sessoes/:sessionId/avaliacao/:studentId/marcacoes',
   sessionStudentObservationTags:
     '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId/marcacoes',
