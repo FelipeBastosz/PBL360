@@ -66,7 +66,11 @@ export function StudentEvaluationCenter() {
       Icon: UserCircleIcon,
       path: sessionId ? ROUTES.studentSelfEvaluation.replace(':sessionId', sessionId) : undefined,
     },
-    { title: 'Avaliar Colegas', Icon: UsersIcon },
+    {
+      title: 'Avaliar Colegas',
+      Icon: UsersIcon,
+      path: sessionId ? ROUTES.studentPeerEvaluation.replace(':sessionId', sessionId) : undefined,
+    },
     { title: 'Notas e Feedbacks', Icon: ChatBubbleBottomCenterTextIcon },
   ];
 
