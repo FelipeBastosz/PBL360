@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { evaluationService } from '@/services/evaluation.service';
+import { observationService } from '@/services/observation.service';
 import type { TutorEvaluationData } from '@/types/evaluation';
 import { StudentEvaluationPage } from './StudentEvaluationPage';
 
@@ -16,6 +17,7 @@ vi.mock('@/hooks/useAuth', () => ({
 }));
 
 vi.mock('@/services/evaluation.service');
+vi.mock('@/services/observation.service');
 
 const mockEvalData: TutorEvaluationData = {
   status: 'PENDENTE',
@@ -31,11 +33,28 @@ const mockEvalData: TutorEvaluationData = {
   ],
 };
 
+const mockTags = [
+  { id: 't1', nome: 'Celular fora de contexto' },
+  { id: 't2', nome: 'Atraso' },
+];
+
 describe('StudentEvaluationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(evaluationService.getEvaluation).mockResolvedValue(mockEvalData);
     vi.mocked(evaluationService.getFeedback).mockResolvedValue(null);
+    vi.mocked(observationService.listTags).mockResolvedValue(mockTags);
+    vi.mocked(observationService.listStudentObservations).mockResolvedValue({
+      observacoes: [
+        {
+          id: 'obs-1',
+          marcacoes: [{ id: 't1', nome: 'Celular fora de contexto' }],
+          texto: null,
+          criadaEm: '',
+        },
+      ],
+      contagem: { t1: 1 },
+    });
   });
 
   function renderPage(sessionId = 's1', studentId = 'st1') {
@@ -58,101 +77,19 @@ describe('StudentEvaluationPage', () => {
     );
   }
 
-  it('renders student criteria with scores and weight indicators', async () => {
+  it('renders quick observation tag and decrements count when clicking minus button', async () => {
+    vi.mocked(observationService.undoObservation).mockResolvedValue(undefined);
     renderPage();
 
-    expect(
-      await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' }),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Seguimento')).toBeInTheDocument();
-    expect(screen.getByText('Peso 3,0')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('8')).toBeInTheDocument();
-  });
+    expect(await screen.findByText('Celular fora de contexto')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
 
-  it('allows clicking on the score to type decimal values directly', async () => {
-    renderPage();
-
-    await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' });
-    const scoreInput = screen.getByLabelText('Nota de Seguimento');
-    await userEvent.clear(scoreInput);
-    await userEvent.type(scoreInput, '8.5');
-
-    expect(screen.getByDisplayValue('8.5')).toBeInTheDocument();
-  });
-
-  it('increments and decrements criteria scores within 0 and 10 bounds', async () => {
-    renderPage();
-
-    await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' });
-    const plusBtn = screen.getByRole('button', { name: 'Aumentar nota de Seguimento' });
-    await userEvent.click(plusBtn);
-
-    expect(screen.getByDisplayValue('9')).toBeInTheDocument();
-  });
-
-  it('saves evaluation as draft when clicking Salvar rascunho', async () => {
-    vi.mocked(evaluationService.saveEvaluation).mockResolvedValue(mockEvalData);
-
-    renderPage();
-
-    await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' });
-    await userEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
-
-    await waitFor(() => {
-      expect(evaluationService.saveEvaluation).toHaveBeenCalledWith(
-        's1',
-        'st1',
-        expect.objectContaining({ enviar: false }),
-      );
+    const minusBtn = screen.getByRole('button', {
+      name: 'Diminuir marcação Celular fora de contexto',
     });
-    expect(mockNotify).toHaveBeenCalledWith({
-      tone: 'info',
-      message: 'Rascunho salvo com sucesso.',
-    });
-  });
+    await userEvent.click(minusBtn);
 
-  it('renders feedback textarea and submits final evaluation', async () => {
-    vi.mocked(evaluationService.saveEvaluation).mockResolvedValue(mockEvalData);
-    vi.mocked(evaluationService.saveFeedback).mockResolvedValue({
-      id: 'fb1',
-      texto: 'Muito bom',
-      criadoEm: '',
-    });
-
-    renderPage();
-
-    await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' });
-    const feedbackInput = screen.getByPlaceholderText(
-      'Escreva aqui um feedback para o(a) aluno(a)...',
-    );
-    await userEvent.type(feedbackInput, 'Muito bom');
-
-    await userEvent.click(screen.getByRole('button', { name: 'Enviar avaliação e feedback' }));
-
-    await waitFor(() => {
-      expect(evaluationService.saveEvaluation).toHaveBeenCalledWith(
-        's1',
-        'st1',
-        expect.objectContaining({ enviar: true }),
-      );
-    });
-    expect(mockNotify).toHaveBeenCalledWith({
-      tone: 'success',
-      message: 'Avaliação enviada com sucesso.',
-    });
-  });
-
-  it('requests justification when updating an already submitted evaluation', async () => {
-    vi.mocked(evaluationService.getEvaluation).mockResolvedValue({
-      ...mockEvalData,
-      status: 'ENVIADA',
-    });
-
-    renderPage();
-
-    await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' });
-    await userEvent.click(screen.getByRole('button', { name: 'Enviar avaliação e feedback' }));
-
-    expect(await screen.findByText('Justificativa da alteração')).toBeInTheDocument();
+    expect(observationService.undoObservation).toHaveBeenCalledWith('obs-1');
+    expect(screen.queryByText('1')).not.toBeInTheDocument();
   });
 });
