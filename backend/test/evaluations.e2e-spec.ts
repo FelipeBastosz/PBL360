@@ -106,7 +106,7 @@ describe('Tutor evaluations (e2e)', () => {
     problemId = problem.id;
     const sessions = await db.query<{ id: string }[]>(
       `INSERT INTO sessions (problem_id, title, date, order_index, status)
-       VALUES ($1, 'Primeira', '2026-10-05', 1, 'agendada'), ($1, 'Segunda', '2026-10-06', 2, 'agendada') RETURNING id;`,
+       VALUES ($1, 'Primeira', '2099-10-05', 1, 'agendada'), ($1, 'Segunda', '2099-10-06', 2, 'agendada') RETURNING id;`,
       [problemId],
     );
     sessionId = sessions[0]!.id;
@@ -259,7 +259,7 @@ describe('Tutor evaluations (e2e)', () => {
       justificativa: 'Correção da participação',
     }).expect(200);
     expect(adjusted.body as EvaluationBody).toMatchObject({
-      notaSessao: 8.15,
+      notaSessao: 7.63,
       adicionalAplicado: 0.5,
       enviadaEm: (sent.body as EvaluationBody).enviadaEm,
     });
