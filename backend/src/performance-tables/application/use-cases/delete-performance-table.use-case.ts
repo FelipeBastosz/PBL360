@@ -25,7 +25,7 @@ export class DeletePerformanceTableUseCase {
     }
 
     const usage = await this.performanceTableRepository.findUsageById(tableId);
-    if (usage && (usage.problemCount > 0 || (usage.sessionCount ?? 0) > 0)) {
+    if (usage && (usage.sessionCount ?? 0) > 0) {
       throw new ConflictError('A tabela de desempenho já foi utilizada e não pode ser excluída.');
     }
 

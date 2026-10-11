@@ -34,13 +34,25 @@ describe('DeletePerformanceTableUseCase', () => {
     expect(table.deletedAt).toBeInstanceOf(Date);
   });
 
-  it('rejects deletion when table has been used in problems or sessions', async () => {
+  it('rejects deletion when table has been used in sessions', async () => {
     const table = Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null });
     repository.findById.mockResolvedValue(table);
     repository.findUsageById.mockResolvedValue({ problemCount: 1, sessionCount: 2 });
 
     await expect(useCase.execute({ tableId, tutorId })).rejects.toBeInstanceOf(ConflictError);
     expect(repository.softDelete).not.toHaveBeenCalled();
+  });
+
+  it('allows deletion when table is linked to problems but has not been used in sessions', async () => {
+    const table = Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null });
+    repository.findById.mockResolvedValue(table);
+    repository.findUsageById.mockResolvedValue({ problemCount: 1, sessionCount: 0 });
+    repository.softDelete.mockResolvedValue(true);
+
+    await useCase.execute({ tableId, tutorId });
+
+    expect(repository.softDelete).toHaveBeenCalledWith(table);
+    expect(table.deletedAt).toBeInstanceOf(Date);
   });
 
   it('rejects deletion by a tutor who does not own the table', async () => {
