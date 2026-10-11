@@ -90,6 +90,8 @@ describe('PerformanceTablesController', () => {
       isDefault: false,
       descricao: 'Desc',
       quantidadeProblemas: 0,
+      quantidadeSessoes: 0,
+      quantidadeSessoesPassadas: 0,
       criterios: [
         {
           id: 'crit-1',
@@ -173,6 +175,8 @@ describe('PerformanceTablesController', () => {
       nome: 'Barema PBL',
       descricao: null,
       quantidadeProblemas: 2,
+      quantidadeSessoes: 0,
+      quantidadeSessoesPassadas: 0,
       criterios: [
         {
           id: 'crit-1',
@@ -224,6 +228,7 @@ describe('PerformanceTablesController', () => {
       changes: {
         name: 'Barema',
         description: null,
+        propagateToSessions: false,
         criteria: [
           {
             id: 'criterion-1',
