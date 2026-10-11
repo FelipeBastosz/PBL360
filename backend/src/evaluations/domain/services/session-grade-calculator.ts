@@ -9,6 +9,7 @@ export class SessionGradeCalculator {
     items: readonly CriterionScore[],
     criteria: readonly SessionEvaluationCriterion[],
     bonus: number | null,
+    applyCargoFormula = false,
   ): number {
     EvaluationRules.assertValidItems(
       items,
@@ -16,13 +17,14 @@ export class SessionGradeCalculator {
       true,
     );
     this.assertConfiguration(criteria, bonus);
-    return this.weightedResult(items, criteria, bonus);
+    return this.weightedResult(items, criteria, bonus, applyCargoFormula);
   }
 
   private static weightedResult(
     items: readonly CriterionScore[],
     criteria: readonly SessionEvaluationCriterion[],
     bonus: number | null,
+    applyCargoFormula: boolean,
   ): number {
     const scores = new Map(
       items.map((item) => [item.criterionId, BigInt(Math.round(item.score * 100))]),
@@ -33,9 +35,19 @@ export class SessionGradeCalculator {
       (sum, criterion, index) => sum + scores.get(criterion.id)! * weights[index]!,
       0n,
     );
+    return this.toGrade(weighted, total, bonus, applyCargoFormula);
+  }
+
+  private static toGrade(
+    weighted: bigint,
+    total: bigint,
+    bonus: number | null,
+    applyCargoFormula: boolean,
+  ): number {
     const cargoScoreCents = BigInt(Math.round((bonus ?? 0) * 1000));
-    const numerator = bonus === null ? weighted : weighted * 7n + cargoScoreCents * total * 3n;
-    const denominator = bonus === null ? total : total * 10n;
+    const usesCargoFormula = applyCargoFormula && bonus !== null;
+    const numerator = usesCargoFormula ? weighted * 7n + cargoScoreCents * total * 3n : weighted;
+    const denominator = usesCargoFormula ? total * 10n : total;
     const cents = (2n * numerator + denominator) / (2n * denominator);
     return Number(cents > 1000n ? 1000n : cents) / 100;
   }
