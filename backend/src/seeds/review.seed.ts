@@ -1,24 +1,31 @@
 import { Logger } from '@nestjs/common';
-import type { DataSource } from 'typeorm';
+import type { DataSource, Repository } from 'typeorm';
 import { User } from '@/users/domain/entities/user.entity';
+import {
+  type ReviewUsers,
+  seedReviewBehaviorTagsAndObservations,
+  seedReviewCriterionGrades,
+  seedReviewFeedbacksIfEmpty,
+} from './review-activities.seed';
 
 const logger = new Logger('ReviewSeed');
 
-interface ReviewUsers {
-  tutor: User;
-  coTutor: User;
-  student1: User;
-  student2: User;
+async function findStudent(
+  repo: Repository<User>,
+  email: string,
+  reg: string,
+): Promise<User | null> {
+  const byEmail = await repo.findOneBy({ email });
+  if (byEmail) return byEmail;
+  return repo.findOneBy({ registrationNumber: reg });
 }
 
 async function findReviewUsers(ds: DataSource): Promise<ReviewUsers | null> {
   const repo = ds.getRepository(User);
-  const [tutor, coTutor, student1, student2] = await Promise.all([
-    repo.findOneBy({ email: 'carlos@uefs.br' }),
-    repo.findOneBy({ email: 'maria@uefs.br' }),
-    repo.findOneBy({ email: '20240001@discente.uefs.br' }),
-    repo.findOneBy({ email: '20240002@discente.uefs.br' }),
-  ]);
+  const tutor = await repo.findOneBy({ email: 'carlos@uefs.br' });
+  const coTutor = await repo.findOneBy({ email: 'maria@uefs.br' });
+  const student1 = await findStudent(repo, '20240001@discente.uefs.br', '20240001');
+  const student2 = await findStudent(repo, '20240002@discente.uefs.br', '20240002');
   if (!tutor || !coTutor || !student1 || !student2) return null;
   return { tutor, coTutor, student1, student2 };
 }
@@ -114,52 +121,42 @@ async function seedReviewRoles(
   );
 }
 
-async function seedSessionFeedbacks(
+async function seedSession1Attendance(
   ds: DataSource,
-  problemId: string,
-  session1Id: string,
-  users: ReviewUsers,
-): Promise<void> {
-  await ds.query(
-    `INSERT INTO feedback (autor_id, problema_id, destinatario_id, sessao_id, escopo, texto)
-     VALUES ($1, $2, $3, $4, 'SESSAO', 'Excelente condução da abertura como coordenadora.'),
-            ($1, $2, $5, $4, 'SESSAO', 'Relatório claro com registros precisos.');`,
-    [users.tutor.id, problemId, users.student1.id, session1Id, users.student2.id],
-  );
-}
-
-async function seedProblemFeedbacks(
-  ds: DataSource,
-  problemId: string,
-  users: ReviewUsers,
-): Promise<void> {
-  await ds.query(
-    `INSERT INTO feedback (autor_id, problema_id, destinatario_id, escopo, nota, texto)
-     VALUES ($1, $2, $3, 'ALUNO', 9.5, 'Desempenho excelente durante todas as discussões.'),
-            ($1, $2, $4, 'ALUNO', 9.0, 'Ótima capacidade analítica e postura colaborativa.');`,
-    [users.tutor.id, problemId, users.student1.id, users.student2.id],
-  );
-  await ds.query(
-    `INSERT INTO feedback (autor_id, problema_id, escopo, texto)
-     VALUES ($1, $2, 'PROBLEMA', 'A turma demonstrou maturidade na resolução do problema.');`,
-    [users.tutor.id, problemId],
-  );
-}
-
-async function seedReviewFeedbacksIfEmpty(
-  ds: DataSource,
-  problemId: string,
   s1: string,
   users: ReviewUsers,
 ): Promise<void> {
-  const existingFb = await ds.query<Array<{ id: string }>>(
-    `SELECT id FROM feedback WHERE problema_id = $1 LIMIT 1;`,
-    [problemId],
+  await ds.query(
+    `INSERT INTO attendances (session_id, student_id, recorded_by, status, seat_number)
+     VALUES ($1, $2, $4, 'PRESENT', 1), ($1, $3, $4, 'PRESENT', 2)
+     ON CONFLICT (session_id, student_id) DO UPDATE
+     SET status = EXCLUDED.status, seat_number = EXCLUDED.seat_number, justification = NULL;`,
+    [s1, users.student1.id, users.student2.id, users.tutor.id],
   );
-  if (existingFb.length === 0) {
-    await seedSessionFeedbacks(ds, problemId, s1, users);
-    await seedProblemFeedbacks(ds, problemId, users);
-  }
+}
+
+async function seedSession2Attendance(
+  ds: DataSource,
+  s2: string,
+  users: ReviewUsers,
+): Promise<void> {
+  await ds.query(
+    `INSERT INTO attendances (session_id, student_id, recorded_by, status, seat_number, justification)
+     VALUES ($1, $2, $4, 'PRESENT', 1, NULL),
+            ($1, $3, $4, 'EXCUSED', NULL, 'Participação em congresso acadêmico')
+     ON CONFLICT (session_id, student_id) DO UPDATE
+     SET status = EXCLUDED.status, seat_number = EXCLUDED.seat_number, justification = EXCLUDED.justification;`,
+    [s2, users.student1.id, users.student2.id, users.tutor.id],
+  );
+}
+
+async function seedReviewAttendances(
+  ds: DataSource,
+  sessionIds: [string, string],
+  users: ReviewUsers,
+): Promise<void> {
+  await seedSession1Attendance(ds, sessionIds[0], users);
+  await seedSession2Attendance(ds, sessionIds[1], users);
 }
 
 export async function seedReviewData(ds: DataSource): Promise<void> {
@@ -173,7 +170,10 @@ export async function seedReviewData(ds: DataSource): Promise<void> {
   const problemId = await seedReviewProblem(ds, roomId, users.tutor.id);
   const s1 = await seedSession(ds, problemId, 1, 'Sessão 1 - Abertura', '2026-10-01', 'concluida');
   const s2 = await seedSession(ds, problemId, 2, 'Sessão 2 - Fechamento', '2026-10-08', 'agendada');
+  await seedReviewAttendances(ds, [s1, s2], users);
   await seedReviewRoles(ds, [s1, s2], users);
+  await seedReviewBehaviorTagsAndObservations(ds, s1, users);
+  await seedReviewCriterionGrades(ds, problemId, [s1, s2], users);
   await seedReviewFeedbacksIfEmpty(ds, problemId, s1, users);
   logger.log('Review seed completed successfully.');
 }
