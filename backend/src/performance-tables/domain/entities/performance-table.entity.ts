@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '@/users/domain/entities/user.entity';
+import { Room } from '@/rooms/domain/entities/room.entity';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { NewPerformanceTable } from './new-performance-table';
 import { PerformanceCriterion } from './performance-criterion.entity';
@@ -40,6 +41,18 @@ export class PerformanceTable {
   })
   tutor: User;
 
+  @Index('idx_performance_tables_room_id')
+  @Column({ name: 'room_id', type: 'uuid', nullable: true, default: null })
+  roomId: string | null;
+
+  @ManyToOne(() => Room, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'room_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_performance_tables_room',
+  })
+  room?: Room | null;
+
   @Column({ type: 'varchar', length: 120 })
   name: string;
 
@@ -68,6 +81,7 @@ export class PerformanceTable {
   static create(props: NewPerformanceTable): PerformanceTable {
     const table = new PerformanceTable();
     table.tutorId = props.tutorId?.trim();
+    table.roomId = props.roomId?.trim() || null;
     table.name = props.name?.trim();
     table.description = props.description?.trim() || null;
     table.isDefault = props.isDefault ?? false;
@@ -86,7 +100,11 @@ export class PerformanceTable {
 
   update(props: UpdatePerformanceTable): void {
     this.assertCriterionIdsAreValid(props.criteria ?? []);
-    const candidate = PerformanceTable.create({ ...props, tutorId: this.tutorId });
+    const candidate = PerformanceTable.create({
+      ...props,
+      tutorId: this.tutorId,
+      roomId: this.roomId,
+    });
     candidate.criteria.forEach((criterion, index) => {
       const id = props.criteria[index]!.id;
       if (id !== undefined) criterion.id = id;
