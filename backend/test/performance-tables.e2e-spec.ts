@@ -524,4 +524,25 @@ describe('Performance tables (e2e)', () => {
     const body = res.body as ErrorResponseDto;
     expect(body.message).toContain('A soma dos pesos dos critérios deve ser igual a 10.');
   });
+  it('rechecks past session usage inside the table update transaction', async () => {
+    const repository = moduleRef.get<PerformanceTableRepository>(PERFORMANCE_TABLE_REPOSITORY);
+    const table = (await repository.findById(tableId))!;
+    table.update({
+      name: 'Nome desatualizado',
+      criteria: table.criteria.map((criterion) => ({
+        id: criterion.id,
+        name: criterion.name,
+        description: criterion.description,
+        orderIndex: criterion.orderIndex,
+        weight: criterion.weight,
+      })),
+    });
+    await dataSource.query(
+      `INSERT INTO sessions (problem_id, title, date, order_index)
+      SELECT id, 'Sessão passada', CURRENT_DATE - 1, 1 FROM problems WHERE performance_table_id = $1;`,
+      [tableId],
+    );
+    await expect(repository.update(table)).rejects.toThrow(InvalidPerformanceTableError);
+    expect((await repository.findById(tableId))!.name).toBe('Tabela de teste');
+  });
 });

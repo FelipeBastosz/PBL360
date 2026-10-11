@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
 import { NotFoundError } from '@/shared/errors/application.error';
 import { syncPerformanceCriteria } from './performance-criteria.persistence';
+import { assertPastSessionUpdateAllowed } from './performance-table-update.validation';
 import { propagatePerformanceTableSessions } from './performance-table-session.persistence';
 
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
@@ -52,6 +53,7 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
   update(table: PerformanceTable, propagateToSessions = false): Promise<PerformanceTable> {
     return this.performanceTables.manager.transaction(async (manager) => {
       await this.lockTable(manager, table);
+      await assertPastSessionUpdateAllowed(manager, table);
       await this.updateTable(manager, table);
       await syncPerformanceCriteria(manager, table);
       if (propagateToSessions) await propagatePerformanceTableSessions(manager, table);

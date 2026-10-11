@@ -1,6 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
@@ -133,6 +134,10 @@ export const UpdatePerformanceTableSwaggerDocs = applyDecorators(
   ApiBadRequestResponse({
     description:
       'Dados inválidos, IDs repetidos, critérios não pertencentes à tabela ou tentativa de alterar campos além dos pesos após sessão passada.',
+    type: ErrorResponseDto,
+  }),
+  ApiConflictResponse({
+    description: 'A propagação adicionaria ou removeria critérios de uma avaliação já enviada.',
     type: ErrorResponseDto,
   }),
   ApiUnauthorizedResponse({

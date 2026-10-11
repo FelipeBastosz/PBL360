@@ -371,4 +371,108 @@ describe('Tutor evaluations (e2e)', () => {
       'properties.criterios',
     );
   });
+  it('reads submitted evaluations in the grade report and preserves an absent cargo score', async () => {
+    await submit().expect(200);
+    await db.query(
+      `INSERT INTO criterion_grades (session_id, student_id, criterion_id, score)
+      VALUES ($1, $2, $3, 0), ($1, $2, $4, 0);`,
+      [sessionId, student.id, firstCriterionId, secondCriterionId],
+    );
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaAdicional: 1 })
+      .expect(200);
+    const response = await api(app, owner).get(`${problemPath()}/notas`).expect(200);
+    const body = response.body as {
+      alunos: { alunoId: string; sessoes: { sessaoId: string; nota: number | null }[] }[];
+    };
+    expect(
+      body.alunos
+        .find((row) => row.alunoId === student.id)
+        ?.sessoes.find((row) => row.sessaoId === sessionId)?.nota,
+    ).toBe(8.5);
+  });
+
+  it('does not expose legacy scores as submitted grades while a tutor evaluation is a draft', async () => {
+    await save({ itens: scores(), enviar: false }).expect(200);
+    await db.query(
+      `INSERT INTO criterion_grades (session_id, student_id, criterion_id, score)
+      VALUES ($1, $2, $3, 10), ($1, $2, $4, 10);`,
+      [sessionId, student.id, firstCriterionId, secondCriterionId],
+    );
+    const response = await api(app, owner).get(`${problemPath()}/notas`).expect(200);
+    const body = response.body as {
+      alunos: { alunoId: string; sessoes: { sessaoId: string; nota: number | null }[] }[];
+    };
+    expect(
+      body.alunos
+        .find((row) => row.alunoId === student.id)
+        ?.sessoes.find((row) => row.sessaoId === sessionId)?.nota,
+    ).toBeNull();
+  });
+
+  it('serializes a submitted adjustment with propagation of new weights', async () => {
+    await submit().expect(200);
+    const responses = await Promise.all([
+      save({ itens: scores(8, 9), enviar: true, justificativa: 'Revisão da participação' }),
+      api(app, owner).put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Critérios',
+        propagarParaSessoes: true,
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', peso: 6, ordem: 1 },
+          { id: secondCriterionId, nome: 'Autonomia', peso: 4, ordem: 2 },
+        ],
+      }),
+    ]);
+    expect(responses.map((response) => response.status)).toEqual([200, 200]);
+    const response = await api(app, owner).get(evaluationPath()).expect(200);
+    expect((response.body as EvaluationBody).notaSessao).toBe(8.4);
+    expect((response.body as EvaluationBody).ajustes).toHaveLength(1);
+  });
+
+  it('rejects propagating missing criteria into a submitted future-session evaluation', async () => {
+    await db.query('UPDATE sessions SET date = CURRENT_DATE + 10 WHERE problem_id = $1;', [
+      problemId,
+    ]);
+    await submit().expect(200);
+    await api(app, owner)
+      .put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Critérios',
+        propagarParaSessoes: true,
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', peso: 5, ordem: 1 },
+          { nome: 'Novo critério', peso: 5, ordem: 2 },
+        ],
+      })
+      .expect(409);
+    const response = await api(app, owner).get(evaluationPath()).expect(200);
+    expect((response.body as EvaluationBody).notaSessao).toBe(8.5);
+    expect((response.body as EvaluationBody).criterios.map((criterion) => criterion.id)).toEqual([
+      firstCriterionId,
+      secondCriterionId,
+    ]);
+    const current = await api(app, owner).get(`${problemPath()}/criterios`).expect(200);
+    expect((current.body as EvaluationBody).criterios.map((criterion) => criterion.id)).toEqual([
+      firstCriterionId,
+      secondCriterionId,
+    ]);
+  });
+
+  it('removes obsolete draft items when propagating structural edits to a future session', async () => {
+    await db.query('UPDATE sessions SET date = CURRENT_DATE + 10 WHERE problem_id = $1;', [
+      problemId,
+    ]);
+    await save({ itens: scores(), enviar: false }).expect(200);
+    await api(app, owner)
+      .put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Critérios',
+        propagarParaSessoes: true,
+        criterios: [{ id: firstCriterionId, nome: 'Participação', peso: 10, ordem: 1 }],
+      })
+      .expect(200);
+    const response = await api(app, owner).get(evaluationPath()).expect(200);
+    expect((response.body as EvaluationBody).itens).toEqual([
+      { criterioId: firstCriterionId, nota: 7 },
+    ]);
+    await save({ itens: [{ criterioId: firstCriterionId, nota: 7 }], enviar: true }).expect(200);
+  });
 });

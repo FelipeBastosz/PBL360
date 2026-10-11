@@ -1,3 +1,5 @@
+import { SESSION_SCORES_QUERY, SESSION_BONUSES_QUERY } from './evaluation-grade.queries';
+
 export interface GradeQuery {
   sql: string;
   params: unknown[];
@@ -53,7 +55,7 @@ function baseQueries(roomId: string, problemId: string): GradeQuery[] {
 function gradeQueries(problemId: string, subQuery: string): GradeQuery[] {
   return [
     {
-      sql: `SELECT session_id, student_id, criterion_id, score FROM criterion_grades WHERE session_id IN (${subQuery})`,
+      sql: SESSION_SCORES_QUERY,
       params: [problemId],
     },
     {
@@ -61,7 +63,7 @@ function gradeQueries(problemId: string, subQuery: string): GradeQuery[] {
       params: [problemId],
     },
     {
-      sql: `SELECT session_id, student_id, bonus_score FROM session_roles WHERE session_id IN (${subQuery})`,
+      sql: SESSION_BONUSES_QUERY,
       params: [problemId],
     },
   ];

@@ -56,12 +56,12 @@ export async function freezeSessionConfig(
   problemId: string,
   authorId: string,
 ): Promise<SessionEvaluationConfig> {
-  const existing = await readSessionConfig(manager, sessionId);
-  if (existing) return existing;
   await manager.query(
-    `SELECT pt.id FROM performance_tables pt JOIN problems p ON p.performance_table_id = pt.id WHERE p.id = $1 FOR UPDATE OF pt;`,
+    `SELECT pt.id FROM performance_tables pt JOIN problems p ON p.performance_table_id = pt.id WHERE p.id = $1 FOR SHARE OF pt;`,
     [problemId],
   );
+  const existing = await readSessionConfig(manager, sessionId);
+  if (existing) return existing;
   const config = await readProblemConfig(manager, problemId);
   if (config.criteria.length === 0)
     throw new UnprocessableEntityError('A tabela vinculada não possui critérios ativos.');

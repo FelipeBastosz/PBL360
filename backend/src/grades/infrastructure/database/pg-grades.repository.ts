@@ -35,14 +35,11 @@ export class PgGradesRepository implements GradesRepository {
       attendances = [],
       roles = [],
       criteria = [],
-    ] = await Promise.all(queries.map(({ sql, params }) => this.queryRows(sql, params)));
+    ] = await this.grades.transaction('REPEATABLE READ', (manager) =>
+      Promise.all(queries.map(({ sql, params }) => manager.query<GradeRow[]>(sql, params))),
+    );
 
     return { sessions, students, formulas, scores, attendances, roles, criteria };
-  }
-
-  private async queryRows(sql: string, params: unknown[]): Promise<GradeRow[]> {
-    const rows = await this.grades.query<GradeRow[]>(sql, params);
-    return rows ?? [];
   }
 
   async findFormulaComponents(formulaIds: unknown[]): Promise<GradeRow[]> {
