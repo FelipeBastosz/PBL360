@@ -15,31 +15,26 @@ describe('ListRoomStudentsUseCase', () => {
   });
 
   it('returns student data after member access is granted', async () => {
-    const member = { id: 'tutor-id', type: 'TUTOR' as const };
+    const tutorId = 'tutor-id';
     const students = [
       {
-        id: 'student-id',
         name: 'Ana Souza',
         joinedAt: new Date('2026-01-01'),
-        email: 'ana@discente.uefs.br',
-        registrationNumber: '20240001',
       },
     ];
     rooms.findStudents.mockResolvedValue(students);
 
-    await expect(useCase.execute({ roomId: 'room-id', member })).resolves.toEqual(students);
-    expect(access.assertMemberCanAccessRoom).toHaveBeenCalledWith('room-id', member);
+    await expect(useCase.execute('room-id', tutorId)).resolves.toEqual(students);
+    expect(access.assertTutorCanAccessRoom).toHaveBeenCalledWith('room-id', tutorId);
     expect(rooms.findStudents).toHaveBeenCalledWith('room-id');
   });
 
   it.each([new ForbiddenError('negado'), new NotFoundError('Sala não encontrada.')])(
     'does not list students when room access is denied: %p',
     async (error) => {
-      access.assertMemberCanAccessRoom.mockRejectedValue(error);
+      access.assertTutorCanAccessRoom.mockRejectedValue(error);
 
-      await expect(
-        useCase.execute({ roomId: 'room-id', member: { id: 'other-user-id', type: 'STUDENT' } }),
-      ).rejects.toBe(error);
+      await expect(useCase.execute('room-id', 'other-user-id')).rejects.toBe(error);
       expect(rooms.findStudents).not.toHaveBeenCalled();
     },
   );

@@ -9,6 +9,13 @@ export const FIND_ITEMS = `
   SELECT id, criterion_id AS "criterionId", score FROM evaluation_items
    WHERE evaluation_id = $1 ORDER BY criterion_id;
 `;
+export const FIND_SELF_EVALUATION = `
+  SELECT id, status, submitted_at AS "submittedAt", session_score AS "sessionScore",
+         applied_bonus AS "appliedBonus", calculation_version AS "calculationVersion",
+         created_by AS "createdBy", created_at AS "createdAt",
+         updated_by AS "updatedBy", updated_at AS "updatedAt"
+    FROM evaluations WHERE session_id = $1 AND student_id = $2 AND type = 'SELF_ASSESSMENT';
+`;
 export const FIND_ADJUSTMENTS = `
   SELECT ei.criterion_id AS "criterionId", ga.previous_value AS "previousValue",
          ga.new_value AS "newValue", ga.justification, ga.created_by AS "authorId",
