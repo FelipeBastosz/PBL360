@@ -86,10 +86,10 @@ describe('GetProblemGradesUseCase', () => {
 
     expect(result.alunos[0]).toMatchObject({
       alunoId: 'student-1',
-      notaFinal: 5.95,
-      sessoes: [{ sessaoId: 'session-1', nota: 6, situacao: 'AVALIADA' }],
+      notaFinal: 8.5,
+      sessoes: [{ sessaoId: 'session-1', nota: 8.5, situacao: 'AVALIADA' }],
     });
-    expect(result.mediaTurma).toBe(6);
+    expect(result.mediaTurma).toBe(8.5);
     expect(gradesRepository.findProblemData).toHaveBeenCalledWith(
       input.roomId,
       input.problemId,
@@ -101,7 +101,7 @@ describe('GetProblemGradesUseCase', () => {
         {
           session_id: 'session-1',
           student_id: 'student-1',
-          grade: 5.95,
+          grade: 8.5,
           situation: 'AVALIADA',
           formula_version: 1,
         },
@@ -109,7 +109,7 @@ describe('GetProblemGradesUseCase', () => {
       problemRows: [
         {
           student_id: 'student-1',
-          grade: 5.95,
+          grade: 8.5,
           formula_version: 1,
         },
       ],

@@ -8,7 +8,7 @@ export class SessionGradeCalculator {
   static calculate(
     items: readonly CriterionScore[],
     criteria: readonly SessionEvaluationCriterion[],
-    bonus: number,
+    bonus: number | null,
   ): number {
     EvaluationRules.assertValidItems(
       items,
@@ -22,7 +22,7 @@ export class SessionGradeCalculator {
   private static weightedResult(
     items: readonly CriterionScore[],
     criteria: readonly SessionEvaluationCriterion[],
-    bonus: number,
+    bonus: number | null,
   ): number {
     const scores = new Map(
       items.map((item) => [item.criterionId, BigInt(Math.round(item.score * 100))]),
@@ -33,9 +33,9 @@ export class SessionGradeCalculator {
       (sum, criterion, index) => sum + scores.get(criterion.id)! * weights[index]!,
       0n,
     );
-    const cargoScoreCents = BigInt(Math.round(bonus * 1000));
-    const numerator = weighted * 7n + cargoScoreCents * total * 3n;
-    const denominator = total * 10n;
+    const cargoScoreCents = BigInt(Math.round((bonus ?? 0) * 1000));
+    const numerator = bonus === null ? weighted : weighted * 7n + cargoScoreCents * total * 3n;
+    const denominator = bonus === null ? total : total * 10n;
     const cents = (2n * numerator + denominator) / (2n * denominator);
     return Number(cents > 1000n ? 1000n : cents) / 100;
   }
@@ -51,9 +51,9 @@ export class SessionGradeCalculator {
 
   private static assertConfiguration(
     criteria: readonly SessionEvaluationCriterion[],
-    bonus: number,
+    bonus: number | null,
   ): void {
-    if (!Number.isFinite(bonus) || bonus < 0 || bonus > 1) {
+    if (bonus !== null && (!Number.isFinite(bonus) || bonus < 0 || bonus > 1)) {
       throw new InvalidEvaluationItemsError('O adicional de papel deve estar entre 0 e 1.');
     }
     if (

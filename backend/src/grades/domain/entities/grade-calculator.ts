@@ -65,13 +65,22 @@ export const calculateSessionGrade = (input: SessionGradeInput): SessionGradeRes
   const average = weightedAverage(values, denominator);
   if (average === null) return { grade: null, situation: 'PENDENTE' };
 
-  const bonus = input.bonus ?? 0;
-  const grade = input.defaultFormula ? (average * 7 + bonus * 10 * 3) / 10 : average + bonus;
+  const grade = calculateFinalSessionGrade(average, input.bonus, input.defaultFormula);
   return {
     grade: Math.min(10, grade),
     situation: 'AVALIADA',
   };
 };
+
+function calculateFinalSessionGrade(
+  average: number,
+  bonus: number | null,
+  defaultFormula = false,
+): number {
+  if (defaultFormula && bonus !== null) return (average * 7 + bonus * 10 * 3) / 10;
+  if (defaultFormula) return average;
+  return average + (bonus ?? 0);
+}
 
 export const calculateProblemGrade = (
   components: GradeComponent[],

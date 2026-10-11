@@ -19,6 +19,11 @@ describe('SessionGradeCalculator', () => {
       SessionGradeCalculator.calculate(items, [criterion('a', 1), criterion('b', 3)], 0.5),
     ).toBe(7.45);
   });
+  it('uses the simple weighted mean when the student has no cargo score', () => {
+    expect(
+      SessionGradeCalculator.calculate(items, [criterion('a', 1), criterion('b', 3)], null),
+    ).toBe(8.5);
+  });
   it('caps the result at ten', () => {
     expect(
       SessionGradeCalculator.calculate([{ criterionId: 'a', score: 10 }], [criterion('a', 1)], 1),

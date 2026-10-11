@@ -15,7 +15,7 @@ export interface EvaluationRevision {
   submit: boolean;
   justification?: string;
   authorId: string;
-  bonus: number;
+  bonus: number | null;
   now: Date;
 }
 

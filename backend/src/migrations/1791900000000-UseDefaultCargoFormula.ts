@@ -3,6 +3,22 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 export class UseDefaultCargoFormula1791900000000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
+      ALTER TABLE evaluations DROP CONSTRAINT ck_evaluation_submission;
+      ALTER TABLE evaluations ADD CONSTRAINT ck_evaluation_submission CHECK (
+        (status = 'DRAFT' AND submitted_at IS NULL AND session_score IS NULL AND applied_bonus IS NULL)
+        OR (status = 'SUBMITTED' AND submitted_at IS NOT NULL AND
+          (type <> 'TUTOR_SESSION' OR (session_score IS NOT NULL AND calculation_version IS NOT NULL)))
+      );
+
+      UPDATE evaluations e
+         SET applied_bonus = NULL
+       WHERE e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED' AND e.applied_bonus = 0
+         AND NOT EXISTS (
+           SELECT 1 FROM session_roles sr
+            WHERE sr.session_id = e.session_id AND sr.student_id = e.student_id
+              AND sr.bonus_score IS NOT NULL
+         );
+
       UPDATE performance_criteria pc
          SET weight = CASE pc.name
            WHEN 'Seguimento' THEN 4
@@ -39,7 +55,9 @@ export class UseDefaultCargoFormula1791900000000 implements MigrationInterface {
       )
       UPDATE evaluations e
          SET session_score = ROUND(
-               (weighted_scores.simple_score * 7 + COALESCE(e.applied_bonus, 0) * 10 * 3) / 10,
+               CASE WHEN e.applied_bonus IS NULL THEN weighted_scores.simple_score
+                    ELSE (weighted_scores.simple_score * 7 + e.applied_bonus * 10 * 3) / 10
+               END,
                2
              ),
              calculation_version = 'WEIGHTED_CRITERIA_CARGO_70_30_V2'
@@ -50,6 +68,18 @@ export class UseDefaultCargoFormula1791900000000 implements MigrationInterface {
 
   async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
+      UPDATE evaluations
+         SET applied_bonus = 0
+       WHERE type = 'TUTOR_SESSION' AND status = 'SUBMITTED' AND applied_bonus IS NULL;
+
+      ALTER TABLE evaluations DROP CONSTRAINT ck_evaluation_submission;
+      ALTER TABLE evaluations ADD CONSTRAINT ck_evaluation_submission CHECK (
+        (status = 'DRAFT' AND submitted_at IS NULL AND session_score IS NULL AND applied_bonus IS NULL)
+        OR (status = 'SUBMITTED' AND submitted_at IS NOT NULL AND
+          (type <> 'TUTOR_SESSION' OR
+            (session_score IS NOT NULL AND applied_bonus IS NOT NULL AND calculation_version IS NOT NULL)))
+      );
+
       UPDATE performance_criteria pc
          SET weight = CASE pc.name
            WHEN 'Seguimento' THEN 3

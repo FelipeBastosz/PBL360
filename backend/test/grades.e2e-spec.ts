@@ -145,11 +145,11 @@ describe('Grades (e2e)', () => {
         alunoId: studentId,
         nome: 'Ana Discente',
         matricula: '20260001',
-        sessoes: [{ sessaoId: sessionId, nota: 6, situacao: 'AVALIADA' }],
-        notaFinal: 6,
+        sessoes: [{ sessaoId: sessionId, nota: 8.5, situacao: 'AVALIADA' }],
+        notaFinal: 8.5,
       },
     ]);
-    expect(grades.mediaTurma).toBe(6);
+    expect(grades.mediaTurma).toBe(8.5);
     expect(grades.versoesFormula).toEqual({ sessao: 0, problema: 0 });
 
     const [sessionGrade] = await dataSource.query<
@@ -158,7 +158,7 @@ describe('Grades (e2e)', () => {
       sessionId,
     ]);
     expect(sessionGrade).toMatchObject({
-      grade: '5.950000',
+      grade: '8.500000',
       situation: 'AVALIADA',
       formula_version: 1,
     });
@@ -167,7 +167,7 @@ describe('Grades (e2e)', () => {
       'SELECT grade, formula_version FROM problem_grades WHERE problem_id = $1 AND student_id = $2',
       [problemId, studentId],
     );
-    expect(problemGrade).toMatchObject({ grade: '5.950000', formula_version: 1 });
+    expect(problemGrade).toMatchObject({ grade: '8.500000', formula_version: 1 });
   });
 
   it('returns 401 when the request has no authentication token', async () => {

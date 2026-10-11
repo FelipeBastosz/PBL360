@@ -31,6 +31,24 @@ describe('grade calculator', () => {
     ).toEqual({ grade: 6.82, situation: 'AVALIADA' });
   });
 
+  it('uses the simple grade when no cargo score is assigned', () => {
+    expect(
+      calculateSessionGrade({
+        attendance: 'PRESENT',
+        criteria: [
+          { id: 'a', score: 8 },
+          { id: 'b', score: 6 },
+        ],
+        components: [
+          { type: 'CRITERIO', referenceId: 'a', weight: 50 },
+          { type: 'CRITERIO', referenceId: 'b', weight: 50 },
+        ],
+        bonus: null,
+        defaultFormula: true,
+      }),
+    ).toEqual({ grade: 7, situation: 'AVALIADA' });
+  });
+
   it.each([
     [
       'present weighted average',

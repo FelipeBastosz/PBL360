@@ -15,7 +15,9 @@ const RECALCULATE_SESSION_EVALUATIONS = `
      GROUP BY e.id
   )
   UPDATE evaluations e
-     SET session_score = ROUND((weighted_scores.simple_score * 7 + COALESCE(e.applied_bonus, 0) * 10 * 3) / 10, 2),
+     SET session_score = ROUND(CASE WHEN e.applied_bonus IS NULL THEN weighted_scores.simple_score
+                                    ELSE (weighted_scores.simple_score * 7 + e.applied_bonus * 10 * 3) / 10
+                               END, 2),
          calculation_version = 'WEIGHTED_CRITERIA_CARGO_70_30_V2',
          updated_by = $2,
          updated_at = now()
