@@ -35,8 +35,22 @@ export class UpdatePerformanceTableUseCase {
       throw new ForbiddenError('Apenas o professor responsável pode editar esta tabela.');
     }
 
-    table.update(input);
+    return this.updateTable(table, input);
+  }
 
-    return this.performanceTableRepository.update(table);
+  private async updateTable(
+    table: PerformanceTable,
+    input: UpdatePerformanceTable,
+  ): Promise<PerformanceTable> {
+    const usage = await this.performanceTableRepository.findUsageById(table.id);
+    table.update(input, (usage.pastSessionCount ?? 0) > 0);
+
+    const updated = await this.performanceTableRepository.update(
+      table,
+      input.propagateToSessions ?? false,
+    );
+    updated.sessionCount = usage.sessionCount ?? 0;
+    updated.pastSessionCount = usage.pastSessionCount ?? 0;
+    return updated;
   }
 }

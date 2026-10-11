@@ -145,14 +145,14 @@ describe('Tutor evaluations (e2e)', () => {
     const response = await save({ itens: scores(), enviar: true }, coTutor).expect(200);
     expect(response.body as EvaluationBody).toMatchObject({
       status: 'ENVIADA',
-      notaSessao: 8.5,
+      notaSessao: 5.95,
       adicionalAplicado: 0,
     });
     expect(await count('evaluations')).toBe(1);
     const list = await api(app, owner).get(`/sessoes/${sessionId}/avaliacoes`).expect(200);
     expect((list.body as SummaryBody[]).find((row) => row.alunoId === student.id)).toMatchObject({
       status: 'ENVIADA',
-      notaSessao: 8.5,
+      notaSessao: 5.95,
     });
   });
   it('replaces a draft item list and permits an empty draft', async () => {
@@ -178,14 +178,14 @@ describe('Tutor evaluations (e2e)', () => {
     const before = await db.query<{ id: string }[]>('SELECT id FROM evaluation_items ORDER BY id;');
     await save({ itens: scores(8, 10), enviar: true }, coTutor).expect(400);
     const unchanged = await api(app, owner).get(evaluationPath()).expect(200);
-    expect((unchanged.body as EvaluationBody).notaSessao).toBe(8.5);
+    expect((unchanged.body as EvaluationBody).notaSessao).toBe(5.95);
     expect(await count('grade_adjustments')).toBe(0);
     const response = await save(
       { itens: scores(8, 10), enviar: true, justificativa: 'Revisão após discussão da sessão' },
       coTutor,
     ).expect(200);
     const body = response.body as EvaluationBody;
-    expect(body.notaSessao).toBe(9.5);
+    expect(body.notaSessao).toBe(6.65);
     expect(body.ajustes).toHaveLength(2);
     expect(body.ajustes.every((adjustment) => adjustment.autor.id === coTutor.id)).toBe(true);
     expect(body.ajustes).toEqual(
@@ -223,7 +223,7 @@ describe('Tutor evaluations (e2e)', () => {
     await save({ itens: scores(), enviar: true }, coTutor, secondStudent.id).expect(200);
     const old = await api(app, owner).get(evaluationPath(secondStudent.id)).expect(200);
     expect((old.body as EvaluationBody).criterios).toHaveLength(2);
-    expect((old.body as EvaluationBody).notaSessao).toBe(8.5);
+    expect((old.body as EvaluationBody).notaSessao).toBe(5.95);
     expect((old.body as EvaluationBody).criterios[0]).toMatchObject({
       nome: 'Participação',
       peso: 1,
@@ -249,7 +249,7 @@ describe('Tutor evaluations (e2e)', () => {
       })
       .expect(200);
     const sent = await submit().expect(200);
-    expect((sent.body as EvaluationBody).notaSessao).toBe(9);
+    expect((sent.body as EvaluationBody).notaSessao).toBe(7.45);
     await api(app, owner)
       .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaAdicional: 1 })
       .expect(200);
@@ -259,7 +259,7 @@ describe('Tutor evaluations (e2e)', () => {
       justificativa: 'Correção da participação',
     }).expect(200);
     expect(adjusted.body as EvaluationBody).toMatchObject({
-      notaSessao: 9.25,
+      notaSessao: 7.63,
       adicionalAplicado: 0.5,
       enviadaEm: (sent.body as EvaluationBody).enviadaEm,
     });
@@ -331,7 +331,7 @@ describe('Tutor evaluations (e2e)', () => {
       }).expect(500);
       const response = await api(app, owner).get(evaluationPath()).expect(200);
       const body = response.body as EvaluationBody;
-      expect(body.notaSessao).toBe(8.5);
+      expect(body.notaSessao).toBe(5.95);
       expect(body.itens.find((item) => item.criterioId === firstCriterionId)?.nota).toBe(7);
       expect(body.ajustes).toEqual([]);
     } finally {

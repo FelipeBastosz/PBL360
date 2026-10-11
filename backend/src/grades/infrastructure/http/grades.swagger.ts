@@ -27,14 +27,14 @@ export const GetProblemGradesSwaggerDocs = applyDecorators(
           sessoes: [
             {
               sessaoId: '123e4567-e89b-12d3-a456-426614174000',
-              nota: 8.5,
+              nota: 6,
               situacao: 'AVALIADA',
             },
           ],
-          notaFinal: 8.5,
+          notaFinal: 6,
         },
       ],
-      mediaTurma: 8.5,
+      mediaTurma: 6,
       versoesFormula: {
         sessao: 1,
         problema: 1,

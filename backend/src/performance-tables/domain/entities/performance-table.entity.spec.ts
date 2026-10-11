@@ -228,6 +228,45 @@ describe('PerformanceTable', () => {
     expect(table.criteria.map((criterion) => criterion.weight)).toEqual([4, 6]);
   });
 
+  it('allows only weight changes when a table has a past session', () => {
+    const table = PerformanceTable.create({
+      tutorId: 'tutor-123',
+      name: 'Barema',
+      criteria: [
+        { name: 'Participação', orderIndex: 1, weight: 5 },
+        { name: 'Postura', orderIndex: 2, weight: 5 },
+      ],
+    });
+    table.criteria.forEach((criterion, index) => {
+      criterion.id = `criterion-${index + 1}`;
+    });
+
+    expect(() =>
+      table.update(
+        {
+          name: 'Outro barema',
+          criteria: [
+            { id: 'criterion-1', name: 'Participação', weight: 5 },
+            { id: 'criterion-2', name: 'Postura', weight: 5 },
+          ],
+        },
+        true,
+      ),
+    ).toThrow('Somente os pesos podem ser alterados.');
+
+    table.update(
+      {
+        name: 'Barema',
+        criteria: [
+          { id: 'criterion-1', name: 'Participação', weight: 6 },
+          { id: 'criterion-2', name: 'Postura', weight: 4 },
+        ],
+      },
+      true,
+    );
+    expect(table.criteria.map((criterion) => criterion.weight)).toEqual([6, 4]);
+  });
+
   it.each(['name', 'description'])('rejects changing the default table %s', (field) => {
     const table = PerformanceTable.create({
       ...validTableData(),

@@ -2,7 +2,7 @@ import { InvalidEvaluationItemsError } from '../errors/invalid-evaluation.error'
 import type { SessionEvaluationCriterion } from '../entities/session-evaluation-criterion.entity';
 import { EvaluationRules, type CriterionScore } from './evaluation-rules';
 
-export const SESSION_CALCULATION_VERSION = 'WEIGHTED_AVERAGE_BONUS_V1';
+export const SESSION_CALCULATION_VERSION = 'WEIGHTED_CRITERIA_CARGO_70_30_V2';
 
 export class SessionGradeCalculator {
   static calculate(
@@ -33,8 +33,10 @@ export class SessionGradeCalculator {
       (sum, criterion, index) => sum + scores.get(criterion.id)! * weights[index]!,
       0n,
     );
-    const numerator = weighted + BigInt(Math.round(bonus * 100)) * total;
-    const cents = (2n * numerator + total) / (2n * total);
+    const cargoScoreCents = BigInt(Math.round(bonus * 1000));
+    const numerator = weighted * 7n + cargoScoreCents * total * 3n;
+    const denominator = total * 10n;
+    const cents = (2n * numerator + denominator) / (2n * denominator);
     return Number(cents > 1000n ? 1000n : cents) / 100;
   }
 

@@ -22,6 +22,20 @@ describe('UpdatePerformanceTableDto', () => {
     ).resolves.toEqual([]);
   });
 
+  it('accepts the session propagation choice', async () => {
+    await expect(
+      validatePayload([{ nome: 'Participação', peso: 10 }], { propagarParaSessoes: true }),
+    ).resolves.toEqual([]);
+  });
+
+  it('rejects a non-boolean session propagation choice', async () => {
+    expect(
+      await validatePayload([{ nome: 'Participação', peso: 10 }], {
+        propagarParaSessoes: 'true',
+      }),
+    ).not.toHaveLength(0);
+  });
+
   it.each([null, '', 'invalid-id', 123])('rejects an invalid criterion id: %s', async (id) => {
     expect(await validatePayload([{ id, nome: 'Participação' }])).not.toHaveLength(0);
   });

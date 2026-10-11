@@ -18,7 +18,11 @@ describe('UpdatePerformanceTableUseCase', () => {
       findById: jest.fn(),
       update: jest.fn(),
       softDelete: jest.fn(),
-      findUsageById: jest.fn(),
+      findUsageById: jest.fn().mockResolvedValue({
+        problemCount: 0,
+        sessionCount: 0,
+        pastSessionCount: 0,
+      }),
       findByIdIncludingDeleted: jest.fn(),
     };
 
@@ -65,7 +69,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     });
 
     expect(repository.findById).toHaveBeenCalledWith(tableId);
-    expect(repository.update).toHaveBeenCalledWith(table);
+    expect(repository.update).toHaveBeenCalledWith(table, false);
 
     expect(result.name).toBe('Barema atualizado');
     expect(result.description).toBe('Nova configuração');
@@ -89,6 +93,59 @@ describe('UpdatePerformanceTableUseCase', () => {
     ).rejects.toThrow(NotFoundError);
 
     expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects full edits after a past session and permits changing only weights', async () => {
+    const table = PerformanceTable.create({
+      tutorId,
+      name: 'Barema',
+      criteria: [
+        { name: 'Participação', weight: 5 },
+        { name: 'Postura', weight: 5 },
+      ],
+    });
+    table.id = tableId;
+    table.criteria[0]!.id = 'criterion-1';
+    table.criteria[1]!.id = 'criterion-2';
+    repository.findById.mockResolvedValue(table);
+    repository.findUsageById.mockResolvedValue({
+      problemCount: 1,
+      sessionCount: 2,
+      pastSessionCount: 1,
+    });
+    repository.update.mockImplementation((updated) => Promise.resolve(updated));
+
+    await expect(
+      useCase.execute({
+        tableId,
+        tutorId,
+        changes: {
+          name: 'Outro nome',
+          criteria: [
+            { id: 'criterion-1', name: 'Participação', weight: 5 },
+            { id: 'criterion-2', name: 'Postura', weight: 5 },
+          ],
+        },
+      }),
+    ).rejects.toThrow('Somente os pesos podem ser alterados.');
+    expect(repository.update).not.toHaveBeenCalled();
+
+    const result = await useCase.execute({
+      tableId,
+      tutorId,
+      changes: {
+        name: 'Barema',
+        criteria: [
+          { id: 'criterion-1', name: 'Participação', weight: 6 },
+          { id: 'criterion-2', name: 'Postura', weight: 4 },
+        ],
+        propagateToSessions: true,
+      },
+    });
+
+    expect(repository.update).toHaveBeenCalledWith(table, true);
+    expect(result.sessionCount).toBe(2);
+    expect(result.pastSessionCount).toBe(1);
   });
 
   it('throws ForbiddenError when the tutor does not own the table', async () => {
@@ -213,7 +270,7 @@ describe('UpdatePerformanceTableUseCase', () => {
       },
     });
 
-    expect(repository.update).toHaveBeenCalledWith(table);
+    expect(repository.update).toHaveBeenCalledWith(table, false);
     expect(result.criteria.map((criterion) => criterion.id)).toEqual(['retained-id', undefined]);
     expect(result.criteria[0]!.name).toBe('Participação nas discussões');
   });

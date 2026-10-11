@@ -33,6 +33,11 @@ describe('Performance tables (e2e)', () => {
   });
 
   const cleanupDb = async () => {
+    await dataSource.query('DELETE FROM evaluation_items;');
+    await dataSource.query('DELETE FROM evaluations;');
+    await dataSource.query('DELETE FROM session_evaluation_criteria;');
+    await dataSource.query('DELETE FROM session_evaluation_configs;');
+    await dataSource.query('DELETE FROM sessions;');
     await dataSource.query('DELETE FROM problems;');
     await dataSource.query('DELETE FROM performance_criteria;');
     await dataSource.query('DELETE FROM performance_tables;');
@@ -355,6 +360,97 @@ describe('Performance tables (e2e)', () => {
     await updateTable(payload, otherTutorToken).expect(403);
     await updateTable(payload, studentToken).expect(403);
     expect(await readCriteria()).toEqual(before);
+  });
+
+  it('limits past table edits to weights and can propagate snapshots and grades', async () => {
+    const [problem] = await dataSource.query<{ id: string }[]>(
+      'SELECT id FROM problems WHERE performance_table_id = $1 LIMIT 1;',
+      [tableId],
+    );
+    const [initialCriterion] = await readCriteria();
+    await dataSource.query('UPDATE performance_criteria SET weight = 5 WHERE id = $1;', [
+      initialCriterion!.id,
+    ]);
+    const [secondCriterion] = await dataSource.query<{ id: string }[]>(
+      `INSERT INTO performance_criteria (performance_table_id, name, order_index, weight)
+       VALUES ($1, 'Segundo critério', 2, 5) RETURNING id;`,
+      [tableId],
+    );
+    const [session] = await dataSource.query<{ id: string }[]>(
+      `INSERT INTO sessions (problem_id, title, date, order_index)
+       VALUES ($1, 'Sessão passada', CURRENT_DATE - 1, 1) RETURNING id;`,
+      [problem!.id],
+    );
+    await dataSource.query(
+      `INSERT INTO session_evaluation_configs
+         (session_id, performance_table_id, table_name, created_by)
+       VALUES ($1, $2, 'Tabela de teste', $3);`,
+      [session!.id, tableId, ownerId],
+    );
+    await dataSource.query(
+      `INSERT INTO session_evaluation_criteria
+         (session_id, criterion_id, name, weight, order_index)
+       SELECT $1, id, name, weight, order_index
+         FROM performance_criteria
+        WHERE id = ANY($2::uuid[]);`,
+      [session!.id, [initialCriterion!.id, secondCriterion!.id]],
+    );
+    const [evaluation] = await dataSource.query<{ id: string }[]>(
+      `INSERT INTO evaluations
+         (evaluator_id, student_id, problem_id, session_id, config_session_id,
+          performance_table_id, type, status, submitted_at, session_score,
+          applied_bonus, calculation_version, created_by)
+       VALUES ($1, $2, $3, $4, $4, $5, 'TUTOR_SESSION', 'SUBMITTED', now(), 6.4,
+               0.5, 'WEIGHTED_AVERAGE_BONUS_V1', $1)
+       RETURNING id;`,
+      [ownerId, studentId, problem!.id, session!.id, tableId],
+    );
+    await dataSource.query(
+      `INSERT INTO evaluation_items (evaluation_id, criterion_id, score)
+       VALUES ($1, $2, 8), ($1, $3, 6);`,
+      [evaluation!.id, initialCriterion!.id, secondCriterion!.id],
+    );
+
+    await updateTable({
+      nome: 'Outro nome',
+      criterios: [
+        { id: initialCriterion!.id, nome: 'Critério', ordem: 1, peso: 5 },
+        { id: secondCriterion!.id, nome: 'Segundo critério', ordem: 2, peso: 5 },
+      ],
+    }).expect(400);
+
+    const weightChanges = {
+      nome: 'Tabela de teste',
+      criterios: [
+        { id: initialCriterion!.id, nome: 'Critério', ordem: 1, peso: 6 },
+        { id: secondCriterion!.id, nome: 'Segundo critério', ordem: 2, peso: 4 },
+      ],
+    };
+    await updateTable(weightChanges).expect(200);
+    const [frozenCriterion] = await dataSource.query<{ weight: string }[]>(
+      `SELECT weight FROM session_evaluation_criteria
+        WHERE session_id = $1 AND criterion_id = $2;`,
+      [session!.id, initialCriterion!.id],
+    );
+    const [unchangedEvaluation] = await dataSource.query<{ session_score: string }[]>(
+      'SELECT session_score FROM evaluations WHERE id = $1;',
+      [evaluation!.id],
+    );
+    expect(frozenCriterion!.weight).toBe('5.00');
+    expect(unchangedEvaluation!.session_score).toBe('6.40');
+
+    await updateTable({ ...weightChanges, propagarParaSessoes: true }).expect(200);
+    const [propagatedCriterion] = await dataSource.query<{ weight: string }[]>(
+      `SELECT weight FROM session_evaluation_criteria
+        WHERE session_id = $1 AND criterion_id = $2;`,
+      [session!.id, initialCriterion!.id],
+    );
+    const [recalculatedEvaluation] = await dataSource.query<{ session_score: string }[]>(
+      'SELECT session_score FROM evaluations WHERE id = $1;',
+      [evaluation!.id],
+    );
+    expect(propagatedCriterion!.weight).toBe('6.00');
+    expect(recalculatedEvaluation!.session_score).toBe('6.54');
   });
 
   it('rolls back table changes, archival and reordering when persistence fails', async () => {

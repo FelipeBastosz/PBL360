@@ -11,6 +11,26 @@ const criteria: GradeComponent[] = [
 ];
 
 describe('grade calculator', () => {
+  it('applies the default 70/30 formula with a cargo grade on a ten-point scale', () => {
+    expect(
+      calculateSessionGrade({
+        attendance: 'PRESENT',
+        criteria: [
+          { id: 'a', score: 8 },
+          { id: 'b', score: 6 },
+          { id: 'c', score: 10 },
+        ],
+        components: [
+          { type: 'CRITERIO', referenceId: 'a', weight: 40 },
+          { type: 'CRITERIO', referenceId: 'b', weight: 40 },
+          { type: 'CRITERIO', referenceId: 'c', weight: 20 },
+        ],
+        bonus: 0.5,
+        defaultFormula: true,
+      }),
+    ).toEqual({ grade: 6.82, situation: 'AVALIADA' });
+  });
+
   it.each([
     [
       'present weighted average',

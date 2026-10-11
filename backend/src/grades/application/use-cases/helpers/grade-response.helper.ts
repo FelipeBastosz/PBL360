@@ -30,6 +30,7 @@ export function selectComponents(rows: Row[], formula?: Row): GradeComponent[] {
       type: row.type as GradeComponent['type'],
       referenceId: row.reference_id as string | null,
       weight: Number(row.weight),
+      sessionId: row.session_id ? String(row.session_id) : undefined,
     }));
 }
 

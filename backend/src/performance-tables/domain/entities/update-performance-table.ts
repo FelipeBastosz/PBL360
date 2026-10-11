@@ -5,6 +5,7 @@ export interface UpdatePerformanceCriterion extends NewPerformanceCriterion {
 }
 
 export interface UpdatePerformanceTable {
+  propagateToSessions?: boolean;
   name: string;
   description?: string | null;
   criteria: UpdatePerformanceCriterion[];

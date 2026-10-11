@@ -10,6 +10,24 @@ import type { GradeRow } from '../../../domain/repositories/grades.repository';
 
 export type Row = GradeRow;
 
+export function buildDefaultSessionComponents(criteria: Row[]): Row[] {
+  const criteriaBySession = new Map<string, Row[]>();
+  for (const criterion of criteria) {
+    const sessionId = String(criterion.session_id);
+    criteriaBySession.set(sessionId, [...(criteriaBySession.get(sessionId) ?? []), criterion]);
+  }
+  return [...criteriaBySession].flatMap(([sessionId, sessionCriteria]) => {
+    const totalWeight = sessionCriteria.reduce((sum, item) => sum + Number(item.weight), 0);
+    return sessionCriteria.map((criterion) => ({
+      formula_id: '__default_session',
+      type: 'CRITERIO',
+      reference_id: criterion.id,
+      weight: (Number(criterion.weight) / totalWeight) * 100,
+      session_id: sessionId,
+    }));
+  });
+}
+
 export interface StudentGradeContext {
   student: Row;
   sessions: Row[];
@@ -20,6 +38,7 @@ export interface StudentGradeContext {
   problemComponents: GradeComponent[];
   sessionFormulaVersion: number;
   problemFormulaVersion: number;
+  defaultSessionFormula: boolean;
 }
 
 export interface StudentSessionResponse {
@@ -78,6 +97,7 @@ export function calculateSessionGradeContext(ctx: {
   attendances: Row[];
   roles: Row[];
   sessionComponents: GradeComponent[];
+  defaultSessionFormula: boolean;
 }) {
   const { criteria, attendance, bonus } = extractSessionInputs(ctx);
   return calculateSessionGrade({
@@ -85,6 +105,7 @@ export function calculateSessionGradeContext(ctx: {
     components: ctx.sessionComponents,
     attendance,
     bonus,
+    defaultFormula: ctx.defaultSessionFormula,
   });
 }
 
@@ -96,6 +117,7 @@ export function processStudentSession(ctx: {
   roles: Row[];
   sessionComponents: GradeComponent[];
   formulaVersion: number;
+  defaultSessionFormula: boolean;
 }) {
   const sessionId = String(ctx.session.id);
   const calculated = calculateSessionGradeContext(ctx);
@@ -132,24 +154,29 @@ function buildSessionResponse(
 }
 
 export function processStudentGrades(ctx: StudentGradeContext) {
-  const sessionRows: Row[] = [];
-  const grades: StudentSessionResponse[] = ctx.sessions.map((session) => {
-    const { row, responseSession } = processStudentSession({
-      session,
-      student: ctx.student,
-      scores: ctx.scores,
-      attendances: ctx.attendances,
-      roles: ctx.roles,
-      sessionComponents: ctx.sessionComponents,
-      formulaVersion: ctx.sessionFormulaVersion,
-    });
-    sessionRows.push(row);
-    return responseSession;
-  });
+  const results = ctx.sessions.map((session) => processStudentSessionForGrade(ctx, session));
+  const sessionRows = results.map((result) => result.row);
+  const grades = results.map((result) => result.responseSession);
 
   const finalGrade = calculateProblemGrade(ctx.problemComponents, sessionGrades(sessionRows));
 
   return buildStudentResult(ctx, grades, finalGrade.grade, sessionRows);
+}
+
+function processStudentSessionForGrade(ctx: StudentGradeContext, session: Row) {
+  const sessionId = String(session.id);
+  return processStudentSession({
+    session,
+    student: ctx.student,
+    scores: ctx.scores,
+    attendances: ctx.attendances,
+    roles: ctx.roles,
+    sessionComponents: ctx.sessionComponents.filter(
+      (component) => !component.sessionId || component.sessionId === sessionId,
+    ),
+    formulaVersion: ctx.sessionFormulaVersion,
+    defaultSessionFormula: ctx.defaultSessionFormula,
+  });
 }
 
 function sessionGrades(rows: Row[]): Array<number | null> {
