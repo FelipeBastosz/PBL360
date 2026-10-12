@@ -25,6 +25,21 @@ export class SaveStudentProblemFeedbackDto {
   @Max(10, { message: 'A nota máxima permitida é 10.' })
   nota?: number | null;
 
+  @ApiPropertyOptional({ example: 'ALUNO' })
+  @IsOptional()
+  @IsString()
+  escopo?: string;
+
+  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174001' })
+  @IsOptional()
+  @IsString()
+  destinatario_id?: string | null;
+
+  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174001' })
+  @IsOptional()
+  @IsString()
+  destinatarioId?: string | null;
+
   @ApiProperty({
     description: 'Texto do feedback direcionado ao aluno no problema (1 a 2000 caracteres).',
     example: 'Excelente participação durante a tutoria e fundamentação das fontes.',
