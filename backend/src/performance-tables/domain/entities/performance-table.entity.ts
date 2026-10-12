@@ -53,6 +53,15 @@ export class PerformanceTable {
   @Column({ name: 'source_table_id', type: 'uuid', nullable: true, default: null })
   sourceTableId: string | null;
 
+  @Index('idx_performance_tables_source')
+  @ManyToOne(() => PerformanceTable, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({
+    name: 'source_table_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_performance_tables_source',
+  })
+  sourceTable?: PerformanceTable | null;
+
   @Column({ name: 'is_session_copy', type: 'boolean', default: false })
   isSessionCopy: boolean;
 
