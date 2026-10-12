@@ -3,20 +3,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
-import { renderApp, sessionFor, studentUser, tutorUser } from '@/testing/renderApp';
+import { renderApp, sessionFor, studentUser } from '@/testing/renderApp';
 
 vi.mock('@/services/user.service');
+vi.mock('@/services/room.service', () => ({
+  roomService: { list: async () => [], listMyRooms: async () => [] },
+}));
 
 afterEach(() => {
   vi.resetAllMocks();
   localStorage.clear();
 });
 
-describe('HomePage', () => {
+describe('AppHeader', () => {
   it('shows the photo stored for the signed-in student', async () => {
     vi.mocked(userService.getPhoto).mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
     sessionStore.save(sessionFor({ ...studentUser, possuiFoto: true }));
-    renderApp('/inicio');
+    renderApp('/turmas');
 
     const photo = await screen.findByRole('img', { name: 'Foto de Ana Souza' });
 
@@ -26,36 +29,28 @@ describe('HomePage', () => {
 
   it('shows the initials when the user has no photo', async () => {
     sessionStore.save(sessionFor({ ...studentUser, possuiFoto: false }));
-    renderApp('/inicio');
+    renderApp('/turmas');
 
-    expect(await screen.findByRole('heading', { name: 'Olá, Ana Souza!' })).toBeInTheDocument();
-    expect(screen.getByText('AS')).toBeInTheDocument();
+    expect(await screen.findByText('AS')).toBeInTheDocument();
     expect(userService.getPhoto).not.toHaveBeenCalled();
   });
 
   it('falls back to the initials when the photo cannot be loaded', async () => {
     vi.mocked(userService.getPhoto).mockRejectedValue(new ApiError(404, ['Foto não encontrada.']));
     sessionStore.save(sessionFor({ ...studentUser, possuiFoto: true }));
-    renderApp('/inicio');
+    renderApp('/turmas');
 
     expect(await screen.findByText('AS')).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: 'Foto de Ana Souza' })).not.toBeInTheDocument();
   });
 
-  it('shows the formulas button only for tutors', async () => {
-    sessionStore.save(sessionFor(tutorUser));
-    renderApp('/inicio');
-
-    expect(await screen.findByRole('button', { name: 'Ver Minhas Fórmulas' })).toBeInTheDocument();
-  });
-
-  it('does not show the formulas button for students', async () => {
+  it('signs the user out', async () => {
     sessionStore.save(sessionFor(studentUser));
-    renderApp('/inicio');
+    const { user } = renderApp('/turmas');
 
-    expect(
-      await screen.findByRole('heading', { name: `Olá, ${studentUser.nome}!` }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ver Minhas Fórmulas' })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'Sair' }));
+
+    expect(await screen.findByRole('button', { name: 'Entrar' })).toBeInTheDocument();
+    expect(sessionStore.getToken()).toBeNull();
   });
 });

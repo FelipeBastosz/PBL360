@@ -9,7 +9,6 @@ export const ROUTES = {
   resetPasswordCode: '/recuperar-senha/codigo',
   resetPassword: '/recuperar-senha/nova-senha',
   resetPasswordSuccess: '/recuperar-senha/concluido',
-  home: '/inicio',
   rooms: '/turmas',
   createRoom: '/turmas/nova',
   createRoomSuccess: '/turmas/nova/sucesso',
@@ -28,7 +27,10 @@ export const ROUTES = {
   problemSessions: '/turmas/:roomId/problemas/:problemId',
   manageSessions: '/turmas/:roomId/problemas/:problemId/sessoes/gerenciar',
   sessionHub: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId',
+  sessionFormulas: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/formulas',
   rollCall: '/sessoes/:sessaoId/chamada',
   memberSession: '/sessoes/:sessaoId',
   sessionRollCall: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/chamada',
+  sessionEvaluationsList: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar',
+  studentEvaluation: '/sessoes/:sessionId/avaliacao/:studentId',
 } as const;

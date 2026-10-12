@@ -99,7 +99,7 @@ function ProblemSessionsMain({
   return (
     <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
       {error && <Alert tone="error">{error.message}</Alert>}
-      <ProblemTopActions isProfessor={isProfessor} />
+      <ProblemTopActions isProfessor={isProfessor} roomId={roomId} problemId={problemId} />
       <SessionsSearch query={query} setQuery={setQuery} />
       {isLoading ? (
         <div className="mt-10 flex justify-center">

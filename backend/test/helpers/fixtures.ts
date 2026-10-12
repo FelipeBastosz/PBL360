@@ -15,7 +15,7 @@ export interface TestUser {
 
 export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
   await dataSource.query(
-    'TRUNCATE observation_tags, observations, behavior_tags, feedback_revisions, feedback, session_attachments, attendances, session_roles, sessions, problems, performance_criteria, performance_tables, room_students, room_tutor_events, room_tutors, rooms, password_reset_codes, email_verification_codes, user_photos, users CASCADE;',
+    'TRUNCATE problem_grades, session_grades, criterion_grades, formula_components, formulas, grade_adjustments, evaluation_items, evaluations, session_evaluation_configs, observation_tags, observations, behavior_tags, feedback_revisions, feedback, session_attachments, attendances, session_roles, sessions, problems, performance_criteria, performance_tables, room_students, room_tutor_events, room_tutors, rooms, password_reset_codes, email_verification_codes, user_photos, users CASCADE;',
   );
 };
 

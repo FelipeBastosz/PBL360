@@ -4,11 +4,12 @@ import {
   Catch,
   ConflictException,
   ForbiddenException,
+  HttpStatus,
   NotFoundException,
   UnauthorizedException,
   UnprocessableEntityException,
+  HttpException,
   type ExceptionFilter,
-  type HttpException,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -16,6 +17,7 @@ import {
   ConflictError,
   ForbiddenError,
   InvalidRequestError,
+  LockedError,
   NotFoundError,
   UnauthorizedError,
   UnprocessableEntityError,
@@ -24,6 +26,12 @@ import { DomainError } from '../errors/domain.error';
 
 type HttpExceptionClass = new (message: string) => HttpException;
 
+class LockedHttpException extends HttpException {
+  constructor(message: string) {
+    super(HttpException.createBody(message, 'Locked', HttpStatus.LOCKED), HttpStatus.LOCKED);
+  }
+}
+
 const HTTP_EXCEPTIONS: [abstract new (message: string) => Error, HttpExceptionClass][] = [
   [InvalidRequestError, BadRequestException],
   [UnauthorizedError, UnauthorizedException],
@@ -31,6 +39,7 @@ const HTTP_EXCEPTIONS: [abstract new (message: string) => Error, HttpExceptionCl
   [NotFoundError, NotFoundException],
   [ConflictError, ConflictException],
   [UnprocessableEntityError, UnprocessableEntityException],
+  [LockedError, LockedHttpException],
 ];
 
 export const toHttpException = (error: DomainError | ApplicationError): HttpException => {

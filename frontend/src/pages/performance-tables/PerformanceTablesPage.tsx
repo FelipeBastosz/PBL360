@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { PlusIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { SearchField } from '@/components/ui/SearchField';
 import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
@@ -12,6 +12,7 @@ import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
 import type { PerformanceTableSummary } from '@/types/performanceTable';
 import { cn } from '@/utils/cn';
+import { readApplyTarget } from '@/utils/navigationState';
 import { CreateFormulaModal } from './components/CreateFormulaModal';
 
 function PerformanceTablesHeader() {
@@ -97,9 +98,12 @@ function PerformanceTablesFabMenu({ onOpenCreateModal }: { onOpenCreateModal: ()
 
 type CardProps = { table: PerformanceTableSummary };
 function PerformanceTableCard({ table }: CardProps) {
+  const { state } = useLocation();
+
   return (
     <Link
       to={`${ROUTES.performanceTables}/${table.id}`}
+      state={readApplyTarget(state)}
       className="flex flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-shadow hover:shadow-md"
     >
       <div className="h-1.5 w-full bg-brand-900" />

@@ -20,7 +20,6 @@ const ResetPasswordSuccessPage = lazy(
 const RollCallPage = lazy(() => import('@/pages/roll-call/RollCallPage'));
 const MemberSessionPage = lazy(() => import('@/pages/sessions/MemberSessionPage'));
 const NotFoundPage = lazy(() => import('@/pages/not-found/NotFoundPage'));
-const HomePage = lazy(() => import('@/pages/home/HomePage'));
 const RoomsPage = lazy(() => import('@/pages/rooms/RoomsPage'));
 const CreateRoomPage = lazy(() => import('@/pages/rooms/CreateRoomPage'));
 const CreateRoomSuccessPage = lazy(() => import('@/pages/rooms/CreateRoomSuccessPage'));
@@ -47,6 +46,11 @@ const EditPerformanceTablePage = lazy(
 const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
 const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
 const SessionHubPage = lazy(() => import('@/pages/sessions/SessionHubPage'));
+const ProblemFormulaPage = lazy(() => import('@/pages/formulas/ProblemFormulaPage'));
+const SessionEvaluationsListPage = lazy(
+  () => import('@/pages/evaluations/SessionEvaluationsListPage'),
+);
+const StudentEvaluationPage = lazy(() => import('@/pages/evaluations/StudentEvaluationPage'));
 
 export function AppRoutes() {
   return (
@@ -65,7 +69,6 @@ export function AppRoutes() {
           <Route path={ROUTES.resetPasswordSuccess} element={<ResetPasswordSuccessPage />} />
         </Route>
         <Route element={<ProtectedRoute />}>
-          <Route path={ROUTES.home} element={<HomePage />} />
           <Route path={ROUTES.rooms} element={<RoomsPage />} />
           <Route path={ROUTES.createRoom} element={<CreateRoomPage />} />
           <Route path={ROUTES.createRoomSuccess} element={<CreateRoomSuccessPage />} />
@@ -82,9 +85,12 @@ export function AppRoutes() {
           <Route path={ROUTES.problemSessions} element={<ProblemSessionsPage />} />
           <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />
           <Route path={ROUTES.sessionHub} element={<SessionHubPage />} />
+          <Route path={ROUTES.sessionFormulas} element={<ProblemFormulaPage />} />
           <Route path={ROUTES.rollCall} element={<RollCallPage />} />
           <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
           <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
+          <Route path={ROUTES.sessionEvaluationsList} element={<SessionEvaluationsListPage />} />
+          <Route path={ROUTES.studentEvaluation} element={<StudentEvaluationPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

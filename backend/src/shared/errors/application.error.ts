@@ -23,3 +23,5 @@ export class ConflictError extends ApplicationError {
 }
 
 export class UnprocessableEntityError extends ApplicationError {}
+
+export class LockedError extends ApplicationError {}
