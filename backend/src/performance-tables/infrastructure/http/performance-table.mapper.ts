@@ -49,7 +49,7 @@ function mapCriteria(table: PerformanceTable) {
 export const toUpdatePerformanceTableInput = (
   dto: UpdatePerformanceTableDto,
 ): UpdatePerformanceTable => ({
-  propagateToSessions: dto.propagarParaSessoes ?? false,
+  propagateToSessions: dto.propagarParaSessoes,
   name: dto.nome,
   description: dto.descricao,
   criteria: dto.criterios.map((criterion) => ({
