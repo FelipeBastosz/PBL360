@@ -118,8 +118,9 @@ describe('Received feedbacks (e2e)', () => {
       student.id,
       colleague.id,
     ]);
+    // Session creation can assign the tutor's default table automatically.
     const [table] = await db.query<[{ id: string }]>(
-      "INSERT INTO performance_tables (tutor_id, name, is_default) VALUES ($1, 'Tabela', false) RETURNING id;",
+      "INSERT INTO performance_tables (tutor_id, name, is_default) VALUES ($1, 'Tabela', true) RETURNING id;",
       [tutor.id],
     );
     tableId = table.id;
