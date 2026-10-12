@@ -76,12 +76,12 @@ async function ensureEvaluation(
   );
 }
 
-async function readBonus(manager: EntityManager, input: EvaluationWrite): Promise<number> {
+async function readBonus(manager: EntityManager, input: EvaluationWrite): Promise<number | null> {
   const [row] = await manager.query<{ bonus: string | null }[]>(
     'SELECT bonus_score AS bonus FROM session_roles WHERE session_id = $1 AND student_id = $2 FOR SHARE;',
     [input.context.sessionId, input.studentId],
   );
-  return Number(row?.bonus ?? 0);
+  return row?.bonus === null || row?.bonus === undefined ? null : Number(row.bonus);
 }
 
 async function updateEvaluation(manager: EntityManager, evaluation: Evaluation): Promise<void> {

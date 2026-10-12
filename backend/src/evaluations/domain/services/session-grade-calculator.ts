@@ -2,13 +2,14 @@ import { InvalidEvaluationItemsError } from '../errors/invalid-evaluation.error'
 import type { SessionEvaluationCriterion } from '../entities/session-evaluation-criterion.entity';
 import { EvaluationRules, type CriterionScore } from './evaluation-rules';
 
-export const SESSION_CALCULATION_VERSION = 'WEIGHTED_AVERAGE_BONUS_V1';
+export const SESSION_CALCULATION_VERSION = 'WEIGHTED_CRITERIA_CARGO_70_30_V2';
 
 export class SessionGradeCalculator {
   static calculate(
     items: readonly CriterionScore[],
     criteria: readonly SessionEvaluationCriterion[],
-    bonus: number,
+    bonus: number | null,
+    applyCargoFormula = false,
   ): number {
     EvaluationRules.assertValidItems(
       items,
@@ -16,13 +17,14 @@ export class SessionGradeCalculator {
       true,
     );
     this.assertConfiguration(criteria, bonus);
-    return this.weightedResult(items, criteria, bonus);
+    return this.weightedResult(items, criteria, bonus, applyCargoFormula);
   }
 
   private static weightedResult(
     items: readonly CriterionScore[],
     criteria: readonly SessionEvaluationCriterion[],
-    bonus: number,
+    bonus: number | null,
+    applyCargoFormula: boolean,
   ): number {
     const scores = new Map(
       items.map((item) => [item.criterionId, BigInt(Math.round(item.score * 100))]),
@@ -33,8 +35,20 @@ export class SessionGradeCalculator {
       (sum, criterion, index) => sum + scores.get(criterion.id)! * weights[index]!,
       0n,
     );
-    const numerator = weighted + BigInt(Math.round(bonus * 100)) * total;
-    const cents = (2n * numerator + total) / (2n * total);
+    return this.toGrade(weighted, total, bonus, applyCargoFormula);
+  }
+
+  private static toGrade(
+    weighted: bigint,
+    total: bigint,
+    bonus: number | null,
+    applyCargoFormula: boolean,
+  ): number {
+    const cargoScoreCents = BigInt(Math.round((bonus ?? 0) * 1000));
+    const usesCargoFormula = applyCargoFormula && bonus !== null;
+    const numerator = usesCargoFormula ? weighted * 7n + cargoScoreCents * total * 3n : weighted;
+    const denominator = usesCargoFormula ? total * 10n : total;
+    const cents = (2n * numerator + denominator) / (2n * denominator);
     return Number(cents > 1000n ? 1000n : cents) / 100;
   }
 
@@ -49,9 +63,9 @@ export class SessionGradeCalculator {
 
   private static assertConfiguration(
     criteria: readonly SessionEvaluationCriterion[],
-    bonus: number,
+    bonus: number | null,
   ): void {
-    if (!Number.isFinite(bonus) || bonus < 0 || bonus > 1) {
+    if (bonus !== null && (!Number.isFinite(bonus) || bonus < 0 || bonus > 1)) {
       throw new InvalidEvaluationItemsError('O adicional de papel deve estar entre 0 e 1.');
     }
     if (

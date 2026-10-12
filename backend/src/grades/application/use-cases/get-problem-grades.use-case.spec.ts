@@ -79,7 +79,7 @@ describe('GetProblemGradesUseCase', () => {
           score: 8.5,
         },
       ],
-      criteria: [{ id: 'criterion-1', weight: 1 }],
+      criteria: [{ id: 'criterion-1', session_id: 'session-1', weight: 1 }],
     });
 
     const result = await useCase.execute(input);

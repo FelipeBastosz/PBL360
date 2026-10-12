@@ -14,6 +14,7 @@ import { User } from '@/users/domain/entities/user.entity';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { NewPerformanceTable } from './new-performance-table';
 import { PerformanceCriterion } from './performance-criterion.entity';
+import { assertOnlyWeightsChanged } from './performance-table-update-policy';
 import type {
   UpdatePerformanceCriterion,
   UpdatePerformanceTable,
@@ -64,6 +65,8 @@ export class PerformanceTable {
   deletedAt: Date | null;
 
   problemCount?: number;
+  sessionCount?: number;
+  pastSessionCount?: number;
 
   static create(props: NewPerformanceTable): PerformanceTable {
     const table = new PerformanceTable();
@@ -84,9 +87,14 @@ export class PerformanceTable {
     return table;
   }
 
-  update(props: UpdatePerformanceTable): void {
+  update(props: UpdatePerformanceTable, hasPastSessions = false): void {
     this.assertCriterionIdsAreValid(props.criteria ?? []);
-    const candidate = PerformanceTable.create({ ...props, tutorId: this.tutorId });
+    const candidate = PerformanceTable.create({
+      tutorId: this.tutorId,
+      name: props.name,
+      description: props.description,
+      criteria: props.criteria,
+    });
     candidate.criteria.forEach((criterion, index) => {
       const id = props.criteria[index]!.id;
       if (id !== undefined) criterion.id = id;
@@ -95,6 +103,7 @@ export class PerformanceTable {
     });
 
     this.assertDefaultTableCanBeUpdated(candidate);
+    if (hasPastSessions) assertOnlyWeightsChanged(this, candidate);
     this.name = candidate.name;
     this.description = candidate.description;
     this.criteria = candidate.criteria;

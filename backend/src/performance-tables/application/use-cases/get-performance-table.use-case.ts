@@ -29,6 +29,10 @@ export class GetPerformanceTableUseCase {
       throw new ForbiddenError('Você não tem permissão para acessar esta tabela de desempenho.');
     }
 
+    const usage = await this.performanceTableRepository.findUsageById(table.id);
+    table.sessionCount = usage.sessionCount ?? 0;
+    table.pastSessionCount = usage.pastSessionCount ?? 0;
+
     return table;
   }
 }

@@ -4,6 +4,8 @@ export const PERFORMANCE_TABLE_REPOSITORY = Symbol('PERFORMANCE_TABLE_REPOSITORY
 
 export interface PerformanceTableUsage {
   problemCount: number;
+  sessionCount?: number;
+  pastSessionCount?: number;
 }
 
 export interface PerformanceTableSummary {
@@ -23,7 +25,7 @@ export interface PerformanceTableRepository {
   findSummariesByTutorId(tutorId: string): Promise<PerformanceTableSummary[]>;
   findById(id: string): Promise<PerformanceTable | null>;
   softDelete(table: PerformanceTable): Promise<boolean>;
-  update(table: PerformanceTable): Promise<PerformanceTable>;
+  update(table: PerformanceTable, propagateToSessions?: boolean): Promise<PerformanceTable>;
   findUsageById(id: string): Promise<PerformanceTableUsage>;
   findByIdIncludingDeleted(id: string): Promise<PerformanceTable | null>;
 }

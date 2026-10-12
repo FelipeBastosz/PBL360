@@ -79,9 +79,29 @@ export const INSERT_PERFORMANCE_TABLE_QUERY = `
 `;
 
 export const FIND_PERFORMANCE_TABLE_USAGE_QUERY = `
-  SELECT COUNT(*)::int AS "problemCount"
-    FROM problems
-   WHERE performance_table_id = $1;
+  WITH table_problems AS (
+    SELECT id FROM problems WHERE performance_table_id = $1
+    UNION
+    SELECT s.problem_id
+      FROM session_evaluation_configs cfg
+      JOIN sessions s ON s.id = cfg.session_id
+     WHERE cfg.performance_table_id = $1
+  ),
+  table_sessions AS (
+    SELECT s.id, s.date
+      FROM sessions s
+     WHERE EXISTS (
+       SELECT 1 FROM problems p
+        WHERE p.id = s.problem_id AND p.performance_table_id = $1
+     ) OR EXISTS (
+       SELECT 1 FROM session_evaluation_configs cfg
+        WHERE cfg.session_id = s.id AND cfg.performance_table_id = $1
+     )
+  )
+  SELECT (SELECT COUNT(*)::int FROM table_problems) AS "problemCount",
+         COUNT(*)::int AS "sessionCount",
+         COUNT(*) FILTER (WHERE date < CURRENT_DATE)::int AS "pastSessionCount"
+    FROM table_sessions;
 `;
 
 export const FIND_PERFORMANCE_TABLE_BY_ID_INCLUDING_DELETED_QUERY = `

@@ -11,6 +11,7 @@ export interface GradeComponent {
   referenceId?: string | null;
   weight: number;
   value?: number | null;
+  sessionId?: string;
 }
 
 export interface SessionGradeInput {
@@ -18,6 +19,7 @@ export interface SessionGradeInput {
   components: GradeComponent[];
   attendance: GradeAttendance;
   bonus: number | null;
+  defaultFormula?: boolean;
 }
 
 export interface SessionGradeResult {
@@ -29,19 +31,20 @@ export interface ProblemGradeResult {
   grade: number | null;
 }
 
-const weightedAverage = (values: Array<{ value: number; weight: number }>): number | null => {
+const weightedAverage = (
+  values: Array<{ value: number; weight: number }>,
+  denominator?: number,
+): number | null => {
   const available = values.filter((item) => item.value !== null && item.weight > 0);
-  const weight = available.reduce((sum, item) => sum + item.weight, 0);
+  if (available.length === 0) return null;
+  const weight = denominator ?? available.reduce((sum, item) => sum + item.weight, 0);
   return weight === 0
     ? null
     : available.reduce((sum, item) => sum + item.value * item.weight, 0) / weight;
 };
 
-export const calculateSessionGrade = (input: SessionGradeInput): SessionGradeResult => {
-  if (input.attendance === 'ABSENT') return { grade: 0, situation: 'AUSENTE' };
-  if (input.attendance === 'EXCUSED') return { grade: null, situation: 'JUSTIFICADA' };
-
-  const values = input.components
+function sessionCriterionValues(input: SessionGradeInput) {
+  return input.components
     .filter((component) => component.type === 'CRITERIO')
     .map((component) => ({
       value:
@@ -49,14 +52,35 @@ export const calculateSessionGrade = (input: SessionGradeInput): SessionGradeRes
       weight: component.weight,
     }))
     .filter((item): item is { value: number; weight: number } => item.value !== null);
-  const average = weightedAverage(values);
+}
+
+export const calculateSessionGrade = (input: SessionGradeInput): SessionGradeResult => {
+  if (input.attendance === 'ABSENT') return { grade: 0, situation: 'AUSENTE' };
+  if (input.attendance === 'EXCUSED') return { grade: null, situation: 'JUSTIFICADA' };
+
+  const values = sessionCriterionValues(input);
+  const denominator = input.defaultFormula
+    ? input.components.reduce((sum, component) => sum + component.weight, 0)
+    : undefined;
+  const average = weightedAverage(values, denominator);
   if (average === null) return { grade: null, situation: 'PENDENTE' };
 
+  const grade = calculateFinalSessionGrade(average, input.bonus, input.defaultFormula);
   return {
-    grade: Math.min(10, average + (input.bonus ?? 0)),
+    grade: Math.min(10, grade),
     situation: 'AVALIADA',
   };
 };
+
+function calculateFinalSessionGrade(
+  average: number,
+  bonus: number | null,
+  defaultFormula = false,
+): number {
+  if (defaultFormula && bonus !== null) return (average * 7 + bonus * 10 * 3) / 10;
+  if (defaultFormula) return average;
+  return average + (bonus ?? 0);
+}
 
 export const calculateProblemGrade = (
   components: GradeComponent[],

@@ -8,6 +8,7 @@ import {
 } from '../../domain/repositories/grades.repository';
 import type { GradesResponseDto } from '../dtos/grades-response.dto';
 import {
+  buildDefaultSessionComponents,
   processStudentGrades,
   type Row,
   type StudentResponse,
@@ -99,15 +100,7 @@ export class GetProblemGradesUseCase {
   private applySessionDefault(formulas: Row[], components: Row[], criteria: Row[]): void {
     if (formulas.some((f) => f.scope === 'SESSAO') || criteria.length === 0) return;
     formulas.push({ id: '__default_session', scope: 'SESSAO', version: null });
-    const totalWeight = criteria.reduce((sum, c) => sum + Number(c.weight), 0);
-    components.push(
-      ...criteria.map((c) => ({
-        formula_id: '__default_session',
-        type: 'CRITERIO',
-        reference_id: c.id,
-        weight: (Number(c.weight) / totalWeight) * 100,
-      })),
-    );
+    components.push(...buildDefaultSessionComponents(criteria));
   }
 
   private applyProblemDefault(formulas: Row[], components: Row[]): void {
@@ -172,6 +165,7 @@ export class GetProblemGradesUseCase {
       sessionComponents: session.components,
       problemComponents: problem.components,
       sessionFormulaVersion: (session.formula?.version as number) ?? 1,
+      defaultSessionFormula: session.formula?.id === '__default_session',
       problemFormulaVersion: (problem.formula?.version as number) ?? 1,
     };
   }
