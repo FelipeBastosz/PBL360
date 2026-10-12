@@ -11,6 +11,27 @@ import type {
 } from '@/types/evaluation';
 import type { BehaviorTag, ObservationItem } from '@/types/observation';
 
+function draftStorageKey(sessionId: string, studentId: string) {
+  return `eval_draft_${sessionId}_${studentId}`;
+}
+
+function loadStoredDraft(sessionId: string, studentId: string) {
+  try {
+    const raw = sessionStorage.getItem(draftStorageKey(sessionId, studentId));
+    return raw ? (JSON.parse(raw) as { scores: Record<string, number>; feedback: string }) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearStoredDraft(sessionId: string, studentId: string) {
+  try {
+    sessionStorage.removeItem(draftStorageKey(sessionId, studentId));
+  } catch {
+    // ignore
+  }
+}
+
 function toScoresMap(itens: Array<{ criterioId: string; nota: number }>) {
   const map: Record<string, number> = {};
   itens.forEach((i) => {
@@ -38,9 +59,8 @@ async function sendEvaluation(
   const itens = criteria.map((c) => ({ criterioId: c.id, nota: scores[c.id] ?? 0 }));
   const result = await runSave(sessionId, studentId, { itens, enviar, justificativa });
   if (result.ok) {
-    if (feedback.trim()) {
-      await evaluationService.saveFeedback(sessionId, studentId, feedback.trim());
-    }
+    await evaluationService.saveFeedback(sessionId, studentId, feedback.trim());
+    clearStoredDraft(sessionId, studentId);
     notify({
       tone: enviar ? 'success' : 'info',
       message: enviar ? 'Avaliação enviada com sucesso.' : 'Rascunho salvo com sucesso.',
@@ -71,8 +91,11 @@ function useFetchStudentEvaluation(sessionId: string, studentId: string) {
         if (res.ok) {
           setCriteria(res.data.evalData.criterios);
           setStatus(res.data.evalData.status);
-          setScores(toScoresMap(res.data.evalData.itens));
-          if (res.data.fbData) setFeedback(res.data.fbData.texto);
+          const backendScores = toScoresMap(res.data.evalData.itens);
+          const backendFeedback = res.data.fbData?.texto || '';
+          const cached = loadStoredDraft(sessionId, studentId);
+          setScores(cached?.scores ?? backendScores);
+          setFeedback(cached?.feedback ?? backendFeedback);
         }
       });
     }
@@ -153,11 +176,36 @@ export function useStudentEvaluation(sessionId: string, studentId: string) {
       navigate,
     );
 
+  async function saveDraftAndNavigate(targetUrl: string, stateData: unknown) {
+    try {
+      sessionStorage.setItem(
+        draftStorageKey(sessionId, studentId),
+        JSON.stringify({ scores: evalData.scores, feedback: evalData.feedback }),
+      );
+    } catch {
+      // ignore
+    }
+
+    if (evalData.status !== 'ENVIADA') {
+      const itens = evalData.criteria.map((c) => ({
+        criterioId: c.id,
+        nota: evalData.scores[c.id] ?? 0,
+      }));
+      await runSave(sessionId, studentId, { itens, enviar: false }).catch(() => null);
+      await evaluationService
+        .saveFeedback(sessionId, studentId, evalData.feedback.trim())
+        .catch(() => null);
+    }
+
+    navigate(targetUrl, { state: stateData });
+  }
+
   return {
     ...evalData,
     ...tagData,
     isSaving,
     handleScoreChange,
     submitEvaluation,
+    saveDraftAndNavigate,
   };
 }

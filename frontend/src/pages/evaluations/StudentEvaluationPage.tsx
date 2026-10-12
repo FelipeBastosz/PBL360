@@ -13,10 +13,12 @@ function EvaluationActionButtons({
   onSend,
   onDraft,
   isSaving,
+  isEnviada,
 }: {
   onSend: () => void;
   onDraft: () => void;
   isSaving: boolean;
+  isEnviada: boolean;
 }) {
   return (
     <div className="mt-2 flex flex-col gap-2.5">
@@ -31,11 +33,16 @@ function EvaluationActionButtons({
       <button
         type="button"
         onClick={onDraft}
-        disabled={isSaving}
-        className="w-full rounded-2xl border border-brand-900 bg-white py-3 text-sm font-bold text-brand-900 transition hover:bg-brand-50 active:scale-[0.98] disabled:opacity-50"
+        disabled={isSaving || isEnviada}
+        className="w-full rounded-2xl border border-brand-900 bg-white py-3 text-sm font-bold text-brand-900 transition hover:bg-brand-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
       >
         Salvar rascunho
       </button>
+      {isEnviada && (
+        <p className="text-center text-xs text-muted">
+          Esta avaliação já foi enviada. Não é permitido salvá-la como rascunho.
+        </p>
+      )}
     </div>
   );
 }
@@ -44,10 +51,15 @@ type MainContentProps = {
   studentName: string;
   state: ReturnType<typeof useStudentEvaluation>;
   onSend: () => void;
-  moreTagsUrl: string;
+  onNavigateMoreTags: () => void;
 };
 
-function EvaluationMainContent({ studentName, state, onSend, moreTagsUrl }: MainContentProps) {
+function EvaluationMainContent({
+  studentName,
+  state,
+  onSend,
+  onNavigateMoreTags,
+}: MainContentProps) {
   if (state.isLoading) {
     return (
       <div className="mt-12 flex justify-center">
@@ -69,14 +81,14 @@ function EvaluationMainContent({ studentName, state, onSend, moreTagsUrl }: Main
         counts={state.counts}
         onIncrement={state.handleTagClick}
         onDecrement={state.handleTagDecrement}
-        moreTagsUrl={moreTagsUrl}
-        studentName={studentName}
+        onNavigateMoreTags={onNavigateMoreTags}
       />
       <EvaluationFeedbackCard feedback={state.feedback} onChange={state.setFeedback} />
       <EvaluationActionButtons
         onSend={onSend}
         onDraft={() => state.submitEvaluation(false)}
         isSaving={state.isSaving}
+        isEnviada={state.status === 'ENVIADA'}
       />
     </>
   );
@@ -99,6 +111,9 @@ export function StudentEvaluationPage() {
   };
 
   const moreTagsUrl = `${location.pathname}/marcacoes`;
+  const handleOpenMoreTags = () => {
+    state.saveDraftAndNavigate(moreTagsUrl, { studentName });
+  };
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
@@ -109,7 +124,7 @@ export function StudentEvaluationPage() {
           studentName={studentName}
           state={state}
           onSend={handleSend}
-          moreTagsUrl={moreTagsUrl}
+          onNavigateMoreTags={handleOpenMoreTags}
         />
       </main>
       <JustificationModal

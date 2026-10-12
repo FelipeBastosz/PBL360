@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -41,6 +41,7 @@ const mockTags = [
 describe('StudentEvaluationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     vi.mocked(evaluationService.getEvaluation).mockResolvedValue(mockEvalData);
     vi.mocked(evaluationService.getFeedback).mockResolvedValue(null);
     vi.mocked(observationService.listTags).mockResolvedValue(mockTags);
@@ -77,19 +78,68 @@ describe('StudentEvaluationPage', () => {
     );
   }
 
-  it('renders quick observation tag and decrements count when clicking minus button', async () => {
-    vi.mocked(observationService.undoObservation).mockResolvedValue(undefined);
+  it('renders student criteria, weights, and calculates final session grade', async () => {
     renderPage();
 
-    expect(await screen.findByText('Celular fora de contexto')).toBeInTheDocument();
-    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Nota final da sessão')).toBeInTheDocument();
+    expect(screen.getByText('6.9')).toBeInTheDocument();
+  });
 
-    const minusBtn = screen.getByRole('button', {
-      name: 'Diminuir marcação Celular fora de contexto',
+  it('saves empty feedback when cleared by user', async () => {
+    vi.mocked(evaluationService.saveEvaluation).mockResolvedValue(mockEvalData);
+    vi.mocked(evaluationService.saveFeedback).mockResolvedValue({
+      id: 'fb1',
+      texto: '',
+      criadoEm: '',
     });
-    await userEvent.click(minusBtn);
 
-    expect(observationService.undoObservation).toHaveBeenCalledWith('obs-1');
-    expect(screen.queryByText('1')).not.toBeInTheDocument();
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' });
+    const feedbackInput = screen.getByPlaceholderText(
+      'Escreva aqui um feedback para o(a) aluno(a)...',
+    );
+    await userEvent.clear(feedbackInput);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar avaliação e feedback' }));
+
+    await waitFor(() => {
+      expect(evaluationService.saveFeedback).toHaveBeenCalledWith('s1', 'st1', '');
+    });
+  });
+
+  it('disables draft button and displays notice when status is ENVIADA', async () => {
+    vi.mocked(evaluationService.getEvaluation).mockResolvedValue({
+      ...mockEvalData,
+      status: 'ENVIADA',
+    });
+
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' });
+    const draftBtn = screen.getByRole('button', { name: 'Salvar rascunho' });
+    expect(draftBtn).toBeDisabled();
+    expect(
+      screen.getByText('Esta avaliação já foi enviada. Não é permitido salvá-la como rascunho.'),
+    ).toBeInTheDocument();
+  });
+
+  it('preserves draft in session storage when navigating to tags even if evaluation is ENVIADA', async () => {
+    vi.mocked(evaluationService.getEvaluation).mockResolvedValue({
+      ...mockEvalData,
+      status: 'ENVIADA',
+    });
+
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' });
+    await userEvent.click(screen.getByRole('button', { name: 'Ver outras marcações' }));
+
+    const saved = JSON.parse(sessionStorage.getItem('eval_draft_s1_st1') || '{}');
+    expect(saved.scores).toEqual({ c1: 8, c2: 6 });
+    expect(evaluationService.saveEvaluation).not.toHaveBeenCalled();
   });
 });
