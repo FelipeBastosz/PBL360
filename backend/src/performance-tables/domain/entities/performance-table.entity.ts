@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   DeleteDateColumn,
@@ -15,6 +16,7 @@ import { Room } from '@/rooms/domain/entities/room.entity';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { NewPerformanceTable } from './new-performance-table';
 import { PerformanceCriterion } from './performance-criterion.entity';
+import { SYSTEM_TABLE_IDS } from './system-performance-tables';
 import {
   assertDefaultTableCanBeUpdated,
   assertOnlyWeightsChanged,
@@ -25,6 +27,12 @@ import type {
 } from './update-performance-table';
 
 @Entity('performance_tables')
+@Check(
+  'ck_system_performance_table_owner',
+  `(is_default = FALSE AND tutor_id IS NOT NULL) OR
+   (is_default = TRUE AND tutor_id IS NULL AND room_id IS NULL AND deleted_at IS NULL
+    AND id IN ('${SYSTEM_TABLE_IDS.standard}', '${SYSTEM_TABLE_IDS.firstSession}'))`,
+)
 export class PerformanceTable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
