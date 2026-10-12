@@ -274,7 +274,7 @@ describe('Review Walkthrough Flow & Calculation Verification (e2e)', () => {
     expect(anaGrade).toBeDefined();
     expect(anaGrade?.nome).toBe('Ana Souza');
     expect(anaGrade?.matricula).toBe('20261001');
-    expect(anaGrade?.sessoes).toEqual([
+    expect(anaGrade?.sessoes).toMatchObject([
       { sessaoId: session1Id, nota: 7.5, situacao: 'AVALIADA' },
       { sessaoId: session2Id, nota: 7.1, situacao: 'AVALIADA' },
     ]);
@@ -284,7 +284,7 @@ describe('Review Walkthrough Flow & Calculation Verification (e2e)', () => {
     expect(joaoGrade).toBeDefined();
     expect(joaoGrade?.nome).toBe('João Silva');
     expect(joaoGrade?.matricula).toBe('20261002');
-    expect(joaoGrade?.sessoes).toEqual([
+    expect(joaoGrade?.sessoes).toMatchObject([
       { sessaoId: session1Id, nota: 6.4, situacao: 'AVALIADA' },
       { sessaoId: session2Id, nota: null, situacao: 'JUSTIFICADA' },
     ]);

@@ -1,6 +1,10 @@
 import { presentGrade, type GradeComponent } from '../../../domain/entities/grade-calculator';
 import type { GradesResponseDto } from '../../dtos/grades-response.dto';
 import type { Row, StudentResponse, StudentSessionResponse } from './get-problem-grades.helper';
+import {
+  toEvaluationComponentResponse,
+  type StudentEvaluationComponents,
+} from './evaluation-components.helper';
 
 export function buildGradeResponse(
   sessions: Row[],
@@ -20,6 +24,7 @@ export function buildStudentResponse(
   student: Row,
   grades: StudentSessionResponse[],
   finalGrade: number | null,
+  evaluations: StudentEvaluationComponents,
 ): StudentResponse {
   return {
     alunoId: String(student.id),
@@ -27,6 +32,8 @@ export function buildStudentResponse(
     matricula: student.matricula as string | null,
     sessoes: grades,
     notaFinal: presentGrade(finalGrade),
+    autoavaliacao: toEvaluationComponentResponse(evaluations.self),
+    pares: toEvaluationComponentResponse(evaluations.peer),
   };
 }
 

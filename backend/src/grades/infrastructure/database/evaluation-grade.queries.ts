@@ -25,3 +25,24 @@ export const SESSION_BONUSES_QUERY = `
        AND e.student_id = sr.student_id AND e.type = 'TUTOR_SESSION'
    );
 `;
+
+// The current self-assessment score is the latest tutor adjustment, falling back to the original.
+export const SELF_ASSESSMENT_SCORES_QUERY = `
+  SELECT e.session_id, e.student_id, COALESCE(latest.new_value, e.session_score) AS score
+    FROM evaluations e
+    JOIN sessions s ON s.id = e.session_id
+    LEFT JOIN LATERAL (
+      SELECT ga.new_value FROM grade_adjustments ga
+       WHERE ga.evaluation_id = e.id
+       ORDER BY ga.created_at DESC, ga.id DESC LIMIT 1
+    ) latest ON TRUE
+   WHERE s.problem_id = $1 AND e.type = 'SELF_ASSESSMENT' AND e.status = 'SUBMITTED';
+`;
+
+export const PEER_RECEIVED_SCORES_QUERY = `
+  SELECT e.session_id, e.student_id, e.session_score AS score
+    FROM evaluations e
+    JOIN sessions s ON s.id = e.session_id
+   WHERE s.problem_id = $1 AND e.type = 'PEER_ASSESSMENT' AND e.status = 'SUBMITTED'
+     AND e.evaluator_id <> e.student_id;
+`;
