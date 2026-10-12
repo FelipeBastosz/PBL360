@@ -7,15 +7,47 @@ import {
 } from '@heroicons/react/24/outline';
 import type { ComponentType } from 'react';
 
-type CardItemProps = {
+type GridProps = {
+  basePath: string;
+  isStudentEvalActive: boolean;
+};
+
+function ActionCard({
+  to,
+  title,
+  desc,
+  color,
+  Icon,
+  disabled,
+  badge,
+}: {
   to: string;
   title: string;
   desc: string;
   color: string;
   Icon: ComponentType<{ className?: string }>;
-};
+  disabled?: boolean;
+  badge?: string;
+}) {
+  if (disabled) {
+    return (
+      <div className="relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm opacity-60 cursor-not-allowed">
+        {badge && (
+          <span className="absolute right-3 top-3 rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-bold text-muted">
+            {badge}
+          </span>
+        )}
+        <div className={`flex size-11 items-center justify-center rounded-xl ${color}`}>
+          <Icon className="size-6" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-ink">{title}</h3>
+          <p className="mt-1 text-xs text-muted leading-relaxed">{desc}</p>
+        </div>
+      </div>
+    );
+  }
 
-function ActionCard({ to, title, desc, color, Icon }: CardItemProps) {
   return (
     <Link
       to={to}
@@ -32,26 +64,7 @@ function ActionCard({ to, title, desc, color, Icon }: CardItemProps) {
   );
 }
 
-function DisabledHistoryCard() {
-  return (
-    <div className="relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm opacity-60 cursor-not-allowed">
-      <span className="absolute right-3 top-3 rounded-full bg-black/5 px-2.5 py-0.5 text-xs font-semibold text-muted">
-        Em breve
-      </span>
-      <div className="flex size-11 items-center justify-center rounded-xl bg-gray-100 text-gray-500">
-        <ClockIcon className="size-6" />
-      </div>
-      <div>
-        <h3 className="text-sm font-bold text-ink">Histórico de avaliações</h3>
-        <p className="mt-1 text-xs text-muted leading-relaxed">
-          Comparar e ajustar com justificativa
-        </p>
-      </div>
-    </div>
-  );
-}
-
-export function SessionActionGrid({ basePath }: { basePath: string }) {
+export function SessionActionGrid({ basePath, isStudentEvalActive }: GridProps) {
   return (
     <div className="grid grid-cols-2 gap-3">
       <ActionCard
@@ -61,13 +74,21 @@ export function SessionActionGrid({ basePath }: { basePath: string }) {
         color="bg-blue-50 text-blue-600"
         Icon={ClipboardDocumentCheckIcon}
       />
+
       <ActionCard
         to={`${basePath}/avaliar`}
         title="Avaliar alunos"
-        desc="Critérios, marcações e feedback"
-        color="bg-emerald-50 text-emerald-600"
+        desc={
+          isStudentEvalActive
+            ? 'Avaliações ativas. Consulte e ajuste no Histórico de avaliações.'
+            : 'Critérios, marcações e feedback'
+        }
+        color={isStudentEvalActive ? 'bg-gray-100 text-gray-400' : 'bg-emerald-50 text-emerald-600'}
         Icon={StarIcon}
+        disabled={isStudentEvalActive}
+        badge={isStudentEvalActive ? 'Bloqueado' : undefined}
       />
+
       <ActionCard
         to={`${basePath}/formulas`}
         title="Fórmulas"
@@ -75,7 +96,16 @@ export function SessionActionGrid({ basePath }: { basePath: string }) {
         color="bg-amber-50 text-amber-600"
         Icon={AdjustmentsHorizontalIcon}
       />
-      <DisabledHistoryCard />
+
+      <ActionCard
+        to={`${basePath}/historico`}
+        title="Histórico de avaliações"
+        desc="Comparar e ajustar com justificativa"
+        color="bg-gray-100 text-gray-500"
+        Icon={ClockIcon}
+        disabled
+        badge="Em breve"
+      />
     </div>
   );
 }
