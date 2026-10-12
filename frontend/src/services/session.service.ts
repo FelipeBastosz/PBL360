@@ -11,6 +11,8 @@ import type {
   SessionDeletionImpact,
   SessionRoleAssignment,
   UpdateSessionPayload,
+  SessionReleasesResponse,
+  UpdateReleasesPayload,
 } from '@/types/session';
 import { api } from './api';
 
@@ -80,4 +82,12 @@ export const sessionService = {
 
   deleteAttachment: (sessionId: string, attachmentId: string) =>
     api.delete<void>(`${BASE}/${sessionId}/anexos/${attachmentId}`).then(() => undefined),
+
+  getReleases: (sessionId: string) =>
+    api.get<SessionReleasesResponse>(`/sessoes/${sessionId}/liberacoes`).then((r) => r.data),
+
+  updateReleases: (sessionId: string, payload: UpdateReleasesPayload) =>
+    api
+      .put<SessionReleasesResponse>(`/sessoes/${sessionId}/liberacoes`, payload)
+      .then((r) => r.data),
 };

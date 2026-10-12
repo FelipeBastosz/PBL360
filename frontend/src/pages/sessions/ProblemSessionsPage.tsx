@@ -16,10 +16,10 @@ import {
 import { ROUTES } from '@/routes/paths';
 import type { Session } from '@/types/session';
 import { cn } from '@/utils/cn';
-import { SessionsEmptyState } from './SessionsEmptyState';
-import { SessionFormModal } from './SessionFormModal';
-import { SessionCard } from './SessionCard';
-import { ProblemSessionsHeader } from './ProblemSessionsHeader';
+import { SessionsEmptyState } from './components/SessionsEmptyState';
+import { SessionFormModal } from './components/SessionFormModal';
+import { SessionCard } from './components/SessionCard';
+import { ProblemSessionsHeader } from './components/ProblemSessionsHeader';
 import { ProblemTopActions } from './ProblemTopActions';
 
 function SessionsSearch({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
