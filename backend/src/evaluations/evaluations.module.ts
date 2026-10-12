@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { SessionsModule } from '@/sessions/sessions.module';
+import { FeedbacksModule } from '@/feedbacks/feedbacks.module';
 import { EvaluationAccessService } from './application/services/evaluation-access.service';
 import { GetProblemEvaluationCriteriaUseCase } from './application/use-cases/get-problem-evaluation-criteria.use-case';
 import { ListSessionEvaluationsUseCase } from './application/use-cases/list-session-evaluations.use-case';
@@ -13,13 +14,18 @@ import { PgEvaluationRepository } from './infrastructure/database/pg-evaluation.
 import { ProblemEvaluationCriteriaController } from './infrastructure/http/problem-evaluation-criteria.controller';
 import { TutorEvaluationsController } from './infrastructure/http/tutor-evaluations.controller';
 import { PeerEvaluationsController } from './infrastructure/http/peer-evaluations.controller';
+import { StudentEvaluationsController } from './infrastructure/http/student-evaluations.controller';
+import { GetSelfAssessmentUseCase } from './application/use-cases/get-self-assessment.use-case';
+import { SaveSelfAssessmentUseCase } from './application/use-cases/save-self-assessment.use-case';
+import { GetStudentEvaluationSummaryUseCase } from './application/use-cases/get-student-evaluation-summary.use-case';
 
 @Module({
-  imports: [SessionsModule],
+  imports: [SessionsModule, FeedbacksModule],
   controllers: [
     ProblemEvaluationCriteriaController,
     TutorEvaluationsController,
     PeerEvaluationsController,
+    StudentEvaluationsController,
   ],
   providers: [
     EvaluationAccessService,
@@ -30,6 +36,9 @@ import { PeerEvaluationsController } from './infrastructure/http/peer-evaluation
     ListSessionPeersUseCase,
     GetPeerEvaluationUseCase,
     SavePeerEvaluationUseCase,
+    GetSelfAssessmentUseCase,
+    SaveSelfAssessmentUseCase,
+    GetStudentEvaluationSummaryUseCase,
     { provide: EVALUATION_REPOSITORY, useClass: PgEvaluationRepository },
   ],
 })

@@ -1,4 +1,4 @@
-import { ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
 
 import { Test, type TestingModule } from '@nestjs/testing';
@@ -16,14 +16,13 @@ const mockProblem = {
 
 describe('UpdateProblemUseCase', () => {
   let useCase: UpdateProblemUseCase;
-  let repository: { findById: jest.Mock; updateDetails: jest.Mock; hasEvaluations: jest.Mock };
+  let repository: { findById: jest.Mock; updateDetails: jest.Mock };
   let assertTutorCanAccessRoom: jest.Mock;
 
   beforeEach(async () => {
     repository = {
       findById: jest.fn(),
       updateDetails: jest.fn(),
-      hasEvaluations: jest.fn().mockResolvedValue(false),
     };
     assertTutorCanAccessRoom = jest.fn();
 
@@ -104,53 +103,19 @@ describe('UpdateProblemUseCase', () => {
     ).rejects.toThrow(new NotFoundError('Problema não encontrado.'));
     expect(repository.updateDetails).not.toHaveBeenCalled();
   });
-  it('blocks changing or unlinking a table after any evaluation', async () => {
-    repository.findById.mockResolvedValue({ ...mockProblem, performanceTableId: 'table' });
-    repository.hasEvaluations.mockResolvedValue(true);
-    for (const tabelaId of ['other-table', null]) {
-      await expect(
-        useCase.execute({
-          roomId: 'room-1',
-          problemId: 'prob-1',
-          tutorId: 'tutor-1',
-          dto: { title: 'Título', tabelaId },
-        }),
-      ).rejects.toThrow(ConflictError);
-    }
-    expect(repository.updateDetails).not.toHaveBeenCalled();
-  });
-  it('preserves title-only edits and an unchanged table even with evaluations', async () => {
-    repository.findById.mockResolvedValue({ ...mockProblem, performanceTableId: 'table' });
-    repository.hasEvaluations.mockResolvedValue(true);
+  it('updates only the problem title because table configuration is session-scoped', async () => {
+    repository.findById.mockResolvedValue({ ...mockProblem });
     await useCase.execute({
       roomId: 'room-1',
       problemId: 'prob-1',
       tutorId: 'tutor-1',
-      dto: { title: 'Título' },
-    });
-    await useCase.execute({
-      roomId: 'room-1',
-      problemId: 'prob-1',
-      tutorId: 'tutor-1',
-      dto: { title: 'Título', tabelaId: 'table' },
-    });
-    expect(repository.hasEvaluations).not.toHaveBeenCalled();
-    expect(repository.updateDetails).toHaveBeenCalledTimes(2);
-  });
-  it('passes an explicit table link to atomic persistence before evaluations exist', async () => {
-    repository.findById.mockResolvedValue({ ...mockProblem, performanceTableId: null });
-    await useCase.execute({
-      roomId: 'room-1',
-      problemId: 'prob-1',
-      tutorId: 'tutor-1',
-      dto: { title: '  Título  ', tabelaId: 'table' },
+      dto: { title: '  Título  ' },
     });
     expect(repository.updateDetails).toHaveBeenCalledWith({
       id: 'prob-1',
       roomId: 'room-1',
       authorId: 'tutor-1',
       title: 'Título',
-      tableId: 'table',
     });
   });
 });

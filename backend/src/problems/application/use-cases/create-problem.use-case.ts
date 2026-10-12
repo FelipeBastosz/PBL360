@@ -15,7 +15,6 @@ export interface CreateProblemInput {
   description?: string | null;
   startDate?: string | null;
   endDate?: string | null;
-  performanceTableId?: string | null;
 }
 
 @Injectable()
@@ -35,7 +34,6 @@ export class CreateProblemUseCase {
       description: input.description,
       startDate: input.startDate,
       endDate: input.endDate,
-      performanceTableId: input.performanceTableId ?? null,
       createdBy: input.authorId,
     });
 

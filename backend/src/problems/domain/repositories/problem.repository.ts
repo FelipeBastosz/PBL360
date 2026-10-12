@@ -3,10 +3,8 @@ import type { Problem } from '../entities/problem.entity';
 export const PROBLEM_REPOSITORY = Symbol('PROBLEM_REPOSITORY');
 
 export interface ProblemRepository {
-  hasEvaluations(problemId: string): Promise<boolean>;
   updateDetails(input: UpdateProblemDetails): Promise<Problem>;
   create(problem: Problem): Promise<Problem>;
-  save(problem: Problem): Promise<Problem>;
   findById(id: string): Promise<Problem | null>;
   findByRoomId(roomId: string): Promise<Problem[]>;
   hasSessions(problemId: string): Promise<boolean>;
@@ -19,5 +17,4 @@ export interface UpdateProblemDetails {
   roomId: string;
   authorId: string;
   title: string;
-  tableId?: string | null;
 }

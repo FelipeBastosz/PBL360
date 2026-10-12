@@ -5,20 +5,16 @@ export interface GradeQuery {
   params: unknown[];
 }
 
-export function buildProblemQueries(
-  roomId: string,
-  problemId: string,
-  performanceTableId: unknown,
-): GradeQuery[] {
+export function buildProblemQueries(roomId: string, problemId: string): GradeQuery[] {
   const subQuery = 'SELECT id FROM sessions WHERE problem_id = $1';
   return [
     ...baseQueries(roomId, problemId),
     ...gradeQueries(problemId, subQuery),
-    ...criteriaQueries(problemId, performanceTableId),
+    ...criteriaQueries(problemId),
   ];
 }
 
-function criteriaQueries(problemId: string, performanceTableId: unknown): GradeQuery[] {
+function criteriaQueries(problemId: string): GradeQuery[] {
   return [
     {
       sql: `SELECT s.id AS session_id, COALESCE(sec.criterion_id, pc.id) AS id,
@@ -27,10 +23,11 @@ function criteriaQueries(problemId: string, performanceTableId: unknown): GradeQ
               LEFT JOIN session_evaluation_configs cfg ON cfg.session_id = s.id
               LEFT JOIN session_evaluation_criteria sec ON sec.session_id = s.id
               LEFT JOIN performance_criteria pc
-                ON cfg.session_id IS NULL AND pc.performance_table_id = $2 AND pc.deleted_at IS NULL
+                ON cfg.session_id IS NULL
+               AND pc.performance_table_id = s.performance_table_id AND pc.deleted_at IS NULL
              WHERE s.problem_id = $1
              ORDER BY s.order_index, COALESCE(sec.order_index, pc.order_index);`,
-      params: [problemId, performanceTableId],
+      params: [problemId],
     },
   ];
 }
@@ -45,11 +42,25 @@ function baseQueries(roomId: string, problemId: string): GradeQuery[] {
       sql: `SELECT u.id, u.name, u.registration_number AS matricula FROM room_students r JOIN users u ON u.id = r.student_id WHERE r.room_id = $1 AND u.type = 'STUDENT' ORDER BY u.name, u.id`,
       params: [roomId],
     },
-    {
-      sql: 'SELECT id, scope, version FROM formulas WHERE problem_id = $1 AND active = true',
-      params: [problemId],
-    },
+    formulaQuery(problemId),
   ];
+}
+
+function formulaQuery(problemId: string): GradeQuery {
+  return {
+    sql: `SELECT id, scope, CASE WHEN is_default THEN NULL ELSE version END AS version,
+                  session_id, is_default
+            FROM formulas
+           WHERE problem_id = $1 AND scope = 'PROBLEMA' AND active = TRUE
+          UNION ALL
+          SELECT f.id, f.scope,
+                 CASE WHEN f.is_default THEN NULL ELSE f.version END AS version,
+                 f.session_id, f.is_default
+            FROM formulas f
+            JOIN sessions s ON s.id = f.session_id
+           WHERE s.problem_id = $1 AND f.scope = 'SESSAO' AND f.active = TRUE`,
+    params: [problemId],
+  };
 }
 
 function gradeQueries(problemId: string, subQuery: string): GradeQuery[] {

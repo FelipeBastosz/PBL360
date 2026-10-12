@@ -27,6 +27,7 @@ export class CreateSessionUseCase {
     return this.sessions.create(
       Session.create({
         problemId: input.problemId,
+        createdBy: input.tutorId,
         title: input.title,
         description: input.description,
         date: input.date,

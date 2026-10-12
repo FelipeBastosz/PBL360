@@ -19,6 +19,19 @@ export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
   );
 };
 
+export const insertDefaultPerformanceTable = async (
+  dataSource: DataSource,
+  tutorId: string,
+): Promise<string> => {
+  const [table] = await dataSource.query<[{ id: string }]>(
+    `INSERT INTO performance_tables (tutor_id, name, is_default)
+     VALUES ($1, 'Tabela padrão de teste', TRUE)
+     RETURNING id;`,
+    [tutorId],
+  );
+  return table.id;
+};
+
 export const signAccessToken = (
   app: INestApplication,
   id: string,

@@ -50,6 +50,23 @@ describe('grade calculator', () => {
     ).toEqual({ grade: 7, situation: 'AVALIADA' });
   });
 
+  it('applies the configured criteria and role blocks to a session grade', () => {
+    expect(
+      calculateSessionGrade({
+        attendance: 'PRESENT',
+        criteria: [
+          { id: 'a', score: 8, weight: 75 },
+          { id: 'b', score: 4, weight: 25 },
+        ],
+        components: [
+          { type: 'CRITERIOS', weight: 60 },
+          { type: 'PAPEL', weight: 40 },
+        ],
+        bonus: 0.5,
+      }),
+    ).toEqual({ grade: 6.2, situation: 'AVALIADA' });
+  });
+
   it.each([
     [
       'present weighted average',

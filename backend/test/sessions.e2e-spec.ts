@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, signAccessToken } from './helpers/fixtures';
+import { cleanDatabase, insertDefaultPerformanceTable, signAccessToken } from './helpers/fixtures';
 
 interface SessionCreatedResponseBody {
   id: string;
@@ -154,6 +154,9 @@ describe('Sessions (e2e)', () => {
       [otherTutorId],
     );
     otherRoomId = otherRoom.id;
+
+    await insertDefaultPerformanceTable(dataSource, ownerTutorId);
+    await insertDefaultPerformanceTable(dataSource, otherTutorId);
 
     const [problem] = await dataSource.query<[{ id: string }]>(
       `INSERT INTO problems (room_id, title, description, order_index, created_by)

@@ -46,8 +46,7 @@ describe('review.seed.ts', () => {
     mockDataSource.query.mockImplementation((sql: string, params?: unknown[]) => {
       if (sql.includes('SELECT id FROM rooms')) return Promise.resolve([]);
       if (sql.includes('INSERT INTO rooms')) return Promise.resolve([{ id: 'room-1' }]);
-      if (sql.includes('SELECT id FROM performance_tables'))
-        return Promise.resolve([{ id: 'table-1' }]);
+      if (sql.includes('FROM performance_tables')) return Promise.resolve([{ id: 'table-1' }]);
       if (sql.includes('SELECT id FROM problems')) return Promise.resolve([]);
       if (sql.includes('INSERT INTO problems')) return Promise.resolve([{ id: 'problem-1' }]);
       if (sql.includes('SELECT id FROM sessions')) return Promise.resolve([]);
@@ -55,6 +54,7 @@ describe('review.seed.ts', () => {
         const order = (params as unknown[])?.[4];
         return Promise.resolve([{ id: `sess-${String(order)}` }]);
       }
+      if (sql.includes('INSERT INTO formulas')) return Promise.resolve([{ id: 'formula-1' }]);
       if (sql.includes('SELECT id, nome FROM behavior_tags')) {
         return Promise.resolve([
           { id: 'tag-1', nome: 'Liderança e Proatividade' },
@@ -63,10 +63,12 @@ describe('review.seed.ts', () => {
       }
       if (sql.includes('SELECT id FROM observations')) return Promise.resolve([]);
       if (sql.includes('INSERT INTO observations')) return Promise.resolve([{ id: 'obs-1' }]);
-      if (sql.includes('SELECT pc.id, pc.name')) {
+      if (sql.includes('SELECT s.id AS session_id, pc.id')) {
         return Promise.resolve([
-          { id: 'crit-1', name: 'Domínio do tema' },
-          { id: 'crit-2', name: 'Uso de fontes' },
+          { id: 'crit-1', session_id: 'sess-1' },
+          { id: 'crit-2', session_id: 'sess-1' },
+          { id: 'crit-1', session_id: 'sess-2' },
+          { id: 'crit-2', session_id: 'sess-2' },
         ]);
       }
       if (sql.includes('SELECT id FROM feedback')) return Promise.resolve([]);
@@ -77,8 +79,16 @@ describe('review.seed.ts', () => {
 
     expect(mockDataSource.query).toHaveBeenCalled();
     expect(mockDataSource.query).toHaveBeenCalledWith(
-      expect.stringContaining('VALUES ($1, $2, $3, $4, $5, $6)'),
-      ['problem-1', 'Sessão 1 - Abertura', 'Sessão 1 - Abertura', '2026-10-01', 1, 'concluida'],
+      expect.stringContaining('VALUES ($1, $7, $2, $3, $4, $5, $6)'),
+      [
+        'problem-1',
+        'Sessão 1 - Abertura',
+        'Sessão 1 - Abertura',
+        '2026-10-01',
+        1,
+        'concluida',
+        'table-1',
+      ],
     );
     expect(mockDataSource.query).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO attendances'),

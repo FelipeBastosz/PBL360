@@ -10,7 +10,6 @@ import { GetProblemDeletionImpactUseCase } from './application/use-cases/get-pro
 import { GetProblemUseCase } from './application/use-cases/get-problem.use-case';
 import { ListProblemsByRoomUseCase } from './application/use-cases/list-problems-by-room.use-case';
 import { UpdateProblemUseCase } from './application/use-cases/update-problem.use-case';
-import { ChangeProblemPerformanceTableUseCase } from './application/use-cases/change-problem-performance-table.use-case';
 import { GetProblemFormulaUseCase } from './application/use-cases/get-problem-formula.use-case';
 import { CustomizeProblemFormulaUseCase } from './application/use-cases/customize-problem-formula.use-case';
 import { RestoreDefaultFormulaUseCase } from './application/use-cases/restore-default-formula.use-case';
@@ -38,7 +37,6 @@ import { ProblemFormulasController } from './infrastructure/http/problem-formula
     UpdateProblemUseCase,
     GetProblemDeletionImpactUseCase,
     DeleteProblemUseCase,
-    ChangeProblemPerformanceTableUseCase,
     GetProblemFormulaUseCase,
     CustomizeProblemFormulaUseCase,
     RestoreDefaultFormulaUseCase,

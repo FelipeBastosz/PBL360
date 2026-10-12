@@ -5,4 +5,5 @@ export interface SessionEvaluationConfig {
   tableName: string;
   criteria: SessionEvaluationCriterion[];
   frozen: boolean;
+  formula?: { criteriaWeight: number; roleWeight: number };
 }

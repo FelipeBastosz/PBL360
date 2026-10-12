@@ -47,6 +47,17 @@ export interface PeerEvaluationWrite {
   items: CriterionScore[];
   submit: boolean;
 }
+export interface StudentEvaluationSummary {
+  participating: boolean;
+  peerSubmitted: number;
+  peerTotal: number;
+}
+export interface SelfAssessmentWrite {
+  context: EvaluationContext;
+  studentId: string;
+  items: CriterionScore[];
+  submit: boolean;
+}
 export interface EvaluationRepository {
   getProblemCriteria(problemId: string): Promise<SessionEvaluationConfig>;
   isEnrolled(roomId: string, studentId: string): Promise<boolean>;
@@ -61,4 +72,10 @@ export interface EvaluationRepository {
     peerId: string,
   ): Promise<PeerEvaluationDetail>;
   recordPeerEvaluation(input: PeerEvaluationWrite): Promise<PeerEvaluationDetail>;
+  getSelfAssessment(context: EvaluationContext, studentId: string): Promise<EvaluationDetail>;
+  getStudentEvaluationSummary(
+    context: EvaluationContext,
+    studentId: string,
+  ): Promise<StudentEvaluationSummary>;
+  recordSelfAssessment(input: SelfAssessmentWrite): Promise<EvaluationDetail>;
 }

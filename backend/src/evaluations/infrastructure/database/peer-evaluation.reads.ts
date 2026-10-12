@@ -7,7 +7,7 @@ import type {
   PeerEvaluationSummary,
 } from '../../domain/repositories/evaluation.repository';
 import { toEvaluation, type EvaluationItemRow, type EvaluationRow } from './evaluation-row.mapper';
-import { readProblemConfig, readSessionConfig } from './session-evaluation-config.persistence';
+import { readSessionConfig, readSessionTableConfig } from './session-evaluation-config.persistence';
 import {
   FIND_PEER_EVALUATION,
   FIND_PEER_ITEMS,
@@ -72,7 +72,7 @@ export async function getPeerEvaluation(
   const peer = await findPeerOrThrow(manager, context.sessionId, evaluatorId, peerId);
   const config =
     (await readSessionConfig(manager, context.sessionId)) ??
-    (await readProblemConfig(manager, context.problemId));
+    (await readSessionTableConfig(manager, context.sessionId));
 
   const [row] = await manager.query<EvaluationRow[]>(FIND_PEER_EVALUATION, [
     context.sessionId,

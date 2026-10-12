@@ -4,12 +4,12 @@ import { InvalidProblemError } from '../errors/invalid-problem.error';
 
 describe('Formula', () => {
   const defaultFormulaProps = {
-    problemId: 'uuid-1',
+    sessionId: 'session-1',
     scope: FormulaScope.SESSAO,
     createdBy: 'tutor-1',
     components: [
-      { type: FormulaComponentType.CRITERIO, referenceId: 'crit-1', weight: 50 },
-      { type: FormulaComponentType.CRITERIO, referenceId: 'crit-2', weight: 50 },
+      { type: FormulaComponentType.CRITERIOS, weight: 70 },
+      { type: FormulaComponentType.PAPEL, weight: 30 },
     ],
   };
 
@@ -26,8 +26,8 @@ describe('Formula', () => {
     const invalidProps = {
       ...defaultFormulaProps,
       components: [
-        { type: FormulaComponentType.CRITERIO, referenceId: 'crit-1', weight: 40 },
-        { type: FormulaComponentType.CRITERIO, referenceId: 'crit-2', weight: 50 },
+        { type: FormulaComponentType.CRITERIOS, weight: 40 },
+        { type: FormulaComponentType.PAPEL, weight: 50 },
       ],
     };
 
@@ -39,28 +39,27 @@ describe('Formula', () => {
     const roundingProps = {
       ...defaultFormulaProps,
       components: [
-        { type: FormulaComponentType.CRITERIO, referenceId: 'c1', weight: 33.33 },
-        { type: FormulaComponentType.CRITERIO, referenceId: 'c2', weight: 33.33 },
-        { type: FormulaComponentType.CRITERIO, referenceId: 'c3', weight: 33.34 },
+        { type: FormulaComponentType.CRITERIOS, weight: 33.33 },
+        { type: FormulaComponentType.PAPEL, weight: 66.675 },
       ],
     };
 
     const formula = Formula.create(roundingProps);
-    expect(formula.components).toHaveLength(3);
+    expect(formula.components).toHaveLength(2);
   });
 
-  it('deve lançar erro se escopo SESSAO contiver componente de PROBLEMA', () => {
+  it('deve rejeitar componentes diferentes dos blocos da fórmula de sessão', () => {
     const invalidProps = {
       ...defaultFormulaProps,
       components: [
-        { type: FormulaComponentType.CRITERIO, referenceId: 'crit-1', weight: 50 },
+        { type: FormulaComponentType.CRITERIOS, weight: 50 },
         { type: FormulaComponentType.MEDIA_SESSOES, referenceId: null, weight: 50 },
       ],
     };
 
     expect(() => Formula.create(invalidProps)).toThrow(InvalidProblemError);
     expect(() => Formula.create(invalidProps)).toThrow(
-      'Fórmulas de sessão só podem conter componentes do tipo CRITERIO',
+      'A fórmula da sessão deve conter exatamente um componente CRITERIOS e um PAPEL',
     );
   });
 

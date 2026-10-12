@@ -4,10 +4,11 @@ export type GradeSituation = 'AVALIADA' | 'PENDENTE' | 'JUSTIFICADA' | 'AUSENTE'
 export interface GradeCriterion {
   id: string;
   score: number | null;
+  weight?: number;
 }
 
 export interface GradeComponent {
-  type: 'CRITERIO' | 'MEDIA_SESSOES' | 'AUTOAVALIACAO' | 'PARES';
+  type: 'CRITERIOS' | 'PAPEL' | 'CRITERIO' | 'MEDIA_SESSOES' | 'AUTOAVALIACAO' | 'PARES';
   referenceId?: string | null;
   weight: number;
   value?: number | null;
@@ -43,6 +44,23 @@ const weightedAverage = (
     : available.reduce((sum, item) => sum + item.value * item.weight, 0) / weight;
 };
 
+function calculateConfiguredSessionGrade(input: SessionGradeInput): SessionGradeResult {
+  const criteriaWeight =
+    input.components.find((component) => component.type === 'CRITERIOS')?.weight ?? 0;
+  const roleWeight = input.components.find((component) => component.type === 'PAPEL')?.weight ?? 0;
+  const average = weightedAverage(
+    input.criteria.flatMap((criterion) =>
+      criterion.score === null ? [] : [{ value: criterion.score, weight: criterion.weight ?? 1 }],
+    ),
+  );
+  if (average === null) return { grade: null, situation: 'PENDENTE' };
+  const grade =
+    input.bonus === null
+      ? average
+      : (average * criteriaWeight + input.bonus * 10 * roleWeight) / 100;
+  return { grade: Math.min(10, grade), situation: 'AVALIADA' };
+}
+
 function sessionCriterionValues(input: SessionGradeInput) {
   return input.components
     .filter((component) => component.type === 'CRITERIO')
@@ -58,6 +76,9 @@ export const calculateSessionGrade = (input: SessionGradeInput): SessionGradeRes
   if (input.attendance === 'ABSENT') return { grade: 0, situation: 'AUSENTE' };
   if (input.attendance === 'EXCUSED') return { grade: null, situation: 'JUSTIFICADA' };
 
+  if (input.components.some((component) => component.type === 'CRITERIOS')) {
+    return calculateConfiguredSessionGrade(input);
+  }
   const values = sessionCriterionValues(input);
   const denominator = input.defaultFormula
     ? input.components.reduce((sum, component) => sum + component.weight, 0)

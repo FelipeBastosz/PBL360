@@ -65,7 +65,6 @@ describe('GetProblemGradesUseCase', () => {
   it('calculates grades with default formulas and saves them through the repository', async () => {
     gradesRepository.findProblem.mockResolvedValue({
       id: input.problemId,
-      performance_table_id: 'table-1',
     });
     gradesRepository.findProblemData.mockResolvedValue({
       ...emptyData,
@@ -90,11 +89,7 @@ describe('GetProblemGradesUseCase', () => {
       sessoes: [{ sessaoId: 'session-1', nota: 8.5, situacao: 'AVALIADA' }],
     });
     expect(result.mediaTurma).toBe(8.5);
-    expect(gradesRepository.findProblemData).toHaveBeenCalledWith(
-      input.roomId,
-      input.problemId,
-      'table-1',
-    );
+    expect(gradesRepository.findProblemData).toHaveBeenCalledWith(input.roomId, input.problemId);
     expect(gradesRepository.findFormulaComponents).toHaveBeenCalledWith([]);
     expect(gradesRepository.saveGrades).toHaveBeenCalledWith(input.problemId, {
       sessionRows: [
@@ -117,14 +112,12 @@ describe('GetProblemGradesUseCase', () => {
   });
 
   it('uses the versions from active formulas', async () => {
-    gradesRepository.findProblem.mockResolvedValue({
-      id: input.problemId,
-      performance_table_id: 'table-1',
-    });
+    gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
     gradesRepository.findProblemData.mockResolvedValue({
       ...emptyData,
+      sessions: [{ id: 'session-1', date: '2026-10-02' }],
       formulas: [
-        { id: 'formula-session', scope: 'SESSAO', version: 3 },
+        { id: 'formula-session', scope: 'SESSAO', session_id: 'session-1', version: 3 },
         { id: 'formula-problem', scope: 'PROBLEMA', version: 4 },
       ],
     });

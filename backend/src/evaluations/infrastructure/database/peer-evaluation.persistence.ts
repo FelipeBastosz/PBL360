@@ -124,7 +124,7 @@ async function executePeerEvaluationTx(
   input: PeerEvaluationWrite,
 ): Promise<PeerEvaluationDetail> {
   const { peer, existingId } = await assertCanEvaluatePeer(tx, input);
-  const config = await freezeSessionConfig(tx, input.sessionId, input.problemId, input.evaluatorId);
+  const config = await freezeSessionConfig(tx, input.sessionId, input.evaluatorId);
   validateEvaluationRules(() =>
     EvaluationRules.assertValidItems(
       input.items,
