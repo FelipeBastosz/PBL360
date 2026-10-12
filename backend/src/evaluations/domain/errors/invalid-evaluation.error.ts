@@ -5,3 +5,5 @@ export class InvalidEvaluationItemsError extends DomainError {}
 export class InvalidEvaluationJustificationError extends DomainError {}
 
 export class InvalidEvaluationStateError extends DomainError {}
+
+export class InvalidAdjustmentError extends DomainError {}

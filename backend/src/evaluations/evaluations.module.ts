@@ -11,6 +11,8 @@ import { GetPeerEvaluationUseCase } from './application/use-cases/get-peer-evalu
 import { SavePeerEvaluationUseCase } from './application/use-cases/save-peer-evaluation.use-case';
 import { EVALUATION_REPOSITORY } from './domain/repositories/evaluation.repository';
 import { PgEvaluationRepository } from './infrastructure/database/pg-evaluation.repository';
+import { SELF_ASSESSMENT_ADJUSTMENT_REPOSITORY } from './domain/repositories/self-assessment-adjustment.repository';
+import { PgSelfAssessmentAdjustmentRepository } from './infrastructure/database/pg-self-assessment-adjustment.repository';
 import { ProblemEvaluationCriteriaController } from './infrastructure/http/problem-evaluation-criteria.controller';
 import { TutorEvaluationsController } from './infrastructure/http/tutor-evaluations.controller';
 import { PeerEvaluationsController } from './infrastructure/http/peer-evaluations.controller';
@@ -18,6 +20,9 @@ import { StudentEvaluationsController } from './infrastructure/http/student-eval
 import { GetSelfAssessmentUseCase } from './application/use-cases/get-self-assessment.use-case';
 import { SaveSelfAssessmentUseCase } from './application/use-cases/save-self-assessment.use-case';
 import { GetStudentEvaluationSummaryUseCase } from './application/use-cases/get-student-evaluation-summary.use-case';
+import { AdjustSelfAssessmentUseCase } from './application/use-cases/adjust-self-assessment.use-case';
+import { ListSelfAssessmentAdjustmentsUseCase } from './application/use-cases/list-self-assessment-adjustments.use-case';
+import { SelfAssessmentAdjustmentsController } from './infrastructure/http/self-assessment-adjustments.controller';
 
 @Module({
   imports: [SessionsModule, FeedbacksModule],
@@ -26,6 +31,7 @@ import { GetStudentEvaluationSummaryUseCase } from './application/use-cases/get-
     TutorEvaluationsController,
     PeerEvaluationsController,
     StudentEvaluationsController,
+    SelfAssessmentAdjustmentsController,
   ],
   providers: [
     EvaluationAccessService,
@@ -39,7 +45,13 @@ import { GetStudentEvaluationSummaryUseCase } from './application/use-cases/get-
     GetSelfAssessmentUseCase,
     SaveSelfAssessmentUseCase,
     GetStudentEvaluationSummaryUseCase,
+    AdjustSelfAssessmentUseCase,
+    ListSelfAssessmentAdjustmentsUseCase,
     { provide: EVALUATION_REPOSITORY, useClass: PgEvaluationRepository },
+    {
+      provide: SELF_ASSESSMENT_ADJUSTMENT_REPOSITORY,
+      useClass: PgSelfAssessmentAdjustmentRepository,
+    },
   ],
 })
 export class EvaluationsModule {}
