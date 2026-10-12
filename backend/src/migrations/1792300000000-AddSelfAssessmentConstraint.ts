@@ -1,6 +1,8 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddSelfAssessmentConstraint1791900000000 implements MigrationInterface {
+export class AddSelfAssessmentConstraint1792300000000 implements MigrationInterface {
+  name = 'AddSelfAssessmentConstraint1791900000000';
+
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       CREATE UNIQUE INDEX uq_self_assessment_session_student

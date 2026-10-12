@@ -7,6 +7,7 @@ import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
 import type { Session } from '@/sessions/domain/entities/session.entity';
 import type { EvaluationDetail } from '../../domain/repositories/evaluation.repository';
 import { assertSelfAssessmentCanBeSaved } from './self-assessment-policy';
+import { studentSelfAssessmentStatus } from './student-self-assessment-status';
 
 const now = new Date('2026-10-10T12:00:00.000Z');
 const session = {
@@ -73,5 +74,20 @@ describe('self-assessment policy', () => {
         now,
       ),
     ).toThrow(UnprocessableEntityError);
+  });
+
+  it('reports a disabled release as unavailable even when its deadline has passed', () => {
+    expect(
+      studentSelfAssessmentStatus(
+        {
+          ...session,
+          selfEvalReleased: false,
+          selfEvalDeadline: new Date('2026-10-09T12:00:00.000Z'),
+        } as Session,
+        true,
+        null,
+        now,
+      ),
+    ).toBe('INDISPONIVEL');
   });
 });

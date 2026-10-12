@@ -5,10 +5,14 @@ export interface StudentRoomSummary {
   name: string;
   semester: string;
   totalStudents: number;
+  totalProblems: number;
 }
 
 export interface RoomStudentSummary {
+  id: string;
   name: string;
+  email: string;
+  registrationNumber: string | null;
   joinedAt: Date;
 }
 

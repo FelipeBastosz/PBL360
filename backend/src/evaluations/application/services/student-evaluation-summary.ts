@@ -11,12 +11,13 @@ export function toStudentEvaluationSummary(
   counts: StudentEvaluationSummary,
   detail: EvaluationDetail,
   feedback: Feedback | null,
+  feedbackIsNew: boolean,
   now: Date,
 ) {
   return {
     self: toSelfSummary(session, counts, detail, now),
     peers: toPeerSummary(session, counts),
-    feedback: { available: feedback !== null, new: feedback !== null },
+    feedback: { available: feedback !== null, new: feedbackIsNew },
   };
 }
 

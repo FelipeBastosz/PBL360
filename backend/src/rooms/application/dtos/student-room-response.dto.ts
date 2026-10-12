@@ -12,4 +12,7 @@ export class StudentRoomResponseDto {
 
   @ApiProperty({ example: 24 })
   totalAlunos!: number;
+
+  @ApiProperty({ example: 3 })
+  totalProblemas!: number;
 }
