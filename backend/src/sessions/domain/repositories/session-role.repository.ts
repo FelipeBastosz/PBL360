@@ -6,7 +6,7 @@ export interface SessionRoleListItem {
   studentId: string;
   name: string;
   role: SessionRole;
-  bonusScore: number | null;
+  roleScore: number | null;
 }
 
 export interface SessionRoleRepository {
@@ -16,7 +16,7 @@ export interface SessionRoleRepository {
     roomId: string,
     studentId: string,
     role: SessionRole | null,
-    bonusScore: number | null,
+    roleScore: number | null,
     transfer: boolean,
-  ): Promise<{ studentId: string; role: SessionRole | null; bonusScore: number | null }>;
+  ): Promise<{ studentId: string; role: SessionRole | null; roleScore: number | null }>;
 }

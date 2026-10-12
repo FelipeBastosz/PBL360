@@ -1,6 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
@@ -119,7 +120,9 @@ export const UpdatePerformanceTableSwaggerDocs = applyDecorators(
       'Critérios com ID são atualizados; critérios sem ID são criados. ' +
       'Critérios omitidos são excluídos logicamente. ' +
       'A soma dos pesos de todos os critérios deve ser igual a 10. ' +
-      'A tabela deve manter ao menos um critério. Na tabela padrão, nome, descrição, nomes, descrições e ordens dos critérios não podem ser alterados; somente os pesos podem ser modificados.',
+      'A tabela deve manter ao menos um critério. Se já foi usada em sessão passada, somente os pesos podem ser alterados. ' +
+      'O campo propagarParaSessoes, quando verdadeiro, atualiza os snapshots das sessões vinculadas e recalcula as avaliações enviadas. ' +
+      'Na tabela padrão, nome, descrição, nomes, descrições e ordens dos critérios permanecem protegidos.',
   }),
   ApiBody({
     type: UpdatePerformanceTableDto,
@@ -130,7 +133,11 @@ export const UpdatePerformanceTableSwaggerDocs = applyDecorators(
   }),
   ApiBadRequestResponse({
     description:
-      'Dados inválidos, IDs repetidos ou critérios que não pertencem à configuração ativa da tabela.',
+      'Dados inválidos, IDs repetidos, critérios não pertencentes à tabela ou tentativa de alterar campos além dos pesos após sessão passada.',
+    type: ErrorResponseDto,
+  }),
+  ApiConflictResponse({
+    description: 'A propagação adicionaria ou removeria critérios de uma avaliação já enviada.',
     type: ErrorResponseDto,
   }),
   ApiUnauthorizedResponse({

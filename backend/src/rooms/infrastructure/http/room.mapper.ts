@@ -1,8 +1,8 @@
-import type { RoomTutorResponseDto } from '../../application/dtos/room-tutor-response.dto';
-import type { RoomTutor } from '../../domain/repositories/room.repository';
 import type { RoomResponseDto } from '../../application/dtos/room-response.dto';
 import type { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 import type { Room, RoomChanges } from '../../domain/entities/room.entity';
+import type { RoomTutor } from '../../domain/repositories/room.repository';
+import type { RoomTutorResponseDto } from '../../application/dtos/room-tutor-response.dto';
 import { InvalidRequestError } from '@/shared/errors/application.error';
 
 export const toRoomResponse = (room: Room): RoomResponseDto => ({
@@ -14,6 +14,13 @@ export const toRoomResponse = (room: Room): RoomResponseDto => ({
   semestre: room.semester,
   ativo: room.active,
   criadoEm: room.createdAt,
+});
+
+export const toRoomTutorResponse = (tutor: RoomTutor): RoomTutorResponseDto => ({
+  id: tutor.id,
+  nome: tutor.name,
+  email: tutor.email,
+  responsavel: tutor.isResponsible,
 });
 
 export const toRoomChanges = (dto: UpdateRoomDto): RoomChanges => ({
@@ -33,10 +40,3 @@ export const roomCodeFromInviteLink = (link: string): string => {
 
   return roomCode;
 };
-
-export const toRoomTutorResponse = (tutor: RoomTutor): RoomTutorResponseDto => ({
-  id: tutor.id,
-  nome: tutor.name,
-  email: tutor.email,
-  responsavel: tutor.isResponsible,
-});

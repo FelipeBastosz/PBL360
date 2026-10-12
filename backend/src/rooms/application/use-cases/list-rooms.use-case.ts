@@ -1,9 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  ROOM_REPOSITORY,
-  type RoomRepository,
-  type TutorRoomSummary,
-} from '../../domain/repositories/room.repository';
+import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
+import type { Room } from '../../domain/entities/room.entity';
 
 @Injectable()
 export class ListRoomsUseCase {
@@ -12,7 +9,7 @@ export class ListRoomsUseCase {
     private readonly roomRepository: RoomRepository,
   ) {}
 
-  execute(tutorId: string): Promise<TutorRoomSummary[]> {
-    return this.roomRepository.findSummariesByTutorId(tutorId);
+  execute(tutorId: string): Promise<Room[]> {
+    return this.roomRepository.findByTutorId(tutorId);
   }
 }

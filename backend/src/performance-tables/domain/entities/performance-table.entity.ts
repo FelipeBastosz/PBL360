@@ -11,9 +11,14 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '@/users/domain/entities/user.entity';
+import { Room } from '@/rooms/domain/entities/room.entity';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { NewPerformanceTable } from './new-performance-table';
 import { PerformanceCriterion } from './performance-criterion.entity';
+import {
+  assertDefaultTableCanBeUpdated,
+  assertOnlyWeightsChanged,
+} from './performance-table-update-policy';
 import type {
   UpdatePerformanceCriterion,
   UpdatePerformanceTable,
@@ -40,6 +45,18 @@ export class PerformanceTable {
   })
   tutor: User;
 
+  @Index('idx_performance_tables_room_id')
+  @Column({ name: 'room_id', type: 'uuid', nullable: true, default: null })
+  roomId: string | null;
+
+  @ManyToOne(() => Room, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'room_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_performance_tables_room',
+  })
+  room?: Room | null;
+
   @Column({ type: 'varchar', length: 120 })
   name: string;
 
@@ -64,10 +81,13 @@ export class PerformanceTable {
   deletedAt: Date | null;
 
   problemCount?: number;
+  sessionCount?: number;
+  pastSessionCount?: number;
 
   static create(props: NewPerformanceTable): PerformanceTable {
     const table = new PerformanceTable();
     table.tutorId = props.tutorId?.trim();
+    table.roomId = props.roomId?.trim() || null;
     table.name = props.name?.trim();
     table.description = props.description?.trim() || null;
     table.isDefault = props.isDefault ?? false;
@@ -84,20 +104,31 @@ export class PerformanceTable {
     return table;
   }
 
-  update(props: UpdatePerformanceTable): void {
+  update(props: UpdatePerformanceTable, hasPastSessions = false): void {
     this.assertCriterionIdsAreValid(props.criteria ?? []);
-    const candidate = PerformanceTable.create({ ...props, tutorId: this.tutorId });
+    const candidate = this.buildUpdateCandidate(props);
+    assertDefaultTableCanBeUpdated(this, candidate);
+    if (hasPastSessions) assertOnlyWeightsChanged(this, candidate);
+    this.name = candidate.name;
+    this.description = candidate.description;
+    this.criteria = candidate.criteria;
+  }
+
+  private buildUpdateCandidate(props: UpdatePerformanceTable): PerformanceTable {
+    const candidate = PerformanceTable.create({
+      tutorId: this.tutorId,
+      roomId: this.roomId,
+      name: props.name,
+      description: props.description,
+      criteria: props.criteria,
+    });
     candidate.criteria.forEach((criterion, index) => {
       const id = props.criteria[index]!.id;
       if (id !== undefined) criterion.id = id;
       criterion.performanceTableId = this.id;
       criterion.performanceTable = this;
     });
-
-    this.assertDefaultTableCanBeUpdated(candidate);
-    this.name = candidate.name;
-    this.description = candidate.description;
-    this.criteria = candidate.criteria;
+    return candidate;
   }
 
   private assertCriterionIdsAreValid(criteria: UpdatePerformanceCriterion[]): void {
@@ -126,38 +157,6 @@ export class PerformanceTable {
     }
 
     this.deletedAt = new Date();
-  }
-
-  private assertDefaultTableCanBeUpdated(candidate: PerformanceTable): void {
-    if (!this.isDefault) return;
-
-    if (candidate.name !== this.name || candidate.description !== this.description) {
-      throw new InvalidPerformanceTableError(
-        'O nome e a descrição da tabela padrão não podem ser alterados.',
-      );
-    }
-
-    this.assertDefaultCriteriaUnchanged(candidate);
-  }
-
-  private assertDefaultCriteriaUnchanged(candidate: PerformanceTable): void {
-    const currentCriteria = new Map(this.criteria.map((criterion) => [criterion.id, criterion]));
-    if (
-      candidate.criteria.length !== this.criteria.length ||
-      candidate.criteria.some((criterion) => {
-        const current = currentCriteria.get(criterion.id);
-        return (
-          !current ||
-          criterion.name !== current.name ||
-          criterion.description !== current.description ||
-          criterion.orderIndex !== current.orderIndex
-        );
-      })
-    ) {
-      throw new InvalidPerformanceTableError(
-        'Os nomes, descrições e ordens dos critérios da tabela padrão não podem ser alterados.',
-      );
-    }
   }
 
   private assertIsValid(): void {

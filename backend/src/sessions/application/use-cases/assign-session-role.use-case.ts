@@ -11,14 +11,14 @@ export interface AssignSessionRoleInput {
   tutorId: string;
   studentId: string;
   role: SessionRole | null;
-  bonusScore: number | null;
+  roleScore: number | null;
   transfer: boolean;
 }
 
 export interface AssignSessionRoleOutput {
   studentId: string;
   role: SessionRole | null;
-  bonusScore: number | null;
+  roleScore: number | null;
 }
 
 @Injectable()
@@ -45,7 +45,7 @@ export class AssignSessionRoleUseCase {
       roomId,
       input.studentId,
       input.role,
-      input.bonusScore,
+      input.roleScore,
       input.transfer,
     );
   }

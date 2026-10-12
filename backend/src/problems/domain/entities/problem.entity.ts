@@ -9,7 +9,6 @@ import {
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
-import { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
 import { Room } from '@/rooms/domain/entities/room.entity';
 import { User } from '@/users/domain/entities/user.entity';
 import type { Auditable } from '@/shared/interfaces/auditable.interface';
@@ -60,18 +59,6 @@ export class Problem implements Auditable {
   @Column({ name: 'self_eval_deadline', type: 'timestamptz', nullable: true, default: null })
   selfEvalDeadline?: Date | null;
 
-  @Index('idx_problems_performance_table_id')
-  @Column({ name: 'performance_table_id', type: 'uuid', nullable: true, default: null })
-  performanceTableId: string | null;
-
-  @ManyToOne(() => PerformanceTable, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({
-    name: 'performance_table_id',
-    referencedColumnName: 'id',
-    foreignKeyConstraintName: 'fk_problems_performance_table',
-  })
-  performanceTable: PerformanceTable | null;
-
   @Index('idx_problems_created_by')
   @Column({ name: 'created_by', type: 'uuid' })
   createdBy: string;
@@ -114,7 +101,6 @@ export class Problem implements Auditable {
     problem.peerEvalReleased = props.peerEvalReleased ?? false;
     problem.releasedAt = props.releasedAt ?? null;
     problem.selfEvalDeadline = props.selfEvalDeadline ?? null;
-    problem.performanceTableId = props.performanceTableId ?? null;
     problem.createdBy = props.createdBy?.trim();
     problem.updatedBy = null;
 

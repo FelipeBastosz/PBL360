@@ -1,3 +1,4 @@
+import type { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { InvalidPerformanceTableError } from '../../domain/errors/invalid-performance-table.error';
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
@@ -18,7 +19,11 @@ describe('UpdatePerformanceTableUseCase', () => {
       findById: jest.fn(),
       update: jest.fn(),
       softDelete: jest.fn(),
-      findUsageById: jest.fn(),
+      findUsageById: jest.fn().mockResolvedValue({
+        problemCount: 0,
+        sessionCount: 0,
+        pastSessionCount: 0,
+      }),
       findByIdIncludingDeleted: jest.fn(),
     };
 
@@ -65,7 +70,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     });
 
     expect(repository.findById).toHaveBeenCalledWith(tableId);
-    expect(repository.update).toHaveBeenCalledWith(table);
+    expect(repository.update).toHaveBeenCalledWith(table, false);
 
     expect(result.name).toBe('Barema atualizado');
     expect(result.description).toBe('Nova configuração');
@@ -89,6 +94,59 @@ describe('UpdatePerformanceTableUseCase', () => {
     ).rejects.toThrow(NotFoundError);
 
     expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects full edits after a past session and permits changing only weights', async () => {
+    const table = PerformanceTable.create({
+      tutorId,
+      name: 'Barema',
+      criteria: [
+        { name: 'Participação', weight: 5 },
+        { name: 'Postura', weight: 5 },
+      ],
+    });
+    table.id = tableId;
+    table.criteria[0]!.id = 'criterion-1';
+    table.criteria[1]!.id = 'criterion-2';
+    repository.findById.mockResolvedValue(table);
+    repository.findUsageById.mockResolvedValue({
+      problemCount: 1,
+      sessionCount: 2,
+      pastSessionCount: 1,
+    });
+    repository.update.mockImplementation((updated) => Promise.resolve(updated));
+
+    await expect(
+      useCase.execute({
+        tableId,
+        tutorId,
+        changes: {
+          name: 'Outro nome',
+          criteria: [
+            { id: 'criterion-1', name: 'Participação', weight: 5 },
+            { id: 'criterion-2', name: 'Postura', weight: 5 },
+          ],
+        },
+      }),
+    ).rejects.toThrow('Somente os pesos podem ser alterados.');
+    expect(repository.update).not.toHaveBeenCalled();
+
+    const result = await useCase.execute({
+      tableId,
+      tutorId,
+      changes: {
+        name: 'Barema',
+        criteria: [
+          { id: 'criterion-1', name: 'Participação', weight: 6 },
+          { id: 'criterion-2', name: 'Postura', weight: 4 },
+        ],
+        propagateToSessions: true,
+      },
+    });
+
+    expect(repository.update).toHaveBeenCalledWith(table, true);
+    expect(result.sessionCount).toBe(2);
+    expect(result.pastSessionCount).toBe(1);
   });
 
   it('throws ForbiddenError when the tutor does not own the table', async () => {
@@ -213,7 +271,7 @@ describe('UpdatePerformanceTableUseCase', () => {
       },
     });
 
-    expect(repository.update).toHaveBeenCalledWith(table);
+    expect(repository.update).toHaveBeenCalledWith(table, false);
     expect(result.criteria.map((criterion) => criterion.id)).toEqual(['retained-id', undefined]);
     expect(result.criteria[0]!.name).toBe('Participação nas discussões');
   });
@@ -261,5 +319,64 @@ describe('UpdatePerformanceTableUseCase', () => {
         },
       }),
     ).rejects.toBe(failure);
+  });
+
+  it('allows a co-tutor of the room to update a room performance table', async () => {
+    const table = PerformanceTable.create({
+      tutorId: 'tutor-owner-1',
+      roomId: 'room-uuid-1',
+      name: 'Barema da Sala',
+      criteria: [{ name: 'Postura', weight: 10 }],
+    });
+    table.id = tableId;
+    repository.findById.mockResolvedValue(table);
+    repository.update.mockImplementation((t) => Promise.resolve(t));
+
+    const assertTutorCanAccessRoom = jest.fn().mockResolvedValue({});
+    const mockRoomAccessService = {
+      assertTutorCanAccessRoom,
+    } as unknown as RoomAccessService;
+    const roomUseCase = new UpdatePerformanceTableUseCase(repository, mockRoomAccessService);
+
+    const result = await roomUseCase.execute({
+      tableId,
+      tutorId: 'co-tutor-2',
+      changes: {
+        name: 'Barema da Sala Atualizado',
+        criteria: [{ name: 'Postura e Ética', weight: 10 }],
+      },
+    });
+
+    expect(assertTutorCanAccessRoom).toHaveBeenCalledWith('room-uuid-1', 'co-tutor-2');
+    expect(repository.update).toHaveBeenCalled();
+    expect(result.name).toBe('Barema da Sala Atualizado');
+  });
+
+  it('rejects update by a tutor not participating in the room', async () => {
+    const table = PerformanceTable.create({
+      tutorId: 'tutor-owner-1',
+      roomId: 'room-uuid-1',
+      name: 'Barema da Sala',
+      criteria: [{ name: 'Postura', weight: 10 }],
+    });
+    table.id = tableId;
+    repository.findById.mockResolvedValue(table);
+
+    const assertTutorCanAccessRoom = jest
+      .fn()
+      .mockRejectedValue(new ForbiddenError('Sem acesso à sala'));
+    const mockRoomAccessService = {
+      assertTutorCanAccessRoom,
+    } as unknown as RoomAccessService;
+    const roomUseCase = new UpdatePerformanceTableUseCase(repository, mockRoomAccessService);
+
+    await expect(
+      roomUseCase.execute({
+        tableId,
+        tutorId: 'intruder-tutor',
+        changes: { name: 'Hack', criteria: [{ name: 'Postura', weight: 10 }] },
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect(repository.update).not.toHaveBeenCalled();
   });
 });

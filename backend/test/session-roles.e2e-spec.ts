@@ -6,19 +6,19 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, signAccessToken } from './helpers/fixtures';
+import { cleanDatabase, insertDefaultPerformanceTable, signAccessToken } from './helpers/fixtures';
 
 interface SessionRoleResponseBody {
   alunoId: string;
   nome: string;
   papel: string;
-  notaAdicional: number | null;
+  notaPapel: number | null;
 }
 
 interface AssignedSessionRoleResponseBody {
   alunoId: string;
   papel: string | null;
-  notaAdicional: number | null;
+  notaPapel: number | null;
 }
 
 interface ConflictErrorResponseBody {
@@ -118,6 +118,8 @@ describe('Session Roles (e2e)', () => {
     );
     roomId = room.id;
 
+    await insertDefaultPerformanceTable(dataSource, ownerTutorId);
+
     await dataSource.query(`INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2);`, [
       roomId,
       coTutorId,
@@ -165,7 +167,7 @@ describe('Session Roles (e2e)', () => {
   const assignRoleHelper = (
     targetSessionId = sessionId,
     targetStudentId = student1Id,
-    payload: object = { papel: 'COORDENADOR', notaAdicional: 0.5 },
+    payload: object = { papel: 'COORDENADOR', notaPapel: 5 },
     token = ownerToken,
   ) => {
     return server()
@@ -212,7 +214,7 @@ describe('Session Roles (e2e)', () => {
       it('returns 401 Unauthorized when request lacks authorization token', async () => {
         const response = await server()
           .put(`/api/sessoes/${sessionId}/papeis/${student1Id}`)
-          .send({ papel: 'COORDENADOR', notaAdicional: 0.5 });
+          .send({ papel: 'COORDENADOR', notaPapel: 5 });
 
         expect(response.status).toBe(401);
       });
@@ -267,10 +269,10 @@ describe('Session Roles (e2e)', () => {
     });
 
     it('returns list of assigned roles with student name, role and additional score', async () => {
-      await assignRoleHelper(sessionId, student1Id, { papel: 'COORDENADOR', notaAdicional: 0.5 });
+      await assignRoleHelper(sessionId, student1Id, { papel: 'COORDENADOR', notaPapel: 5 });
       await assignRoleHelper(sessionId, student2Id, {
         papel: 'SECRETARIO_QUADRO',
-        notaAdicional: 0.25,
+        notaPapel: 2.5,
       });
 
       const response = await listRolesHelper(sessionId);
@@ -283,7 +285,7 @@ describe('Session Roles (e2e)', () => {
         alunoId: student1Id,
         nome: 'Lucas Aluno Um',
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       });
 
       const boardSec = roles.find((r) => r.alunoId === student2Id);
@@ -291,7 +293,7 @@ describe('Session Roles (e2e)', () => {
         alunoId: student2Id,
         nome: 'Beatriz Aluna Dois',
         papel: 'SECRETARIO_QUADRO',
-        notaAdicional: 0.25,
+        notaPapel: 2.5,
       });
     });
 
@@ -303,10 +305,10 @@ describe('Session Roles (e2e)', () => {
   });
 
   describe('PUT /api/sessoes/:sessionId/papeis/:studentId', () => {
-    it('assigns role with bonus score successfully', async () => {
+    it('assigns role with role score successfully', async () => {
       const response = await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.75,
+        notaPapel: 7.5,
       });
 
       expect(response.status).toBe(200);
@@ -314,14 +316,14 @@ describe('Session Roles (e2e)', () => {
       expect(body).toEqual({
         alunoId: student1Id,
         papel: 'COORDENADOR',
-        notaAdicional: 0.75,
+        notaPapel: 7.5,
       });
     });
 
-    it('assigns role with null bonus score', async () => {
+    it('assigns role with null role score', async () => {
       const response = await assignRoleHelper(sessionId, student1Id, {
         papel: 'SECRETARIO_MESA',
-        notaAdicional: null,
+        notaPapel: null,
       });
 
       expect(response.status).toBe(200);
@@ -329,11 +331,11 @@ describe('Session Roles (e2e)', () => {
       expect(body).toEqual({
         alunoId: student1Id,
         papel: 'SECRETARIO_MESA',
-        notaAdicional: null,
+        notaPapel: null,
       });
     });
 
-    it('assigns role without specifying notaAdicional (defaults to null)', async () => {
+    it('assigns role without specifying notaPapel (defaults to null)', async () => {
       const response = await assignRoleHelper(sessionId, student1Id, {
         papel: 'SECRETARIO_QUADRO',
       });
@@ -343,42 +345,42 @@ describe('Session Roles (e2e)', () => {
       expect(body).toEqual({
         alunoId: student1Id,
         papel: 'SECRETARIO_QUADRO',
-        notaAdicional: null,
+        notaPapel: null,
       });
     });
 
-    it('allows boundary values for bonus score (0 and 1)', async () => {
+    it('allows boundary values for role score (0 and 10)', async () => {
       const resZero = await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0,
+        notaPapel: 0,
       });
       expect(resZero.status).toBe(200);
-      expect((resZero.body as AssignedSessionRoleResponseBody).notaAdicional).toBe(0);
+      expect((resZero.body as AssignedSessionRoleResponseBody).notaPapel).toBe(0);
 
-      const resOne = await assignRoleHelper(sessionId, student1Id, {
+      const resTen = await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 1,
+        notaPapel: 10,
       });
-      expect(resOne.status).toBe(200);
-      expect((resOne.body as AssignedSessionRoleResponseBody).notaAdicional).toBe(1);
+      expect(resTen.status).toBe(200);
+      expect((resTen.body as AssignedSessionRoleResponseBody).notaPapel).toBe(10);
     });
 
-    it('updates existing role and bonus score for the same student in the same session', async () => {
+    it('updates existing role and role score for the same student in the same session', async () => {
       await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       });
 
       const response = await assignRoleHelper(sessionId, student1Id, {
         papel: 'SECRETARIO_MESA',
-        notaAdicional: 0.8,
+        notaPapel: 8,
       });
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
         alunoId: student1Id,
         papel: 'SECRETARIO_MESA',
-        notaAdicional: 0.8,
+        notaPapel: 8,
       });
 
       // Garantir que o aluno só tem 1 papel registrado na sessão
@@ -391,7 +393,7 @@ describe('Session Roles (e2e)', () => {
     it('removes role when sending papel: null', async () => {
       await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       });
 
       const response = await assignRoleHelper(sessionId, student1Id, {
@@ -402,7 +404,7 @@ describe('Session Roles (e2e)', () => {
       expect(response.body).toEqual({
         alunoId: student1Id,
         papel: null,
-        notaAdicional: null,
+        notaPapel: null,
       });
 
       const listRes = await listRolesHelper(sessionId);
@@ -412,7 +414,7 @@ describe('Session Roles (e2e)', () => {
     it('returns 422 Unprocessable Entity when student is not enrolled in the room', async () => {
       const response = await assignRoleHelper(sessionId, unenrolledStudentId, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       });
 
       expect(response.status).toBe(422);
@@ -425,13 +427,13 @@ describe('Session Roles (e2e)', () => {
       // Aluno 1 ocupa COORDENADOR
       await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       });
 
       // Aluno 2 tenta assumir COORDENADOR sem transferir
       const response = await assignRoleHelper(sessionId, student2Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.7,
+        notaPapel: 7,
         transferir: false,
       });
 
@@ -448,13 +450,13 @@ describe('Session Roles (e2e)', () => {
       // Aluno 1 ocupa COORDENADOR
       await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       });
 
       // Aluno 2 assume COORDENADOR com transferir: true
       const response = await assignRoleHelper(sessionId, student2Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.75,
+        notaPapel: 7.5,
         transferir: true,
       });
 
@@ -462,7 +464,7 @@ describe('Session Roles (e2e)', () => {
       expect(response.body).toEqual({
         alunoId: student2Id,
         papel: 'COORDENADOR',
-        notaAdicional: 0.75,
+        notaPapel: 7.5,
       });
 
       // Verificar que apenas Aluno 2 é COORDENADOR e Aluno 1 foi desvinculado
@@ -473,32 +475,32 @@ describe('Session Roles (e2e)', () => {
         alunoId: student2Id,
         nome: 'Beatriz Aluna Dois',
         papel: 'COORDENADOR',
-        notaAdicional: 0.75,
+        notaPapel: 7.5,
       });
     });
 
-    it('returns 400 Bad Request when bonus score is greater than 1', async () => {
+    it('returns 400 Bad Request when role score is greater than 10', async () => {
       const response = await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 1.01,
-      });
-
-      expect(response.status).toBe(400);
-    });
-
-    it('returns 400 Bad Request when bonus score is negative', async () => {
-      const response = await assignRoleHelper(sessionId, student1Id, {
-        papel: 'COORDENADOR',
-        notaAdicional: -0.1,
+        notaPapel: 10.01,
       });
 
       expect(response.status).toBe(400);
     });
 
-    it('returns 400 Bad Request when bonus score has more than 2 decimal places', async () => {
+    it('returns 400 Bad Request when role score is negative', async () => {
       const response = await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.123,
+        notaPapel: -0.1,
+      });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('returns 400 Bad Request when role score has more than 2 decimal places', async () => {
+      const response = await assignRoleHelper(sessionId, student1Id, {
+        papel: 'COORDENADOR',
+        notaPapel: 5.123,
       });
 
       expect(response.status).toBe(400);
@@ -507,7 +509,7 @@ describe('Session Roles (e2e)', () => {
     it('returns 400 Bad Request when role is invalid string', async () => {
       const response = await assignRoleHelper(sessionId, student1Id, {
         papel: 'PRESIDENTE',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       });
 
       expect(response.status).toBe(400);
@@ -527,12 +529,12 @@ describe('Session Roles (e2e)', () => {
     it('maintains independent roles across different sessions', async () => {
       await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       });
 
       await assignRoleHelper(session2Id, student2Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.7,
+        notaPapel: 7,
       });
 
       const list1 = await listRolesHelper(sessionId);
@@ -551,7 +553,7 @@ describe('Session Roles (e2e)', () => {
     it('cascades deletion of session_roles when session is deleted', async () => {
       await assignRoleHelper(sessionId, student1Id, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       });
 
       const rolesBefore = await dataSource.query<Array<Record<string, unknown>>>(

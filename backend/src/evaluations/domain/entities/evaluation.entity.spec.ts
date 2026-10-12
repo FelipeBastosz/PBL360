@@ -17,7 +17,7 @@ const revision = (overrides: Partial<EvaluationRevision> = {}): EvaluationRevisi
   items: [{ criterionId: 'a', score: 8 }],
   submit: true,
   authorId: 'tutor',
-  bonus: 0.5,
+  bonus: 5,
   now,
   ...overrides,
 });
@@ -36,8 +36,8 @@ const submitted = (): Evaluation =>
     status: EvaluationStatus.SUBMITTED,
     items: [{ id: 'item', criterionId: 'a', score: 8 }],
     submittedAt: now,
-    sessionScore: 8.5,
-    appliedBonus: 0.5,
+    sessionScore: 7.1,
+    appliedBonus: 5,
   });
 
 describe('Evaluation', () => {
@@ -52,8 +52,8 @@ describe('Evaluation', () => {
     evaluation.revise(revision(), config);
     expect(evaluation).toMatchObject({
       status: EvaluationStatus.SUBMITTED,
-      sessionScore: 8.5,
-      appliedBonus: 0.5,
+      sessionScore: 7.1,
+      appliedBonus: 5,
       submittedAt: now,
     });
   });
@@ -74,23 +74,23 @@ describe('Evaluation', () => {
         items: [{ criterionId: 'a', score: 9 }],
         justification: 'Revisão da participação',
         authorId: 'other-tutor',
-        bonus: 1,
+        bonus: 10,
         now: new Date('2026-10-06'),
       }),
       config,
     );
     expect(changes).toEqual([{ itemId: 'item', previousValue: 8, newValue: 9 }]);
     expect(evaluation).toMatchObject({
-      sessionScore: 9.5,
-      appliedBonus: 0.5,
+      sessionScore: 7.8,
+      appliedBonus: 5,
       submittedAt: now,
       updatedBy: 'other-tutor',
     });
   });
   it('does not require justification or create adjustments for an unchanged submission', () => {
     const evaluation = submitted();
-    expect(evaluation.revise(revision({ bonus: 1 }), config)).toEqual([]);
-    expect(evaluation.sessionScore).toBe(8.5);
+    expect(evaluation.revise(revision({ bonus: 10 }), config)).toEqual([]);
+    expect(evaluation.sessionScore).toBe(7.1);
   });
   it('rejects returning a submitted evaluation to draft', () => {
     expect(() => submitted().revise(revision({ submit: false }), config)).toThrow(

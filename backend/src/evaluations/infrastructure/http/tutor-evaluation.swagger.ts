@@ -43,7 +43,7 @@ export const GetTutorEvaluationSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Consulta a avaliação e os ajustes do aluno',
     description:
-      'Retorna PENDENTE quando não há avaliação. Critérios e pesos são os preservados para a sessão; antes do primeiro salvamento, retorna uma prévia da tabela atual sem gravar configuração.',
+      'Retorna PENDENTE quando não há avaliação. Critérios e pesos são os preservados para a sessão, podendo ser atualizados por propagação explícita da tabela; antes do primeiro salvamento, retorna uma prévia da tabela atual sem gravar configuração.',
   }),
   ApiOkResponse({ type: TutorEvaluationResponseDto }),
   ApiUnprocessableEntityResponse({
@@ -56,7 +56,7 @@ export const SaveTutorEvaluationSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Salva, envia ou ajusta a avaliação do tutor',
     description:
-      'Uma avaliação compartilhada por aluno e sessão. O primeiro salvamento fixa critérios e pesos para todos. A lista substitui o rascunho. Envio exige todos os critérios. Após envio, alterações exigem justificativa de 10 a 500 caracteres e geram histórico por item; não é permitido voltar a rascunho. Cálculo: média ponderada mais adicional preservado no envio, limitado a 10 e arredondado ao final para duas casas. Não há personalização de fórmula nesta rota.',
+      'Uma avaliação compartilhada por aluno e sessão. O primeiro salvamento preserva critérios e pesos para todos; a edição da tabela pode propagá-los explicitamente. A lista substitui o rascunho. Envio exige todos os critérios. Após envio, alterações exigem justificativa de 10 a 500 caracteres e geram histórico por item; não é permitido voltar a rascunho. Cálculo padrão: 70% da média ponderada dos critérios e 30% da nota de cargo (valor registrado de 0 a 1 multiplicado por 10). Sem nota de cargo, usa apenas a média ponderada. Zero é uma nota de cargo válida. O cargo é preservado no primeiro envio; resultado limitado a 10 e arredondado ao final para duas casas. Não há personalização de fórmula nesta rota.',
   }),
   ApiBody({ type: SaveTutorEvaluationDto }),
   ApiOkResponse({ type: TutorEvaluationResponseDto }),

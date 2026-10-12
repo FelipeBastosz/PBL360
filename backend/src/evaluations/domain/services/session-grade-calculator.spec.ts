@@ -12,16 +12,34 @@ const items = [
   { criterionId: 'a', score: 7 },
   { criterionId: 'b', score: 9 },
 ];
+const calculateWithCargo = (
+  scores: typeof items,
+  criteria: ReturnType<typeof criterion>[],
+  roleScore: number | null,
+) => SessionGradeCalculator.calculate(scores, criteria, roleScore, true);
 
 describe('SessionGradeCalculator', () => {
-  it('calculates the weighted mean and role bonus', () => {
-    expect(
-      SessionGradeCalculator.calculate(items, [criterion('a', 1), criterion('b', 3)], 0.5),
-    ).toBe(9);
+  it('calculates the weighted mean followed by the standard cargo formula', () => {
+    expect(calculateWithCargo(items, [criterion('a', 1), criterion('b', 3)], 5)).toBe(7.45);
   });
-  it('caps the result at ten', () => {
+  it('uses the simple weighted mean when the student has no cargo score', () => {
+    expect(calculateWithCargo(items, [criterion('a', 1), criterion('b', 3)], null)).toBe(8.5);
+  });
+  it('calculates a weighted mean for evaluations without the cargo formula', () => {
+    expect(SessionGradeCalculator.calculate(items, [criterion('a', 1), criterion('b', 3)], 0)).toBe(
+      8.5,
+    );
+  });
+  it('calculates 10 when both criteria and role score are 10', () => {
     expect(
-      SessionGradeCalculator.calculate([{ criterionId: 'a', score: 9.8 }], [criterion('a', 1)], 1),
+      calculateWithCargo(
+        [
+          { criterionId: 'a', score: 10 },
+          { criterionId: 'b', score: 10 },
+        ],
+        [criterion('a', 1), criterion('b', 1)],
+        10,
+      ),
     ).toBe(10);
   });
   it('rounds only the final result, including decimal weights', () => {
@@ -29,32 +47,24 @@ describe('SessionGradeCalculator', () => {
       { criterionId: 'a', score: 1 },
       { criterionId: 'b', score: 1.01 },
     ];
-    expect(
-      SessionGradeCalculator.calculate(scores, [criterion('a', 0.1), criterion('b', 0.1)], 0),
-    ).toBe(1.01);
-    expect(SessionGradeCalculator.calculate(items, [criterion('a', 1), criterion('b', 2)], 0)).toBe(
-      8.33,
-    );
+    expect(calculateWithCargo(scores, [criterion('a', 0.1), criterion('b', 0.1)], 0)).toBe(0.7);
+    expect(calculateWithCargo(items, [criterion('a', 1), criterion('b', 2)], 0)).toBe(5.83);
   });
   it('accepts zero scores and ignores zero-weight criteria in the mean', () => {
-    expect(
-      SessionGradeCalculator.calculate([{ criterionId: 'a', score: 0 }], [criterion('a', 1)], 0),
-    ).toBe(0);
-    expect(SessionGradeCalculator.calculate(items, [criterion('a', 0), criterion('b', 1)], 0)).toBe(
-      9,
-    );
+    expect(calculateWithCargo([{ criterionId: 'a', score: 0 }], [criterion('a', 1)], 0)).toBe(0);
+    expect(calculateWithCargo(items, [criterion('a', 0), criterion('b', 1)], 0)).toBe(6.3);
   });
   it('rejects an all-zero configuration and missing criteria', () => {
-    expect(() =>
-      SessionGradeCalculator.calculate(items, [criterion('a', 0), criterion('b', 0)], 0),
-    ).toThrow(InvalidEvaluationItemsError);
-    expect(() => SessionGradeCalculator.calculate([], [criterion('a', 1)], 0)).toThrow(
+    expect(() => calculateWithCargo(items, [criterion('a', 0), criterion('b', 0)], 0)).toThrow(
+      InvalidEvaluationItemsError,
+    );
+    expect(() => calculateWithCargo([], [criterion('a', 1)], 0)).toThrow(
       InvalidEvaluationItemsError,
     );
   });
-  it.each([-1, 1.01, NaN])('rejects invalid bonus %s', (bonus) => {
+  it.each([-0.01, 10.01, NaN])('rejects invalid role score %s', (roleScore) => {
     expect(() =>
-      SessionGradeCalculator.calculate(items, [criterion('a', 1), criterion('b', 1)], bonus),
+      calculateWithCargo(items, [criterion('a', 1), criterion('b', 1)], roleScore),
     ).toThrow(InvalidEvaluationItemsError);
   });
 });

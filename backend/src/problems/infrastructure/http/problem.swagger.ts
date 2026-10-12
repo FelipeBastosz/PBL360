@@ -10,14 +10,12 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
-  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { ProblemDeletionImpactDto } from '../../application/dtos/problem-deletion-impact.dto';
 import { ProblemResponseDto } from '../../application/dtos/problem-response.dto';
-import { ProblemPerformanceTableResponseDto } from '../../application/dtos/problem-performance-table-response.dto';
 
 export const CreateProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
@@ -68,15 +66,9 @@ export const GetProblemSwaggerDocs = applyDecorators(
 export const UpdateProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
-    summary: 'Atualiza o título e a tabela de um problema',
-    description:
-      'Preserva o campo obrigatório title e permite vincular uma tabela própria com tabelaId. Omitir tabelaId preserva o vínculo; null remove. Após a primeira avaliação, inclusive rascunho, trocar ou remover a tabela retorna 409.',
+    summary: 'Atualiza o título de um problema',
   }),
   ApiOkResponse({ description: 'Problema atualizado com sucesso.' }),
-  ApiConflictResponse({
-    description: 'O problema já possui avaliações; o vínculo com a tabela não pode mudar.',
-    type: ErrorResponseDto,
-  }),
   ApiBadRequestResponse({
     description: 'Dados inválidos ou erro de validação.',
     type: ErrorResponseDto,
@@ -106,22 +98,4 @@ export const DeleteProblemSwaggerDocs = applyDecorators(
   ApiUnauthorizedResponse({ description: 'JWT não informado.', type: ErrorResponseDto }),
   ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
   ApiNotFoundResponse({ description: 'Problema não encontrado.', type: ErrorResponseDto }),
-);
-
-export const ChangeProblemPerformanceTableSwaggerDocs = applyDecorators(
-  ApiBearerAuth(JWT_SECURITY_SCHEME),
-  ApiOperation({ summary: 'Vincula ou troca a tabela de desempenho do problema' }),
-  ApiOkResponse({
-    description: 'Tabela de desempenho vinculada.',
-    type: ProblemPerformanceTableResponseDto,
-  }),
-  ApiBadRequestResponse({ description: 'Dados inválidos.', type: ErrorResponseDto }),
-  ApiUnauthorizedResponse({ description: 'JWT não informado.', type: ErrorResponseDto }),
-  ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
-  ApiNotFoundResponse({ description: 'Problema ou sala não encontrada.', type: ErrorResponseDto }),
-  ApiConflictResponse({ description: 'Problema possui avaliações.', type: ErrorResponseDto }),
-  ApiUnprocessableEntityResponse({
-    description: 'A tabela informada é inválida.',
-    type: ErrorResponseDto,
-  }),
 );
