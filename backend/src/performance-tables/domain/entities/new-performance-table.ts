@@ -1,5 +1,6 @@
 export interface NewPerformanceTable {
   tutorId: string;
+  roomId?: string | null;
   name: string;
   description?: string | null;
   isDefault?: boolean;

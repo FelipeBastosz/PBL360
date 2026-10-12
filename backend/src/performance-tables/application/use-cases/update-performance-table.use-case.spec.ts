@@ -1,3 +1,4 @@
+import type { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { InvalidPerformanceTableError } from '../../domain/errors/invalid-performance-table.error';
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
@@ -318,5 +319,64 @@ describe('UpdatePerformanceTableUseCase', () => {
         },
       }),
     ).rejects.toBe(failure);
+  });
+
+  it('allows a co-tutor of the room to update a room performance table', async () => {
+    const table = PerformanceTable.create({
+      tutorId: 'tutor-owner-1',
+      roomId: 'room-uuid-1',
+      name: 'Barema da Sala',
+      criteria: [{ name: 'Postura', weight: 10 }],
+    });
+    table.id = tableId;
+    repository.findById.mockResolvedValue(table);
+    repository.update.mockImplementation((t) => Promise.resolve(t));
+
+    const assertTutorCanAccessRoom = jest.fn().mockResolvedValue({});
+    const mockRoomAccessService = {
+      assertTutorCanAccessRoom,
+    } as unknown as RoomAccessService;
+    const roomUseCase = new UpdatePerformanceTableUseCase(repository, mockRoomAccessService);
+
+    const result = await roomUseCase.execute({
+      tableId,
+      tutorId: 'co-tutor-2',
+      changes: {
+        name: 'Barema da Sala Atualizado',
+        criteria: [{ name: 'Postura e Ética', weight: 10 }],
+      },
+    });
+
+    expect(assertTutorCanAccessRoom).toHaveBeenCalledWith('room-uuid-1', 'co-tutor-2');
+    expect(repository.update).toHaveBeenCalled();
+    expect(result.name).toBe('Barema da Sala Atualizado');
+  });
+
+  it('rejects update by a tutor not participating in the room', async () => {
+    const table = PerformanceTable.create({
+      tutorId: 'tutor-owner-1',
+      roomId: 'room-uuid-1',
+      name: 'Barema da Sala',
+      criteria: [{ name: 'Postura', weight: 10 }],
+    });
+    table.id = tableId;
+    repository.findById.mockResolvedValue(table);
+
+    const assertTutorCanAccessRoom = jest
+      .fn()
+      .mockRejectedValue(new ForbiddenError('Sem acesso à sala'));
+    const mockRoomAccessService = {
+      assertTutorCanAccessRoom,
+    } as unknown as RoomAccessService;
+    const roomUseCase = new UpdatePerformanceTableUseCase(repository, mockRoomAccessService);
+
+    await expect(
+      roomUseCase.execute({
+        tableId,
+        tutorId: 'intruder-tutor',
+        changes: { name: 'Hack', criteria: [{ name: 'Postura', weight: 10 }] },
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect(repository.update).not.toHaveBeenCalled();
   });
 });
