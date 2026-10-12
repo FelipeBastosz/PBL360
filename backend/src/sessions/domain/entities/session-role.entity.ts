@@ -16,8 +16,8 @@ import { SessionRole } from '../enums/session-role.enum';
 @Index('idx_session_roles_student_id', ['studentId'])
 @Unique('uq_session_roles_session_role', ['sessionId', 'role'])
 @Check(
-  'ck_session_roles_bonus_score',
-  '"bonus_score" IS NULL OR ("bonus_score" >= 0 AND "bonus_score" <= 1)',
+  'ck_session_roles_role_score',
+  '"role_score" IS NULL OR ("role_score" >= 0 AND "role_score" <= 10)',
 )
 export class SessionRoleAssignment {
   @PrimaryColumn({ name: 'session_id', type: 'uuid' })
@@ -30,13 +30,13 @@ export class SessionRoleAssignment {
   role!: SessionRole;
 
   @Column({
-    name: 'bonus_score',
+    name: 'role_score',
     type: 'numeric',
-    precision: 3,
+    precision: 4,
     scale: 2,
     nullable: true,
   })
-  bonusScore!: number | null;
+  roleScore!: number | null;
 
   @ManyToOne(() => Session, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({
