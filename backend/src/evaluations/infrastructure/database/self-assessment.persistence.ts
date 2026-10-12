@@ -48,12 +48,7 @@ async function prepareSelfAssessment(
   tx: EntityManager,
   input: SelfAssessmentWrite,
 ): Promise<string> {
-  const config = await freezeSessionConfig(
-    tx,
-    input.context.sessionId,
-    input.context.problemId,
-    input.studentId,
-  );
+  const config = await freezeSessionConfig(tx, input.context.sessionId, input.studentId);
   const existing = await findExisting(tx, input);
   assertNotSubmitted(existing);
   validateItems(
