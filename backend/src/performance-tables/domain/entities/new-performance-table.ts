@@ -12,4 +12,5 @@ export interface NewPerformanceCriterion {
   description?: string | null;
   orderIndex?: number;
   weight?: number;
+  maxScore?: number;
 }

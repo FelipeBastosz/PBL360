@@ -21,7 +21,7 @@ export const toEvaluationCriteriaResponse = (
     nome: criterion.name,
     descricao: criterion.description,
     peso: criterion.weight,
-    notaMaxima: 10,
+    notaMaxima: criterion.maxScore ?? 10,
     ordem: criterion.orderIndex,
   })),
 });

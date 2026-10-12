@@ -20,6 +20,7 @@ import { PerformanceTable } from './performance-table.entity';
   where: '"deleted_at" IS NULL',
 })
 @Check('chk_performance_criteria_weight', '"weight" >= 0 AND "weight" <= 10')
+@Check('chk_performance_criteria_max_score', '"max_score" > 0 AND "max_score" <= 10')
 export class PerformanceCriterion {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -51,6 +52,9 @@ export class PerformanceCriterion {
   @Column({ name: 'weight', type: 'numeric', precision: 4, scale: 2, default: 1 })
   weight: number;
 
+  @Column({ name: 'max_score', type: 'numeric', precision: 4, scale: 2, default: 10 })
+  maxScore: number;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
@@ -66,6 +70,7 @@ export class PerformanceCriterion {
     criterion.description = props.description?.trim() || null;
     criterion.orderIndex = props.orderIndex ?? 1;
     criterion.weight = props.weight ?? 1;
+    criterion.maxScore = props.maxScore ?? 10;
     criterion.assertIsValid();
 
     return criterion;
@@ -74,6 +79,7 @@ export class PerformanceCriterion {
   private assertIsValid(): void {
     this.assertNameIsValid();
     this.assertNumbersAreValid();
+    this.assertMaxScoreIsValid();
   }
 
   private assertNameIsValid(): void {
@@ -88,12 +94,18 @@ export class PerformanceCriterion {
     }
   }
 
+  private assertMaxScoreIsValid(): void {
+    if (!Number.isFinite(this.maxScore) || this.maxScore <= 0 || this.maxScore > 10) {
+      throw new InvalidPerformanceTableError('A nota máxima deve ser maior que zero e até 10.');
+    }
+  }
+
   private assertNumbersAreValid(): void {
     if (!Number.isInteger(this.orderIndex) || this.orderIndex < 1) {
       throw new InvalidPerformanceTableError('A ordem do critério deve ser um inteiro positivo.');
     }
 
-    if (this.weight < 0 || this.weight > 10) {
+    if (!Number.isFinite(this.weight) || this.weight < 0 || this.weight > 10) {
       throw new InvalidPerformanceTableError('O peso do critério deve estar entre 0 e 10.');
     }
   }

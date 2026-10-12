@@ -1,4 +1,5 @@
 import type { EntityManager } from 'typeorm';
+import { lockSessionPerformanceTable } from '@/sessions/infrastructure/database/session-table-lock.persistence';
 import { NotFoundError, UnprocessableEntityError } from '@/shared/errors/application.error';
 import { validateEvaluationRules } from '../../application/services/evaluation-rule-validation';
 import type {
@@ -16,6 +17,7 @@ export async function recordEvaluation(
   manager: EntityManager,
   input: EvaluationWrite,
 ): Promise<EvaluationDetail> {
+  await lockSessionPerformanceTable(manager, input.context.sessionId);
   await lockEvaluationContext(manager, input);
   const { sessionId } = input.context;
   const config = await freezeSessionConfig(manager, sessionId, input.authorId);

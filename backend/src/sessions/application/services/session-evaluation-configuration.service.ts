@@ -8,6 +8,7 @@ import {
   type SessionTableChangeResponse,
   type UpdateSessionFormulaComponentDto,
 } from '../dtos/session-evaluation-configuration.dto';
+import type { SessionCriterionRow } from '../../infrastructure/database/session-table-configuration.persistence';
 import { updateSessionTable } from '../../infrastructure/database/session-table-configuration.persistence';
 import {
   readSessionTable,
@@ -104,7 +105,7 @@ async function isSessionBlocked(dataSource: DataSource, sessionId: string): Prom
 
 function configurationResponse(
   table: { id: string; name: string; isDefault: boolean },
-  criteria: Array<{ id: string; name: string; weight: string | number }>,
+  criteria: Pick<SessionCriterionRow, 'id' | 'name' | 'weight' | 'maxScore'>[],
   formula: SessionEvaluationConfigurationDto['formula'],
   blocked: boolean,
 ): SessionEvaluationConfigurationDto {
@@ -120,11 +121,12 @@ function configurationResponse(
   };
 }
 
-function mapCriteria(criteria: Array<{ id: string; name: string; weight: string | number }>) {
+function mapCriteria(criteria: Pick<SessionCriterionRow, 'id' | 'name' | 'weight' | 'maxScore'>[]) {
   return criteria.map((criterion) => ({
     id: criterion.id,
     nome: criterion.name,
     peso: Number(criterion.weight),
+    notaMaxima: Number(criterion.maxScore ?? 10),
   }));
 }
 

@@ -18,6 +18,19 @@ function validTableData(): NewPerformanceTable {
 }
 
 describe('PerformanceTable', () => {
+  it('preserves a configured maximum when the legacy editor omits it', () => {
+    const table = PerformanceTable.create({
+      ...validTableData(),
+      criteria: [{ name: 'Participação', weight: 10, maxScore: 8 }],
+    });
+    table.criteria[0]!.id = 'criterion';
+    table.update(
+      { name: table.name, criteria: [{ id: 'criterion', name: 'Participação', weight: 10 }] },
+      true,
+    );
+    expect(table.criteria[0]!.maxScore).toBe(8);
+  });
+
   it('creates a table with its criteria', () => {
     const table = PerformanceTable.create(validTableData());
 

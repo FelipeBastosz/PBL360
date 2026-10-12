@@ -27,6 +27,9 @@ export class SessionPerformanceCriterionDto {
 
   @ApiProperty({ minimum: 0, maximum: 10 })
   peso: number;
+
+  @ApiProperty({ minimum: 0, exclusiveMinimum: true, maximum: 10 })
+  notaMaxima: number;
 }
 
 export class SessionPerformanceTableDto {

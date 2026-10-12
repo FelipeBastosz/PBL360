@@ -40,7 +40,9 @@ describe('RoomPerformanceTablesController', () => {
           descricao: null,
           origem: PerformanceTableOrigin.TURMA,
           autor: { id: tutorId, nome: 'Professor' },
-          criterios: [{ id: 'c1', nome: 'Critério 1', descricao: null, ordem: 1, peso: 10 }],
+          criterios: [
+            { id: 'c1', nome: 'Critério 1', descricao: null, ordem: 1, peso: 10, notaMaxima: 10 },
+          ],
           emUso: 2,
         },
       ];

@@ -420,18 +420,32 @@ describe('Tutor evaluations (e2e)', () => {
     expect((response.body as EvaluationBody).ajustes).toHaveLength(1);
   });
 
-  it('rejects propagating missing criteria into a submitted future-session evaluation', async () => {
+  it('rejects structural edits in both editors after a future-session evaluation is submitted', async () => {
     await db.query('UPDATE sessions SET date = CURRENT_DATE + 10 WHERE problem_id = $1;', [
       problemId,
     ]);
     await submit().expect(200);
-    await api(app, owner)
+    const rejected = await api(app, owner)
       .put(`/tabelas-desempenho/${tableId}`, {
         nome: 'Critérios',
         propagarParaSessoes: true,
         criterios: [
           { id: firstCriterionId, nome: 'Participação', peso: 5, ordem: 1 },
           { nome: 'Novo critério', peso: 5, ordem: 2 },
+        ],
+      })
+      .expect(400);
+    expect(rejected.body).toMatchObject({
+      message: [
+        'Esta tabela já foi usada em sessão passada. Somente os pesos podem ser alterados.',
+      ],
+    });
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/tabela/edicao`, {
+        escopo: 'TODAS',
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', peso: 5, notaMaxima: 10 },
+          { nome: 'Novo critério', peso: 5, notaMaxima: 10 },
         ],
       })
       .expect(409);

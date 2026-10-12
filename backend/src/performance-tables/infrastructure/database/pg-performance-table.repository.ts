@@ -34,7 +34,7 @@ import {
   FIND_ROOM_PERFORMANCE_TABLES_QUERY,
 } from './performance-table.queries';
 
-const CRITERION_COLUMNS = 5;
+const CRITERION_COLUMNS = 6;
 
 @Injectable()
 export class PgPerformanceTableRepository implements PerformanceTableRepository {
@@ -172,7 +172,7 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
          name,
          description,
          order_index,
-         weight
+         weight, max_score
        )
        VALUES ${placeholders}
        RETURNING id;`,
@@ -187,6 +187,7 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
       criterion.description ?? null,
       criterion.orderIndex,
       criterion.weight,
+      criterion.maxScore ?? 10,
     ]);
   }
 

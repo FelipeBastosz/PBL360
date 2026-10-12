@@ -32,7 +32,8 @@ function hasNonWeightChange(
     !previous ||
     criterion.name !== previous.name ||
     criterion.description !== previous.description ||
-    criterion.orderIndex !== previous.orderIndex
+    criterion.orderIndex !== previous.orderIndex ||
+    (criterion.maxScore ?? 10) !== (previous.maxScore ?? 10)
   );
 }
 

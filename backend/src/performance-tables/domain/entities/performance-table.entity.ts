@@ -124,6 +124,9 @@ export class PerformanceTable {
     });
     candidate.criteria.forEach((criterion, index) => {
       const id = props.criteria[index]!.id;
+      if (props.criteria[index]!.maxScore === undefined) {
+        criterion.maxScore = this.criteria.find((current) => current.id === id)?.maxScore ?? 10;
+      }
       if (id !== undefined) criterion.id = id;
       criterion.performanceTableId = this.id;
       criterion.performanceTable = this;

@@ -99,6 +99,7 @@ describe('PerformanceTablesController', () => {
           descricao: null,
           ordem: 1,
           peso: 10,
+          notaMaxima: 10,
         },
       ],
       criadoEm: mockDate,
@@ -141,7 +142,7 @@ describe('PerformanceTablesController', () => {
     ]);
   });
 
-  it('retrieves performance table by id with its criteria', async () => {
+  it.each([10, 8.5])('retrieves criteria with maximum score %s', async (maxScore) => {
     const table = new PerformanceTable();
     table.id = 'table-uuid-1';
     table.tutorId = 'tutor-uuid-1';
@@ -155,6 +156,7 @@ describe('PerformanceTablesController', () => {
       description: 'Desc 1',
       orderIndex: 1,
       weight: 5,
+      maxScore,
     });
     table.criteria = [criterion];
     table.createdAt = mockDate;
@@ -184,6 +186,7 @@ describe('PerformanceTablesController', () => {
           descricao: 'Desc 1',
           ordem: 1,
           peso: 5,
+          notaMaxima: maxScore,
         },
       ],
       criadoEm: mockDate,

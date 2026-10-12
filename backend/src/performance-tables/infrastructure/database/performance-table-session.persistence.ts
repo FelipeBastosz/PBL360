@@ -72,8 +72,8 @@ async function replaceSessionCriteria(manager: EntityManager, tableId: string): 
   );
   await manager.query(
     `INSERT INTO session_evaluation_criteria
-       (session_id, criterion_id, name, description, weight, order_index)
-     SELECT s.id, pc.id, pc.name, pc.description, pc.weight, pc.order_index
+       (session_id, criterion_id, name, description, weight, order_index, max_score)
+     SELECT s.id, pc.id, pc.name, pc.description, pc.weight, pc.order_index, pc.max_score
        FROM sessions s
        JOIN performance_criteria pc ON pc.performance_table_id = s.performance_table_id
       WHERE s.performance_table_id = $1 AND pc.deleted_at IS NULL

@@ -17,6 +17,7 @@ export interface PerformanceTableDetailRow {
   criterionDescription: string | null;
   criterionOrderIndex: number | null;
   criterionWeight: string | number | null;
+  criterionMaxScore?: string | number | null;
 }
 
 export function toPerformanceTableWithCriteria(
@@ -59,6 +60,7 @@ function toCriterion(
   criterion.description = row.criterionDescription;
   criterion.orderIndex = Number(row.criterionOrderIndex);
   criterion.weight = Number(row.criterionWeight);
+  criterion.maxScore = Number(row.criterionMaxScore ?? 10);
   criterion.performanceTable = table;
 
   return criterion;

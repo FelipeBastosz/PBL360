@@ -8,6 +8,26 @@ const criterionIds = ['criterion-1', 'criterion-2'];
 
 describe('EvaluationRules', () => {
   describe('assertValidItems', () => {
+    it('validates both drafts and submissions against the configured maximum', () => {
+      const criteria = [{ id: 'criterion-1', maxScore: 8 }];
+      for (const complete of [false, true]) {
+        expect(() =>
+          EvaluationRules.assertValidItems(
+            [{ criterionId: 'criterion-1', score: 8 }],
+            criteria,
+            complete,
+          ),
+        ).not.toThrow();
+        expect(() =>
+          EvaluationRules.assertValidItems(
+            [{ criterionId: 'criterion-1', score: 8.01 }],
+            criteria,
+            complete,
+          ),
+        ).toThrow('A nota do critério deve estar entre 0 e 8.');
+      }
+    });
+
     it.each([0, 8.5, 10])('accepts a score of %s', (score) => {
       expect(() =>
         EvaluationRules.assertValidItems(

@@ -1,4 +1,5 @@
 import type { EntityManager } from 'typeorm';
+import { lockSessionPerformanceTable } from '@/sessions/infrastructure/database/session-table-lock.persistence';
 import { ConflictError, LockedError, NotFoundError } from '@/shared/errors/application.error';
 import { validateEvaluationRules } from '../../application/services/evaluation-rule-validation';
 import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
@@ -6,7 +7,7 @@ import type {
   EvaluationDetail,
   SelfAssessmentWrite,
 } from '../../domain/repositories/evaluation.repository';
-import { EvaluationRules } from '../../domain/services/evaluation-rules';
+import { type ScoringCriterion, EvaluationRules } from '../../domain/services/evaluation-rules';
 import {
   SessionGradeCalculator,
   SESSION_CALCULATION_VERSION,
@@ -38,6 +39,7 @@ async function executeSelfAssessment(
   tx: EntityManager,
   input: SelfAssessmentWrite,
 ): Promise<EvaluationDetail> {
+  await lockSessionPerformanceTable(tx, input.context.sessionId);
   await assertSelfAssessmentOpen(tx, input);
   const evaluationId = await prepareSelfAssessment(tx, input);
   await persistSelfAssessment(tx, evaluationId, input);
@@ -51,10 +53,7 @@ async function prepareSelfAssessment(
   const config = await freezeSessionConfig(tx, input.context.sessionId, input.studentId);
   const existing = await findExisting(tx, input);
   assertNotSubmitted(existing);
-  validateItems(
-    input,
-    config.criteria.map((criterion) => criterion.id),
-  );
+  validateItems(input, config.criteria);
   return existing?.id ?? insertSelfAssessment(tx, input, config.tableId);
 }
 
@@ -64,7 +63,7 @@ function assertNotSubmitted(existing: { status: EvaluationStatus } | null): void
   }
 }
 
-function validateItems(input: SelfAssessmentWrite, criterionIds: string[]): void {
+function validateItems(input: SelfAssessmentWrite, criterionIds: ScoringCriterion[]): void {
   validateEvaluationRules(() =>
     EvaluationRules.assertValidItems(input.items, criterionIds, input.submit),
   );

@@ -41,7 +41,8 @@ export const FIND_PERFORMANCE_TABLE_BY_ID_QUERY = `
          pc.name AS "criterionName",
          pc.description AS "criterionDescription",
          pc.order_index AS "criterionOrderIndex",
-         pc.weight AS "criterionWeight"
+         pc.weight AS "criterionWeight",
+         pc.max_score AS "criterionMaxScore"
     FROM performance_tables pt
     LEFT JOIN performance_criteria pc
       ON pc.performance_table_id = pt.id
@@ -93,7 +94,10 @@ export const FIND_PERFORMANCE_TABLE_USAGE_QUERY = `
   )
   SELECT (SELECT COUNT(*)::int FROM table_problems) AS "problemCount",
          COUNT(*)::int AS "sessionCount",
-         COUNT(*) FILTER (WHERE date < CURRENT_DATE)::int AS "pastSessionCount"
+         COUNT(*) FILTER (WHERE date <= CURRENT_DATE OR EXISTS (
+           SELECT 1 FROM evaluations e WHERE e.session_id = table_sessions.id
+             AND e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED'
+         ))::int AS "pastSessionCount"
     FROM table_sessions;
 `;
 
@@ -116,7 +120,8 @@ export const FIND_PERFORMANCE_TABLE_BY_ID_INCLUDING_DELETED_QUERY = `
          pc.name AS "criterionName",
          pc.description AS "criterionDescription",
          pc.order_index AS "criterionOrderIndex",
-         pc.weight AS "criterionWeight"
+         pc.weight AS "criterionWeight",
+         pc.max_score AS "criterionMaxScore"
     FROM performance_tables pt
     LEFT JOIN performance_criteria pc
       ON pc.performance_table_id = pt.id
@@ -152,7 +157,8 @@ export const FIND_ROOM_PERFORMANCE_TABLES_QUERY = `
          pc.name AS "criterionName",
          pc.description AS "criterionDescription",
          pc.order_index AS "criterionOrderIndex",
-         pc.weight AS "criterionWeight"
+         pc.weight AS "criterionWeight",
+         pc.max_score AS "criterionMaxScore"
     FROM performance_tables pt
    INNER JOIN users u ON u.id = pt.tutor_id
     LEFT JOIN performance_criteria pc

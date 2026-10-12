@@ -18,6 +18,7 @@ export interface RoomPerformanceTableRow {
   criterionDescription: string | null;
   criterionOrderIndex: number | null;
   criterionWeight: string | number | null;
+  criterionMaxScore?: string | number | null;
 }
 
 export function toRoomPerformanceTableItems(
@@ -56,6 +57,7 @@ function appendCriterion(item: RoomPerformanceTableItem, row: RoomPerformanceTab
     descricao: row.criterionDescription,
     ordem: Number(row.criterionOrderIndex),
     peso: Number(row.criterionWeight),
+    notaMaxima: Number(row.criterionMaxScore ?? 10),
   });
 }
 

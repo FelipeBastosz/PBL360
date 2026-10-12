@@ -3,5 +3,6 @@ export interface SessionEvaluationCriterion {
   name: string;
   description: string | null;
   weight: number;
+  maxScore?: number;
   orderIndex: number;
 }

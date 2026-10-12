@@ -44,6 +44,12 @@ import { PgSessionAttachmentRepository } from './infrastructure/database/pg-sess
 import { SessionEvaluationConfigurationController } from './infrastructure/http/session-evaluation-configuration.controller';
 import { SessionEvaluationConfigurationService } from './application/services/session-evaluation-configuration.service';
 
+import { SessionTableEditingController } from './infrastructure/http/session-table-editing.controller';
+import { GetSessionTableEditPermissionsUseCase } from './application/use-cases/get-session-table-edit-permissions.use-case';
+import { EditSessionTableUseCase } from './application/use-cases/edit-session-table.use-case';
+import { SESSION_TABLE_EDITING_REPOSITORY } from './domain/repositories/session-table-editing.repository';
+import { PgSessionTableEditingRepository } from './infrastructure/database/pg-session-table-editing.repository';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Session, SessionRoleAssignment, Attendance, SessionAttachment]),
@@ -52,6 +58,7 @@ import { SessionEvaluationConfigurationService } from './application/services/se
   ],
   controllers: [
     SessionsController,
+    SessionTableEditingController,
     SessionRolesController,
     RollCallController,
     MemberSessionsController,
@@ -61,6 +68,9 @@ import { SessionEvaluationConfigurationService } from './application/services/se
   ],
   providers: [
     CreateSessionUseCase,
+    GetSessionTableEditPermissionsUseCase,
+    EditSessionTableUseCase,
+    { provide: SESSION_TABLE_EDITING_REPOSITORY, useClass: PgSessionTableEditingRepository },
     ListSessionsUseCase,
     GetSessionUseCase,
     UpdateSessionUseCase,

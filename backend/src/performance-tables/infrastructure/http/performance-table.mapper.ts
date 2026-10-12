@@ -43,6 +43,7 @@ function mapCriteria(table: PerformanceTable) {
     descricao: criterion.description,
     ordem: criterion.orderIndex,
     peso: Number(criterion.weight),
+    notaMaxima: criterion.maxScore ?? 10,
   }));
 }
 

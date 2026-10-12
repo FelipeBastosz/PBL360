@@ -12,11 +12,7 @@ export class SessionGradeCalculator {
     applyCargoFormula = false,
     formula = { criteriaWeight: 70, roleWeight: 30 },
   ): number {
-    EvaluationRules.assertValidItems(
-      items,
-      criteria.map((criterion) => criterion.id),
-      true,
-    );
+    EvaluationRules.assertValidItems(items, criteria, true);
     this.assertConfiguration(criteria, bonus, formula);
     return this.weightedResult(items, criteria, bonus, applyCargoFormula, formula);
   }

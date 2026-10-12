@@ -60,8 +60,8 @@ async function persistCriterion(
   if (criterion.id) {
     await manager.query(
       `UPDATE performance_criteria
-          SET name = $2, description = $3, order_index = $4, weight = $5, updated_at = now()
-        WHERE performance_table_id = $1 AND id = $6 AND deleted_at IS NULL;`,
+          SET name = $2, description = $3, order_index = $4, weight = $5, max_score = $6, updated_at = now()
+        WHERE performance_table_id = $1 AND id = $7 AND deleted_at IS NULL;`,
       [...values, criterion.id],
     );
   } else {
@@ -74,8 +74,8 @@ async function insertCriterion(
   values: (string | number | null)[],
 ): Promise<void> {
   await manager.query(
-    `INSERT INTO performance_criteria (performance_table_id, name, description, order_index, weight)
-     VALUES ($1, $2, $3, $4, $5);`,
+    `INSERT INTO performance_criteria (performance_table_id, name, description, order_index, weight, max_score)
+     VALUES ($1, $2, $3, $4, $5, $6);`,
     values,
   );
 }
@@ -84,5 +84,12 @@ function criterionValues(
   tableId: string,
   criterion: PerformanceCriterion,
 ): (string | number | null)[] {
-  return [tableId, criterion.name, criterion.description, criterion.orderIndex, criterion.weight];
+  return [
+    tableId,
+    criterion.name,
+    criterion.description,
+    criterion.orderIndex,
+    criterion.weight,
+    criterion.maxScore ?? 10,
+  ];
 }
