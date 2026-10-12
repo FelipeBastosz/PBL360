@@ -410,7 +410,7 @@ describe('Performance tables (e2e)', () => {
           performance_table_id, type, status, submitted_at, session_score,
           applied_bonus, calculation_version, created_by)
        VALUES ($1, $2, $3, $4, $4, $5, 'TUTOR_SESSION', 'SUBMITTED', now(), 6.4,
-               0.5, 'WEIGHTED_AVERAGE_BONUS_V1', $1)
+               5, 'WEIGHTED_SESSION_FORMULA_V3', $1)
        RETURNING id;`,
       [ownerId, studentId, problem!.id, session!.id, tableId],
     );
