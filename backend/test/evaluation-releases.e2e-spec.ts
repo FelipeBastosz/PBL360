@@ -126,24 +126,45 @@ describe('Evaluation releases (e2e)', () => {
     });
   });
 
-  it('releases both evaluations and keeps the change', async () => {
+  it('releases one evaluation and keeps the change', async () => {
     const deadline = future();
 
     const response = await api(app, owner)
       .put(path(), {
         autoavaliacao: { liberada: true, prazo: deadline },
-        pares: { liberada: true, prazo: null },
+        pares: { liberada: false, prazo: null },
       })
       .expect(200);
 
     const body = response.body as ReleasesBody;
     expect(body.autoavaliacao).toMatchObject({ liberada: true, prazo: deadline });
-    expect(body.pares).toMatchObject({ liberada: true, prazo: null });
+    expect(body.pares).toMatchObject({ liberada: false, prazo: null });
     expect(body.atualizadoPor).toBe(owner.id);
     expect(body.atualizadoEm).not.toBeNull();
 
     const stored = await api(app, owner).get(path()).expect(200);
     expect(stored.body).toEqual(body);
+  });
+
+  it('keeps self and peer releases mutually exclusive', async () => {
+    await api(app, owner)
+      .put(path(), { autoavaliacao: { liberada: true, prazo: null } })
+      .expect(200);
+
+    await api(app, owner)
+      .put(path(), { pares: { liberada: true, prazo: null } })
+      .expect(409);
+
+    const response = await api(app, owner)
+      .put(path(), {
+        autoavaliacao: { liberada: false, prazo: null },
+        pares: { liberada: true, prazo: null },
+      })
+      .expect(200);
+
+    const body = response.body as ReleasesBody;
+    expect(body.autoavaliacao.liberada).toBe(false);
+    expect(body.pares.liberada).toBe(true);
   });
 
   it('turns a release off and preserves what was already submitted', async () => {
