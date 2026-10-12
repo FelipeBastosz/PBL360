@@ -166,7 +166,7 @@ describe('Grades (e2e)', () => {
             nota: 8.5,
             situacao: 'AVALIADA',
             autoavaliacao: { nota: null, situacao: 'NAO_LIBERADA' },
-            pares: { nota: null, situacao: 'NAO_LIBERADA' },
+            pares: { nota: null, situacao: 'NAO_LIBERADA', origem: 'FORMULARIO' },
           },
         ],
         notaFinal: 8.5,
