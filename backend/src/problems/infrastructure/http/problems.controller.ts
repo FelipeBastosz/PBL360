@@ -20,15 +20,8 @@ import { GetProblemDeletionImpactUseCase } from '../../application/use-cases/get
 import { GetProblemUseCase } from '../../application/use-cases/get-problem.use-case';
 import { ListProblemsByRoomUseCase } from '../../application/use-cases/list-problems-by-room.use-case';
 import { UpdateProblemUseCase } from '../../application/use-cases/update-problem.use-case';
-import { ChangeProblemPerformanceTableUseCase } from '../../application/use-cases/change-problem-performance-table.use-case';
-import { ChangeProblemPerformanceTableDto } from '../../application/dtos/change-problem-performance-table.dto';
-import { ProblemPerformanceTableResponseDto } from '../../application/dtos/problem-performance-table-response.dto';
 import type { Problem } from '../../domain/entities/problem.entity';
-import {
-  toProblemDeletionImpactResponse,
-  toProblemPerformanceTableResponse,
-  toProblemResponse,
-} from './problem.mapper';
+import { toProblemDeletionImpactResponse, toProblemResponse } from './problem.mapper';
 import {
   CreateProblemSwaggerDocs,
   DeleteProblemSwaggerDocs,
@@ -36,7 +29,6 @@ import {
   GetProblemSwaggerDocs,
   ListProblemsSwaggerDocs,
   UpdateProblemSwaggerDocs,
-  ChangeProblemPerformanceTableSwaggerDocs,
 } from './problem.swagger';
 
 @ApiTags('Problemas')
@@ -50,7 +42,6 @@ export class ProblemsController {
     private readonly updateProblemUseCase: UpdateProblemUseCase,
     private readonly getProblemDeletionImpactUseCase: GetProblemDeletionImpactUseCase,
     private readonly deleteProblemUseCase: DeleteProblemUseCase,
-    private readonly changeProblemPerformanceTableUseCase: ChangeProblemPerformanceTableUseCase,
   ) {}
 
   @Post()
@@ -68,12 +59,10 @@ export class ProblemsController {
       description: dto.descricao,
       startDate: dto.dataInicio ?? null,
       endDate: dto.dataFim ?? null,
-      performanceTableId: dto.tabelaId ?? null,
     });
 
     return toProblemResponse(problem);
   }
-
   @Get()
   @Roles(UserType.TUTOR, UserType.STUDENT)
   @ListProblemsSwaggerDocs
@@ -133,24 +122,5 @@ export class ProblemsController {
     @AuthenticatedUserId() tutorId: string,
   ): Promise<void> {
     await this.deleteProblemUseCase.execute({ roomId, problemId, tutorId });
-  }
-
-  @Put(':problemId/tabela-desempenho')
-  @Roles(UserType.TUTOR)
-  @HttpCode(HttpStatus.OK)
-  @ChangeProblemPerformanceTableSwaggerDocs
-  async changePerformanceTable(
-    @UuidParam('roomId') roomId: string,
-    @UuidParam('problemId') problemId: string,
-    @Body() dto: ChangeProblemPerformanceTableDto,
-    @AuthenticatedUserId() tutorId: string,
-  ): Promise<ProblemPerformanceTableResponseDto> {
-    const change = await this.changeProblemPerformanceTableUseCase.execute({
-      roomId,
-      problemId,
-      tutorId,
-      performanceTableId: dto.tabelaId,
-    });
-    return toProblemPerformanceTableResponse(change);
   }
 }

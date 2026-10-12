@@ -34,6 +34,7 @@ export interface RoomPerformanceTableItem {
 export interface PerformanceTableUsage {
   problemCount: number;
   sessionCount?: number;
+  pastSessionCount?: number;
 }
 
 export interface PerformanceTableSummary {
@@ -55,7 +56,7 @@ export interface PerformanceTableRepository {
   findTablesByRoom(roomId: string, tutorId: string): Promise<RoomPerformanceTableItem[]>;
   findById(id: string): Promise<PerformanceTable | null>;
   softDelete(table: PerformanceTable): Promise<boolean>;
-  update(table: PerformanceTable): Promise<PerformanceTable>;
+  update(table: PerformanceTable, propagateToSessions?: boolean): Promise<PerformanceTable>;
   findUsageById(id: string): Promise<PerformanceTableUsage>;
   findByIdIncludingDeleted(id: string): Promise<PerformanceTable | null>;
 }

@@ -46,7 +46,7 @@ describe('AddTutorToRoomUseCase', () => {
     });
 
     expect(access.assertTutorIsRoomOwner).toHaveBeenCalledWith(ROOM_ID, OWNER_ID);
-    expect(rooms.addTutor).toHaveBeenCalledWith(ROOM_ID, NEW_TUTOR_ID, OWNER_ID);
+    expect(rooms.addTutor).toHaveBeenCalledWith(ROOM_ID, NEW_TUTOR_ID);
   });
 
   it('only lets the owner add tutors', async () => {

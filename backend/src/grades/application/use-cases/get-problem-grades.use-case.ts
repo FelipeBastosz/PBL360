@@ -8,6 +8,7 @@ import {
 } from '../../domain/repositories/grades.repository';
 import type { GradesResponseDto } from '../dtos/grades-response.dto';
 import {
+  buildDefaultSessionComponents,
   processStudentGrades,
   type Row,
   type StudentResponse,
@@ -27,6 +28,12 @@ interface ProblemData {
 interface FormulaContext {
   formula: Row | undefined;
   components: GradeComponent[];
+}
+
+interface SessionFormulaContext extends FormulaContext {
+  sessionId: string;
+  formulaVersion: number;
+  defaultFormula: boolean;
 }
 
 interface StudentsResult {
@@ -61,12 +68,8 @@ export class GetProblemGradesUseCase {
     const problem = await this.gradesRepository.findProblem(input.problemId, input.roomId);
     if (!problem) throw new NotFoundError('Problema não encontrado na sala informada.');
 
-    const data = await this.gradesRepository.findProblemData(
-      input.roomId,
-      input.problemId,
-      problem.performance_table_id,
-    );
-    const effective = await this.withDefaults(data.formulas, data.criteria);
+    const data = await this.gradesRepository.findProblemData(input.roomId, input.problemId);
+    const effective = await this.withDefaults(data.formulas, data.criteria, data.sessions);
 
     const result = this.calculate({ ...data, ...effective });
     await this.saveGrades(input.problemId, result);
@@ -88,26 +91,44 @@ export class GetProblemGradesUseCase {
   private async withDefaults(
     formulas: Row[],
     criteria: Row[],
+    sessions: Row[],
   ): Promise<{ formulas: Row[]; components: Row[] }> {
     const components = await this.loadComponents(formulas);
     const result = [...formulas];
-    this.applySessionDefault(result, components, criteria);
+    this.applySessionDefaults(result, components, criteria, sessions);
     this.applyProblemDefault(result, components);
     return { formulas: result, components };
   }
 
-  private applySessionDefault(formulas: Row[], components: Row[], criteria: Row[]): void {
-    if (formulas.some((f) => f.scope === 'SESSAO') || criteria.length === 0) return;
-    formulas.push({ id: '__default_session', scope: 'SESSAO', version: null });
-    const totalWeight = criteria.reduce((sum, c) => sum + Number(c.weight), 0);
-    components.push(
-      ...criteria.map((c) => ({
-        formula_id: '__default_session',
-        type: 'CRITERIO',
-        reference_id: c.id,
-        weight: (Number(c.weight) / totalWeight) * 100,
-      })),
-    );
+  private applySessionDefaults(
+    formulas: Row[],
+    components: Row[],
+    criteria: Row[],
+    sessions: Row[],
+  ): void {
+    for (const session of sessions) {
+      this.addDefaultSessionFormula(formulas, components, criteria, String(session.id));
+    }
+  }
+
+  private addDefaultSessionFormula(
+    formulas: Row[],
+    components: Row[],
+    criteria: Row[],
+    sessionId: string,
+  ): void {
+    if (formulas.some((formula) => formula.scope === 'SESSAO' && formula.session_id === sessionId))
+      return;
+    if (!criteria.some((criterion) => criterion.session_id === sessionId)) return;
+    const formulaId = `__default_session_${sessionId}`;
+    formulas.push({
+      id: formulaId,
+      scope: 'SESSAO',
+      session_id: sessionId,
+      version: null,
+      is_default: true,
+    });
+    components.push(...buildDefaultSessionComponents(sessionId, formulaId));
   }
 
   private applyProblemDefault(formulas: Row[], components: Row[]): void {
@@ -122,18 +143,18 @@ export class GetProblemGradesUseCase {
   }
 
   private calculate(data: CalculationData): CalculationResult {
-    const session = this.buildContext(data, 'SESSAO');
     const problem = this.buildContext(data, 'PROBLEMA');
-    const { students, sessionRows, problemRows } = this.processStudents(data, session, problem);
+    const sessions = this.buildSessionContexts(data);
+    const { students, sessionRows, problemRows } = this.processStudents(data, sessions, problem);
 
     return {
-      response: buildGradeResponse(data.sessions, students, session.formula, problem.formula),
+      response: buildGradeResponse(data.sessions, students, sessions[0]?.formula, problem.formula),
       sessionRows,
       problemRows,
     };
   }
 
-  private buildContext(data: CalculationData, scope: 'SESSAO' | 'PROBLEMA'): FormulaContext {
+  private buildContext(data: CalculationData, scope: 'PROBLEMA'): FormulaContext {
     const formula = data.formulas.find((f: Row) => f.scope === scope);
     return {
       formula,
@@ -141,13 +162,30 @@ export class GetProblemGradesUseCase {
     };
   }
 
+  private buildSessionContexts(data: CalculationData): SessionFormulaContext[] {
+    return data.sessions.map((session) => {
+      const sessionId = String(session.id);
+      const formula = data.formulas.find(
+        (candidate) => candidate.scope === 'SESSAO' && String(candidate.session_id) === sessionId,
+      );
+      const context: SessionFormulaContext = {
+        sessionId,
+        formula,
+        components: selectComponents(data.components, formula),
+        formulaVersion: (formula?.version as number) ?? 1,
+        defaultFormula: Boolean(formula?.is_default),
+      };
+      return context;
+    });
+  }
+
   private processStudents(
     data: CalculationData,
-    session: FormulaContext,
+    sessions: SessionFormulaContext[],
     problem: FormulaContext,
   ): StudentsResult {
     const processed = data.students.map((student) =>
-      processStudentGrades(this.studentContext(data, student, session, problem)),
+      processStudentGrades(this.studentContext(data, student, sessions, problem)),
     );
 
     return {
@@ -160,18 +198,18 @@ export class GetProblemGradesUseCase {
   private studentContext(
     data: CalculationData,
     student: Row,
-    session: FormulaContext,
+    sessions: SessionFormulaContext[],
     problem: FormulaContext,
   ) {
     return {
       student,
       sessions: data.sessions,
+      criteria: data.criteria,
       scores: data.scores,
       attendances: data.attendances,
       roles: data.roles,
-      sessionComponents: session.components,
+      sessionFormulas: sessions,
       problemComponents: problem.components,
-      sessionFormulaVersion: (session.formula?.version as number) ?? 1,
       problemFormulaVersion: (problem.formula?.version as number) ?? 1,
     };
   }

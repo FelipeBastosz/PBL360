@@ -29,7 +29,7 @@ export class AddTutorToRoomUseCase {
       throw new NotFoundError('Professor não encontrado.');
     }
 
-    if (!(await this.roomRepository.addTutor(roomId, tutorId, authenticatedTutorId))) {
+    if (!(await this.roomRepository.addTutor(roomId, tutorId))) {
       throw new ConflictError('Este professor já está associado à sala.');
     }
   }

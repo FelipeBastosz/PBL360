@@ -11,6 +11,62 @@ const criteria: GradeComponent[] = [
 ];
 
 describe('grade calculator', () => {
+  it('applies the default 70/30 formula with a cargo grade on a ten-point scale', () => {
+    const result = calculateSessionGrade({
+      attendance: 'PRESENT',
+      criteria: [
+        { id: 'a', score: 8 },
+        { id: 'b', score: 6 },
+        { id: 'c', score: 10 },
+      ],
+      components: [
+        { type: 'CRITERIO', referenceId: 'a', weight: 40 },
+        { type: 'CRITERIO', referenceId: 'b', weight: 40 },
+        { type: 'CRITERIO', referenceId: 'c', weight: 20 },
+      ],
+      bonus: 0.5,
+      defaultFormula: true,
+    });
+
+    expect(result.grade).toBeCloseTo(6.82, 10);
+    expect(result.situation).toBe('AVALIADA');
+  });
+
+  it('uses the simple grade when no cargo score is assigned', () => {
+    expect(
+      calculateSessionGrade({
+        attendance: 'PRESENT',
+        criteria: [
+          { id: 'a', score: 8 },
+          { id: 'b', score: 6 },
+        ],
+        components: [
+          { type: 'CRITERIO', referenceId: 'a', weight: 50 },
+          { type: 'CRITERIO', referenceId: 'b', weight: 50 },
+        ],
+        bonus: null,
+        defaultFormula: true,
+      }),
+    ).toEqual({ grade: 7, situation: 'AVALIADA' });
+  });
+
+  it('applies the configured criteria and role blocks to a session grade', () => {
+    expect(
+      calculateSessionGrade({
+        attendance: 'PRESENT',
+        criteria: [
+          { id: 'a', score: 8, weight: 75 },
+          { id: 'b', score: 4, weight: 25 },
+        ],
+        components: [
+          { type: 'CRITERIOS', weight: 60 },
+          { type: 'PAPEL', weight: 40 },
+        ],
+        bonus: 0.5,
+      }),
+    ).toEqual({ grade: 6.2, situation: 'AVALIADA' });
+  });
+
   it.each([
     [
       'present weighted average',

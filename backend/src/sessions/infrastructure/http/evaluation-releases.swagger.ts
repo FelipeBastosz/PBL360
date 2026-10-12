@@ -42,6 +42,7 @@ export const UpdateEvaluationReleasesSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Liga, desliga ou altera o prazo das avaliações da sessão',
     description:
+      'Autoavaliação e pares são mutuamente exclusivas: só uma pode estar liberada por vez. ' +
       'Desligar bloqueia novos envios e edições, mas preserva o que já foi enviado. ' +
       'Depois do prazo o envio fica fechado; para reabrir, informe um prazo novo.',
   }),
@@ -51,7 +52,8 @@ export const UpdateEvaluationReleasesSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
   ApiConflictResponse({
-    description: 'A chamada da sessão ainda não foi salva.',
+    description:
+      'A chamada da sessão ainda não foi salva, ou o pedido deixaria autoavaliação e pares liberadas ao mesmo tempo.',
     type: ErrorResponseDto,
   }),
   ...commonErrors,

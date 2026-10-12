@@ -95,42 +95,54 @@ export async function seedReviewBehaviorTagsAndObservations(
   }
 }
 
-async function saveCriterionScoresForSessions(
+async function saveCriterionScores(
   ds: DataSource,
-  sessionIds: [string, string],
-  users: ReviewUsers,
+  sessionId: string,
+  studentId: string,
   criterionId: string,
+  score: number,
 ): Promise<void> {
-  const [s1, s2] = sessionIds;
   await ds.query(
     `INSERT INTO criterion_grades (session_id, student_id, criterion_id, score)
-     VALUES ($1, $2, $3, 9.0), ($1, $4, $3, 8.5)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (session_id, student_id, criterion_id) DO UPDATE SET score = EXCLUDED.score;`,
-    [s1, users.student1.id, criterionId, users.student2.id],
-  );
-  await ds.query(
-    `INSERT INTO criterion_grades (session_id, student_id, criterion_id, score)
-     VALUES ($1, $2, $3, 9.5)
-     ON CONFLICT (session_id, student_id, criterion_id) DO UPDATE SET score = EXCLUDED.score;`,
-    [s2, users.student1.id, criterionId],
+    [sessionId, studentId, criterionId, score],
   );
 }
 
 export async function seedReviewCriterionGrades(
   ds: DataSource,
-  problemId: string,
   sessionIds: [string, string],
   users: ReviewUsers,
 ): Promise<void> {
-  const criteria = await ds.query<Array<{ id: string; name: string }>>(
-    `SELECT pc.id, pc.name
-     FROM performance_criteria pc
-     JOIN problems p ON p.performance_table_id = pc.performance_table_id
-     WHERE p.id = $1 ORDER BY pc.order_index ASC;`,
-    [problemId],
+  const criteria = await ds.query<Array<{ id: string; session_id: string }>>(
+    `SELECT s.id AS session_id, pc.id
+       FROM sessions s
+       JOIN performance_criteria pc ON pc.performance_table_id = s.performance_table_id
+      WHERE s.id = ANY($1) AND pc.deleted_at IS NULL
+      ORDER BY s.order_index, pc.order_index ASC;`,
+    [sessionIds],
   );
-  for (const criterion of criteria) {
-    await saveCriterionScoresForSessions(ds, sessionIds, users, criterion.id);
+  for (const criterion of criteria)
+    await saveReviewCriterionScores(ds, criterion, sessionIds[0], users);
+}
+
+async function saveReviewCriterionScores(
+  ds: DataSource,
+  criterion: { id: string; session_id: string },
+  firstSessionId: string,
+  users: ReviewUsers,
+): Promise<void> {
+  const { id, session_id: sessionId } = criterion;
+  await saveCriterionScores(
+    ds,
+    sessionId,
+    users.student1.id,
+    id,
+    sessionId === firstSessionId ? 9 : 9.5,
+  );
+  if (sessionId === firstSessionId) {
+    await saveCriterionScores(ds, sessionId, users.student2.id, id, 8.5);
   }
 }
 

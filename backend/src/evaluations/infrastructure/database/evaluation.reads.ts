@@ -7,7 +7,7 @@ import type {
 } from '../../domain/repositories/evaluation.repository';
 import { toEvaluation, type EvaluationRow, type EvaluationItemRow } from './evaluation-row.mapper';
 import { FIND_ADJUSTMENTS, FIND_EVALUATION, FIND_ITEMS } from './evaluation.queries';
-import { readProblemConfig, readSessionConfig } from './session-evaluation-config.persistence';
+import { readSessionConfig, readSessionTableConfig } from './session-evaluation-config.persistence';
 
 interface AdjustmentRow extends Omit<GradeAdjustment, 'previousValue' | 'newValue'> {
   previousValue: string;
@@ -32,7 +32,7 @@ export async function readEvaluationDetail(
 ): Promise<EvaluationDetail> {
   const config =
     (await readSessionConfig(manager, context.sessionId)) ??
-    (await readProblemConfig(manager, context.problemId));
+    (await readSessionTableConfig(manager, context.sessionId));
   const evaluation = await readEvaluation(manager, context.sessionId, studentId);
   const rows = evaluation
     ? await manager.query<AdjustmentRow[]>(FIND_ADJUSTMENTS, [evaluation.id])

@@ -98,19 +98,19 @@ describe('Grades (e2e)', () => {
 
     const [problem] = await dataSource.query<[{ id: string }]>(
       `INSERT INTO problems
-        (room_id, title, description, order_index, created_by, performance_table_id)
-       VALUES ($1, 'Problema de notas', 'Problema para teste de notas', 1, $2, $3)
+        (room_id, title, description, order_index, created_by)
+       VALUES ($1, 'Problema de notas', 'Problema para teste de notas', 1, $2)
        RETURNING id;`,
-      [roomId, tutorId, performanceTable.id],
+      [roomId, tutorId],
     );
     problemId = problem.id;
 
     const [session] = await dataSource.query<[{ id: string }]>(
       `INSERT INTO sessions
-        (problem_id, title, description, date, order_index)
-       VALUES ($1, 'Sessão de avaliação', 'Sessão de teste', '2026-10-02', 1)
+        (problem_id, performance_table_id, title, description, date, order_index)
+       VALUES ($1, $2, 'Sessão de avaliação', 'Sessão de teste', '2026-10-02', 1)
        RETURNING id;`,
-      [problemId],
+      [problemId, performanceTable.id],
     );
     sessionId = session.id;
 
@@ -150,7 +150,7 @@ describe('Grades (e2e)', () => {
       },
     ]);
     expect(grades.mediaTurma).toBe(8.5);
-    expect(grades.versoesFormula).toEqual({ sessao: 0, problema: 0 });
+    expect(grades.versoesFormula).toEqual({ sessao: null, problema: 0 });
 
     const [sessionGrade] = await dataSource.query<
       [{ grade: string; situation: string; formula_version: number }]

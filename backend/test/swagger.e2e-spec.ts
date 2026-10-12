@@ -106,16 +106,11 @@ describe('Swagger (e2e)', () => {
     ]);
   });
 
-  it('documents the required title and optional nullable table UUID in the problem update', () => {
+  it('documents the required title in the problem update', () => {
     const schema = document.components.schemas.UpdateProblemDto!;
 
     expect(schema).toBeDefined();
-    expect(Object.keys(schema.properties).sort()).toEqual(['tabelaId', 'title']);
+    expect(Object.keys(schema.properties).sort()).toEqual(['title']);
     expect(schema.required).toEqual(['title']);
-    expect(schema.properties.tabelaId).toMatchObject({
-      type: 'string',
-      format: 'uuid',
-      nullable: true,
-    });
   });
 });

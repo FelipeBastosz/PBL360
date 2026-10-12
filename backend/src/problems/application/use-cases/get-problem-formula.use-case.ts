@@ -6,11 +6,8 @@ import { FORMULA_REPOSITORY } from '../../domain/repositories/formula.repository
 import type { FormulaRepository } from '../../domain/repositories/formula.repository';
 import { PROBLEM_REPOSITORY } from '../../domain/repositories/problem.repository';
 import type { ProblemRepository } from '../../domain/repositories/problem.repository';
-import { PERFORMANCE_TABLE_REPOSITORY } from '@/performance-tables/domain/repositories/performance-table.repository';
-import type { PerformanceTableRepository } from '@/performance-tables/domain/repositories/performance-table.repository';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import type { Problem } from '../../domain/entities/problem.entity';
-import type { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
 
 export interface GetProblemFormulaInput {
   roomId: string;
@@ -38,30 +35,28 @@ export class GetProblemFormulaUseCase {
   constructor(
     @Inject(PROBLEM_REPOSITORY) private readonly problems: ProblemRepository,
     @Inject(FORMULA_REPOSITORY) private readonly formulas: FormulaRepository,
-    @Inject(PERFORMANCE_TABLE_REPOSITORY) private readonly tables: PerformanceTableRepository,
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
   async execute(input: GetProblemFormulaInput): Promise<ProblemFormulaOutput> {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
 
-    const problem = await this.validateProblem(input);
-    const table = await this.fetchTable(problem);
-
-    const criteriaMap = new Map<string, string>();
-    if (table) {
-      table.criteria.forEach((c) => criteriaMap.set(c.id, c.name));
+    if (input.scope !== FormulaScope.PROBLEMA) {
+      throw new UnprocessableEntityError(
+        'A fórmula da sessão deve ser consultada pela configuração da própria sessão.',
+      );
     }
+    await this.validateProblem(input);
 
     const activeFormula = await this.formulas.findActiveByProblemAndScope(
       input.problemId,
       input.scope,
     );
     if (activeFormula) {
-      return this.buildActiveFormula(input.scope, activeFormula, criteriaMap);
+      return this.buildActiveFormula(input.scope, activeFormula);
     }
 
-    return this.buildDefaultFormula(input.scope, table);
+    return this.buildProblemScopeFormula();
   }
 
   private async validateProblem(input: GetProblemFormulaInput): Promise<Problem> {
@@ -72,16 +67,7 @@ export class GetProblemFormulaUseCase {
     return problem;
   }
 
-  private async fetchTable(problem: Problem) {
-    if (!problem.performanceTableId) return null;
-    return this.tables.findByIdIncludingDeleted(problem.performanceTableId);
-  }
-
-  private buildActiveFormula(
-    scope: FormulaScope,
-    activeFormula: Formula,
-    criteriaMap: Map<string, string>,
-  ): ProblemFormulaOutput {
+  private buildActiveFormula(scope: FormulaScope, activeFormula: Formula): ProblemFormulaOutput {
     return {
       scope,
       isDefault: false,
@@ -89,22 +75,10 @@ export class GetProblemFormulaUseCase {
       components: activeFormula.components.map((c) => ({
         type: c.type,
         referenceId: c.referenceId,
-        name: c.referenceId
-          ? criteriaMap.get(c.referenceId) || 'Critério Excluído'
-          : this.getDefaultNameForType(c.type),
+        name: this.getDefaultNameForType(c.type),
         weight: Number(c.weight),
       })),
     };
-  }
-
-  private buildDefaultFormula(
-    scope: FormulaScope,
-    table: PerformanceTable | null,
-  ): ProblemFormulaOutput {
-    if (scope === FormulaScope.PROBLEMA) {
-      return this.buildProblemScopeFormula();
-    }
-    return this.buildSessionScopeFormula(table);
   }
 
   private buildProblemScopeFormula(): ProblemFormulaOutput {
@@ -126,47 +100,6 @@ export class GetProblemFormulaUseCase {
 
   private createComponent(type: string, name: string, weight: number): ProblemFormulaComponent {
     return { type, referenceId: null, name, weight };
-  }
-
-  private buildSessionScopeFormula(table: PerformanceTable | null): ProblemFormulaOutput {
-    if (!table || table.criteria.length === 0) {
-      throw new UnprocessableEntityError(
-        'O problema não possui uma tabela de desempenho com critérios.',
-      );
-    }
-
-    const components = this.createCriteriaComponents(table);
-    this.adjustComponentWeights(components);
-
-    return {
-      scope: FormulaScope.SESSAO,
-      isDefault: true,
-      version: null,
-      components,
-    };
-  }
-
-  private createCriteriaComponents(table: {
-    criteria: Array<{ id: string; name: string; weight: string | number }>;
-  }) {
-    const totalWeight = table.criteria.reduce((sum, c) => sum + Number(c.weight), 0);
-    return table.criteria.map((c) => ({
-      type: FormulaComponentType.CRITERIO as const,
-      referenceId: c.id,
-      name: c.name,
-      weight: Number(((Number(c.weight) / totalWeight) * 100).toFixed(2)),
-    }));
-  }
-
-  private adjustComponentWeights(components: Array<{ weight: number }>): void {
-    const sum = components.reduce((acc: number, c) => acc + c.weight, 0);
-    if (sum !== 100 && components.length > 0) {
-      const lastComponent = components[components.length - 1];
-      if (lastComponent) {
-        lastComponent.weight += Number((100 - sum).toFixed(2));
-        lastComponent.weight = Number(lastComponent.weight.toFixed(2));
-      }
-    }
   }
 
   private getDefaultNameForType(type: string): string | null {

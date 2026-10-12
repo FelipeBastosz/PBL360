@@ -27,6 +27,16 @@ export class PerformanceTableResponseDto {
   })
   quantidadeProblemas?: number;
 
+  @ApiPropertyOptional({ type: Number, example: 2 })
+  quantidadeSessoes?: number;
+
+  @ApiPropertyOptional({
+    type: Number,
+    example: 1,
+    description: 'Sessões cuja data já passou; nesse caso somente os pesos podem ser alterados.',
+  })
+  quantidadeSessoesPassadas?: number;
+
   @ApiProperty({ format: 'date-time' })
   criadoEm: Date;
 

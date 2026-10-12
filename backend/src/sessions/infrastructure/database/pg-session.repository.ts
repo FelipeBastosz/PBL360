@@ -1,60 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
-import { ConflictError } from '@/shared/errors/application.error';
+import { ConflictError, UnprocessableEntityError } from '@/shared/errors/application.error';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { Session } from '../../domain/entities/session.entity';
 import { countReleaseSubmissions } from './evaluation-release.queries';
+import { SESSION_COLUMNS, type SessionRow } from './session-row';
 import type {
   ReleaseSubmissions,
   SessionDeletionImpact,
   SessionRepository,
 } from '../../domain/repositories/session.repository';
 
-interface SessionRow {
-  id: string;
-  problemId: string;
-  title: string;
-  description: string | null;
-  date: string;
-  orderIndex: number;
-  status: string;
-  selfEvalReleased: boolean;
-  peerEvalReleased: boolean;
-  selfEvalDeadline: Date | null;
-  peerEvalDeadline: Date | null;
-  releasedAt: Date | null;
-  releasedBy: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const SESSION_COLUMNS = `
-  id,
-  problem_id AS "problemId",
-  title,
-  description,
-  to_char(date, 'YYYY-MM-DD') AS date,
-  order_index AS "orderIndex",
-  status,
-  self_eval_released AS "selfEvalReleased",
-  peer_eval_released AS "peerEvalReleased",
-  self_eval_deadline AS "selfEvalDeadline",
-  peer_eval_deadline AS "peerEvalDeadline",
-  released_at AS "releasedAt",
-  released_by AS "releasedBy",
-  created_at AS "createdAt",
-  updated_at AS "updatedAt"`;
-
 @Injectable()
 export class PgSessionRepository implements SessionRepository {
   constructor(@InjectRepository(Session) private readonly sessions: Repository<Session>) {}
 
   create(session: Session): Promise<Session> {
-    return this.sessions.manager.transaction(async (manager) => {
-      await manager.query(`SELECT id FROM problems WHERE id = $1 FOR UPDATE;`, [session.problemId]);
-      return this.insertWithNextOrder(manager, session);
-    });
+    return this.sessions.manager.transaction((manager) =>
+      this.createWithinTransaction(manager, session),
+    );
   }
 
   save(session: Session): Promise<Session> {
@@ -115,15 +80,32 @@ export class PgSessionRepository implements SessionRepository {
     });
   }
 
-  private async insertWithNextOrder(manager: EntityManager, session: Session): Promise<Session> {
-    const rows = await manager.query<SessionRow[]>(
-      `INSERT INTO sessions (problem_id, title, description, date, order_index, status)
-       SELECT $1, $2, $3, $4::date, COALESCE(MAX(order_index), 0) + 1, $5
-       FROM sessions WHERE problem_id = $1
-       RETURNING ${SESSION_COLUMNS};`,
-      [session.problemId, session.title, session.description, session.date, session.status],
-    );
+  private async insertWithNextOrder(
+    manager: EntityManager,
+    session: Session,
+    performanceTableId: string,
+  ): Promise<Session> {
+    const rows = await insertSessionRow(manager, session, performanceTableId);
     return this.toEntity(requireFirstRow(rows, 'Failed to persist session.'));
+  }
+
+  private async createWithinTransaction(
+    manager: EntityManager,
+    session: Session,
+  ): Promise<Session> {
+    await manager.query(`SELECT id FROM problems WHERE id = $1 FOR UPDATE;`, [session.problemId]);
+    const tableId = await this.findInitialTableId(manager, session.problemId);
+    return this.insertWithNextOrder(manager, session, tableId);
+  }
+
+  private async findInitialTableId(manager: EntityManager, problemId: string): Promise<string> {
+    const table = await findInitialTable(manager, problemId);
+    if (!table?.id) {
+      throw new UnprocessableEntityError(
+        'Não há uma tabela de desempenho padrão disponível para iniciar a sessão.',
+      );
+    }
+    return table.id;
   }
 
   private async decrementFollowingOrders(
@@ -144,4 +126,44 @@ export class PgSessionRepository implements SessionRepository {
   private toEntity(row: SessionRow): Session {
     return Object.assign(new Session(), row, { orderIndex: Number(row.orderIndex) });
   }
+}
+
+async function insertSessionRow(
+  manager: EntityManager,
+  session: Session,
+  performanceTableId: string,
+): Promise<SessionRow[]> {
+  return manager.query<SessionRow[]>(
+    `INSERT INTO sessions (problem_id, performance_table_id, title, description, date, order_index, status)
+     SELECT $1, $6, $2, $3, $4::date, COALESCE(MAX(order_index), 0) + 1, $5
+       FROM sessions WHERE problem_id = $1
+     RETURNING ${SESSION_COLUMNS};`,
+    [
+      session.problemId,
+      session.title,
+      session.description,
+      session.date,
+      session.status,
+      performanceTableId,
+    ],
+  );
+}
+
+function findInitialTable(manager: EntityManager, problemId: string) {
+  return manager
+    .query<Array<{ id: string | null }>>(
+      `SELECT COALESCE(
+       (SELECT s.performance_table_id FROM sessions s
+         JOIN performance_tables existing ON existing.id = s.performance_table_id
+        WHERE s.problem_id = $1 AND existing.deleted_at IS NULL
+        ORDER BY s.order_index LIMIT 1),
+       (SELECT pt.id FROM problems p
+         JOIN rooms r ON r.id = p.room_id
+         JOIN performance_tables pt ON pt.tutor_id = r.tutor_id
+        WHERE p.id = $1 AND pt.is_default = TRUE AND pt.deleted_at IS NULL
+        LIMIT 1)
+     ) AS id;`,
+      [problemId],
+    )
+    .then((rows) => rows[0] ?? null);
 }

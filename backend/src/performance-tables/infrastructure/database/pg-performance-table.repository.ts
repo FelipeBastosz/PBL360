@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
 import { NotFoundError } from '@/shared/errors/application.error';
 import { syncPerformanceCriteria } from './performance-criteria.persistence';
+import { assertPastSessionUpdateAllowed } from './performance-table-update.validation';
+import { propagatePerformanceTableSessions } from './performance-table-session.persistence';
 
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
 import type {
@@ -55,11 +57,13 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     });
   }
 
-  update(table: PerformanceTable): Promise<PerformanceTable> {
+  update(table: PerformanceTable, propagateToSessions = false): Promise<PerformanceTable> {
     return this.performanceTables.manager.transaction(async (manager) => {
       await this.lockTable(manager, table);
+      await assertPastSessionUpdateAllowed(manager, table);
       await this.updateTable(manager, table);
       await syncPerformanceCriteria(manager, table);
+      if (propagateToSessions) await propagatePerformanceTableSessions(manager, table);
 
       return this.readUpdatedTable(manager, table.id);
     });
@@ -209,8 +213,9 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
       ? {
           problemCount: Number(usage.problemCount ?? 0),
           sessionCount: Number(usage.sessionCount ?? 0),
+          pastSessionCount: Number(usage.pastSessionCount ?? 0),
         }
-      : { problemCount: 0, sessionCount: 0 };
+      : { problemCount: 0, sessionCount: 0, pastSessionCount: 0 };
   }
 
   async findByIdIncludingDeleted(id: string): Promise<PerformanceTable | null> {

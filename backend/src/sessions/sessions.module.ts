@@ -41,6 +41,8 @@ import { UpdateEvaluationReleasesUseCase } from './application/use-cases/update-
 import { EvaluationReleasesController } from './infrastructure/http/evaluation-releases.controller';
 import { SESSION_ATTACHMENT_REPOSITORY } from './domain/repositories/session-attachment.repository';
 import { PgSessionAttachmentRepository } from './infrastructure/database/pg-session-attachment.repository';
+import { SessionEvaluationConfigurationController } from './infrastructure/http/session-evaluation-configuration.controller';
+import { SessionEvaluationConfigurationService } from './application/services/session-evaluation-configuration.service';
 
 @Module({
   imports: [
@@ -55,6 +57,7 @@ import { PgSessionAttachmentRepository } from './infrastructure/database/pg-sess
     MemberSessionsController,
     SessionAttachmentsController,
     EvaluationReleasesController,
+    SessionEvaluationConfigurationController,
   ],
   providers: [
     CreateSessionUseCase,
@@ -76,6 +79,7 @@ import { PgSessionAttachmentRepository } from './infrastructure/database/pg-sess
     DeleteSessionAttachmentUseCase,
     GetEvaluationReleasesUseCase,
     UpdateEvaluationReleasesUseCase,
+    SessionEvaluationConfigurationService,
     { provide: SESSION_REPOSITORY, useClass: PgSessionRepository },
     { provide: SESSION_ROLE_REPOSITORY, useClass: PgSessionRoleRepository },
     { provide: ATTENDANCE_REPOSITORY, useClass: PgAttendanceRepository },

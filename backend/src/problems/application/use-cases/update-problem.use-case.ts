@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
-import { ConflictError, NotFoundError } from '@/shared/errors/application.error';
+import { NotFoundError } from '@/shared/errors/application.error';
 
 import {
   PROBLEM_REPOSITORY,
@@ -26,22 +26,12 @@ export class UpdateProblemUseCase {
       throw new NotFoundError('Problema não encontrado.');
     }
 
-    await this.assertTableChangeAllowed(problem, input.dto.tabelaId);
     return this.repository.updateDetails({
       id: problem.id,
       roomId: input.roomId,
       authorId: input.tutorId,
       title: input.dto.title.trim(),
-      tableId: input.dto.tabelaId,
     });
-  }
-  private async assertTableChangeAllowed(problem: Problem, tableId?: string | null): Promise<void> {
-    if (tableId === undefined || tableId === problem.performanceTableId) return;
-    if (await this.repository.hasEvaluations(problem.id)) {
-      throw new ConflictError(
-        'A tabela não pode ser alterada após a primeira avaliação do problema.',
-      );
-    }
   }
 }
 

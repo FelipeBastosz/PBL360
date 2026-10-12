@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, signAccessToken } from './helpers/fixtures';
+import { cleanDatabase, insertDefaultPerformanceTable, signAccessToken } from './helpers/fixtures';
 
 interface SessionRoleResponseBody {
   alunoId: string;
@@ -117,6 +117,8 @@ describe('Session Roles (e2e)', () => {
       [ownerTutorId],
     );
     roomId = room.id;
+
+    await insertDefaultPerformanceTable(dataSource, ownerTutorId);
 
     await dataSource.query(`INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2);`, [
       roomId,

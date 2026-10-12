@@ -7,34 +7,39 @@ import {
 } from '../../../domain/entities/grade-calculator';
 
 import type { GradeRow } from '../../../domain/repositories/grades.repository';
+import type { GradesResponseDto } from '../../dtos/grades-response.dto';
+import { buildStudentResponse } from './grade-response.helper';
 
 export type Row = GradeRow;
+
+export function buildDefaultSessionComponents(sessionId: string, formulaId: string): Row[] {
+  return [
+    { formula_id: formulaId, type: 'CRITERIOS', weight: 70, session_id: sessionId },
+    { formula_id: formulaId, type: 'PAPEL', weight: 30, session_id: sessionId },
+  ];
+}
+
+export interface SessionFormulaEntry {
+  sessionId: string;
+  components: GradeComponent[];
+  formulaVersion: number;
+  defaultFormula: boolean;
+}
 
 export interface StudentGradeContext {
   student: Row;
   sessions: Row[];
+  criteria: Row[];
   scores: Row[];
   attendances: Row[];
   roles: Row[];
-  sessionComponents: GradeComponent[];
+  sessionFormulas: SessionFormulaEntry[];
   problemComponents: GradeComponent[];
-  sessionFormulaVersion: number;
   problemFormulaVersion: number;
 }
 
-export interface StudentSessionResponse {
-  sessaoId: string;
-  nota: number | null;
-  situacao: string;
-}
-
-export interface StudentResponse {
-  alunoId: string;
-  nome: string;
-  matricula: string | null;
-  sessoes: StudentSessionResponse[];
-  notaFinal: number | null;
-}
+export type StudentSessionResponse = GradesResponseDto['alunos'][number]['sessoes'][number];
+export type StudentResponse = GradesResponseDto['alunos'][number];
 
 export function filterByStudentAndSession(
   rows: Row[],
@@ -44,24 +49,41 @@ export function filterByStudentAndSession(
   return rows.find((item) => item.session_id === sessionId && item.student_id === studentId);
 }
 
-export function mapCriteriaForSession(scores: Row[], sessionId: string, studentId: unknown) {
-  return scores
-    .filter((score) => score.session_id === sessionId && score.student_id === studentId)
-    .map((score) => ({
-      id: String(score.criterion_id),
-      score: score.score === null ? null : Number(score.score),
-    }));
+export function mapCriteriaForSession(
+  criteria: Row[],
+  scores: Row[],
+  sessionId: string,
+  studentId: unknown,
+) {
+  return criteria
+    .filter((criterion) => criterion.session_id === sessionId)
+    .map((criterion) => mapCriterionScore(criterion, scores, sessionId, studentId));
+}
+
+function mapCriterionScore(criterion: Row, scores: Row[], sessionId: string, studentId: unknown) {
+  const score = scores.find(
+    (item) =>
+      item.session_id === sessionId &&
+      item.student_id === studentId &&
+      item.criterion_id === criterion.id,
+  );
+  return {
+    id: String(criterion.id),
+    score: score?.score === null || score?.score === undefined ? null : Number(score.score),
+    weight: Number(criterion.weight),
+  };
 }
 
 function extractSessionInputs(ctx: {
   session: Row;
   student: Row;
+  criteria: Row[];
   scores: Row[];
   attendances: Row[];
   roles: Row[];
 }) {
   const sessionId = String(ctx.session.id);
-  const criteria = mapCriteriaForSession(ctx.scores, sessionId, ctx.student.id);
+  const criteria = mapCriteriaForSession(ctx.criteria, ctx.scores, sessionId, ctx.student.id);
   const attendance =
     (filterByStudentAndSession(ctx.attendances, sessionId, ctx.student.id)
       ?.status as GradeAttendance) ?? null;
@@ -71,13 +93,35 @@ function extractSessionInputs(ctx: {
   return { criteria, attendance, bonus };
 }
 
-export function calculateSessionGradeContext(ctx: {
+export function processStudentSession(ctx: {
   session: Row;
   student: Row;
+  criteria: Row[];
   scores: Row[];
   attendances: Row[];
   roles: Row[];
   sessionComponents: GradeComponent[];
+  formulaVersion: number;
+  defaultSessionFormula: boolean;
+}) {
+  const sessionId = String(ctx.session.id);
+  const calculated = calculateSessionForContext(ctx);
+
+  return {
+    row: buildSessionRow(ctx, sessionId, calculated),
+    responseSession: buildSessionResponse(sessionId, calculated),
+  };
+}
+
+function calculateSessionForContext(ctx: {
+  session: Row;
+  student: Row;
+  criteria: Row[];
+  scores: Row[];
+  attendances: Row[];
+  roles: Row[];
+  sessionComponents: GradeComponent[];
+  defaultSessionFormula: boolean;
 }) {
   const { criteria, attendance, bonus } = extractSessionInputs(ctx);
   return calculateSessionGrade({
@@ -85,25 +129,8 @@ export function calculateSessionGradeContext(ctx: {
     components: ctx.sessionComponents,
     attendance,
     bonus,
+    defaultFormula: ctx.defaultSessionFormula,
   });
-}
-
-export function processStudentSession(ctx: {
-  session: Row;
-  student: Row;
-  scores: Row[];
-  attendances: Row[];
-  roles: Row[];
-  sessionComponents: GradeComponent[];
-  formulaVersion: number;
-}) {
-  const sessionId = String(ctx.session.id);
-  const calculated = calculateSessionGradeContext(ctx);
-
-  return {
-    row: buildSessionRow(ctx, sessionId, calculated),
-    responseSession: buildSessionResponse(sessionId, calculated),
-  };
 }
 
 function buildSessionRow(
@@ -132,24 +159,46 @@ function buildSessionResponse(
 }
 
 export function processStudentGrades(ctx: StudentGradeContext) {
-  const sessionRows: Row[] = [];
-  const grades: StudentSessionResponse[] = ctx.sessions.map((session) => {
-    const { row, responseSession } = processStudentSession({
-      session,
-      student: ctx.student,
-      scores: ctx.scores,
-      attendances: ctx.attendances,
-      roles: ctx.roles,
-      sessionComponents: ctx.sessionComponents,
-      formulaVersion: ctx.sessionFormulaVersion,
-    });
-    sessionRows.push(row);
-    return responseSession;
-  });
+  const results = ctx.sessions.map((session) => processStudentSessionForGrade(ctx, session));
+  const sessionRows = results.map((result) => result.row);
+  const grades = results.map((result) => result.responseSession);
 
   const finalGrade = calculateProblemGrade(ctx.problemComponents, sessionGrades(sessionRows));
 
   return buildStudentResult(ctx, grades, finalGrade.grade, sessionRows);
+}
+
+function processStudentSessionForGrade(ctx: StudentGradeContext, session: Row) {
+  const sessionId = String(session.id);
+  const formula = sessionFormulaFor(ctx.sessionFormulas, sessionId);
+  return processStudentSession({
+    session,
+    student: ctx.student,
+    criteria: ctx.criteria,
+    scores: ctx.scores,
+    attendances: ctx.attendances,
+    roles: ctx.roles,
+    sessionComponents: formula.components,
+    formulaVersion: formula.formulaVersion,
+    defaultSessionFormula: formula.defaultFormula,
+  });
+}
+
+function sessionFormulaFor(
+  formulas: SessionFormulaEntry[],
+  sessionId: string,
+): SessionFormulaEntry {
+  return (
+    formulas.find((entry) => entry.sessionId === sessionId) ?? {
+      sessionId,
+      components: [
+        { type: 'CRITERIOS', weight: 70 },
+        { type: 'PAPEL', weight: 30 },
+      ],
+      formulaVersion: 1,
+      defaultFormula: true,
+    }
+  );
 }
 
 function sessionGrades(rows: Row[]): Array<number | null> {
@@ -170,19 +219,5 @@ function buildStudentResult(
       formula_version: ctx.problemFormulaVersion,
     },
     responseStudent: buildStudentResponse(ctx.student, grades, finalGrade),
-  };
-}
-
-function buildStudentResponse(
-  student: Row,
-  grades: StudentSessionResponse[],
-  finalGrade: number | null,
-): StudentResponse {
-  return {
-    alunoId: String(student.id),
-    nome: String(student.name),
-    matricula: student.matricula as string | null,
-    sessoes: grades,
-    notaFinal: presentGrade(finalGrade),
   };
 }
