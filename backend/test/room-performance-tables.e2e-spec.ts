@@ -228,17 +228,17 @@ describe('Room Performance Tables (e2e)', () => {
     // 3. Vincular a tabela da turma a um problema com 2 sessões e verificar emUso
     // -----------------------------------------------------------------
     const [problem] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO problems (room_id, title, description, order_index, created_by, performance_table_id)
-       VALUES ($1, 'Problema 1', 'Descrição', 1, $2, $3)
+      `INSERT INTO problems (room_id, title, description, order_index, created_by)
+       VALUES ($1, 'Problema 1', 'Descrição', 1, $2)
        RETURNING id;`,
-      [roomId, coTutorId, roomTableId],
+      [roomId, coTutorId],
     );
 
     await dataSource.query(
-      `INSERT INTO sessions (problem_id, title, date, order_index, status)
-       VALUES ($1, 'Sessão 1', '2026-10-01', 1, 'concluida'),
-              ($1, 'Sessão 2', '2026-10-08', 2, 'agendada');`,
-      [problem.id],
+      `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index, status)
+       VALUES ($1, $2, 'Sessão 1', '2026-10-01', 1, 'concluida'),
+              ($1, $2, 'Sessão 2', '2026-10-08', 2, 'agendada');`,
+      [problem.id, roomTableId],
     );
 
     const listResAfterUsage = await server()
@@ -282,12 +282,22 @@ describe('Room Performance Tables (e2e)', () => {
       .expect(403);
 
     // -----------------------------------------------------------------
-    // 6. Carlos tenta excluir a tabela que já está em uso na turma -> 409 Conflict
+    // 6. Carlos exclui uma tabela de turma própria -> 204 No Content
     // -----------------------------------------------------------------
-    await server()
-      .delete(`/api/tabelas-desempenho/${roomTableId}`)
+    const tempTableRes = await server()
+      .post(`/api/salas/${roomId}/tabelas-desempenho`)
       .set('Authorization', `Bearer ${ownerToken}`)
-      .expect(409);
+      .send({
+        nome: 'Tabela Temporária para Exclusão',
+        criterios: [{ nome: 'Critério Único', ordem: 1, peso: 10 }],
+      })
+      .expect(201);
+    const tempTableId = (tempTableRes.body as { id: string }).id;
+
+    await server()
+      .delete(`/api/tabelas-desempenho/${tempTableId}`)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(204);
 
     // -----------------------------------------------------------------
     // 7. Remover Co-tutor Maria da turma -> deixa de ter acesso às tabelas da turma

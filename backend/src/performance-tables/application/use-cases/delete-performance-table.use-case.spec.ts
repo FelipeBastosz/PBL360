@@ -1,4 +1,4 @@
-import { ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
 import type { PerformanceTableRepository } from '../../domain/repositories/performance-table.repository';
 import { DeletePerformanceTableUseCase } from './delete-performance-table.use-case';
@@ -26,27 +26,6 @@ describe('DeletePerformanceTableUseCase', () => {
   it('soft deletes a table when requested by its owner', async () => {
     const table = Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null });
     repository.findById.mockResolvedValue(table);
-    repository.softDelete.mockResolvedValue(true);
-
-    await useCase.execute({ tableId, tutorId });
-
-    expect(repository.softDelete).toHaveBeenCalledWith(table);
-    expect(table.deletedAt).toBeInstanceOf(Date);
-  });
-
-  it('rejects deletion when table has been used in sessions', async () => {
-    const table = Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null });
-    repository.findById.mockResolvedValue(table);
-    repository.findUsageById.mockResolvedValue({ problemCount: 1, sessionCount: 2 });
-
-    await expect(useCase.execute({ tableId, tutorId })).rejects.toBeInstanceOf(ConflictError);
-    expect(repository.softDelete).not.toHaveBeenCalled();
-  });
-
-  it('allows deletion when table is linked to problems but has not been used in sessions', async () => {
-    const table = Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null });
-    repository.findById.mockResolvedValue(table);
-    repository.findUsageById.mockResolvedValue({ problemCount: 1, sessionCount: 0 });
     repository.softDelete.mockResolvedValue(true);
 
     await useCase.execute({ tableId, tutorId });

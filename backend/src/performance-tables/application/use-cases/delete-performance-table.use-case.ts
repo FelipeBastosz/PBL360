@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
+import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import {
   PERFORMANCE_TABLE_REPOSITORY,
   type PerformanceTableRepository,
@@ -22,11 +22,6 @@ export class DeletePerformanceTableUseCase {
     if (!table) throw new NotFoundError('Tabela de desempenho não encontrada.');
     if (table.tutorId !== tutorId) {
       throw new ForbiddenError('Apenas o professor responsável pode excluir esta tabela.');
-    }
-
-    const usage = await this.performanceTableRepository.findUsageById(tableId);
-    if (usage && (usage.sessionCount ?? 0) > 0) {
-      throw new ConflictError('A tabela de desempenho já foi utilizada e não pode ser excluída.');
     }
 
     table.delete();
