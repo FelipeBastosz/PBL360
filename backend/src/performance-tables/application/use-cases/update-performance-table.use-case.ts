@@ -1,3 +1,4 @@
+import { SYSTEM_TABLE_READ_ONLY } from '../../domain/entities/system-performance-tables';
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
@@ -34,6 +35,7 @@ export class UpdatePerformanceTableUseCase {
       throw new NotFoundError('Tabela de desempenho não encontrada.');
     }
 
+    if (table.isDefault) throw new ForbiddenError(SYSTEM_TABLE_READ_ONLY);
     if (table.tutorId !== tutorId) {
       if (table.roomId && this.roomAccessService) {
         await this.roomAccessService.assertTutorCanAccessRoom(table.roomId, tutorId);

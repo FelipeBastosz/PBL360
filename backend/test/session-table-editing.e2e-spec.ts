@@ -343,7 +343,7 @@ describe('Session table editing (e2e)', () => {
     );
     expect(session.tableId).toBe(tableId);
     const [tables] = await db.query<[{ count: string }]>(
-      'SELECT count(*) AS count FROM performance_tables;',
+      'SELECT count(*) AS count FROM performance_tables WHERE is_default = FALSE;',
     );
     expect(Number(tables.count)).toBe(1);
     const detail = (await api(app, owner).get(evaluationPath()).expect(200))

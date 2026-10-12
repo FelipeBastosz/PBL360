@@ -25,25 +25,21 @@ import type {
 } from './update-performance-table';
 
 @Entity('performance_tables')
-@Index('uq_performance_tables_tutor_default', ['tutorId'], {
-  unique: true,
-  where: '"is_default" = TRUE AND "deleted_at" IS NULL',
-})
 export class PerformanceTable {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Index('idx_performance_tables_tutor_id')
-  @Column({ name: 'tutor_id', type: 'uuid' })
-  tutorId: string;
+  @Column({ name: 'tutor_id', type: 'uuid', nullable: true })
+  tutorId: string | null;
 
-  @ManyToOne(() => User, { nullable: false, onDelete: 'RESTRICT' })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: 'tutor_id',
     referencedColumnName: 'id',
     foreignKeyConstraintName: 'fk_performance_tables_tutor',
   })
-  tutor: User;
+  tutor: User | null;
 
   @Index('idx_performance_tables_room_id')
   @Column({ name: 'room_id', type: 'uuid', nullable: true, default: null })
@@ -105,9 +101,9 @@ export class PerformanceTable {
   }
 
   update(props: UpdatePerformanceTable, hasPastSessions = false): void {
+    assertDefaultTableCanBeUpdated(this);
     this.assertCriterionIdsAreValid(props.criteria ?? []);
     const candidate = this.buildUpdateCandidate(props);
-    assertDefaultTableCanBeUpdated(this, candidate);
     if (hasPastSessions) assertOnlyWeightsChanged(this, candidate);
     this.name = candidate.name;
     this.description = candidate.description;
@@ -116,7 +112,7 @@ export class PerformanceTable {
 
   private buildUpdateCandidate(props: UpdatePerformanceTable): PerformanceTable {
     const candidate = PerformanceTable.create({
-      tutorId: this.tutorId,
+      tutorId: this.tutorId!,
       roomId: this.roomId,
       name: props.name,
       description: props.description,

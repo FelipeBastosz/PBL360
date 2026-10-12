@@ -49,7 +49,7 @@ export async function propagatePerformanceTableSessions(
   await updateSnapshotTableNames(manager, table);
   await replaceSessionCriteria(manager, table.id);
   await removeObsoleteDraftItems(manager, table.id);
-  await recalculateSessionEvaluations(manager, table.id, table.tutorId);
+  await recalculateSessionEvaluations(manager, table.id, table.tutorId!);
 }
 
 async function updateSnapshotTableNames(

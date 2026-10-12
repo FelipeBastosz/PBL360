@@ -84,10 +84,10 @@ async function updateSessionReferences(
   ids: Map<string, string>,
 ): Promise<void> {
   if (plan.copy) await remapScores(manager, sessionId, ids);
-  await manager.query('UPDATE sessions SET performance_table_id = $2 WHERE id = $1;', [
-    sessionId,
-    plan.table.id,
-  ]);
+  await manager.query(
+    'UPDATE sessions SET performance_table_id = $2, uses_default_table = FALSE WHERE id = $1;',
+    [sessionId, plan.table.id],
+  );
   await refreshSnapshot(manager, sessionId, plan);
   await manager.query('UPDATE evaluations SET performance_table_id = $2 WHERE session_id = $1;', [
     sessionId,

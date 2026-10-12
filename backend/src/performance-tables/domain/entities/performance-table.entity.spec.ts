@@ -202,43 +202,11 @@ describe('PerformanceTable', () => {
     expect(table.criteria).toHaveLength(3);
   });
 
-  it('allows only weight changes in the default table', () => {
-    const table = PerformanceTable.create({
-      tutorId: 'tutor-123',
-      name: 'Fórmula Padrão',
-      description: 'Critérios padrão de avaliação.',
-      isDefault: true,
-      criteria: [
-        { name: 'Seguimento', description: 'Seguir orientações.', orderIndex: 1, weight: 3 },
-        { name: 'Participação', description: 'Participar.', orderIndex: 2, weight: 7 },
-      ],
-    });
-    table.criteria.forEach((criterion, index) => {
-      criterion.id = `criterion-${index + 1}`;
-    });
-
-    table.update({
-      name: 'Fórmula Padrão',
-      description: 'Critérios padrão de avaliação.',
-      criteria: [
-        {
-          id: 'criterion-1',
-          name: 'Seguimento',
-          description: 'Seguir orientações.',
-          orderIndex: 1,
-          weight: 4,
-        },
-        {
-          id: 'criterion-2',
-          name: 'Participação',
-          description: 'Participar.',
-          orderIndex: 2,
-          weight: 6,
-        },
-      ],
-    });
-
-    expect(table.criteria.map((criterion) => criterion.weight)).toEqual([4, 6]);
+  it('rejects all changes to a system default, including weights', () => {
+    const table = PerformanceTable.create({ ...validTableData(), isDefault: true });
+    expect(() =>
+      table.update({ name: table.name, criteria: [{ name: 'Participação', weight: 10 }] }),
+    ).toThrow('somente leitura');
   });
 
   it('allows only weight changes when a table has a past session', () => {
@@ -295,7 +263,7 @@ describe('PerformanceTable', () => {
         description: field === 'description' ? 'Outra' : 'Critérios padrão de avaliação.',
         criteria: [{ id: 'criterion-1', name: 'Participação', weight: 10 }],
       }),
-    ).toThrow('não podem ser alterados');
+    ).toThrow('somente leitura');
   });
 
   it('rejects deleting the default table', () => {

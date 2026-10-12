@@ -102,11 +102,19 @@ describe('EditSessionTableUseCase', () => {
     expect(plan().table.criteria[1]!.maxScore).toBe(6);
   });
 
-  it('applies the new session policy to a default table before any session has occurred', async () => {
-    const { useCase, context, plan } = setup();
+  it('rejects editing a system default in the TODAS scope', async () => {
+    const { useCase, context } = setup(false);
     context.table.isDefault = true;
-    await useCase.execute({ ...tableEditInput(), name: 'Novo barema' });
-    expect(plan().table.name).toBe('Novo barema');
+    await expect(useCase.execute(tableEditInput('TODAS'))).rejects.toThrow(ForbiddenError);
+  });
+
+  it('allows an independent session copy of a system default', async () => {
+    const { useCase, context, plan } = setup(false);
+    context.table.isDefault = true;
+    context.table.tutorId = null;
+    await useCase.execute(tableEditInput('SESSAO'));
+    expect(plan().copy).toBe(true);
+    expect(plan().table.isDefault).toBe(false);
   });
 
   it('keeps copied names within the database limit', async () => {

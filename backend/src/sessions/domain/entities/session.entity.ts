@@ -47,6 +47,9 @@ export class Session {
   })
   performanceTable: PerformanceTable;
 
+  @Column({ name: 'uses_default_table', type: 'boolean', default: false })
+  usesDefaultTable: boolean;
+
   @Column({ type: 'varchar', length: 120 })
   title: string;
 

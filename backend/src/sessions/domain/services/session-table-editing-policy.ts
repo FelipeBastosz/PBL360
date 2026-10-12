@@ -3,6 +3,7 @@ import {
   ForbiddenError,
   UnprocessableEntityError,
 } from '@/shared/errors/application.error';
+import { SYSTEM_TABLE_READ_ONLY } from '@/performance-tables/domain/entities/system-performance-tables';
 import { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
 import { InvalidPerformanceTableError } from '@/performance-tables/domain/errors/invalid-performance-table.error';
 import type {
@@ -17,7 +18,7 @@ export const WEIGHTS_ONLY_REASON =
   'A tabela possui sessão de hoje, anterior ou com avaliação do tutor enviada. Somente os pesos podem ser alterados.';
 
 export function canEditTableCriteria(context: SessionTableEditContext): boolean {
-  return !context.sessions.some((session) => session.hasOccurred);
+  return !context.table.isDefault && !context.sessions.some((session) => session.hasOccurred);
 }
 
 export function assertTableSessionsAccessible(sessions: TableSessionUsage[]): void {
@@ -30,11 +31,15 @@ export function prepareSessionTableEdit(
   context: SessionTableEditContext,
   input: SessionTableEditInput,
 ): SessionTableEditPlan {
+  if (context.table.isDefault && input.scope === 'TODAS')
+    throw new ForbiddenError(SYSTEM_TABLE_READ_ONLY);
   const sessions = input.scope === 'SESSAO' ? [context.session] : context.sessions;
   assertTableSessionsAccessible(sessions);
   assertCriterionIds(context, input.criteria);
   input.criteria.forEach(assertEditNumbers);
-  const editable = canEditTableCriteria(context);
+  const editable = context.table.isDefault
+    ? !context.session.hasOccurred
+    : canEditTableCriteria(context);
   if (!editable) assertWeightsOnly(context.table, input);
   const table = buildCandidate(context, input, editable);
   return { table, sessions, copy: input.scope === 'SESSAO' };
@@ -88,7 +93,7 @@ function createCandidate(
   editable: boolean,
 ): PerformanceTable {
   const table = PerformanceTable.create({
-    tutorId: input.scope === 'SESSAO' ? input.tutorId : context.table.tutorId,
+    tutorId: input.scope === 'SESSAO' ? input.tutorId : context.table.tutorId!,
     roomId: input.scope === 'SESSAO' ? context.session.roomId : context.table.roomId,
     name: resolveName(context, input),
     description: context.table.description,

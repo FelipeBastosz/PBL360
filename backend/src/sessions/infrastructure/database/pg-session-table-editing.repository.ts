@@ -23,8 +23,10 @@ export class PgSessionTableEditingRepository implements SessionTableEditingRepos
     return this.dataSource.transaction(async (manager) => {
       const tableId = await lockSessionPerformanceTable(manager, input.sessionId, true);
       await manager.query(
-        'SELECT id FROM sessions WHERE performance_table_id = $1 ORDER BY id FOR UPDATE;',
-        [tableId],
+        `SELECT id FROM sessions WHERE performance_table_id = $1
+          AND (id = $2 OR NOT EXISTS (SELECT 1 FROM performance_tables WHERE id = $1 AND is_default = TRUE))
+          ORDER BY id FOR UPDATE;`,
+        [tableId, input.sessionId],
       );
       const context = await readTableEditContext(manager, input.sessionId, input.tutorId);
       return persistSessionTableEdit(manager, prepare(context));

@@ -1,3 +1,4 @@
+import { ForbiddenError } from '@/shared/errors/application.error';
 import type { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import { InvalidPerformanceTableError } from '../../domain/errors/invalid-performance-table.error';
 import type { PerformanceTableRepository } from '../../domain/repositories/performance-table.repository';
@@ -12,6 +13,7 @@ describe('CreatePerformanceTableUseCase', () => {
 
     const repository: jest.Mocked<PerformanceTableRepository> = {
       create: createMock,
+      findTablesByRoom: jest.fn(),
       findSummariesByTutorId: jest.fn(),
       findById: jest.fn(),
       softDelete: jest.fn(),
@@ -43,25 +45,16 @@ describe('CreatePerformanceTableUseCase', () => {
     expect(result).toBe(savedTable);
   });
 
-  it('creates the protected default table with the standard criteria', async () => {
-    const savedTable = { id: 'default-table-uuid' };
-    createMock.mockResolvedValueOnce(savedTable);
-
-    await expect(useCase.executeDefault('tutor-uuid-1')).resolves.toBe(savedTable);
-
-    expect(createMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        tutorId: 'tutor-uuid-1',
-        name: 'Fórmula Padrão',
-        description: 'Critérios padrão de avaliação.',
+  it('rejects creating a system default through the application', async () => {
+    await expect(
+      useCase.execute({
+        tutorId: 'tutor',
+        name: 'Padrão',
         isDefault: true,
-        criteria: [
-          expect.objectContaining({ name: 'Seguimento', weight: 3 }),
-          expect.objectContaining({ name: 'Comportamento', weight: 3 }),
-          expect.objectContaining({ name: 'Participação', weight: 4 }),
-        ],
+        criteria: [{ name: 'Participação', weight: 10 }],
       }),
-    );
+    ).rejects.toThrow(ForbiddenError);
+    expect(createMock).not.toHaveBeenCalled();
   });
 
   it('does not persist a table without criteria', async () => {

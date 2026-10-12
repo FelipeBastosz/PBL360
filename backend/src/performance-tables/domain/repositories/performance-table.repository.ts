@@ -9,7 +9,7 @@ export enum PerformanceTableOrigin {
 }
 
 export interface PerformanceTableAuthor {
-  id: string;
+  id: string | null;
   nome: string;
 }
 
@@ -40,7 +40,7 @@ export interface PerformanceTableUsage {
 
 export interface PerformanceTableSummary {
   id: string;
-  tutorId: string;
+  tutorId: string | null;
   roomId?: string | null;
   name: string;
   description: string | null;
