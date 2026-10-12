@@ -17,8 +17,8 @@ export async function recordEvaluation(
   input: EvaluationWrite,
 ): Promise<EvaluationDetail> {
   await lockEvaluationContext(manager, input);
-  const { sessionId, problemId } = input.context;
-  const config = await freezeSessionConfig(manager, sessionId, problemId, input.authorId);
+  const { sessionId } = input.context;
+  const config = await freezeSessionConfig(manager, sessionId, input.authorId);
   await ensureEvaluation(manager, input, config.tableId);
   const evaluation = (await readEvaluation(manager, sessionId, input.studentId))!;
   await reviseEvaluation(manager, input, evaluation, config);

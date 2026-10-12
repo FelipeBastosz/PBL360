@@ -64,7 +64,13 @@ export class Evaluation implements Auditable {
     submitted: boolean,
   ): void {
     const bonus = submitted ? this.appliedBonus! : input.bonus;
-    this.sessionScore = SessionGradeCalculator.calculate(input.items, config.criteria, bonus, true);
+    this.sessionScore = SessionGradeCalculator.calculate(
+      input.items,
+      config.criteria,
+      bonus,
+      true,
+      config.formula,
+    );
     this.appliedBonus = bonus;
     this.calculationVersion = SESSION_CALCULATION_VERSION;
     this.submittedAt ??= input.now;

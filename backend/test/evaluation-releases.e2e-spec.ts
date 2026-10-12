@@ -100,10 +100,10 @@ describe('Evaluation releases (e2e)', () => {
       [room.id, owner.id, table.id],
     );
     const sessions = await db.query<{ id: string }[]>(
-      `INSERT INTO sessions (problem_id, title, date, order_index, status)
-       VALUES ($1, 'Abertura', '2026-10-05', 1, 'agendada'), ($1, 'Fechamento', '2026-10-06', 2, 'agendada')
+      `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index, status)
+       VALUES ($1, $2, 'Abertura', '2026-10-05', 1, 'agendada'), ($1, $2, 'Fechamento', '2026-10-06', 2, 'agendada')
        RETURNING id;`,
-      [problem.id],
+      [problem.id, table.id],
     );
     sessionId = sessions[0]!.id;
     sessionWithoutRollCallId = sessions[1]!.id;

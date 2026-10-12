@@ -2,7 +2,13 @@ import type { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { api, cleanDatabase, insertUser, type TestUser } from './helpers/fixtures';
+import {
+  api,
+  cleanDatabase,
+  insertDefaultPerformanceTable,
+  insertUser,
+  type TestUser,
+} from './helpers/fixtures';
 
 interface RollCallStudentBody {
   alunoId: string;
@@ -108,6 +114,7 @@ describe('Roll call (e2e)', () => {
       })
       .expect(201);
     roomId = (room.body as { id: string }).id;
+    await insertDefaultPerformanceTable(dataSource, tutor.id);
     students = [
       await insertStudent(1, 'Ana Souza'),
       await insertStudent(2, 'Bruno Lima'),

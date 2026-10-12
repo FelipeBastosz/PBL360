@@ -4,7 +4,13 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { api, cleanDatabase, insertUser, type TestUser } from './helpers/fixtures';
+import {
+  api,
+  cleanDatabase,
+  insertDefaultPerformanceTable,
+  insertUser,
+  type TestUser,
+} from './helpers/fixtures';
 
 interface AttachmentBody {
   id: string;
@@ -74,6 +80,7 @@ describe('Session attachments (e2e)', () => {
       })
       .expect(201);
     roomId = (room.body as { id: string }).id;
+    await insertDefaultPerformanceTable(dataSource, tutor.id);
     await dataSource.query('INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);', [
       roomId,
       student.id,

@@ -32,6 +32,12 @@ export class Session {
   })
   problem: Problem;
 
+  createdBy: string;
+
+  @Column({ name: 'performance_table_id', type: 'uuid' })
+  @Index('idx_sessions_performance_table_id')
+  performanceTableId: string;
+
   @Column({ type: 'varchar', length: 120 })
   title: string;
 
@@ -82,6 +88,8 @@ export class Session {
   static create(props: NewSession): Session {
     const session = new Session();
     session.problemId = props.problemId;
+    session.createdBy = props.createdBy;
+    session.performanceTableId = '';
     session.title = props.title.trim();
     session.description = props.description?.trim() || null;
     session.date = props.date;
@@ -134,6 +142,7 @@ export class Session {
 
 export interface NewSession {
   problemId: string;
+  createdBy: string;
   title: string;
   description: string | null;
   date: string;

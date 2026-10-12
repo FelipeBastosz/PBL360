@@ -103,9 +103,9 @@ describe('Peer evaluations (e2e)', () => {
     problemId = problem.id;
 
     const [session] = await db.query<{ id: string }[]>(
-      `INSERT INTO sessions (problem_id, title, date, order_index, status, peer_eval_released)
-       VALUES ($1, 'Sessão 1', '2026-10-05', 1, 'agendada', true) RETURNING id;`,
-      [problemId],
+      `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index, status, peer_eval_released)
+       VALUES ($1, $2, 'Sessão 1', '2026-10-05', 1, 'agendada', true) RETURNING id;`,
+      [problemId, tableId],
     );
     sessionId = session.id;
 

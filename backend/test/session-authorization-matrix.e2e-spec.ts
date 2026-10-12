@@ -121,10 +121,10 @@ describe('Session Authorization Matrix (e2e)', () => {
     problemId = problem.id;
 
     const [session] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO sessions (problem_id, title, description, date, order_index, status)
-       VALUES ($1, 'Sessão 1', 'Descrição', '2026-10-02', 1, 'agendada')
+      `INSERT INTO sessions (problem_id, performance_table_id, title, description, date, order_index, status)
+       VALUES ($1, $2, 'Sessão 1', 'Descrição', '2026-10-02', 1, 'agendada')
        RETURNING id;`,
-      [problemId],
+      [problemId, perfTable.id],
     );
     sessionId = session.id;
   });
@@ -254,14 +254,14 @@ describe('Session Authorization Matrix (e2e)', () => {
     });
   });
 
-  describe('5. Fórmulas (Problem Formulas)', () => {
-    const path = () => `/api/salas/${roomId}/problemas/${problemId}/formulas?escopo=SESSAO`;
+  describe('5. Configuração de avaliação da sessão', () => {
+    const path = () => `/api/sessoes/${sessionId}/configuracao-avaliacao`;
 
-    it('allows room owner to get problem formula', async () => {
+    it('allows room owner to get session evaluation configuration', async () => {
       await server().get(path()).set('Authorization', `Bearer ${ownerToken}`).expect(200);
     });
 
-    it('allows co-tutor to get problem formula', async () => {
+    it('allows co-tutor to get session evaluation configuration', async () => {
       await server().get(path()).set('Authorization', `Bearer ${coTutorToken}`).expect(200);
     });
 

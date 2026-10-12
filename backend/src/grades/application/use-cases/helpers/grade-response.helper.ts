@@ -1,6 +1,6 @@
 import { presentGrade, type GradeComponent } from '../../../domain/entities/grade-calculator';
 import type { GradesResponseDto } from '../../dtos/grades-response.dto';
-import type { Row, StudentResponse } from './get-problem-grades.helper';
+import type { Row, StudentResponse, StudentSessionResponse } from './get-problem-grades.helper';
 
 export function buildGradeResponse(
   sessions: Row[],
@@ -9,17 +9,42 @@ export function buildGradeResponse(
   problemFormula?: Row,
 ): GradesResponseDto {
   return {
-    sessoes: sessions.map((session, index) => ({
-      id: String(session.id),
-      rotulo: `S${index + 1}`,
-      data: String(session.date),
-    })),
+    sessoes: sessionResponses(sessions),
     alunos: students,
     mediaTurma: presentGrade(classAverage(students.map((student) => student.notaFinal))),
-    versoesFormula: {
-      sessao: sessionFormula ? Number(sessionFormula.version) : null,
-      problema: problemFormula ? Number(problemFormula.version) : null,
-    },
+    versoesFormula: formulaVersions(sessionFormula, problemFormula),
+  };
+}
+
+export function buildStudentResponse(
+  student: Row,
+  grades: StudentSessionResponse[],
+  finalGrade: number | null,
+): StudentResponse {
+  return {
+    alunoId: String(student.id),
+    nome: String(student.name),
+    matricula: student.matricula as string | null,
+    sessoes: grades,
+    notaFinal: presentGrade(finalGrade),
+  };
+}
+
+function sessionResponses(sessions: Row[]) {
+  return sessions.map((session, index) => ({
+    id: String(session.id),
+    rotulo: `S${index + 1}`,
+    data: String(session.date),
+  }));
+}
+
+function formulaVersions(sessionFormula?: Row, problemFormula?: Row) {
+  return {
+    sessao:
+      sessionFormula?.version === null || sessionFormula?.version === undefined
+        ? null
+        : Number(sessionFormula.version),
+    problema: problemFormula ? Number(problemFormula.version) : null,
   };
 }
 

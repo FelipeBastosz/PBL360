@@ -143,18 +143,18 @@ describe('Review Walkthrough Flow & Calculation Verification (e2e)', () => {
     problemId = problem.id;
 
     const [s1] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO sessions (problem_id, title, description, date, order_index, status)
-       VALUES ($1, 'Sessão 1 - Abertura', 'Abertura do caso', '2026-10-01', 1, 'concluida')
+      `INSERT INTO sessions (problem_id, performance_table_id, title, description, date, order_index, status)
+       VALUES ($1, $2, 'Sessão 1 - Abertura', 'Abertura do caso', '2026-10-01', 1, 'concluida')
        RETURNING id;`,
-      [problemId],
+      [problemId, tableId],
     );
     session1Id = s1.id;
 
     const [s2] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO sessions (problem_id, title, description, date, order_index, status)
-       VALUES ($1, 'Sessão 2 - Fechamento', 'Fechamento do caso', '2026-10-08', 2, 'agendada')
+      `INSERT INTO sessions (problem_id, performance_table_id, title, description, date, order_index, status)
+       VALUES ($1, $2, 'Sessão 2 - Fechamento', 'Fechamento do caso', '2026-10-08', 2, 'agendada')
        RETURNING id;`,
-      [problemId],
+      [problemId, tableId],
     );
     session2Id = s2.id;
   });

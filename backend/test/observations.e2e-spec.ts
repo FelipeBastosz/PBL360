@@ -2,7 +2,13 @@ import type { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { api, cleanDatabase, insertUser, type TestUser } from './helpers/fixtures';
+import {
+  api,
+  cleanDatabase,
+  insertDefaultPerformanceTable,
+  insertUser,
+  type TestUser,
+} from './helpers/fixtures';
 
 const MISSING_ID = '00000000-0000-4000-8000-000000000000';
 
@@ -66,6 +72,7 @@ describe('Observations (e2e)', () => {
        VALUES ($1, 'Sala de Teste', 'EXA123', 'ROOM1234', '2026.2', true) RETURNING id;`,
       [tutor.id],
     );
+    await insertDefaultPerformanceTable(database, tutor.id);
     await database.query('INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);', [
       room.id,
       student.id,
