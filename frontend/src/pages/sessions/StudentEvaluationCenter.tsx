@@ -1,4 +1,4 @@
-import type { ComponentType, SVGProps } from 'react';
+import type { ComponentType, ReactNode, SVGProps } from 'react';
 import {
   ChatBubbleBottomCenterTextIcon,
   ChevronRightIcon,
@@ -37,12 +37,13 @@ function EvaluationCard({ title, Icon }: EvaluationItem) {
   );
 }
 
-export function StudentEvaluationCenter() {
+export function StudentEvaluationCenter({ children }: { children?: ReactNode }) {
   return (
     <section aria-labelledby="student-evaluations-title" className="flex flex-col gap-3">
       <h2 id="student-evaluations-title" className="text-lg font-semibold text-brand-900">
         Central de Avaliações
       </h2>
+      {children}
       <ul className="flex flex-col gap-3">
         {EVALUATIONS.map((item) => (
           <EvaluationCard key={item.title} {...item} />
