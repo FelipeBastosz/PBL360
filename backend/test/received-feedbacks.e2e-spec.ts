@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import type { OpenAPIObject } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
+import { SESSION_CALCULATION_VERSION } from '@/evaluations/domain/services/session-grade-calculator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
 import { api, cleanDatabase, insertUser, type TestUser } from './helpers/fixtures';
@@ -28,20 +29,49 @@ describe('Received feedbacks (e2e)', () => {
     problemId: string,
     sessionId: string,
     laterSessionId: string,
-    criterionId: string;
+    criterionId: string,
+    tableId: string;
   const sessionPath = () => `/sessoes/${sessionId}/meu-feedback`;
   const problemPath = () => `/salas/${roomId}/problemas/${problemId}/meus-feedbacks`;
   const views = () =>
     db.query<{ feedback_id: string; student_id: string; first_viewed_at: Date }[]>(
       'SELECT * FROM feedback_views ORDER BY feedback_id, student_id;',
     );
-  const evaluate = (learner = student, submit = true) =>
-    api(app, tutor)
-      .put(`/sessoes/${sessionId}/avaliacoes/${learner.id}`, {
-        itens: [{ criterioId: criterionId, nota: 8 }],
-        enviar: submit,
-      })
-      .expect(200);
+  // Feedback visibility depends on persisted evaluation status, not the table assignment workflow.
+  const createEvaluation = async (learner = student, submit = true) => {
+    await db.transaction(async (manager) => {
+      await manager.query(
+        `INSERT INTO session_evaluation_configs (session_id, performance_table_id, table_name, created_by)
+         VALUES ($1, $2, 'Tabela', $3) ON CONFLICT (session_id) DO NOTHING;`,
+        [sessionId, tableId, tutor.id],
+      );
+      await manager.query(
+        `INSERT INTO session_evaluation_criteria (session_id, criterion_id, name, weight, order_index)
+         VALUES ($1, $2, 'Participação', 10, 1) ON CONFLICT (session_id, criterion_id) DO NOTHING;`,
+        [sessionId, criterionId],
+      );
+      const [evaluation] = await manager.query<[{ id: string }]>(
+        `INSERT INTO evaluations (evaluator_id, student_id, problem_id, session_id, config_session_id,
+          performance_table_id, type, status, submitted_at, session_score, calculation_version, created_by)
+         VALUES ($1, $2, $3, $4, $4, $5, 'TUTOR_SESSION', $6, $7, $8, $9, $1) RETURNING id;`,
+        [
+          tutor.id,
+          learner.id,
+          problemId,
+          sessionId,
+          tableId,
+          submit ? 'SUBMITTED' : 'DRAFT',
+          submit ? new Date() : null,
+          submit ? 8 : null,
+          submit ? SESSION_CALCULATION_VERSION : null,
+        ],
+      );
+      await manager.query(
+        'INSERT INTO evaluation_items (evaluation_id, criterion_id, score) VALUES ($1, $2, 8);',
+        [evaluation.id, criterionId],
+      );
+    });
+  };
   const feedback = async (
     scope: 'ALUNO' | 'SESSAO' | 'PROBLEMA',
     learner = student,
@@ -92,14 +122,15 @@ describe('Received feedbacks (e2e)', () => {
       "INSERT INTO performance_tables (tutor_id, name, is_default) VALUES ($1, 'Tabela', false) RETURNING id;",
       [tutor.id],
     );
+    tableId = table.id;
     const [criterion] = await db.query<[{ id: string }]>(
       "INSERT INTO performance_criteria (performance_table_id, name, weight, order_index) VALUES ($1, 'Participação', 10, 1) RETURNING id;",
       [table.id],
     );
     criterionId = criterion.id;
     const [problem] = await db.query<[{ id: string }]>(
-      "INSERT INTO problems (room_id, title, order_index, created_by, performance_table_id) VALUES ($1, 'Problema', 1, $2, $3) RETURNING id;",
-      [roomId, tutor.id, table.id],
+      "INSERT INTO problems (room_id, title, order_index, created_by) VALUES ($1, 'Problema', 1, $2) RETURNING id;",
+      [roomId, tutor.id],
     );
     problemId = problem.id;
     const sessions = await db.query<{ id: string }[]>(
@@ -115,7 +146,7 @@ describe('Received feedbacks (e2e)', () => {
     const empty = await api(app, student).get(sessionPath()).expect(200);
     expect(empty.text).toBe('null');
     await feedback('SESSAO');
-    await evaluate(student, false);
+    await createEvaluation(student, false);
     const draft = await api(app, student).get(sessionPath()).expect(200);
     expect(draft.body).toBeNull();
     const problem = await api(app, student).get(problemPath()).expect(200);
@@ -127,7 +158,7 @@ describe('Received feedbacks (e2e)', () => {
 
   it('returns an identified tutor, hides scores and shares the first read across both endpoints', async () => {
     const id = await feedback('SESSAO', student, 9);
-    await evaluate();
+    await createEvaluation();
     const first = await api(app, student).get(sessionPath()).expect(200);
     expect(first.headers['cache-control']).toBe('private, no-store');
     expect(first.body as FeedbackBody).toMatchObject({
@@ -172,7 +203,7 @@ describe('Received feedbacks (e2e)', () => {
       feedback: null,
     });
     expect(await views()).toHaveLength(2);
-    await evaluate();
+    await createEvaluation();
     const visible = await api(app, student).get(problemPath()).expect(200);
     expect((visible.body as ProblemBody).sessoes[0]?.feedback?.novo).toBe(true);
     const direct = await api(app, student).get(sessionPath()).expect(200);
@@ -182,7 +213,7 @@ describe('Received feedbacks (e2e)', () => {
   it('never reads a colleague feedback even when their id is supplied as a query parameter', async () => {
     await feedback('ALUNO', colleague, 10);
     await feedback('SESSAO', colleague);
-    await evaluate(colleague);
+    await createEvaluation(colleague);
     const all = await api(app, student).get(`${problemPath()}?alunoId=${colleague.id}`).expect(200);
     expect((all.body as ProblemBody).individual).toBeNull();
     expect((all.body as ProblemBody).sessoes.every((item) => item.feedback === null)).toBe(true);
@@ -195,7 +226,7 @@ describe('Received feedbacks (e2e)', () => {
 
   it('does not release own session feedback when only another student has submitted grades', async () => {
     await feedback('SESSAO');
-    await evaluate(colleague);
+    await createEvaluation(colleague);
     const response = await api(app, student).get(sessionPath()).expect(200);
     expect(response.body).toBeNull();
     expect(await views()).toHaveLength(0);
@@ -214,7 +245,7 @@ describe('Received feedbacks (e2e)', () => {
 
   it('records exactly one first read during concurrent requests', async () => {
     await feedback('SESSAO');
-    await evaluate();
+    await createEvaluation();
     const responses = await Promise.all([
       api(app, student).get(sessionPath()).expect(200),
       api(app, student).get(problemPath()).expect(200),
