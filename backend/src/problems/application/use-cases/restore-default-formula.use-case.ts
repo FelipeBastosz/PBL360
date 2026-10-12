@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { NotFoundError } from '@/shared/errors/application.error';
+import { NotFoundError, UnprocessableEntityError } from '@/shared/errors/application.error';
 import { FormulaScope } from '../../domain/entities/formula.entity';
 import {
   FORMULA_REPOSITORY,
@@ -34,6 +34,11 @@ export class RestoreDefaultFormulaUseCase {
   async execute(input: RestoreDefaultFormulaInput): Promise<ProblemFormulaOutput> {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
 
+    if (input.scope !== FormulaScope.PROBLEMA) {
+      throw new UnprocessableEntityError(
+        'A fórmula da sessão deve ser restaurada pela configuração da própria sessão.',
+      );
+    }
     const problem = await this.problems.findById(input.problemId);
     if (!problem || problem.roomId !== input.roomId) {
       throw new NotFoundError('Problema não encontrado na sala informada.');

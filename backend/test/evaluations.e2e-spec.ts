@@ -99,15 +99,15 @@ describe('Tutor evaluations (e2e)', () => {
     firstCriterionId = criteria[0]!.id;
     secondCriterionId = criteria[1]!.id;
     const [problem] = await db.query<[{ id: string }]>(
-      `INSERT INTO problems (room_id, title, order_index, created_by, performance_table_id)
-       VALUES ($1, 'Problema', 1, $2, $3) RETURNING id;`,
-      [roomId, owner.id, tableId],
+      `INSERT INTO problems (room_id, title, order_index, created_by)
+       VALUES ($1, 'Problema', 1, $2) RETURNING id;`,
+      [roomId, owner.id],
     );
     problemId = problem.id;
     const sessions = await db.query<{ id: string }[]>(
-      `INSERT INTO sessions (problem_id, title, date, order_index, status)
-       VALUES ($1, 'Primeira', '2099-10-05', 1, 'agendada'), ($1, 'Segunda', '2099-10-06', 2, 'agendada') RETURNING id;`,
-      [problemId],
+      `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index, status)
+       VALUES ($1, $2, 'Primeira', '2099-10-05', 1, 'agendada'), ($1, $2, 'Segunda', '2099-10-06', 2, 'agendada') RETURNING id;`,
+      [problemId, tableId],
     );
     sessionId = sessions[0]!.id;
     nextSessionId = sessions[1]!.id;
@@ -264,25 +264,21 @@ describe('Tutor evaluations (e2e)', () => {
       enviadaEm: (sent.body as EvaluationBody).enviadaEm,
     });
   });
-  it('blocks table replacement and session deletion after even an empty draft', async () => {
-    await save({ itens: [], enviar: false }).expect(200);
-    await api(app, owner).put(problemPath(), { title: 'Atualizado', tabelaId: null }).expect(409);
+  it('blocks table replacement and session deletion after a submitted evaluation', async () => {
+    await submit().expect(200);
+    await api(app, owner).put(`/sessoes/${sessionId}/tabela`, { tabelaId: tableId }).expect(409);
     await api(app, owner).put(problemPath(), { title: 'Atualizado' }).expect(200);
-    await api(app, coTutor)
-      .put(problemPath(), { title: 'Atualizado', tabelaId: tableId })
-      .expect(200);
     const sessionPath = `${problemPath()}/sessoes/${sessionId}`;
     const impact = await api(app, owner).get(`${sessionPath}/impacto-exclusao`).expect(200);
     expect(impact.body as { avaliacoes: number }).toMatchObject({ avaliacoes: 1 });
     await api(app, owner).delete(sessionPath).expect(409);
   });
-  it('returns 422 with linking guidance when there is no performance table', async () => {
-    await api(app, owner).put(problemPath(), { title: 'Problema', tabelaId: null }).expect(200);
-    const response = await api(app, owner).get(`${problemPath()}/criterios`).expect(422);
-    expect((response.body as { message: string }).message).toContain('Fórmulas');
-    await submit().expect(422);
-    expect(await count('evaluations')).toBe(0);
-    await api(app, owner).put(problemPath(), { title: 'Problema', tabelaId: tableId }).expect(200);
+  it('rejects an unavailable table for a session without changing its evaluation configuration', async () => {
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/tabela`, {
+        tabelaId: '00000000-0000-4000-8000-000000000000',
+      })
+      .expect(422);
     await submit().expect(200);
   });
   it('does not allow students, outsiders or unauthenticated callers to access evaluations', async () => {
@@ -338,19 +334,14 @@ describe('Tutor evaluations (e2e)', () => {
       await db.query('ALTER TABLE evaluation_items DROP CONSTRAINT test_reject_score;');
     }
   });
-  it('serializes unlinking the table against the first evaluation', async () => {
-    const [evaluation, problem] = await Promise.all([
+  it('serializes changing the session table against the first evaluation', async () => {
+    const [evaluation, configuration] = await Promise.all([
       save({ itens: [], enviar: false }),
-      api(app, owner).put(problemPath(), { title: 'Problema', tabelaId: null }),
+      api(app, owner).put(`/sessoes/${sessionId}/tabela`, { tabelaId: tableId }),
     ]);
-    if (evaluation.status === 200) {
-      expect(problem.status).toBe(409);
-      expect(await count('evaluations')).toBe(1);
-    } else {
-      expect(evaluation.status).toBe(422);
-      expect(problem.status).toBe(200);
-      expect(await count('evaluations')).toBe(0);
-    }
+    expect(evaluation.status).toBe(200);
+    expect(configuration.status).toBe(200);
+    expect(await count('evaluations')).toBe(1);
   });
   it('documents all routes, request fields and business error responses', async () => {
     const response = await api(app).get('/docs/json').expect(200);

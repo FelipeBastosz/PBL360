@@ -86,9 +86,9 @@ describe('Performance tables (e2e)', () => {
       [ownerId],
     );
     await dataSource.query(
-      `INSERT INTO problems (room_id, title, created_by, performance_table_id)
-       VALUES ($1, 'Problema vinculado', $2, $3);`,
-      [room.id, ownerId, tableId],
+      `INSERT INTO problems (room_id, title, created_by)
+       VALUES ($1, 'Problema vinculado', $2);`,
+      [room.id, ownerId],
     );
     ownerToken = signAccessToken(app, ownerId, 'owner@uefs.br', UserType.TUTOR);
     otherTutorToken = signAccessToken(app, otherTutorId, 'other@uefs.br', UserType.TUTOR);
@@ -106,6 +106,12 @@ describe('Performance tables (e2e)', () => {
       .set('Authorization', `Bearer ${token}`);
 
   it('retrieves performance table with criteria sorted by order_index and linked problems count', async () => {
+    const [problem] = await dataSource.query<[{ id: string }]>('SELECT id FROM problems LIMIT 1;');
+    await dataSource.query(
+      `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index)
+       VALUES ($1, $2, 'Sessão vinculada', CURRENT_DATE, 1);`,
+      [problem.id, tableId],
+    );
     await dataSource.query('DELETE FROM performance_criteria WHERE performance_table_id = $1;', [
       tableId,
     ]);
@@ -152,6 +158,12 @@ describe('Performance tables (e2e)', () => {
   });
 
   it('soft deletes only the table and preserves criteria and linked problems', async () => {
+    const [problem] = await dataSource.query<[{ id: string }]>('SELECT id FROM problems LIMIT 1;');
+    await dataSource.query(
+      `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index)
+       VALUES ($1, $2, 'Sessão vinculada', CURRENT_DATE, 1);`,
+      [problem.id, tableId],
+    );
     await deleteTable(ownerToken).expect(204);
 
     const [table] = await dataSource.query<{ deleted_at: Date | null }[]>(
@@ -163,7 +175,7 @@ describe('Performance tables (e2e)', () => {
       [tableId],
     );
     const [problems] = await dataSource.query<{ count: number }[]>(
-      'SELECT COUNT(*)::int AS count FROM problems WHERE performance_table_id = $1;',
+      'SELECT COUNT(DISTINCT problem_id)::int AS count FROM sessions WHERE performance_table_id = $1;',
       [tableId],
     );
 
@@ -363,10 +375,7 @@ describe('Performance tables (e2e)', () => {
   });
 
   it('limits past table edits to weights and can propagate snapshots and grades', async () => {
-    const [problem] = await dataSource.query<{ id: string }[]>(
-      'SELECT id FROM problems WHERE performance_table_id = $1 LIMIT 1;',
-      [tableId],
-    );
+    const [problem] = await dataSource.query<{ id: string }[]>('SELECT id FROM problems LIMIT 1;');
     const [initialCriterion] = await readCriteria();
     await dataSource.query('UPDATE performance_criteria SET weight = 5 WHERE id = $1;', [
       initialCriterion!.id,
@@ -377,9 +386,9 @@ describe('Performance tables (e2e)', () => {
       [tableId],
     );
     const [session] = await dataSource.query<{ id: string }[]>(
-      `INSERT INTO sessions (problem_id, title, date, order_index)
-       VALUES ($1, 'Sessão passada', CURRENT_DATE - 1, 1) RETURNING id;`,
-      [problem!.id],
+      `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index)
+       VALUES ($1, $2, 'Sessão passada', CURRENT_DATE - 1, 1) RETURNING id;`,
+      [problem!.id, tableId],
     );
     await dataSource.query(
       `INSERT INTO session_evaluation_configs
@@ -538,8 +547,9 @@ describe('Performance tables (e2e)', () => {
       })),
     });
     await dataSource.query(
-      `INSERT INTO sessions (problem_id, title, date, order_index)
-      SELECT id, 'Sessão passada', CURRENT_DATE - 1, 1 FROM problems WHERE performance_table_id = $1;`,
+      `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index)
+      SELECT id, $1, 'Sessão passada', CURRENT_DATE - 1, 1
+        FROM problems ORDER BY created_at LIMIT 1;`,
       [tableId],
     );
     await expect(repository.update(table)).rejects.toThrow(InvalidPerformanceTableError);

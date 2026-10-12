@@ -5,15 +5,11 @@ import { FORMULA_REPOSITORY } from '../../domain/repositories/formula.repository
 import type { FormulaRepository } from '../../domain/repositories/formula.repository';
 import { PROBLEM_REPOSITORY } from '../../domain/repositories/problem.repository';
 import type { ProblemRepository } from '../../domain/repositories/problem.repository';
-import { PERFORMANCE_TABLE_REPOSITORY } from '@/performance-tables/domain/repositories/performance-table.repository';
-import type { PerformanceTableRepository } from '@/performance-tables/domain/repositories/performance-table.repository';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import {
   GetProblemFormulaUseCase,
   type ProblemFormulaOutput,
 } from './get-problem-formula.use-case';
-
-import type { Problem } from '../../domain/entities/problem.entity';
 
 export interface CustomizeFormulaComponentInput {
   type: string;
@@ -34,15 +30,18 @@ export class CustomizeProblemFormulaUseCase {
   constructor(
     @Inject(PROBLEM_REPOSITORY) private readonly problems: ProblemRepository,
     @Inject(FORMULA_REPOSITORY) private readonly formulas: FormulaRepository,
-    @Inject(PERFORMANCE_TABLE_REPOSITORY) private readonly tables: PerformanceTableRepository,
     private readonly roomAccessService: RoomAccessService,
     private readonly getFormulaUseCase: GetProblemFormulaUseCase,
   ) {}
 
   async execute(input: CustomizeProblemFormulaInput): Promise<ProblemFormulaOutput> {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
-    const problem = await this.validateProblem(input);
-    await this.validateFormulaScope(input, problem);
+    await this.validateProblem(input);
+    if (input.scope !== FormulaScope.PROBLEMA) {
+      throw new UnprocessableEntityError(
+        'A fórmula da sessão deve ser personalizada pela configuração da própria sessão.',
+      );
+    }
 
     await this.updateFormula(input);
 
@@ -78,24 +77,6 @@ export class CustomizeProblemFormulaUseCase {
       throw new NotFoundError('Problema não encontrado na sala informada.');
     }
     return problem;
-  }
-
-  private async validateFormulaScope(input: CustomizeProblemFormulaInput, problem: Problem) {
-    if (input.scope === FormulaScope.SESSAO) {
-      if (!problem.performanceTableId) {
-        throw new UnprocessableEntityError('O problema não possui uma tabela vinculada.');
-      }
-      const table = await this.tables.findByIdIncludingDeleted(problem.performanceTableId);
-      const validCriteriaIds = new Set(table?.criteria.map((c) => c.id) || []);
-
-      for (const comp of input.components) {
-        if (!validCriteriaIds.has(comp.referenceId!)) {
-          throw new UnprocessableEntityError(
-            'Um ou mais critérios não pertencem à tabela deste problema.',
-          );
-        }
-      }
-    }
   }
 
   private createFormulaCandidate(

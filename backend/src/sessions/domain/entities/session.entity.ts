@@ -10,6 +10,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Problem } from '@/problems/domain/entities/problem.entity';
+import { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
 import { User } from '@/users/domain/entities/user.entity';
 import { InvalidSessionError } from '../errors/invalid-session.error';
 import type { EvaluationReleaseChange, EvaluationReleaseKind } from './evaluation-release';
@@ -31,6 +32,20 @@ export class Session {
     foreignKeyConstraintName: 'fk_sessions_problem',
   })
   problem: Problem;
+
+  createdBy: string;
+
+  @Column({ name: 'performance_table_id', type: 'uuid' })
+  @Index('idx_sessions_performance_table_id')
+  performanceTableId: string;
+
+  @ManyToOne(() => PerformanceTable, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: 'performance_table_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_sessions_performance_table',
+  })
+  performanceTable: PerformanceTable;
 
   @Column({ type: 'varchar', length: 120 })
   title: string;
@@ -82,6 +97,8 @@ export class Session {
   static create(props: NewSession): Session {
     const session = new Session();
     session.problemId = props.problemId;
+    session.createdBy = props.createdBy;
+    session.performanceTableId = '';
     session.title = props.title.trim();
     session.description = props.description?.trim() || null;
     session.date = props.date;
@@ -134,6 +151,7 @@ export class Session {
 
 export interface NewSession {
   problemId: string;
+  createdBy: string;
   title: string;
   description: string | null;
   date: string;

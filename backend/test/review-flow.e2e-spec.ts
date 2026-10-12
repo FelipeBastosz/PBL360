@@ -135,26 +135,26 @@ describe('Review Walkthrough Flow & Calculation Verification (e2e)', () => {
     criterion2Id = c2.id;
 
     const [problem] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO problems (room_id, title, description, order_index, created_by, performance_table_id)
-       VALUES ($1, 'Problema 1 - Prontuário Eletrônico', 'Descrição da Review', 1, $2, $3)
+      `INSERT INTO problems (room_id, title, description, order_index, created_by)
+       VALUES ($1, 'Problema 1 - Prontuário Eletrônico', 'Descrição da Review', 1, $2)
        RETURNING id;`,
-      [roomId, tutorId, tableId],
+      [roomId, tutorId],
     );
     problemId = problem.id;
 
     const [s1] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO sessions (problem_id, title, description, date, order_index, status)
-       VALUES ($1, 'Sessão 1 - Abertura', 'Abertura do caso', '2026-10-01', 1, 'concluida')
+      `INSERT INTO sessions (problem_id, performance_table_id, title, description, date, order_index, status)
+       VALUES ($1, $2, 'Sessão 1 - Abertura', 'Abertura do caso', '2026-10-01', 1, 'concluida')
        RETURNING id;`,
-      [problemId],
+      [problemId, tableId],
     );
     session1Id = s1.id;
 
     const [s2] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO sessions (problem_id, title, description, date, order_index, status)
-       VALUES ($1, 'Sessão 2 - Fechamento', 'Fechamento do caso', '2026-10-08', 2, 'agendada')
+      `INSERT INTO sessions (problem_id, performance_table_id, title, description, date, order_index, status)
+       VALUES ($1, $2, 'Sessão 2 - Fechamento', 'Fechamento do caso', '2026-10-08', 2, 'agendada')
        RETURNING id;`,
-      [problemId],
+      [problemId, tableId],
     );
     session2Id = s2.id;
   });

@@ -2,6 +2,10 @@ import type { EntityManager } from 'typeorm';
 import { NotFoundError, UnprocessableEntityError } from '@/shared/errors/application.error';
 import type { SessionEvaluationConfig } from '../../domain/entities/session-evaluation-config.entity';
 import type { SessionEvaluationCriterion } from '../../domain/entities/session-evaluation-criterion.entity';
+import {
+  readSessionConfiguration,
+  toEvaluationFormula,
+} from '@/sessions/infrastructure/database/session-configuration.read.persistence';
 
 interface TableRow {
   tableId: string;
@@ -15,21 +19,21 @@ export async function readProblemConfig(
   manager: EntityManager,
   problemId: string,
 ): Promise<SessionEvaluationConfig> {
-  const [table] = await manager.query<TableRow[]>(
-    `SELECT pt.id AS "tableId", pt.name AS "tableName" FROM problems p
-     JOIN performance_tables pt ON pt.id = p.performance_table_id WHERE p.id = $1;`,
+  const [session] = await manager.query<Array<{ id: string }>>(
+    `SELECT id FROM sessions WHERE problem_id = $1 ORDER BY order_index LIMIT 1;`,
     [problemId],
   );
-  if (!table)
-    throw new UnprocessableEntityError(
-      'Este problema não possui uma tabela de desempenho vinculada. Vincule uma tabela em Fórmulas para iniciar as avaliações.',
-    );
-  const criteria = await manager.query<CriterionRow[]>(
-    `SELECT id, name, description, weight, order_index AS "orderIndex"
-     FROM performance_criteria WHERE performance_table_id = $1 AND deleted_at IS NULL ORDER BY order_index;`,
-    [table.tableId],
-  );
-  return { ...table, criteria: criteria.map(toCriterion), frozen: false };
+  if (!session) {
+    throw new UnprocessableEntityError('Este problema ainda não possui sessões configuradas.');
+  }
+  return readSessionConfiguration(manager, session.id);
+}
+
+export async function readSessionTableConfig(
+  manager: EntityManager,
+  sessionId: string,
+): Promise<SessionEvaluationConfig> {
+  return readSessionConfiguration(manager, sessionId);
 }
 
 export async function readSessionConfig(
@@ -42,27 +46,52 @@ export async function readSessionConfig(
     [sessionId],
   );
   if (!config) return null;
-  const criteria = await manager.query<CriterionRow[]>(
+  return {
+    ...config,
+    criteria: (await readSnapshotCriteria(manager, sessionId)).map(toCriterion),
+    frozen: true,
+    formula: await readFormula(manager, sessionId),
+  };
+}
+
+async function readSnapshotCriteria(
+  manager: EntityManager,
+  sessionId: string,
+): Promise<CriterionRow[]> {
+  return manager.query<CriterionRow[]>(
     `SELECT criterion_id AS id, name, description, weight, order_index AS "orderIndex"
-     FROM session_evaluation_criteria WHERE session_id = $1 ORDER BY order_index;`,
+       FROM session_evaluation_criteria WHERE session_id = $1 ORDER BY order_index;`,
     [sessionId],
   );
-  return { ...config, criteria: criteria.map(toCriterion), frozen: true };
+}
+
+async function readFormula(
+  manager: EntityManager,
+  sessionId: string,
+): Promise<{ criteriaWeight: number; roleWeight: number }> {
+  const rows = await manager.query<Array<{ type: string; weight: string | number }>>(
+    `SELECT fc.type, fc.weight FROM formulas f
+       JOIN formula_components fc ON fc.formula_id = f.id
+      WHERE f.session_id = $1 AND f.scope = 'SESSAO' AND f.active = TRUE;`,
+    [sessionId],
+  );
+  return toEvaluationFormula(rows);
 }
 
 export async function freezeSessionConfig(
   manager: EntityManager,
   sessionId: string,
-  problemId: string,
   authorId: string,
 ): Promise<SessionEvaluationConfig> {
   await manager.query(
-    `SELECT pt.id FROM performance_tables pt JOIN problems p ON p.performance_table_id = pt.id WHERE p.id = $1 FOR SHARE OF pt;`,
-    [problemId],
+    `SELECT pt.id FROM sessions s
+      JOIN performance_tables pt ON pt.id = s.performance_table_id
+     WHERE s.id = $1 FOR SHARE OF pt;`,
+    [sessionId],
   );
   const existing = await readSessionConfig(manager, sessionId);
   if (existing) return existing;
-  const config = await readProblemConfig(manager, problemId);
+  const config = await readSessionConfiguration(manager, sessionId);
   if (config.criteria.length === 0)
     throw new UnprocessableEntityError('A tabela vinculada não possui critérios ativos.');
   await insertSnapshot(manager, sessionId, authorId, config);

@@ -1,4 +1,4 @@
-export type GradeRow = Record<string, string | number | null | undefined>;
+export type GradeRow = Record<string, string | number | boolean | null | undefined>;
 
 export interface ProblemGradeData {
   sessions: GradeRow[];
@@ -18,11 +18,7 @@ export interface GradePersistenceData {
 export interface GradesRepository {
   findProblem(problemId: string, roomId: string): Promise<GradeRow | null>;
 
-  findProblemData(
-    roomId: string,
-    problemId: string,
-    performanceTableId: unknown,
-  ): Promise<ProblemGradeData>;
+  findProblemData(roomId: string, problemId: string): Promise<ProblemGradeData>;
 
   findFormulaComponents(formulaIds: unknown[]): Promise<GradeRow[]>;
 
