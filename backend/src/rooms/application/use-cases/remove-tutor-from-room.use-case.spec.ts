@@ -26,7 +26,7 @@ describe('RemoveTutorFromRoomUseCase', () => {
 
     await useCase.execute({ roomId: ROOM_ID, authenticatedTutorId: OWNER_ID, tutorId: 'tutor-2' });
 
-    expect(rooms.removeTutor).toHaveBeenCalledWith(ROOM_ID, 'tutor-2', OWNER_ID);
+    expect(rooms.removeTutor).toHaveBeenCalledWith(ROOM_ID, 'tutor-2');
   });
 
   it('never removes the owner', async () => {

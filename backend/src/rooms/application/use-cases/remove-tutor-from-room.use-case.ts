@@ -28,7 +28,7 @@ export class RemoveTutorFromRoomUseCase {
       throw new ForbiddenError('O professor responsável não pode ser removido da sala.');
     }
 
-    if (!(await this.roomRepository.removeTutor(roomId, tutorId, authenticatedTutorId))) {
+    if (!(await this.roomRepository.removeTutor(roomId, tutorId))) {
       throw new NotFoundError('Professor não está associado à sala.');
     }
   }
