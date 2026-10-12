@@ -1,23 +1,76 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import type { SessionReleasesResponse } from '@/types/session';
 import { SessionEvaluationsCard } from './SessionEvaluationsCard';
 
-describe('SessionEvaluationsCard', () => {
-  it('renders evaluations card with title, subtitle and Em breve badge', () => {
-    render(<SessionEvaluationsCard />);
+const mockReleases: SessionReleasesResponse = {
+  autoavaliacao: {
+    liberada: true,
+    prazo: '2026-10-15T17:00:00.000Z',
+    enviadas: 4,
+    esperadas: 12,
+  },
+  pares: {
+    liberada: false,
+    prazo: null,
+    enviadas: 0,
+    esperadas: 12,
+  },
+  atualizadoEm: '2026-10-01T10:00:00.000Z',
+  atualizadoPor: 'tutor-1',
+};
 
-    expect(screen.getByText('Autoavaliação e pares')).toBeInTheDocument();
-    expect(
-      screen.getByText(/os alunos só veem os formulários quando você libera/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Em breve')).toBeInTheDocument();
+describe('SessionEvaluationsCard', () => {
+  it('renders adherence stats and formatted deadline when evaluation is released', () => {
+    render(
+      <SessionEvaluationsCard
+        releases={mockReleases}
+        onToggle={vi.fn()}
+        isAttendancePending={false}
+        isLoading={false}
+      />,
+    );
+
+    expect(screen.getByText('4 de 12 enviaram')).toBeInTheDocument();
+    expect(screen.getByText(/Até 15 de out\./i)).toBeInTheDocument();
   });
 
-  it('renders locked toggle rows for student self-evaluation and peer evaluation', () => {
-    render(<SessionEvaluationsCard />);
+  it('calls onToggle when clicking the switches', async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
 
-    expect(screen.getByText('Autoavaliação dos alunos')).toBeInTheDocument();
-    expect(screen.getByText('Avaliação entre pares')).toBeInTheDocument();
-    expect(screen.getAllByText('Bloqueada')).toHaveLength(2);
+    render(
+      <SessionEvaluationsCard
+        releases={mockReleases}
+        onToggle={onToggle}
+        isAttendancePending={false}
+        isLoading={false}
+      />,
+    );
+
+    const switches = screen.getAllByRole('switch');
+    await user.click(switches[0]);
+    expect(onToggle).toHaveBeenCalledWith('autoavaliacao');
+
+    await user.click(switches[1]);
+    expect(onToggle).toHaveBeenCalledWith('pares');
+  });
+
+  it('locks switches and displays warning when attendance is pending', () => {
+    render(
+      <SessionEvaluationsCard
+        releases={mockReleases}
+        onToggle={vi.fn()}
+        isAttendancePending={true}
+        isLoading={false}
+      />,
+    );
+
+    expect(screen.getByText(/salve a chamada da sessão primeiro/i)).toBeInTheDocument();
+
+    const switches = screen.getAllByRole('switch');
+    expect(switches[0]).toBeDisabled();
+    expect(switches[1]).toBeDisabled();
   });
 });

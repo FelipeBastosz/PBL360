@@ -115,3 +115,22 @@ export type RoomSession = {
   problemaId: string;
   problemaTitulo: string;
 };
+
+export type EvaluationReleaseInfo = {
+  liberada: boolean;
+  prazo: string | null;
+  enviadas: number;
+  esperadas: number;
+};
+
+export type SessionReleasesResponse = {
+  autoavaliacao: EvaluationReleaseInfo;
+  pares: EvaluationReleaseInfo;
+  atualizadoEm: string;
+  atualizadoPor: string;
+};
+
+export type UpdateReleasesPayload = {
+  autoavaliacao?: { liberada: boolean; prazo: string | null };
+  pares?: { liberada: boolean; prazo: string | null };
+};
