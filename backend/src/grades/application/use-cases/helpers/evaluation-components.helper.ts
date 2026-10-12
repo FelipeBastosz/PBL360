@@ -1,5 +1,6 @@
 import {
   calculatePeerAssessmentSession,
+  calculatePokerPeerSession,
   calculateProblemEvaluationComponent,
   calculateSelfAssessmentSession,
   type EvaluationComponentResult,
@@ -19,12 +20,16 @@ export interface EvaluationComponentContext {
   attendances: GradeRow[];
   selfScores: GradeRow[];
   peerScores: GradeRow[];
+  pokerScores: GradeRow[];
   now: Date;
 }
+
+export type PeerGradeSource = 'FORMULARIO' | 'PLANNING_POKER';
 
 export interface SessionEvaluationComponents {
   self: EvaluationComponentResult;
   peer: EvaluationComponentResult;
+  peerSource?: PeerGradeSource;
 }
 
 export interface StudentEvaluationComponents extends SessionEvaluationComponents {
@@ -59,7 +64,10 @@ export function withSessionEvaluations(
   return {
     ...response,
     autoavaliacao: toEvaluationComponentResponse(evaluations.self),
-    pares: toEvaluationComponentResponse(evaluations.peer),
+    pares: {
+      ...toEvaluationComponentResponse(evaluations.peer),
+      origem: evaluations.peerSource ?? 'FORMULARIO',
+    },
   };
 }
 
@@ -83,11 +91,26 @@ export function calculateSessionComponents(
       release: releaseOf(session, 'self'),
       score: numberOrNull(ctx.selfScores.find(belongs)?.score),
     }),
-    peer: calculatePeerAssessmentSession({
-      ...shared,
-      release: releaseOf(session, 'peer'),
-      receivedScores: ctx.peerScores.filter(belongs).map((row) => Number(row.score)),
-    }),
+    ...peerComponent(ctx, session, shared),
+  };
+}
+
+function peerComponent(
+  ctx: EvaluationComponentContext,
+  session: GradeRow,
+  shared: { attendance: GradeAttendance; now: Date },
+): Pick<SessionEvaluationComponents, 'peer' | 'peerSource'> {
+  const belongs = belongsTo(String(session.id), ctx.student.id);
+  if (session.has_poker === true) {
+    const finalGrade = numberOrNull(ctx.pokerScores.find(belongs)?.score);
+    const peer = calculatePokerPeerSession({ attendance: shared.attendance, finalGrade });
+    return { peer, peerSource: 'PLANNING_POKER' };
+  }
+  const receivedScores = ctx.peerScores.filter(belongs).map((row) => Number(row.score));
+  const release = releaseOf(session, 'peer');
+  return {
+    peer: calculatePeerAssessmentSession({ ...shared, release, receivedScores }),
+    peerSource: 'FORMULARIO',
   };
 }
 
