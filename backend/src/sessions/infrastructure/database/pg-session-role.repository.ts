@@ -19,7 +19,7 @@ export class PgSessionRoleRepository implements SessionRoleRepository {
   async list(sessionId: string): Promise<SessionRoleListItem[]> {
     return this.assignments.query<SessionRoleListItem[]>(
       `SELECT sr.student_id AS "studentId", u.name,
-              sr.role, sr.bonus_score AS "bonusScore"
+              sr.role, sr.role_score AS "roleScore"
        FROM session_roles sr
        JOIN users u ON u.id = sr.student_id
        WHERE sr.session_id = $1
@@ -33,15 +33,15 @@ export class PgSessionRoleRepository implements SessionRoleRepository {
     roomId: string,
     studentId: string,
     role: SessionRole | null,
-    bonusScore: number | null,
+    roleScore: number | null,
     transfer: boolean,
-  ): Promise<{ studentId: string; role: SessionRole | null; bonusScore: number | null }> {
+  ): Promise<{ studentId: string; role: SessionRole | null; roleScore: number | null }> {
     return this.assignments.manager.transaction(async (manager) => {
       await this.assertEnrolled(manager, roomId, studentId);
       if (role === null) return this.remove(manager, sessionId, studentId);
       await this.transferIfOccupied(manager, sessionId, studentId, role, transfer);
-      await this.upsert(manager, sessionId, studentId, role, bonusScore);
-      return { studentId, role, bonusScore };
+      await this.upsert(manager, sessionId, studentId, role, roleScore);
+      return { studentId, role, roleScore };
     });
   }
 
@@ -67,7 +67,7 @@ export class PgSessionRoleRepository implements SessionRoleRepository {
       sessionId,
       studentId,
     ]);
-    return { studentId, role: null, bonusScore: null };
+    return { studentId, role: null, roleScore: null };
   }
 
   private async transferIfOccupied(
@@ -109,14 +109,14 @@ export class PgSessionRoleRepository implements SessionRoleRepository {
     sessionId: string,
     studentId: string,
     role: SessionRole,
-    bonusScore: number | null,
+    roleScore: number | null,
   ) {
     return manager.query(
-      `INSERT INTO session_roles (session_id, student_id, role, bonus_score)
+      `INSERT INTO session_roles (session_id, student_id, role, role_score)
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (session_id, student_id)
-       DO UPDATE SET role = EXCLUDED.role, bonus_score = EXCLUDED.bonus_score;`,
-      [sessionId, studentId, role, bonusScore],
+       DO UPDATE SET role = EXCLUDED.role, role_score = EXCLUDED.role_score;`,
+      [sessionId, studentId, role, roleScore],
     );
   }
 }

@@ -27,13 +27,13 @@ export class UpdateSessionRoleDto {
   @IsEnum(SessionRolePayload)
   papel?: SessionRolePayload | null;
 
-  @ApiPropertyOptional({ minimum: 0, maximum: 1, example: 0.5, nullable: true })
+  @ApiPropertyOptional({ minimum: 0, maximum: 10, example: 8.5, nullable: true })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  @Max(1)
-  notaAdicional?: number | null;
+  @Max(10)
+  notaPapel?: number | null;
 
   @ApiPropertyOptional({ default: false })
   @IsOptional()
@@ -45,11 +45,11 @@ export class SessionRoleResponseDto {
   @ApiProperty() alunoId: string;
   @ApiProperty() nome: string;
   @ApiProperty({ enum: SessionRolePayload }) papel: SessionRolePayload;
-  @ApiProperty({ nullable: true }) notaAdicional: number | null;
+  @ApiProperty({ nullable: true }) notaPapel: number | null;
 }
 
 export class AssignedSessionRoleResponseDto {
   @ApiProperty() alunoId: string;
   @ApiProperty({ enum: SessionRolePayload, nullable: true }) papel: SessionRolePayload | null;
-  @ApiProperty({ nullable: true }) notaAdicional: number | null;
+  @ApiProperty({ nullable: true }) notaPapel: number | null;
 }

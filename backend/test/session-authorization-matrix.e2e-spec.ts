@@ -165,7 +165,7 @@ describe('Session Authorization Matrix (e2e)', () => {
       await server()
         .put(assignPath())
         .set('Authorization', `Bearer ${coTutorToken}`)
-        .send({ papel: 'COORDENADOR', notaAdicional: 0.5 })
+        .send({ papel: 'COORDENADOR', notaPapel: 5 })
         .expect(200);
     });
 

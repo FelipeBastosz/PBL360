@@ -18,7 +18,7 @@ export const SESSION_BONUSES_QUERY = `
     FROM evaluations e
    WHERE e.problem_id = $1 AND e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED'
   UNION ALL
-  SELECT sr.session_id, sr.student_id, sr.bonus_score
+  SELECT sr.session_id, sr.student_id, sr.role_score AS bonus_score
     FROM session_roles sr JOIN sessions s ON s.id = sr.session_id
    WHERE s.problem_id = $1 AND NOT EXISTS (
      SELECT 1 FROM evaluations e WHERE e.session_id = sr.session_id
