@@ -35,3 +35,29 @@ function hasNonWeightChange(
     criterion.orderIndex !== previous.orderIndex
   );
 }
+
+export function assertDefaultTableCanBeUpdated(
+  current: Pick<PerformanceTable, 'isDefault' | 'name' | 'description' | 'criteria'>,
+  candidate: Pick<PerformanceTable, 'name' | 'description' | 'criteria'>,
+): void {
+  if (!current.isDefault) return;
+
+  if (candidate.name !== current.name || candidate.description !== current.description) {
+    throw new InvalidPerformanceTableError(
+      'O nome e a descrição da tabela padrão não podem ser alterados.',
+    );
+  }
+
+  assertDefaultCriteriaUnchanged(current.criteria, candidate.criteria);
+}
+
+function assertDefaultCriteriaUnchanged(
+  currentCriteria: PerformanceTable['criteria'],
+  candidateCriteria: PerformanceTable['criteria'],
+): void {
+  if (criteriaChanged(currentCriteria, candidateCriteria)) {
+    throw new InvalidPerformanceTableError(
+      'Os nomes, descrições e ordens dos critérios da tabela padrão não podem ser alterados.',
+    );
+  }
+}

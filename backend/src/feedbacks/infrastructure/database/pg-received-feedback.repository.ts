@@ -6,6 +6,7 @@ import type {
 } from '../../domain/repositories/received-feedback.repository';
 import {
   INSERT_FIRST_VIEWS,
+  MARK_SESSION_FEEDBACKS_READ,
   READ_PROBLEM_FEEDBACKS,
   READ_PROBLEM_SESSIONS,
   READ_SESSION_FEEDBACK,
@@ -73,6 +74,7 @@ export class PgReceivedFeedbackRepository implements ReceivedFeedbackRepository 
   ): Promise<Set<string>> {
     if (ids.length === 0) return new Set();
     const inserted = await manager.query<{ id: string }[]>(INSERT_FIRST_VIEWS, [ids, studentId]);
+    await manager.query(MARK_SESSION_FEEDBACKS_READ, [ids, studentId]);
     return new Set(inserted.map((row) => row.id));
   }
 }

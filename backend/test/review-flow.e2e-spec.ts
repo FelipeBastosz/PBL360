@@ -189,19 +189,19 @@ describe('Review Walkthrough Flow & Calculation Verification (e2e)', () => {
     await server()
       .put(`/api/sessoes/${session1Id}/papeis/${anaId}`)
       .set('Authorization', `Bearer ${tutorToken}`)
-      .send({ papel: 'COORDENADOR', notaAdicional: 0.5 })
+      .send({ papel: 'COORDENADOR', notaPapel: 5 })
       .expect(200);
 
     await server()
       .put(`/api/sessoes/${session1Id}/papeis/${joaoId}`)
       .set('Authorization', `Bearer ${tutorToken}`)
-      .send({ papel: 'SECRETARIO_MESA', notaAdicional: 0.3 })
+      .send({ papel: 'SECRETARIO_MESA', notaPapel: 3 })
       .expect(200);
 
     await server()
       .put(`/api/sessoes/${session2Id}/papeis/${anaId}`)
       .set('Authorization', `Bearer ${coTutorToken}`)
-      .send({ papel: 'SECRETARIO_MESA', notaAdicional: 0.2 })
+      .send({ papel: 'SECRETARIO_MESA', notaPapel: 2 })
       .expect(200);
 
     await server()

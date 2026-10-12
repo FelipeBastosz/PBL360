@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AdjustmentsHorizontalIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { ROUTES } from '@/routes/paths';
 
@@ -29,11 +29,16 @@ function ActionContent({ Icon, title, description }: ActionContentProps) {
 type ProblemTopActionsProps = { isProfessor: boolean; roomId: string; problemId: string };
 
 export function ProblemTopActions({ isProfessor, roomId, problemId }: ProblemTopActionsProps) {
+  const navigate = useNavigate();
   if (!isProfessor) return null;
+
+  const gradesPath = ROUTES.problemGrades
+    .replace(':roomId', roomId)
+    .replace(':problemId', problemId);
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <button type="button" onClick={() => {}} className={ACTION_CLASS}>
+      <button type="button" onClick={() => navigate(gradesPath)} className={ACTION_CLASS}>
         <ActionContent
           Icon={DocumentTextIcon}
           title="Relatório Final"

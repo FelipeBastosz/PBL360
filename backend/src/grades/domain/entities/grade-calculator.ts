@@ -48,6 +48,7 @@ function calculateConfiguredSessionGrade(input: SessionGradeInput): SessionGrade
   const criteriaWeight =
     input.components.find((component) => component.type === 'CRITERIOS')?.weight ?? 0;
   const roleWeight = input.components.find((component) => component.type === 'PAPEL')?.weight ?? 0;
+  const totalWeight = criteriaWeight + roleWeight || 100;
   const average = weightedAverage(
     input.criteria.flatMap((criterion) =>
       criterion.score === null ? [] : [{ value: criterion.score, weight: criterion.weight ?? 1 }],
@@ -57,8 +58,8 @@ function calculateConfiguredSessionGrade(input: SessionGradeInput): SessionGrade
   const grade =
     input.bonus === null
       ? average
-      : (average * criteriaWeight + input.bonus * 10 * roleWeight) / 100;
-  return { grade: Math.min(10, grade), situation: 'AVALIADA' };
+      : (average * criteriaWeight + input.bonus * roleWeight) / totalWeight;
+  return { grade, situation: 'AVALIADA' };
 }
 
 function sessionCriterionValues(input: SessionGradeInput) {
@@ -88,7 +89,7 @@ export const calculateSessionGrade = (input: SessionGradeInput): SessionGradeRes
 
   const grade = calculateFinalSessionGrade(average, input.bonus, input.defaultFormula);
   return {
-    grade: Math.min(10, grade),
+    grade,
     situation: 'AVALIADA',
   };
 };
@@ -98,9 +99,9 @@ function calculateFinalSessionGrade(
   bonus: number | null,
   defaultFormula = false,
 ): number {
-  if (defaultFormula && bonus !== null) return (average * 7 + bonus * 10 * 3) / 10;
+  if (defaultFormula && bonus !== null) return (average * 7 + bonus * 3) / 10;
   if (defaultFormula) return average;
-  return average + (bonus ?? 0);
+  return bonus !== null ? (average * 7 + bonus * 3) / 10 : average;
 }
 
 export const calculateProblemGrade = (

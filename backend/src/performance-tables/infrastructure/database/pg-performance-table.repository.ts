@@ -11,6 +11,7 @@ import type {
   PerformanceTableRepository,
   PerformanceTableSummary,
   PerformanceTableUsage,
+  RoomPerformanceTableItem,
 } from '../../domain/repositories/performance-table.repository';
 
 import {
@@ -19,12 +20,18 @@ import {
 } from './performance-table-detail.mapper';
 
 import {
+  type RoomPerformanceTableRow,
+  toRoomPerformanceTableItems,
+} from './room-performance-table.mapper';
+
+import {
   FIND_PERFORMANCE_TABLE_BY_ID_QUERY,
   PERFORMANCE_TABLE_SUMMARY_QUERY,
   UPDATE_PERFORMANCE_TABLE_QUERY,
   INSERT_PERFORMANCE_TABLE_QUERY,
   FIND_PERFORMANCE_TABLE_USAGE_QUERY,
   FIND_PERFORMANCE_TABLE_BY_ID_INCLUDING_DELETED_QUERY,
+  FIND_ROOM_PERFORMANCE_TABLES_QUERY,
 } from './performance-table.queries';
 
 const CRITERION_COLUMNS = 5;
@@ -127,13 +134,22 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     });
   }
 
+  async findTablesByRoom(roomId: string, tutorId: string): Promise<RoomPerformanceTableItem[]> {
+    const rows = await this.performanceTables.query<RoomPerformanceTableRow[]>(
+      FIND_ROOM_PERFORMANCE_TABLES_QUERY,
+      [roomId, tutorId],
+    );
+
+    return toRoomPerformanceTableItems(rows, roomId);
+  }
+
   private async insertTable(
     manager: EntityManager,
     table: PerformanceTable,
   ): Promise<PerformanceTable> {
     const [persistedTable] = await manager.query<PerformanceTable[]>(
       INSERT_PERFORMANCE_TABLE_QUERY,
-      [table.tutorId, table.name, table.description, table.isDefault],
+      [table.tutorId, table.roomId ?? null, table.name, table.description, table.isDefault],
     );
 
     if (!persistedTable) {
@@ -193,7 +209,13 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
       [id],
     );
 
-    return usage ?? { problemCount: 0, sessionCount: 0, pastSessionCount: 0 };
+    return usage
+      ? {
+          problemCount: Number(usage.problemCount ?? 0),
+          sessionCount: Number(usage.sessionCount ?? 0),
+          pastSessionCount: Number(usage.pastSessionCount ?? 0),
+        }
+      : { problemCount: 0, sessionCount: 0, pastSessionCount: 0 };
   }
 
   async findByIdIncludingDeleted(id: string): Promise<PerformanceTable | null> {

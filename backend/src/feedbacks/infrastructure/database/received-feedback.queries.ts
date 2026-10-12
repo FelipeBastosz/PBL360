@@ -36,3 +36,13 @@ export const INSERT_FIRST_VIEWS = `
   ON CONFLICT (feedback_id, student_id) DO NOTHING
   RETURNING feedback_id AS id;
 `;
+
+// Keep the student summary's latest-read indicator in sync with both received-feedback routes.
+export const MARK_SESSION_FEEDBACKS_READ = `
+  INSERT INTO student_session_feedback_reads (feedback_id, student_id, read_at)
+  SELECT f.id, $2::uuid, now() FROM feedback f
+  WHERE f.id = ANY($1::uuid[]) AND f.destinatario_id = $2 AND f.escopo = 'SESSAO'
+  ORDER BY f.id
+  ON CONFLICT (feedback_id, student_id) DO UPDATE
+  SET read_at = GREATEST(student_session_feedback_reads.read_at, EXCLUDED.read_at);
+`;

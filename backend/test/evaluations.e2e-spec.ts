@@ -245,13 +245,13 @@ describe('Tutor evaluations (e2e)', () => {
     await api(app, owner)
       .put(`/sessoes/${sessionId}/papeis/${student.id}`, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       })
       .expect(200);
     const sent = await submit().expect(200);
     expect((sent.body as EvaluationBody).notaSessao).toBe(7.45);
     await api(app, owner)
-      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaAdicional: 1 })
+      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaPapel: 10 })
       .expect(200);
     const adjusted = await save({
       itens: scores(8, 9),
@@ -260,7 +260,7 @@ describe('Tutor evaluations (e2e)', () => {
     }).expect(200);
     expect(adjusted.body as EvaluationBody).toMatchObject({
       notaSessao: 7.63,
-      adicionalAplicado: 0.5,
+      adicionalAplicado: 5,
       enviadaEm: (sent.body as EvaluationBody).enviadaEm,
     });
   });
@@ -370,7 +370,7 @@ describe('Tutor evaluations (e2e)', () => {
       [sessionId, student.id, firstCriterionId, secondCriterionId],
     );
     await api(app, owner)
-      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaAdicional: 1 })
+      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaPapel: 10 })
       .expect(200);
     const response = await api(app, owner).get(`${problemPath()}/notas`).expect(200);
     const body = response.body as {

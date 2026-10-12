@@ -24,7 +24,7 @@ describe('grade calculator', () => {
         { type: 'CRITERIO', referenceId: 'b', weight: 40 },
         { type: 'CRITERIO', referenceId: 'c', weight: 20 },
       ],
-      bonus: 0.5,
+      bonus: 5,
       defaultFormula: true,
     });
 
@@ -62,7 +62,7 @@ describe('grade calculator', () => {
           { type: 'CRITERIOS', weight: 60 },
           { type: 'PAPEL', weight: 40 },
         ],
-        bonus: 0.5,
+        bonus: 5,
       }),
     ).toEqual({ grade: 6.2, situation: 'AVALIADA' });
   });
@@ -142,27 +142,27 @@ describe('grade calculator', () => {
       'AVALIADA',
     ],
     [
-      'bonus is added',
+      'role score is weighted',
       {
         attendance: 'PRESENT',
         criteria: [
           { id: 'a', score: 8 },
-          { id: 'b', score: 6 },
+          { id: 'b', score: 8 },
         ],
-        bonus: 0.5,
+        bonus: 6,
       },
-      7.9,
+      7.4,
       'AVALIADA',
     ],
     [
-      'bonus respects ten ceiling',
+      'role score at ten',
       {
         attendance: 'PRESENT',
         criteria: [
           { id: 'a', score: 10 },
           { id: 'b', score: 10 },
         ],
-        bonus: 1,
+        bonus: 10,
       },
       10,
       'AVALIADA',
@@ -194,7 +194,7 @@ describe('grade calculator', () => {
       'AVALIADA',
     ],
     [
-      'bonus can be zero',
+      'role score can be zero',
       {
         attendance: 'PRESENT',
         criteria: [
@@ -203,7 +203,7 @@ describe('grade calculator', () => {
         ],
         bonus: 0,
       },
-      5,
+      3.5,
       'AVALIADA',
     ],
     [

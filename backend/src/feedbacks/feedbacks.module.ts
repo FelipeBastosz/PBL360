@@ -15,6 +15,7 @@ import { SaveGeneralProblemFeedbackUseCase } from './application/use-cases/save-
 import { GetProblemFeedbacksUseCase } from './application/use-cases/get-problem-feedbacks.use-case';
 import { SaveSessionFeedbackUseCase } from './application/use-cases/save-session-feedback.use-case';
 import { GetSessionFeedbackUseCase } from './application/use-cases/get-session-feedback.use-case';
+import { GetOwnSessionFeedbackUseCase } from './application/use-cases/get-own-session-feedback.use-case';
 import { GetFeedbackRevisionsUseCase } from './application/use-cases/get-feedback-revisions.use-case';
 
 import { FeedbackView } from './domain/entities/feedback-view.entity';
@@ -48,6 +49,7 @@ import { MyProblemFeedbacksController } from './infrastructure/http/my-problem-f
     GetProblemFeedbacksUseCase,
     SaveSessionFeedbackUseCase,
     GetSessionFeedbackUseCase,
+    GetOwnSessionFeedbackUseCase,
     GetFeedbackRevisionsUseCase,
     {
       provide: FEEDBACK_REPOSITORY,

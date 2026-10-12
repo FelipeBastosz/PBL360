@@ -12,6 +12,10 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
+import {
+  AuthenticatedUser,
+  type AuthenticatedUserRef,
+} from '@/shared/decorators/authenticated-user.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -107,18 +111,26 @@ export class RoomsController {
       nome: room.name,
       semestre: room.semester,
       totalAlunos: room.totalStudents,
+      totalProblemas: room.totalProblems,
     }));
   }
 
   @Get(':id/alunos')
+  @Roles(UserType.TUTOR, UserType.STUDENT)
   @ListRoomStudentsSwaggerDocs
   async listRoomStudents(
     @UuidParam('id') roomId: string,
-    @AuthenticatedUserId() tutorId: string,
+    @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<RoomStudentResponseDto[]> {
-    const students = await this.listRoomStudentsUseCase.execute(roomId, tutorId);
+    const students = await this.listRoomStudentsUseCase.execute(roomId, member);
 
-    return students.map((student) => ({ nome: student.name, dataEntrada: student.joinedAt }));
+    return students.map((student) => ({
+      id: student.id,
+      nome: student.name,
+      email: student.email,
+      matricula: student.registrationNumber,
+      dataEntrada: student.joinedAt,
+    }));
   }
 
   @Get()

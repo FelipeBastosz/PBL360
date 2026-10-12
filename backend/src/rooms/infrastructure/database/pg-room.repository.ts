@@ -109,10 +109,12 @@ export class PgRoomRepository implements RoomRepository {
   async findForStudent(studentId: string): Promise<StudentRoomSummary[]> {
     const rows = await this.rooms.query<StudentRoomSummary[]>(
       `SELECT rooms.id AS "roomId", rooms.name, rooms.semester,
-              COUNT(members.student_id)::int AS "totalStudents"
+            COUNT(DISTINCT members.student_id)::int AS "totalStudents",
+            COUNT(DISTINCT problems.id)::int AS "totalProblems"
          FROM room_students enrollment
          JOIN rooms ON rooms.id = enrollment.room_id
          JOIN room_students members ON members.room_id = rooms.id
+          LEFT JOIN problems ON problems.room_id = rooms.id
         WHERE enrollment.student_id = $1
           AND rooms.deleted_at IS NULL
         GROUP BY rooms.id, rooms.name, rooms.semester
@@ -125,7 +127,9 @@ export class PgRoomRepository implements RoomRepository {
 
   async findStudents(roomId: string): Promise<RoomStudentSummary[]> {
     return this.rooms.query<RoomStudentSummary[]>(
-      `SELECT users.name, enrollment.joined_at AS "joinedAt"
+      `SELECT users.id, users.name, users.email,
+              users.registration_number AS "registrationNumber",
+              enrollment.joined_at AS "joinedAt"
          FROM room_students enrollment
          JOIN users ON users.id = enrollment.student_id
         WHERE enrollment.room_id = $1

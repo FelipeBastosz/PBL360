@@ -33,4 +33,5 @@ export const ROUTES = {
   sessionRollCall: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/chamada',
   sessionEvaluationsList: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar',
   studentEvaluation: '/sessoes/:sessionId/avaliacao/:studentId',
+  problemGrades: '/turmas/:roomId/problemas/:problemId/notas',
 } as const;

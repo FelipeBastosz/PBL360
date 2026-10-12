@@ -13,10 +13,11 @@ describe('DeletePerformanceTableUseCase', () => {
     repository = {
       create: jest.fn(),
       findSummariesByTutorId: jest.fn(),
+      findTablesByRoom: jest.fn(),
       findById: jest.fn(),
       softDelete: jest.fn(),
       update: jest.fn(),
-      findUsageById: jest.fn(),
+      findUsageById: jest.fn().mockResolvedValue({ problemCount: 0, sessionCount: 0 }),
       findByIdIncludingDeleted: jest.fn(),
     };
     useCase = new DeletePerformanceTableUseCase(repository);
@@ -50,9 +51,8 @@ describe('DeletePerformanceTableUseCase', () => {
   });
 
   it('propagates persistence failures', async () => {
-    repository.findById.mockResolvedValue(
-      Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null }),
-    );
+    const table = Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null });
+    repository.findById.mockResolvedValue(table);
     repository.softDelete.mockRejectedValue(new Error('Database failure'));
 
     await expect(useCase.execute({ tableId, tutorId })).rejects.toThrow('Database failure');

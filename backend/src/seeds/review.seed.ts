@@ -68,15 +68,15 @@ async function seedReviewRoles(
 ): Promise<void> {
   const [s1, s2] = sessionIds;
   await ds.query(
-    `INSERT INTO session_roles (session_id, student_id, role, bonus_score)
-     VALUES ($1, $2, 'COORDINATOR', 0.5), ($1, $3, 'TABLE_SECRETARY', 0.5)
-     ON CONFLICT (session_id, student_id) DO UPDATE SET role = EXCLUDED.role;`,
+    `INSERT INTO session_roles (session_id, student_id, role, role_score)
+     VALUES ($1, $2, 'COORDINATOR', 5.0), ($1, $3, 'TABLE_SECRETARY', 5.0)
+     ON CONFLICT (session_id, student_id) DO UPDATE SET role = EXCLUDED.role, role_score = EXCLUDED.role_score;`,
     [s1, users.student1.id, users.student2.id],
   );
   await ds.query(
-    `INSERT INTO session_roles (session_id, student_id, role, bonus_score)
-     VALUES ($1, $2, 'TABLE_SECRETARY', 0.5), ($1, $3, 'COORDINATOR', 0.5)
-     ON CONFLICT (session_id, student_id) DO UPDATE SET role = EXCLUDED.role;`,
+    `INSERT INTO session_roles (session_id, student_id, role, role_score)
+     VALUES ($1, $2, 'TABLE_SECRETARY', 5.0), ($1, $3, 'COORDINATOR', 5.0)
+     ON CONFLICT (session_id, student_id) DO UPDATE SET role = EXCLUDED.role, role_score = EXCLUDED.role_score;`,
     [s2, users.student1.id, users.student2.id],
   );
 }

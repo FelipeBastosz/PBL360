@@ -30,6 +30,12 @@ export class GetStudentEvaluationSummaryUseCase {
       this.evaluations.getSelfAssessment(context, studentId),
       this.feedbacks.findStudentSessionFeedback(sessionId, studentId),
     ]);
-    return toStudentEvaluationSummary(access.session, counts, detail, feedback, now);
+    const readAt = feedback
+      ? await this.feedbacks.findStudentSessionFeedbackReadAt(feedback.id, studentId)
+      : null;
+    const updatedAt = feedback?.editedAt ?? feedback?.createdAt ?? null;
+    const feedbackIsNew =
+      feedback !== null && (readAt === null || (updatedAt !== null && updatedAt > readAt));
+    return toStudentEvaluationSummary(access.session, counts, detail, feedback, feedbackIsNew, now);
   }
 }

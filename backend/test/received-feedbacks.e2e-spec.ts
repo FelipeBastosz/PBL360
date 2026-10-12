@@ -155,6 +155,7 @@ describe('Received feedbacks (e2e)', () => {
       true,
     );
     expect(await views()).toHaveLength(0);
+    expect(await db.query<unknown[]>('SELECT * FROM student_session_feedback_reads;')).toEqual([]);
   });
 
   it('returns an identified tutor, hides scores and shares the first read across both endpoints', async () => {
@@ -209,6 +210,30 @@ describe('Received feedbacks (e2e)', () => {
     expect((visible.body as ProblemBody).sessoes[0]?.feedback?.novo).toBe(true);
     const direct = await api(app, student).get(sessionPath()).expect(200);
     expect((direct.body as FeedbackBody).novo).toBe(false);
+  });
+
+  it('updates the summary read indicator through both endpoints while preserving the first read', async () => {
+    const id = await feedback('SESSAO');
+    await createEvaluation();
+    await api(app, student).get(sessionPath()).expect(200);
+    const firstViews = await views();
+    const [read] = await db.query<[{ feedback_id: string; student_id: string; read_at: Date }]>(
+      'SELECT * FROM student_session_feedback_reads;',
+    );
+    expect(read).toMatchObject({ feedback_id: id, student_id: student.id });
+    for (const path of [problemPath(), sessionPath()]) {
+      await db.query(
+        "UPDATE student_session_feedback_reads SET read_at = '2000-01-01' WHERE feedback_id = $1;",
+        [id],
+      );
+      await api(app, student).get(path).expect(200);
+      const [updated] = await db.query<[{ read_at: Date }]>(
+        'SELECT read_at FROM student_session_feedback_reads WHERE feedback_id = $1 AND student_id = $2;',
+        [id, student.id],
+      );
+      expect(updated.read_at.getTime()).toBeGreaterThan(new Date('2000-01-01').getTime());
+      expect(await views()).toEqual(firstViews);
+    }
   });
 
   it('never reads a colleague feedback even when their id is supplied as a query parameter', async () => {
