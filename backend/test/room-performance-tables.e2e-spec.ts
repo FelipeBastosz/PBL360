@@ -236,8 +236,8 @@ describe('Room Performance Tables (e2e)', () => {
 
     await dataSource.query(
       `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index, status)
-       VALUES ($1, $2, 'Sessão 1', '2026-10-01', 1, 'concluida'),
-              ($1, $2, 'Sessão 2', '2026-10-08', 2, 'agendada');`,
+       VALUES ($1, $2, 'Sessão 1', CURRENT_DATE + 1, 1, 'agendada'),
+              ($1, $2, 'Sessão 2', CURRENT_DATE + 7, 2, 'agendada');`,
       [problem.id, roomTableId],
     );
 
