@@ -9,12 +9,14 @@ import { FEEDBACK_REPOSITORY } from './domain/repositories/feedback.repository';
 import { PgFeedbackRepository } from './infrastructure/database/pg-feedback.repository';
 import { RoomFeedbacksController } from './infrastructure/http/room-feedbacks.controller';
 import { SessionFeedbacksController } from './infrastructure/http/session-feedbacks.controller';
+import { StudentSessionFeedbacksController } from './infrastructure/http/student-session-feedbacks.controller';
 import { FeedbackRevisionsController } from './infrastructure/http/feedback-revisions.controller';
 import { SaveStudentProblemFeedbackUseCase } from './application/use-cases/save-student-problem-feedback.use-case';
 import { SaveGeneralProblemFeedbackUseCase } from './application/use-cases/save-general-problem-feedback.use-case';
 import { GetProblemFeedbacksUseCase } from './application/use-cases/get-problem-feedbacks.use-case';
 import { SaveSessionFeedbackUseCase } from './application/use-cases/save-session-feedback.use-case';
 import { GetSessionFeedbackUseCase } from './application/use-cases/get-session-feedback.use-case';
+import { GetOwnSessionFeedbackUseCase } from './application/use-cases/get-own-session-feedback.use-case';
 import { GetFeedbackRevisionsUseCase } from './application/use-cases/get-feedback-revisions.use-case';
 
 @Module({
@@ -24,13 +26,19 @@ import { GetFeedbackRevisionsUseCase } from './application/use-cases/get-feedbac
     ProblemsModule,
     SessionsModule,
   ],
-  controllers: [RoomFeedbacksController, SessionFeedbacksController, FeedbackRevisionsController],
+  controllers: [
+    RoomFeedbacksController,
+    SessionFeedbacksController,
+    StudentSessionFeedbacksController,
+    FeedbackRevisionsController,
+  ],
   providers: [
     SaveStudentProblemFeedbackUseCase,
     SaveGeneralProblemFeedbackUseCase,
     GetProblemFeedbacksUseCase,
     SaveSessionFeedbackUseCase,
     GetSessionFeedbackUseCase,
+    GetOwnSessionFeedbackUseCase,
     GetFeedbackRevisionsUseCase,
     {
       provide: FEEDBACK_REPOSITORY,

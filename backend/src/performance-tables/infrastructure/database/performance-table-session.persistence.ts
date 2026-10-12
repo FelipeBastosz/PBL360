@@ -31,7 +31,8 @@ const RECALCULATE_SESSION_EVALUATIONS = `
   UPDATE evaluations e
      SET session_score = ROUND(CASE WHEN e.applied_bonus IS NULL THEN weighted_scores.simple_score
                                     ELSE (weighted_scores.simple_score * weighted_scores.criteria_weight
-                                          + e.applied_bonus * 10 * weighted_scores.role_weight) / 100
+                                          + e.applied_bonus * weighted_scores.role_weight)
+                                         / (weighted_scores.criteria_weight + weighted_scores.role_weight)
                                END, 2),
          calculation_version = 'WEIGHTED_SESSION_FORMULA_V3',
          updated_by = $2,

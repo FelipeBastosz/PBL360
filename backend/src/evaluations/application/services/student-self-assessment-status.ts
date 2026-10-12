@@ -12,7 +12,7 @@ export function studentSelfAssessmentStatus(
 ): StudentSelfAssessmentStatus {
   if (!participating) return 'NAO_PARTICIPOU';
   if (evaluationStatus === EvaluationStatus.SUBMITTED) return 'ENVIADA';
-  if (session.selfEvalDeadline && session.selfEvalDeadline <= now) return 'ENCERRADA';
   if (!session.selfEvalReleased) return 'INDISPONIVEL';
+  if (session.selfEvalDeadline && session.selfEvalDeadline <= now) return 'ENCERRADA';
   return evaluationStatus === EvaluationStatus.DRAFT ? 'RASCUNHO' : 'PENDENTE';
 }

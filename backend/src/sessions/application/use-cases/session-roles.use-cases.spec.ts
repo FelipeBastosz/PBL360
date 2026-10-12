@@ -16,13 +16,13 @@ describe('Session role use cases', () => {
           studentId: 'student-1',
           name: 'Student',
           role: SessionRole.COORDINATOR,
-          bonusScore: 0.5,
+          roleScore: 5.0,
         },
       ]),
       assign: jest.fn().mockResolvedValue({
         studentId: 'student-1',
         role: SessionRole.COORDINATOR,
-        bonusScore: 0.5,
+        roleScore: 5.0,
       }),
     };
     access = {
@@ -48,7 +48,7 @@ describe('Session role use cases', () => {
       tutorId: 'tutor-1',
       studentId: 'student-1',
       role: SessionRole.COORDINATOR,
-      bonusScore: 0.5,
+      roleScore: 5.0,
       transfer: true,
     });
     expect(repository.assign).toHaveBeenCalledWith(
@@ -56,7 +56,7 @@ describe('Session role use cases', () => {
       'room-1',
       'student-1',
       SessionRole.COORDINATOR,
-      0.5,
+      5.0,
       true,
     );
   });
@@ -70,7 +70,7 @@ describe('Session role use cases', () => {
         tutorId: 'tutor-1',
         studentId: 'student-2',
         role: SessionRole.COORDINATOR,
-        bonusScore: null,
+        roleScore: null,
         transfer: false,
       }),
     ).rejects.toThrow(ConflictError);
@@ -84,7 +84,7 @@ describe('Session role use cases', () => {
         tutorId: 'tutor-1',
         studentId: 'student-2',
         role: null,
-        bonusScore: null,
+        roleScore: null,
         transfer: false,
       }),
     ).rejects.toThrow(UnprocessableEntityError);

@@ -21,10 +21,14 @@ interface StudentRoomBody {
   nome: string;
   semestre: string;
   totalAlunos: number;
+  totalProblemas: number;
 }
 
 interface RoomStudentBody {
+  id: string;
   nome: string;
+  email: string;
+  matricula: string | null;
   dataEntrada: string;
 }
 
@@ -144,6 +148,11 @@ describe('Rooms (e2e)', () => {
         'INSERT INTO room_students (room_id, student_id) VALUES ($1, $2), ($1, $3), ($4, $3);',
         [room.id, student.id, secondStudent.id, unrelatedRoomBody.id],
       );
+      await dataSource.query(
+        `INSERT INTO problems (room_id, title, order_index, created_by)
+         VALUES ($1, 'Problema 1', 1, $2), ($1, 'Problema 2', 2, $2), ($3, 'Outro problema', 1, $2);`,
+        [room.id, owner.id, unrelatedRoomBody.id],
+      );
 
       const response = await api(app, student).get('/salas/minhas').expect(200);
       const listedRooms = response.body as StudentRoomBody[];
@@ -154,6 +163,7 @@ describe('Rooms (e2e)', () => {
           nome: room.nome,
           semestre: room.semestre,
           totalAlunos: 2,
+          totalProblemas: 2,
         },
       ]);
     });
@@ -214,7 +224,7 @@ describe('Rooms (e2e)', () => {
   });
 
   describe('GET /salas/:id/alunos', () => {
-    it('lists only student names and enrollment dates for a linked tutor', async () => {
+    it('lists student profile data for a linked tutor and an enrolled student', async () => {
       const room = await createRoom();
       const secondStudent = await insertUser(
         app,
@@ -238,7 +248,18 @@ describe('Rooms (e2e)', () => {
       expect(listedStudents.every((entry) => Number.isFinite(Date.parse(entry.dataEntrada)))).toBe(
         true,
       );
-      expect(Object.keys(listedStudents[0])).toEqual(['nome', 'dataEntrada']);
+      expect(listedStudents).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: student.id,
+            email: student.email,
+            matricula: student.email.slice(0, 8),
+          }),
+          expect.objectContaining({ id: secondStudent.id }),
+        ]),
+      );
+
+      await api(app, student).get(`/salas/${room.id}/alunos`).expect(200, listedStudents);
     });
 
     it('is forbidden to a tutor not linked to the room', async () => {
@@ -247,7 +268,7 @@ describe('Rooms (e2e)', () => {
       await api(app, colleague).get(`/salas/${room.id}/alunos`).expect(403);
     });
 
-    it('is forbidden to students', async () => {
+    it('is forbidden to students who are not enrolled', async () => {
       const room = await createRoom();
 
       await api(app, student).get(`/salas/${room.id}/alunos`).expect(403);

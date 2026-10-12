@@ -37,9 +37,9 @@ describe('recalculateEvaluation', () => {
     expect(current.updatedBy).toBe('original-author');
   });
 
-  it('preserves the role bonus applied at submission', () => {
+  it('preserves the role score applied at submission', () => {
     const current = evaluation();
-    current.appliedBonus = 0.8;
+    current.appliedBonus = 8;
     expect(recalculateEvaluation(current, config)?.sessionScore).toBe(7.72);
   });
 

@@ -245,13 +245,13 @@ describe('Tutor evaluations (e2e)', () => {
     await api(app, owner)
       .put(`/sessoes/${sessionId}/papeis/${student.id}`, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       })
       .expect(200);
     const sent = await submit().expect(200);
     expect((sent.body as EvaluationBody).notaSessao).toBe(7.45);
     await api(app, owner)
-      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaAdicional: 1 })
+      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaPapel: 10 })
       .expect(200);
     const adjusted = await save({
       itens: scores(8, 9),
@@ -260,8 +260,36 @@ describe('Tutor evaluations (e2e)', () => {
     }).expect(200);
     expect(adjusted.body as EvaluationBody).toMatchObject({
       notaSessao: 7.63,
-      adicionalAplicado: 0.5,
+      adicionalAplicado: 5,
       enviadaEm: (sent.body as EvaluationBody).enviadaEm,
+    });
+  });
+  it('preserves the role score scale when propagating criterion weights', async () => {
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaPapel: 5 })
+      .expect(200);
+    await submit().expect(200);
+    await api(app, owner)
+      .put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Critérios',
+        propagarParaSessoes: true,
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', peso: 6, ordem: 1 },
+          { id: secondCriterionId, nome: 'Autonomia', peso: 4, ordem: 2 },
+        ],
+      })
+      .expect(200);
+    const [stored] = await db.query<[{ score: string; roleScore: string }]>(
+      `SELECT session_score AS score, applied_bonus AS "roleScore" FROM evaluations
+        WHERE session_id = $1 AND student_id = $2 AND type = 'TUTOR_SESSION';`,
+      [sessionId, student.id],
+    );
+    expect(Number(stored.score)).toBe(6.96);
+    expect(Number(stored.roleScore)).toBe(5);
+    const response = await api(app, owner).get(evaluationPath()).expect(200);
+    expect(response.body as EvaluationBody).toMatchObject({
+      notaSessao: 6.96,
+      adicionalAplicado: 5,
     });
   });
   it('blocks table replacement and session deletion after a submitted evaluation', async () => {
@@ -370,7 +398,7 @@ describe('Tutor evaluations (e2e)', () => {
       [sessionId, student.id, firstCriterionId, secondCriterionId],
     );
     await api(app, owner)
-      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaAdicional: 1 })
+      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaPapel: 10 })
       .expect(200);
     const response = await api(app, owner).get(`${problemPath()}/notas`).expect(200);
     const body = response.body as {
