@@ -113,10 +113,10 @@ describe('Session Authorization Matrix (e2e)', () => {
     criterionId = criterion.id;
 
     const [problem] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO problems (room_id, title, description, order_index, created_by, performance_table_id)
-       VALUES ($1, 'Problema Matriz', 'Descrição', 1, $2, $3)
+      `INSERT INTO problems (room_id, title, description, order_index, created_by)
+       VALUES ($1, 'Problema Matriz', 'Descrição', 1, $2)
        RETURNING id;`,
-      [roomId, ownerTutorId, perfTable.id],
+      [roomId, ownerTutorId],
     );
     problemId = problem.id;
 

@@ -96,9 +96,9 @@ describe('Peer evaluations (e2e)', () => {
     crit2Id = criteria[1]!.id;
 
     const [problem] = await db.query<[{ id: string }]>(
-      `INSERT INTO problems (room_id, title, order_index, created_by, performance_table_id)
-       VALUES ($1, 'Problema 1', 1, $2, $3) RETURNING id;`,
-      [roomId, owner.id, tableId],
+      `INSERT INTO problems (room_id, title, order_index, created_by)
+       VALUES ($1, 'Problema 1', 1, $2) RETURNING id;`,
+      [roomId, owner.id],
     );
     problemId = problem.id;
 

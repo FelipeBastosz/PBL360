@@ -108,7 +108,10 @@ export class MoveEvaluationConfigToSessions1792000000000 implements MigrationInt
         ON formulas(session_id) WHERE scope = 'SESSAO' AND active = TRUE;
       ALTER TABLE formulas DROP COLUMN legacy_formula_id;
 
-      UPDATE problems SET performance_table_id = NULL;
+      DROP INDEX IF EXISTS idx_problems_performance_table_id;
+      ALTER TABLE problems
+        DROP CONSTRAINT IF EXISTS fk_problems_performance_table,
+        DROP COLUMN IF EXISTS performance_table_id;
 
       CREATE FUNCTION assign_session_performance_table() RETURNS TRIGGER AS $$
       DECLARE
@@ -187,10 +190,22 @@ export class MoveEvaluationConfigToSessions1792000000000 implements MigrationInt
       INSERT INTO formula_components (id, formula_id, type, reference_id, weight)
       SELECT id, formula_id, type, reference_id, weight
         FROM move_evaluation_config_component_backup;
+      ALTER TABLE problems
+        ADD COLUMN IF NOT EXISTS performance_table_id UUID;
       UPDATE problems p
          SET performance_table_id = b.performance_table_id
         FROM move_evaluation_config_problem_table_backup b
        WHERE b.id = p.id;
+      ALTER TABLE problems
+        DROP CONSTRAINT IF EXISTS fk_problems_performance_table;
+      DROP INDEX IF EXISTS idx_problems_performance_table_id;
+      ALTER TABLE problems
+        ADD CONSTRAINT fk_problems_performance_table
+          FOREIGN KEY (performance_table_id)
+          REFERENCES performance_tables(id)
+          ON DELETE RESTRICT;
+      CREATE INDEX IF NOT EXISTS idx_problems_performance_table_id
+        ON problems(performance_table_id);
 
       DROP INDEX IF EXISTS idx_sessions_performance_table_id;
       ALTER TABLE sessions

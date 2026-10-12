@@ -1,5 +1,6 @@
 import {
   Column,
+  Check,
   CreateDateColumn,
   Entity,
   Index,
@@ -10,6 +11,7 @@ import {
 } from 'typeorm';
 import { User } from '@/users/domain/entities/user.entity';
 import { Problem } from './problem.entity';
+import { Session } from '@/sessions/domain/entities/session.entity';
 import { FormulaComponent } from './formula-component.entity';
 import { InvalidProblemError } from '../errors/invalid-problem.error';
 
@@ -34,8 +36,17 @@ export type NewFormula = {
 };
 
 @Entity('formulas')
+@Check(
+  'ck_formulas_owner_scope',
+  `("scope" = 'PROBLEMA' AND "problem_id" IS NOT NULL AND "session_id" IS NULL)
+   OR ("scope" = 'SESSAO' AND "problem_id" IS NULL AND "session_id" IS NOT NULL)`,
+)
 @Index('idx_formulas_problem_scope', ['problemId', 'scope'])
 @Index('idx_formulas_session_scope', ['sessionId', 'scope'])
+@Index('uq_formulas_active_session', ['sessionId'], {
+  unique: true,
+  where: `"scope" = 'SESSAO' AND "active" = TRUE`,
+})
 export class Formula {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -56,6 +67,14 @@ export class Formula {
 
   @Column({ name: 'session_id', type: 'uuid', nullable: true })
   sessionId: string | null;
+
+  @ManyToOne(() => Session, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'session_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_formulas_session',
+  })
+  session: Session | null;
 
   @Column({ type: 'int', default: 1 })
   version: number;

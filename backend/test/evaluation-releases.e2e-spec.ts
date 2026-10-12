@@ -95,9 +95,9 @@ describe('Evaluation releases (e2e)', () => {
       [owner.id],
     );
     const [problem] = await db.query<[{ id: string }]>(
-      `INSERT INTO problems (room_id, title, order_index, created_by, performance_table_id)
-       VALUES ($1, 'Problema', 1, $2, $3) RETURNING id;`,
-      [room.id, owner.id, table.id],
+      `INSERT INTO problems (room_id, title, order_index, created_by)
+       VALUES ($1, 'Problema', 1, $2) RETURNING id;`,
+      [room.id, owner.id],
     );
     const sessions = await db.query<{ id: string }[]>(
       `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index, status)

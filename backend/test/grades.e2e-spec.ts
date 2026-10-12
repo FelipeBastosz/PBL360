@@ -98,10 +98,10 @@ describe('Grades (e2e)', () => {
 
     const [problem] = await dataSource.query<[{ id: string }]>(
       `INSERT INTO problems
-        (room_id, title, description, order_index, created_by, performance_table_id)
-       VALUES ($1, 'Problema de notas', 'Problema para teste de notas', 1, $2, $3)
+        (room_id, title, description, order_index, created_by)
+       VALUES ($1, 'Problema de notas', 'Problema para teste de notas', 1, $2)
        RETURNING id;`,
-      [roomId, tutorId, performanceTable.id],
+      [roomId, tutorId],
     );
     problemId = problem.id;
 

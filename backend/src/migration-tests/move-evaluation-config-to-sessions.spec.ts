@@ -21,6 +21,8 @@ describe('MoveEvaluationConfigToSessions1792000000000', () => {
     expect(executedSql).toContain('SELECT NULL, s.id, f.id, f.scope, f.version');
     expect(executedSql).toContain("SELECT NULL, s.id, 'SESSAO', 1, TRUE, TRUE");
     expect(executedSql).toContain('CREATE TABLE move_evaluation_config_component_backup');
+    expect(executedSql).toContain('DROP CONSTRAINT IF EXISTS fk_problems_performance_table');
+    expect(executedSql).toContain('DROP COLUMN IF EXISTS performance_table_id');
   });
 
   it('restores problem table assignments and legacy session formulas on rollback', async () => {
@@ -36,6 +38,7 @@ describe('MoveEvaluationConfigToSessions1792000000000', () => {
     expect(executedSql).toContain('FROM move_evaluation_config_formula_backup');
     expect(executedSql).toContain('FROM move_evaluation_config_component_backup');
     expect(executedSql).toContain('FROM move_evaluation_config_problem_table_backup');
+    expect(executedSql).toContain('ADD CONSTRAINT fk_problems_performance_table');
     expect(executedSql).toContain('DROP TABLE move_evaluation_config_formula_backup');
   });
 });

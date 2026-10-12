@@ -135,10 +135,10 @@ describe('Review Walkthrough Flow & Calculation Verification (e2e)', () => {
     criterion2Id = c2.id;
 
     const [problem] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO problems (room_id, title, description, order_index, created_by, performance_table_id)
-       VALUES ($1, 'Problema 1 - Prontuário Eletrônico', 'Descrição da Review', 1, $2, $3)
+      `INSERT INTO problems (room_id, title, description, order_index, created_by)
+       VALUES ($1, 'Problema 1 - Prontuário Eletrônico', 'Descrição da Review', 1, $2)
        RETURNING id;`,
-      [roomId, tutorId, tableId],
+      [roomId, tutorId],
     );
     problemId = problem.id;
 
