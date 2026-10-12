@@ -1,0 +1,42 @@
+export interface StudentProblemFeedbackResponse {
+  id: string;
+  escopo: 'ALUNO';
+  destinatarioId: string;
+  nota: number | null;
+  texto: string;
+  criadoEm: string;
+  editadoEm: string | null;
+}
+
+export interface GeneralFeedbackResponse {
+  id: string;
+  escopo: 'PROBLEMA';
+  texto: string;
+  criadoEm: string;
+  editadoEm: string | null;
+}
+
+export interface StudentWithFeedback {
+  alunoId: string;
+  nome: string;
+  feedback: StudentProblemFeedbackResponse | null;
+}
+
+export interface ProblemFeedbacksResponse {
+  geral: GeneralFeedbackResponse | null;
+  alunos: StudentWithFeedback[];
+}
+
+export interface SaveStudentFeedbackPayload {
+  escopo: 'ALUNO';
+  destinatario_id: string;
+  nota: number;
+  texto: string;
+}
+
+export interface SaveGeneralFeedbackPayload {
+  escopo: 'PROBLEMA';
+  destinatario_id: null;
+  nota: null;
+  texto: string;
+}
