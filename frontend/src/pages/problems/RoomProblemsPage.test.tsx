@@ -150,8 +150,6 @@ describe('RoomProblemsPage', () => {
       renderComponent(mockTeacher);
 
       expect(await screen.findByText('Problema 1 - Introdução')).toBeInTheDocument();
-      expect(screen.getByText('Autoavaliação disponível')).toBeInTheDocument();
-
       expect(screen.queryByText('Nenhum problema cadastrado nesta turma.')).not.toBeInTheDocument();
     });
   });

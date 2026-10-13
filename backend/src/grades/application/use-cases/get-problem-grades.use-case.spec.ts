@@ -25,6 +25,8 @@ describe('GetProblemGradesUseCase', () => {
     attendances: [],
     roles: [],
     criteria: [],
+    selfScores: [],
+    peerScores: [],
   };
 
   beforeEach(() => {
@@ -147,5 +149,66 @@ describe('GetProblemGradesUseCase', () => {
       { id: 'sess-1', rotulo: 'Sessão 1', title: 'Sessão 1', nome: 'Sessão 1', data: '2026-10-06' },
       { id: 'sess-4', rotulo: 'Sessão 4', title: 'Sessão 4', nome: 'Sessão 4', data: '2026-10-12' },
     ]);
+  });
+
+  it('feeds the self and peer components of the final formula from each session', async () => {
+    const now = new Date('2026-10-12T12:00:00.000Z');
+    gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
+    gradesRepository.findProblemData.mockResolvedValue({
+      ...emptyData,
+      sessions: [
+        {
+          id: 'session-1',
+          date: '2026-10-02',
+          self_eval_released: true,
+          self_eval_deadline_ms: Date.parse('2026-10-05T12:00:00.000Z'),
+          peer_eval_released: true,
+          peer_eval_deadline_ms: Date.parse('2026-10-05T12:00:00.000Z'),
+        },
+        { id: 'session-2', date: '2026-10-09', self_eval_released: true, peer_eval_released: true },
+      ],
+      students: [{ id: 'student-1', name: 'Ana Souza', matricula: '20260001' }],
+      formulas: [{ id: 'formula-problem', scope: 'PROBLEMA', version: 2 }],
+      scores: [
+        { session_id: 'session-1', student_id: 'student-1', criterion_id: 'c1', score: '8.5' },
+      ],
+      attendances: [
+        { session_id: 'session-1', student_id: 'student-1', status: 'PRESENT' },
+        { session_id: 'session-2', student_id: 'student-1', status: 'PRESENT' },
+      ],
+      criteria: [{ id: 'c1', session_id: 'session-1', weight: 1 }],
+      selfScores: [{ session_id: 'session-1', student_id: 'student-1', score: '9.00' }],
+      peerScores: [
+        { session_id: 'session-1', student_id: 'student-1', score: '8.00' },
+        { session_id: 'session-1', student_id: 'student-1', score: '6.00' },
+      ],
+    });
+    gradesRepository.findFormulaComponents.mockResolvedValue([
+      { formula_id: 'formula-problem', type: 'MEDIA_SESSOES', weight: '60' },
+      { formula_id: 'formula-problem', type: 'AUTOAVALIACAO', weight: '20' },
+      { formula_id: 'formula-problem', type: 'PARES', weight: '20' },
+    ]);
+
+    const result = await useCase.execute(input, now);
+
+    expect(result.alunos[0]).toMatchObject({
+      notaFinal: 8.3,
+      autoavaliacao: { nota: 9, situacao: 'AVALIADA' },
+      pares: { nota: 7, situacao: 'AVALIADA' },
+      sessoes: [
+        {
+          sessaoId: 'session-1',
+          nota: 8.5,
+          situacao: 'AVALIADA',
+          autoavaliacao: { nota: 9, situacao: 'AVALIADA' },
+          pares: { nota: 7, situacao: 'AVALIADA' },
+        },
+        {
+          sessaoId: 'session-2',
+          autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+          pares: { nota: null, situacao: 'PENDENTE' },
+        },
+      ],
+    });
   });
 });

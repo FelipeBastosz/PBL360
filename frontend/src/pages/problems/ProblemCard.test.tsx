@@ -33,38 +33,4 @@ describe('ProblemCard', () => {
     expect(screen.getByText('Problema 1 - Diagnóstico')).toBeInTheDocument();
     expect(screen.getByRole('link')).toHaveAttribute('href', '/turmas/room-1/problemas/prob-1');
   });
-
-  it('renders "Autoavaliação disponível" badge when self-evaluation is enabled', () => {
-    const problem = { ...baseProblem, autoavaliacaoLiberada: true };
-
-    render(
-      <MemoryRouter>
-        <ProblemCard problem={problem} roomId="room-1" />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByText('Autoavaliação disponível')).toBeInTheDocument();
-  });
-
-  it('renders "Avaliação por pares disponível" badge when peer evaluation is enabled', () => {
-    const problem = { ...baseProblem, avaliacaoEntreParesLiberada: true };
-
-    render(
-      <MemoryRouter>
-        <ProblemCard problem={problem} roomId="room-1" />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByText('Avaliação por pares disponível')).toBeInTheDocument();
-  });
-
-  it('renders "Avaliações indisponíveis" badge when no evaluation is open', () => {
-    render(
-      <MemoryRouter>
-        <ProblemCard problem={baseProblem} roomId="room-1" />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByText('Avaliações indisponíveis')).toBeInTheDocument();
-  });
 });

@@ -33,5 +33,10 @@ export const ROUTES = {
   sessionRollCall: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/chamada',
   sessionEvaluationsList: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar',
   studentEvaluation: '/sessoes/:sessionId/avaliacao/:studentId',
+  sessionStudentEvaluation:
+    '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId',
+  studentObservationTags: '/sessoes/:sessionId/avaliacao/:studentId/marcacoes',
+  sessionStudentObservationTags:
+    '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId/marcacoes',
   problemGrades: '/turmas/:roomId/problemas/:problemId/notas',
 } as const;

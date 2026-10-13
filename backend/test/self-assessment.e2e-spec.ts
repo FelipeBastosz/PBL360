@@ -161,6 +161,9 @@ describe('Student self-assessment (e2e)', () => {
   });
 
   it('marks feedback new until the student opens it, then new again after an edit', async () => {
+    await api(app, tutor)
+      .put(`/sessoes/${sessionId}/avaliacoes/${student.id}`, { itens: items(), enviar: true })
+      .expect(200);
     await db.query(
       `INSERT INTO feedback (autor_id, problema_id, destinatario_id, sessao_id, escopo, texto)
        VALUES ($1, $2, $3, $4, 'SESSAO', 'Boa participação.');`,
@@ -174,7 +177,11 @@ describe('Student self-assessment (e2e)', () => {
     });
 
     const feedback = await api(app, student).get(feedbackPath()).expect(200);
-    expect(feedback.body).toMatchObject({ escopo: 'SESSAO', texto: 'Boa participação.' });
+    expect(feedback.body).toMatchObject({
+      autor: { id: tutor.id },
+      texto: 'Boa participação.',
+      novo: true,
+    });
 
     const readSummary = await api(app, student).get(summaryPath()).expect(200);
     expect((readSummary.body as StudentEvaluationSummaryBody).feedback).toMatchObject({

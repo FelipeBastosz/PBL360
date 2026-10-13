@@ -23,19 +23,10 @@ export class PgGradesRepository implements GradesRepository {
 
   async findProblemData(roomId: string, problemId: string): Promise<ProblemGradeData> {
     const queries = buildProblemQueries(roomId, problemId);
-    const [
-      sessions = [],
-      students = [],
-      formulas = [],
-      scores = [],
-      attendances = [],
-      roles = [],
-      criteria = [],
-    ] = await this.grades.transaction('REPEATABLE READ', (manager) =>
+    const results = await this.grades.transaction('REPEATABLE READ', (manager) =>
       Promise.all(queries.map(({ sql, params }) => manager.query<GradeRow[]>(sql, params))),
     );
-
-    return { sessions, students, formulas, scores, attendances, roles, criteria };
+    return toProblemGradeData(results);
   }
 
   async findFormulaComponents(formulaIds: unknown[]): Promise<GradeRow[]> {
@@ -68,4 +59,19 @@ export class PgGradesRepository implements GradesRepository {
       }
     });
   }
+}
+
+function toProblemGradeData(results: GradeRow[][]): ProblemGradeData {
+  const at = (index: number): GradeRow[] => results[index] ?? [];
+  return {
+    sessions: at(0),
+    students: at(1),
+    formulas: at(2),
+    scores: at(3),
+    attendances: at(4),
+    roles: at(5),
+    criteria: at(6),
+    selfScores: at(7),
+    peerScores: at(8),
+  };
 }
