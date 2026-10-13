@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import type { UserResponse } from '@/types/auth';
 import type { Problem } from '@/types/problem';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
@@ -29,7 +29,7 @@ export function ManageSessionsHeader({ problem, userNome, user, backUrl }: Heade
             {problem?.titulo || 'Gerenciar Sessões'}
           </h1>
         </div>
-        <UserAvatar
+        <UserMenuButton
           user={user ?? { id: '', nome: userNome ?? '', possuiFoto: false }}
           className="ring-2 ring-white/20"
         />

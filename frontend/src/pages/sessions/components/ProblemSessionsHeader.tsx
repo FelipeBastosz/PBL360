@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import type { UserResponse } from '@/types/auth';
 import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
@@ -44,7 +44,7 @@ export function ProblemSessionsHeader({
             {turma && <span className="text-xs text-white/70">{turma}</span>}
           </div>
         </div>
-        <UserAvatar
+        <UserMenuButton
           user={user ?? { id: '', nome: userNome ?? '', possuiFoto: false }}
           className="ring-2 ring-white/20"
         />

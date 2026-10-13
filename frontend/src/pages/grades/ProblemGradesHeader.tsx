@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
@@ -47,7 +47,7 @@ export function ProblemGradesHeader({ room, problem, backTo }: ProblemGradesHead
             {turma && <span className="text-xs text-white/70">{turma}</span>}
           </div>
         </div>
-        <UserAvatar user={user} className="animate-pop-in ring-2 ring-white/20" />
+        <UserMenuButton user={user} className="animate-pop-in ring-2 ring-white/20" />
       </div>
     </header>
   );

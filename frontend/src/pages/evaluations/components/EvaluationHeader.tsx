@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
@@ -26,7 +26,7 @@ export function EvaluationHeader({ onBack }: { onBack?: () => void }) {
             <span className="text-xs text-white/70">Aluno</span>
           </div>
         </div>
-        <UserAvatar user={user} />
+        <UserMenuButton user={user} />
       </div>
     </header>
   );

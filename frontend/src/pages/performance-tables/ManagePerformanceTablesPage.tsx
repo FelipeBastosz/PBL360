@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,7 +29,7 @@ function ManageHeader() {
           </button>
           <h1 className="text-lg font-bold">Fórmulas</h1>
         </div>
-        <UserAvatar user={user} />
+        <UserMenuButton user={user} />
       </div>
     </header>
   );

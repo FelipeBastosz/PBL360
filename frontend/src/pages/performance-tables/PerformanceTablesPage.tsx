@@ -4,7 +4,7 @@ import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { FabMenu } from '@/components/ui/FabMenu';
 import { SearchField } from '@/components/ui/SearchField';
 import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,7 +33,7 @@ function PerformanceTablesHeader() {
           </button>
           <h1 className="text-lg font-bold">Fórmulas</h1>
         </div>
-        <UserAvatar user={user} />
+        <UserMenuButton user={user} />
       </div>
     </header>
   );

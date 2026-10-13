@@ -1,5 +1,5 @@
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 
 type PokerHeaderProps = {
@@ -25,7 +25,7 @@ export function PokerHeader({ title, subtitle, onBack }: PokerHeaderProps) {
         <h1 className="truncate text-base leading-tight font-semibold">{title}</h1>
         <span className="truncate text-xs text-white/70">{subtitle}</span>
       </div>
-      <UserAvatar user={user} className="ring-2 ring-white/20" />
+      <UserMenuButton user={user} className="ring-2 ring-white/20" />
     </header>
   );
 }
