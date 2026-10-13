@@ -6,11 +6,6 @@ import {
   type RoomStudentSummary,
 } from '../../domain/repositories/room.repository';
 
-export interface ListRoomStudentsInput {
-  roomId: string;
-  member: RoomMember;
-}
-
 @Injectable()
 export class ListRoomStudentsUseCase {
   constructor(
@@ -18,7 +13,7 @@ export class ListRoomStudentsUseCase {
     private readonly roomAccess: RoomAccessService,
   ) {}
 
-  async execute({ roomId, member }: ListRoomStudentsInput): Promise<RoomStudentSummary[]> {
+  async execute(roomId: string, member: RoomMember): Promise<RoomStudentSummary[]> {
     await this.roomAccess.assertMemberCanAccessRoom(roomId, member);
     return this.rooms.findStudents(roomId);
   }

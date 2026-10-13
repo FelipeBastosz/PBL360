@@ -5,7 +5,7 @@ import { type EntityManager, Repository } from 'typeorm';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { ConflictError } from '@/shared/errors/application.error';
 
-import { hasProblemEvaluations, updateProblemDetails } from './problem-update.persistence';
+import { updateProblemDetails } from './problem-update.persistence';
 
 import { Problem } from '../../domain/entities/problem.entity';
 import type {
@@ -25,7 +25,6 @@ interface ProblemRow {
   peerEvalReleased: boolean;
   releasedAt: Date | null;
   selfEvalDeadline: Date | null;
-  performanceTableId: string | null;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -44,7 +43,6 @@ const PROBLEM_COLUMNS = `
   peer_eval_released AS "peerEvalReleased",
   released_at AS "releasedAt",
   self_eval_deadline AS "selfEvalDeadline",
-  performance_table_id AS "performanceTableId",
   created_by AS "createdBy",
   created_at AS "createdAt",
   updated_at AS "updatedAt",
@@ -99,10 +97,6 @@ export class PgProblemRepository implements ProblemRepository {
     return Number(firstRowOrNull(rows)?.count ?? 0);
   }
 
-  hasEvaluations(problemId: string): Promise<boolean> {
-    return hasProblemEvaluations(this.problems.manager, problemId);
-  }
-
   updateDetails(input: UpdateProblemDetails): Promise<Problem> {
     return this.problems.manager.transaction(async (manager) => {
       await updateProblemDetails(manager, input);
@@ -112,10 +106,6 @@ export class PgProblemRepository implements ProblemRepository {
       );
       return this.toEntity(requireFirstRow(rows, 'Failed to update problem.'));
     });
-  }
-
-  save(problem: Problem): Promise<Problem> {
-    return this.problems.save(problem);
   }
 
   create(problem: Problem): Promise<Problem> {
@@ -179,10 +169,10 @@ export class PgProblemRepository implements ProblemRepository {
       `INSERT INTO problems (
           room_id, title, description, order_index, start_date, end_date,
           self_eval_released, peer_eval_released, released_at, self_eval_deadline,
-          performance_table_id, created_by
+          created_by
         )
         SELECT $1, $2, $3, COALESCE(MAX(order_index), 0) + 1, $4::date, $5::date,
-               $6, $7, $8, $9, $10, $11
+               $6, $7, $8, $9, $10
         FROM problems
         WHERE room_id = $1
         RETURNING ${PROBLEM_COLUMNS};`,
@@ -203,7 +193,6 @@ export class PgProblemRepository implements ProblemRepository {
       problem.peerEvalReleased,
       problem.releasedAt ?? null,
       problem.selfEvalDeadline ?? null,
-      problem.performanceTableId ?? null,
       problem.createdBy,
     ];
   }

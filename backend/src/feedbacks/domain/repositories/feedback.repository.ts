@@ -21,6 +21,12 @@ export interface FeedbackRepository {
   findStudentProblemFeedback(problemId: string, studentId: string): Promise<Feedback | null>;
   findGeneralProblemFeedback(problemId: string): Promise<Feedback | null>;
   findStudentSessionFeedback(sessionId: string, studentId: string): Promise<Feedback | null>;
+  findStudentSessionFeedbackReadAt(feedbackId: string, studentId: string): Promise<Date | null>;
+  markStudentSessionFeedbackRead(
+    feedbackId: string,
+    studentId: string,
+    readAt: Date,
+  ): Promise<void>;
   saveWithRevision(feedback: Feedback, revision: FeedbackRevision | null): Promise<Feedback>;
   findRevisionsByFeedbackId(feedbackId: string): Promise<FeedbackRevisionItem[]>;
   isStudentEnrolledInRoom(roomId: string, studentId: string): Promise<boolean>;

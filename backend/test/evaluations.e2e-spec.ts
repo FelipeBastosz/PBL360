@@ -99,15 +99,15 @@ describe('Tutor evaluations (e2e)', () => {
     firstCriterionId = criteria[0]!.id;
     secondCriterionId = criteria[1]!.id;
     const [problem] = await db.query<[{ id: string }]>(
-      `INSERT INTO problems (room_id, title, order_index, created_by, performance_table_id)
-       VALUES ($1, 'Problema', 1, $2, $3) RETURNING id;`,
-      [roomId, owner.id, tableId],
+      `INSERT INTO problems (room_id, title, order_index, created_by)
+       VALUES ($1, 'Problema', 1, $2) RETURNING id;`,
+      [roomId, owner.id],
     );
     problemId = problem.id;
     const sessions = await db.query<{ id: string }[]>(
-      `INSERT INTO sessions (problem_id, title, date, order_index, status)
-       VALUES ($1, 'Primeira', '2026-10-05', 1, 'agendada'), ($1, 'Segunda', '2026-10-06', 2, 'agendada') RETURNING id;`,
-      [problemId],
+      `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index, status)
+       VALUES ($1, $2, 'Primeira', '2099-10-05', 1, 'agendada'), ($1, $2, 'Segunda', '2099-10-06', 2, 'agendada') RETURNING id;`,
+      [problemId, tableId],
     );
     sessionId = sessions[0]!.id;
     nextSessionId = sessions[1]!.id;
@@ -140,13 +140,13 @@ describe('Tutor evaluations (e2e)', () => {
     expect(await count('evaluations')).toBe(0);
     expect(await count('session_evaluation_configs')).toBe(0);
   });
-  it('lets another room tutor continue the same draft and submit a weighted grade', async () => {
+  it('lets another room tutor submit the simple grade when no cargo is assigned', async () => {
     await save({ itens: scores().slice(0, 1), enviar: false }).expect(200);
     const response = await save({ itens: scores(), enviar: true }, coTutor).expect(200);
     expect(response.body as EvaluationBody).toMatchObject({
       status: 'ENVIADA',
       notaSessao: 8.5,
-      adicionalAplicado: 0,
+      adicionalAplicado: null,
     });
     expect(await count('evaluations')).toBe(1);
     const list = await api(app, owner).get(`/sessoes/${sessionId}/avaliacoes`).expect(200);
@@ -245,13 +245,13 @@ describe('Tutor evaluations (e2e)', () => {
     await api(app, owner)
       .put(`/sessoes/${sessionId}/papeis/${student.id}`, {
         papel: 'COORDENADOR',
-        notaAdicional: 0.5,
+        notaPapel: 5,
       })
       .expect(200);
     const sent = await submit().expect(200);
-    expect((sent.body as EvaluationBody).notaSessao).toBe(9);
+    expect((sent.body as EvaluationBody).notaSessao).toBe(7.45);
     await api(app, owner)
-      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaAdicional: 1 })
+      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaPapel: 10 })
       .expect(200);
     const adjusted = await save({
       itens: scores(8, 9),
@@ -259,30 +259,26 @@ describe('Tutor evaluations (e2e)', () => {
       justificativa: 'Correção da participação',
     }).expect(200);
     expect(adjusted.body as EvaluationBody).toMatchObject({
-      notaSessao: 9.25,
-      adicionalAplicado: 0.5,
+      notaSessao: 7.63,
+      adicionalAplicado: 5,
       enviadaEm: (sent.body as EvaluationBody).enviadaEm,
     });
   });
-  it('blocks table replacement and session deletion after even an empty draft', async () => {
-    await save({ itens: [], enviar: false }).expect(200);
-    await api(app, owner).put(problemPath(), { title: 'Atualizado', tabelaId: null }).expect(409);
+  it('blocks table replacement and session deletion after a submitted evaluation', async () => {
+    await submit().expect(200);
+    await api(app, owner).put(`/sessoes/${sessionId}/tabela`, { tabelaId: tableId }).expect(409);
     await api(app, owner).put(problemPath(), { title: 'Atualizado' }).expect(200);
-    await api(app, coTutor)
-      .put(problemPath(), { title: 'Atualizado', tabelaId: tableId })
-      .expect(200);
     const sessionPath = `${problemPath()}/sessoes/${sessionId}`;
     const impact = await api(app, owner).get(`${sessionPath}/impacto-exclusao`).expect(200);
     expect(impact.body as { avaliacoes: number }).toMatchObject({ avaliacoes: 1 });
     await api(app, owner).delete(sessionPath).expect(409);
   });
-  it('returns 422 with linking guidance when there is no performance table', async () => {
-    await api(app, owner).put(problemPath(), { title: 'Problema', tabelaId: null }).expect(200);
-    const response = await api(app, owner).get(`${problemPath()}/criterios`).expect(422);
-    expect((response.body as { message: string }).message).toContain('Fórmulas');
-    await submit().expect(422);
-    expect(await count('evaluations')).toBe(0);
-    await api(app, owner).put(problemPath(), { title: 'Problema', tabelaId: tableId }).expect(200);
+  it('rejects an unavailable table for a session without changing its evaluation configuration', async () => {
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/tabela`, {
+        tabelaId: '00000000-0000-4000-8000-000000000000',
+      })
+      .expect(422);
     await submit().expect(200);
   });
   it('does not allow students, outsiders or unauthenticated callers to access evaluations', async () => {
@@ -338,19 +334,14 @@ describe('Tutor evaluations (e2e)', () => {
       await db.query('ALTER TABLE evaluation_items DROP CONSTRAINT test_reject_score;');
     }
   });
-  it('serializes unlinking the table against the first evaluation', async () => {
-    const [evaluation, problem] = await Promise.all([
+  it('serializes changing the session table against the first evaluation', async () => {
+    const [evaluation, configuration] = await Promise.all([
       save({ itens: [], enviar: false }),
-      api(app, owner).put(problemPath(), { title: 'Problema', tabelaId: null }),
+      api(app, owner).put(`/sessoes/${sessionId}/tabela`, { tabelaId: tableId }),
     ]);
-    if (evaluation.status === 200) {
-      expect(problem.status).toBe(409);
-      expect(await count('evaluations')).toBe(1);
-    } else {
-      expect(evaluation.status).toBe(422);
-      expect(problem.status).toBe(200);
-      expect(await count('evaluations')).toBe(0);
-    }
+    expect(evaluation.status).toBe(200);
+    expect(configuration.status).toBe(200);
+    expect(await count('evaluations')).toBe(1);
   });
   it('documents all routes, request fields and business error responses', async () => {
     const response = await api(app).get('/docs/json').expect(200);
@@ -370,5 +361,109 @@ describe('Tutor evaluations (e2e)', () => {
     expect(document.components?.schemas?.TutorEvaluationResponseDto).toHaveProperty(
       'properties.criterios',
     );
+  });
+  it('reads submitted evaluations in the grade report and preserves an absent cargo score', async () => {
+    await submit().expect(200);
+    await db.query(
+      `INSERT INTO criterion_grades (session_id, student_id, criterion_id, score)
+      VALUES ($1, $2, $3, 0), ($1, $2, $4, 0);`,
+      [sessionId, student.id, firstCriterionId, secondCriterionId],
+    );
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaPapel: 10 })
+      .expect(200);
+    const response = await api(app, owner).get(`${problemPath()}/notas`).expect(200);
+    const body = response.body as {
+      alunos: { alunoId: string; sessoes: { sessaoId: string; nota: number | null }[] }[];
+    };
+    expect(
+      body.alunos
+        .find((row) => row.alunoId === student.id)
+        ?.sessoes.find((row) => row.sessaoId === sessionId)?.nota,
+    ).toBe(8.5);
+  });
+
+  it('does not expose legacy scores as submitted grades while a tutor evaluation is a draft', async () => {
+    await save({ itens: scores(), enviar: false }).expect(200);
+    await db.query(
+      `INSERT INTO criterion_grades (session_id, student_id, criterion_id, score)
+      VALUES ($1, $2, $3, 10), ($1, $2, $4, 10);`,
+      [sessionId, student.id, firstCriterionId, secondCriterionId],
+    );
+    const response = await api(app, owner).get(`${problemPath()}/notas`).expect(200);
+    const body = response.body as {
+      alunos: { alunoId: string; sessoes: { sessaoId: string; nota: number | null }[] }[];
+    };
+    expect(
+      body.alunos
+        .find((row) => row.alunoId === student.id)
+        ?.sessoes.find((row) => row.sessaoId === sessionId)?.nota,
+    ).toBeNull();
+  });
+
+  it('serializes a submitted adjustment with propagation of new weights', async () => {
+    await submit().expect(200);
+    const responses = await Promise.all([
+      save({ itens: scores(8, 9), enviar: true, justificativa: 'Revisão da participação' }),
+      api(app, owner).put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Critérios',
+        propagarParaSessoes: true,
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', peso: 6, ordem: 1 },
+          { id: secondCriterionId, nome: 'Autonomia', peso: 4, ordem: 2 },
+        ],
+      }),
+    ]);
+    expect(responses.map((response) => response.status)).toEqual([200, 200]);
+    const response = await api(app, owner).get(evaluationPath()).expect(200);
+    expect((response.body as EvaluationBody).notaSessao).toBe(8.4);
+    expect((response.body as EvaluationBody).ajustes).toHaveLength(1);
+  });
+
+  it('rejects propagating missing criteria into a submitted future-session evaluation', async () => {
+    await db.query('UPDATE sessions SET date = CURRENT_DATE + 10 WHERE problem_id = $1;', [
+      problemId,
+    ]);
+    await submit().expect(200);
+    await api(app, owner)
+      .put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Critérios',
+        propagarParaSessoes: true,
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', peso: 5, ordem: 1 },
+          { nome: 'Novo critério', peso: 5, ordem: 2 },
+        ],
+      })
+      .expect(409);
+    const response = await api(app, owner).get(evaluationPath()).expect(200);
+    expect((response.body as EvaluationBody).notaSessao).toBe(8.5);
+    expect((response.body as EvaluationBody).criterios.map((criterion) => criterion.id)).toEqual([
+      firstCriterionId,
+      secondCriterionId,
+    ]);
+    const current = await api(app, owner).get(`${problemPath()}/criterios`).expect(200);
+    expect((current.body as EvaluationBody).criterios.map((criterion) => criterion.id)).toEqual([
+      firstCriterionId,
+      secondCriterionId,
+    ]);
+  });
+
+  it('removes obsolete draft items when propagating structural edits to a future session', async () => {
+    await db.query('UPDATE sessions SET date = CURRENT_DATE + 10 WHERE problem_id = $1;', [
+      problemId,
+    ]);
+    await save({ itens: scores(), enviar: false }).expect(200);
+    await api(app, owner)
+      .put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Critérios',
+        propagarParaSessoes: true,
+        criterios: [{ id: firstCriterionId, nome: 'Participação', peso: 10, ordem: 1 }],
+      })
+      .expect(200);
+    const response = await api(app, owner).get(evaluationPath()).expect(200);
+    expect((response.body as EvaluationBody).itens).toEqual([
+      { criterioId: firstCriterionId, nota: 7 },
+    ]);
+    await save({ itens: [{ criterioId: firstCriterionId, nota: 7 }], enviar: true }).expect(200);
   });
 });

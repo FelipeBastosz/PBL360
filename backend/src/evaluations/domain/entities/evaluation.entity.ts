@@ -15,7 +15,7 @@ export interface EvaluationRevision {
   submit: boolean;
   justification?: string;
   authorId: string;
-  bonus: number;
+  bonus: number | null;
   now: Date;
 }
 
@@ -64,7 +64,13 @@ export class Evaluation implements Auditable {
     submitted: boolean,
   ): void {
     const bonus = submitted ? this.appliedBonus! : input.bonus;
-    this.sessionScore = SessionGradeCalculator.calculate(input.items, config.criteria, bonus);
+    this.sessionScore = SessionGradeCalculator.calculate(
+      input.items,
+      config.criteria,
+      bonus,
+      true,
+      config.formula,
+    );
     this.appliedBonus = bonus;
     this.calculationVersion = SESSION_CALCULATION_VERSION;
     this.submittedAt ??= input.now;

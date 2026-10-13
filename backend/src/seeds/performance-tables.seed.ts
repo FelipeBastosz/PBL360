@@ -69,13 +69,13 @@ export const SEED_PERFORMANCE_TABLES: SeedPerformanceTableData[] = [
         name: 'Seguimento',
         description: 'Capacidade de seguir as orientações e metodologia do problema.',
         orderIndex: 1,
-        weight: 3,
+        weight: 4,
       },
       {
         name: 'Comportamento',
         description: 'Postura, ética, respeito e cooperação com o grupo.',
         orderIndex: 2,
-        weight: 3,
+        weight: 2,
       },
       {
         name: 'Participação',
@@ -121,13 +121,13 @@ export const SEED_PERFORMANCE_TABLES: SeedPerformanceTableData[] = [
         name: 'Seguimento',
         description: 'Capacidade de seguir as orientações e metodologia do problema.',
         orderIndex: 1,
-        weight: 3,
+        weight: 4,
       },
       {
         name: 'Comportamento',
         description: 'Postura, ética, respeito e cooperação com o grupo.',
         orderIndex: 2,
-        weight: 3,
+        weight: 2,
       },
       {
         name: 'Participação',

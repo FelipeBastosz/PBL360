@@ -40,4 +40,5 @@ export const ROUTES = {
   studentObservationTags: '/sessoes/:sessionId/avaliacao/:studentId/marcacoes',
   sessionStudentObservationTags:
     '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId/marcacoes',
+  problemGrades: '/turmas/:roomId/problemas/:problemId/notas',
 } as const;

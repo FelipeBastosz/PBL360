@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import type { BehaviorTag } from '@/types/observation';
 
 type Props = {
@@ -6,8 +5,7 @@ type Props = {
   counts: Record<string, number>;
   onIncrement: (tagId: string) => void;
   onDecrement: (tagId: string) => void;
-  moreTagsUrl: string;
-  studentName: string;
+  onNavigateMoreTags: () => void;
 };
 
 function ActiveTagRow({
@@ -54,8 +52,7 @@ export function QuickObservationsCard({
   counts,
   onIncrement,
   onDecrement,
-  moreTagsUrl,
-  studentName,
+  onNavigateMoreTags,
 }: Props) {
   const activeTags = tags.filter((t) => (counts[t.id] ?? 0) > 0);
 
@@ -82,13 +79,13 @@ export function QuickObservationsCard({
         )}
       </div>
 
-      <Link
-        to={moreTagsUrl}
-        state={{ studentName }}
+      <button
+        type="button"
+        onClick={onNavigateMoreTags}
         className="mt-4 block w-full rounded-xl border border-brand-900 bg-white py-2.5 text-center text-xs font-bold text-brand-900 transition hover:bg-brand-50"
       >
         Ver outras marcações
-      </Link>
+      </button>
     </div>
   );
 }

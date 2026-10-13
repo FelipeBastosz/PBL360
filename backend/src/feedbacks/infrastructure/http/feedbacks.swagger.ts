@@ -103,6 +103,24 @@ export const GetSessionFeedbackSwaggerDocs = applyDecorators(
   ApiNotFoundResponse({ description: 'Sessão não encontrada.', type: ErrorResponseDto }),
 );
 
+export const GetOwnSessionFeedbackSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Consulta o próprio feedback da sessão',
+    description: 'Retorna o feedback e registra a leitura para atualizar o indicador de novidade.',
+  }),
+  ApiOkResponse({
+    description: 'Feedback da sessão retornado com sucesso, ou null quando ainda não existe.',
+    type: SessionFeedbackResponseDto,
+  }),
+  ApiUnauthorizedResponse({ description: 'Não autenticado.', type: ErrorResponseDto }),
+  ApiForbiddenResponse({
+    description: 'O usuário não participa da sessão.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({ description: 'Sessão não encontrada.', type: ErrorResponseDto }),
+);
+
 export const GetFeedbackRevisionsSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({

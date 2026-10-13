@@ -325,7 +325,7 @@ describe('Sessions Swagger Documentation (e2e)', () => {
       expect(updateSchema).toBeDefined();
       expect(Object.keys(updateSchema?.properties ?? {})).toEqual([
         'papel',
-        'notaAdicional',
+        'notaPapel',
         'transferir',
       ]);
 
@@ -335,7 +335,7 @@ describe('Sessions Swagger Documentation (e2e)', () => {
         'alunoId',
         'nome',
         'papel',
-        'notaAdicional',
+        'notaPapel',
       ]);
 
       const assignedRoleSchema = document.components.schemas.AssignedSessionRoleResponseDto;
@@ -343,7 +343,7 @@ describe('Sessions Swagger Documentation (e2e)', () => {
       expect(Object.keys(assignedRoleSchema?.properties ?? {})).toEqual([
         'alunoId',
         'papel',
-        'notaAdicional',
+        'notaPapel',
       ]);
     });
   });

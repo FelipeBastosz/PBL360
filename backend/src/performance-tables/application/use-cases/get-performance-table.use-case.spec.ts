@@ -16,7 +16,11 @@ describe('GetPerformanceTableUseCase', () => {
       findById: findByIdMock,
       softDelete: jest.fn(),
       update: jest.fn(),
-      findUsageById: jest.fn(),
+      findUsageById: jest.fn().mockResolvedValue({
+        problemCount: 1,
+        sessionCount: 3,
+        pastSessionCount: 1,
+      }),
       findByIdIncludingDeleted: jest.fn(),
     };
 
@@ -38,6 +42,8 @@ describe('GetPerformanceTableUseCase', () => {
     });
 
     expect(findByIdMock).toHaveBeenCalledWith('table-uuid-1');
+    expect(result.sessionCount).toBe(3);
+    expect(result.pastSessionCount).toBe(1);
     expect(result).toBe(table);
   });
 

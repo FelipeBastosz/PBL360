@@ -21,10 +21,7 @@ import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { CreateRoomDto } from '../../application/dtos/create-room.dto';
-import type {
-  RoomResponseDto,
-  RoomSummaryResponseDto,
-} from '../../application/dtos/room-response.dto';
+import type { RoomResponseDto } from '../../application/dtos/room-response.dto';
 import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 import { CreateRoomUseCase } from '../../application/use-cases/create-room.use-case';
 import { DeleteRoomUseCase } from '../../application/use-cases/delete-room.use-case';
@@ -125,27 +122,23 @@ export class RoomsController {
     @UuidParam('id') roomId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<RoomStudentResponseDto[]> {
-    const students = await this.listRoomStudentsUseCase.execute({ roomId, member });
+    const students = await this.listRoomStudentsUseCase.execute(roomId, member);
 
     return students.map((student) => ({
       id: student.id,
       nome: student.name,
-      dataEntrada: student.joinedAt,
       email: student.email,
       matricula: student.registrationNumber,
+      dataEntrada: student.joinedAt,
     }));
   }
 
   @Get()
   @ListRoomsSwaggerDocs
-  async list(@AuthenticatedUserId() tutorId: string): Promise<RoomSummaryResponseDto[]> {
+  async list(@AuthenticatedUserId() tutorId: string): Promise<RoomResponseDto[]> {
     const rooms = await this.listRoomsUseCase.execute(tutorId);
 
-    return rooms.map(({ room, totalStudents, totalProblems }) => ({
-      ...toRoomResponse(room),
-      totalAlunos: totalStudents,
-      totalProblemas: totalProblems,
-    }));
+    return rooms.map(toRoomResponse);
   }
 
   @Get(':id')

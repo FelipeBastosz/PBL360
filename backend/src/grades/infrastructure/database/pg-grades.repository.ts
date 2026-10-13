@@ -15,41 +15,28 @@ export class PgGradesRepository implements GradesRepository {
 
   async findProblem(problemId: string, roomId: string): Promise<GradeRow | null> {
     const rows = await this.grades.query<GradeRow[]>(
-      'SELECT id, performance_table_id FROM problems WHERE id = $1 AND room_id = $2',
+      'SELECT id FROM problems WHERE id = $1 AND room_id = $2',
       [problemId, roomId],
     );
     return rows[0] ?? null;
   }
 
-  async findProblemData(
-    roomId: string,
-    problemId: string,
-    performanceTableId: unknown,
-  ): Promise<ProblemGradeData> {
-    const queries = buildProblemQueries(roomId, problemId, performanceTableId);
-    const [
-      sessions = [],
-      students = [],
-      formulas = [],
-      scores = [],
-      attendances = [],
-      roles = [],
-      criteria = [],
-    ] = await Promise.all(queries.map(({ sql, params }) => this.queryRows(sql, params)));
-
-    return { sessions, students, formulas, scores, attendances, roles, criteria };
-  }
-
-  private async queryRows(sql: string, params: unknown[]): Promise<GradeRow[]> {
-    const rows = await this.grades.query<GradeRow[]>(sql, params);
-    return rows ?? [];
+  async findProblemData(roomId: string, problemId: string): Promise<ProblemGradeData> {
+    const queries = buildProblemQueries(roomId, problemId);
+    const results = await this.grades.transaction('REPEATABLE READ', (manager) =>
+      Promise.all(queries.map(({ sql, params }) => manager.query<GradeRow[]>(sql, params))),
+    );
+    return toProblemGradeData(results);
   }
 
   async findFormulaComponents(formulaIds: unknown[]): Promise<GradeRow[]> {
     if (formulaIds.length === 0) return [];
 
     const rows = await this.grades.query<GradeRow[]>(
-      'SELECT formula_id, type, reference_id, weight FROM formula_components WHERE formula_id = ANY($1::uuid[])',
+      `SELECT fc.formula_id, fc.type, fc.reference_id, fc.weight, f.session_id
+         FROM formula_components fc
+         JOIN formulas f ON f.id = fc.formula_id
+        WHERE fc.formula_id = ANY($1::uuid[])`,
       [formulaIds],
     );
     return rows ?? [];
@@ -72,4 +59,19 @@ export class PgGradesRepository implements GradesRepository {
       }
     });
   }
+}
+
+function toProblemGradeData(results: GradeRow[][]): ProblemGradeData {
+  const at = (index: number): GradeRow[] => results[index] ?? [];
+  return {
+    sessions: at(0),
+    students: at(1),
+    formulas: at(2),
+    scores: at(3),
+    attendances: at(4),
+    roles: at(5),
+    criteria: at(6),
+    selfScores: at(7),
+    peerScores: at(8),
+  };
 }

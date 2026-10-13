@@ -7,12 +7,12 @@ export class RoomStudentResponseDto {
   @ApiProperty()
   nome!: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
-  dataEntrada!: Date;
-
   @ApiProperty({ format: 'email' })
   email!: string;
 
-  @ApiProperty()
-  matricula!: string;
+  @ApiProperty({ nullable: true })
+  matricula!: string | null;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  dataEntrada!: Date;
 }

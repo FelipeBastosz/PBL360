@@ -3,6 +3,8 @@ import { Formula, FormulaScope } from './formula.entity';
 import { InvalidProblemError } from '../errors/invalid-problem.error';
 
 export enum FormulaComponentType {
+  CRITERIOS = 'CRITERIOS',
+  PAPEL = 'PAPEL',
   CRITERIO = 'CRITERIO',
   MEDIA_SESSOES = 'MEDIA_SESSOES',
   AUTOAVALIACAO = 'AUTOAVALIACAO',
@@ -49,15 +51,14 @@ export class FormulaComponent {
   }
 
   private assertSessionScope(): void {
-    if ((this.type as FormulaComponentType) !== FormulaComponentType.CRITERIO) {
+    const type = this.type as FormulaComponentType;
+    if (type !== FormulaComponentType.CRITERIOS && type !== FormulaComponentType.PAPEL) {
       throw new InvalidProblemError(
-        'Fórmulas de sessão só podem conter componentes do tipo CRITERIO.',
+        'Fórmulas de sessão só podem conter componentes CRITERIOS ou PAPEL.',
       );
     }
-    if (!this.referenceId) {
-      throw new InvalidProblemError(
-        'Componentes do tipo CRITERIO exigem um critério de referência.',
-      );
+    if (this.referenceId) {
+      throw new InvalidProblemError('Os componentes da fórmula da sessão não usam referência.');
     }
   }
 
