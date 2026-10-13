@@ -9,6 +9,7 @@ export type GeneralFeedbackModalProps = {
   roomId: string;
   problemId: string;
   onSaved: (feedback: GeneralFeedbackResponse) => void;
+  updatedAt?: string | null;
 };
 
 export function GeneralFeedbackModal({
@@ -18,6 +19,7 @@ export function GeneralFeedbackModal({
   roomId,
   problemId,
   onSaved,
+  updatedAt,
 }: GeneralFeedbackModalProps) {
   return (
     <Sheet
@@ -35,6 +37,7 @@ export function GeneralFeedbackModal({
           problemId={problemId}
           onSaved={onSaved}
           onClose={onClose}
+          updatedAt={updatedAt}
         />
       )}
     </Sheet>

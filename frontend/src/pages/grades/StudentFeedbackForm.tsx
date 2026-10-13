@@ -2,17 +2,20 @@ import { Alert } from '@/components/ui/Alert';
 import type { StudentGradeRow } from '@/types/grades';
 import type { StudentProblemFeedbackResponse } from '@/types/feedback';
 import { FeedbackFormActions } from './FeedbackFormActions';
-import { StudentGradeField } from './StudentGradeField';
+import { StudentGradeInputField } from './StudentGradeInputField';
 import { StudentCommentField } from './StudentCommentField';
 import { useStudentFeedbackForm } from './hooks/useStudentFeedbackForm';
 
-type StudentFeedbackFormProps = {
+export type StudentFeedbackFormProps = {
   student: StudentGradeRow;
   existingFeedback: StudentProblemFeedbackResponse | null;
   roomId: string;
   problemId: string;
   onSaved: (feedback: StudentProblemFeedbackResponse) => void;
   onClose: () => void;
+  currentGrade?: number | string | null;
+  currentFeedback?: string | null;
+  updatedAt?: string | null;
 };
 
 export function StudentFeedbackForm(props: StudentFeedbackFormProps) {
@@ -22,7 +25,7 @@ export function StudentFeedbackForm(props: StudentFeedbackFormProps) {
     <form noValidate onSubmit={form.handleSubmit} className="flex flex-col gap-4 py-2">
       {form.apiError && <Alert tone="error">{form.apiError}</Alert>}
 
-      <StudentGradeField
+      <StudentGradeInputField
         value={form.nota}
         onChange={(val) => {
           form.setNota(val);
