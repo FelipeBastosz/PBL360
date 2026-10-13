@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
+import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
 import { renderApp, sessionFor, studentUser } from '@/testing/renderApp';
 
 vi.mock('@/services/user.service');
@@ -13,6 +14,7 @@ vi.mock('@/services/room.service', () => ({
 afterEach(() => {
   vi.resetAllMocks();
   localStorage.clear();
+  clearUserPhotoCache();
 });
 
 describe('AppHeader', () => {

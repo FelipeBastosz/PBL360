@@ -6,6 +6,7 @@ import { authService } from '@/services/auth.service';
 import { sessionStore } from '@/services/sessionStore';
 import type { LoginPayload, SessionResponse } from '@/types/auth';
 import { AuthContext, SESSION_EXPIRED_MESSAGE, SESSION_SWITCHED_MESSAGE } from './authContext';
+import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionResponse | null>(() => sessionStore.restore());
@@ -13,6 +14,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     sessionStore.clear();
+    clearUserPhotoCache();
     setSession(null);
   }, []);
 
