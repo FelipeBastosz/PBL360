@@ -33,7 +33,7 @@ export class GetPerformanceTableUseCase {
         return table;
       }
 
-      if (table.roomId && this.roomAccessService) {
+      if (table.isSessionCopy && table.roomId && this.roomAccessService) {
         await this.roomAccessService.assertTutorCanAccessRoom(table.roomId, input.tutorId);
         return table;
       }

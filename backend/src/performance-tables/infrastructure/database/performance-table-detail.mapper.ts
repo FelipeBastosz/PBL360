@@ -5,6 +5,8 @@ export interface PerformanceTableDetailRow {
   id: string;
   tutorId: string;
   roomId?: string | null;
+  sourceTableId?: string | null;
+  isSessionCopy?: boolean;
   name: string;
   description: string | null;
   isDefault: boolean;
@@ -28,6 +30,8 @@ export function toPerformanceTableWithCriteria(
   table.id = first.id;
   table.tutorId = first.tutorId;
   table.roomId = first.roomId ?? null;
+  table.sourceTableId = first.sourceTableId ?? null;
+  table.isSessionCopy = first.isSessionCopy ?? false;
   table.name = first.name;
   table.description = first.description;
   table.isDefault = first.isDefault;

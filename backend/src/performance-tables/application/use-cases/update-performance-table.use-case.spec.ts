@@ -70,7 +70,7 @@ describe('UpdatePerformanceTableUseCase', () => {
     });
 
     expect(repository.findById).toHaveBeenCalledWith(tableId);
-    expect(repository.update).toHaveBeenCalledWith(table, false);
+    expect(repository.update).toHaveBeenCalledWith(table, false, tutorId);
 
     expect(result.name).toBe('Barema atualizado');
     expect(result.description).toBe('Nova configuração');
@@ -144,7 +144,7 @@ describe('UpdatePerformanceTableUseCase', () => {
       },
     });
 
-    expect(repository.update).toHaveBeenCalledWith(table, true);
+    expect(repository.update).toHaveBeenCalledWith(table, false, tutorId);
     expect(result.sessionCount).toBe(2);
     expect(result.pastSessionCount).toBe(1);
   });
@@ -271,7 +271,7 @@ describe('UpdatePerformanceTableUseCase', () => {
       },
     });
 
-    expect(repository.update).toHaveBeenCalledWith(table, false);
+    expect(repository.update).toHaveBeenCalledWith(table, false, tutorId);
     expect(result.criteria.map((criterion) => criterion.id)).toEqual(['retained-id', undefined]);
     expect(result.criteria[0]!.name).toBe('Participação nas discussões');
   });
@@ -328,6 +328,7 @@ describe('UpdatePerformanceTableUseCase', () => {
       name: 'Barema da Sala',
       criteria: [{ name: 'Postura', weight: 10 }],
     });
+    table.isSessionCopy = true;
     table.id = tableId;
     repository.findById.mockResolvedValue(table);
     repository.update.mockImplementation((t) => Promise.resolve(t));
@@ -348,8 +349,37 @@ describe('UpdatePerformanceTableUseCase', () => {
     });
 
     expect(assertTutorCanAccessRoom).toHaveBeenCalledWith('room-uuid-1', 'co-tutor-2');
-    expect(repository.update).toHaveBeenCalled();
+    expect(repository.update).toHaveBeenCalledWith(table, true, 'co-tutor-2');
     expect(result.name).toBe('Barema da Sala Atualizado');
+  });
+
+  it('rejects disabling propagation for an applied shared table', async () => {
+    const table = PerformanceTable.create({
+      tutorId,
+      roomId: 'room-uuid-1',
+      name: 'Tabela aplicada',
+      criteria: [{ name: 'Participação', weight: 10 }],
+    });
+    table.id = tableId;
+    table.isSessionCopy = true;
+    repository.findById.mockResolvedValue(table);
+    const access = {
+      assertTutorCanAccessRoom: jest.fn().mockResolvedValue({}),
+    } as unknown as RoomAccessService;
+    const roomUseCase = new UpdatePerformanceTableUseCase(repository, access);
+
+    await expect(
+      roomUseCase.execute({
+        tableId,
+        tutorId,
+        changes: {
+          name: 'Tabela aplicada',
+          criteria: [{ name: 'Participação', weight: 10 }],
+          propagateToSessions: false,
+        },
+      }),
+    ).rejects.toThrow('separe-a da tabela compartilhada');
+    expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('rejects update by a tutor not participating in the room', async () => {
@@ -359,6 +389,7 @@ describe('UpdatePerformanceTableUseCase', () => {
       name: 'Barema da Sala',
       criteria: [{ name: 'Postura', weight: 10 }],
     });
+    table.isSessionCopy = true;
     table.id = tableId;
     repository.findById.mockResolvedValue(table);
 

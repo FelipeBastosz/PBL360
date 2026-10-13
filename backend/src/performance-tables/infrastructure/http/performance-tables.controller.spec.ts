@@ -228,7 +228,7 @@ describe('PerformanceTablesController', () => {
       changes: {
         name: 'Barema',
         description: null,
-        propagateToSessions: false,
+        propagateToSessions: undefined,
         criteria: [
           {
             id: 'criterion-1',

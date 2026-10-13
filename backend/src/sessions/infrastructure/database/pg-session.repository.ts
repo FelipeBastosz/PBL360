@@ -6,6 +6,7 @@ import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { Session } from '../../domain/entities/session.entity';
 import { countReleaseSubmissions } from './evaluation-release.queries';
 import { SESSION_COLUMNS, type SessionRow } from './session-row';
+import { createSessionPerformanceTableCopy } from './session-performance-table-copy.persistence';
 import type {
   ReleaseSubmissions,
   SessionDeletionImpact,
@@ -105,7 +106,8 @@ export class PgSessionRepository implements SessionRepository {
         'Não há uma tabela de desempenho padrão disponível para iniciar a sessão.',
       );
     }
-    return table.id;
+    if (table.isSessionCopy) return table.id;
+    return (await createSessionPerformanceTableCopy(manager, table.id, table.roomId)).id;
   }
 
   private async decrementFollowingOrders(
@@ -149,20 +151,32 @@ async function insertSessionRow(
   );
 }
 
+const FIND_INITIAL_TABLE_QUERY = `
+  SELECT COALESCE(existing.id, default_table.id) AS id,
+         COALESCE(existing.is_session_copy, default_table.is_session_copy, FALSE) AS "isSessionCopy",
+         p.room_id AS "roomId"
+    FROM problems p
+    LEFT JOIN LATERAL (
+      SELECT pt.id, pt.is_session_copy
+        FROM sessions s
+        JOIN performance_tables pt ON pt.id = s.performance_table_id
+       WHERE s.problem_id = p.id AND pt.deleted_at IS NULL
+       ORDER BY s.order_index LIMIT 1
+    ) existing ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT pt.id, pt.is_session_copy
+        FROM rooms r
+        JOIN performance_tables pt ON pt.tutor_id = r.tutor_id
+       WHERE r.id = p.room_id AND pt.is_default = TRUE AND pt.deleted_at IS NULL
+       LIMIT 1
+    ) default_table ON TRUE
+   WHERE p.id = $1;
+`;
+
 function findInitialTable(manager: EntityManager, problemId: string) {
   return manager
-    .query<Array<{ id: string | null }>>(
-      `SELECT COALESCE(
-       (SELECT s.performance_table_id FROM sessions s
-         JOIN performance_tables existing ON existing.id = s.performance_table_id
-        WHERE s.problem_id = $1 AND existing.deleted_at IS NULL
-        ORDER BY s.order_index LIMIT 1),
-       (SELECT pt.id FROM problems p
-         JOIN rooms r ON r.id = p.room_id
-         JOIN performance_tables pt ON pt.tutor_id = r.tutor_id
-        WHERE p.id = $1 AND pt.is_default = TRUE AND pt.deleted_at IS NULL
-        LIMIT 1)
-     ) AS id;`,
+    .query<Array<{ id: string | null; isSessionCopy: boolean; roomId: string }>>(
+      FIND_INITIAL_TABLE_QUERY,
       [problemId],
     )
     .then((rows) => rows[0] ?? null);
