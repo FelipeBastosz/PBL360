@@ -1,4 +1,5 @@
 import type { ComponentType, SVGProps } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ChatBubbleBottomCenterTextIcon,
   ChevronRightIcon,
@@ -9,15 +10,29 @@ import {
 type EvaluationItem = {
   title: string;
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  href?: string;
 };
 
-const EVALUATIONS: EvaluationItem[] = [
-  { title: 'Autoavaliação', Icon: UserCircleIcon },
-  { title: 'Avaliar Colegas', Icon: UsersIcon },
-  { title: 'Notas e Feedbacks', Icon: ChatBubbleBottomCenterTextIcon },
-];
+function EvaluationCard({ title, Icon, href }: EvaluationItem) {
+  if (href) {
+    return (
+      <li>
+        <Link
+          to={href}
+          className="flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:bg-black/[0.02] focus-visible:outline-2 focus-visible:outline-brand-900"
+        >
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface text-ink">
+            <Icon className="size-6" aria-hidden />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
+            <span className="text-lg font-semibold text-ink">{title}</span>
+          </span>
+          <ChevronRightIcon className="size-5 shrink-0 text-muted/60" aria-hidden />
+        </Link>
+      </li>
+    );
+  }
 
-function EvaluationCard({ title, Icon }: EvaluationItem) {
   return (
     <li
       aria-disabled="true"
@@ -37,14 +52,20 @@ function EvaluationCard({ title, Icon }: EvaluationItem) {
   );
 }
 
-export function StudentEvaluationCenter() {
+export function StudentEvaluationCenter({ feedbackHref }: { feedbackHref?: string }) {
+  const evaluations: EvaluationItem[] = [
+    { title: 'Autoavaliação', Icon: UserCircleIcon },
+    { title: 'Avaliar Colegas', Icon: UsersIcon },
+    { title: 'Feedback do Tutor', Icon: ChatBubbleBottomCenterTextIcon, href: feedbackHref },
+  ];
+
   return (
     <section aria-labelledby="student-evaluations-title" className="flex flex-col gap-3">
       <h2 id="student-evaluations-title" className="text-lg font-semibold text-brand-900">
         Central de Avaliações
       </h2>
       <ul className="flex flex-col gap-3">
-        {EVALUATIONS.map((item) => (
+        {evaluations.map((item) => (
           <EvaluationCard key={item.title} {...item} />
         ))}
       </ul>

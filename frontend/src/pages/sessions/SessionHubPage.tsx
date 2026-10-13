@@ -40,7 +40,7 @@ function SessionHubContent({
   if (!isProfessor) {
     return (
       <>
-        <StudentEvaluationCenter />
+        <StudentEvaluationCenter feedbackHref={`${basePath}/feedback`} />
         <SessionAttachments sessionId={sessionId} canUpload />
       </>
     );
