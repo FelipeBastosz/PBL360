@@ -31,11 +31,17 @@ export function buildStudentResponse(
 }
 
 function sessionResponses(sessions: Row[]) {
-  return sessions.map((session, index) => ({
-    id: String(session.id),
-    rotulo: `S${index + 1}`,
-    data: String(session.date),
-  }));
+  return sessions.map((session, index) => {
+    const rawTitle = (session.title as string | null | undefined)?.trim();
+    const title = rawTitle || `S${index + 1}`;
+    return {
+      id: String(session.id),
+      nome: title,
+      title,
+      rotulo: title,
+      data: String(session.date),
+    };
+  });
 }
 
 function formulaVersions(sessionFormula?: Row, problemFormula?: Row) {

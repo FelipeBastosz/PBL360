@@ -4,12 +4,13 @@ import { FeedbackFormActions } from './FeedbackFormActions';
 import { GeneralFeedbackTextarea } from './GeneralFeedbackTextarea';
 import { useGeneralFeedbackForm } from './hooks/useGeneralFeedbackForm';
 
-type GeneralFeedbackFormProps = {
+export type GeneralFeedbackFormProps = {
   existingFeedback: GeneralFeedbackResponse | null;
   roomId: string;
   problemId: string;
   onSaved: (feedback: GeneralFeedbackResponse) => void;
   onClose: () => void;
+  updatedAt?: string | null;
 };
 
 export function GeneralFeedbackForm(props: GeneralFeedbackFormProps) {

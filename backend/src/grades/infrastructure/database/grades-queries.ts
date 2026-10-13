@@ -35,7 +35,7 @@ function criteriaQueries(problemId: string): GradeQuery[] {
 function baseQueries(roomId: string, problemId: string): GradeQuery[] {
   return [
     {
-      sql: 'SELECT id, date FROM sessions WHERE problem_id = $1 ORDER BY order_index, id',
+      sql: 'SELECT id, title, date, order_index FROM sessions WHERE problem_id = $1 ORDER BY order_index, id',
       params: [problemId],
     },
     {

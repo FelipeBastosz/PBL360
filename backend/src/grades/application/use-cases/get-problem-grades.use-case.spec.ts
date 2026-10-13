@@ -130,4 +130,22 @@ describe('GetProblemGradesUseCase', () => {
       'formula-problem',
     ]);
   });
+
+  it('maps custom session titles to rotulo, title and nome in the response', async () => {
+    gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
+    gradesRepository.findProblemData.mockResolvedValue({
+      ...emptyData,
+      sessions: [
+        { id: 'sess-1', title: 'Sessão 1', date: '2026-10-06', order_index: 1 },
+        { id: 'sess-4', title: 'Sessão 4', date: '2026-10-12', order_index: 4 },
+      ],
+    });
+
+    const result = await useCase.execute(input);
+
+    expect(result.sessoes).toEqual([
+      { id: 'sess-1', rotulo: 'Sessão 1', title: 'Sessão 1', nome: 'Sessão 1', data: '2026-10-06' },
+      { id: 'sess-4', rotulo: 'Sessão 4', title: 'Sessão 4', nome: 'Sessão 4', data: '2026-10-12' },
+    ]);
+  });
 });
