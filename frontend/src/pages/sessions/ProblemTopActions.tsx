@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { AdjustmentsHorizontalIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
+import { DocumentTextIcon } from '@heroicons/react/24/outline';
 import { ROUTES } from '@/routes/paths';
 import { INTERACTIVE_CARD_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
@@ -46,13 +46,6 @@ export function ProblemTopActions({ isProfessor, roomId, problemId }: ProblemTop
           description="Nota final do problema"
         />
       </button>
-      <Link to={ROUTES.performanceTables} state={{ roomId, problemId }} className={ACTION_CLASS}>
-        <ActionContent
-          Icon={AdjustmentsHorizontalIcon}
-          title="Fórmulas"
-          description="Suas tabelas de critérios"
-        />
-      </Link>
     </div>
   );
 }
