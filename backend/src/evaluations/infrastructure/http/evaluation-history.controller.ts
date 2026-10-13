@@ -26,14 +26,14 @@ export class EvaluationHistoryController {
 
   @Get()
   @ListEvaluationHistorySwaggerDocs
-  async list(@UuidParam('sessionId') sessionId: string, @AuthenticatedUserId() tutorId: string) {
+  async list(@UuidParam('sessaoId') sessionId: string, @AuthenticatedUserId() tutorId: string) {
     return toSessionEvaluationHistoryResponse(await this.getHistory.execute(sessionId, tutorId));
   }
 
   @Get(':studentId')
   @GetEvaluationHistoryDetailSwaggerDocs
   async get(
-    @UuidParam('sessionId') sessionId: string,
+    @UuidParam('sessaoId') sessionId: string,
     @UuidParam('studentId') studentId: string,
     @AuthenticatedUserId() tutorId: string,
   ) {
