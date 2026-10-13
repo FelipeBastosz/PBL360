@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import RoomsPage from './RoomsPage';
 import { AuthContext } from '@/contexts/authContext';
 import { ToastProvider } from '@/contexts/ToastProvider';
+import { problemService } from '@/services/problem.service';
 import { roomService } from '@/services/room.service';
 import type { UserResponse } from '@/types/auth';
 import type { Room } from '@/types/room';
@@ -13,8 +14,13 @@ vi.mock('@/services/room.service', () => ({
   roomService: {
     list: vi.fn(),
     listMyRooms: vi.fn(),
+    listStudents: vi.fn(),
     joinByCode: vi.fn(),
   },
+}));
+
+vi.mock('@/services/problem.service', () => ({
+  problemService: { list: vi.fn() },
 }));
 
 const mockTeacher: UserResponse = {
@@ -86,6 +92,8 @@ describe('RoomsPage', () => {
     vi.clearAllMocks();
     vi.mocked(roomService.list).mockResolvedValue([]);
     vi.mocked(roomService.listMyRooms).mockResolvedValue([]);
+    vi.mocked(roomService.listStudents).mockResolvedValue([]);
+    vi.mocked(problemService.list).mockResolvedValue([]);
   });
 
   describe('common behaviors', () => {
