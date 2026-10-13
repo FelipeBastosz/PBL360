@@ -19,6 +19,8 @@ describe('updateSessionTable', () => {
         if (sql.includes('FROM performance_tables pt'))
           return Promise.resolve([{ id: 'table-2', name: 'Nova tabela', isDefault: false }]);
         if (sql.includes('FROM performance_criteria')) return Promise.resolve([{ exists: true }]);
+        if (sql.includes('INSERT INTO performance_tables'))
+          return Promise.resolve([{ id: 'copied-table', name: 'Nova tabela', isDefault: false }]);
         if (sql.includes('FROM sessions')) return Promise.resolve([current]);
         if (sql.includes('FROM evaluations')) return Promise.resolve([{ exists: true }]);
         return Promise.resolve([]);
@@ -46,6 +48,8 @@ describe('updateSessionTable', () => {
         if (sql.includes('FROM performance_tables pt'))
           return Promise.resolve([{ id: 'table-2', name: 'Nova tabela', isDefault: false }]);
         if (sql.includes('FROM performance_criteria')) return Promise.resolve([{ exists: true }]);
+        if (sql.includes('INSERT INTO performance_tables'))
+          return Promise.resolve([{ id: 'copied-table', name: 'Nova tabela', isDefault: false }]);
         if (sql.includes('FROM sessions')) {
           return Promise.resolve([
             current,
@@ -76,7 +80,7 @@ describe('updateSessionTable', () => {
     });
     expect(manager.query).toHaveBeenCalledWith(
       'UPDATE sessions SET performance_table_id = $2 WHERE id = $1;',
-      ['session-1', 'table-2'],
+      ['session-1', 'copied-table'],
     );
   });
 });
