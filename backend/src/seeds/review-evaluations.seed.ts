@@ -87,6 +87,30 @@ async function seedStudentsAndPeers(ctx: SeedContext, users: ReviewUsers) {
   await seedPeer(ctx, users.student1.id, users.student2.id);
 }
 
+const INSERT_CONFIG_SQL = `INSERT INTO session_evaluation_configs (session_id, performance_table_id, table_name, created_by)
+SELECT $1, pt.id, pt.name, $2
+  FROM performance_tables pt
+ WHERE pt.id = $3
+ON CONFLICT (session_id) DO NOTHING;`;
+
+const INSERT_CRITERIA_SQL = `INSERT INTO session_evaluation_criteria
+  (session_id, criterion_id, name, description, weight, order_index)
+SELECT $1, pc.id, pc.name, pc.description, pc.weight, pc.order_index
+  FROM performance_criteria pc
+ WHERE pc.performance_table_id = $2 AND pc.deleted_at IS NULL
+ ORDER BY pc.order_index, pc.created_at, pc.id
+ON CONFLICT (session_id, criterion_id) DO NOTHING;`;
+
+async function ensureSessionEvaluationConfig(
+  ds: DataSource,
+  sessionId: string,
+  tableId: string,
+  tutorId: string,
+): Promise<void> {
+  await ds.query(INSERT_CONFIG_SQL, [sessionId, tutorId, tableId]);
+  await ds.query(INSERT_CRITERIA_SQL, [sessionId, tableId]);
+}
+
 export async function seedReviewEvaluationsIfEmpty(
   ds: DataSource,
   problemId: string,
@@ -100,5 +124,6 @@ export async function seedReviewEvaluationsIfEmpty(
   if (existing.length > 0) return;
   const config = await findSessionCriteria(ds, sessionId);
   if (!config) return;
+  await ensureSessionEvaluationConfig(ds, sessionId, config.tableId, users.tutor.id);
   await seedStudentsAndPeers({ ds, problemId, sessionId, ...config }, users);
 }
