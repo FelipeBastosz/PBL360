@@ -2,9 +2,10 @@ import type { ComponentType, ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AdjustmentsHorizontalIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { ROUTES } from '@/routes/paths';
+import { INTERACTIVE_CARD_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 
-const ACTION_CLASS =
-  'flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md text-left';
+const ACTION_CLASS = cn(INTERACTIVE_CARD_CLASS, 'flex-row items-center gap-4 p-4 text-left');
 
 type ActionContentProps = {
   Icon: ComponentType<{ className?: string }>;
@@ -15,7 +16,7 @@ type ActionContentProps = {
 function ActionContent({ Icon, title, description }: ActionContentProps) {
   return (
     <>
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-900">
+      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-900 transition-[scale] duration-200 group-hover:scale-105">
         <Icon className="size-6" />
       </div>
       <div>
