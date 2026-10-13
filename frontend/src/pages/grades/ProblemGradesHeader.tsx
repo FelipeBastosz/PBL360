@@ -4,6 +4,8 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 
 function parseRoomTurma(fullName?: string) {
   if (!fullName) return '';
@@ -29,7 +31,7 @@ export function ProblemGradesHeader({ room, problem, backTo }: ProblemGradesHead
 
   return (
     <header className="sticky top-0 z-30 bg-brand-900 text-white shadow-[0_6px_18px_-12px_rgb(0_0_119/0.8)]">
-      <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4">
+      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
         <div className="flex items-center gap-3">
           <Link
             to={backTo || defaultBack}

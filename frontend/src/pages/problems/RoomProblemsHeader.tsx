@@ -4,6 +4,8 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ROUTES } from '@/routes/paths';
 import type { UserResponse } from '@/types/auth';
 import type { Room } from '@/types/room';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 
 type RoomProblemsHeaderProps = {
   room: Pick<Room, 'nome'> | null;
@@ -32,7 +34,7 @@ export function RoomProblemsHeader({
 
   return (
     <header className="sticky top-0 z-10 bg-brand-900 text-white shadow-[0_6px_18px_-12px_rgb(0_0_119/0.8)]">
-      <div className="mx-auto flex h-20 w-full max-w-5xl items-center gap-3 px-4">
+      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center gap-3')}>
         <Link
           to={backTo}
           aria-label={backLabel}
