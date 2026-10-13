@@ -39,6 +39,16 @@ export const SELF_ASSESSMENT_SCORES_QUERY = `
    WHERE s.problem_id = $1 AND e.type = 'SELF_ASSESSMENT' AND e.status = 'SUBMITTED';
 `;
 
+export const POKER_PEER_SCORES_QUERY = `
+  SELECT DISTINCT ON (ps.session_id, pr.student_id)
+         ps.session_id, pr.student_id, pr.final_grade AS score
+    FROM poker_rounds pr
+    JOIN poker_sessions ps ON ps.id = pr.poker_id
+    JOIN sessions s ON s.id = ps.session_id
+   WHERE s.problem_id = $1 AND pr.status = 'DECIDED'
+   ORDER BY ps.session_id, pr.student_id, pr.decided_at DESC;
+`;
+
 export const PEER_RECEIVED_SCORES_QUERY = `
   SELECT e.session_id, e.student_id, e.session_score AS score
     FROM evaluations e

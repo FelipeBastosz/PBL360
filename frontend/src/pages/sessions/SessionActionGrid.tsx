@@ -5,13 +5,14 @@ import {
   AdjustmentsHorizontalIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { ROUTES } from '@/routes/paths';
 import type { ApplyTarget } from '@/utils/navigationState';
 
 type GridProps = {
   basePath: string;
   isStudentEvalActive: boolean;
+  children?: ReactNode;
 };
 
 function ActionCard({
@@ -69,7 +70,7 @@ function ActionCard({
   );
 }
 
-export function SessionActionGrid({ basePath, isStudentEvalActive }: GridProps) {
+export function SessionActionGrid({ basePath, isStudentEvalActive, children }: GridProps) {
   const { roomId = '', problemId = '' } = useParams<{ roomId: string; problemId: string }>();
 
   return (
@@ -114,6 +115,7 @@ export function SessionActionGrid({ basePath, isStudentEvalActive }: GridProps) 
         disabled
         badge="Em breve"
       />
+      {children}
     </div>
   );
 }
