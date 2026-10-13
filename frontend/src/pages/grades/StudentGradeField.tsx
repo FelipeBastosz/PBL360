@@ -27,6 +27,7 @@ export type StudentGradeFieldProps = {
   onChange?: (val: string) => void;
   error?: string;
   disabled?: boolean;
+  hideNames?: boolean;
 };
 
 function buildEvaluationContext(
@@ -107,7 +108,7 @@ export function StudentGradeField(props: StudentGradeFieldProps) {
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      aria-label={`Avaliar ${studentName} na sessão ${sessionName || 'Sessão'}: ${cellText}`}
+      aria-label={`Avaliar ${studentName} na sessão ${sessionName}:${cellText}`}
       className="cursor-pointer hover:bg-gray-50 transition px-3 py-3.5 text-center text-muted group-hover:text-ink focus-visible:outline-none focus-visible:bg-gray-100"
     >
       {cellText}

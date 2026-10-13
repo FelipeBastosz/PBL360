@@ -56,7 +56,6 @@ export function StudentGradeRowItem({
             existingFeedback={studentFeedback}
             onSelectEvaluation={onSelectEvaluation}
             onSelectStudent={onSelectStudent}
-            hideNames={hideNames}
           />
         );
       })}
