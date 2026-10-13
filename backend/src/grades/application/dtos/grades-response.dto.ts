@@ -1,6 +1,7 @@
 export interface EvaluationComponentResponse {
   nota: number | null;
   situacao: string;
+  origem?: 'FORMULARIO' | 'PLANNING_POKER';
 }
 
 export class GradesResponseDto {

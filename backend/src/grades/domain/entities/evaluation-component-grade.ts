@@ -26,6 +26,11 @@ export interface SelfAssessmentSessionInput {
   now: Date;
 }
 
+export interface PokerPeerSessionInput {
+  attendance: GradeAttendance;
+  finalGrade: number | null;
+}
+
 export interface PeerAssessmentSessionInput {
   attendance: GradeAttendance;
   release: EvaluationRelease;
@@ -73,6 +78,13 @@ export function calculatePeerAssessmentSession(
   if (average !== null) return { grade: average, situation: 'AVALIADA' };
   if (wasNeverReleased(input.release)) return withoutData('NAO_LIBERADA');
   return withoutData('SEM_AVALIACOES');
+}
+
+export function calculatePokerPeerSession(input: PokerPeerSessionInput): EvaluationComponentResult {
+  const excluded = excludedByAttendance(input.attendance);
+  if (excluded) return excluded;
+  if (input.finalGrade === null) return withoutData('SEM_AVALIACOES');
+  return { grade: input.finalGrade, situation: 'AVALIADA' };
 }
 
 export function calculateProblemEvaluationComponent(

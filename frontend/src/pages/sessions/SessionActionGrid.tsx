@@ -5,11 +5,12 @@ import {
   AdjustmentsHorizontalIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 type GridProps = {
   basePath: string;
   isStudentEvalActive: boolean;
+  children?: ReactNode;
 };
 
 function ActionCard({
@@ -64,7 +65,7 @@ function ActionCard({
   );
 }
 
-export function SessionActionGrid({ basePath, isStudentEvalActive }: GridProps) {
+export function SessionActionGrid({ basePath, isStudentEvalActive, children }: GridProps) {
   return (
     <div className="grid grid-cols-2 gap-3">
       <ActionCard
@@ -106,6 +107,7 @@ export function SessionActionGrid({ basePath, isStudentEvalActive }: GridProps) 
         disabled
         badge="Em breve"
       />
+      {children}
     </div>
   );
 }

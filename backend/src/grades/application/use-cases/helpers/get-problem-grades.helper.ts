@@ -32,6 +32,7 @@ export interface StudentGradeContext {
   problemFormulaVersion: number;
   selfScores: Row[];
   peerScores: Row[];
+  pokerScores: Row[];
   now: Date;
 }
 

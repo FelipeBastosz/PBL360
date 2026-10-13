@@ -10,6 +10,7 @@ export interface ProblemGradeData {
   criteria: GradeRow[];
   selfScores: GradeRow[];
   peerScores: GradeRow[];
+  pokerScores: GradeRow[];
 }
 
 export interface GradePersistenceData {
