@@ -16,6 +16,7 @@ export const PERFORMANCE_TABLE_SUMMARY_QUERY = `
     LEFT JOIN sessions
       ON sessions.performance_table_id = performance_tables.id
    WHERE performance_tables.tutor_id = $1
+     AND performance_tables.is_session_copy = FALSE
      AND performance_tables.deleted_at IS NULL
    GROUP BY performance_tables.id
    ORDER BY performance_tables.created_at ASC,
@@ -26,6 +27,8 @@ export const FIND_PERFORMANCE_TABLE_BY_ID_QUERY = `
   SELECT pt.id,
          pt.tutor_id AS "tutorId",
          pt.room_id AS "roomId",
+         pt.source_table_id AS "sourceTableId",
+         pt.is_session_copy AS "isSessionCopy",
          pt.name,
          pt.description,
          pt.is_default AS "isDefault",
@@ -74,6 +77,8 @@ export const INSERT_PERFORMANCE_TABLE_QUERY = `
     id,
     tutor_id AS "tutorId",
     room_id AS "roomId",
+    source_table_id AS "sourceTableId",
+    is_session_copy AS "isSessionCopy",
     name,
     description,
     is_default AS "isDefault",
@@ -101,6 +106,8 @@ export const FIND_PERFORMANCE_TABLE_BY_ID_INCLUDING_DELETED_QUERY = `
   SELECT pt.id,
          pt.tutor_id AS "tutorId",
          pt.room_id AS "roomId",
+         pt.source_table_id AS "sourceTableId",
+         pt.is_session_copy AS "isSessionCopy",
          pt.name,
          pt.description,
          pt.is_default AS "isDefault",
@@ -159,6 +166,7 @@ export const FIND_ROOM_PERFORMANCE_TABLES_QUERY = `
       ON pc.performance_table_id = pt.id
      AND pc.deleted_at IS NULL
    WHERE pt.deleted_at IS NULL
+     AND pt.is_session_copy = FALSE
      AND (
        pt.room_id = $1
        OR pt.id IN (
