@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { SelectField } from '@/components/ui/SelectField';
 import { Alert } from '@/components/ui/Alert';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { useForm } from '@/hooks/useForm';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
@@ -166,7 +166,7 @@ export default function CreateRoomPage() {
       title="Criar turma"
       subtitle="Dados da disciplina"
       backTo={ROUTES.rooms}
-      trailing={<UserAvatar user={user} />}
+      trailing={<UserMenuButton user={user} />}
     >
       <CreateRoomForm />
     </FlowShell>

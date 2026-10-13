@@ -8,7 +8,7 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { evaluationService } from '@/services/evaluation.service';
 import type { SessionEvaluationSummary, ProblemEvaluationCriteria } from '@/types/evaluation';
 import { StudentEvaluationCard } from './components/StudentEvaluationCard';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import type { UserResponse } from '@/types/auth';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
@@ -30,7 +30,7 @@ function EvaluationsHeader({ user, backUrl }: { user: UserResponse | null; backU
             <span className="text-xs text-white/70">Alunos</span>
           </div>
         </div>
-        <UserAvatar user={user} className="size-9 bg-brand-200 text-brand-900" />
+        <UserMenuButton user={user} className="size-9 bg-brand-200 text-brand-900" />
       </div>
     </header>
   );

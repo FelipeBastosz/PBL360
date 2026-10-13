@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import type { UserResponse } from '@/types/auth';
 import type { Problem } from '@/types/problem';
 import type { Session } from '@/types/session';
@@ -43,7 +43,7 @@ export function SessionHubHeader({ session, problem, userNome, user, backUrl }: 
             <span className="text-xs text-white/70">{problem?.titulo || 'Problema'}</span>
           </div>
         </div>
-        <UserAvatar
+        <UserMenuButton
           user={user ?? { id: '', nome: userNome ?? '', possuiFoto: false }}
           className="ring-2 ring-white/20"
         />

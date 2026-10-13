@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,7 +32,7 @@ function DetailHeader({ title }: { title: string }) {
           </button>
           <h1 className="text-lg font-bold">{title}</h1>
         </div>
-        <UserAvatar user={user} />
+        <UserMenuButton user={user} />
       </div>
     </header>
   );

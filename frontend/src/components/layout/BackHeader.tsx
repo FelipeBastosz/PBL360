@@ -1,5 +1,5 @@
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
@@ -28,7 +28,7 @@ export function BackHeader({ title, subtitle, onBack }: BackHeaderProps) {
           <h1 className="truncate text-xl leading-tight font-semibold">{title}</h1>
           <p className="truncate text-sm text-white/70">{subtitle}</p>
         </div>
-        <UserAvatar user={user} className="animate-pop-in ring-2 ring-white/20" />
+        <UserMenuButton user={user} className="animate-pop-in ring-2 ring-white/20" />
       </div>
     </header>
   );

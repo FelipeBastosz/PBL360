@@ -59,7 +59,8 @@ describe('routing and session', () => {
     sessionStore.save(sessionFor(studentUser));
     const { user } = renderApp('/turmas');
 
-    await user.click(await screen.findByRole('button', { name: 'Sair' }));
+    await user.click(await screen.findByRole('button', { name: 'Abrir menu da conta' }));
+    await user.click(screen.getByRole('button', { name: 'Sair da conta' }));
 
     expect(await screen.findByRole('button', { name: 'Entrar' })).toBeInTheDocument();
     expect(sessionStore.getToken()).toBeNull();
