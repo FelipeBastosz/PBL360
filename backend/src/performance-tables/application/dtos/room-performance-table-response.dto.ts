@@ -3,8 +3,8 @@ import { PerformanceCriterionResponseDto } from './performance-criterion-respons
 import { PerformanceTableOrigin } from '../../domain/repositories/performance-table.repository';
 
 export class PerformanceTableAuthorDto {
-  @ApiProperty({ format: 'uuid', example: 'd3b07384-d113-4944-9c80-e74f1784c6c2' })
-  id: string;
+  @ApiProperty({ type: String, format: 'uuid', nullable: true })
+  id: string | null;
 
   @ApiProperty({ example: 'Carlos Mendes' })
   nome: string;

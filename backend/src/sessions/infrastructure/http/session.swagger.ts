@@ -36,7 +36,11 @@ const notFound = ApiNotFoundResponse({
 
 export const CreateSessionSwaggerDocs = applyDecorators(
   secured,
-  ApiOperation({ summary: 'Cria uma sessão no problema' }),
+  ApiOperation({
+    summary: 'Cria uma sessão no problema',
+    description:
+      'Aplica automaticamente Padrão da 1ª sessão à menor data e Padrão às demais, com fórmula 70% critérios e 30% papel. Datas iguais usam a ordem como desempate.',
+  }),
   ApiCreatedResponse({
     description: 'Sessão criada com sucesso.',
     type: SessionCreatedResponseDto,
@@ -71,7 +75,11 @@ export const GetSessionSwaggerDocs = applyDecorators(
 
 export const UpdateSessionSwaggerDocs = applyDecorators(
   secured,
-  ApiOperation({ summary: 'Atualiza uma sessão' }),
+  ApiOperation({
+    summary: 'Atualiza uma sessão',
+    description:
+      'Ao mudar a data, reaplica as tabelas automáticas enquanto o problema não possuir avaliações, inclusive rascunhos. Escolhas explícitas de tabela são preservadas.',
+  }),
   ApiOkResponse({ description: 'Sessão atualizada.', type: SessionDetailResponseDto }),
   ApiBadRequestResponse({ description: 'Dados inválidos.', type: ErrorResponseDto }),
   unauthorized,

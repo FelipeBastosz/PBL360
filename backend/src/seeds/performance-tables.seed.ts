@@ -63,7 +63,7 @@ export const SEED_PERFORMANCE_TABLES: SeedPerformanceTableData[] = [
     tutorEmail: 'carlos@uefs.br',
     name: 'Fórmula Padrão',
     description: 'Critérios padrão de avaliação.',
-    isDefault: true,
+    isDefault: false,
     criteria: [
       {
         name: 'Seguimento',
@@ -115,7 +115,7 @@ export const SEED_PERFORMANCE_TABLES: SeedPerformanceTableData[] = [
     tutorEmail: 'maria@uefs.br',
     name: 'Fórmula Padrão',
     description: 'Critérios padrão de avaliação.',
-    isDefault: true,
+    isDefault: false,
     criteria: [
       {
         name: 'Seguimento',

@@ -34,4 +34,22 @@ describe('GetSessionTableEditPermissionsUseCase', () => {
       new GetSessionTableEditPermissionsUseCase(repository).execute('session', 'tutor'),
     ).rejects.toBeInstanceOf(ForbiddenError);
   });
+
+  it('explains that a system default must be copied even before the session happens', async () => {
+    const context = tableEditContext(false);
+    context.table.isDefault = true;
+    context.table.tutorId = null;
+    context.sessions = [context.session];
+    const repository: SessionTableEditingRepository = {
+      getContext: jest.fn().mockResolvedValue(context),
+      edit: jest.fn(),
+    };
+    const result = await new GetSessionTableEditPermissionsUseCase(repository).execute(
+      'session',
+      'tutor',
+    );
+    expect(result.canEditCriteria).toBe(false);
+    expect(result.reason).toContain('somente leitura');
+    expect(result.sessions).toEqual([context.session]);
+  });
 });

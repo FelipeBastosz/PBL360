@@ -6,22 +6,28 @@ export async function createSessionPerformanceTableCopy(
   manager: EntityManager,
   sourceTableId: string,
   roomId: string,
+  tutorId: string,
 ): Promise<SessionTableRow> {
-  const [table] = await insertTableCopy(manager, sourceTableId, roomId);
+  const [table] = await insertTableCopy(manager, sourceTableId, roomId, tutorId);
   if (!table) throw new NotFoundError('A tabela de desempenho não foi encontrada.');
   await insertCriterionCopies(manager, sourceTableId, table.id);
   return table;
 }
 
-function insertTableCopy(manager: EntityManager, sourceTableId: string, roomId: string) {
+function insertTableCopy(
+  manager: EntityManager,
+  sourceTableId: string,
+  roomId: string,
+  tutorId: string,
+) {
   return manager.query<SessionTableRow[]>(
     `INSERT INTO performance_tables
        (tutor_id, room_id, name, description, is_default, source_table_id, is_session_copy)
-     SELECT tutor_id, $2, name, description, FALSE, id, TRUE
+     SELECT COALESCE(tutor_id, $3::uuid), $2, name, description, FALSE, id, TRUE
        FROM performance_tables
       WHERE id = $1 AND deleted_at IS NULL
      RETURNING id, name, is_default AS "isDefault";`,
-    [sourceTableId, roomId],
+    [sourceTableId, roomId, tutorId],
   );
 }
 

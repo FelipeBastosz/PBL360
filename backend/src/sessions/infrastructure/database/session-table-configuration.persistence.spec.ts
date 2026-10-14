@@ -41,7 +41,7 @@ describe('updateSessionTable', () => {
     ).toBe(false);
   });
 
-  it('updates the current session and reports following submitted sessions as ignored', async () => {
+  it('records the explicit table choice and skips following submitted sessions', async () => {
     let submittedCheck = 0;
     const manager = {
       query: jest.fn((sql: string) => {
@@ -79,7 +79,7 @@ describe('updateSessionTable', () => {
       ],
     });
     expect(manager.query).toHaveBeenCalledWith(
-      'UPDATE sessions SET performance_table_id = $2 WHERE id = $1;',
+      'UPDATE sessions SET performance_table_id = $2, uses_default_table = FALSE WHERE id = $1;',
       ['session-1', 'copied-table'],
     );
   });
