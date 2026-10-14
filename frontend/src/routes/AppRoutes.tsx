@@ -51,6 +51,9 @@ const SessionEvaluationsListPage = lazy(
   () => import('@/pages/evaluations/SessionEvaluationsListPage'),
 );
 const StudentEvaluationPage = lazy(() => import('@/pages/evaluations/StudentEvaluationPage'));
+const SessionEvaluationHistoryPage = lazy(
+  () => import('@/pages/evaluation-history/SessionEvaluationHistoryPage'),
+);
 const StudentObservationTagsPage = lazy(
   () => import('@/pages/evaluations/StudentObservationTagsPage'),
 );
@@ -92,6 +95,7 @@ const protectedRoutes = (
     <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
     <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
     <Route path={ROUTES.sessionEvaluationsList} element={<SessionEvaluationsListPage />} />
+    <Route path={ROUTES.sessionEvaluationHistory} element={<SessionEvaluationHistoryPage />} />
     <Route path={ROUTES.studentEvaluation} element={<StudentEvaluationPage />} />
     <Route path={ROUTES.sessionStudentEvaluation} element={<StudentEvaluationPage />} />
     <Route path={ROUTES.studentObservationTags} element={<StudentObservationTagsPage />} />

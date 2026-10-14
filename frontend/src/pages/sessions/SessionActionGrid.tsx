@@ -100,11 +100,9 @@ export function SessionActionGrid({ basePath, isStudentEvalActive }: GridProps) 
       <ActionCard
         to={`${basePath}/historico`}
         title="Histórico de avaliações"
-        desc="Comparar e ajustar com justificativa"
-        color="bg-gray-100 text-gray-500"
+        desc="Comparar notas dos alunos e do tutor"
+        color="bg-violet-50 text-violet-600"
         Icon={ClockIcon}
-        disabled
-        badge="Em breve"
       />
     </div>
   );

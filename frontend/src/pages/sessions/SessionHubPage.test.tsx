@@ -142,11 +142,13 @@ describe('SessionHubPage', () => {
     );
   });
 
-  it('renders disabled card for Histórico de avaliações with Em breve badge', async () => {
+  it('links the Histórico de avaliações card to the evaluation history page', async () => {
     renderPage();
 
-    expect(await screen.findByText('Histórico de avaliações')).toBeInTheDocument();
-    expect(screen.getByText('Em breve')).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /histórico de avaliações/i })).toHaveAttribute(
+      'href',
+      '/turmas/room-1/problemas/prob-1/sessoes/sess-1/historico',
+    );
   });
 
   it('renders Autoavaliação e pares card with toggle switches', async () => {

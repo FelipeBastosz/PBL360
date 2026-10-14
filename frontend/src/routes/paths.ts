@@ -32,6 +32,7 @@ export const ROUTES = {
   memberSession: '/sessoes/:sessaoId',
   sessionRollCall: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/chamada',
   sessionEvaluationsList: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar',
+  sessionEvaluationHistory: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/historico',
   studentEvaluation: '/sessoes/:sessionId/avaliacao/:studentId',
   sessionStudentEvaluation:
     '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId',
