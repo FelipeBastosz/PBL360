@@ -51,13 +51,63 @@ const SessionEvaluationsListPage = lazy(
   () => import('@/pages/evaluations/SessionEvaluationsListPage'),
 );
 const StudentEvaluationPage = lazy(() => import('@/pages/evaluations/StudentEvaluationPage'));
+const StudentObservationTagsPage = lazy(
+  () => import('@/pages/evaluations/StudentObservationTagsPage'),
+);
+
+const publicRoutes = (
+  <Route element={<PublicOnlyRoute />}>
+    <Route path={ROUTES.profileSelection} element={<ProfileSelectionPage />} />
+    <Route path={ROUTES.login} element={<LoginPage />} />
+    <Route path={ROUTES.register} element={<RegisterPage />} />
+    <Route path={ROUTES.verifyAccount} element={<VerifyAccountPage />} />
+    <Route path={ROUTES.registerSuccess} element={<RegisterSuccessPage />} />
+    <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+    <Route path={ROUTES.resetPasswordCode} element={<ResetPasswordCodePage />} />
+    <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
+    <Route path={ROUTES.resetPasswordSuccess} element={<ResetPasswordSuccessPage />} />
+  </Route>
+);
+
+const protectedRoutes = (
+  <Route element={<ProtectedRoute />}>
+    <Route path={ROUTES.rooms} element={<RoomsPage />} />
+    <Route path={ROUTES.createRoom} element={<CreateRoomPage />} />
+    <Route path={ROUTES.createRoomSuccess} element={<CreateRoomSuccessPage />} />
+    <Route path={ROUTES.manageRooms} element={<ManageRoomsPage />} />
+    <Route path={ROUTES.editRoom} element={<EditRoomPage />} />
+    <Route path={ROUTES.roomProblems} element={<RoomProblemsPage />} />
+    <Route path={ROUTES.roomMembers} element={<RoomMembersPage />} />
+    <Route path={ROUTES.manageProblems} element={<ManageProblemsPage />} />
+    <Route path={ROUTES.performanceTables} element={<PerformanceTablesPage />} />
+    <Route path={ROUTES.createPerformanceTable} element={<CreatePerformanceTablePage />} />
+    <Route path={ROUTES.performanceTableDetail} element={<PerformanceTableDetailPage />} />
+    <Route path={ROUTES.managePerformanceTables} element={<ManagePerformanceTablesPage />} />
+    <Route path={ROUTES.editPerformanceTable} element={<EditPerformanceTablePage />} />
+    <Route path={ROUTES.problemSessions} element={<ProblemSessionsPage />} />
+    <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />
+    <Route path={ROUTES.sessionHub} element={<SessionHubPage />} />
+    <Route path={ROUTES.sessionFormulas} element={<ProblemFormulaPage />} />
+    <Route path={ROUTES.rollCall} element={<RollCallPage />} />
+    <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
+    <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
+    <Route path={ROUTES.sessionEvaluationsList} element={<SessionEvaluationsListPage />} />
+    <Route path={ROUTES.studentEvaluation} element={<StudentEvaluationPage />} />
+    <Route path={ROUTES.sessionStudentEvaluation} element={<StudentEvaluationPage />} />
+    <Route path={ROUTES.studentObservationTags} element={<StudentObservationTagsPage />} />
+    <Route path={ROUTES.sessionStudentObservationTags} element={<StudentObservationTagsPage />} />
+  </Route>
+);
 const ProblemGradesPage = lazy(() => import('@/pages/grades/ProblemGradesPage'));
+const PlanningPokerPage = lazy(() => import('@/pages/planning-poker/PlanningPokerPage'));
 
 export function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path={ROUTES.splash} element={<SplashPage />} />
+        {publicRoutes}
+        {protectedRoutes}
         <Route element={<PublicOnlyRoute />}>
           <Route path={ROUTES.profileSelection} element={<ProfileSelectionPage />} />
           <Route path={ROUTES.login} element={<LoginPage />} />
@@ -93,6 +143,7 @@ export function AppRoutes() {
           <Route path={ROUTES.sessionEvaluationsList} element={<SessionEvaluationsListPage />} />
           <Route path={ROUTES.studentEvaluation} element={<StudentEvaluationPage />} />
           <Route path={ROUTES.problemGrades} element={<ProblemGradesPage />} />
+          <Route path={ROUTES.sessionPlanningPoker} element={<PlanningPokerPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

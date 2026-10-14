@@ -1,14 +1,18 @@
 import type { ProblemGradesResponse, StudentGradeRow } from '@/types/grades';
+import type { ProblemFeedbacksResponse } from '@/types/feedback';
 import { ProblemGradesTableToggle } from './ProblemGradesTableToggle';
 import { ProblemGradesTableHeader } from './ProblemGradesTableHeader';
 import { StudentGradeRowItem } from './StudentGradeRowItem';
 import { ProblemGradesTableFooter } from './ProblemGradesTableFooter';
+import type { EvaluationContext } from './StudentGradeField';
 
 export type ProblemGradesTableProps = {
   data: ProblemGradesResponse;
   hideNames: boolean;
   onToggleHideNames: (val: boolean) => void;
-  onSelectStudent: (student: StudentGradeRow) => void;
+  onSelectStudent?: (student: StudentGradeRow) => void;
+  onSelectEvaluation?: (context: EvaluationContext) => void;
+  feedbacks?: ProblemFeedbacksResponse | null;
 };
 
 export function ProblemGradesTable({
@@ -16,6 +20,8 @@ export function ProblemGradesTable({
   hideNames,
   onToggleHideNames,
   onSelectStudent,
+  onSelectEvaluation,
+  feedbacks,
 }: ProblemGradesTableProps) {
   return (
     <div className="rounded-3xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
@@ -42,6 +48,8 @@ export function ProblemGradesTable({
                   sessoes={data.sessoes}
                   hideNames={hideNames}
                   onSelectStudent={onSelectStudent}
+                  onSelectEvaluation={onSelectEvaluation}
+                  feedbacks={feedbacks}
                 />
               ))
             )}

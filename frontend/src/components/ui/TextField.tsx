@@ -6,7 +6,7 @@ type TextFieldProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'email' | 'password' | 'url' | 'date';
+  type?: 'text' | 'email' | 'password' | 'url' | 'date' | 'datetime-local';
   placeholder?: string;
   autoComplete?: string;
   inputMode?: 'text' | 'email' | 'numeric' | 'url';

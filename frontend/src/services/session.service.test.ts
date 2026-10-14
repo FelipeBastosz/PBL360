@@ -163,4 +163,31 @@ describe('sessionService', () => {
     await sessionService.downloadAttachment('s1', 'a1');
     expect(sent(download)).toMatchObject({ url: '/sessoes/s1/anexos/a1', responseType: 'blob' });
   });
+
+  it('fetches release status for a session', async () => {
+    const mockReleases = {
+      autoavaliacao: { liberada: true, prazo: null, enviadas: 4, esperadas: 12 },
+      pares: { liberada: false, prazo: null, enviadas: 0, esperadas: 12 },
+      atualizadoEm: '2026-10-01T10:00:00.000Z',
+      atualizadoPor: 'tutor-1',
+    };
+    const adapter = respondWith(mockReleases);
+
+    await expect(sessionService.getReleases('sess-1')).resolves.toEqual(mockReleases);
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'get',
+      url: '/sessoes/sess-1/liberacoes',
+    });
+  });
+
+  it('updates release configuration for a session', async () => {
+    const payload = { autoavaliacao: { liberada: true, prazo: null } };
+    const adapter = respondWith({}, 200);
+
+    await sessionService.updateReleases('sess-1', payload);
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'put',
+      url: '/sessoes/sess-1/liberacoes',
+    });
+  });
 });

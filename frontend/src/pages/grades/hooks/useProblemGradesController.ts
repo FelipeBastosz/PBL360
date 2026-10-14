@@ -8,6 +8,7 @@ import type {
   GeneralFeedbackResponse,
 } from '@/types/feedback';
 import { useProblemGradesData } from './useProblemGradesData';
+import type { EvaluationContext } from '../StudentGradeField';
 
 function updateStudentFeedbacks(
   prev: ProblemFeedbacksResponse | null,
@@ -31,8 +32,20 @@ export function useProblemGradesController() {
 
   const data = useProblemGradesData(roomId, problemId, isProfessor);
   const [hideNames, setHideNames] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<StudentGradeRow | null>(null);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationContext | null>(null);
+  const [selectedStudentState, setSelectedStudentState] = useState<StudentGradeRow | null>(null);
   const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
+
+  const handleClose = () => {
+    setSelectedEvaluation(null);
+    setSelectedStudentState(null);
+  };
+
+  const selectedStudent =
+    selectedStudentState ??
+    (selectedEvaluation
+      ? (data.grades?.alunos.find((a) => a.alunoId === selectedEvaluation.studentId) ?? null)
+      : null);
 
   const handleStudentFeedbackSaved = (saved: StudentProblemFeedbackResponse) => {
     data.setFeedbacks((prev) => updateStudentFeedbacks(prev, saved, selectedStudent?.nome));
@@ -52,8 +65,11 @@ export function useProblemGradesController() {
     ...data,
     hideNames,
     setHideNames,
+    selectedEvaluation,
+    setSelectedEvaluation,
     selectedStudent,
-    setSelectedStudent,
+    setSelectedStudent: setSelectedStudentState,
+    handleClose,
     isGeneralModalOpen,
     setIsGeneralModalOpen,
     currentStudentFeedback,

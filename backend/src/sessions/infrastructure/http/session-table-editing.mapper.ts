@@ -19,7 +19,6 @@ export function toSessionTableEditInput(
       id: criterion.id,
       name: criterion.nome,
       weight: criterion.peso,
-      maxScore: criterion.notaMaxima,
     })),
   };
 }

@@ -28,7 +28,7 @@ export class SessionPerformanceCriterionDto {
   @ApiProperty({ minimum: 0, maximum: 10 })
   peso: number;
 
-  @ApiProperty({ minimum: 0, exclusiveMinimum: true, maximum: 10 })
+  @ApiProperty({ example: 10, enum: [10], description: 'Limite fixo das notas dos critérios.' })
   notaMaxima: number;
 }
 

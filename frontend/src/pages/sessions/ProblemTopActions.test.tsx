@@ -19,10 +19,10 @@ describe('ProblemTopActions', () => {
     expect(screen.getByText('Nota final do problema')).toBeInTheDocument();
   });
 
-  it('links professors to their formulas', () => {
+  it('does not show the formulas shortcut, which moved to the session page', () => {
     renderActions(true);
 
-    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute('href', '/formulas');
+    expect(screen.queryByRole('link', { name: /fórmulas/i })).not.toBeInTheDocument();
   });
 
   it('renders nothing when user is not a professor', () => {

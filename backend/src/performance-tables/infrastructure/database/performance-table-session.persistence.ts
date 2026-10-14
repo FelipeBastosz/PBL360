@@ -3,21 +3,21 @@ import { ConflictError } from '@/shared/errors/application.error';
 import type { PerformanceTable } from '../../domain/entities/performance-table.entity';
 
 const RECALCULATE_SESSION_EVALUATIONS = `
-  WITH weighted_scores AS (
+  WITH session_scores AS (
     SELECT e.id,
-           SUM(COALESCE(ei.score, 0) * sec.weight) / NULLIF(SUM(sec.weight), 0) AS simple_score,
-           COALESCE((
-             SELECT fc.weight FROM formulas f
-              JOIN formula_components fc ON fc.formula_id = f.id
-             WHERE f.session_id = e.session_id AND f.scope = 'SESSAO'
-               AND f.active = TRUE AND fc.type = 'CRITERIOS'
-           ), 70) AS criteria_weight,
-           COALESCE((
-             SELECT fc.weight FROM formulas f
-              JOIN formula_components fc ON fc.formula_id = f.id
-             WHERE f.session_id = e.session_id AND f.scope = 'SESSAO'
-               AND f.active = TRUE AND fc.type = 'PAPEL'
-           ), 30) AS role_weight
+           e.session_id,
+           e.student_id,
+           e.session_score AS previous_score,
+           e.applied_bonus AS role_score,
+           SUM(COALESCE(ei.score, 0) * sec.weight) / NULLIF(SUM(sec.weight), 0) AS criteria_score,
+           COALESCE((SELECT fc.weight FROM formulas f
+                      JOIN formula_components fc ON fc.formula_id = f.id
+                     WHERE f.session_id = e.session_id AND f.scope = 'SESSAO'
+                       AND f.active = TRUE AND fc.type = 'CRITERIOS'), 70) AS criteria_weight,
+           COALESCE((SELECT fc.weight FROM formulas f
+                      JOIN formula_components fc ON fc.formula_id = f.id
+                     WHERE f.session_id = e.session_id AND f.scope = 'SESSAO'
+                       AND f.active = TRUE AND fc.type = 'PAPEL'), 30) AS role_weight
       FROM evaluations e
       JOIN sessions s ON s.id = e.session_id
       JOIN session_evaluation_configs cfg ON cfg.session_id = e.session_id
@@ -27,29 +27,43 @@ const RECALCULATE_SESSION_EVALUATIONS = `
      WHERE s.performance_table_id = $1
        AND e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED'
      GROUP BY e.id
-  )
-  UPDATE evaluations e
-     SET session_score = ROUND(CASE WHEN e.applied_bonus IS NULL THEN weighted_scores.simple_score
-                                    ELSE (weighted_scores.simple_score * weighted_scores.criteria_weight
-                                          + e.applied_bonus * weighted_scores.role_weight)
-                                         / (weighted_scores.criteria_weight + weighted_scores.role_weight)
-                               END, 2),
+  ), weighted_scores AS (
+    SELECT session_scores.*,
+           ROUND(CASE WHEN role_score IS NULL THEN criteria_score
+                      ELSE (criteria_score * criteria_weight + role_score * role_weight)
+                           / NULLIF(criteria_weight + role_weight, 0)
+                 END, 2) AS new_score
+      FROM session_scores
+  ), updated_evaluations AS (
+    UPDATE evaluations e
+       SET session_score = weighted_scores.new_score,
          calculation_version = 'WEIGHTED_SESSION_FORMULA_V3',
          updated_by = $2,
          updated_at = now()
+      FROM weighted_scores
+     WHERE e.id = weighted_scores.id
+       AND e.session_score IS DISTINCT FROM weighted_scores.new_score
+    RETURNING e.id
+  )
+  INSERT INTO grade_recalculation_history
+    (evaluation_id, session_id, student_id, previous_score, new_score, reason_code, changed_by)
+  SELECT weighted_scores.id, weighted_scores.session_id, weighted_scores.student_id,
+         weighted_scores.previous_score, weighted_scores.new_score,
+         'CRITERION_WEIGHTS_CHANGED', $2
     FROM weighted_scores
-   WHERE e.id = weighted_scores.id;
+    JOIN updated_evaluations ON updated_evaluations.id = weighted_scores.id;
 `;
 
 export async function propagatePerformanceTableSessions(
   manager: EntityManager,
   table: PerformanceTable,
+  changedBy: string,
 ): Promise<void> {
   await assertSubmittedItemsRemainValid(manager, table.id);
   await updateSnapshotTableNames(manager, table);
   await replaceSessionCriteria(manager, table.id);
   await removeObsoleteDraftItems(manager, table.id);
-  await recalculateSessionEvaluations(manager, table.id, table.tutorId!);
+  await recalculateSessionEvaluations(manager, table.id, changedBy);
 }
 
 async function updateSnapshotTableNames(
@@ -73,8 +87,8 @@ async function replaceSessionCriteria(manager: EntityManager, tableId: string): 
   );
   await manager.query(
     `INSERT INTO session_evaluation_criteria
-       (session_id, criterion_id, name, description, weight, order_index, max_score)
-     SELECT s.id, pc.id, pc.name, pc.description, pc.weight, pc.order_index, pc.max_score
+       (session_id, criterion_id, name, description, weight, order_index)
+     SELECT s.id, pc.id, pc.name, pc.description, pc.weight, pc.order_index
        FROM sessions s
        JOIN performance_criteria pc ON pc.performance_table_id = s.performance_table_id
       WHERE s.performance_table_id = $1 AND pc.deleted_at IS NULL

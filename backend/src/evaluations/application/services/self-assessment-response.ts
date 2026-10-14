@@ -29,6 +29,6 @@ function toCriterion(criterion: EvaluationDetail['config']['criteria'][number]) 
     id: criterion.id,
     name: criterion.name,
     weight: criterion.weight,
-    maxScore: criterion.maxScore ?? 10,
+    maxScore: 10,
   };
 }

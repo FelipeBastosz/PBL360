@@ -48,7 +48,7 @@ export const EditSessionTableSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Edita a tabela em uma sessão ou em todas as sessões vinculadas.',
     description:
-      'SESSAO cria uma cópia na turma. Para um padrão do sistema, somente SESSAO é permitido, respeitando o histórico da sessão atual. TODAS altera tabelas comuns, inclusive em outras salas autorizadas. Notas são recalculadas na leitura; notas por critério e ajustes são preservados.',
+      'SESSAO cria uma cópia na turma. Para um padrão do sistema, somente SESSAO é permitido, respeitando o histórico da sessão atual. TODAS altera tabelas comuns, inclusive em outras salas autorizadas. A nota máxima de cada critério é sempre 10 e não pode ser configurada. Notas são recalculadas na leitura; notas por critério e ajustes são preservados.',
   }),
   ApiBody({ type: EditSessionTableDto }),
   ApiOkResponse({ type: SessionTableEditResponseDto }),
@@ -59,7 +59,7 @@ export const EditSessionTableSwaggerDocs = applyDecorators(
   }),
   ApiUnprocessableEntityResponse({
     description:
-      'Pesos, notas máximas ou critérios inválidos. Soma dos pesos igual a 10 e máxima maior que zero e até 10.',
+      'Pesos ou critérios inválidos. Cada peso deve estar entre 0 e 10, e a soma dos pesos deve ser igual a 10.',
     type: ErrorResponseDto,
   }),
   ...accessErrors,

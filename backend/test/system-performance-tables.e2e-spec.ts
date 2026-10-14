@@ -126,21 +126,56 @@ describe('System performance tables (e2e)', () => {
     expect((await assignment(earlier)).tableId).toBe(SYSTEM_TABLE_IDS.standard);
   });
 
-  it('preserves an explicit table selection when dates are reordered', async () => {
-    const first = await create('2099-11-10');
-    const second = await create('2099-11-11');
-    await api(app, tutor)
-      .put(`/sessoes/${first}/tabela`, { tabelaId: SYSTEM_TABLE_IDS.standard })
-      .expect(200);
-    await api(app, tutor)
-      .put(`${path()}/${second}`, { titulo: 'Anterior', descricao: null, data: '2099-11-09' })
-      .expect(200);
-    expect(await assignment(first)).toEqual({
-      tableId: SYSTEM_TABLE_IDS.standard,
-      automatic: false,
-    });
-    expect((await assignment(second)).tableId).toBe(SYSTEM_TABLE_IDS.firstSession);
-  });
+  it.each([SYSTEM_TABLE_IDS.standard, SYSTEM_TABLE_IDS.firstSession])(
+    'preserves an explicit copy of %s when dates are reordered',
+    async (sourceId) => {
+      const first = await create('2099-11-10');
+      const second = await create('2099-11-11');
+      await api(app, tutor).put(`/sessoes/${first}/tabela`, { tabelaId: sourceId }).expect(200);
+      const selected = await assignment(first);
+      expect(selected.automatic).toBe(false);
+      expect(selected.tableId).not.toBe(sourceId);
+      const [copy] = await db.query<
+        Array<{
+          tutorId: string;
+          roomId: string;
+          sourceId: string;
+          isDefault: boolean;
+          isSessionCopy: boolean;
+        }>
+      >(
+        `SELECT tutor_id AS "tutorId", room_id AS "roomId", source_table_id AS "sourceId",
+              is_default AS "isDefault", is_session_copy AS "isSessionCopy"
+         FROM performance_tables WHERE id = $1;`,
+        [selected.tableId],
+      );
+      expect(copy).toEqual({
+        tutorId: tutor.id,
+        roomId,
+        sourceId,
+        isDefault: false,
+        isSessionCopy: true,
+      });
+      const source = (await api(app, tutor).get(`/tabelas-desempenho/${sourceId}`).expect(200))
+        .body as TableBody;
+      const copied = (
+        await api(app, tutor).get(`/tabelas-desempenho/${selected.tableId}`).expect(200)
+      ).body as TableBody;
+      expect(copied.criterios.map(({ nome, peso }) => ({ nome, peso }))).toEqual(
+        source.criterios.map(({ nome, peso }) => ({ nome, peso })),
+      );
+      expect(
+        copied.criterios.every(
+          (criterion) => !source.criterios.some((original) => original.id === criterion.id),
+        ),
+      ).toBe(true);
+      await api(app, tutor)
+        .put(`${path()}/${second}`, { titulo: 'Anterior', descricao: null, data: '2099-11-09' })
+        .expect(200);
+      expect(await assignment(first)).toEqual(selected);
+      expect((await assignment(second)).tableId).toBe(SYSTEM_TABLE_IDS.firstSession);
+    },
+  );
 
   it('does not reassign tables after a draft evaluation exists', async () => {
     const first = await create('2099-11-10');
@@ -196,11 +231,10 @@ describe('System performance tables (e2e)', () => {
     await api(app, tutor)
       .put(`/sessoes/${session}/tabela/edicao`, {
         escopo: 'TODAS',
-        criterios: source.criterios.map(({ id, nome, peso, notaMaxima }) => ({
+        criterios: source.criterios.map(({ id, nome, peso }) => ({
           id,
           nome,
           peso,
-          notaMaxima,
         })),
       })
       .expect(403);

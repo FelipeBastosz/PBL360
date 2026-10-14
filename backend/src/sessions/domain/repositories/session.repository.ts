@@ -25,4 +25,5 @@ export interface ReleaseSubmissions {
   presentStudents: number;
   selfSubmitted: number;
   peerSubmitted: number;
+  pokerStarted?: boolean;
 }

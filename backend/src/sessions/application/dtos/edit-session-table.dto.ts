@@ -34,15 +34,6 @@ export class EditSessionCriterionDto {
   })
   @Allow()
   peso: number;
-
-  @ApiPropertyOptional({
-    minimum: 0,
-    exclusiveMinimum: true,
-    maximum: 10,
-    description: 'Obrigatória na edição completa; até duas casas decimais.',
-  })
-  @Allow()
-  notaMaxima?: number;
 }
 
 export class EditSessionTableDto {

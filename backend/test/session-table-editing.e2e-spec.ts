@@ -35,8 +35,8 @@ describe('Session table editing (e2e)', () => {
     { criterioId: secondId, nota: 6 },
   ];
   const criteria = () => [
-    { id: firstId, nome: 'Participação', peso: 8, notaMaxima: 10 },
-    { id: secondId, nome: 'Postura', peso: 2, notaMaxima: 10 },
+    { id: firstId, nome: 'Participação', peso: 8 },
+    { id: secondId, nome: 'Postura', peso: 2 },
   ];
   const edit = (body: object, user = owner) => api(app, user).put(`${path()}/edicao`, body);
   const save = (body: object, session = sessionId) =>
@@ -117,11 +117,11 @@ describe('Session table editing (e2e)', () => {
   });
 
   it.each(['SESSAO', 'TODAS'])(
-    'supports full editing with %s and validates the new maximum',
+    'supports full editing with %s and keeps scores between zero and ten',
     async (scope) => {
       await save({ itens: scores(), enviar: false }).expect(200);
       const updated = criteria();
-      updated[0] = { id: firstId, nome: 'Autonomia', peso: 8, notaMaxima: 8 };
+      updated[0] = { id: firstId, nome: 'Autonomia', peso: 8 };
       const response = await edit({ escopo: scope, nome: 'Novo', criterios: updated }).expect(200);
       const body = response.body as EditResponse;
       expect(body.sessoesAtualizadas).toHaveLength(scope === 'SESSAO' ? 1 : 2);
@@ -129,16 +129,21 @@ describe('Session table editing (e2e)', () => {
       const detail = (await api(app, owner).get(evaluationPath()).expect(200))
         .body as EvaluationResponse;
       const first = detail.criterios.find((criterion) => criterion.nome === 'Autonomia')!;
-      expect(first).toMatchObject({ notaMaxima: 8, peso: 8 });
+      expect(first).toMatchObject({ notaMaxima: 10, peso: 8 });
       expect(detail.itens).toEqual(
         expect.arrayContaining([expect.objectContaining({ criterioId: first.id, nota: 8 })]),
       );
-      const invalid = detail.itens.map((item) => ({
+      const valid = detail.itens.map((item) => ({
         ...item,
-        nota: item.criterioId === first.id ? 8.01 : item.nota,
+        nota: item.criterioId === first.id ? 10 : item.nota,
       }));
-      await save({ itens: invalid, enviar: true }).expect(422);
-      await save({ itens: detail.itens, enviar: true }).expect(200);
+      for (const nota of [-0.01, 10.01]) {
+        const invalid = valid.map((item) =>
+          item.criterioId === first.id ? { ...item, nota } : item,
+        );
+        await save({ itens: invalid, enviar: true }).expect(422);
+      }
+      await save({ itens: valid, enviar: true }).expect(200);
       const [next] = await db.query<[{ tableId: string }]>(
         'SELECT performance_table_id AS "tableId" FROM sessions WHERE id = $1;',
         [nextSessionId],
@@ -214,7 +219,7 @@ describe('Session table editing (e2e)', () => {
     await db.query('UPDATE sessions SET date = CURRENT_DATE WHERE id = $1;', [nextSessionId]);
     await edit({ escopo: 'SESSAO', nome: 'Novo', criterios: criteria() }).expect(409);
     const changed = criteria();
-    changed[0]!.notaMaxima = 8;
+    changed[0]!.nome = 'Autonomia';
     await edit({ escopo: 'TODAS', criterios: changed }).expect(409);
   });
 
@@ -237,13 +242,13 @@ describe('Session table editing (e2e)', () => {
     await save({ itens: scores(), enviar: false }).expect(200);
     await edit({
       escopo: 'TODAS',
-      criterios: [criteria()[0], { nome: 'Evolução', peso: 2, notaMaxima: 5 }],
+      criterios: [criteria()[0], { nome: 'Evolução', peso: 2 }],
     }).expect(200);
     const detail = (await api(app, owner).get(evaluationPath()).expect(200))
       .body as EvaluationResponse;
     expect(detail.itens).toEqual([{ criterioId: firstId, nota: 8 }]);
     expect(detail.criterios).toEqual(
-      expect.arrayContaining([expect.objectContaining({ nome: 'Evolução', notaMaxima: 5 })]),
+      expect.arrayContaining([expect.objectContaining({ nome: 'Evolução', notaMaxima: 10 })]),
     );
     const [removed] = await db.query<[{ deletedAt: Date | null }]>(
       'SELECT deleted_at AS "deletedAt" FROM performance_criteria WHERE id = $1;',
@@ -268,21 +273,32 @@ describe('Session table editing (e2e)', () => {
       .expect(200);
   });
 
-  it('rejects invalid weights and maxima and preserves a draft above a proposed maximum', async () => {
+  it('rejects invalid weights and preserves draft scores', async () => {
     await save({ itens: scores(), enviar: false }).expect(200);
-    for (const invalid of [
-      { peso: 11 },
-      { peso: -1 },
-      { peso: 8.001 },
-      { notaMaxima: 0 },
-      { notaMaxima: 11 },
-      { notaMaxima: null },
-      { notaMaxima: 7 },
-    ]) {
+    for (const invalid of [{ peso: 11 }, { peso: -1 }, { peso: 8.001 }]) {
       await edit({
         escopo: 'TODAS',
         criterios: [{ ...criteria()[0], ...invalid }, criteria()[1]],
       }).expect(422);
+    }
+    const detail = (await api(app, owner).get(evaluationPath()).expect(200))
+      .body as EvaluationResponse;
+    expect(detail.itens).toEqual(expect.arrayContaining(scores()));
+    expect(detail.criterios.every((criterion) => criterion.notaMaxima === 10)).toBe(true);
+  });
+
+  it.each([
+    [false, 'SESSAO'],
+    [false, 'TODAS'],
+    [true, 'SESSAO'],
+    [true, 'TODAS'],
+  ])('rejects configurable maximums when occurred=%s and scope=%s', async (occurred, scope) => {
+    await save({ itens: scores(), enviar: Boolean(occurred) }).expect(200);
+    for (const notaMaxima of [5, 10]) {
+      await edit({
+        escopo: scope,
+        criterios: [{ ...criteria()[0], notaMaxima }, criteria()[1]],
+      }).expect(400);
     }
     const detail = (await api(app, owner).get(evaluationPath()).expect(200))
       .body as EvaluationResponse;
@@ -360,6 +376,10 @@ describe('Session table editing (e2e)', () => {
     const doc = (await api(app).get('/docs/json').expect(200)).body as OpenAPIObject;
     expect(doc.paths['/api/sessoes/{sessaoId}/tabela/permissoes-edicao']?.get).toBeDefined();
     const put = doc.paths['/api/sessoes/{sessaoId}/tabela/edicao']?.put;
+    expect(doc.components?.schemas?.EditSessionCriterionDto).toHaveProperty('properties');
+    expect(doc.components?.schemas?.EditSessionCriterionDto).not.toHaveProperty(
+      'properties.notaMaxima',
+    );
     expect(put?.responses).toEqual(
       expect.objectContaining({
         '200': expect.anything() as unknown,

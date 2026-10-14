@@ -11,9 +11,8 @@ interface TableRow {
   tableId: string;
   tableName: string;
 }
-interface CriterionRow extends Omit<SessionEvaluationCriterion, 'weight' | 'maxScore'> {
+interface CriterionRow extends Omit<SessionEvaluationCriterion, 'weight'> {
   weight: string;
-  maxScore?: string | number;
 }
 
 export async function readProblemConfig(
@@ -60,7 +59,7 @@ async function readSnapshotCriteria(
   sessionId: string,
 ): Promise<CriterionRow[]> {
   return manager.query<CriterionRow[]>(
-    `SELECT criterion_id AS id, name, description, weight, max_score AS "maxScore", order_index AS "orderIndex"
+    `SELECT criterion_id AS id, name, description, weight, order_index AS "orderIndex"
        FROM session_evaluation_criteria WHERE session_id = $1 ORDER BY order_index;`,
     [sessionId],
   );
@@ -119,8 +118,8 @@ async function insertSnapshotCriterion(
   criterion: SessionEvaluationCriterion,
 ): Promise<void> {
   await manager.query(
-    `INSERT INTO session_evaluation_criteria (session_id, criterion_id, name, description, weight, order_index, max_score)
-     VALUES ($1, $2, $3, $4, $5, $6, $7);`,
+    `INSERT INTO session_evaluation_criteria (session_id, criterion_id, name, description, weight, order_index)
+     VALUES ($1, $2, $3, $4, $5, $6);`,
     [
       sessionId,
       criterion.id,
@@ -128,7 +127,6 @@ async function insertSnapshotCriterion(
       criterion.description,
       criterion.weight,
       criterion.orderIndex,
-      criterion.maxScore ?? 10,
     ],
   );
 }
@@ -148,5 +146,4 @@ export async function assertSessionExists(
 const toCriterion = (row: CriterionRow): SessionEvaluationCriterion => ({
   ...row,
   weight: Number(row.weight),
-  maxScore: Number(row.maxScore ?? 10),
 });

@@ -3,7 +3,7 @@ import { FlowShell } from '@/components/layout/FlowShell';
 import { Button } from '@/components/ui/Button';
 import { CopyValue } from '@/components/ui/CopyValue';
 import { SuccessState } from '@/components/ui/SuccessState';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { useShareInvite } from '@/hooks/useShareInvite';
 import { ROUTES } from '@/routes/paths';
@@ -50,7 +50,7 @@ export default function CreateRoomSuccessPage() {
   const roomName = room.nome || room.name;
 
   return (
-    <FlowShell title="Turma criada" backTo={ROUTES.rooms} trailing={<UserAvatar user={user} />}>
+    <FlowShell title="Turma criada" backTo={ROUTES.rooms} trailing={<UserMenuButton user={user} />}>
       <SuccessState
         title="Turma criada com sucesso!"
         description={`Você criou a turma: ${roomName}`}

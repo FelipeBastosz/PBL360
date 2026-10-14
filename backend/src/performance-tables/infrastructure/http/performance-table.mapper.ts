@@ -43,14 +43,14 @@ function mapCriteria(table: PerformanceTable) {
     descricao: criterion.description,
     ordem: criterion.orderIndex,
     peso: Number(criterion.weight),
-    notaMaxima: criterion.maxScore ?? 10,
+    notaMaxima: 10,
   }));
 }
 
 export const toUpdatePerformanceTableInput = (
   dto: UpdatePerformanceTableDto,
 ): UpdatePerformanceTable => ({
-  propagateToSessions: dto.propagarParaSessoes ?? false,
+  propagateToSessions: dto.propagarParaSessoes,
   name: dto.nome,
   description: dto.descricao,
   criteria: dto.criterios.map((criterion) => ({

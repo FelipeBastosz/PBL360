@@ -16,12 +16,12 @@ export class SystemDefaultPerformanceTables1792400000000 implements MigrationInt
       INSERT INTO performance_tables (id, tutor_id, name, is_default)
       VALUES ('34200000-0000-4000-8000-000000000001', NULL, 'Padrão', TRUE),
              ('34200000-0000-4000-8000-000000000002', NULL, 'Padrão da 1ª sessão', TRUE);
-      INSERT INTO performance_criteria (performance_table_id, name, order_index, weight, max_score)
-      VALUES ('34200000-0000-4000-8000-000000000001', 'Seguimento', 1, 4, 10),
-             ('34200000-0000-4000-8000-000000000001', 'Participação', 2, 4, 10),
-             ('34200000-0000-4000-8000-000000000001', 'Comportamento', 3, 2, 10),
-             ('34200000-0000-4000-8000-000000000002', 'Participação', 1, 8, 10),
-             ('34200000-0000-4000-8000-000000000002', 'Comportamento', 2, 2, 10);
+      INSERT INTO performance_criteria (performance_table_id, name, order_index, weight)
+      VALUES ('34200000-0000-4000-8000-000000000001', 'Seguimento', 1, 4),
+             ('34200000-0000-4000-8000-000000000001', 'Participação', 2, 4),
+             ('34200000-0000-4000-8000-000000000001', 'Comportamento', 3, 2),
+             ('34200000-0000-4000-8000-000000000002', 'Participação', 1, 8),
+             ('34200000-0000-4000-8000-000000000002', 'Comportamento', 2, 2);
       ALTER TABLE sessions ADD COLUMN uses_default_table BOOLEAN NOT NULL DEFAULT FALSE;
       CREATE OR REPLACE FUNCTION assign_session_performance_table() RETURNS TRIGGER AS $$
       BEGIN

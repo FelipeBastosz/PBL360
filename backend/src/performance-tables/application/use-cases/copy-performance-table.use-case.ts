@@ -42,7 +42,6 @@ function createCopy(source: PerformanceTable, input: CopyPerformanceTableInput):
       description: criterion.description,
       orderIndex: criterion.orderIndex,
       weight: Number(criterion.weight),
-      maxScore: Number(criterion.maxScore ?? 10),
     })),
   });
 }

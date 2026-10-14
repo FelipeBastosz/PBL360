@@ -38,7 +38,6 @@ describe('EditSessionTableUseCase', () => {
     if (!occurred) {
       input.name = 'Novo barema';
       input.criteria[0]!.name = 'Autonomia';
-      input.criteria[0]!.maxScore = 8;
     }
     await useCase.execute(input);
     expect(plan().copy).toBe(scope === 'SESSAO');
@@ -73,19 +72,21 @@ describe('EditSessionTableUseCase', () => {
       ];
       await useCase.execute(input);
       expect(plan().table.criteria.map((criterion) => criterion.orderIndex)).toEqual([2, 1]);
-      expect(plan().table.criteria.map((criterion) => criterion.maxScore)).toEqual([10, 10]);
+      expect(plan().table.criteria.map((criterion) => criterion.name)).toEqual([
+        'Postura',
+        'Participação',
+      ]);
     },
   );
 
-  it.each(['name', 'criterionName', 'maximum', 'add', 'remove', 'missingId'])(
+  it.each(['name', 'criterionName', 'add', 'remove', 'missingId'])(
     'rejects a restricted %s change',
     async (kind) => {
       const { useCase } = setup(true);
       const input = tableEditInput('SESSAO');
       if (kind === 'name') input.name = 'Barema';
       if (kind === 'criterionName') input.criteria[0]!.name = 'Novo';
-      if (kind === 'maximum') input.criteria[0]!.maxScore = 8;
-      if (kind === 'add') input.criteria.push({ name: 'Novo', weight: 0, maxScore: 10 });
+      if (kind === 'add') input.criteria.push({ name: 'Novo', weight: 0 });
       if (kind === 'remove') input.criteria.pop();
       if (kind === 'missingId') delete input.criteria[0]!.id;
       await expect(useCase.execute(input)).rejects.toBeInstanceOf(ConflictError);
@@ -95,11 +96,11 @@ describe('EditSessionTableUseCase', () => {
   it('permits adding and removing criteria before any session has occurred', async () => {
     const { useCase, plan } = setup();
     const input = tableEditInput();
-    input.criteria[1] = { name: 'Evolução', weight: 2, maxScore: 6 };
+    input.criteria[1] = { name: 'Evolução', weight: 2 };
     await useCase.execute(input);
     expect(plan().table.criteria[0]!.id).toBe('criterion-0');
     expect(plan().table.criteria[1]!.id).toBeUndefined();
-    expect(plan().table.criteria[1]!.maxScore).toBe(6);
+    expect(plan().table.criteria[1]!.name).toBe('Evolução');
   });
 
   it('rejects editing a system default in the TODAS scope', async () => {
@@ -125,16 +126,6 @@ describe('EditSessionTableUseCase', () => {
     expect(plan().table.name).toContain(' — ');
   });
 
-  it.each([0, -1, 10.01, NaN, Infinity, 1.001])(
-    'rejects an invalid maximum of %s',
-    async (maximum) => {
-      const { useCase } = setup();
-      const input = tableEditInput();
-      input.criteria[0]!.maxScore = maximum;
-      await expect(useCase.execute(input)).rejects.toBeInstanceOf(UnprocessableEntityError);
-    },
-  );
-
   it.each([-1, 11, NaN, Infinity, 8.001])('rejects an invalid weight of %s', async (weight) => {
     const { useCase } = setup();
     const input = tableEditInput();
@@ -142,7 +133,7 @@ describe('EditSessionTableUseCase', () => {
     await expect(useCase.execute(input)).rejects.toBeInstanceOf(UnprocessableEntityError);
   });
 
-  it.each(['duplicate', 'foreign', 'empty', 'sum', 'missingName', 'missingMaximum'])(
+  it.each(['duplicate', 'foreign', 'empty', 'sum', 'missingName'])(
     'rejects %s criteria',
     async (kind) => {
       const { useCase } = setup();
@@ -152,7 +143,6 @@ describe('EditSessionTableUseCase', () => {
       if (kind === 'empty') input.criteria = [];
       if (kind === 'sum') input.criteria[0]!.weight = 7;
       if (kind === 'missingName') delete input.criteria[0]!.name;
-      if (kind === 'missingMaximum') delete input.criteria[0]!.maxScore;
       await expect(useCase.execute(input)).rejects.toBeInstanceOf(UnprocessableEntityError);
     },
   );

@@ -63,11 +63,7 @@ function assertWeightsOnly(table: PerformanceTable, input: SessionTableEditInput
   const existing = new Map(table.criteria.map((criterion) => [criterion.id, criterion]));
   for (const criterion of input.criteria) {
     const previous = criterion.id ? existing.get(criterion.id) : undefined;
-    if (
-      !previous ||
-      (criterion.name !== undefined && criterion.name !== previous.name) ||
-      (criterion.maxScore !== undefined && criterion.maxScore !== (previous.maxScore ?? 10))
-    ) {
+    if (!previous || (criterion.name !== undefined && criterion.name !== previous.name)) {
       throw new ConflictError(WEIGHTS_ONLY_REASON);
     }
   }
@@ -116,21 +112,17 @@ function criterionValues(
 ) {
   const previous = context.table.criteria.find((item) => item.id === criterion.id);
   assertCriterionFields(criterion, editable);
-  assertNumericPrecision(
-    criterion.maxScore === undefined ? (previous?.maxScore ?? 10) : criterion.maxScore,
-  );
   return {
     name: criterion.name ?? previous!.name,
     description: previous?.description ?? null,
     weight: criterion.weight,
-    maxScore: criterion.maxScore ?? previous?.maxScore ?? 10,
     orderIndex: editable ? index + 1 : previous!.orderIndex,
   };
 }
 
 function assertCriterionFields(criterion: TableEditCriterion, editable: boolean): void {
-  if (editable && (criterion.name === undefined || criterion.maxScore === undefined)) {
-    throw new UnprocessableEntityError('Informe nome, peso e nota máxima de cada critério.');
+  if (editable && criterion.name === undefined) {
+    throw new UnprocessableEntityError('Informe nome e peso de cada critério.');
   }
   assertNumericPrecision(criterion.weight);
 }
@@ -140,16 +132,11 @@ function assertEditNumbers(criterion: TableEditCriterion): void {
   if (criterion.weight < 0 || criterion.weight > 10) {
     throw new UnprocessableEntityError('O peso do critério deve estar entre 0 e 10.');
   }
-  if (criterion.maxScore === undefined) return;
-  assertNumericPrecision(criterion.maxScore);
-  if (criterion.maxScore <= 0 || criterion.maxScore > 10) {
-    throw new UnprocessableEntityError('A nota máxima deve ser maior que zero e até 10.');
-  }
 }
 
 function assertNumericPrecision(value: number): void {
   if (!Number.isFinite(value) || Math.abs(value * 100 - Math.round(value * 100)) > 0.000001) {
-    throw new UnprocessableEntityError('Pesos e notas máximas devem ter até duas casas decimais.');
+    throw new UnprocessableEntityError('Pesos devem ter até duas casas decimais.');
   }
 }
 

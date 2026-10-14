@@ -11,8 +11,8 @@ export async function insertSystemPerformanceTables(db: DataSource): Promise<voi
     if (inserted.length === 0) continue;
     for (const [index, criterion] of table.criteria.entries()) {
       await db.query(
-        `INSERT INTO performance_criteria (performance_table_id, name, order_index, weight, max_score)
-         VALUES ($1, $2, $3, $4, 10);`,
+        `INSERT INTO performance_criteria (performance_table_id, name, order_index, weight)
+         VALUES ($1, $2, $3, $4);`,
         [table.id, criterion.name, index + 1, criterion.weight],
       );
     }

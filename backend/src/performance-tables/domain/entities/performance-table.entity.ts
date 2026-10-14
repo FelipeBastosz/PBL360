@@ -17,6 +17,7 @@ import { InvalidPerformanceTableError } from '../errors/invalid-performance-tabl
 import type { NewPerformanceTable } from './new-performance-table';
 import { PerformanceCriterion } from './performance-criterion.entity';
 import { SYSTEM_TABLE_IDS } from './system-performance-tables';
+import { assertPerformanceTableIsValid } from './performance-table.validation';
 import {
   assertDefaultTableCanBeUpdated,
   assertOnlyWeightsChanged,
@@ -52,6 +53,21 @@ export class PerformanceTable {
   @Index('idx_performance_tables_room_id')
   @Column({ name: 'room_id', type: 'uuid', nullable: true, default: null })
   roomId: string | null;
+
+  @Column({ name: 'source_table_id', type: 'uuid', nullable: true, default: null })
+  sourceTableId: string | null;
+
+  @Index('idx_performance_tables_source')
+  @ManyToOne(() => PerformanceTable, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({
+    name: 'source_table_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_performance_tables_source',
+  })
+  sourceTable?: PerformanceTable | null;
+
+  @Column({ name: 'is_session_copy', type: 'boolean', default: false })
+  isSessionCopy: boolean;
 
   @ManyToOne(() => Room, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({
@@ -92,6 +108,8 @@ export class PerformanceTable {
     const table = new PerformanceTable();
     table.tutorId = props.tutorId?.trim();
     table.roomId = props.roomId?.trim() || null;
+    table.sourceTableId = null;
+    table.isSessionCopy = false;
     table.name = props.name?.trim();
     table.description = props.description?.trim() || null;
     table.isDefault = props.isDefault ?? false;
@@ -103,7 +121,7 @@ export class PerformanceTable {
       entity.performanceTable = table;
       return entity;
     });
-    table.assertIsValid();
+    assertPerformanceTableIsValid(table);
 
     return table;
   }
@@ -128,9 +146,6 @@ export class PerformanceTable {
     });
     candidate.criteria.forEach((criterion, index) => {
       const id = props.criteria[index]!.id;
-      if (props.criteria[index]!.maxScore === undefined) {
-        criterion.maxScore = this.criteria.find((current) => current.id === id)?.maxScore ?? 10;
-      }
       if (id !== undefined) criterion.id = id;
       criterion.performanceTableId = this.id;
       criterion.performanceTable = this;
@@ -162,52 +177,12 @@ export class PerformanceTable {
         'A tabela de desempenho padrão não pode ser excluída.',
       );
     }
+    if (this.isSessionCopy) {
+      throw new InvalidPerformanceTableError(
+        'As tabelas aplicadas às sessões não podem ser excluídas.',
+      );
+    }
 
     this.deletedAt = new Date();
-  }
-
-  private assertIsValid(): void {
-    if (!this.tutorId) {
-      throw new InvalidPerformanceTableError('O professor responsável é obrigatório.');
-    }
-
-    if (!this.name) {
-      throw new InvalidPerformanceTableError('O nome da tabela de desempenho é obrigatório.');
-    }
-
-    if (this.name.length > 120) {
-      throw new InvalidPerformanceTableError(
-        'O nome da tabela de desempenho deve ter no máximo 120 caracteres.',
-      );
-    }
-
-    if (this.criteria.length === 0) {
-      throw new InvalidPerformanceTableError(
-        'A tabela de desempenho deve possuir ao menos um critério.',
-      );
-    }
-
-    this.criteriaHaveUniqueOrderIndexes();
-    this.assertCriteriaWeightsSumToTen();
-  }
-
-  private criteriaHaveUniqueOrderIndexes(): void {
-    const orderIndexes = this.criteria.map((criterion) => criterion.orderIndex);
-    if (new Set(orderIndexes).size !== orderIndexes.length) {
-      throw new InvalidPerformanceTableError(
-        'Os critérios da tabela de desempenho não podem repetir a ordem.',
-      );
-    }
-  }
-
-  private assertCriteriaWeightsSumToTen(): void {
-    const totalWeight = this.criteria.reduce(
-      (sum, criterion) => sum + Number(criterion.weight ?? 0),
-      0,
-    );
-
-    if (Number.isNaN(totalWeight) || Math.abs(totalWeight - 10) > 0.0001) {
-      throw new InvalidPerformanceTableError('A soma dos pesos dos critérios deve ser igual a 10.');
-    }
   }
 }

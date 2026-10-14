@@ -8,7 +8,7 @@ export interface CriterionScore {
   score: number;
 }
 
-export type ScoringCriterion = string | { id: string; maxScore?: number };
+export type ScoringCriterion = string | { id: string };
 
 export class EvaluationRules {
   static assertValidItems(
@@ -16,18 +16,13 @@ export class EvaluationRules {
     criteria: readonly ScoringCriterion[],
     requireComplete: boolean,
   ): void {
-    const maximums = new Map(
-      criteria.map((criterion) =>
-        typeof criterion === 'string'
-          ? ([criterion, 10] as const)
-          : ([criterion.id, criterion.maxScore ?? 10] as const),
-      ),
+    const allowedIds = new Set(
+      criteria.map((criterion) => (typeof criterion === 'string' ? criterion : criterion.id)),
     );
-    const allowedIds = new Set(maximums.keys());
     const receivedIds = new Set(items.map((item) => item.criterionId));
 
     this.assertUniqueItems(items, receivedIds);
-    items.forEach((item) => this.assertValidItem(item, maximums));
+    items.forEach((item) => this.assertValidItem(item, allowedIds));
 
     if (requireComplete) {
       this.assertComplete(receivedIds, allowedIds);
@@ -43,19 +38,15 @@ export class EvaluationRules {
     }
   }
 
-  private static assertValidItem(
-    item: CriterionScore,
-    maximums: ReadonlyMap<string, number>,
-  ): void {
-    if (!maximums.has(item.criterionId)) {
+  private static assertValidItem(item: CriterionScore, allowedIds: ReadonlySet<string>): void {
+    if (!allowedIds.has(item.criterionId)) {
       throw new InvalidEvaluationItemsError(
         'Um dos critérios não pertence à configuração desta avaliação.',
       );
     }
 
-    const maximum = maximums.get(item.criterionId)!;
-    if (!Number.isFinite(item.score) || item.score < 0 || item.score > maximum || item.score > 10) {
-      throw new InvalidEvaluationItemsError(`A nota do critério deve estar entre 0 e ${maximum}.`);
+    if (!Number.isFinite(item.score) || item.score < 0 || item.score > 10) {
+      throw new InvalidEvaluationItemsError('A nota do critério deve estar entre 0 e 10.');
     }
   }
 
