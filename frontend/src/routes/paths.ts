@@ -39,5 +39,7 @@ export const ROUTES = {
   studentObservationTags: '/sessoes/:sessionId/avaliacao/:studentId/marcacoes',
   sessionStudentObservationTags:
     '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId/marcacoes',
+  sessionEvaluationHistory: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/historico',
+  evaluationHistory: '/sessoes/:sessionId/historico',
   problemGrades: '/turmas/:roomId/problemas/:problemId/notas',
 } as const;

@@ -5,6 +5,10 @@ import type {
   TutorEvaluationData,
   SaveTutorEvaluationPayload,
   SessionFeedbackResponse,
+  AdjustSelfAssessmentPayload,
+  SelfAssessmentAdjustmentResponse,
+  SelfAssessmentAdjustmentHistoryResponse,
+  SessionEvaluationHistoryResponse,
 } from '@/types/evaluation';
 
 export const evaluationService = {
@@ -34,5 +38,29 @@ export const evaluationService = {
   saveFeedback: (sessionId: string, studentId: string, texto: string) =>
     api
       .put<SessionFeedbackResponse>(`/sessoes/${sessionId}/alunos/${studentId}/feedback`, { texto })
+      .then((r) => r.data),
+
+  adjustSelfAssessment: (
+    sessionId: string,
+    studentId: string,
+    payload: AdjustSelfAssessmentPayload,
+  ) =>
+    api
+      .post<SelfAssessmentAdjustmentResponse>(
+        `/sessoes/${sessionId}/autoavaliacoes/${studentId}/ajustes`,
+        payload,
+      )
+      .then((r) => r.data),
+
+  getSelfAssessmentAdjustments: (sessionId: string, studentId: string) =>
+    api
+      .get<SelfAssessmentAdjustmentHistoryResponse>(
+        `/sessoes/${sessionId}/autoavaliacoes/${studentId}/ajustes`,
+      )
+      .then((r) => r.data),
+
+  getEvaluationHistory: (sessionId: string) =>
+    api
+      .get<SessionEvaluationHistoryResponse>(`/sessoes/${sessionId}/avaliacoes`)
       .then((r) => r.data),
 };

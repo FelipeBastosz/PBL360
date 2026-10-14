@@ -15,6 +15,30 @@ type GridProps = {
   children?: ReactNode;
 };
 
+function ActionCardContent({
+  title,
+  desc,
+  color,
+  Icon,
+}: {
+  title: string;
+  desc: string;
+  color: string;
+  Icon: ComponentType<{ className?: string }>;
+}) {
+  return (
+    <>
+      <div className={`flex size-11 items-center justify-center rounded-xl ${color}`}>
+        <Icon className="size-6" />
+      </div>
+      <div>
+        <h3 className="text-sm font-bold text-ink">{title}</h3>
+        <p className="mt-1 text-xs text-muted leading-relaxed">{desc}</p>
+      </div>
+    </>
+  );
+}
+
 function ActionCard({
   to,
   title,
@@ -42,13 +66,7 @@ function ActionCard({
             {badge}
           </span>
         )}
-        <div className={`flex size-11 items-center justify-center rounded-xl ${color}`}>
-          <Icon className="size-6" />
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-ink">{title}</h3>
-          <p className="mt-1 text-xs text-muted leading-relaxed">{desc}</p>
-        </div>
+        <ActionCardContent title={title} desc={desc} color={color} Icon={Icon} />
       </div>
     );
   }
@@ -59,13 +77,7 @@ function ActionCard({
       state={state}
       className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md"
     >
-      <div className={`flex size-11 items-center justify-center rounded-xl ${color}`}>
-        <Icon className="size-6" />
-      </div>
-      <div>
-        <h3 className="text-sm font-bold text-ink">{title}</h3>
-        <p className="mt-1 text-xs text-muted leading-relaxed">{desc}</p>
-      </div>
+      <ActionCardContent title={title} desc={desc} color={color} Icon={Icon} />
     </Link>
   );
 }
@@ -110,10 +122,8 @@ export function SessionActionGrid({ basePath, isStudentEvalActive, children }: G
         to={`${basePath}/historico`}
         title="Histórico de avaliações"
         desc="Comparar e ajustar com justificativa"
-        color="bg-gray-100 text-gray-500"
+        color="bg-gray-100 text-gray-600"
         Icon={ClockIcon}
-        disabled
-        badge="Em breve"
       />
       {children}
     </div>
