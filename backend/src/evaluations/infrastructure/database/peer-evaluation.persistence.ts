@@ -1,4 +1,5 @@
 import type { EntityManager } from 'typeorm';
+import { lockSessionPerformanceTable } from '@/sessions/infrastructure/database/session-table-lock.persistence';
 import { ConflictError } from '@/shared/errors/application.error';
 import { validateEvaluationRules } from '../../application/services/evaluation-rule-validation';
 import { EvaluationRules } from '../../domain/services/evaluation-rules';
@@ -123,14 +124,11 @@ async function executePeerEvaluationTx(
   tx: EntityManager,
   input: PeerEvaluationWrite,
 ): Promise<PeerEvaluationDetail> {
+  await lockSessionPerformanceTable(tx, input.sessionId);
   const { peer, existingId } = await assertCanEvaluatePeer(tx, input);
   const config = await freezeSessionConfig(tx, input.sessionId, input.evaluatorId);
   validateEvaluationRules(() =>
-    EvaluationRules.assertValidItems(
-      input.items,
-      config.criteria.map((c) => c.id),
-      input.submit,
-    ),
+    EvaluationRules.assertValidItems(input.items, config.criteria, input.submit),
   );
   const evaluationId = await ensurePeerEvaluationId(tx, input, config.tableId, existingId);
   await persistPeerItemsAndStatus(tx, input, config, evaluationId);

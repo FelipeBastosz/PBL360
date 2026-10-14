@@ -24,7 +24,9 @@ describe('ListRoomPerformanceTablesUseCase', () => {
       descricao: 'Criada pelo tutor titular',
       origem: PerformanceTableOrigin.TURMA,
       autor: { id: tutorId, nome: 'Professor Titular' },
-      criterios: [{ id: 'c1', nome: 'Domínio', descricao: null, ordem: 1, peso: 10 }],
+      criterios: [
+        { id: 'c1', nome: 'Domínio', descricao: null, ordem: 1, peso: 10, notaMaxima: 10 },
+      ],
       emUso: 3,
     },
     {
@@ -33,7 +35,9 @@ describe('ListRoomPerformanceTablesUseCase', () => {
       descricao: 'Criada fora de turmas',
       origem: PerformanceTableOrigin.PESSOAL,
       autor: { id: coTutorId, nome: 'Professor Co-tutor' },
-      criterios: [{ id: 'c2', nome: 'Postura', descricao: null, ordem: 1, peso: 10 }],
+      criterios: [
+        { id: 'c2', nome: 'Postura', descricao: null, ordem: 1, peso: 10, notaMaxima: 10 },
+      ],
       emUso: 0,
     },
     {
@@ -42,7 +46,7 @@ describe('ListRoomPerformanceTablesUseCase', () => {
       descricao: 'Padrão do sistema',
       origem: PerformanceTableOrigin.PADRAO,
       autor: { id: 'admin-uuid', nome: 'Administrador' },
-      criterios: [{ id: 'c3', nome: 'Geral', descricao: null, ordem: 1, peso: 10 }],
+      criterios: [{ id: 'c3', nome: 'Geral', descricao: null, ordem: 1, peso: 10, notaMaxima: 10 }],
       emUso: 1,
     },
   ];

@@ -104,7 +104,7 @@ export class PerformanceCriterion {
       throw new InvalidPerformanceTableError('A ordem do critério deve ser um inteiro positivo.');
     }
 
-    if (this.weight < 0 || this.weight > 10) {
+    if (!Number.isFinite(this.weight) || this.weight < 0 || this.weight > 10) {
       throw new InvalidPerformanceTableError('O peso do critério deve estar entre 0 e 10.');
     }
   }

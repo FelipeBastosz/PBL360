@@ -38,7 +38,7 @@ export class SelfAssessmentCriterionDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() nome!: string;
   @ApiProperty() peso!: number;
-  @ApiProperty({ example: 10 }) notaMaxima!: number;
+  @ApiProperty({ example: 10, enum: [10] }) notaMaxima!: number;
 }
 
 export class SelfAssessmentItemDto {

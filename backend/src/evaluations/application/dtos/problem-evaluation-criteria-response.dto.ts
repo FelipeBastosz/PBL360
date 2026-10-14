@@ -9,7 +9,8 @@ export class EvaluationCriterionResponseDto {
   @ApiProperty() nome!: string;
   @ApiProperty({ type: String, nullable: true }) descricao!: string | null;
   @ApiProperty({ example: 1, minimum: 0, maximum: 10 }) peso!: number;
-  @ApiProperty({ example: 10, enum: [10] }) notaMaxima!: number;
+  @ApiProperty({ example: 10, enum: [10], description: 'Limite fixo das notas dos critérios.' })
+  notaMaxima!: number;
   @ApiProperty({ minimum: 1 }) ordem!: number;
 }
 export class ProblemEvaluationCriteriaResponseDto {
