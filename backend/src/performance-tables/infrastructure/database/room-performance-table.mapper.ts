@@ -56,6 +56,7 @@ function appendCriterion(item: RoomPerformanceTableItem, row: RoomPerformanceTab
     descricao: row.criterionDescription,
     ordem: Number(row.criterionOrderIndex),
     peso: Number(row.criterionWeight),
+    notaMaxima: 10,
   });
 }
 

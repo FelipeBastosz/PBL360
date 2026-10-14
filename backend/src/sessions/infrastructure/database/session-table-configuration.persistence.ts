@@ -1,5 +1,6 @@
 import { ConflictError, UnprocessableEntityError } from '@/shared/errors/application.error';
 import type { DataSource, EntityManager } from 'typeorm';
+import { lockProblemPerformanceTables } from './session-table-lock.persistence';
 import {
   removeObsoleteDraftItems,
   replaceSessionSnapshot,
@@ -20,7 +21,7 @@ const FIND_VISIBLE_TABLE = `SELECT pt.id, pt.name, pt.is_default AS "isDefault"
           SELECT 1 FROM rooms r
           LEFT JOIN room_tutors rt ON rt.room_id = r.id
           WHERE r.id = $2
-            AND (pt.tutor_id = r.tutor_id OR pt.tutor_id = rt.tutor_id OR pt.tutor_id = $3)
+            AND (pt.room_id = r.id OR pt.tutor_id = r.tutor_id OR pt.tutor_id = rt.tutor_id OR pt.tutor_id = $3)
         )
       FOR SHARE OF pt;`;
 
@@ -59,6 +60,7 @@ async function applyTableChange(
   tutorId: string,
   applyToFollowing: boolean,
 ) {
+  await lockProblemPerformanceTables(manager, current.problemId, tableId);
   await manager.query('SELECT id FROM problems WHERE id = $1 FOR UPDATE;', [current.problemId]);
   const table = await findVisibleTable(manager, tableId, roomId, tutorId);
   if (!(await hasActiveCriteria(manager, tableId))) {

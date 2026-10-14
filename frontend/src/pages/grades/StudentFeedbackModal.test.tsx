@@ -210,8 +210,56 @@ describe('StudentFeedbackModal', () => {
       />,
     );
 
-    expect(screen.getByText(/Última edição em:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Última edição/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/nota/i)).toHaveValue(7.5);
     expect(screen.getByLabelText(/comentário de feedback/i)).toHaveValue('Feedback anterior.');
+  });
+
+  it('displays session name in modal title when sessionName or evaluation is provided', () => {
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={vi.fn()}
+        student={mockStudent}
+        existingFeedback={null}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+        sessionName="Sessão 01"
+      />,
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Feedback - Sessão 01' })).toBeInTheDocument();
+  });
+
+  it('pre-fills modal inputs with currentGrade and currentFeedback from evaluation context', () => {
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={vi.fn()}
+        student={mockStudent}
+        existingFeedback={null}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+        evaluation={{
+          studentId: 'aluno-1',
+          sessionId: 'sess-1',
+          sessionName: 'Sessão 01',
+          currentGrade: 9.2,
+          currentFeedback: 'Participação ativa nas etapas.',
+          updatedAt: '2026-10-12T15:30:00Z',
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Feedback - Sessão 01' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/nota/i)).toHaveValue(9.2);
+    expect(screen.getByLabelText(/comentário de feedback/i)).toHaveValue(
+      'Participação ativa nas etapas.',
+    );
+    expect(screen.getByText(/Última edição/i)).toBeInTheDocument();
   });
 });

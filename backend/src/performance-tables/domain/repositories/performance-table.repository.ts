@@ -19,6 +19,7 @@ export interface RoomPerformanceCriterionItem {
   descricao: string | null;
   ordem: number;
   peso: number;
+  notaMaxima: number;
 }
 
 export interface RoomPerformanceTableItem {

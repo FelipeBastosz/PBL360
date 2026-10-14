@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import type { UserResponse } from '@/types/auth';
 import type { FormulaScope } from '@/types/formula';
 import { cn } from '@/utils/cn';
@@ -25,7 +25,7 @@ export function FormulaHeader({ user, backTo, scope, onScopeChange }: FormulaHea
           <ChevronLeftIcon className="size-6" aria-hidden />
         </Link>
         <h1 className="flex-1 text-xl font-semibold">Fórmulas</h1>
-        <UserAvatar user={user} className="ring-2 ring-white/20" />
+        <UserMenuButton user={user} className="ring-2 ring-white/20" />
       </div>
       <div role="tablist" className="mx-auto flex w-full max-w-md">
         {SCOPE_TABS.map((tab) => (

@@ -5,7 +5,13 @@ export interface EvaluationComponentResponse {
 }
 
 export class GradesResponseDto {
-  sessoes!: Array<{ id: string; rotulo: string; data: string }>;
+  sessoes!: Array<{
+    id: string;
+    rotulo: string;
+    nome?: string;
+    title?: string;
+    data: string;
+  }>;
   alunos!: Array<{
     alunoId: string;
     nome: string;

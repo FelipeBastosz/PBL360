@@ -122,22 +122,75 @@ describe('ProblemGradesTable', () => {
     expect(screen.queryByText('Ana Silva')).not.toBeInTheDocument();
   });
 
-  it('calls onSelectStudent when clicking a student row', async () => {
+  it('calls onSelectStudent and onSelectEvaluation when clicking a grade cell, keeping student name static', async () => {
     const user = userEvent.setup();
-    const handleSelect = vi.fn();
+    const handleSelectStudent = vi.fn();
+    const handleSelectEvaluation = vi.fn();
 
     render(
       <ProblemGradesTable
         data={mockGradesData}
         hideNames={false}
         onToggleHideNames={vi.fn()}
-        onSelectStudent={handleSelect}
+        onSelectStudent={handleSelectStudent}
+        onSelectEvaluation={handleSelectEvaluation}
       />,
     );
 
-    const studentRow = screen.getByRole('button', { name: 'Ver feedback de Ana Silva' });
-    await user.click(studentRow);
+    const studentName = screen.getByText('Ana Silva');
+    expect(studentName.closest('button')).toBeNull();
+    expect(studentName.closest('tr')).not.toHaveAttribute('role', 'button');
 
-    expect(handleSelect).toHaveBeenCalledWith(mockGradesData.alunos[0]);
+    const gradeCell = screen.getByRole('button', { name: /Ana Silva.*S1/i });
+    await user.click(gradeCell);
+
+    expect(handleSelectEvaluation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        studentId: 'aluno-1',
+        sessionId: 'sess-1',
+        sessionName: 'S1',
+        currentGrade: 8.5,
+      }),
+    );
+    expect(handleSelectStudent).toHaveBeenCalledWith(mockGradesData.alunos[0]);
+  });
+
+  it('applies defensive session name fallback hierarchy and tooltip in header', () => {
+    const customData: ProblemGradesResponse = {
+      ...mockGradesData,
+      sessoes: [
+        { id: 's-1', nome: 'Sessão Nome' },
+        { id: 's-2', name: 'Session Name' },
+        { id: 's-3', titulo: 'Sessão Título' },
+        { id: 's-4', title: 'Session Title' },
+        { id: 's-5', descricao: 'Sessão Desc' },
+        { id: 's-6', rotulo: 'S6' },
+      ],
+      alunos: [],
+    };
+
+    render(<ProblemGradesTable data={customData} hideNames={false} onToggleHideNames={vi.fn()} />);
+
+    const headers = [
+      'Sessão Nome',
+      'Session Name',
+      'Sessão Título',
+      'Session Title',
+      'Sessão Desc',
+      'S6',
+    ];
+
+    headers.forEach((headerName) => {
+      const th = screen.getByRole('columnheader', { name: headerName });
+      expect(th).toBeInTheDocument();
+      expect(th).toHaveAttribute('title', headerName);
+      expect(th).toHaveClass('bg-brand-50');
+      expect(th).toHaveClass('truncate');
+    });
+
+    const alunoHeader = screen.getByRole('columnheader', { name: 'ALUNO' });
+    const geralHeader = screen.getByRole('columnheader', { name: 'GERAL' });
+    expect(alunoHeader).toHaveClass('bg-brand-50');
+    expect(geralHeader).toHaveClass('bg-brand-50');
   });
 });

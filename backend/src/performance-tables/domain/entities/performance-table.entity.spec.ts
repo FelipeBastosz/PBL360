@@ -18,6 +18,19 @@ function validTableData(): NewPerformanceTable {
 }
 
 describe('PerformanceTable', () => {
+  it('preserves criterion identity when editing weights in a table already used', () => {
+    const table = PerformanceTable.create({
+      ...validTableData(),
+      criteria: [{ name: 'Participação', weight: 10 }],
+    });
+    table.criteria[0]!.id = 'criterion';
+    table.update(
+      { name: table.name, criteria: [{ id: 'criterion', name: 'Participação', weight: 10 }] },
+      true,
+    );
+    expect(table.criteria[0]!.id).toBe('criterion');
+  });
+
   it('creates a table with its criteria', () => {
     const table = PerformanceTable.create(validTableData());
 

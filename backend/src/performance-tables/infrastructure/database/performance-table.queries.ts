@@ -98,7 +98,10 @@ export const FIND_PERFORMANCE_TABLE_USAGE_QUERY = `
   )
   SELECT (SELECT COUNT(*)::int FROM table_problems) AS "problemCount",
          COUNT(*)::int AS "sessionCount",
-         COUNT(*) FILTER (WHERE date < CURRENT_DATE)::int AS "pastSessionCount"
+         COUNT(*) FILTER (WHERE date <= CURRENT_DATE OR EXISTS (
+           SELECT 1 FROM evaluations e WHERE e.session_id = table_sessions.id
+             AND e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED'
+         ))::int AS "pastSessionCount"
     FROM table_sessions;
 `;
 

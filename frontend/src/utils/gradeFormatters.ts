@@ -20,9 +20,32 @@ export function formatSessionCell(nota: number | null | undefined, situacao?: st
 
 export function formatLastEdited(isoDate?: string | null): string | null {
   if (!isoDate) return null;
+  if (isoDate.includes('às')) return isoDate;
   const date = new Date(isoDate);
-  if (Number.isNaN(date.getTime())) return null;
+  if (Number.isNaN(date.getTime())) return isoDate;
   const formatted = date.toLocaleDateString('pt-BR');
   const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   return `${formatted} às ${time}`;
+}
+
+export function resolveSessionName(
+  sessao?: {
+    nome?: string;
+    name?: string;
+    titulo?: string;
+    title?: string;
+    descricao?: string;
+    rotulo?: string;
+  } | null,
+): string {
+  if (!sessao) return '';
+  return (
+    sessao.title ||
+    sessao.nome ||
+    sessao.name ||
+    sessao.titulo ||
+    sessao.descricao ||
+    sessao.rotulo ||
+    ''
+  );
 }

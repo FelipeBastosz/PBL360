@@ -32,7 +32,19 @@ async function submitUpdate(
   notify: (t: { tone: 'success'; message: string }) => void,
   navigate: (to: string, opts?: { replace?: boolean; state?: unknown }) => void,
 ) {
-  await performanceTableService.update(id, payload);
+  const cleanPayload = {
+    nome: payload.nome,
+    descricao: payload.descricao,
+    criterios: payload.criterios.map((c) => ({
+      ...(c.id ? { id: c.id } : {}),
+      nome: c.nome,
+      descricao: c.descricao || null,
+      ordem: c.ordem,
+      peso: c.peso,
+    })),
+  };
+
+  await performanceTableService.update(id, cleanPayload);
   notify({ tone: 'success', message: 'Fórmula atualizada com sucesso.' });
   const target = readApplyTarget(null);
   navigate(ROUTES.performanceTables, { replace: true, state: target });

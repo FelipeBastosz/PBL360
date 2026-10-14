@@ -5,6 +5,7 @@ import type * as Router from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { roomService } from '@/services/room.service';
 import { userService } from '@/services/user.service';
+import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
 import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import ManageRoomsPage from './ManageRoomsPage';
@@ -62,6 +63,7 @@ const mockRooms: Room[] = [
 
 describe('ManageRoomsPage', () => {
   beforeEach(() => {
+    clearUserPhotoCache();
     vi.clearAllMocks();
     vi.mocked(roomService.list).mockResolvedValue(mockRooms);
     vi.mocked(userService.getPhoto).mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
