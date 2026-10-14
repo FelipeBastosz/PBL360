@@ -3,7 +3,7 @@ import { PerformanceTable } from '../../domain/entities/performance-table.entity
 
 export interface PerformanceTableDetailRow {
   id: string;
-  tutorId: string;
+  tutorId: string | null;
   roomId?: string | null;
   sourceTableId?: string | null;
   isSessionCopy?: boolean;

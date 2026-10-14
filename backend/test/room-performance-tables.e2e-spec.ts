@@ -1,3 +1,4 @@
+import { SYSTEM_TABLE_IDS } from '@/performance-tables/domain/entities/system-performance-tables';
 import type { Server } from 'node:http';
 import { type INestApplication } from '@nestjs/common';
 import { type TestingModule } from '@nestjs/testing';
@@ -13,7 +14,7 @@ interface RoomPerformanceTableResponseItem {
   nome: string;
   descricao: string | null;
   origem: 'TURMA' | 'PESSOAL' | 'PADRAO';
-  autor: { id: string; nome: string };
+  autor: { id: string | null; nome: string };
   criterios: Array<{
     id: string;
     nome: string;
@@ -111,20 +112,7 @@ describe('Room Performance Tables (e2e)', () => {
       coTutorId,
     ]);
 
-    // 3. Criar tabela padrão do sistema (PADRAO)
-    const [defaultTable] = await dataSource.query<[{ id: string }]>(
-      `INSERT INTO performance_tables (tutor_id, name, is_default)
-       VALUES ($1, 'Barema Geral do Sistema', true)
-       RETURNING id;`,
-      [ownerId],
-    );
-    defaultTableId = defaultTable.id;
-
-    await dataSource.query(
-      `INSERT INTO performance_criteria (performance_table_id, name, order_index, weight)
-       VALUES ($1, 'Critério Geral 1', 1, 10);`,
-      [defaultTableId],
-    );
+    defaultTableId = SYSTEM_TABLE_IDS.standard;
 
     // 4. Criar tabela pessoal de Carlos (PESSOAL - sem room_id)
     const [ownerPersonal] = await dataSource.query<[{ id: string }]>(
@@ -196,12 +184,9 @@ describe('Room Performance Tables (e2e)', () => {
 
     const tables = listRes.body as RoomPerformanceTableResponseItem[];
 
-    // Maria deve ver:
-    // a) A tabela da turma criada por Carlos (origem: TURMA, autor: Carlos)
-    // b) Sua própria tabela pessoal (origem: PESSOAL, autor: Maria)
-    // c) A tabela padrão do sistema (origem: PADRAO)
-    // E NÃO deve ver a tabela pessoal de Carlos!
-    expect(tables).toHaveLength(3);
+    // Maria sees the room table, her personal table and both system defaults.
+    // Carlos's personal table remains private.
+    expect(tables).toHaveLength(4);
 
     const roomTable = tables.find((t) => t.id === roomTableId);
     expect(roomTable).toBeDefined();

@@ -15,6 +15,7 @@ import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { roomService } from '@/services/room.service';
+import { problemService } from '@/services/problem.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room, StudentRoom } from '@/types/room';
 import { countLabel } from '@/utils/countLabel';
@@ -32,6 +33,22 @@ function toRoom(studentRoom: StudentRoom): Room {
     criadoEm: '',
     totalAlunos: studentRoom.totalAlunos,
     totalProblemas: studentRoom.totalProblemas,
+  };
+}
+
+// GET /salas does not return the counts yet, so they are fetched per room when missing.
+async function withCounts(room: Room): Promise<Room> {
+  if (room.totalAlunos !== undefined && room.totalProblemas !== undefined) return room;
+
+  const [students, problems] = await Promise.allSettled([
+    roomService.listStudents(room.id),
+    problemService.list(room.id),
+  ]);
+
+  return {
+    ...room,
+    totalAlunos: students.status === 'fulfilled' ? students.value.length : room.totalAlunos,
+    totalProblemas: problems.status === 'fulfilled' ? problems.value.length : room.totalProblemas,
   };
 }
 
@@ -120,7 +137,8 @@ function useRooms(isStudent: boolean) {
       const studentRooms = roomService.listMyRooms ? await roomService.listMyRooms() : [];
       return studentRooms.map(toRoom);
     }
-    return roomService.list();
+    const tutorRooms = await roomService.list();
+    return Promise.all(tutorRooms.map(withCounts));
   }, [isStudent]);
 
   const { run, isLoading, error } = useAsyncAction(fetchRooms);

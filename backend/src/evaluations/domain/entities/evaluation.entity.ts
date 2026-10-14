@@ -36,11 +36,7 @@ export class Evaluation implements Auditable {
     const submitted = this.status === EvaluationStatus.SUBMITTED;
     if (submitted && !input.submit)
       throw new InvalidEvaluationStateError('Uma avaliação enviada não pode voltar a rascunho.');
-    EvaluationRules.assertValidItems(
-      input.items,
-      config.criteria.map((criterion) => criterion.id),
-      input.submit || submitted,
-    );
+    EvaluationRules.assertValidItems(input.items, config.criteria, input.submit || submitted);
     const changes = submitted ? this.findChanges(input.items) : [];
     if (changes.length > 0) EvaluationRules.assertAdjustmentJustification(input.justification);
     if (input.submit) this.applyGrade(input, config, submitted);

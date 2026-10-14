@@ -3,23 +3,21 @@ import { ConflictError } from '@/shared/errors/application.error';
 import type { PerformanceTable } from '../../domain/entities/performance-table.entity';
 
 const RECALCULATE_SESSION_EVALUATIONS = `
-  WITH weighted_scores AS (
+  WITH session_scores AS (
     SELECT e.id,
            e.session_id,
            e.student_id,
            e.session_score AS previous_score,
-           ROUND(CASE WHEN e.applied_bonus IS NULL
-                      THEN SUM(COALESCE(ei.score, 0) * sec.weight) / NULLIF(SUM(sec.weight), 0)
-                      ELSE (SUM(COALESCE(ei.score, 0) * sec.weight) / NULLIF(SUM(sec.weight), 0)
-                            * COALESCE((SELECT fc.weight FROM formulas f
-                                         JOIN formula_components fc ON fc.formula_id = f.id
-                                        WHERE f.session_id = e.session_id AND f.scope = 'SESSAO'
-                                          AND f.active = TRUE AND fc.type = 'CRITERIOS'), 70)
-                            + e.applied_bonus * 10 * COALESCE((SELECT fc.weight FROM formulas f
-                                         JOIN formula_components fc ON fc.formula_id = f.id
-                                        WHERE f.session_id = e.session_id AND f.scope = 'SESSAO'
-                                          AND f.active = TRUE AND fc.type = 'PAPEL'), 30)) / 100
-                 END, 2) AS new_score
+           e.applied_bonus AS role_score,
+           SUM(COALESCE(ei.score, 0) * sec.weight) / NULLIF(SUM(sec.weight), 0) AS criteria_score,
+           COALESCE((SELECT fc.weight FROM formulas f
+                      JOIN formula_components fc ON fc.formula_id = f.id
+                     WHERE f.session_id = e.session_id AND f.scope = 'SESSAO'
+                       AND f.active = TRUE AND fc.type = 'CRITERIOS'), 70) AS criteria_weight,
+           COALESCE((SELECT fc.weight FROM formulas f
+                      JOIN formula_components fc ON fc.formula_id = f.id
+                     WHERE f.session_id = e.session_id AND f.scope = 'SESSAO'
+                       AND f.active = TRUE AND fc.type = 'PAPEL'), 30) AS role_weight
       FROM evaluations e
       JOIN sessions s ON s.id = e.session_id
       JOIN session_evaluation_configs cfg ON cfg.session_id = e.session_id
@@ -29,6 +27,13 @@ const RECALCULATE_SESSION_EVALUATIONS = `
      WHERE s.performance_table_id = $1
        AND e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED'
      GROUP BY e.id
+  ), weighted_scores AS (
+    SELECT session_scores.*,
+           ROUND(CASE WHEN role_score IS NULL THEN criteria_score
+                      ELSE (criteria_score * criteria_weight + role_score * role_weight)
+                           / NULLIF(criteria_weight + role_weight, 0)
+                 END, 2) AS new_score
+      FROM session_scores
   ), updated_evaluations AS (
     UPDATE evaluations e
        SET session_score = weighted_scores.new_score,

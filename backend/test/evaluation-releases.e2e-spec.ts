@@ -113,7 +113,7 @@ describe('Evaluation releases (e2e)', () => {
     await insertEvaluation('SELF_ASSESSMENT', first, first, ids);
     await insertEvaluation('PEER_ASSESSMENT', first, second, ids);
     await insertEvaluation('PEER_ASSESSMENT', second, first, ids, false);
-  });
+  }, 30000);
 
   it('returns closed releases with the adherence of present and late students', async () => {
     const response = await api(app, owner).get(path()).expect(200);

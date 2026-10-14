@@ -22,6 +22,22 @@ describe('SessionGradeCalculator', () => {
   it('calculates the weighted mean followed by the standard cargo formula', () => {
     expect(calculateWithCargo(items, [criterion('a', 1), criterion('b', 3)], 5)).toBe(7.45);
   });
+  it.each([
+    { criteriaWeight: 70, roleWeight: 30 },
+    { criteriaWeight: 7, roleWeight: 3 },
+  ])('uses the fixed criterion scale with role scores and formula %j', (formula) => {
+    const criteria = [criterion('a', 1), criterion('b', 3)];
+    expect(SessionGradeCalculator.calculate(items, criteria, 5, true, formula)).toBe(7.45);
+    expect(() =>
+      SessionGradeCalculator.calculate(
+        [{ criterionId: 'a', score: 10.01 }, items[1]!],
+        criteria,
+        5,
+        true,
+        formula,
+      ),
+    ).toThrow('A nota do critério deve estar entre 0 e 10.');
+  });
   it('uses the simple weighted mean when the student has no cargo score', () => {
     expect(calculateWithCargo(items, [criterion('a', 1), criterion('b', 3)], null)).toBe(8.5);
   });

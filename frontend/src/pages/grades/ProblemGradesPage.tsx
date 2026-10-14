@@ -30,6 +30,8 @@ export function ProblemGradesPage() {
               hideNames={ctrl.hideNames}
               onToggleHideNames={ctrl.setHideNames}
               onSelectStudent={ctrl.setSelectedStudent}
+              onSelectEvaluation={ctrl.setSelectedEvaluation}
+              feedbacks={ctrl.feedbacks}
             />
             <ProblemGradesActions onOpenGeneralModal={() => ctrl.setIsGeneralModalOpen(true)} />
           </>
@@ -37,9 +39,10 @@ export function ProblemGradesPage() {
       </main>
 
       <StudentFeedbackModal
-        isOpen={ctrl.selectedStudent !== null}
-        onClose={() => ctrl.setSelectedStudent(null)}
+        isOpen={ctrl.selectedEvaluation !== null || ctrl.selectedStudent !== null}
+        onClose={ctrl.handleClose}
         student={ctrl.selectedStudent}
+        evaluation={ctrl.selectedEvaluation}
         existingFeedback={ctrl.currentStudentFeedback}
         hideNames={ctrl.hideNames}
         roomId={ctrl.roomId}

@@ -31,6 +31,7 @@ export const ROUTES = {
   rollCall: '/sessoes/:sessaoId/chamada',
   memberSession: '/sessoes/:sessaoId',
   sessionRollCall: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/chamada',
+  sessionPlanningPoker: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/planning-poker',
   sessionEvaluationsList: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar',
   sessionEvaluationHistory: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/historico',
   studentEvaluation: '/sessoes/:sessionId/avaliacao/:studentId',

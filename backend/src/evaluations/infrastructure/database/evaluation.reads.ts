@@ -1,4 +1,5 @@
 import type { EntityManager } from 'typeorm';
+import { recalculateEvaluation } from '../../domain/services/recalculate-evaluation';
 import type { Evaluation } from '../../domain/entities/evaluation.entity';
 import type { GradeAdjustment } from '../../domain/entities/grade-adjustment.entity';
 import type {
@@ -42,5 +43,5 @@ export async function readEvaluationDetail(
     previousValue: Number(row.previousValue),
     newValue: Number(row.newValue),
   }));
-  return { config, evaluation, adjustments };
+  return { config, evaluation: recalculateEvaluation(evaluation, config), adjustments };
 }

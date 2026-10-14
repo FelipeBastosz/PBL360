@@ -5,8 +5,8 @@ export class PerformanceTableResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
 
-  @ApiProperty({ format: 'uuid' })
-  professorId: string;
+  @ApiProperty({ type: String, format: 'uuid', nullable: true })
+  professorId: string | null;
 
   @ApiProperty({ example: 'Barema PBL' })
   nome: string;

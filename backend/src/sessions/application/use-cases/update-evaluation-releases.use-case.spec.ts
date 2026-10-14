@@ -147,6 +147,21 @@ describe('UpdateEvaluationReleasesUseCase', () => {
     expect(repository.save).not.toHaveBeenCalled();
   });
 
+  it('rejects releasing the peer form in a session that used planning poker', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 0,
+      peerSubmitted: 0,
+      pokerStarted: true,
+    });
+
+    await expect(
+      useCase.execute({ ...base, peer: { released: true, deadline: null } }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
   it('rejects a deadline in the past without saving anything', async () => {
     await expect(
       useCase.execute({

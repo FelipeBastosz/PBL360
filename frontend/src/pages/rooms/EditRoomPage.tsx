@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { useForm } from '@/hooks/useForm';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
@@ -176,7 +176,7 @@ export default function EditRoomPage() {
       title="Editar turma"
       subtitle="Dados da disciplina"
       backTo={ROUTES.manageRooms}
-      trailing={<UserAvatar user={user} />}
+      trailing={<UserMenuButton user={user} />}
     >
       {isLoading ? (
         <div className="flex justify-center py-10">

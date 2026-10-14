@@ -1,5 +1,6 @@
 import {
   PEER_RECEIVED_SCORES_QUERY,
+  POKER_PEER_SCORES_QUERY,
   SELF_ASSESSMENT_SCORES_QUERY,
   SESSION_BONUSES_QUERY,
   SESSION_SCORES_QUERY,
@@ -18,6 +19,7 @@ export function buildProblemQueries(roomId: string, problemId: string): GradeQue
     ...criteriaQueries(problemId),
     { sql: SELF_ASSESSMENT_SCORES_QUERY, params: [problemId] },
     { sql: PEER_RECEIVED_SCORES_QUERY, params: [problemId] },
+    { sql: POKER_PEER_SCORES_QUERY, params: [problemId] },
   ];
 }
 
@@ -42,9 +44,11 @@ function criteriaQueries(problemId: string): GradeQuery[] {
 function baseQueries(roomId: string, problemId: string): GradeQuery[] {
   return [
     {
-      sql: `SELECT id, date, self_eval_released, peer_eval_released,
+      sql: `SELECT id, title, date, order_index, self_eval_released, peer_eval_released,
                    (EXTRACT(EPOCH FROM self_eval_deadline) * 1000)::float8 AS self_eval_deadline_ms,
-                   (EXTRACT(EPOCH FROM peer_eval_deadline) * 1000)::float8 AS peer_eval_deadline_ms
+                   (EXTRACT(EPOCH FROM peer_eval_deadline) * 1000)::float8 AS peer_eval_deadline_ms,
+                   EXISTS (SELECT 1 FROM poker_sessions ps WHERE ps.session_id = sessions.id)
+                     AS has_poker
               FROM sessions WHERE problem_id = $1 ORDER BY order_index, id`,
       params: [problemId],
     },

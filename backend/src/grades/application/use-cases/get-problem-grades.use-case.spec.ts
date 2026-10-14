@@ -27,6 +27,7 @@ describe('GetProblemGradesUseCase', () => {
     criteria: [],
     selfScores: [],
     peerScores: [],
+    pokerScores: [],
   };
 
   beforeEach(() => {
@@ -133,6 +134,24 @@ describe('GetProblemGradesUseCase', () => {
     ]);
   });
 
+  it('maps custom session titles to rotulo, title and nome in the response', async () => {
+    gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
+    gradesRepository.findProblemData.mockResolvedValue({
+      ...emptyData,
+      sessions: [
+        { id: 'sess-1', title: 'Sessão 1', date: '2026-10-06', order_index: 1 },
+        { id: 'sess-4', title: 'Sessão 4', date: '2026-10-12', order_index: 4 },
+      ],
+    });
+
+    const result = await useCase.execute(input);
+
+    expect(result.sessoes).toEqual([
+      { id: 'sess-1', rotulo: 'Sessão 1', title: 'Sessão 1', nome: 'Sessão 1', data: '2026-10-06' },
+      { id: 'sess-4', rotulo: 'Sessão 4', title: 'Sessão 4', nome: 'Sessão 4', data: '2026-10-12' },
+    ]);
+  });
+
   it('feeds the self and peer components of the final formula from each session', async () => {
     const now = new Date('2026-10-12T12:00:00.000Z');
     gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
@@ -191,6 +210,57 @@ describe('GetProblemGradesUseCase', () => {
           pares: { nota: null, situacao: 'PENDENTE' },
         },
       ],
+    });
+  });
+  describe('planning poker as the peer grade', () => {
+    const pokerData = (pokerScores: ProblemGradeData['pokerScores']): ProblemGradeData => ({
+      ...emptyData,
+      sessions: [{ id: 'session-1', date: '2026-10-02', has_poker: true }],
+      students: [
+        { id: 'student-1', name: 'Ana Souza', matricula: null },
+        { id: 'student-2', name: 'Bruno Lima', matricula: null },
+        { id: 'student-3', name: 'Carla Mendes', matricula: null },
+      ],
+      attendances: ['student-1', 'student-2', 'student-3'].map((id) => ({
+        session_id: 'session-1',
+        student_id: id,
+        status: id === 'student-3' ? 'ABSENT' : 'PRESENT',
+      })),
+      peerScores: [{ session_id: 'session-1', student_id: 'student-1', score: '2.00' }],
+      pokerScores,
+    });
+
+    beforeEach(() => gradesRepository.findProblem.mockResolvedValue({ id: 'problem-1' }));
+
+    it('uses the accepted or adjusted planning poker grade instead of the peer form', async () => {
+      gradesRepository.findProblemData.mockResolvedValue(
+        pokerData([
+          { session_id: 'session-1', student_id: 'student-1', score: '8.40' },
+          { session_id: 'session-1', student_id: 'student-2', score: '9.50' },
+        ]),
+      );
+
+      const result = await useCase.execute(input, new Date('2026-10-12T12:00:00.000Z'));
+
+      expect(result.alunos[0]?.sessoes[0]?.pares).toEqual({
+        nota: 8.4,
+        situacao: 'AVALIADA',
+        origem: 'PLANNING_POKER',
+      });
+      expect(result.alunos[1]?.pares).toMatchObject({ nota: 9.5, situacao: 'AVALIADA' });
+    });
+
+    it('leaves a student who was not evaluated without peer data', async () => {
+      gradesRepository.findProblemData.mockResolvedValue(pokerData([]));
+
+      const result = await useCase.execute(input, new Date('2026-10-12T12:00:00.000Z'));
+
+      expect(result.alunos[0]?.sessoes[0]?.pares).toEqual({
+        nota: null,
+        situacao: 'SEM_AVALIACOES',
+        origem: 'PLANNING_POKER',
+      });
+      expect(result.alunos[2]?.sessoes[0]?.pares.situacao).toBe('AUSENTE');
     });
   });
 });

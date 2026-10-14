@@ -264,6 +264,38 @@ describe('Tutor evaluations (e2e)', () => {
       enviadaEm: (sent.body as EvaluationBody).enviadaEm,
     });
   });
+  it('preserves the role score scale when propagating criterion weights', async () => {
+    await db.query(
+      'UPDATE performance_tables SET is_session_copy = TRUE, room_id = $2 WHERE id = $1;',
+      [tableId, roomId],
+    );
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaPapel: 5 })
+      .expect(200);
+    await submit().expect(200);
+    await api(app, owner)
+      .put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Critérios',
+        propagarParaSessoes: true,
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', peso: 6, ordem: 1 },
+          { id: secondCriterionId, nome: 'Autonomia', peso: 4, ordem: 2 },
+        ],
+      })
+      .expect(200);
+    const [stored] = await db.query<[{ score: string; roleScore: string }]>(
+      `SELECT session_score AS score, applied_bonus AS "roleScore" FROM evaluations
+        WHERE session_id = $1 AND student_id = $2 AND type = 'TUTOR_SESSION';`,
+      [sessionId, student.id],
+    );
+    expect(Number(stored.score)).toBe(6.96);
+    expect(Number(stored.roleScore)).toBe(5);
+    const response = await api(app, owner).get(evaluationPath()).expect(200);
+    expect(response.body as EvaluationBody).toMatchObject({
+      notaSessao: 6.96,
+      adicionalAplicado: 5,
+    });
+  });
   it('blocks table replacement and session deletion after a submitted evaluation', async () => {
     await submit().expect(200);
     await api(app, owner).put(`/sessoes/${sessionId}/tabela`, { tabelaId: tableId }).expect(409);
@@ -466,7 +498,7 @@ describe('Tutor evaluations (e2e)', () => {
     expect((response.body as EvaluationBody).ajustes).toHaveLength(1);
   });
 
-  it('rejects propagating missing criteria into a submitted future-session evaluation', async () => {
+  it('rejects structural edits in both editors after a future-session evaluation is submitted', async () => {
     await db.query('UPDATE sessions SET date = CURRENT_DATE + 10 WHERE problem_id = $1;', [
       problemId,
     ]);
@@ -475,13 +507,27 @@ describe('Tutor evaluations (e2e)', () => {
       [tableId, roomId],
     );
     await submit().expect(200);
-    await api(app, owner)
+    const rejected = await api(app, owner)
       .put(`/tabelas-desempenho/${tableId}`, {
         nome: 'Critérios',
         propagarParaSessoes: true,
         criterios: [
           { id: firstCriterionId, nome: 'Participação', peso: 5, ordem: 1 },
           { nome: 'Novo critério', peso: 5, ordem: 2 },
+        ],
+      })
+      .expect(400);
+    expect(rejected.body).toMatchObject({
+      message: [
+        'Esta tabela já foi usada em sessão passada. Somente os pesos podem ser alterados.',
+      ],
+    });
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/tabela/edicao`, {
+        escopo: 'TODAS',
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', peso: 5 },
+          { nome: 'Novo critério', peso: 5 },
         ],
       })
       .expect(409);

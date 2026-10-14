@@ -136,10 +136,7 @@ describe('SessionHubPage', () => {
       'href',
       `${basePath}/avaliar`,
     );
-    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute(
-      'href',
-      `${basePath}/formulas`,
-    );
+    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute('href', '/formulas');
   });
 
   it('links the Histórico de avaliações card to the evaluation history page', async () => {

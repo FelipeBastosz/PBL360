@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
+import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
 import { ApiError } from '@/services/apiError';
 import { roomService } from '@/services/room.service';
 import { userService } from '@/services/user.service';
@@ -75,6 +76,7 @@ function renderPage(user: UserResponse = tutor) {
 
 describe('RoomMembersPage', () => {
   beforeEach(() => {
+    clearUserPhotoCache();
     vi.clearAllMocks();
     vi.mocked(roomService.getById).mockResolvedValue(room);
     vi.mocked(roomService.listStudents).mockResolvedValue(students);
@@ -212,7 +214,9 @@ describe('RoomMembersPage', () => {
       renderPage(classmate);
       await screen.findByText('Ana');
 
-      expect(userService.getPhoto).toHaveBeenCalledWith('s2');
+      await waitFor(() => {
+        expect(userService.getPhoto).toHaveBeenCalledWith('s2');
+      });
       expect(userService.getPhoto).not.toHaveBeenCalledWith('s1');
     });
   });

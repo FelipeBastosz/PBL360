@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { PlusIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { FabMenu } from '@/components/ui/FabMenu';
 import { SearchField } from '@/components/ui/SearchField';
 import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,14 +21,20 @@ function PerformanceTablesHeader() {
   const navigate = useNavigate();
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Voltar" className="p-1">
-          <ChevronLeftIcon className="size-6" strokeWidth={2} />
-        </button>
-        <h1 className="text-lg font-bold">Fórmulas</h1>
+    <header className="shrink-0 bg-brand-900 text-white">
+      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Voltar"
+            className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
+          >
+            <ChevronLeftIcon className="size-6" strokeWidth={2} />
+          </button>
+          <h1 className="text-lg font-bold">Fórmulas</h1>
+        </div>
+        <UserMenuButton user={user} />
       </div>
-      <UserAvatar user={user} />
     </header>
   );
 }
@@ -55,44 +62,14 @@ function PerformanceTablesEmptyState() {
 }
 
 function PerformanceTablesFabMenu({ onOpenCreateModal }: { onOpenCreateModal: () => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
-
   return (
-    <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3">
-      {isOpen && (
-        <div className="flex animate-fade-up flex-col items-end gap-2">
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              navigate(ROUTES.managePerformanceTables);
-            }}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
-          >
-            Editar uma fórmula
-          </button>
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              onOpenCreateModal();
-            }}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
-          >
-            Criar nova fórmula
-          </button>
-        </div>
-      )}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          'flex size-14 items-center justify-center rounded-full bg-brand-900 text-white shadow-lg transition-transform',
-          isOpen ? 'rotate-45 bg-danger' : '',
-        )}
-        aria-label="Ações de fórmula"
-      >
-        <PlusIcon className="size-6" strokeWidth={2.5} />
-      </button>
-    </div>
+    <FabMenu
+      label="Ações de fórmula"
+      actions={[
+        { label: 'Editar uma fórmula', to: ROUTES.managePerformanceTables },
+        { label: 'Criar nova fórmula', onClick: onOpenCreateModal },
+      ]}
+    />
   );
 }
 

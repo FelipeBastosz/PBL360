@@ -103,6 +103,7 @@ const protectedRoutes = (
   </Route>
 );
 const ProblemGradesPage = lazy(() => import('@/pages/grades/ProblemGradesPage'));
+const PlanningPokerPage = lazy(() => import('@/pages/planning-poker/PlanningPokerPage'));
 
 export function AppRoutes() {
   return (
@@ -146,6 +147,7 @@ export function AppRoutes() {
           <Route path={ROUTES.sessionEvaluationsList} element={<SessionEvaluationsListPage />} />
           <Route path={ROUTES.studentEvaluation} element={<StudentEvaluationPage />} />
           <Route path={ROUTES.problemGrades} element={<ProblemGradesPage />} />
+          <Route path={ROUTES.sessionPlanningPoker} element={<PlanningPokerPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

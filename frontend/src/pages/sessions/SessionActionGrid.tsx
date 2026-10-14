@@ -1,15 +1,18 @@
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   ClipboardDocumentCheckIcon,
   StarIcon,
   AdjustmentsHorizontalIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
+import { ROUTES } from '@/routes/paths';
+import type { ApplyTarget } from '@/utils/navigationState';
 
 type GridProps = {
   basePath: string;
   isStudentEvalActive: boolean;
+  children?: ReactNode;
 };
 
 function ActionCard({
@@ -20,6 +23,7 @@ function ActionCard({
   Icon,
   disabled,
   badge,
+  state,
 }: {
   to: string;
   title: string;
@@ -28,6 +32,7 @@ function ActionCard({
   Icon: ComponentType<{ className?: string }>;
   disabled?: boolean;
   badge?: string;
+  state?: ApplyTarget;
 }) {
   if (disabled) {
     return (
@@ -51,6 +56,7 @@ function ActionCard({
   return (
     <Link
       to={to}
+      state={state}
       className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md"
     >
       <div className={`flex size-11 items-center justify-center rounded-xl ${color}`}>
@@ -64,7 +70,9 @@ function ActionCard({
   );
 }
 
-export function SessionActionGrid({ basePath, isStudentEvalActive }: GridProps) {
+export function SessionActionGrid({ basePath, isStudentEvalActive, children }: GridProps) {
+  const { roomId = '', problemId = '' } = useParams<{ roomId: string; problemId: string }>();
+
   return (
     <div className="grid grid-cols-2 gap-3">
       <ActionCard
@@ -90,7 +98,8 @@ export function SessionActionGrid({ basePath, isStudentEvalActive }: GridProps) 
       />
 
       <ActionCard
-        to={`${basePath}/formulas`}
+        to={ROUTES.performanceTables}
+        state={{ roomId, problemId }}
         title="Fórmulas"
         desc="Pesos da sessão e da nota final"
         color="bg-amber-50 text-amber-600"
@@ -104,6 +113,7 @@ export function SessionActionGrid({ basePath, isStudentEvalActive }: GridProps) 
         color="bg-violet-50 text-violet-600"
         Icon={ClockIcon}
       />
+      {children}
     </div>
   );
 }

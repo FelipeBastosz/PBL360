@@ -4,7 +4,9 @@ import type { SessionReleasesResponse } from '@/types/session';
 import { SessionActionGrid } from './SessionActionGrid';
 import { SessionEvaluationsCard } from './SessionEvaluationsCard';
 import { SessionAttachments } from './SessionAttachments';
+import { PlanningPokerHubCard } from './PlanningPokerHubCard';
 import { StudentEvaluationCenter } from './StudentEvaluationCenter';
+import { StudentPokerNotice } from './StudentPokerNotice';
 
 type SessionHubContentProps = {
   isLoading: boolean;
@@ -16,6 +18,17 @@ type SessionHubContentProps = {
   isAttendancePending: boolean;
   isUpdating: boolean;
 };
+
+function StudentHubContent({ sessionId, pokerPath }: { sessionId: string; pokerPath: string }) {
+  return (
+    <>
+      <StudentEvaluationCenter>
+        <StudentPokerNotice sessionId={sessionId} pokerPath={pokerPath} />
+      </StudentEvaluationCenter>
+      <SessionAttachments sessionId={sessionId} canUpload />
+    </>
+  );
+}
 
 export function SessionHubContent({
   isLoading,
@@ -36,19 +49,15 @@ export function SessionHubContent({
   }
 
   const isStudentEvalActive = Boolean(releases?.autoavaliacao.liberada || releases?.pares.liberada);
+  const pokerPath = `${basePath}/planning-poker`;
 
-  if (!isProfessor) {
-    return (
-      <>
-        <StudentEvaluationCenter />
-        <SessionAttachments sessionId={sessionId} canUpload />
-      </>
-    );
-  }
+  if (!isProfessor) return <StudentHubContent sessionId={sessionId} pokerPath={pokerPath} />;
 
   return (
     <>
-      <SessionActionGrid basePath={basePath} isStudentEvalActive={isStudentEvalActive} />
+      <SessionActionGrid basePath={basePath} isStudentEvalActive={isStudentEvalActive}>
+        <PlanningPokerHubCard sessionId={sessionId} pokerPath={pokerPath} refreshKey={releases} />
+      </SessionActionGrid>
       <SessionEvaluationsCard
         releases={releases}
         onToggle={onToggle}

@@ -151,7 +151,7 @@ describe('Grades (e2e)', () => {
     expect(grades.sessoes).toHaveLength(1);
     expect(grades.sessoes[0]).toMatchObject({
       id: sessionId,
-      rotulo: 'S1',
+      rotulo: 'Sessão de avaliação',
     });
     expect(typeof grades.sessoes[0]?.data).toBe('string');
     expect(grades.sessoes[0]?.data).toContain('2026');
@@ -166,7 +166,7 @@ describe('Grades (e2e)', () => {
             nota: 8.5,
             situacao: 'AVALIADA',
             autoavaliacao: { nota: null, situacao: 'NAO_LIBERADA' },
-            pares: { nota: null, situacao: 'NAO_LIBERADA' },
+            pares: { nota: null, situacao: 'NAO_LIBERADA', origem: 'FORMULARIO' },
           },
         ],
         notaFinal: 8.5,
