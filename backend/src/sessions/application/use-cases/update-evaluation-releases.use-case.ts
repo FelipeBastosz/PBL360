@@ -5,6 +5,7 @@ import { ConflictError, InvalidRequestError } from '@/shared/errors/application.
 import type { EvaluationReleaseChange } from '../../domain/entities/evaluation-release';
 import {
   SESSION_REPOSITORY,
+  type ReleaseSubmissions,
   type SessionRepository,
 } from '../../domain/repositories/session.repository';
 import { SessionAccessService } from '../services/session-access.service';
@@ -37,9 +38,7 @@ export class UpdateEvaluationReleasesUseCase {
       input.tutorId,
     );
     const submissions = await this.repository.countReleaseSubmissions(session.id);
-    if (!submissions.rollCallSaved) {
-      throw new ConflictError('Salve a chamada da sessão antes de liberar as avaliações.');
-    }
+    this.assertCanRelease(input, submissions);
 
     const now = new Date();
     if (input.self) session.changeRelease('self', input.self, input.tutorId, now);
@@ -47,6 +46,20 @@ export class UpdateEvaluationReleasesUseCase {
     this.assertReleasesExclusive(session.selfEvalReleased, session.peerEvalReleased);
 
     return toEvaluationReleasesOutput(await this.repository.save(session), submissions);
+  }
+
+  private assertCanRelease(
+    input: UpdateEvaluationReleasesInput,
+    submissions: ReleaseSubmissions,
+  ): void {
+    if (!submissions.rollCallSaved) {
+      throw new ConflictError('Salve a chamada da sessão antes de liberar as avaliações.');
+    }
+    if (input.peer?.released && submissions.pokerStarted) {
+      throw new ConflictError(
+        'Esta sessão já usa o planning poker para a avaliação entre pares. Use um ou outro.',
+      );
+    }
   }
 
   private assertReleasesExclusive(selfReleased: boolean, peerReleased: boolean): void {

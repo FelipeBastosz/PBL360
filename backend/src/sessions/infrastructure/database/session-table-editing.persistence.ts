@@ -10,13 +10,13 @@ import {
   replaceSessionSnapshot,
   removeObsoleteDraftItems,
 } from './session-evaluation-snapshot.persistence';
-import { assertStoredScoresFit } from './session-table-editing.validation';
+import { assertTutorItemsRemainValid } from './session-table-editing.validation';
 
 export async function persistSessionTableEdit(
   manager: EntityManager,
   plan: SessionTableEditPlan,
 ): Promise<SessionTableEditResult> {
-  await assertStoredScoresFit(manager, plan);
+  await assertTutorItemsRemainValid(manager, plan);
   const criterionIds = plan.copy ? await insertTableCopy(manager, plan) : new Map<string, string>();
   if (!plan.copy) await updateOriginalTable(manager, plan);
   for (const session of plan.sessions) {
@@ -52,17 +52,9 @@ async function insertCopiedCriterion(
   id: string,
 ): Promise<void> {
   await manager.query(
-    `INSERT INTO performance_criteria (id, performance_table_id, name, description, order_index, weight, max_score)
-     VALUES ($1, $2, $3, $4, $5, $6, $7);`,
-    [
-      id,
-      tableId,
-      criterion.name,
-      criterion.description,
-      criterion.orderIndex,
-      criterion.weight,
-      criterion.maxScore,
-    ],
+    `INSERT INTO performance_criteria (id, performance_table_id, name, description, order_index, weight)
+     VALUES ($1, $2, $3, $4, $5, $6);`,
+    [id, tableId, criterion.name, criterion.description, criterion.orderIndex, criterion.weight],
   );
 }
 

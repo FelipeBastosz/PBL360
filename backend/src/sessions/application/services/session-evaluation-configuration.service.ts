@@ -105,7 +105,7 @@ async function isSessionBlocked(dataSource: DataSource, sessionId: string): Prom
 
 function configurationResponse(
   table: { id: string; name: string; isDefault: boolean },
-  criteria: Pick<SessionCriterionRow, 'id' | 'name' | 'weight' | 'maxScore'>[],
+  criteria: Pick<SessionCriterionRow, 'id' | 'name' | 'weight'>[],
   formula: SessionEvaluationConfigurationDto['formula'],
   blocked: boolean,
 ): SessionEvaluationConfigurationDto {
@@ -121,12 +121,12 @@ function configurationResponse(
   };
 }
 
-function mapCriteria(criteria: Pick<SessionCriterionRow, 'id' | 'name' | 'weight' | 'maxScore'>[]) {
+function mapCriteria(criteria: Pick<SessionCriterionRow, 'id' | 'name' | 'weight'>[]) {
   return criteria.map((criterion) => ({
     id: criterion.id,
     nome: criterion.name,
     peso: Number(criterion.weight),
-    notaMaxima: Number(criterion.maxScore ?? 10),
+    notaMaxima: 10,
   }));
 }
 

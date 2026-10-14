@@ -28,7 +28,7 @@ export function readTableCriteria(
   tableId: string,
 ): Promise<SessionCriterionRow[]> {
   return manager.query<SessionCriterionRow[]>(
-    `SELECT id, name, description, weight, max_score AS "maxScore", order_index AS "orderIndex"
+    `SELECT id, name, description, weight, order_index AS "orderIndex"
        FROM performance_criteria
       WHERE performance_table_id = $1 AND deleted_at IS NULL
       ORDER BY order_index, created_at, id;`,
@@ -70,6 +70,5 @@ function toCriterion(row: SessionCriterionRow): SessionEvaluationCriterion {
   return {
     ...row,
     weight: Number(row.weight),
-    maxScore: Number(row.maxScore ?? 10),
   };
 }

@@ -1,6 +1,8 @@
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 
 type BackHeaderProps = {
   title: string;
@@ -13,7 +15,7 @@ export function BackHeader({ title, subtitle, onBack }: BackHeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 bg-brand-900 text-white shadow-[0_6px_18px_-12px_rgb(0_0_119/0.8)]">
-      <div className="mx-auto flex h-20 w-full max-w-5xl items-center gap-3 px-4">
+      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-20 items-center gap-3')}>
         <button
           type="button"
           onClick={onBack}
@@ -26,7 +28,7 @@ export function BackHeader({ title, subtitle, onBack }: BackHeaderProps) {
           <h1 className="truncate text-xl leading-tight font-semibold">{title}</h1>
           <p className="truncate text-sm text-white/70">{subtitle}</p>
         </div>
-        <UserAvatar user={user} className="animate-pop-in ring-2 ring-white/20" />
+        <UserMenuButton user={user} className="animate-pop-in ring-2 ring-white/20" />
       </div>
     </header>
   );

@@ -8,6 +8,9 @@ export interface ProblemGradeData {
   attendances: GradeRow[];
   roles: GradeRow[];
   criteria: GradeRow[];
+  selfScores: GradeRow[];
+  peerScores: GradeRow[];
+  pokerScores: GradeRow[];
 }
 
 export interface GradePersistenceData {

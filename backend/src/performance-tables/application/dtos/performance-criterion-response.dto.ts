@@ -16,6 +16,6 @@ export class PerformanceCriterionResponseDto {
   @ApiProperty({ example: 3 })
   peso: number;
 
-  @ApiProperty({ example: 10, exclusiveMinimum: true, minimum: 0, maximum: 10 })
+  @ApiProperty({ example: 10, enum: [10], description: 'Limite fixo das notas dos critérios.' })
   notaMaxima: number;
 }

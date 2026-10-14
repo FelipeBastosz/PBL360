@@ -91,7 +91,7 @@ export class SavePeerEvaluationUseCase {
         id: c.id,
         nome: c.name,
         peso: c.weight,
-        notaMaxima: c.maxScore ?? 10,
+        notaMaxima: 10,
       })),
       itens: (detail.evaluation?.items ?? []).map((item) => ({
         criterioId: item.criterionId,

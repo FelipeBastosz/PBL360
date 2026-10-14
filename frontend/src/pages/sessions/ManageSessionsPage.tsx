@@ -9,10 +9,10 @@ import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
 import type { Problem } from '@/types/problem';
 import type { Session, SessionDeletionImpact } from '@/types/session';
-import { DeleteSessionModal } from './DeleteSessionModal';
-import { SessionFormModal } from './SessionFormModal';
-import { ManageSessionsHeader } from './ManageSessionsHeader';
-import { ManageSessionCard } from './ManageSessionCard';
+import { DeleteSessionModal } from './components/DeleteSessionModal';
+import { SessionFormModal } from './components/SessionFormModal';
+import { ManageSessionsHeader } from './components/ManageSessionsHeader';
+import { ManageSessionCard } from './components/ManageSessionCard';
 
 function ManageFooter({ onFinish }: { onFinish: () => void }) {
   return (

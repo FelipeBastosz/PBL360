@@ -9,7 +9,6 @@ import { FEEDBACK_REPOSITORY } from './domain/repositories/feedback.repository';
 import { PgFeedbackRepository } from './infrastructure/database/pg-feedback.repository';
 import { RoomFeedbacksController } from './infrastructure/http/room-feedbacks.controller';
 import { SessionFeedbacksController } from './infrastructure/http/session-feedbacks.controller';
-import { StudentSessionFeedbacksController } from './infrastructure/http/student-session-feedbacks.controller';
 import { FeedbackRevisionsController } from './infrastructure/http/feedback-revisions.controller';
 import { SaveStudentProblemFeedbackUseCase } from './application/use-cases/save-student-problem-feedback.use-case';
 import { SaveGeneralProblemFeedbackUseCase } from './application/use-cases/save-general-problem-feedback.use-case';
@@ -19,20 +18,32 @@ import { GetSessionFeedbackUseCase } from './application/use-cases/get-session-f
 import { GetOwnSessionFeedbackUseCase } from './application/use-cases/get-own-session-feedback.use-case';
 import { GetFeedbackRevisionsUseCase } from './application/use-cases/get-feedback-revisions.use-case';
 
+import { FeedbackView } from './domain/entities/feedback-view.entity';
+import { RECEIVED_FEEDBACK_REPOSITORY } from './domain/repositories/received-feedback.repository';
+import { PgReceivedFeedbackRepository } from './infrastructure/database/pg-received-feedback.repository';
+import { GetMySessionFeedbackUseCase } from './application/use-cases/get-my-session-feedback.use-case';
+import { GetMyProblemFeedbacksUseCase } from './application/use-cases/get-my-problem-feedbacks.use-case';
+import { MySessionFeedbackController } from './infrastructure/http/my-session-feedback.controller';
+import { MyProblemFeedbacksController } from './infrastructure/http/my-problem-feedbacks.controller';
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Feedback, FeedbackRevision]),
+    TypeOrmModule.forFeature([Feedback, FeedbackRevision, FeedbackView]),
     RoomsModule,
     ProblemsModule,
     SessionsModule,
   ],
   controllers: [
+    MySessionFeedbackController,
+    MyProblemFeedbacksController,
     RoomFeedbacksController,
     SessionFeedbacksController,
-    StudentSessionFeedbacksController,
     FeedbackRevisionsController,
   ],
   providers: [
+    GetMySessionFeedbackUseCase,
+    GetMyProblemFeedbacksUseCase,
+    { provide: RECEIVED_FEEDBACK_REPOSITORY, useClass: PgReceivedFeedbackRepository },
     SaveStudentProblemFeedbackUseCase,
     SaveGeneralProblemFeedbackUseCase,
     GetProblemFeedbacksUseCase,

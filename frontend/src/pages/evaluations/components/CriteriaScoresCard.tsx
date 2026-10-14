@@ -8,6 +8,33 @@ type Props = {
   onScoreChange: (criterioId: string, nextScore: number) => void;
 };
 
+function calculateFinalScore(
+  criteria: EvaluationCriterion[],
+  scores: Record<string, number>,
+): number {
+  const totalWeight = criteria.reduce((sum, c) => sum + c.peso, 0);
+  if (totalWeight <= 0) return 0;
+  const weightedSum = criteria.reduce((sum, c) => {
+    const score = scores[c.id] ?? 0;
+    return sum + score * c.peso;
+  }, 0);
+  return Math.round((weightedSum / totalWeight) * 10) / 10;
+}
+
+function FinalScoreRow({ score }: { score: number }) {
+  return (
+    <div className="mt-4 flex items-center justify-between border-t border-black/10 pt-4">
+      <span className="text-sm font-bold text-brand-900">Nota final da sessão</span>
+      <div className="flex items-center gap-1.5">
+        <span className="rounded-xl bg-brand-900 px-3.5 py-1 text-base font-bold text-white shadow-xs">
+          {score.toFixed(1)}
+        </span>
+        <span className="text-xs text-muted">/ 10</span>
+      </div>
+    </div>
+  );
+}
+
 function EditableScoreInput({
   value,
   onChange,
@@ -108,6 +135,8 @@ function CriterionRow({
 }
 
 export function CriteriaScoresCard({ studentName, criteria, scores, onScoreChange }: Props) {
+  const finalScore = calculateFinalScore(criteria, scores);
+
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
       <h2 className="text-base font-bold text-brand-900">Notas do aluno: {studentName}</h2>
@@ -121,6 +150,7 @@ export function CriteriaScoresCard({ studentName, criteria, scores, onScoreChang
           />
         ))}
       </div>
+      <FinalScoreRow score={finalScore} />
     </div>
   );
 }

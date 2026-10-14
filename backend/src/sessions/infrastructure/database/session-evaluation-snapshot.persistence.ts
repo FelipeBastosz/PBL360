@@ -25,8 +25,8 @@ async function insertSnapshotCriteria(
 ): Promise<void> {
   await manager.query(
     `INSERT INTO session_evaluation_criteria
-       (session_id, criterion_id, name, description, weight, order_index, max_score)
-     SELECT $1, pc.id, pc.name, pc.description, pc.weight, pc.order_index, pc.max_score
+       (session_id, criterion_id, name, description, weight, order_index)
+     SELECT $1, pc.id, pc.name, pc.description, pc.weight, pc.order_index
        FROM performance_criteria pc
       WHERE pc.performance_table_id = $2 AND pc.deleted_at IS NULL
       ORDER BY pc.order_index, pc.created_at, pc.id;`,

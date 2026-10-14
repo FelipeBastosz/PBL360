@@ -5,6 +5,7 @@ import {
   removeObsoleteDraftItems,
   replaceSessionSnapshot,
 } from './session-evaluation-snapshot.persistence';
+import { createSessionPerformanceTableCopy } from './session-performance-table-copy.persistence';
 
 export interface SessionConfigRow {
   id: string;
@@ -35,7 +36,6 @@ export interface SessionCriterionRow {
   name: string;
   description: string | null;
   weight: string | number;
-  maxScore?: string | number;
   orderIndex: number;
 }
 
@@ -68,7 +68,8 @@ async function applyTableChange(
   }
   const sessions = await findTargetSessions(manager, current, applyToFollowing);
   await rejectSubmittedCurrentSession(manager, current.id);
-  return updateTargetSessions(manager, sessions, table);
+  const copiedTable = await createSessionPerformanceTableCopy(manager, table.id, roomId);
+  return updateTargetSessions(manager, sessions, copiedTable);
 }
 
 async function hasActiveCriteria(manager: EntityManager, tableId: string): Promise<boolean> {

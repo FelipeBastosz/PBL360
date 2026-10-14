@@ -9,8 +9,8 @@ describe('recalculateEvaluation', () => {
     tableName: 'Barema',
     frozen: true,
     criteria: [
-      { id: 'a', name: 'A', description: null, orderIndex: 1, weight: 8, maxScore: 10 },
-      { id: 'b', name: 'B', description: null, orderIndex: 2, weight: 2, maxScore: 10 },
+      { id: 'a', name: 'A', description: null, orderIndex: 1, weight: 8 },
+      { id: 'b', name: 'B', description: null, orderIndex: 2, weight: 2 },
     ],
   };
 

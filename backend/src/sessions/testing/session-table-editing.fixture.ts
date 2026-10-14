@@ -39,8 +39,8 @@ export function tableEditInput(scope: TableEditScope = 'TODAS'): SessionTableEdi
     tutorId: 'tutor',
     scope,
     criteria: [
-      { id: 'criterion-0', name: 'Participação', weight: 8, maxScore: 10 },
-      { id: 'criterion-1', name: 'Postura', weight: 2, maxScore: 10 },
+      { id: 'criterion-0', name: 'Participação', weight: 8 },
+      { id: 'criterion-1', name: 'Postura', weight: 2 },
     ],
   };
 }

@@ -57,7 +57,11 @@ export interface PerformanceTableRepository {
   findTablesByRoom(roomId: string, tutorId: string): Promise<RoomPerformanceTableItem[]>;
   findById(id: string): Promise<PerformanceTable | null>;
   softDelete(table: PerformanceTable): Promise<boolean>;
-  update(table: PerformanceTable, propagateToSessions?: boolean): Promise<PerformanceTable>;
+  update(
+    table: PerformanceTable,
+    propagateToSessions?: boolean,
+    changedBy?: string,
+  ): Promise<PerformanceTable>;
   findUsageById(id: string): Promise<PerformanceTableUsage>;
   findByIdIncludingDeleted(id: string): Promise<PerformanceTable | null>;
 }

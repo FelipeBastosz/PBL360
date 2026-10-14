@@ -6,7 +6,6 @@ export interface TableEditCriterion {
   id?: string;
   name?: string;
   weight: number;
-  maxScore?: number;
 }
 
 export interface SessionTableEditInput {

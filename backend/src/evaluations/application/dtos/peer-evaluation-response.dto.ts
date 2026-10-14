@@ -38,7 +38,8 @@ export class PeerEvaluationCriterionResponseDto {
 
   @ApiProperty({
     example: 10,
-    description: 'Nota máxima permitida para o critério.',
+    enum: [10],
+    description: 'Limite fixo das notas dos critérios.',
   })
   notaMaxima!: number;
 }

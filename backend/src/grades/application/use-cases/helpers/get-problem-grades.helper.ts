@@ -9,22 +9,16 @@ import {
 import type { GradeRow } from '../../../domain/repositories/grades.repository';
 import type { GradesResponseDto } from '../../dtos/grades-response.dto';
 import { buildStudentResponse } from './grade-response.helper';
+import {
+  calculateSessionComponents,
+  summarizeEvaluationComponents,
+  withEvaluationValues,
+  withSessionEvaluations,
+  type StudentEvaluationComponents,
+} from './evaluation-components.helper';
+import { sessionFormulaFor, type SessionFormulaEntry } from './session-formula.helper';
 
 export type Row = GradeRow;
-
-export function buildDefaultSessionComponents(sessionId: string, formulaId: string): Row[] {
-  return [
-    { formula_id: formulaId, type: 'CRITERIOS', weight: 70, session_id: sessionId },
-    { formula_id: formulaId, type: 'PAPEL', weight: 30, session_id: sessionId },
-  ];
-}
-
-export interface SessionFormulaEntry {
-  sessionId: string;
-  components: GradeComponent[];
-  formulaVersion: number;
-  defaultFormula: boolean;
-}
 
 export interface StudentGradeContext {
   student: Row;
@@ -36,9 +30,14 @@ export interface StudentGradeContext {
   sessionFormulas: SessionFormulaEntry[];
   problemComponents: GradeComponent[];
   problemFormulaVersion: number;
+  selfScores: Row[];
+  peerScores: Row[];
+  pokerScores: Row[];
+  now: Date;
 }
 
 export type StudentSessionResponse = GradesResponseDto['alunos'][number]['sessoes'][number];
+export type SessionGradeResponse = Omit<StudentSessionResponse, 'autoavaliacao' | 'pares'>;
 export type StudentResponse = GradesResponseDto['alunos'][number];
 
 export function filterByStudentAndSession(
@@ -150,7 +149,7 @@ function buildSessionRow(
 function buildSessionResponse(
   sessionId: string,
   calculated: ReturnType<typeof calculateSessionGrade>,
-): StudentSessionResponse {
+): SessionGradeResponse {
   return {
     sessaoId: sessionId,
     nota: presentGrade(calculated.grade),
@@ -159,13 +158,19 @@ function buildSessionResponse(
 }
 
 export function processStudentGrades(ctx: StudentGradeContext) {
-  const results = ctx.sessions.map((session) => processStudentSessionForGrade(ctx, session));
+  const results = ctx.sessions.map((session) => ({
+    ...processStudentSessionForGrade(ctx, session),
+    evaluations: calculateSessionComponents(ctx, session),
+  }));
   const sessionRows = results.map((result) => result.row);
-  const grades = results.map((result) => result.responseSession);
+  const evaluations = summarizeEvaluationComponents(results.map((result) => result.evaluations));
+  const grades = results.map((result) =>
+    withSessionEvaluations(result.responseSession, result.evaluations),
+  );
+  const components = withEvaluationValues(ctx.problemComponents, evaluations);
+  const finalGrade = calculateProblemGrade(components, sessionGrades(sessionRows));
 
-  const finalGrade = calculateProblemGrade(ctx.problemComponents, sessionGrades(sessionRows));
-
-  return buildStudentResult(ctx, grades, finalGrade.grade, sessionRows);
+  return buildStudentResult(ctx, grades, finalGrade.grade, sessionRows, evaluations);
 }
 
 function processStudentSessionForGrade(ctx: StudentGradeContext, session: Row) {
@@ -184,23 +189,6 @@ function processStudentSessionForGrade(ctx: StudentGradeContext, session: Row) {
   });
 }
 
-function sessionFormulaFor(
-  formulas: SessionFormulaEntry[],
-  sessionId: string,
-): SessionFormulaEntry {
-  return (
-    formulas.find((entry) => entry.sessionId === sessionId) ?? {
-      sessionId,
-      components: [
-        { type: 'CRITERIOS', weight: 70 },
-        { type: 'PAPEL', weight: 30 },
-      ],
-      formulaVersion: 1,
-      defaultFormula: true,
-    }
-  );
-}
-
 function sessionGrades(rows: Row[]): Array<number | null> {
   return rows.map((row) => row.grade as number | null);
 }
@@ -210,6 +198,7 @@ function buildStudentResult(
   grades: StudentSessionResponse[],
   finalGrade: number | null,
   sessionRows: Row[],
+  evaluations: StudentEvaluationComponents,
 ) {
   return {
     sessionRows,
@@ -218,6 +207,6 @@ function buildStudentResult(
       grade: finalGrade,
       formula_version: ctx.problemFormulaVersion,
     },
-    responseStudent: buildStudentResponse(ctx.student, grades, finalGrade),
+    responseStudent: buildStudentResponse(ctx.student, grades, finalGrade, evaluations),
   };
 }

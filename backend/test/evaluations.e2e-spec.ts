@@ -265,6 +265,10 @@ describe('Tutor evaluations (e2e)', () => {
     });
   });
   it('preserves the role score scale when propagating criterion weights', async () => {
+    await db.query(
+      'UPDATE performance_tables SET is_session_copy = TRUE, room_id = $2 WHERE id = $1;',
+      [tableId, roomId],
+    );
     await api(app, owner)
       .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaPapel: 5 })
       .expect(200);
@@ -308,6 +312,48 @@ describe('Tutor evaluations (e2e)', () => {
       })
       .expect(422);
     await submit().expect(200);
+  });
+  it('creates a shared table copy and then separates one session without changing the source', async () => {
+    const shared = await api(app, owner)
+      .put(`/sessoes/${sessionId}/tabela`, { tabelaId: tableId, aplicarNasSeguintes: true })
+      .expect(200);
+    expect(
+      (shared.body as { sessoesAtualizadas: Array<{ sessaoId: string }> }).sessoesAtualizadas,
+    ).toHaveLength(2);
+    const [sharedIds] = await db.query<[{ first_id: string; next_id: string }]>(
+      `SELECT (SELECT performance_table_id FROM sessions WHERE id = $1) AS first_id,
+              (SELECT performance_table_id FROM sessions WHERE id = $2) AS next_id;`,
+      [sessionId, nextSessionId],
+    );
+    expect(sharedIds.first_id).not.toBe(tableId);
+    expect(sharedIds.next_id).toBe(sharedIds.first_id);
+
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/tabela`, { tabelaId: sharedIds.first_id })
+      .expect(200);
+    const [separatedIds] = await db.query<[{ first_id: string; next_id: string }]>(
+      `SELECT (SELECT performance_table_id FROM sessions WHERE id = $1) AS first_id,
+              (SELECT performance_table_id FROM sessions WHERE id = $2) AS next_id;`,
+      [sessionId, nextSessionId],
+    );
+    expect(separatedIds.first_id).not.toBe(separatedIds.next_id);
+    expect(separatedIds.next_id).toBe(sharedIds.next_id);
+
+    await api(app, owner)
+      .put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Original atualizada',
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', ordem: 1, peso: 4 },
+          { id: secondCriterionId, nome: 'Autonomia', ordem: 2, peso: 6 },
+        ],
+      })
+      .expect(200);
+    const copiedWeights = await db.query<{ weight: string }[]>(
+      `SELECT weight FROM performance_criteria
+        WHERE performance_table_id = ANY($1::uuid[]) ORDER BY weight;`,
+      [[separatedIds.first_id, separatedIds.next_id]],
+    );
+    expect(copiedWeights.map((row) => row.weight)).toEqual(['1.00', '1.00', '3.00', '3.00']);
   });
   it('does not allow students, outsiders or unauthenticated callers to access evaluations', async () => {
     await api(app).get(evaluationPath()).expect(401);
@@ -431,6 +477,10 @@ describe('Tutor evaluations (e2e)', () => {
 
   it('serializes a submitted adjustment with propagation of new weights', async () => {
     await submit().expect(200);
+    await db.query(
+      'UPDATE performance_tables SET is_session_copy = TRUE, room_id = $2 WHERE id = $1;',
+      [tableId, roomId],
+    );
     const responses = await Promise.all([
       save({ itens: scores(8, 9), enviar: true, justificativa: 'Revisão da participação' }),
       api(app, owner).put(`/tabelas-desempenho/${tableId}`, {
@@ -452,6 +502,10 @@ describe('Tutor evaluations (e2e)', () => {
     await db.query('UPDATE sessions SET date = CURRENT_DATE + 10 WHERE problem_id = $1;', [
       problemId,
     ]);
+    await db.query(
+      'UPDATE performance_tables SET is_session_copy = TRUE, room_id = $2 WHERE id = $1;',
+      [tableId, roomId],
+    );
     await submit().expect(200);
     const rejected = await api(app, owner)
       .put(`/tabelas-desempenho/${tableId}`, {
@@ -472,8 +526,8 @@ describe('Tutor evaluations (e2e)', () => {
       .put(`/sessoes/${sessionId}/tabela/edicao`, {
         escopo: 'TODAS',
         criterios: [
-          { id: firstCriterionId, nome: 'Participação', peso: 5, notaMaxima: 10 },
-          { nome: 'Novo critério', peso: 5, notaMaxima: 10 },
+          { id: firstCriterionId, nome: 'Participação', peso: 5 },
+          { nome: 'Novo critério', peso: 5 },
         ],
       })
       .expect(409);
@@ -494,6 +548,10 @@ describe('Tutor evaluations (e2e)', () => {
     await db.query('UPDATE sessions SET date = CURRENT_DATE + 10 WHERE problem_id = $1;', [
       problemId,
     ]);
+    await db.query(
+      'UPDATE performance_tables SET is_session_copy = TRUE, room_id = $2 WHERE id = $1;',
+      [tableId, roomId],
+    );
     await save({ itens: scores(), enviar: false }).expect(200);
     await api(app, owner)
       .put(`/tabelas-desempenho/${tableId}`, {

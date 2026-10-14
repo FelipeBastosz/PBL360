@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
-import { NotFoundError } from '@/shared/errors/application.error';
-import { syncPerformanceCriteria } from './performance-criteria.persistence';
-import { assertPastSessionUpdateAllowed } from './performance-table-update.validation';
-import { propagatePerformanceTableSessions } from './performance-table-session.persistence';
+import { persistTableUpdate } from './performance-table-update.persistence';
 
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
 import type {
@@ -27,14 +24,13 @@ import {
 import {
   FIND_PERFORMANCE_TABLE_BY_ID_QUERY,
   PERFORMANCE_TABLE_SUMMARY_QUERY,
-  UPDATE_PERFORMANCE_TABLE_QUERY,
   INSERT_PERFORMANCE_TABLE_QUERY,
   FIND_PERFORMANCE_TABLE_USAGE_QUERY,
   FIND_PERFORMANCE_TABLE_BY_ID_INCLUDING_DELETED_QUERY,
   FIND_ROOM_PERFORMANCE_TABLES_QUERY,
 } from './performance-table.queries';
 
-const CRITERION_COLUMNS = 6;
+const CRITERION_COLUMNS = 5;
 
 @Injectable()
 export class PgPerformanceTableRepository implements PerformanceTableRepository {
@@ -57,14 +53,13 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     });
   }
 
-  update(table: PerformanceTable, propagateToSessions = false): Promise<PerformanceTable> {
+  update(
+    table: PerformanceTable,
+    propagateToSessions = false,
+    changedBy = table.tutorId,
+  ): Promise<PerformanceTable> {
     return this.performanceTables.manager.transaction(async (manager) => {
-      await this.lockTable(manager, table);
-      await assertPastSessionUpdateAllowed(manager, table);
-      await this.updateTable(manager, table);
-      await syncPerformanceCriteria(manager, table);
-      if (propagateToSessions) await propagatePerformanceTableSessions(manager, table);
-
+      await persistTableUpdate(manager, table, propagateToSessions, changedBy);
       return this.readUpdatedTable(manager, table.id);
     });
   }
@@ -76,8 +71,10 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
               updated_at = now()
         WHERE id = $1
           AND tutor_id = $3
+          AND is_session_copy = FALSE
           AND is_default = FALSE
           AND deleted_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM sessions WHERE performance_table_id = $1)
         RETURNING id;`,
       [table.id, table.deletedAt, table.tutorId],
     );
@@ -99,21 +96,6 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     );
 
     return rows.length > 0 ? toPerformanceTableWithCriteria(rows) : null;
-  }
-
-  private async updateTable(manager: EntityManager, table: PerformanceTable): Promise<void> {
-    await manager.query(UPDATE_PERFORMANCE_TABLE_QUERY, [table.id, table.name, table.description]);
-  }
-
-  private async lockTable(manager: EntityManager, table: PerformanceTable): Promise<void> {
-    const rows = await manager.query<{ id: string }[]>(
-      `SELECT id FROM performance_tables
-        WHERE id = $1 AND tutor_id = $2 AND deleted_at IS NULL FOR UPDATE;`,
-      [table.id, table.tutorId],
-    );
-    if (rows.length === 0) {
-      throw new NotFoundError('Tabela de desempenho não encontrada.');
-    }
   }
 
   private async readUpdatedTable(manager: EntityManager, id: string): Promise<PerformanceTable> {
@@ -172,7 +154,7 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
          name,
          description,
          order_index,
-         weight, max_score
+         weight
        )
        VALUES ${placeholders}
        RETURNING id;`,
@@ -187,7 +169,6 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
       criterion.description ?? null,
       criterion.orderIndex,
       criterion.weight,
-      criterion.maxScore ?? 10,
     ]);
   }
 
