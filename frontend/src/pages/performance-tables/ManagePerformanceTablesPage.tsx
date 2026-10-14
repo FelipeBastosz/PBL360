@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeftIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spinner } from '@/components/ui/Spinner';
@@ -10,6 +10,7 @@ import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
 import type { PerformanceTableSummary } from '@/types/performanceTable';
 import { cn } from '@/utils/cn';
+import { readApplyTarget } from '@/utils/navigationState';
 
 function ManageHeader() {
   const { user } = useAuth();
@@ -133,6 +134,8 @@ function ManageActions({
 
 export function ManagePerformanceTablesPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const target = readApplyTarget(location.state);
   const [tables, setTables] = useState<PerformanceTableSummary[]>([]);
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -153,7 +156,7 @@ export function ManagePerformanceTablesPage() {
 
   function handleComplete() {
     if (selectedId) {
-      navigate(`${ROUTES.performanceTables}/${selectedId}/editar`);
+      navigate(`${ROUTES.performanceTables}/${selectedId}/editar`, { state: target });
     }
   }
 

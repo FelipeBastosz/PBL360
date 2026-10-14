@@ -30,51 +30,54 @@ function StudentHubContent({ sessionId, pokerPath }: { sessionId: string; pokerP
   );
 }
 
-export function SessionHubContent({
-  isLoading,
-  isProfessor,
-  basePath,
-  sessionId,
-  releases,
-  onToggle,
-  isAttendancePending,
-  isUpdating,
-}: SessionHubContentProps) {
-  if (isLoading) {
+function SessionCloseFooter() {
+  return (
+    <div className="mt-4 flex flex-col gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        disabled
+        className="border-danger/30 text-danger cursor-not-allowed opacity-60"
+      >
+        Encerrar sessão
+      </Button>
+    </div>
+  );
+}
+
+export function SessionHubContent(props: SessionHubContentProps) {
+  if (props.isLoading) {
     return (
       <div className="mt-10 flex justify-center">
         <Spinner className="size-8 text-brand-900" />
       </div>
     );
   }
+  const isStudentEvalActive = Boolean(
+    props.releases?.autoavaliacao.liberada || props.releases?.pares.liberada,
+  );
+  const pokerPath = `${props.basePath}/planning-poker`;
 
-  const isStudentEvalActive = Boolean(releases?.autoavaliacao.liberada || releases?.pares.liberada);
-  const pokerPath = `${basePath}/planning-poker`;
-
-  if (!isProfessor) return <StudentHubContent sessionId={sessionId} pokerPath={pokerPath} />;
+  if (!props.isProfessor)
+    return <StudentHubContent sessionId={props.sessionId} pokerPath={pokerPath} />;
 
   return (
     <>
-      <SessionActionGrid basePath={basePath} isStudentEvalActive={isStudentEvalActive}>
-        <PlanningPokerHubCard sessionId={sessionId} pokerPath={pokerPath} refreshKey={releases} />
+      <SessionActionGrid basePath={props.basePath} isStudentEvalActive={isStudentEvalActive}>
+        <PlanningPokerHubCard
+          sessionId={props.sessionId}
+          pokerPath={pokerPath}
+          refreshKey={props.releases}
+        />
       </SessionActionGrid>
       <SessionEvaluationsCard
-        releases={releases}
-        onToggle={onToggle}
-        isAttendancePending={isAttendancePending}
-        isLoading={isUpdating}
+        releases={props.releases}
+        onToggle={props.onToggle}
+        isAttendancePending={props.isAttendancePending}
+        isLoading={props.isUpdating}
       />
-      <SessionAttachments sessionId={sessionId} canUpload />
-      <div className="mt-4 flex flex-col gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          disabled
-          className="border-danger/30 text-danger cursor-not-allowed opacity-60"
-        >
-          Encerrar sessão
-        </Button>
-      </div>
+      <SessionAttachments sessionId={props.sessionId} canUpload />
+      <SessionCloseFooter />
     </>
   );
 }

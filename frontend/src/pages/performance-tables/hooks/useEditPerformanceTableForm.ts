@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
+import { readApplyTarget } from '@/utils/navigationState';
 import type { CriterionInput } from '@/types/performanceTable';
 
 function validateEditFormula(nome: string, count: number, totalWeight: number) {
@@ -29,11 +30,12 @@ async function submitUpdate(
   id: string,
   payload: { nome: string; descricao: string | null; criterios: CriterionInput[] },
   notify: (t: { tone: 'success'; message: string }) => void,
-  navigate: (to: string, opts?: { replace?: boolean }) => void,
+  navigate: (to: string, opts?: { replace?: boolean; state?: unknown }) => void,
 ) {
   await performanceTableService.update(id, payload);
   notify({ tone: 'success', message: 'Fórmula atualizada com sucesso.' });
-  navigate(ROUTES.performanceTables, { replace: true });
+  const target = readApplyTarget(null);
+  navigate(ROUTES.performanceTables, { replace: true, state: target });
 }
 
 function useFetchTableInitialData(id: string) {
@@ -77,13 +79,10 @@ function useFetchTableInitialData(id: string) {
   };
 }
 
-function useSaveExecution(
-  id: string,
-  data: ReturnType<typeof useFetchTableInitialData>,
-  notify: (t: { tone: 'success'; message: string }) => void,
-  navigate: (to: string, opts?: { replace?: boolean }) => void,
-  setErrorMessage: (msg: string | null) => void,
-) {
+function useSaveExecution(id: string, data: ReturnType<typeof useFetchTableInitialData>) {
+  const navigate = useNavigate();
+  const { notify } = useToast();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   function prepareSave(): boolean {
@@ -117,15 +116,12 @@ function useSaveExecution(
     }
   }
 
-  return { isSaving, prepareSave, executeSave };
+  return { isSaving, prepareSave, executeSave, errorMessage, setErrorMessage, navigate };
 }
 
 export function useEditPerformanceTableForm(id: string) {
-  const navigate = useNavigate();
-  const { notify } = useToast();
   const data = useFetchTableInitialData(id);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+  const save = useSaveExecution(id, data);
   const isDirty = useMemo(
     () =>
       checkIsDirty(
@@ -135,7 +131,5 @@ export function useEditPerformanceTableForm(id: string) {
     [data.nome, data.descricao, data.criterios, data.initialData],
   );
 
-  const save = useSaveExecution(id, data, notify, navigate, setErrorMessage);
-
-  return { ...data, ...save, errorMessage, setErrorMessage, isDirty, navigate };
+  return { ...data, ...save, isDirty };
 }
