@@ -1,13 +1,20 @@
 export interface SessionColumn {
   id: string;
-  rotulo: string;
-  data: string;
+  rotulo?: string;
+  nome?: string;
+  name?: string;
+  titulo?: string;
+  title?: string;
+  descricao?: string;
+  data?: string;
 }
 
 export interface StudentSessionGrade {
   sessaoId: string;
   nota: number | null;
   situacao: 'AVALIADA' | 'PENDENTE' | 'JUSTIFICADA' | 'AUSENTE' | string;
+  feedback?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface StudentGradeRow {

@@ -1,78 +1,91 @@
-import { useState } from 'react';
-import { CheckIcon, ClockIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import type { BehaviorTag } from '@/types/observation';
 
-const DEFAULT_TAGS = [
-  { id: '1', label: 'Celular fora de contexto', Icon: XMarkIcon },
-  { id: '2', label: 'Atraso', Icon: ClockIcon },
-  { id: '3', label: 'Não participação', Icon: XMarkIcon },
-  { id: '4', label: 'Contribuição relevante', Icon: CheckIcon },
-];
+type Props = {
+  tags: BehaviorTag[];
+  counts: Record<string, number>;
+  onIncrement: (tagId: string) => void;
+  onDecrement: (tagId: string) => void;
+  onNavigateMoreTags: () => void;
+};
 
-function TagButtons({
-  selectedTags,
-  onToggle,
+function ActiveTagRow({
+  tag,
+  count,
+  onIncrement,
+  onDecrement,
 }: {
-  selectedTags: string[];
-  onToggle: (id: string) => void;
+  tag: BehaviorTag;
+  count: number;
+  onIncrement: () => void;
+  onDecrement: () => void;
 }) {
   return (
-    <div className="mt-4 flex flex-wrap gap-2">
-      {DEFAULT_TAGS.map(({ id, label, Icon }) => {
-        const isSelected = selectedTags.includes(id);
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onToggle(id)}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
-              isSelected
-                ? 'border-brand-900 bg-brand-50 text-brand-900'
-                : 'border-black/10 bg-white text-ink hover:bg-gray-50'
-            }`}
-          >
-            <Icon className="size-3.5 stroke-[2.5]" />
-            <span>{label}</span>
-          </button>
-        );
-      })}
-      <button
-        type="button"
-        disabled
-        className="rounded-xl border border-dashed border-brand-900/40 bg-brand-50/50 px-3 py-2 text-xs font-semibold text-brand-900 opacity-60"
-      >
-        + criar marcação
-      </button>
+    <div className="flex w-full items-center justify-between rounded-xl border border-brand-900/15 bg-brand-50/60 p-3 shadow-xs">
+      <span className="text-xs font-semibold text-brand-900">{tag.nome}</span>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label={`Diminuir marcação ${tag.nome}`}
+          onClick={onDecrement}
+          className="flex size-6 items-center justify-center rounded-lg border border-brand-900/20 bg-white text-xs font-bold text-brand-900 hover:bg-brand-100 active:scale-95"
+        >
+          −
+        </button>
+        <span className="flex size-5 items-center justify-center rounded-full bg-brand-900 text-[11px] font-bold text-white">
+          {count}
+        </span>
+        <button
+          type="button"
+          aria-label={`Aumentar marcação ${tag.nome}`}
+          onClick={onIncrement}
+          className="flex size-6 items-center justify-center rounded-lg border border-brand-900/20 bg-white text-xs font-bold text-brand-900 hover:bg-brand-100 active:scale-95"
+        >
+          +
+        </button>
+      </div>
     </div>
   );
 }
 
 export function QuickObservationsCard({
-  complement,
-  onComplementChange,
-}: {
-  complement: string;
-  onComplementChange: (val: string) => void;
-}) {
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
-  function toggleTag(id: string) {
-    setSelectedTags((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
-  }
+  tags,
+  counts,
+  onIncrement,
+  onDecrement,
+  onNavigateMoreTags,
+}: Props) {
+  const activeTags = tags.filter((t) => (counts[t.id] ?? 0) > 0);
 
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
       <h2 className="text-base font-bold text-brand-900">Observações rápidas</h2>
       <p className="mt-1 text-xs leading-relaxed text-muted">
-        Toque para marcar. As marcações entram no histórico do aluno.
+        Marcações registradas para o aluno nesta sessão.
       </p>
-      <TagButtons selectedTags={selectedTags} onToggle={toggleTag} />
-      <input
-        type="text"
-        placeholder="Observação complementar (texto livre)"
-        value={complement}
-        onChange={(e) => onComplementChange(e.target.value)}
-        className="mt-4 h-12 w-full rounded-xl border border-black/10 bg-white px-4 text-xs text-ink placeholder:text-placeholder focus:border-brand-900 focus:outline-none focus:ring-1 focus:ring-brand-900"
-      />
+
+      <div className="mt-4 flex flex-col gap-2.5">
+        {activeTags.length === 0 ? (
+          <p className="py-2 text-center text-xs text-muted">Nenhuma marcação atribuída ainda.</p>
+        ) : (
+          activeTags.map((tag) => (
+            <ActiveTagRow
+              key={tag.id}
+              tag={tag}
+              count={counts[tag.id] ?? 0}
+              onIncrement={() => onIncrement(tag.id)}
+              onDecrement={() => onDecrement(tag.id)}
+            />
+          ))
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={onNavigateMoreTags}
+        className="mt-4 block w-full rounded-xl border border-brand-900 bg-white py-2.5 text-center text-xs font-bold text-brand-900 transition hover:bg-brand-50"
+      >
+        Ver outras marcações
+      </button>
     </div>
   );
 }

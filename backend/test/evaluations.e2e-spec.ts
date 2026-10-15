@@ -264,6 +264,38 @@ describe('Tutor evaluations (e2e)', () => {
       enviadaEm: (sent.body as EvaluationBody).enviadaEm,
     });
   });
+  it('preserves the role score scale when propagating criterion weights', async () => {
+    await db.query(
+      'UPDATE performance_tables SET is_session_copy = TRUE, room_id = $2 WHERE id = $1;',
+      [tableId, roomId],
+    );
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/papeis/${student.id}`, { papel: 'COORDENADOR', notaPapel: 5 })
+      .expect(200);
+    await submit().expect(200);
+    await api(app, owner)
+      .put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Critérios',
+        propagarParaSessoes: true,
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', peso: 6, ordem: 1 },
+          { id: secondCriterionId, nome: 'Autonomia', peso: 4, ordem: 2 },
+        ],
+      })
+      .expect(200);
+    const [stored] = await db.query<[{ score: string; roleScore: string }]>(
+      `SELECT session_score AS score, applied_bonus AS "roleScore" FROM evaluations
+        WHERE session_id = $1 AND student_id = $2 AND type = 'TUTOR_SESSION';`,
+      [sessionId, student.id],
+    );
+    expect(Number(stored.score)).toBe(6.96);
+    expect(Number(stored.roleScore)).toBe(5);
+    const response = await api(app, owner).get(evaluationPath()).expect(200);
+    expect(response.body as EvaluationBody).toMatchObject({
+      notaSessao: 6.96,
+      adicionalAplicado: 5,
+    });
+  });
   it('blocks table replacement and session deletion after a submitted evaluation', async () => {
     await submit().expect(200);
     await api(app, owner).put(`/sessoes/${sessionId}/tabela`, { tabelaId: tableId }).expect(409);
@@ -280,6 +312,48 @@ describe('Tutor evaluations (e2e)', () => {
       })
       .expect(422);
     await submit().expect(200);
+  });
+  it('creates a shared table copy and then separates one session without changing the source', async () => {
+    const shared = await api(app, owner)
+      .put(`/sessoes/${sessionId}/tabela`, { tabelaId: tableId, aplicarNasSeguintes: true })
+      .expect(200);
+    expect(
+      (shared.body as { sessoesAtualizadas: Array<{ sessaoId: string }> }).sessoesAtualizadas,
+    ).toHaveLength(2);
+    const [sharedIds] = await db.query<[{ first_id: string; next_id: string }]>(
+      `SELECT (SELECT performance_table_id FROM sessions WHERE id = $1) AS first_id,
+              (SELECT performance_table_id FROM sessions WHERE id = $2) AS next_id;`,
+      [sessionId, nextSessionId],
+    );
+    expect(sharedIds.first_id).not.toBe(tableId);
+    expect(sharedIds.next_id).toBe(sharedIds.first_id);
+
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/tabela`, { tabelaId: sharedIds.first_id })
+      .expect(200);
+    const [separatedIds] = await db.query<[{ first_id: string; next_id: string }]>(
+      `SELECT (SELECT performance_table_id FROM sessions WHERE id = $1) AS first_id,
+              (SELECT performance_table_id FROM sessions WHERE id = $2) AS next_id;`,
+      [sessionId, nextSessionId],
+    );
+    expect(separatedIds.first_id).not.toBe(separatedIds.next_id);
+    expect(separatedIds.next_id).toBe(sharedIds.next_id);
+
+    await api(app, owner)
+      .put(`/tabelas-desempenho/${tableId}`, {
+        nome: 'Original atualizada',
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', ordem: 1, peso: 4 },
+          { id: secondCriterionId, nome: 'Autonomia', ordem: 2, peso: 6 },
+        ],
+      })
+      .expect(200);
+    const copiedWeights = await db.query<{ weight: string }[]>(
+      `SELECT weight FROM performance_criteria
+        WHERE performance_table_id = ANY($1::uuid[]) ORDER BY weight;`,
+      [[separatedIds.first_id, separatedIds.next_id]],
+    );
+    expect(copiedWeights.map((row) => row.weight)).toEqual(['1.00', '1.00', '3.00', '3.00']);
   });
   it('does not allow students, outsiders or unauthenticated callers to access evaluations', async () => {
     await api(app).get(evaluationPath()).expect(401);
@@ -403,6 +477,10 @@ describe('Tutor evaluations (e2e)', () => {
 
   it('serializes a submitted adjustment with propagation of new weights', async () => {
     await submit().expect(200);
+    await db.query(
+      'UPDATE performance_tables SET is_session_copy = TRUE, room_id = $2 WHERE id = $1;',
+      [tableId, roomId],
+    );
     const responses = await Promise.all([
       save({ itens: scores(8, 9), enviar: true, justificativa: 'Revisão da participação' }),
       api(app, owner).put(`/tabelas-desempenho/${tableId}`, {
@@ -420,18 +498,36 @@ describe('Tutor evaluations (e2e)', () => {
     expect((response.body as EvaluationBody).ajustes).toHaveLength(1);
   });
 
-  it('rejects propagating missing criteria into a submitted future-session evaluation', async () => {
+  it('rejects structural edits in both editors after a future-session evaluation is submitted', async () => {
     await db.query('UPDATE sessions SET date = CURRENT_DATE + 10 WHERE problem_id = $1;', [
       problemId,
     ]);
+    await db.query(
+      'UPDATE performance_tables SET is_session_copy = TRUE, room_id = $2 WHERE id = $1;',
+      [tableId, roomId],
+    );
     await submit().expect(200);
-    await api(app, owner)
+    const rejected = await api(app, owner)
       .put(`/tabelas-desempenho/${tableId}`, {
         nome: 'Critérios',
         propagarParaSessoes: true,
         criterios: [
           { id: firstCriterionId, nome: 'Participação', peso: 5, ordem: 1 },
           { nome: 'Novo critério', peso: 5, ordem: 2 },
+        ],
+      })
+      .expect(400);
+    expect(rejected.body).toMatchObject({
+      message: [
+        'Esta tabela já foi usada em sessão passada. Somente os pesos podem ser alterados.',
+      ],
+    });
+    await api(app, owner)
+      .put(`/sessoes/${sessionId}/tabela/edicao`, {
+        escopo: 'TODAS',
+        criterios: [
+          { id: firstCriterionId, nome: 'Participação', peso: 5 },
+          { nome: 'Novo critério', peso: 5 },
         ],
       })
       .expect(409);
@@ -452,6 +548,10 @@ describe('Tutor evaluations (e2e)', () => {
     await db.query('UPDATE sessions SET date = CURRENT_DATE + 10 WHERE problem_id = $1;', [
       problemId,
     ]);
+    await db.query(
+      'UPDATE performance_tables SET is_session_copy = TRUE, room_id = $2 WHERE id = $1;',
+      [tableId, roomId],
+    );
     await save({ itens: scores(), enviar: false }).expect(200);
     await api(app, owner)
       .put(`/tabelas-desempenho/${tableId}`, {

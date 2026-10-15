@@ -7,10 +7,9 @@ import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
 import type { UserResponse } from '@/types/auth';
 import type { Problem } from '@/types/problem';
-import type { Session } from '@/types/session';
+import type { Session, SessionReleasesResponse } from '@/types/session';
 import SessionHubPage from './SessionHubPage';
 
-// 1. Mocks dos serviços da API
 vi.mock('@/services/problem.service', () => ({
   problemService: { getById: vi.fn() },
 }));
@@ -20,6 +19,7 @@ vi.mock('@/services/session.service', () => ({
     getById: vi.fn(),
     getForMember: vi.fn(),
     listAttachments: vi.fn().mockResolvedValue([]),
+    getReleases: vi.fn(),
   },
 }));
 
@@ -65,6 +65,13 @@ const mockSession: Session = {
   status: 'agendada',
 };
 
+const mockReleases: SessionReleasesResponse = {
+  autoavaliacao: { liberada: false, prazo: null, enviadas: 0, esperadas: 10 },
+  pares: { liberada: false, prazo: null, enviadas: 0, esperadas: 10 },
+  atualizadoEm: '2026-01-01T00:00:00.000Z',
+  atualizadoPor: 'tutor-1',
+};
+
 const mockStudent: UserResponse = {
   ...mockTeacher,
   id: '2',
@@ -101,6 +108,7 @@ describe('SessionHubPage', () => {
     vi.clearAllMocks();
     vi.mocked(problemService.getById).mockResolvedValue(mockProblem);
     vi.mocked(sessionService.getById).mockResolvedValue(mockSession);
+    vi.mocked(sessionService.getReleases).mockResolvedValue(mockReleases);
   });
 
   it('renders header with session title, formatted date, problem subtitle and user initials', async () => {
@@ -128,27 +136,23 @@ describe('SessionHubPage', () => {
       'href',
       `${basePath}/avaliar`,
     );
-    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute(
-      'href',
-      `${basePath}/formulas`,
-    );
+    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute('href', '/formulas');
   });
 
   it('renders disabled card for Histórico de avaliações with Em breve badge', async () => {
     renderPage();
 
     expect(await screen.findByText('Histórico de avaliações')).toBeInTheDocument();
-    // 2 badges de "Em breve" (1 na grade e 1 no card de autoavaliação)
-    expect(screen.getAllByText('Em breve')).toHaveLength(2);
+    expect(screen.getByText('Em breve')).toBeInTheDocument();
   });
 
-  it('renders Autoavaliação e pares card with locked toggles', async () => {
+  it('renders Autoavaliação e pares card with toggle switches', async () => {
     renderPage();
 
     expect(await screen.findByText('Autoavaliação e pares')).toBeInTheDocument();
     expect(screen.getByText('Autoavaliação dos alunos')).toBeInTheDocument();
     expect(screen.getByText('Avaliação entre pares')).toBeInTheDocument();
-    expect(screen.getAllByText('Bloqueada')).toHaveLength(2);
+    expect(screen.getAllByRole('switch')).toHaveLength(2);
   });
 
   it('renders Encerrar sessão button as disabled', async () => {

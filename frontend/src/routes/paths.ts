@@ -31,8 +31,14 @@ export const ROUTES = {
   rollCall: '/sessoes/:sessaoId/chamada',
   memberSession: '/sessoes/:sessaoId',
   sessionRollCall: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/chamada',
+  sessionPlanningPoker: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/planning-poker',
   sessionEvaluationsList: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar',
   studentEvaluation: '/sessoes/:sessionId/avaliacao/:studentId',
+  sessionStudentEvaluation:
+    '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId',
+  studentObservationTags: '/sessoes/:sessionId/avaliacao/:studentId/marcacoes',
+  sessionStudentObservationTags:
+    '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId/marcacoes',
   problemGrades: '/turmas/:roomId/problemas/:problemId/notas',
   sessionFeedback: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/feedback',
   problemFeedbacks: '/turmas/:roomId/problemas/:problemId/feedbacks',

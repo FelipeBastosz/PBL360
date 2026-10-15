@@ -1,4 +1,4 @@
-import type { ComponentType, SVGProps } from 'react';
+import type { ComponentType, ReactNode, SVGProps } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChatBubbleBottomCenterTextIcon,
@@ -52,7 +52,12 @@ function EvaluationCard({ title, Icon, href }: EvaluationItem) {
   );
 }
 
-export function StudentEvaluationCenter({ feedbackHref }: { feedbackHref?: string }) {
+type StudentEvaluationCenterProps = {
+  feedbackHref?: string;
+  children?: ReactNode;
+};
+
+export function StudentEvaluationCenter({ feedbackHref, children }: StudentEvaluationCenterProps) {
   const evaluations: EvaluationItem[] = [
     { title: 'Autoavaliação', Icon: UserCircleIcon },
     { title: 'Avaliar Colegas', Icon: UsersIcon },
@@ -64,6 +69,7 @@ export function StudentEvaluationCenter({ feedbackHref }: { feedbackHref?: strin
       <h2 id="student-evaluations-title" className="text-lg font-semibold text-brand-900">
         Central de Avaliações
       </h2>
+      {children}
       <ul className="flex flex-col gap-3">
         {evaluations.map((item) => (
           <EvaluationCard key={item.title} {...item} />

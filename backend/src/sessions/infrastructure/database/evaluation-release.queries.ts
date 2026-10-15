@@ -13,7 +13,8 @@ export async function countReleaseSubmissions(
          WHERE session_id = $1 AND status IN ('PRESENT', 'LATE'))::int AS "presentStudents",
        COUNT(DISTINCT evaluator_id) FILTER (WHERE type = 'SELF_ASSESSMENT')::int AS "selfSubmitted",
        COUNT(DISTINCT (evaluator_id, student_id))
-         FILTER (WHERE type = 'PEER_ASSESSMENT')::int AS "peerSubmitted"
+         FILTER (WHERE type = 'PEER_ASSESSMENT')::int AS "peerSubmitted",
+       EXISTS (SELECT 1 FROM poker_sessions WHERE session_id = $1) AS "pokerStarted"
      FROM evaluations
      WHERE session_id = $1 AND status = 'SUBMITTED';`,
     [sessionId],

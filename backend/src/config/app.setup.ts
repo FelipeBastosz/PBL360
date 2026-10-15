@@ -4,6 +4,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { DomainExceptionFilter } from '@/shared/filters/domain-exception.filter';
 import { validationExceptionFactory } from '@/shared/pipes/validation-exception.factory';
+import { CorsIoAdapter } from '@/shared/realtime/cors-io.adapter';
 import { setupSwagger } from './swagger.config';
 
 const configureHealthRewrite = (app: NestExpressApplication, apiPrefix: string): void => {
@@ -36,6 +37,7 @@ export const configureApp = (app: NestExpressApplication): void => {
   configureHealthRewrite(app, apiPrefix);
   app.setGlobalPrefix(apiPrefix);
   app.enableCors({ origin: config.getOrThrow<string[]>('app.corsOrigin') });
+  app.useWebSocketAdapter(new CorsIoAdapter(app, config.getOrThrow<string[]>('app.corsOrigin')));
   configurePipesAndFilters(app);
 
   if (config.get<string>('app.env') !== 'production') {

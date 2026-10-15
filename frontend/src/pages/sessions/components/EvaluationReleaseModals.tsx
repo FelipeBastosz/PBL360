@@ -1,0 +1,159 @@
+import { useState } from 'react';
+import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { Button } from '@/components/ui/Button';
+import { TextField } from '@/components/ui/TextField';
+import { Alert } from '@/components/ui/Alert';
+
+type ReleaseModalProps = {
+  isOpen: boolean;
+  type: 'autoavaliacao' | 'pares' | null;
+  activeOtherType?: 'autoavaliacao' | 'pares' | null;
+  isLoading: boolean;
+  errorMessage?: string | null;
+  onConfirm: (prazo: string | null) => void;
+  onCancel: () => void;
+};
+
+function OtherReleaseWarning({ otherName }: { otherName: string }) {
+  return (
+    <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-xs text-amber-800">
+      <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+      <span>
+        A <strong>{otherName}</strong> está ativa no momento. Ao confirmar, ela será{' '}
+        <strong>automaticamente desativada</strong>.
+      </span>
+    </div>
+  );
+}
+
+function SetDeadlineActions({
+  isLoading,
+  onConfirm,
+  onCancel,
+  prazo,
+}: {
+  isLoading: boolean;
+  onConfirm: (p: string | null) => void;
+  onCancel: () => void;
+  prazo: string;
+}) {
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      <Button
+        isLoading={isLoading}
+        onClick={() => onConfirm(prazo ? new Date(prazo).toISOString() : null)}
+      >
+        Confirmar liberação
+      </Button>
+      <Button variant="link" disabled={isLoading} onClick={onCancel}>
+        Cancelar
+      </Button>
+    </div>
+  );
+}
+
+export function SetDeadlineModal({
+  isOpen,
+  type,
+  activeOtherType,
+  isLoading,
+  errorMessage,
+  onConfirm,
+  onCancel,
+}: ReleaseModalProps) {
+  const [prazo, setPrazo] = useState('');
+
+  if (!isOpen) return null;
+
+  const currentName = type === 'autoavaliacao' ? 'Autoavaliação' : 'Avaliação por pares';
+  const otherName = activeOtherType === 'autoavaliacao' ? 'Autoavaliação' : 'Avaliação por pares';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <div className="relative w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl animate-pop-in">
+        <button
+          onClick={isLoading ? undefined : onCancel}
+          disabled={isLoading}
+          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-black/5"
+        >
+          <XMarkIcon className="size-6" />
+        </button>
+
+        <div className="mt-2 flex flex-col gap-3 text-center">
+          <h2 className="text-xl font-bold text-brand-900">Liberar {currentName}</h2>
+          <p className="text-xs text-muted">
+            Defina um prazo limite para os alunos enviarem ou deixe em branco para liberar sem
+            prazo.
+          </p>
+
+          {activeOtherType && <OtherReleaseWarning otherName={otherName} />}
+          {errorMessage && <Alert tone="error">{errorMessage}</Alert>}
+
+          <TextField
+            label="Prazo (Opcional)"
+            type="datetime-local"
+            value={prazo}
+            onChange={setPrazo}
+          />
+
+          <SetDeadlineActions
+            isLoading={isLoading}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+            prazo={prazo}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type LockModalProps = {
+  isOpen: boolean;
+  enviadas: number;
+  isLoading: boolean;
+  errorMessage?: string | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+export function ConfirmLockModal({
+  isOpen,
+  enviadas,
+  isLoading,
+  errorMessage,
+  onConfirm,
+  onCancel,
+}: LockModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      <div className="relative w-full max-w-sm rounded-[24px] bg-white p-6 text-center shadow-2xl animate-pop-in">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+          <ExclamationTriangleIcon className="size-7" />
+        </div>
+        <h2 className="mt-4 text-xl font-bold text-ink">Desativar avaliações?</h2>
+        <p className="mt-2 text-xs text-muted leading-relaxed">
+          <strong>{enviadas} alunos</strong> já enviaram suas respostas. Ao desativar, os envios
+          feitos serão preservados, mas novos envios e edições serão bloqueados.
+        </p>
+
+        {errorMessage && (
+          <div className="mt-2">
+            <Alert tone="error">{errorMessage}</Alert>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-col gap-2">
+          <Button isLoading={isLoading} onClick={onConfirm}>
+            Sim, desativar e bloquear
+          </Button>
+          <Button variant="link" disabled={isLoading} onClick={onCancel} className="text-muted">
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -9,7 +9,7 @@ export enum PerformanceTableOrigin {
 }
 
 export interface PerformanceTableAuthor {
-  id: string;
+  id: string | null;
   nome: string;
 }
 
@@ -19,6 +19,7 @@ export interface RoomPerformanceCriterionItem {
   descricao: string | null;
   ordem: number;
   peso: number;
+  notaMaxima: number;
 }
 
 export interface RoomPerformanceTableItem {
@@ -39,7 +40,7 @@ export interface PerformanceTableUsage {
 
 export interface PerformanceTableSummary {
   id: string;
-  tutorId: string;
+  tutorId: string | null;
   roomId?: string | null;
   name: string;
   description: string | null;
@@ -56,7 +57,11 @@ export interface PerformanceTableRepository {
   findTablesByRoom(roomId: string, tutorId: string): Promise<RoomPerformanceTableItem[]>;
   findById(id: string): Promise<PerformanceTable | null>;
   softDelete(table: PerformanceTable): Promise<boolean>;
-  update(table: PerformanceTable, propagateToSessions?: boolean): Promise<PerformanceTable>;
+  update(
+    table: PerformanceTable,
+    propagateToSessions?: boolean,
+    changedBy?: string,
+  ): Promise<PerformanceTable>;
   findUsageById(id: string): Promise<PerformanceTableUsage>;
   findByIdIncludingDeleted(id: string): Promise<PerformanceTable | null>;
 }

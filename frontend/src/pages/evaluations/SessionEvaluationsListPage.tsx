@@ -8,26 +8,30 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { evaluationService } from '@/services/evaluation.service';
 import type { SessionEvaluationSummary, ProblemEvaluationCriteria } from '@/types/evaluation';
 import { StudentEvaluationCard } from './components/StudentEvaluationCard';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import type { UserResponse } from '@/types/auth';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 
 function EvaluationsHeader({ user, backUrl }: { user: UserResponse | null; backUrl: string }) {
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
-      <div className="flex items-center gap-3">
-        <Link
-          to={backUrl}
-          aria-label="Voltar para a sessão"
-          className="rounded-md p-1 hover:bg-white/10"
-        >
-          <ChevronLeftIcon className="size-6" />
-        </Link>
-        <div className="flex flex-col">
-          <h1 className="text-base font-semibold leading-tight">Avaliação</h1>
-          <span className="text-xs text-white/70">Alunos</span>
+    <header className="shrink-0 bg-brand-900 text-white">
+      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
+        <div className="flex items-center gap-3">
+          <Link
+            to={backUrl}
+            aria-label="Voltar para a sessão"
+            className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
+          >
+            <ChevronLeftIcon className="size-6" />
+          </Link>
+          <div className="flex flex-col">
+            <h1 className="text-base font-semibold leading-tight">Avaliação</h1>
+            <span className="text-xs text-white/70">Alunos</span>
+          </div>
         </div>
+        <UserMenuButton user={user} className="size-9 bg-brand-200 text-brand-900" />
       </div>
-      <UserAvatar user={user} className="size-9 bg-brand-200 text-brand-900" />
     </header>
   );
 }

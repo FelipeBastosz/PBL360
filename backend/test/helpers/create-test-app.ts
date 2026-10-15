@@ -1,3 +1,5 @@
+import { DataSource } from 'typeorm';
+import { insertSystemPerformanceTables } from './system-performance-tables';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule, type TestingModuleBuilder } from '@nestjs/testing';
 import { AppModule } from '@/app.module';
@@ -16,6 +18,7 @@ export const createTestApp = async (customize: Customize = (b) => b): Promise<Te
 
   configureApp(app);
   await app.init();
+  await insertSystemPerformanceTables(moduleRef.get(DataSource));
 
   return { app, moduleRef };
 };

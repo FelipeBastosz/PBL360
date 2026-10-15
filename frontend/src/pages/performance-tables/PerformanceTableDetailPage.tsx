@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,20 +12,28 @@ import { performanceTableService } from '@/services/performance-table.service';
 import { problemService } from '@/services/problem.service';
 import type { Criterion, PerformanceTable } from '@/types/performanceTable';
 import { readApplyTarget } from '@/utils/navigationState';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 
 function DetailHeader({ title }: { title: string }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Voltar" className="p-1">
-          <ChevronLeftIcon className="size-6" strokeWidth={2} />
-        </button>
-        <h1 className="text-lg font-bold">{title}</h1>
+    <header className="shrink-0 bg-brand-900 text-white">
+      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Voltar"
+            className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
+          >
+            <ChevronLeftIcon className="size-6" strokeWidth={2} />
+          </button>
+          <h1 className="text-lg font-bold">{title}</h1>
+        </div>
+        <UserMenuButton user={user} />
       </div>
-      <UserAvatar user={user} />
     </header>
   );
 }

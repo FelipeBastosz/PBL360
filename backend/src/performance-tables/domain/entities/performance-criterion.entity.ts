@@ -28,6 +28,17 @@ export class PerformanceCriterion {
   @Column({ name: 'performance_table_id', type: 'uuid' })
   performanceTableId: string;
 
+  @Column({ name: 'source_criterion_id', type: 'uuid', nullable: true, default: null })
+  sourceCriterionId: string | null;
+
+  @ManyToOne(() => PerformanceCriterion, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({
+    name: 'source_criterion_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'performance_criteria_source_criterion_id_fkey',
+  })
+  sourceCriterion?: PerformanceCriterion | null;
+
   @ManyToOne(() => PerformanceTable, (table) => table.criteria, {
     nullable: false,
     onDelete: 'RESTRICT',
@@ -93,7 +104,7 @@ export class PerformanceCriterion {
       throw new InvalidPerformanceTableError('A ordem do critério deve ser um inteiro positivo.');
     }
 
-    if (this.weight < 0 || this.weight > 10) {
+    if (!Number.isFinite(this.weight) || this.weight < 0 || this.weight > 10) {
       throw new InvalidPerformanceTableError('O peso do critério deve estar entre 0 e 10.');
     }
   }

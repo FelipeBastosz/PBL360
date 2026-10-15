@@ -159,15 +159,15 @@ describe('ProblemGradesPage', () => {
     expect(screen.queryByText('Ana Silva')).not.toBeInTheDocument();
   });
 
-  it('opens student feedback modal when clicking on a student row, inheriting privacy settings', async () => {
+  it('opens student feedback modal when clicking on a grade cell, inheriting privacy settings', async () => {
     const user = userEvent.setup();
     renderPage();
 
     // With names visible
-    const anaRow = await screen.findByRole('button', { name: 'Ver feedback de Ana Silva' });
-    await user.click(anaRow);
+    const gradeCell = await screen.findByRole('button', { name: /Ana Silva.*S1/i });
+    await user.click(gradeCell);
 
-    const dialog = screen.getByRole('dialog', { name: 'Ana Silva' });
+    const dialog = screen.getByRole('dialog', { name: 'Feedback - S1' });
     expect(dialog).toBeInTheDocument();
     expect(screen.getByLabelText(/nota/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/comentário de feedback/i)).toBeInTheDocument();
@@ -179,12 +179,12 @@ describe('ProblemGradesPage', () => {
     const toggle = screen.getByRole('switch', { name: 'Ocultar nomes' });
     await user.click(toggle);
 
-    // Click row again (now aria-label has matricula)
-    const anaRowHidden = screen.getByRole('button', { name: 'Ver feedback de 26121190' });
-    await user.click(anaRowHidden);
+    // Click grade cell again (now aria-label has matricula)
+    const gradeCellHidden = screen.getByRole('button', { name: /26121190.*S1/i });
+    await user.click(gradeCellHidden);
 
-    // Modal title should be only matricula
-    expect(screen.getByRole('dialog', { name: '26121190' })).toBeInTheDocument();
+    // Modal title should use sessionName
+    expect(screen.getByRole('dialog', { name: 'Feedback - S1' })).toBeInTheDocument();
   });
 
   it('opens general feedback modal when clicking "Feedback geral da turma"', async () => {
@@ -217,12 +217,13 @@ describe('ProblemGradesPage', () => {
 
     renderPage();
 
-    const anaRow = await screen.findByRole('button', { name: 'Ver feedback de Ana Silva' });
-    await user.click(anaRow);
+    const gradeCell = await screen.findByRole('button', { name: /Ana Silva.*S1/i });
+    await user.click(gradeCell);
 
     const gradeInput = screen.getByLabelText(/nota/i);
     const commentInput = screen.getByLabelText(/comentário de feedback/i);
 
+    await user.clear(gradeInput);
     await user.type(gradeInput, '9.5');
     await user.type(commentInput, 'Desempenho excelente no problema.');
     await user.click(screen.getByRole('button', { name: 'Salvar' }));

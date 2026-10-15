@@ -14,6 +14,10 @@ export async function assertPastSessionUpdateAllowed(
   manager: EntityManager,
   table: PerformanceTable,
 ): Promise<void> {
+  await manager.query(
+    'SELECT id FROM sessions WHERE performance_table_id = $1 ORDER BY id FOR UPDATE;',
+    [table.id],
+  );
   const [usage] = await manager.query<{ pastSessionCount: number }[]>(
     FIND_PERFORMANCE_TABLE_USAGE_QUERY,
     [table.id],

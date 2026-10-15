@@ -8,6 +8,29 @@ const criterionIds = ['criterion-1', 'criterion-2'];
 
 describe('EvaluationRules', () => {
   describe('assertValidItems', () => {
+    it.each([0, 8.01, 10])(
+      'accepts score %s in drafts and submissions with criterion objects',
+      (score) => {
+        const criteria = [{ id: 'criterion-1' }];
+        for (const complete of [false, true]) {
+          expect(() =>
+            EvaluationRules.assertValidItems(
+              [{ criterionId: 'criterion-1', score }],
+              criteria,
+              complete,
+            ),
+          ).not.toThrow();
+          expect(() =>
+            EvaluationRules.assertValidItems(
+              [{ criterionId: 'criterion-1', score: 10.01 }],
+              criteria,
+              complete,
+            ),
+          ).toThrow('A nota do critério deve estar entre 0 e 10.');
+        }
+      },
+    );
+
     it.each([0, 8.5, 10])('accepts a score of %s', (score) => {
       expect(() =>
         EvaluationRules.assertValidItems(

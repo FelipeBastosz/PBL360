@@ -5,25 +5,18 @@ import type { GradeComponent } from '../../domain/entities/grade-calculator';
 import {
   GRADES_REPOSITORY,
   type GradesRepository,
+  type ProblemGradeData,
 } from '../../domain/repositories/grades.repository';
 import type { GradesResponseDto } from '../dtos/grades-response.dto';
+import { buildDefaultSessionComponents } from './helpers/session-formula.helper';
 import {
-  buildDefaultSessionComponents,
   processStudentGrades,
   type Row,
   type StudentResponse,
 } from './helpers/get-problem-grades.helper';
 import { buildGradeResponse, selectComponents } from './helpers/grade-response.helper';
 
-interface ProblemData {
-  sessions: Row[];
-  students: Row[];
-  formulas: Row[];
-  scores: Row[];
-  attendances: Row[];
-  roles: Row[];
-  criteria: Row[];
-}
+type ProblemData = ProblemGradeData;
 
 interface FormulaContext {
   formula: Row | undefined;
@@ -50,6 +43,7 @@ interface CalculationResult {
 
 interface CalculationData extends ProblemData {
   components: Row[];
+  now: Date;
 }
 
 @Injectable()
@@ -59,11 +53,10 @@ export class GetProblemGradesUseCase {
     private readonly roomAccess: RoomAccessService,
   ) {}
 
-  async execute(input: {
-    roomId: string;
-    problemId: string;
-    tutorId: string;
-  }): Promise<GradesResponseDto> {
+  async execute(
+    input: { roomId: string; problemId: string; tutorId: string },
+    now = new Date(),
+  ): Promise<GradesResponseDto> {
     await this.roomAccess.assertTutorCanAccessRoom(input.roomId, input.tutorId);
     const problem = await this.gradesRepository.findProblem(input.problemId, input.roomId);
     if (!problem) throw new NotFoundError('Problema não encontrado na sala informada.');
@@ -71,7 +64,7 @@ export class GetProblemGradesUseCase {
     const data = await this.gradesRepository.findProblemData(input.roomId, input.problemId);
     const effective = await this.withDefaults(data.formulas, data.criteria, data.sessions);
 
-    const result = this.calculate({ ...data, ...effective });
+    const result = this.calculate({ ...data, ...effective, now });
     await this.saveGrades(input.problemId, result);
     return result.response;
   }
@@ -202,12 +195,8 @@ export class GetProblemGradesUseCase {
     problem: FormulaContext,
   ) {
     return {
+      ...data,
       student,
-      sessions: data.sessions,
-      criteria: data.criteria,
-      scores: data.scores,
-      attendances: data.attendances,
-      roles: data.roles,
       sessionFormulas: sessions,
       problemComponents: problem.components,
       problemFormulaVersion: (problem.formula?.version as number) ?? 1,

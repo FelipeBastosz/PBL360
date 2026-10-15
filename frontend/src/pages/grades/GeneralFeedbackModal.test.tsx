@@ -131,4 +131,31 @@ describe('GeneralFeedbackModal', () => {
     expect(handleClose).not.toHaveBeenCalled();
     expect(commentInput).toHaveValue('Comentário geral a ser mantido.');
   });
+
+  it('renders last edition date formatted in footer when updatedAt or editadoEm is present', () => {
+    const existingFeedback: GeneralFeedbackResponse = {
+      id: 'fb-gen-1',
+      escopo: 'PROBLEMA',
+      texto: 'Comentário existente da turma.',
+      criadoEm: '2026-10-01T10:00:00Z',
+      editadoEm: '2026-10-12T15:30:00Z',
+      updatedAt: '2026-10-12T15:30:00Z',
+    };
+
+    render(
+      <GeneralFeedbackModal
+        isOpen={true}
+        onClose={vi.fn()}
+        existingFeedback={existingFeedback}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+      />,
+    );
+
+    const footerText = screen.getByText(/Última edição/i);
+    expect(footerText).toBeInTheDocument();
+    expect(footerText).toHaveClass('text-sm');
+    expect(footerText).toHaveClass('text-gray-500');
+  });
 });
