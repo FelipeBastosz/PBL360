@@ -5,6 +5,8 @@ import type {
   GeneralFeedbackResponse,
   SaveStudentFeedbackPayload,
   SaveGeneralFeedbackPayload,
+  ReceivedFeedbackResponse,
+  ReceivedProblemFeedbacksResponse,
 } from '@/types/feedback';
 
 export const feedbackService = {
@@ -35,6 +37,21 @@ export const feedbackService = {
       .put<GeneralFeedbackResponse>(
         `/salas/${roomId}/problemas/${problemId}/feedbacks/geral`,
         payload,
+      )
+      .then((r) => r.data),
+
+  getMySessionFeedback: (sessionId: string): Promise<ReceivedFeedbackResponse | null> =>
+    api
+      .get<ReceivedFeedbackResponse | null>(`/sessoes/${sessionId}/meu-feedback`)
+      .then((r) => r.data),
+
+  getMyProblemFeedbacks: (
+    roomId: string,
+    problemId: string,
+  ): Promise<ReceivedProblemFeedbacksResponse> =>
+    api
+      .get<ReceivedProblemFeedbacksResponse>(
+        `/salas/${roomId}/problemas/${problemId}/meus-feedbacks`,
       )
       .then((r) => r.data),
 };

@@ -54,7 +54,7 @@ export function useCreatePerformanceTableForm() {
         criterios,
       });
       notify({ tone: 'success', message: 'Fórmula criada com sucesso.' });
-      navigate(ROUTES.performanceTables, { replace: true });
+      navigate(ROUTES.performanceTables, { replace: true, state: location.state });
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Ocorreu um erro ao salvar a fórmula.');
     }

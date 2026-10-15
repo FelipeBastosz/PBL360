@@ -134,3 +134,62 @@ export type UpdateReleasesPayload = {
   autoavaliacao?: { liberada: boolean; prazo: string | null };
   pares?: { liberada: boolean; prazo: string | null };
 };
+
+export type SessionTableCriterion = {
+  id: string;
+  nome: string;
+  peso: number;
+};
+
+export type SessionTableConfig = {
+  id: string;
+  nome: string;
+  padrao: boolean;
+  origem?: 'PADRAO' | 'PRIMEIRA_SESSAO' | null;
+  criterios: SessionTableCriterion[];
+};
+
+export type SessionFormulaComponentType = 'CRITERIOS' | 'PAPEL';
+
+export type SessionFormulaComponent = {
+  tipo: SessionFormulaComponentType;
+  peso: number;
+};
+
+export type SessionFormulaConfig = {
+  padrao: boolean;
+  versao: number | null;
+  componentes: SessionFormulaComponent[];
+};
+
+export type SessionEvaluationConfig = {
+  tabela: SessionTableConfig;
+  formula: SessionFormulaConfig;
+  bloqueada: boolean;
+};
+
+export type ApplySessionTablePayload = {
+  tabelaId: string;
+  aplicarNasSeguintes: boolean;
+};
+
+export type SessionTableIgnored = {
+  sessaoId: string;
+  rotulo: string;
+  motivo: string;
+};
+
+export type SessionTableUpdated = {
+  sessaoId: string;
+  rotulo: string;
+};
+
+export type SessionTableUpdateResult = {
+  sessoesAtualizadas: SessionTableUpdated[];
+  sessoesIgnoradas: SessionTableIgnored[];
+};
+
+export type UpdateSessionFormulaPayload = {
+  componentes: SessionFormulaComponent[];
+  aplicarNasSeguintes?: boolean;
+};

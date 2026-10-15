@@ -42,4 +42,6 @@ export const ROUTES = {
   sessionEvaluationHistory: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/historico',
   evaluationHistory: '/sessoes/:sessionId/historico',
   problemGrades: '/turmas/:roomId/problemas/:problemId/notas',
+  sessionFeedback: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/feedback',
+  problemFeedbacks: '/turmas/:roomId/problemas/:problemId/feedbacks',
 } as const;

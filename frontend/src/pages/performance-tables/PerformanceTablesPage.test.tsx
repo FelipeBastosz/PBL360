@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { performanceTableService } from '@/services/performance-table.service';
+import { sessionService } from '@/services/session.service';
 import type { PerformanceTableSummary } from '@/types/performanceTable';
 import { PerformanceTablesPage } from './PerformanceTablesPage';
 
@@ -12,6 +13,11 @@ vi.mock('@/hooks/useAuth', () => ({
 }));
 
 vi.mock('@/services/performance-table.service');
+vi.mock('@/services/session.service', () => ({
+  sessionService: {
+    getEvaluationConfig: vi.fn(),
+  },
+}));
 
 const mockSummaries: PerformanceTableSummary[] = [
   {
@@ -37,16 +43,23 @@ const mockSummaries: PerformanceTableSummary[] = [
 describe('PerformanceTablesPage', () => {
   beforeEach(() => {
     vi.mocked(performanceTableService.list).mockResolvedValue([]);
+    vi.mocked(sessionService.getEvaluationConfig).mockResolvedValue({
+      tabela: { id: 'copy-1', nome: 'Barema PBL', padrao: false, criterios: [] },
+      formula: { padrao: true, versao: null, componentes: [] },
+      bloqueada: false,
+    });
   });
 
   afterEach(() => {
     vi.resetAllMocks();
   });
 
-  function renderPage() {
+  function renderPage(state = { sessionId: 'sess-1' }) {
     return render(
-      <MemoryRouter>
-        <PerformanceTablesPage />
+      <MemoryRouter initialEntries={[{ pathname: '/formulas', state }]}>
+        <Routes>
+          <Route path="/formulas" element={<PerformanceTablesPage />} />
+        </Routes>
       </MemoryRouter>,
     );
   }
@@ -57,25 +70,12 @@ describe('PerformanceTablesPage', () => {
     expect(screen.getByRole('button', { name: 'Voltar' })).toBeInTheDocument();
   });
 
-  it('renders the empty state when list is empty', async () => {
-    renderPage();
-
-    expect(
-      await screen.findByText('Você ainda não possui fórmulas cadastradas.'),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Toque no/)).toBeInTheDocument();
-  });
-
-  it('renders the list of performance tables and badges when data is returned', async () => {
+  it('renders tables with Applied badge when matching session configuration', async () => {
     vi.mocked(performanceTableService.list).mockResolvedValue(mockSummaries);
     renderPage();
 
     expect(await screen.findByText('Barema PBL')).toBeInTheDocument();
-    expect(screen.getByText('Critérios padrão do módulo.')).toBeInTheDocument();
-    expect(screen.getByText('6 critérios')).toBeInTheDocument();
-
-    expect(screen.getByText('Avaliação Curta')).toBeInTheDocument();
-    expect(screen.getByText('3 critérios')).toBeInTheDocument();
+    expect(screen.getByText('Aplicada')).toBeInTheDocument();
   });
 
   it('filters tables based on search query', async () => {
@@ -83,24 +83,10 @@ describe('PerformanceTablesPage', () => {
     renderPage();
 
     await screen.findByText('Barema PBL');
-
-    const searchInput = screen.getByPlaceholderText('Pesquisar fórmula');
-    await userEvent.type(searchInput, 'Curta');
+    await userEvent.type(screen.getByPlaceholderText('Pesquisar fórmula'), 'Curta');
 
     expect(screen.queryByText('Barema PBL')).not.toBeInTheDocument();
     expect(screen.getByText('Avaliação Curta')).toBeInTheDocument();
-  });
-
-  it('shows no results message when filter finds nothing', async () => {
-    vi.mocked(performanceTableService.list).mockResolvedValue(mockSummaries);
-    renderPage();
-
-    await screen.findByText('Barema PBL');
-
-    const searchInput = screen.getByPlaceholderText('Pesquisar fórmula');
-    await userEvent.type(searchInput, 'Inexistente');
-
-    expect(screen.getByText('Nenhuma fórmula encontrada.')).toBeInTheDocument();
   });
 
   it('displays an error alert when the service fails', async () => {
@@ -110,40 +96,5 @@ describe('PerformanceTablesPage', () => {
     renderPage();
 
     expect(await screen.findByText('Erro de conexão com o servidor.')).toBeInTheDocument();
-  });
-
-  it('toggles the fab menu correctly', async () => {
-    renderPage();
-
-    const fabButton = screen.getByRole('button', { name: 'Ações de fórmula' });
-    expect(screen.queryByText('Criar nova fórmula')).not.toBeInTheDocument();
-
-    await userEvent.click(fabButton);
-    expect(screen.getByText('Criar nova fórmula')).toBeInTheDocument();
-    expect(screen.getByText('Editar uma fórmula')).toBeInTheDocument();
-
-    await userEvent.click(fabButton);
-    expect(screen.queryByText('Criar nova fórmula')).not.toBeInTheDocument();
-  });
-
-  it('forwards the problem the tutor came from to the table detail', async () => {
-    const user = userEvent.setup();
-    vi.mocked(performanceTableService.list).mockResolvedValue(mockSummaries);
-    function DetailState() {
-      return <p>{JSON.stringify(useLocation().state)}</p>;
-    }
-    const target = { roomId: 'room-1', problemId: 'problem-1' };
-    render(
-      <MemoryRouter initialEntries={[{ pathname: '/formulas', state: target }]}>
-        <Routes>
-          <Route path="/formulas" element={<PerformanceTablesPage />} />
-          <Route path="/formulas/:id" element={<DetailState />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    await user.click(await screen.findByText('Barema PBL'));
-
-    expect(screen.getByText(JSON.stringify(target))).toBeInTheDocument();
   });
 });

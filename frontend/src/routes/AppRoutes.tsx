@@ -57,6 +57,8 @@ const StudentObservationTagsPage = lazy(
 const EvaluationHistoryPage = lazy(() => import('@/pages/evaluations/EvaluationHistoryPage'));
 const ProblemGradesPage = lazy(() => import('@/pages/grades/ProblemGradesPage'));
 const PlanningPokerPage = lazy(() => import('@/pages/planning-poker/PlanningPokerPage'));
+const SessionFeedbackPage = lazy(() => import('@/pages/feedbacks/SessionFeedbackPage'));
+const ProblemFeedbacksPage = lazy(() => import('@/pages/feedbacks/ProblemFeedbacksPage'));
 
 const publicRoutes = (
   <Route element={<PublicOnlyRoute />}>
@@ -103,6 +105,8 @@ const protectedRoutes = (
     <Route path={ROUTES.evaluationHistory} element={<EvaluationHistoryPage />} />
     <Route path={ROUTES.problemGrades} element={<ProblemGradesPage />} />
     <Route path={ROUTES.sessionPlanningPoker} element={<PlanningPokerPage />} />
+    <Route path={ROUTES.sessionFeedback} element={<SessionFeedbackPage />} />
+    <Route path={ROUTES.problemFeedbacks} element={<ProblemFeedbacksPage />} />
   </Route>
 );
 
