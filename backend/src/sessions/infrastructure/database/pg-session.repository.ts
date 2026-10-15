@@ -1,12 +1,14 @@
+import { lockProblemPerformanceTables } from './session-table-lock.persistence';
+import { reapplyDefaultSessionTables } from './default-session-tables.persistence';
+import { SYSTEM_TABLE_IDS } from '@/performance-tables/domain/entities/system-performance-tables';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
-import { ConflictError, UnprocessableEntityError } from '@/shared/errors/application.error';
+import { ConflictError } from '@/shared/errors/application.error';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { Session } from '../../domain/entities/session.entity';
 import { countReleaseSubmissions } from './evaluation-release.queries';
 import { SESSION_COLUMNS, type SessionRow } from './session-row';
-import { createSessionPerformanceTableCopy } from './session-performance-table-copy.persistence';
 import type {
   ReleaseSubmissions,
   SessionDeletionImpact,
@@ -24,7 +26,21 @@ export class PgSessionRepository implements SessionRepository {
   }
 
   save(session: Session): Promise<Session> {
-    return this.sessions.save(session);
+    return this.sessions.manager.transaction(async (manager) => {
+      await lockProblemPerformanceTables(manager, session.problemId, SYSTEM_TABLE_IDS.standard);
+      await manager.query('SELECT id FROM problems WHERE id = $1 FOR UPDATE;', [session.problemId]);
+      await manager.save(Session, {
+        ...session,
+        performanceTableId: undefined,
+        usesDefaultTable: undefined,
+      });
+      await reapplyDefaultSessionTables(manager, session.problemId);
+      const rows = await manager.query<SessionRow[]>(
+        `SELECT ${SESSION_COLUMNS} FROM sessions WHERE id = $1;`,
+        [session.id],
+      );
+      return this.toEntity(requireFirstRow(rows, 'Session not found after update.'));
+    });
   }
 
   async findById(id: string): Promise<Session | null> {
@@ -66,6 +82,7 @@ export class PgSessionRepository implements SessionRepository {
 
   async delete(id: string, problemId: string): Promise<void> {
     await this.sessions.manager.transaction(async (manager) => {
+      await lockProblemPerformanceTables(manager, problemId, SYSTEM_TABLE_IDS.standard);
       await manager.query(`SELECT id FROM problems WHERE id = $1 FOR UPDATE;`, [problemId]);
       const targetRows = await manager.query<Array<{ orderIndex: number }>>(
         `SELECT order_index AS "orderIndex" FROM sessions WHERE id = $1 AND problem_id = $2 FOR UPDATE;`,
@@ -78,15 +95,12 @@ export class PgSessionRepository implements SessionRepository {
       }
       await manager.query(`DELETE FROM sessions WHERE id = $1;`, [id]);
       await this.decrementFollowingOrders(manager, problemId, Number(target.orderIndex));
+      await reapplyDefaultSessionTables(manager, problemId);
     });
   }
 
-  private async insertWithNextOrder(
-    manager: EntityManager,
-    session: Session,
-    performanceTableId: string,
-  ): Promise<Session> {
-    const rows = await insertSessionRow(manager, session, performanceTableId);
+  private async insertWithNextOrder(manager: EntityManager, session: Session): Promise<Session> {
+    const rows = await insertSessionRow(manager, session);
     return this.toEntity(requireFirstRow(rows, 'Failed to persist session.'));
   }
 
@@ -94,20 +108,11 @@ export class PgSessionRepository implements SessionRepository {
     manager: EntityManager,
     session: Session,
   ): Promise<Session> {
+    await lockProblemPerformanceTables(manager, session.problemId, SYSTEM_TABLE_IDS.standard);
     await manager.query(`SELECT id FROM problems WHERE id = $1 FOR UPDATE;`, [session.problemId]);
-    const tableId = await this.findInitialTableId(manager, session.problemId);
-    return this.insertWithNextOrder(manager, session, tableId);
-  }
-
-  private async findInitialTableId(manager: EntityManager, problemId: string): Promise<string> {
-    const table = await findInitialTable(manager, problemId);
-    if (!table?.id) {
-      throw new UnprocessableEntityError(
-        'Não há uma tabela de desempenho padrão disponível para iniciar a sessão.',
-      );
-    }
-    if (table.isSessionCopy) return table.id;
-    return (await createSessionPerformanceTableCopy(manager, table.id, table.roomId)).id;
+    const created = await this.insertWithNextOrder(manager, session);
+    await reapplyDefaultSessionTables(manager, session.problemId);
+    return created;
   }
 
   private async decrementFollowingOrders(
@@ -130,54 +135,12 @@ export class PgSessionRepository implements SessionRepository {
   }
 }
 
-async function insertSessionRow(
-  manager: EntityManager,
-  session: Session,
-  performanceTableId: string,
-): Promise<SessionRow[]> {
+async function insertSessionRow(manager: EntityManager, session: Session): Promise<SessionRow[]> {
   return manager.query<SessionRow[]>(
     `INSERT INTO sessions (problem_id, performance_table_id, title, description, date, order_index, status)
-     SELECT $1, $6, $2, $3, $4::date, COALESCE(MAX(order_index), 0) + 1, $5
+     SELECT $1, NULL, $2, $3, $4::date, COALESCE(MAX(order_index), 0) + 1, $5
        FROM sessions WHERE problem_id = $1
      RETURNING ${SESSION_COLUMNS};`,
-    [
-      session.problemId,
-      session.title,
-      session.description,
-      session.date,
-      session.status,
-      performanceTableId,
-    ],
+    [session.problemId, session.title, session.description, session.date, session.status],
   );
-}
-
-const FIND_INITIAL_TABLE_QUERY = `
-  SELECT COALESCE(existing.id, default_table.id) AS id,
-         COALESCE(existing.is_session_copy, default_table.is_session_copy, FALSE) AS "isSessionCopy",
-         p.room_id AS "roomId"
-    FROM problems p
-    LEFT JOIN LATERAL (
-      SELECT pt.id, pt.is_session_copy
-        FROM sessions s
-        JOIN performance_tables pt ON pt.id = s.performance_table_id
-       WHERE s.problem_id = p.id AND pt.deleted_at IS NULL
-       ORDER BY s.order_index LIMIT 1
-    ) existing ON TRUE
-    LEFT JOIN LATERAL (
-      SELECT pt.id, pt.is_session_copy
-        FROM rooms r
-        JOIN performance_tables pt ON pt.tutor_id = r.tutor_id
-       WHERE r.id = p.room_id AND pt.is_default = TRUE AND pt.deleted_at IS NULL
-       LIMIT 1
-    ) default_table ON TRUE
-   WHERE p.id = $1;
-`;
-
-function findInitialTable(manager: EntityManager, problemId: string) {
-  return manager
-    .query<Array<{ id: string | null; isSessionCopy: boolean; roomId: string }>>(
-      FIND_INITIAL_TABLE_QUERY,
-      [problemId],
-    )
-    .then((rows) => rows[0] ?? null);
 }

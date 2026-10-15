@@ -21,7 +21,7 @@ const FIND_VISIBLE_TABLE = `SELECT pt.id, pt.name, pt.is_default AS "isDefault"
           SELECT 1 FROM rooms r
           LEFT JOIN room_tutors rt ON rt.room_id = r.id
           WHERE r.id = $2
-            AND (pt.room_id = r.id OR pt.tutor_id = r.tutor_id OR pt.tutor_id = rt.tutor_id OR pt.tutor_id = $3)
+            AND (pt.is_default = TRUE OR pt.room_id = r.id OR pt.tutor_id = r.tutor_id OR pt.tutor_id = rt.tutor_id OR pt.tutor_id = $3)
         )
       FOR SHARE OF pt;`;
 
@@ -68,7 +68,7 @@ async function applyTableChange(
   }
   const sessions = await findTargetSessions(manager, current, applyToFollowing);
   await rejectSubmittedCurrentSession(manager, current.id);
-  const copiedTable = await createSessionPerformanceTableCopy(manager, table.id, roomId);
+  const copiedTable = await createSessionPerformanceTableCopy(manager, table.id, roomId, tutorId);
   return updateTargetSessions(manager, sessions, copiedTable);
 }
 
@@ -177,10 +177,10 @@ async function replaceSessionTable(
   session: SessionConfigRow,
   table: SessionTableRow,
 ): Promise<void> {
-  await manager.query('UPDATE sessions SET performance_table_id = $2 WHERE id = $1;', [
-    session.id,
-    table.id,
-  ]);
+  await manager.query(
+    'UPDATE sessions SET performance_table_id = $2, uses_default_table = FALSE WHERE id = $1;',
+    [session.id, table.id],
+  );
   if (!(await hasEvaluationSnapshot(manager, session.id))) return;
   await replaceSessionSnapshot(manager, session.id, table);
   await removeObsoleteDraftItems(manager, session.id);

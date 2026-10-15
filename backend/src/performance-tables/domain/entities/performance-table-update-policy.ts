@@ -1,3 +1,4 @@
+import { SYSTEM_TABLE_READ_ONLY } from './system-performance-tables';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { PerformanceTable } from './performance-table.entity';
 
@@ -36,28 +37,6 @@ function hasNonWeightChange(
   );
 }
 
-export function assertDefaultTableCanBeUpdated(
-  current: Pick<PerformanceTable, 'isDefault' | 'name' | 'description' | 'criteria'>,
-  candidate: Pick<PerformanceTable, 'name' | 'description' | 'criteria'>,
-): void {
-  if (!current.isDefault) return;
-
-  if (candidate.name !== current.name || candidate.description !== current.description) {
-    throw new InvalidPerformanceTableError(
-      'O nome e a descrição da tabela padrão não podem ser alterados.',
-    );
-  }
-
-  assertDefaultCriteriaUnchanged(current.criteria, candidate.criteria);
-}
-
-function assertDefaultCriteriaUnchanged(
-  currentCriteria: PerformanceTable['criteria'],
-  candidateCriteria: PerformanceTable['criteria'],
-): void {
-  if (criteriaChanged(currentCriteria, candidateCriteria)) {
-    throw new InvalidPerformanceTableError(
-      'Os nomes, descrições e ordens dos critérios da tabela padrão não podem ser alterados.',
-    );
-  }
+export function assertDefaultTableCanBeUpdated(current: Pick<PerformanceTable, 'isDefault'>): void {
+  if (current.isDefault) throw new InvalidPerformanceTableError(SYSTEM_TABLE_READ_ONLY);
 }

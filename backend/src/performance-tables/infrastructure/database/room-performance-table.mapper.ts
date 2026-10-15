@@ -9,7 +9,7 @@ export interface RoomPerformanceTableRow {
   description: string | null;
   roomId: string | null;
   isDefault: boolean;
-  authorId: string;
+  authorId: string | null;
   authorName: string;
   createdAt: Date;
   emUso: number;

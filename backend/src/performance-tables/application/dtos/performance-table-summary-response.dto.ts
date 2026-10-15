@@ -4,8 +4,13 @@ export class PerformanceTableSummaryResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
 
-  @ApiProperty({ format: 'uuid', description: 'Professor proprietário da tabela.' })
-  professorId: string;
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'Professor proprietário; nulo nas tabelas do sistema.',
+  })
+  professorId: string | null;
 
   @ApiProperty({ example: 'Tabela de Desempenho 1' })
   nome: string;

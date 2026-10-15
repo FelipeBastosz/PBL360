@@ -36,11 +36,10 @@ export const ListPerformanceTablesSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Lista as tabelas de desempenho do professor autenticado',
     description:
-      'Retorna somente as tabelas ativas do professor, com a quantidade de critérios ativos e de problemas ativos que utilizam cada tabela.',
+      'Retorna as tabelas ativas do professor e as duas tabelas padrão do sistema, com a quantidade de critérios ativos e de problemas ativos que utilizam cada tabela.',
   }),
   ApiOkResponse({
-    description:
-      'Tabelas de desempenho do professor. Retorna uma lista vazia quando não houver tabelas.',
+    description: 'Tabelas de desempenho do professor e os dois padrões compartilhados do sistema.',
     type: PerformanceTableSummaryResponseDto,
     isArray: true,
   }),
@@ -53,7 +52,7 @@ export const CreatePerformanceTableSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Cria uma tabela de desempenho',
     description:
-      'Cria uma tabela editável para o professor autenticado. A soma dos pesos de todos os critérios deve ser igual a 10. A tabela padrão é criada automaticamente no cadastro do tutor e não pode ser criada manualmente.',
+      'Cria uma tabela editável para o professor autenticado. A soma dos pesos de todos os critérios deve ser igual a 10. Os padrões do sistema são compartilhados, somente leitura e podem ser copiados.',
   }),
   ApiBody({ type: CreatePerformanceTableDto }),
   ApiCreatedResponse({
@@ -73,7 +72,7 @@ export const GetPerformanceTableSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Busca os detalhes de uma tabela de desempenho',
     description:
-      'Retorna uma tabela de desempenho do professor autenticado com todos os seus critérios ativos ordenados.',
+      'Retorna uma tabela acessível ao professor, incluindo padrões do sistema, com seus critérios ativos ordenados.',
   }),
   ApiOkResponse({
     description: 'Tabela de desempenho encontrada com seus critérios.',
@@ -122,7 +121,7 @@ export const UpdatePerformanceTableSwaggerDocs = applyDecorators(
       'A soma dos pesos de todos os critérios deve ser igual a 10. ' +
       'A tabela deve manter ao menos um critério. Se já foi usada em sessão passada, somente os pesos podem ser alterados. ' +
       'O campo propagarParaSessoes, quando verdadeiro, atualiza os snapshots das sessões vinculadas e recalcula as avaliações enviadas. ' +
-      'Na tabela padrão, nome, descrição, nomes, descrições e ordens dos critérios permanecem protegidos.',
+      'As tabelas padrão do sistema são somente leitura, inclusive os pesos. Crie uma cópia para personalizar.',
   }),
   ApiBody({
     type: UpdatePerformanceTableDto,
@@ -145,7 +144,8 @@ export const UpdatePerformanceTableSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
   ApiForbiddenResponse({
-    description: 'Apenas o professor responsável pode editar esta tabela.',
+    description:
+      'Apenas o professor responsável pode editar esta tabela. Padrões do sistema são somente leitura.',
     type: ErrorResponseDto,
   }),
   ApiNotFoundResponse({

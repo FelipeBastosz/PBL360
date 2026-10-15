@@ -1,3 +1,4 @@
+import { SYSTEM_TABLE_READ_ONLY } from '@/performance-tables/domain/entities/system-performance-tables';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   SESSION_TABLE_EDITING_REPOSITORY,
@@ -22,7 +23,11 @@ export class GetSessionTableEditPermissionsUseCase {
     const canEditCriteria = canEditTableCriteria(context);
     return {
       canEditCriteria,
-      reason: canEditCriteria ? null : WEIGHTS_ONLY_REASON,
+      reason: context.table.isDefault
+        ? SYSTEM_TABLE_READ_ONLY
+        : canEditCriteria
+          ? null
+          : WEIGHTS_ONLY_REASON,
       sessions: context.sessions,
     };
   }

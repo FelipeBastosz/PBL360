@@ -1,3 +1,5 @@
+import { CopyPerformanceTableUseCase } from './application/use-cases/copy-performance-table.use-case';
+import { PerformanceTableCopiesController } from './infrastructure/http/performance-table-copies.controller';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoomsModule } from '@/rooms/rooms.module';
@@ -17,8 +19,13 @@ import { GetPerformanceTableUsageUseCase } from './application/use-cases/get-per
 
 @Module({
   imports: [TypeOrmModule.forFeature([PerformanceTable, PerformanceCriterion]), RoomsModule],
-  controllers: [PerformanceTablesController, RoomPerformanceTablesController],
+  controllers: [
+    PerformanceTablesController,
+    RoomPerformanceTablesController,
+    PerformanceTableCopiesController,
+  ],
   providers: [
+    CopyPerformanceTableUseCase,
     CreatePerformanceTableUseCase,
     DeletePerformanceTableUseCase,
     ListPerformanceTablesUseCase,
