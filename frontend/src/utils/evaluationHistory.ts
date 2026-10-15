@@ -1,3 +1,4 @@
+import type { SelfAssessmentAdjustmentResponse } from '@/types/evaluation';
 import type { StudentEvaluationHistoryItem } from '@/types/evaluationHistory';
 
 export function formatScore(value: number | null | undefined): string {
@@ -11,8 +12,10 @@ export function getStudentScore(item: StudentEvaluationHistoryItem): number | nu
   return item.notaAlunoOriginal ?? item.notaAluno;
 }
 
+// The tutor column shows the adjusted self-assessment when there is one, otherwise the
+// grade from the tutor's own evaluation of the student.
 export function getTutorScore(item: StudentEvaluationHistoryItem): number | null {
-  return item.situacaoAjuste === 'AJUSTADA' ? item.notaAluno : null;
+  return item.situacaoAjuste === 'AJUSTADA' ? item.notaAluno : item.notaTutor;
 }
 
 export function hasSubmitted(item: StudentEvaluationHistoryItem): boolean {
@@ -26,4 +29,20 @@ export function getDisplayName(item: StudentEvaluationHistoryItem, hideNames: bo
 export function getSituationLabel(item: StudentEvaluationHistoryItem): string {
   if (!hasSubmitted(item)) return 'Avaliação pendente';
   return item.situacaoAjuste === 'AJUSTADA' ? 'Ajustada com justificativa' : 'Sem ajuste do tutor';
+}
+
+export function applyAdjustment(
+  items: StudentEvaluationHistoryItem[],
+  response: SelfAssessmentAdjustmentResponse,
+): StudentEvaluationHistoryItem[] {
+  return items.map((item) =>
+    item.alunoId === response.alunoId
+      ? {
+          ...item,
+          notaAluno: response.notaVigente,
+          notaAlunoOriginal: response.notaOriginal,
+          situacaoAjuste: 'AJUSTADA',
+        }
+      : item,
+  );
 }

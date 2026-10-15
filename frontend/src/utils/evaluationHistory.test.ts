@@ -42,9 +42,10 @@ describe('formatScore', () => {
 });
 
 describe('student and tutor scores', () => {
-  it('shows the submitted score and no tutor score when not adjusted', () => {
+  it('shows the tutor evaluation score when there is no adjustment', () => {
     expect(getStudentScore(baseItem)).toBe(9);
-    expect(getTutorScore(baseItem)).toBeNull();
+    expect(getTutorScore(baseItem)).toBe(7.5);
+    expect(getTutorScore({ ...baseItem, notaTutor: null })).toBeNull();
   });
 
   it('shows the original score as the student score and the current one as the tutor score', () => {

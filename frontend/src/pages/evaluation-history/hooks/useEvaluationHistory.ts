@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { evaluationHistoryService } from '@/services/evaluationHistory.service';
+import type { SelfAssessmentAdjustmentResponse } from '@/types/evaluation';
 import type { StudentEvaluationHistoryItem } from '@/types/evaluationHistory';
+import { applyAdjustment } from '@/utils/evaluationHistory';
 
 export function useEvaluationHistory(sessionId: string | undefined) {
   const [students, setStudents] = useState<StudentEvaluationHistoryItem[]>([]);
@@ -14,5 +16,9 @@ export function useEvaluationHistory(sessionId: string | undefined) {
     });
   }, [sessionId, run]);
 
-  return { students, isLoading, error };
+  const handleAdjusted = useCallback((response: SelfAssessmentAdjustmentResponse) => {
+    setStudents((current) => applyAdjustment(current, response));
+  }, []);
+
+  return { students, isLoading, error, handleAdjusted };
 }

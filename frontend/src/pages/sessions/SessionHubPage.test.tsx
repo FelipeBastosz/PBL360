@@ -139,13 +139,13 @@ describe('SessionHubPage', () => {
     expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute('href', '/formulas');
   });
 
-  it('links the Histórico de avaliações card to the evaluation history page', async () => {
+  it('renders active link for Histórico de avaliações', async () => {
     renderPage();
 
-    expect(await screen.findByRole('link', { name: /histórico de avaliações/i })).toHaveAttribute(
-      'href',
-      '/turmas/room-1/problemas/prob-1/sessoes/sess-1/historico',
-    );
+    const basePath = '/turmas/room-1/problemas/prob-1/sessoes/sess-1';
+    const link = await screen.findByRole('link', { name: /histórico de avaliações/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', `${basePath}/historico`);
   });
 
   it('renders Autoavaliação e pares card with toggle switches', async () => {
@@ -185,8 +185,11 @@ describe('SessionHubPage', () => {
       expect(screen.getByRole('heading', { name: 'Central de Avaliações' })).toBeInTheDocument();
       expect(screen.getByText('Autoavaliação')).toBeInTheDocument();
       expect(screen.getByText('Avaliar Colegas')).toBeInTheDocument();
-      expect(screen.getByText('Notas e Feedbacks')).toBeInTheDocument();
-      expect(screen.getAllByText('Em breve')).toHaveLength(3);
+      expect(screen.getByRole('link', { name: /Feedback do Tutor/i })).toHaveAttribute(
+        'href',
+        '/turmas/room-1/problemas/prob-1/sessoes/sess-1/feedback',
+      );
+      expect(screen.getAllByText('Em breve')).toHaveLength(2);
       expect(screen.queryByRole('link', { name: /chamada/i })).not.toBeInTheDocument();
       expect(screen.queryByText('Autoavaliação e pares')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Encerrar sessão' })).not.toBeInTheDocument();

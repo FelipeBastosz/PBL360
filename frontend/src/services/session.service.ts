@@ -13,6 +13,11 @@ import type {
   UpdateSessionPayload,
   SessionReleasesResponse,
   UpdateReleasesPayload,
+  ApplySessionTablePayload,
+  SessionTableUpdateResult,
+  SessionEvaluationConfig,
+  UpdateSessionFormulaPayload,
+  SessionFormulaConfig,
 } from '@/types/session';
 import { api } from './api';
 
@@ -89,5 +94,21 @@ export const sessionService = {
   updateReleases: (sessionId: string, payload: UpdateReleasesPayload) =>
     api
       .put<SessionReleasesResponse>(`/sessoes/${sessionId}/liberacoes`, payload)
+      .then((r) => r.data),
+
+  getEvaluationConfig: (sessionId: string) =>
+    api
+      .get<SessionEvaluationConfig>(`${BASE}/${sessionId}/configuracao-avaliacao`)
+      .then((r) => r.data),
+
+  applyTable: (sessionId: string, payload: ApplySessionTablePayload) =>
+    api.put<SessionTableUpdateResult>(`${BASE}/${sessionId}/tabela`, payload).then((r) => r.data),
+
+  updateFormula: (sessionId: string, payload: UpdateSessionFormulaPayload) =>
+    api.put<SessionFormulaConfig>(`${BASE}/${sessionId}/formula`, payload).then((r) => r.data),
+
+  restoreDefaultFormula: (sessionId: string) =>
+    api
+      .post<SessionFormulaConfig>(`${BASE}/${sessionId}/formula/restaurar-padrao`)
       .then((r) => r.data),
 };

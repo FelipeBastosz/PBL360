@@ -14,6 +14,7 @@ type HistoryStudentCardProps = {
   student: StudentEvaluationHistoryItem;
   hideNames: boolean;
   index: number;
+  onSelect: (student: StudentEvaluationHistoryItem) => void;
 };
 
 // Fallback colours for students without a photo, in the order used by the layout.
@@ -110,18 +111,44 @@ function ScoreArrow() {
   );
 }
 
-export function HistoryStudentCard({ student, hideNames, index }: HistoryStudentCardProps) {
+type StudentPhotoProps = Omit<HistoryStudentCardProps, 'hideNames'> & { displayName: string };
+
+// Only a submitted self-assessment can be adjusted, so only then the photo opens the sheet.
+function StudentPhoto({ student, index, displayName, onSelect }: StudentPhotoProps) {
+  const avatar = (
+    <UserAvatar
+      user={{ id: student.alunoId, nome: student.nome, possuiFoto: true }}
+      className={cn(
+        'size-10! text-[13px]! font-bold! text-white!',
+        AVATAR_COLORS[index % AVATAR_COLORS.length],
+      )}
+    />
+  );
+  if (!hasSubmitted(student)) return avatar;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(student)}
+      aria-label={`Ajustar nota de ${displayName}`}
+      className="shrink-0 rounded-full transition-[scale] duration-200 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900"
+    >
+      {avatar}
+    </button>
+  );
+}
+
+export function HistoryStudentCard({
+  student,
+  hideNames,
+  index,
+  onSelect,
+}: HistoryStudentCardProps) {
   const displayName = getDisplayName(student, hideNames);
 
   return (
     <article className="flex items-center gap-3 rounded-xl border border-[#E2E4EC] bg-white p-[13.8px] shadow-[0_2px_8px_rgb(26_29_41/0.08)]">
-      <UserAvatar
-        user={{ id: student.alunoId, nome: student.nome, possuiFoto: true }}
-        className={cn(
-          'size-10! text-[13px]! font-bold! text-white!',
-          AVATAR_COLORS[index % AVATAR_COLORS.length],
-        )}
-      />
+      <StudentPhoto student={student} index={index} displayName={displayName} onSelect={onSelect} />
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <h2 className="truncate text-[15px] leading-[18px] font-semibold text-brand-900">
           {displayName}

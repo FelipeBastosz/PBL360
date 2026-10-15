@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
 import { ApiError } from '@/services/apiError';
+import { evaluationService } from '@/services/evaluation.service';
 import { evaluationHistoryService } from '@/services/evaluationHistory.service';
 import type { UserResponse } from '@/types/auth';
 import type { StudentEvaluationHistoryItem } from '@/types/evaluationHistory';
@@ -12,6 +13,11 @@ import SessionEvaluationHistoryPage from './SessionEvaluationHistoryPage';
 vi.mock('@/services/evaluationHistory.service', () => ({
   evaluationHistoryService: { list: vi.fn() },
 }));
+vi.mock('@/services/evaluation.service', () => ({
+  evaluationService: { adjustSelfAssessment: vi.fn() },
+}));
+const notify = vi.fn();
+vi.mock('@/hooks/useToast', () => ({ useToast: () => ({ notify }) }));
 vi.mock('@/services/user.service', () => ({
   userService: { getPhoto: vi.fn().mockResolvedValue(new Blob()) },
 }));
@@ -107,6 +113,7 @@ describe('SessionEvaluationHistoryPage', () => {
     const elisa = cardOf('Elisa Nunes');
     expect(within(elisa).getByText('Sem ajuste do tutor')).toBeInTheDocument();
     expect(within(elisa).getByText('8,0')).toBeInTheDocument();
+    expect(within(elisa).getByText('7,0')).toBeInTheDocument();
 
     const carla = cardOf('Carla Rocha');
     expect(within(carla).getByText('Ajustada com justificativa')).toBeInTheDocument();
@@ -117,11 +124,49 @@ describe('SessionEvaluationHistoryPage', () => {
     expect(evaluationHistoryService.list).toHaveBeenCalledWith('sess-1');
   });
 
-  it('is read-only: there is no action to adjust a grade', async () => {
+  it('opens the adjustment sheet only from the photo of a submitted evaluation', async () => {
     renderPage();
     await screen.findByRole('heading', { name: 'Elisa Nunes' });
 
-    expect(within(cardOf('Elisa Nunes')).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(cardOf('Bruno Mendes')).queryByRole('button')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustar nota de Elisa Nunes' }));
+
+    expect(screen.getByRole('dialog', { name: 'Elisa Nunes' })).toBeInTheDocument();
+  });
+
+  it('saves the adjustment and shows the new tutor score on the card', async () => {
+    vi.mocked(evaluationService.adjustSelfAssessment).mockResolvedValue({
+      alunoId: 'aluno-1',
+      notaOriginal: 8,
+      notaVigente: 6.5,
+      ajuste: {
+        valorAnterior: 8,
+        valorNovo: 6.5,
+        justificativa: 'Revisado após conversa com o aluno.',
+        autor: { id: 'tutor-1', nome: 'Professor Silva' },
+        ajustadoEm: '2026-10-15T12:00:00Z',
+      },
+    });
+    renderPage();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Ajustar nota de Elisa Nunes' }),
+    );
+
+    const grade = screen.getByLabelText('Nova nota');
+    await userEvent.clear(grade);
+    await userEvent.type(grade, '6.5');
+    await userEvent.type(
+      screen.getByLabelText('Justificativa do ajuste'),
+      'Revisado após conversa com o aluno.',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar ajuste' }));
+
+    expect(evaluationService.adjustSelfAssessment).toHaveBeenCalledWith('sess-1', 'aluno-1', {
+      novaNota: 6.5,
+      justificativa: 'Revisado após conversa com o aluno.',
+    });
+    expect(await within(cardOf('Elisa Nunes')).findByText('6,5')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('shows the registration number instead of the name when names are hidden', async () => {

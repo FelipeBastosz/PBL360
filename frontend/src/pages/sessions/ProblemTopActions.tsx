@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import { AdjustmentsHorizontalIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { ROUTES } from '@/routes/paths';
 import { INTERACTIVE_CARD_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
@@ -45,6 +45,10 @@ export function ProblemTopActions({ isProfessor, roomId, problemId }: ProblemTop
           title="Relatório Final"
           description="Nota final do problema"
         />
+      </button>
+
+      <button type="button" disabled className={`${ACTION_CLASS} cursor-not-allowed opacity-60`}>
+        <ActionContent Icon={AdjustmentsHorizontalIcon} title="Fórmulas" description="Em breve" />
       </button>
     </div>
   );
