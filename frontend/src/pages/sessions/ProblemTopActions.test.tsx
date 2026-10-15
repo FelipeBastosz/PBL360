@@ -14,22 +14,19 @@ function renderActions(isProfessor: boolean) {
 describe('ProblemTopActions', () => {
   it('renders Relatório Final button when user is a professor', () => {
     renderActions(true);
-
     expect(screen.getByRole('button', { name: /relatório final/i })).toBeInTheDocument();
     expect(screen.getByText('Nota final do problema')).toBeInTheDocument();
   });
 
-  it('does not show the formulas shortcut, which moved to the session page', () => {
+  it('renders disabled Formulas button with Em breve description', () => {
     renderActions(true);
-
-    expect(screen.queryByRole('link', { name: /fórmulas/i })).not.toBeInTheDocument();
+    const button = screen.getByRole('button', { name: /fórmulas/i });
+    expect(button).toBeDisabled();
+    expect(screen.getByText('Em breve')).toBeInTheDocument();
   });
 
   it('renders nothing when user is not a professor', () => {
     const { container } = renderActions(false);
-
     expect(container.firstChild).toBeNull();
-    expect(screen.queryByRole('button', { name: /relatório final/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /fórmulas/i })).not.toBeInTheDocument();
   });
 });
