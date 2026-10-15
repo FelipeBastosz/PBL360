@@ -56,3 +56,52 @@ export type SessionFeedbackResponse = {
   texto: string;
   criadoEm: string;
 };
+
+export type SelfAssessmentAdjustmentAuthor = {
+  id: string;
+  nome: string;
+};
+
+export type SelfAssessmentAdjustment = {
+  valorAnterior: number;
+  valorNovo: number;
+  justificativa: string;
+  autor: SelfAssessmentAdjustmentAuthor;
+  ajustadoEm: string;
+};
+
+export type AdjustSelfAssessmentPayload = {
+  novaNota: number;
+  justificativa: string;
+};
+
+export type SelfAssessmentAdjustmentResponse = {
+  alunoId: string;
+  notaOriginal: number;
+  notaVigente: number;
+  ajuste: SelfAssessmentAdjustment;
+};
+
+export type SelfAssessmentAdjustmentHistoryResponse = {
+  notaOriginal: number | null;
+  notaVigente: number | null;
+  ajustes: SelfAssessmentAdjustment[];
+};
+
+export type EvaluationAdjustmentSituation = 'SEM_AJUSTE' | 'AJUSTADA';
+
+export type StudentEvaluationHistoryItem = {
+  alunoId: string;
+  nome: string;
+  matricula: string | null;
+  notaAluno: number | null;
+  notaAlunoOriginal: number | null;
+  notaTutor: number | null;
+  notaPares: number | null;
+  avaliacoesPares: number;
+  situacaoAjuste: EvaluationAdjustmentSituation;
+};
+
+export type SessionEvaluationHistoryResponse = {
+  alunos: StudentEvaluationHistoryItem[];
+};

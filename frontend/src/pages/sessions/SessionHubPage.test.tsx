@@ -139,11 +139,13 @@ describe('SessionHubPage', () => {
     expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute('href', '/formulas');
   });
 
-  it('renders disabled card for Histórico de avaliações with Em breve badge', async () => {
+  it('renders active link for Histórico de avaliações', async () => {
     renderPage();
 
-    expect(await screen.findByText('Histórico de avaliações')).toBeInTheDocument();
-    expect(screen.getByText('Em breve')).toBeInTheDocument();
+    const basePath = '/turmas/room-1/problemas/prob-1/sessoes/sess-1';
+    const link = await screen.findByRole('link', { name: /histórico de avaliações/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', `${basePath}/historico`);
   });
 
   it('renders Autoavaliação e pares card with toggle switches', async () => {
