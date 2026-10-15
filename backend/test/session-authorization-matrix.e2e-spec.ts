@@ -8,6 +8,8 @@ import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
 import { cleanDatabase, signAccessToken } from './helpers/fixtures';
 
+const DATABASE_HOOK_TIMEOUT_MS = 30_000;
+
 describe('Session Authorization Matrix (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
@@ -33,12 +35,15 @@ describe('Session Authorization Matrix (e2e)', () => {
     let moduleRef: TestingModule;
     ({ app, moduleRef } = await createTestApp());
     dataSource = moduleRef.get(DataSource);
-  });
+  }, DATABASE_HOOK_TIMEOUT_MS);
 
   afterAll(async () => {
-    await cleanDatabase(dataSource);
-    await app.close();
-  });
+    try {
+      await cleanDatabase(dataSource);
+    } finally {
+      await app?.close();
+    }
+  }, DATABASE_HOOK_TIMEOUT_MS);
 
   beforeEach(async () => {
     await cleanDatabase(dataSource);
@@ -127,7 +132,7 @@ describe('Session Authorization Matrix (e2e)', () => {
       [problemId, perfTable.id],
     );
     sessionId = session.id;
-  });
+  }, DATABASE_HOOK_TIMEOUT_MS);
 
   describe('1. Chamada (Roll Call)', () => {
     const path = () => `/api/sessoes/${sessionId}/chamada`;

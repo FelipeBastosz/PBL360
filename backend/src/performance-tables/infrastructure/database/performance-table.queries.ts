@@ -15,7 +15,7 @@ export const PERFORMANCE_TABLE_SUMMARY_QUERY = `
      AND performance_criteria.deleted_at IS NULL
     LEFT JOIN sessions
       ON sessions.performance_table_id = performance_tables.id
-   WHERE performance_tables.tutor_id = $1
+   WHERE (performance_tables.tutor_id = $1 OR performance_tables.is_default = TRUE)
      AND performance_tables.is_session_copy = FALSE
      AND performance_tables.deleted_at IS NULL
    GROUP BY performance_tables.id
@@ -143,7 +143,7 @@ export const FIND_ROOM_PERFORMANCE_TABLES_QUERY = `
          pt.room_id AS "roomId",
          pt.is_default AS "isDefault",
          pt.tutor_id AS "authorId",
-         u.name AS "authorName",
+         COALESCE(u.name, 'Sistema') AS "authorName",
          pt.created_at AS "createdAt",
          (
            SELECT COUNT(DISTINCT s.id)::int
@@ -164,7 +164,7 @@ export const FIND_ROOM_PERFORMANCE_TABLES_QUERY = `
          pc.order_index AS "criterionOrderIndex",
          pc.weight AS "criterionWeight"
     FROM performance_tables pt
-   INNER JOIN users u ON u.id = pt.tutor_id
+   LEFT JOIN users u ON u.id = pt.tutor_id
     LEFT JOIN performance_criteria pc
       ON pc.performance_table_id = pt.id
      AND pc.deleted_at IS NULL

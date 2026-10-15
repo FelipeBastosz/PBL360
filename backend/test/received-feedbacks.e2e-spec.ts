@@ -118,9 +118,9 @@ describe('Received feedbacks (e2e)', () => {
       student.id,
       colleague.id,
     ]);
-    // Session creation can assign the tutor's default table automatically.
+    // Use an explicit personal table to keep feedback fixtures independent of system defaults.
     const [table] = await db.query<[{ id: string }]>(
-      "INSERT INTO performance_tables (tutor_id, name, is_default) VALUES ($1, 'Tabela', true) RETURNING id;",
+      "INSERT INTO performance_tables (tutor_id, name, is_default) VALUES ($1, 'Tabela', FALSE) RETURNING id;",
       [tutor.id],
     );
     tableId = table.id;
@@ -135,9 +135,9 @@ describe('Received feedbacks (e2e)', () => {
     );
     problemId = problem.id;
     const sessions = await db.query<{ id: string }[]>(
-      `INSERT INTO sessions (problem_id, title, date, order_index, status)
-       VALUES ($1, 'Posterior', '2099-10-20', 1, 'agendada'), ($1, 'Anterior', '2099-10-10', 2, 'agendada') RETURNING id;`,
-      [problemId],
+      `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index, status)
+       VALUES ($1, $2, 'Posterior', '2099-10-20', 1, 'agendada'), ($1, $2, 'Anterior', '2099-10-10', 2, 'agendada') RETURNING id;`,
+      [problemId, tableId],
     );
     laterSessionId = sessions[0]!.id;
     sessionId = sessions[1]!.id;

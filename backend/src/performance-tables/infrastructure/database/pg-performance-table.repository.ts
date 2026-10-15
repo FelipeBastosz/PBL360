@@ -4,6 +4,7 @@ import { type EntityManager, Repository } from 'typeorm';
 import { persistTableUpdate } from './performance-table-update.persistence';
 
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
+import { InvalidPerformanceTableError } from '../../domain/errors/invalid-performance-table.error';
 import type {
   PerformanceTableRepository,
   PerformanceTableSummary,
@@ -58,6 +59,9 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     propagateToSessions = false,
     changedBy = table.tutorId,
   ): Promise<PerformanceTable> {
+    if (!changedBy) {
+      throw new InvalidPerformanceTableError('O professor responsável é obrigatório.');
+    }
     return this.performanceTables.manager.transaction(async (manager) => {
       await persistTableUpdate(manager, table, propagateToSessions, changedBy);
       return this.readUpdatedTable(manager, table.id);

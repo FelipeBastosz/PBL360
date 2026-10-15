@@ -19,10 +19,12 @@ type SessionHubContentProps = {
   isUpdating: boolean;
 };
 
-function StudentHubContent({ sessionId, pokerPath }: { sessionId: string; pokerPath: string }) {
+type StudentHubContentProps = { sessionId: string; basePath: string; pokerPath: string };
+
+function StudentHubContent({ sessionId, basePath, pokerPath }: StudentHubContentProps) {
   return (
     <>
-      <StudentEvaluationCenter>
+      <StudentEvaluationCenter feedbackHref={`${basePath}/feedback`}>
         <StudentPokerNotice sessionId={sessionId} pokerPath={pokerPath} />
       </StudentEvaluationCenter>
       <SessionAttachments sessionId={sessionId} canUpload />
@@ -58,8 +60,15 @@ export function SessionHubContent(props: SessionHubContentProps) {
   );
   const pokerPath = `${props.basePath}/planning-poker`;
 
-  if (!props.isProfessor)
-    return <StudentHubContent sessionId={props.sessionId} pokerPath={pokerPath} />;
+  if (!props.isProfessor) {
+    return (
+      <StudentHubContent
+        sessionId={props.sessionId}
+        basePath={props.basePath}
+        pokerPath={pokerPath}
+      />
+    );
+  }
 
   return (
     <>

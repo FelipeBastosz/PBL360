@@ -25,6 +25,7 @@ export class CreateSessionPerformanceTableCopies1792100000000 implements Migrati
             JOIN problems p ON p.id = s.problem_id
             JOIN performance_tables pt ON pt.id = s.performance_table_id
            WHERE pt.is_session_copy = FALSE
+             AND pt.tutor_id IS NOT NULL
         ) table_groups;
 
       INSERT INTO performance_tables

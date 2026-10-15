@@ -15,6 +15,23 @@ export async function readTableEditContext(
   sessionId: string,
   tutorId: string,
 ): Promise<SessionTableEditContext> {
+  const rows = await readCurrentTable(manager, sessionId);
+  const table = toPerformanceTableWithCriteria(rows);
+  const sessions = await readTableSessions(
+    manager,
+    table.id,
+    tutorId,
+    table.isDefault ? sessionId : null,
+  );
+  const session = sessions.find((item) => item.sessionId === sessionId);
+  assertCurrentSessionAccess(session);
+  return { table, session: session!, sessions };
+}
+
+async function readCurrentTable(
+  manager: EntityManager,
+  sessionId: string,
+): Promise<PerformanceTableDetailRow[]> {
   const [current] = await manager.query<Array<{ tableId: string }>>(
     'SELECT performance_table_id AS "tableId" FROM sessions WHERE id = $1;',
     [sessionId],
@@ -25,10 +42,7 @@ export async function readTableEditContext(
     [current.tableId],
   );
   if (!rows.length) throw new NotFoundError('Tabela não encontrada.');
-  const sessions = await readTableSessions(manager, current.tableId, tutorId);
-  const session = sessions.find((item) => item.sessionId === sessionId);
-  assertCurrentSessionAccess(session);
-  return { table: toPerformanceTableWithCriteria(rows), session: session!, sessions };
+  return rows;
 }
 
 function assertCurrentSessionAccess(session: TableSessionUsage | undefined): void {
@@ -41,8 +55,9 @@ function readTableSessions(
   manager: EntityManager,
   tableId: string,
   tutorId: string,
+  sessionId: string | null,
 ): Promise<TableSessionUsage[]> {
-  return manager.query<TableSessionUsage[]>(TABLE_SESSIONS, [tableId, tutorId]);
+  return manager.query<TableSessionUsage[]>(TABLE_SESSIONS, [tableId, tutorId, sessionId]);
 }
 
 const TABLE_SESSIONS = `
@@ -55,5 +70,5 @@ const TABLE_SESSIONS = `
            SELECT 1 FROM room_tutors rt WHERE rt.room_id = r.id AND rt.tutor_id = $2
          ))) AS "canAccess"
     FROM sessions s JOIN problems p ON p.id = s.problem_id JOIN rooms r ON r.id = p.room_id
-   WHERE s.performance_table_id = $1 ORDER BY s.date, p.id, s.order_index, s.id;
+   WHERE s.performance_table_id = $1 AND ($3::uuid IS NULL OR s.id = $3) ORDER BY s.date, p.id, s.order_index, s.id;
 `;
