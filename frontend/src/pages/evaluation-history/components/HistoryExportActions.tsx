@@ -33,7 +33,7 @@ export function HistoryExportActions({
 }: HistoryExportActionsProps) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-20 bg-surface pt-1 pr-[21px] pl-[27px] pb-[max(5.3px,env(safe-area-inset-bottom))] sm:static sm:mt-6 sm:bg-transparent sm:p-0">
-      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-[15.3px] sm:grid sm:grid-cols-2 sm:gap-4">
+      <div className="flex w-full flex-col gap-[15.3px] sm:grid sm:grid-cols-2 sm:gap-4">
         <ExportButton label="Exportar em PDF" disabled={disabled} onClick={onExportPdf} />
         <ExportButton label="Exportar em Excel" disabled={disabled} onClick={onExportExcel} />
       </div>

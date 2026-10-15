@@ -47,7 +47,7 @@ export default function SessionEvaluationHistoryPage() {
       <HistoryHeader
         onBack={() => navigate(`/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}`)}
       />
-      <main className="mx-auto w-full max-w-[720px] px-[18px] pb-[160px] sm:px-6 sm:pt-4 sm:pb-12">
+      <main className="mx-auto w-full px-[18px] pb-[160px] sm:max-w-2xl sm:px-4 sm:pt-4 sm:pb-12 lg:max-w-5xl">
         <HideNamesToggle hideNames={hideNames} onChange={setHideNames} />
         {error && <Alert tone="error">{error.message}</Alert>}
         {isLoading ? (
