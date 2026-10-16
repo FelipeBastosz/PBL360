@@ -16,6 +16,7 @@ import {
 } from '@/shared/decorators/authenticated-user.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
+import { contentDisposition } from '@/shared/http/content-disposition';
 import { FileUpload, type UploadedFileBuffer } from '@/shared/http/file-upload';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import type { SessionAttachmentResponseDto } from '../../application/dtos/session-attachment.dto';
@@ -54,14 +55,6 @@ const toUploadInput = (
   fileName: file?.originalname,
   content: file?.buffer,
 });
-
-export const contentDisposition = (fileName: string): string => {
-  const ascii = fileName
-    .normalize('NFD')
-    .replace(/[^\x20-\x7e]/g, '')
-    .replace(/["\\]/g, '');
-  return `attachment; filename="${ascii || 'documento.pdf'}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
-};
 
 @ApiTags('Anexos da sessão')
 @Controller('sessoes/:sessaoId/anexos')
