@@ -50,7 +50,10 @@ const writeDataRow = (sheet: Worksheet, columns: ReportColumn[], values: ReportC
 
 const fittedWidths = (section: ReportTableSection): number[] =>
   section.columns.map((column, index) => {
-    const lengths = section.rows.map((row) => formatCellText(row[index] ?? null).length);
+    const lengths = section.rows.map(
+      (row) =>
+        formatCellText(normalizeCell(row[index], column.type), columnDecimals(column)).length,
+    );
     const longest = Math.max(column.header.length, ...lengths);
     return Math.min(Math.max(longest + 2, MIN_COLUMN_WIDTH), MAX_COLUMN_WIDTH);
   });

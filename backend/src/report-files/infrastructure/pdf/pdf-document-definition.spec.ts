@@ -151,6 +151,41 @@ describe('buildPdfDefinition', () => {
     });
   });
 
+  it('stretches every column when the table has only numbers', () => {
+    const document = buildReportDocument({
+      sections: [
+        {
+          kind: 'table',
+          title: 'Notas',
+          columns: [
+            { header: 'Tutor', type: ReportColumnType.NUMBER },
+            { header: 'Pares', type: ReportColumnType.NUMBER },
+          ],
+          rows: [[8, 9]],
+        },
+      ],
+    });
+
+    expect(contentOf(buildPdfDefinition(document, LOGO))[2]).toMatchObject({
+      table: { widths: ['*', '*'] },
+    });
+  });
+
+  it('breaks long words in feedback labels and texts', () => {
+    const url = `https://exemplo.uefs.br/${'a'.repeat(60)}`;
+    const document = buildReportDocument({
+      sections: [{ kind: 'text', title: 'Feedbacks', entries: [{ label: url, text: url }] }],
+    });
+
+    expect(contentOf(buildPdfDefinition(document, LOGO))[2]).toEqual([
+      {
+        stack: [{ text: breakLongWords(url), style: 'entryLabel' }, { text: breakLongWords(url) }],
+        margin: [0, 0, 0, 8],
+      },
+    ]);
+    expect(breakLongWords(url)).not.toBe(url);
+  });
+
   it('uses the declared decimals for each column', () => {
     const content = contentOf(
       buildPdfDefinition(classReportDocument(ReportFileFormat.PDF, 3), LOGO),

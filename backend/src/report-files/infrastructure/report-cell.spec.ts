@@ -22,6 +22,18 @@ describe('normalizeCell', () => {
 
   it('keeps text in a number column as text', () => {
     expect(normalizeCell('Pendente', ReportColumnType.NUMBER)).toBe('Pendente');
+    expect(normalizeCell('1.234,5', ReportColumnType.NUMBER)).toBe('1.234,5');
+  });
+
+  it('turns numeric text in a number column into a number', () => {
+    expect(normalizeCell('8.5', ReportColumnType.NUMBER)).toBe(8.5);
+    expect(normalizeCell('8,5', ReportColumnType.NUMBER)).toBe(8.5);
+    expect(normalizeCell(' 10 ', ReportColumnType.NUMBER)).toBe(10);
+    expect(normalizeCell('-2', ReportColumnType.NUMBER)).toBe(-2);
+  });
+
+  it('keeps numeric text in a text column untouched', () => {
+    expect(normalizeCell('00123', ReportColumnType.TEXT)).toBe('00123');
   });
 });
 

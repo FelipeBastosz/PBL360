@@ -73,6 +73,7 @@ const tableWidths = (section: ReportTableSection): Size[] => {
   const widths = section.columns.map((column, index) => columnWidth(section, column, index));
   if (widths.includes('*')) return widths;
   const firstText = section.columns.findIndex((column) => column.type === ReportColumnType.TEXT);
+  if (firstText === -1) return widths.map(() => '*');
   return widths.map((width, index) => (index === firstText ? '*' : width));
 };
 
@@ -97,8 +98,10 @@ const textContent = ({ entries }: ReportTextSection): Content => {
   if (entries.length === 0) return messageContent(EMPTY_TEXT_SECTION_MESSAGE);
   return entries.map(({ label, text }) => ({
     stack: [
-      { text: label, style: 'entryLabel' },
-      text === null ? { text: MISSING_TEXT_LABEL, style: 'missing' } : { text },
+      { text: breakLongWords(label), style: 'entryLabel' },
+      text === null
+        ? { text: MISSING_TEXT_LABEL, style: 'missing' }
+        : { text: breakLongWords(text) },
     ],
     margin: [0, 0, 0, 8],
   }));

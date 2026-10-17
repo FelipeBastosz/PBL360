@@ -19,16 +19,23 @@ export const columnDecimals = ({ decimals }: ReportColumn): number => {
   return Math.min(Math.max(Math.trunc(decimals), 0), MAX_DECIMALS);
 };
 
+const NUMERIC_TEXT = /^-?\d+(?:[.,]\d+)?$/;
+
+const parseNumericText = (value: string): ReportCellValue => {
+  const trimmed = value.trim();
+  return NUMERIC_TEXT.test(trimmed) ? Number(trimmed.replace(',', '.')) : value;
+};
+
 export const normalizeCell = (
   value: ReportCellValue | undefined,
   type: ReportColumnType,
 ): ReportCellValue => {
   if (value === null || value === undefined) return null;
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) return null;
-    return type === ReportColumnType.TEXT ? String(value) : value;
+  if (typeof value === 'string') {
+    return type === ReportColumnType.NUMBER ? parseNumericText(value) : value;
   }
-  return value;
+  if (!Number.isFinite(value)) return null;
+  return type === ReportColumnType.TEXT ? String(value) : value;
 };
 
 export const formatCellText = (value: ReportCellValue, decimals = DEFAULT_DECIMALS): string => {

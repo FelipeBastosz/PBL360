@@ -145,6 +145,29 @@ describe('ExceljsReportRenderer', () => {
     expect(last.getCell(6).numFmt).toBe('0');
   });
 
+  it('sizes columns by the formatted value and writes numeric text as numbers', async () => {
+    const workbook = await renderWorkbook(
+      buildReportDocument({
+        sections: [
+          {
+            kind: 'table',
+            title: 'Notas',
+            columns: [
+              { header: 'Índice', type: ReportColumnType.NUMBER, decimals: 6 },
+              { header: 'Nota', type: ReportColumnType.NUMBER },
+            ],
+            rows: [[123456.5, '8,5']],
+          },
+        ],
+      }),
+    );
+    const grades = sheetOf(workbook, 'Notas');
+    const header = headerRowNumber(grades, 'Índice');
+
+    expect(grades.getColumn(1).width).toBe('123.456,500000'.length + 2);
+    expect(grades.getRow(header + 1).getCell(2).value).toBe(8.5);
+  });
+
   it('explains empty sections instead of leaving blank sheets', async () => {
     const workbook = await renderWorkbook(
       buildReportDocument({
