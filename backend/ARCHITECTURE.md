@@ -402,6 +402,88 @@ async create(
 }
 ```
 
+### 3.7 Exportação de relatórios em PDF e Excel
+
+A geração dos arquivos fica no `ReportFilesModule` (`src/report-files/`), que não conhece
+sala, sessão nem problema. Cada relatório (sessão, problema, turma) continua dono da busca dos
+dados, da autorização e do cálculo das notas no seu próprio caso de uso; ao gerador ele entrega
+só o conteúdo já pronto, descrito por um `ReportDocument`:
+
+| Campo            | O que é                                                                       |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `format`         | `ReportFileFormat.PDF` ou `ReportFileFormat.XLSX`                             |
+| `title`          | Título impresso no topo do PDF e de cada aba da planilha                      |
+| `fileName`       | Nome-base do download, sem extensão; o gerador limpa e acrescenta a extensão  |
+| `identification` | Pares `{ label, value }` que identificam o relatório (sala, problema, sessão) |
+| `sections`       | Seções de tabela (`kind: 'table'`) ou de texto (`kind: 'text'`)               |
+
+- **Tabela**: `columns` declara cada coluna como `TEXT` ou `NUMBER` (com `decimals`, padrão 2).
+  Notas vão em colunas `NUMBER` e continuam números no Excel; matrícula vai em `TEXT` como
+  `string`, o que preserva os zeros à esquerda. Uma linha é um array na ordem das colunas.
+- **Texto**: `entries` com `{ label, text }`, para feedbacks. Textos longos quebram de página.
+- **Ausência é `null`, nunca `0`.** No PDF aparece "—" (ou "Não informado." em textos); na
+  planilha a célula fica vazia. Zero é uma nota de verdade e aparece como zero.
+- Cada seção vira uma aba no Excel e um bloco com título no PDF. Tabela larga (mais de 6
+  colunas) muda o PDF para paisagem, e o cabeçalho da tabela se repete em cada página.
+
+O caso de uso injeta o contrato pelo token e o controller devolve o arquivo com o helper de
+resposta. O `formato` chega pela query, validado pelo `ReportExportQueryDto`:
+
+```ts
+// <feature>.module.ts
+@Module({ imports: [ReportFilesModule, RoomsModule], ... })
+
+// application/use-cases/export-session-report.use-case.ts
+@Injectable()
+export class ExportSessionReportUseCase {
+  constructor(
+    @Inject(REPORT_FILE_GENERATOR) private readonly reportFiles: ReportFileGenerator,
+    ...
+  ) {}
+
+  async execute({ sessionId, tutorId, format }: ExportSessionReportInput): Promise<ReportFile> {
+    // permissão, busca e cálculo ficam aqui
+    return this.reportFiles.generate({
+      format,
+      title: 'Relatório da sessão',
+      fileName: `relatorio-sessao-${session.label}`,
+      identification: [{ label: 'Sala', value: room.name }],
+      sections: [
+        {
+          kind: 'table',
+          title: 'Notas da sessão',
+          columns: [
+            { header: 'Aluno', type: ReportColumnType.TEXT },
+            { header: 'Matrícula', type: ReportColumnType.TEXT },
+            { header: 'Nota', type: ReportColumnType.NUMBER },
+          ],
+          rows: students.map((student) => [student.name, student.registration, student.grade]),
+        },
+      ],
+    });
+  }
+}
+
+// infrastructure/http/session-reports.controller.ts
+@Get('exportacao')
+@ExportSessionReportSwaggerDocs // compõe ExportReportFileSwaggerDocs com o ApiOperation da rota
+async export(
+  @UuidParam('sessaoId') sessionId: string,
+  @Query() query: ReportExportQueryDto,
+  @AuthenticatedUserId() tutorId: string,
+): Promise<StreamableFile> {
+  const file = await this.exportReport.execute({ sessionId, tutorId, format: query.formato });
+  return toReportFileResponse(file);
+}
+```
+
+Erros: formato fora de `PDF`/`XLSX` responde **400** (no DTO e, como defesa, no gerador). Uma
+falha ao montar o arquivo vira `ReportGenerationError` e responde **500**; como o arquivo é
+gerado inteiro em memória antes da resposta, o cliente nunca recebe um arquivo pela metade. Para
+testar um caso de uso sem gerar arquivo de verdade, substitua `REPORT_FILE_GENERATOR` por um
+dublê; as fixtures de `src/report-files/testing/` têm documentos representativos de sessão,
+problema e turma.
+
 ---
 
 ## 4. Criando um novo módulo — passo a passo
