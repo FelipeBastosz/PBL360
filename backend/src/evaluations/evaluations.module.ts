@@ -23,6 +23,11 @@ import { GetStudentEvaluationSummaryUseCase } from './application/use-cases/get-
 import { AdjustSelfAssessmentUseCase } from './application/use-cases/adjust-self-assessment.use-case';
 import { ListSelfAssessmentAdjustmentsUseCase } from './application/use-cases/list-self-assessment-adjustments.use-case';
 import { SelfAssessmentAdjustmentsController } from './infrastructure/http/self-assessment-adjustments.controller';
+import { EvaluationHistoryController } from './infrastructure/http/evaluation-history.controller';
+import { GetSessionEvaluationHistoryUseCase } from './application/use-cases/get-session-evaluation-history.use-case';
+import { GetStudentSessionEvaluationComparisonUseCase } from './application/use-cases/get-student-session-evaluation-comparison.use-case';
+import { EVALUATION_HISTORY_REPOSITORY } from './domain/repositories/evaluation-history.repository';
+import { PgEvaluationHistoryRepository } from './infrastructure/database/pg-evaluation-history.repository';
 
 @Module({
   imports: [SessionsModule, FeedbacksModule],
@@ -32,6 +37,7 @@ import { SelfAssessmentAdjustmentsController } from './infrastructure/http/self-
     PeerEvaluationsController,
     StudentEvaluationsController,
     SelfAssessmentAdjustmentsController,
+    EvaluationHistoryController,
   ],
   providers: [
     EvaluationAccessService,
@@ -47,10 +53,16 @@ import { SelfAssessmentAdjustmentsController } from './infrastructure/http/self-
     GetStudentEvaluationSummaryUseCase,
     AdjustSelfAssessmentUseCase,
     ListSelfAssessmentAdjustmentsUseCase,
+    GetSessionEvaluationHistoryUseCase,
+    GetStudentSessionEvaluationComparisonUseCase,
     { provide: EVALUATION_REPOSITORY, useClass: PgEvaluationRepository },
     {
       provide: SELF_ASSESSMENT_ADJUSTMENT_REPOSITORY,
       useClass: PgSelfAssessmentAdjustmentRepository,
+    },
+    {
+      provide: EVALUATION_HISTORY_REPOSITORY,
+      useClass: PgEvaluationHistoryRepository,
     },
   ],
 })

@@ -129,7 +129,7 @@ export function SessionActionGrid({
         to={`${basePath}/historico`}
         title="Histórico de avaliações"
         desc="Comparar e ajustar com justificativa"
-        color="bg-gray-100 text-gray-600"
+        color="bg-violet-50 text-violet-600"
         Icon={ClockIcon}
       />
       {children}

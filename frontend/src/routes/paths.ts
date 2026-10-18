@@ -33,13 +33,13 @@ export const ROUTES = {
   sessionRollCall: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/chamada',
   sessionPlanningPoker: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/planning-poker',
   sessionEvaluationsList: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar',
+  sessionEvaluationHistory: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/historico',
   studentEvaluation: '/sessoes/:sessionId/avaliacao/:studentId',
   sessionStudentEvaluation:
     '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId',
   studentObservationTags: '/sessoes/:sessionId/avaliacao/:studentId/marcacoes',
   sessionStudentObservationTags:
     '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId/marcacoes',
-  sessionEvaluationHistory: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/historico',
   evaluationHistory: '/sessoes/:sessionId/historico',
   problemGrades: '/turmas/:roomId/problemas/:problemId/notas',
   sessionFeedback: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/feedback',

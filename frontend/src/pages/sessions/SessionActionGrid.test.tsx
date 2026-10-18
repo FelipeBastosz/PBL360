@@ -16,7 +16,10 @@ describe('SessionActionGrid', () => {
     expect(screen.getByRole('link', { name: /chamada/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /avaliar alunos/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /fórmulas/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /histórico de avaliações/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /histórico de avaliações/i })).toHaveAttribute(
+      'href',
+      `${basePath}/historico`,
+    );
   });
 
   it('disables "Avaliar alunos" card with explanation when student evaluations are active', () => {

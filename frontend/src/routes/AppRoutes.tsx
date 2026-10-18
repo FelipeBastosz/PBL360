@@ -51,10 +51,12 @@ const SessionEvaluationsListPage = lazy(
   () => import('@/pages/evaluations/SessionEvaluationsListPage'),
 );
 const StudentEvaluationPage = lazy(() => import('@/pages/evaluations/StudentEvaluationPage'));
+const SessionEvaluationHistoryPage = lazy(
+  () => import('@/pages/evaluation-history/SessionEvaluationHistoryPage'),
+);
 const StudentObservationTagsPage = lazy(
   () => import('@/pages/evaluations/StudentObservationTagsPage'),
 );
-const EvaluationHistoryPage = lazy(() => import('@/pages/evaluations/EvaluationHistoryPage'));
 const ProblemGradesPage = lazy(() => import('@/pages/grades/ProblemGradesPage'));
 const PlanningPokerPage = lazy(() => import('@/pages/planning-poker/PlanningPokerPage'));
 const SessionFeedbackPage = lazy(() => import('@/pages/feedbacks/SessionFeedbackPage'));
@@ -97,12 +99,12 @@ const protectedRoutes = (
     <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
     <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
     <Route path={ROUTES.sessionEvaluationsList} element={<SessionEvaluationsListPage />} />
+    <Route path={ROUTES.sessionEvaluationHistory} element={<SessionEvaluationHistoryPage />} />
     <Route path={ROUTES.studentEvaluation} element={<StudentEvaluationPage />} />
     <Route path={ROUTES.sessionStudentEvaluation} element={<StudentEvaluationPage />} />
     <Route path={ROUTES.studentObservationTags} element={<StudentObservationTagsPage />} />
     <Route path={ROUTES.sessionStudentObservationTags} element={<StudentObservationTagsPage />} />
-    <Route path={ROUTES.sessionEvaluationHistory} element={<EvaluationHistoryPage />} />
-    <Route path={ROUTES.evaluationHistory} element={<EvaluationHistoryPage />} />
+    <Route path={ROUTES.evaluationHistory} element={<SessionEvaluationHistoryPage />} />
     <Route path={ROUTES.problemGrades} element={<ProblemGradesPage />} />
     <Route path={ROUTES.sessionPlanningPoker} element={<PlanningPokerPage />} />
     <Route path={ROUTES.sessionFeedback} element={<SessionFeedbackPage />} />
