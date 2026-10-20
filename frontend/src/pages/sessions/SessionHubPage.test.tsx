@@ -186,7 +186,6 @@ describe('SessionHubPage', () => {
       expect(screen.getByText('Autoavaliação')).toBeInTheDocument();
       expect(screen.getByText('Avaliar Colegas')).toBeInTheDocument();
       expect(screen.getByText('Notas e Feedbacks')).toBeInTheDocument();
-      expect(screen.getAllByText('Em breve')).toHaveLength(1);
       expect(screen.queryByRole('link', { name: /chamada/i })).not.toBeInTheDocument();
       expect(screen.queryByText('Autoavaliação e pares')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Encerrar sessão' })).not.toBeInTheDocument();

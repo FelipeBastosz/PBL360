@@ -105,3 +105,40 @@ export type StudentEvaluationHistoryItem = {
 export type SessionEvaluationHistoryResponse = {
   alunos: StudentEvaluationHistoryItem[];
 };
+
+export type SelfAssessmentResponse = {
+  status: EvaluationStatus;
+  enviadaEm: string | null;
+  itens: CriterionScore[];
+  criterios: EvaluationCriterion[];
+  notaSessao: number | null;
+};
+
+export type SaveSelfAssessmentPayload = {
+  itens: CriterionScore[];
+  enviar: boolean;
+};
+
+export type SessionPeerItem = {
+  id: string;
+  nome: string;
+  status: EvaluationStatus;
+  enviadaEm: string | null;
+};
+
+export type SessionPeersResponse = {
+  colegas: SessionPeerItem[];
+};
+
+export type PeerEvaluationResponse = {
+  colegaId: string;
+  status: EvaluationStatus;
+  enviadaEm: string | null;
+  itens: CriterionScore[];
+  criterios: EvaluationCriterion[];
+};
+
+export type SavePeerEvaluationPayload = {
+  itens: CriterionScore[];
+  enviar: boolean;
+};

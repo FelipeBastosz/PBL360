@@ -1,58 +1,57 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeftIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { CARD_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { Spinner } from '@/components/ui/Spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
+import { evaluationService } from '@/services/evaluation.service';
+import type { EvaluationCriterion, SelfAssessmentResponse } from '@/types/evaluation';
 import type { UserResponse } from '@/types/auth';
 import { cn } from '@/utils/cn';
 
-type Criterion = {
-  id: string;
-  title: string;
-  weight: number;
-  score: number;
-};
-
-const INITIAL_CRITERIA: Criterion[] = [
-  { id: '1', title: 'Segmento', weight: 3.0, score: 8 },
-  { id: '2', title: 'Participação', weight: 3.5, score: 6 },
-  { id: '3', title: 'Cargo', weight: 2.0, score: 9 },
-  { id: '4', title: 'Comportamento', weight: 1.5, score: 8 },
-];
-
 type CriterionStepperProps = {
-  criterion: Criterion;
+  criterion: EvaluationCriterion;
+  score: number;
+  disabled: boolean;
   onChange: (id: string, newScore: number) => void;
 };
 
-function CriterionStepper({ criterion, onChange }: CriterionStepperProps) {
-  const handleDecrease = () => onChange(criterion.id, Math.max(0, criterion.score - 1));
-  const handleIncrease = () => onChange(criterion.id, Math.min(10, criterion.score + 1));
+function CriterionStepper({ criterion, score, disabled, onChange }: CriterionStepperProps) {
+  const max = criterion.notaMaxima ?? 10;
+  const handleDecrease = () => onChange(criterion.id, Math.max(0, score - 1));
+  const handleIncrease = () => onChange(criterion.id, Math.min(max, score + 1));
 
   return (
-    <div className="flex items-center justify-between border-b border-black/5 py-4 last:border-0">
+    <div
+      role="group"
+      aria-label={criterion.nome}
+      className="flex items-center justify-between border-b border-black/5 py-4 last:border-0"
+    >
       <div className="flex flex-col">
-        <span className="font-semibold text-brand-900">{criterion.title}</span>
+        <span className="font-semibold text-brand-900">{criterion.nome}</span>
         <span className="text-sm text-muted">
-          Peso {criterion.weight.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}
+          Peso {criterion.peso.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}
         </span>
       </div>
       <div className="flex items-center gap-4">
         <button
           type="button"
           onClick={handleDecrease}
-          disabled={criterion.score <= 0}
+          disabled={disabled || score <= 0}
           className="flex size-10 items-center justify-center rounded-lg border border-black/10 bg-white text-brand-900 active:bg-surface disabled:opacity-50"
         >
           <span className="text-xl leading-none">&minus;</span>
         </button>
-        <span className="w-6 text-center text-lg font-semibold text-ink">{criterion.score}</span>
+        <span className="w-6 text-center text-lg font-semibold text-ink">{score}</span>
         <button
           type="button"
           onClick={handleIncrease}
-          disabled={criterion.score >= 10}
+          disabled={disabled || score >= max}
           className="flex size-10 items-center justify-center rounded-lg border border-black/10 bg-white text-brand-900 active:bg-surface disabled:opacity-50"
         >
           <span className="text-xl leading-none">+</span>
@@ -62,12 +61,13 @@ function CriterionStepper({ criterion, onChange }: CriterionStepperProps) {
   );
 }
 
-type HeaderProps = {
+function SelfEvaluationHeader({
+  user,
+  onBack,
+}: {
   user: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
   onBack: () => void;
-};
-
-function SelfEvaluationHeader({ user, onBack }: HeaderProps) {
+}) {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
       <div className="flex items-center gap-3">
@@ -76,7 +76,7 @@ function SelfEvaluationHeader({ user, onBack }: HeaderProps) {
         </button>
         <div className="flex flex-col">
           <h1 className="text-base font-semibold leading-tight">Autoavaliação</h1>
-          <span className="text-xs text-white/70">Sessão · 12 ago</span>
+          <span className="text-xs text-white/70">Sessão</span>
         </div>
       </div>
       <UserAvatar
@@ -87,38 +87,114 @@ function SelfEvaluationHeader({ user, onBack }: HeaderProps) {
   );
 }
 
+function buildInitialScores(data: SelfAssessmentResponse): Record<string, number> {
+  const scores: Record<string, number> = {};
+  data.criterios.forEach((c) => {
+    const found = data.itens.find((i) => i.criterioId === c.id);
+    scores[c.id] = found?.nota ?? 0;
+  });
+  return scores;
+}
+
 export default function StudentSelfEvaluationPage() {
+  const { sessionId = '' } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [criteria, setCriteria] = useState<Criterion[]>(INITIAL_CRITERIA);
+  const { notify } = useToast();
+  const [data, setData] = useState<SelfAssessmentResponse | null>(null);
+  const [scores, setScores] = useState<Record<string, number>>({});
+
+  const {
+    run: loadEvaluation,
+    isLoading,
+    error,
+  } = useAsyncAction(
+    useCallback(() => evaluationService.getSelfAssessment(sessionId), [sessionId]),
+  );
+
+  const {
+    run: submitEvaluation,
+    isLoading: isSaving,
+    error: saveError,
+  } = useAsyncAction(
+    useCallback(
+      () =>
+        evaluationService.saveSelfAssessment(sessionId, {
+          itens: Object.entries(scores).map(([criterioId, nota]) => ({ criterioId, nota })),
+          enviar: true,
+        }),
+      [sessionId, scores],
+    ),
+  );
+
+  useEffect(() => {
+    loadEvaluation().then((result) => {
+      if (result.ok) {
+        setData(result.data);
+        setScores(buildInitialScores(result.data));
+      }
+    });
+  }, [loadEvaluation]);
 
   const handleScoreChange = (id: string, newScore: number) => {
-    setCriteria((prev) => prev.map((c) => (c.id === id ? { ...c, score: newScore } : c)));
+    setScores((prev) => ({ ...prev, [id]: newScore }));
   };
+
+  const handleSave = async () => {
+    const result = await submitEvaluation();
+    if (result.ok) {
+      notify({ tone: 'success', message: 'Autoavaliação enviada com sucesso!' });
+      navigate(-1);
+    }
+  };
+
+  const isSubmitted = data?.status === 'ENVIADA';
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
       <SelfEvaluationHeader user={user} onBack={() => navigate(-1)} />
 
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-6')}>
+        {error && <Alert tone="error">{error.message}</Alert>}
+        {saveError && <Alert tone="error">{saveError.message}</Alert>}
+
         <div className={cn(CARD_CLASS, 'flex-row items-center gap-4 p-4')}>
           <span className="flex size-12 items-center justify-center rounded-xl bg-surface">
             <UserCircleIcon className="size-7 text-ink" />
           </span>
-          <span className="text-lg font-semibold text-ink">Aluno</span>
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold text-ink">{user?.nome || 'Aluno'}</span>
+            {isSubmitted && (
+              <span className="text-xs font-semibold text-success">Avaliação já enviada</span>
+            )}
+          </div>
         </div>
 
-        <div className={cn(CARD_CLASS, 'px-4')}>
-          {criteria.map((criterion) => (
-            <CriterionStepper
-              key={criterion.id}
-              criterion={criterion}
-              onChange={handleScoreChange}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="mt-10 flex justify-center">
+            <Spinner className="size-8 text-brand-900" />
+          </div>
+        ) : (
+          data && (
+            <div className={cn(CARD_CLASS, 'px-4')}>
+              {data.criterios.map((criterion) => (
+                <CriterionStepper
+                  key={criterion.id}
+                  criterion={criterion}
+                  score={scores[criterion.id] ?? 0}
+                  disabled={isSubmitted || isSaving}
+                  onChange={handleScoreChange}
+                />
+              ))}
+            </div>
+          )
+        )}
 
-        <Button onClick={() => navigate(-1)}>Salvar Autoavaliação</Button>
+        {!isSubmitted && (
+          <Button onClick={handleSave} disabled={isLoading || isSaving || !data} className="w-full">
+            {isSaving ? 'Enviando...' : 'Salvar Autoavaliação'}
+          </Button>
+        )}
       </main>
     </div>
   );

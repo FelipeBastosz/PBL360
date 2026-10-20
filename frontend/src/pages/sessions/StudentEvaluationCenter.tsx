@@ -58,7 +58,19 @@ function EvaluationCard({ title, Icon, path }: EvaluationItem) {
 }
 
 export function StudentEvaluationCenter() {
-  const { sessionId } = useParams<{ sessionId: string }>();
+  const { roomId, problemId, sessionId } = useParams<{
+    roomId: string;
+    problemId: string;
+    sessionId: string;
+  }>();
+
+  const feedbackPath =
+    roomId && problemId && sessionId
+      ? ROUTES.sessionFeedback
+          .replace(':roomId', roomId)
+          .replace(':problemId', problemId)
+          .replace(':sessionId', sessionId)
+      : undefined;
 
   const evaluations: EvaluationItem[] = [
     {
@@ -71,7 +83,11 @@ export function StudentEvaluationCenter() {
       Icon: UsersIcon,
       path: sessionId ? ROUTES.studentPeerEvaluation.replace(':sessionId', sessionId) : undefined,
     },
-    { title: 'Notas e Feedbacks', Icon: ChatBubbleBottomCenterTextIcon },
+    {
+      title: 'Notas e Feedbacks',
+      Icon: ChatBubbleBottomCenterTextIcon,
+      path: feedbackPath,
+    },
   ];
 
   return (
@@ -79,7 +95,6 @@ export function StudentEvaluationCenter() {
       <h2 id="student-evaluations-title" className="text-lg font-semibold text-brand-900">
         Central de Avaliações
       </h2>
-      {children}
       <ul className="flex flex-col gap-3">
         {evaluations.map((item) => (
           <EvaluationCard key={item.title} {...item} />
