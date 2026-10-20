@@ -5,7 +5,7 @@ describe('ListRoomsUseCase', () => {
   it('returns the rooms linked to the tutor', async () => {
     const rooms = roomRepositoryStub();
     const room = buildRoom();
-    const expected = [room];
+    const expected = [{ room, totalStudents: 24, totalProblems: 8 }];
     rooms.findByTutorId.mockResolvedValue(expected);
 
     await expect(new ListRoomsUseCase(rooms).execute(OWNER_ID)).resolves.toEqual(expected);

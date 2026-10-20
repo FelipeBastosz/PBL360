@@ -8,37 +8,21 @@ import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 import { Room } from '../../domain/entities/room.entity';
 import { RoomCodeInUseError } from '../../domain/errors/room-code-in-use.error';
 import { hasRoomStudent, hasRoomTutor, listRoomTutors } from './room-member-queries';
+import { ROOM_COLUMNS, type RoomRow } from './room-row';
 import type {
   RoomRepository,
   RoomTutor,
   RoomStudentSummary,
   StudentRoomSummary,
+  TutorRoomSummary,
 } from '../../domain/repositories/room.repository';
 
 export const ROOM_CODE_CONSTRAINT = 'uq_rooms_room_code';
 
-interface RoomRow {
-  id: string;
-  tutorId: string;
-  name: string;
-  courseCode: string;
-  roomCode: string;
-  semester: string;
-  active: boolean;
-  createdAt: Date;
-  deletedAt: Date | null;
+interface TutorRoomRow extends RoomRow {
+  totalStudents: number;
+  totalProblems: number;
 }
-
-const ROOM_COLUMNS = `
-  id,
-  tutor_id AS "tutorId",
-  name,
-  course_code AS "courseCode",
-  room_code AS "roomCode",
-  semester,
-  active,
-  created_at AS "createdAt",
-  deleted_at AS "deletedAt"`;
 
 @Injectable()
 export class PgRoomRepository implements RoomRepository {
@@ -88,9 +72,13 @@ export class PgRoomRepository implements RoomRepository {
     );
   }
 
-  async findByTutorId(tutorId: string): Promise<Room[]> {
-    const rows = await this.rooms.query<RoomRow[]>(
-      `SELECT ${ROOM_COLUMNS}
+  async findByTutorId(tutorId: string): Promise<TutorRoomSummary[]> {
+    const rows = await this.rooms.query<TutorRoomRow[]>(
+      `SELECT ${ROOM_COLUMNS},
+            (SELECT COUNT(*)::int FROM room_students members
+              WHERE members.room_id = rooms.id) AS "totalStudents",
+            (SELECT COUNT(*)::int FROM problems
+              WHERE problems.room_id = rooms.id) AS "totalProblems"
         FROM rooms
         WHERE deleted_at IS NULL
           AND EXISTS (
@@ -103,7 +91,12 @@ export class PgRoomRepository implements RoomRepository {
       [tutorId],
     );
 
-    return rows.map((row) => this.toEntity(row));
+    return rows.map((row) => this.toTutorSummary(row));
+  }
+
+  private toTutorSummary(row: TutorRoomRow): TutorRoomSummary {
+    const { totalStudents, totalProblems, ...roomRow } = row;
+    return { room: this.toEntity(roomRow), totalStudents, totalProblems };
   }
 
   async findForStudent(studentId: string): Promise<StudentRoomSummary[]> {
