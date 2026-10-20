@@ -16,6 +16,7 @@ export const ROUTES = {
   editRoom: '/turmas/:id/editar',
   roomProblems: '/turmas/:id/problemas',
   roomMembers: '/turmas/:id/participantes',
+  roomFinalReport: '/turmas/:id/relatorio-final',
   problemDetail: '/turmas/:roomId/problemas/:problemId',
   manageProblems: '/turmas/:id/problemas/gerenciar',
   editProblem: '/turmas/:roomId/problemas/:problemId/editar',
