@@ -40,16 +40,24 @@ export class ClassReportStudentDto {
   @ApiProperty({ example: 'Ana Souza' })
   nome!: string;
 
-  @ApiProperty({ nullable: true, example: '20260001' })
+  @ApiProperty({ nullable: true, type: String, example: '20260001' })
   matricula!: string | null;
 
   @ApiProperty({ type: [ClassReportStudentProblemGradeDto] })
   notasProblemas!: ClassReportStudentProblemGradeDto[];
 
-  @ApiProperty({ nullable: true, type: Number, example: 7.0 })
+  @ApiProperty({
+    nullable: true,
+    type: Number,
+    example: 7.0,
+    description: 'Média das notas disponíveis. Null indica que nenhuma nota final está disponível.',
+  })
   mediaGeral!: number | null;
 
-  @ApiProperty({ example: false })
+  @ApiProperty({
+    example: false,
+    description: 'True quando faltam notas. Se mediaGeral for null, o resultado está pendente.',
+  })
   isParcial!: boolean;
 }
 
