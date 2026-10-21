@@ -12,6 +12,7 @@ import {
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { PHOTO_MIME_TYPES } from '../../domain/entities/user-photo.entity';
+import { UserProfileResponseDto } from '../../application/dtos/user-profile-response.dto';
 
 export const GetUserPhotoSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
@@ -40,3 +41,26 @@ export const GetUserPhotoSwaggerDocs = applyDecorators(
   }),
   ApiNotFoundResponse({ description: 'O usuário não tem foto.', type: ErrorResponseDto }),
 );
+
+export const GetUserProfileSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Consulta os dados do perfil da conta autenticada',
+    description:
+      'Retorna id, nome, email, tipo, matricula e possuiFoto do usuário logado (professor ou aluno).',
+  }),
+  ApiOkResponse({
+    description: 'Dados do perfil do usuário autenticado.',
+    type: UserProfileResponseDto,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Usuário não encontrado.',
+    type: ErrorResponseDto,
+  }),
+);
+
+

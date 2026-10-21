@@ -3,6 +3,8 @@ import { SearchTutorsUseCase } from './application/use-cases/search-tutors.use-c
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GetUserPhotoUseCase } from './application/use-cases/get-user-photo.use-case';
+import { GetUserProfileUseCase } from './application/use-cases/get-user-profile.use-case';
+
 import { User } from './domain/entities/user.entity';
 import { UserPhoto } from './domain/entities/user-photo.entity';
 import { USER_PHOTO_REPOSITORY } from './domain/repositories/user-photo.repository';
@@ -16,6 +18,7 @@ import { UsersController } from './infrastructure/http/users.controller';
   controllers: [UsersController, TutorsController],
   providers: [
     GetUserPhotoUseCase,
+    GetUserProfileUseCase,
     SearchTutorsUseCase,
     {
       provide: USER_REPOSITORY,
