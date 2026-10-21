@@ -71,6 +71,14 @@ export class Session {
   @Column({ name: 'closed_by', type: 'uuid', nullable: true, default: null })
   closedBy: string | null;
 
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({
+    name: 'closed_by',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_sessions_closed_by',
+  })
+  closer?: User | null;
+
   @Column({ name: 'self_eval_released', type: 'boolean', default: false })
   selfEvalReleased: boolean;
 
