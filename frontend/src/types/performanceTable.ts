@@ -1,3 +1,10 @@
+export type PerformanceTableOrigin = 'TURMA' | 'PESSOAL' | 'PADRAO';
+
+export type PerformanceTableAuthor = {
+  id: string | null;
+  nome: string;
+};
+
 export type Criterion = {
   id: string;
   nome: string;
@@ -19,26 +26,47 @@ export type PerformanceTableSummary = {
   nome: string;
   descricao: string | null;
   quantidadeCriterios: number;
-  quantidadeProblemas: number;
-  criadoEm: string;
-  atualizadoEm: string;
+  quantidadeProblemas?: number;
+  origem?: PerformanceTableOrigin;
+  autor?: PerformanceTableAuthor;
+  emUso?: number;
+  criadoEm?: string;
+  atualizadoEm?: string;
+};
+
+export type RoomPerformanceTableItem = {
+  id: string;
+  nome: string;
+  descricao?: string | null;
+  origem: PerformanceTableOrigin;
+  autor: PerformanceTableAuthor;
+  criterios: Array<{
+    id: string;
+    nome: string;
+    peso: number;
+    ordem?: number;
+  }>;
+  emUso: number;
 };
 
 export type PerformanceTable = {
   id: string;
-  professorId: string;
+  professorId?: string;
   nome: string;
   descricao: string | null;
-  quantidadeProblemas: number;
+  quantidadeProblemas?: number;
   criterios: Criterion[];
-  criadoEm: string;
-  atualizadoEm: string;
+  origem?: PerformanceTableOrigin;
+  autor?: PerformanceTableAuthor;
+  criadoEm?: string;
+  atualizadoEm?: string;
 };
 
 export type CreatePerformanceTablePayload = {
   nome: string;
   descricao?: string;
   criterios: CriterionInput[];
+  roomId?: string;
 };
 
 export type UpdatePerformanceTablePayload = {
@@ -46,5 +74,3 @@ export type UpdatePerformanceTablePayload = {
   descricao?: string | null;
   criterios: CriterionInput[];
 };
-
-export const CRITERION_MAX_SCORE = 10;

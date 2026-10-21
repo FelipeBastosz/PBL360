@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { PlusIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { SearchField } from '@/components/ui/SearchField';
-import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
-import { UserMenuButton } from '@/components/layout/UserMenu';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
 import { sessionService } from '@/services/session.service';
@@ -14,193 +13,90 @@ import { ROUTES } from '@/routes/paths';
 import type { PerformanceTableSummary } from '@/types/performanceTable';
 import type { SessionEvaluationConfig } from '@/types/session';
 import { cn } from '@/utils/cn';
-import { readApplyTarget, type ApplyTarget } from '@/utils/navigationState';
+import { readApplyTarget } from '@/utils/navigationState';
 import { CreateFormulaModal } from './components/CreateFormulaModal';
-import { PerformanceTableCard } from './components/PerformanceTableCard';
+import { DeletePerformanceTableModal } from './components/DeletePerformanceTableModal';
+import { PerformanceTableSection } from './components/PerformanceTableSection';
+import {
+  PerformanceTablesHeader,
+  PerformanceTablesFabMenu,
+} from './components/PerformanceTablesLayout';
 
-function PerformanceTablesHeader() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  return (
-    <header className="shrink-0 bg-brand-900 text-white">
-      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            aria-label="Voltar"
-            className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
-          >
-            <ChevronLeftIcon className="size-6" strokeWidth={2} />
-          </button>
-          <h1 className="text-lg font-bold">Fórmulas</h1>
-        </div>
-        <UserMenuButton user={user} />
-      </div>
-    </header>
-  );
-}
-
-function checkIsApplied(
-  table: PerformanceTableSummary,
-  config: SessionEvaluationConfig | null,
-  sessionId?: string,
-): boolean {
-  try {
-    if (sessionId) {
-      const appliedId = sessionStorage.getItem(`pbl360_applied_table_${sessionId}`);
-      if (appliedId) return appliedId === table.id;
-    }
-  } catch {
-    // ignore
-  }
-  if (!config?.tabela) return false;
-  if (config.tabela.id === table.id) return true;
-  const configName = (config.tabela.nome ?? '').trim().toLowerCase();
-  const tableName = (table.nome ?? '').trim().toLowerCase();
-  return configName !== '' && configName === tableName;
-}
-
-function PerformanceTablesList({
-  isLoading,
-  tables,
-  hasFilter,
-  sessionConfig,
-  target,
-}: {
-  isLoading: boolean;
-  tables: PerformanceTableSummary[];
-  hasFilter: boolean;
-  sessionConfig: SessionEvaluationConfig | null;
-  target: ApplyTarget | null;
-}) {
-  if (isLoading) {
-    return (
-      <div className="mt-10 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
-      </div>
-    );
-  }
-
-  if (tables.length === 0) {
-    return hasFilter ? (
-      <p className="mt-10 text-center text-sm text-muted">Nenhuma fórmula encontrada.</p>
-    ) : (
-      <div className="mt-20 flex flex-col items-center justify-center px-6 text-center">
-        <p className="text-base font-semibold text-ink">
-          Você ainda não possui fórmulas cadastradas.
-        </p>
-        <p className="mt-1 text-sm text-muted">
-          Toque no <span className="font-bold text-brand-900">+</span> para começar.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn(CARD_GRID_CLASS, 'mt-4')}>
-      {tables.map((table) => (
-        <PerformanceTableCard
-          key={table.id}
-          table={table}
-          isApplied={checkIsApplied(table, sessionConfig, target?.sessionId)}
-          target={target}
-        />
-      ))}
-    </div>
-  );
-}
-
-function PerformanceTablesFabMenu({
-  onOpenCreateModal,
-  target,
-}: {
-  onOpenCreateModal: () => void;
-  target: ApplyTarget | null;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
-
-  return (
-    <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3">
-      {isOpen && (
-        <div className="flex animate-fade-up flex-col items-end gap-2">
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              navigate(ROUTES.managePerformanceTables, { state: target });
-            }}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
-          >
-            Editar uma fórmula
-          </button>
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              onOpenCreateModal();
-            }}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
-          >
-            Criar nova fórmula
-          </button>
-        </div>
-      )}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          'flex size-14 items-center justify-center rounded-full bg-brand-900 text-white shadow-lg transition-transform',
-          isOpen ? 'rotate-45 bg-danger' : '',
-        )}
-        aria-label="Ações de fórmula"
-      >
-        <PlusIcon className="size-6" strokeWidth={2.5} />
-      </button>
-    </div>
-  );
-}
-
-function usePerformanceTablesData(targetSessionId?: string) {
+function usePerformanceTablesData(roomId?: string, sessionId?: string) {
   const [tables, setTables] = useState<PerformanceTableSummary[]>([]);
   const [sessionConfig, setSessionConfig] = useState<SessionEvaluationConfig | null>(null);
-  const { run, isLoading, error } = useAsyncAction(
-    useCallback(() => performanceTableService.list(), []),
-  );
+
+  const fetcher = useCallback(() => {
+    return roomId ? performanceTableService.listByRoom(roomId) : performanceTableService.list();
+  }, [roomId]);
+
+  const { run, isLoading, error } = useAsyncAction(fetcher);
 
   useEffect(() => {
     run().then((res) => res.ok && setTables(res.data));
-    if (targetSessionId && typeof sessionService.getEvaluationConfig === 'function') {
+    if (sessionId && typeof sessionService.getEvaluationConfig === 'function') {
       sessionService
-        .getEvaluationConfig(targetSessionId)
+        .getEvaluationConfig(sessionId)
         .then(setSessionConfig)
         .catch(() => undefined);
     }
-  }, [run, targetSessionId]);
+  }, [run, sessionId]);
 
-  useEffect(() => {
-    if (!targetSessionId || !sessionConfig?.tabela || tables.length === 0) return;
-    const key = `pbl360_applied_table_${targetSessionId}`;
-    try {
-      if (!sessionStorage.getItem(key)) {
-        const match = tables.find((t) => checkIsApplied(t, sessionConfig));
-        if (match) sessionStorage.setItem(key, match.id);
-      }
-    } catch {
-      // ignore
+  return { tables, setTables, sessionConfig, isLoading, error, reload: run };
+}
+
+function useTableDeletion(onDeleted: () => void) {
+  const { notify } = useToast();
+  const [tableToDelete, setTableToDelete] = useState<PerformanceTableSummary | null>(null);
+  const { run, isLoading } = useAsyncAction(performanceTableService.remove);
+
+  async function handleConfirmDelete() {
+    if (!tableToDelete) return;
+    const res = await run(tableToDelete.id);
+    if (res.ok) {
+      notify({ tone: 'success', message: 'Fórmula excluída com sucesso.' });
+      setTableToDelete(null);
+      onDeleted();
     }
-  }, [tables, sessionConfig, targetSessionId]);
+  }
 
-  return { tables, sessionConfig, isLoading, error };
+  return { tableToDelete, setTableToDelete, isLoading, handleConfirmDelete };
 }
 
 export function PerformanceTablesPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const target = readApplyTarget(location.state);
-  const { tables, sessionConfig, isLoading, error } = usePerformanceTablesData(target?.sessionId);
+  const { user } = useAuth();
+  const target = readApplyTarget(useLocation().state);
+  const { tables, sessionConfig, isLoading, error, reload } = usePerformanceTablesData(
+    target?.roomId,
+    target?.sessionId,
+  );
+  const deletion = useTableDeletion(reload);
   const [query, setQuery] = useState('');
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const filtered = tables.filter((t) => t.nome.toLowerCase().includes(query.toLowerCase()));
+  const filtered = useMemo(
+    () => tables.filter((t) => t.nome.toLowerCase().includes(query.toLowerCase())),
+    [tables, query],
+  );
+
+  const isRoomContext = Boolean(target?.roomId);
+  const sections = useMemo(() => {
+    if (!isRoomContext) return null;
+    return {
+      padrao: filtered.filter((t) => t.origem === 'PADRAO'),
+      turma: filtered.filter((t) => t.origem === 'TURMA'),
+      minhas: filtered.filter((t) => t.origem === 'PESSOAL'),
+    };
+  }, [filtered, isRoomContext]);
+
+  const checkApplied = useCallback(
+    (t: PerformanceTableSummary) => {
+      if (!sessionConfig?.tabela) return false;
+      return sessionConfig.tabela.id === t.id || sessionConfig.tabela.nome === t.nome;
+    },
+    [sessionConfig],
+  );
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
@@ -209,38 +105,76 @@ export function PerformanceTablesPage() {
         <SearchField label="Pesquisar fórmula" value={query} onChange={setQuery} />
       </div>
 
-      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6')}>
-        {tables.length > 0 && (
-          <h2 className="text-xs font-bold uppercase tracking-widest text-muted">
-            Minhas fórmulas · {filtered.length}
-          </h2>
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
+        {error && <Alert tone="error">{error.message}</Alert>}
+        {isLoading && (
+          <div className="mt-10 flex justify-center">
+            <Spinner className="size-8 text-brand-900" />
+          </div>
         )}
-        {error && (
-          <Alert tone="error" className="mt-4">
-            {error.message}
-          </Alert>
+
+        {!isLoading && filtered.length === 0 && (
+          <p className="mt-10 text-center text-sm text-muted">Nenhuma fórmula encontrada.</p>
         )}
-        <PerformanceTablesList
-          isLoading={isLoading}
-          tables={filtered}
-          hasFilter={query.length > 0}
-          sessionConfig={sessionConfig}
-          target={target}
-        />
+
+        {!isLoading && sections && (
+          <>
+            <PerformanceTableSection
+              title="Padrão do sistema"
+              tables={sections.padrao}
+              currentUserId={user?.id}
+              target={target}
+              checkIsApplied={checkApplied}
+              onOpenDelete={deletion.setTableToDelete}
+            />
+            <PerformanceTableSection
+              title="Da turma"
+              tables={sections.turma}
+              currentUserId={user?.id}
+              target={target}
+              checkIsApplied={checkApplied}
+              onOpenDelete={deletion.setTableToDelete}
+            />
+            <PerformanceTableSection
+              title="Minhas"
+              tables={sections.minhas}
+              currentUserId={user?.id}
+              target={target}
+              checkIsApplied={checkApplied}
+              onOpenDelete={deletion.setTableToDelete}
+            />
+          </>
+        )}
+
+        {!isLoading && !sections && filtered.length > 0 && (
+          <PerformanceTableSection
+            title="Minhas fórmulas"
+            tables={filtered}
+            currentUserId={user?.id}
+            target={target}
+            checkIsApplied={checkApplied}
+            onOpenDelete={deletion.setTableToDelete}
+          />
+        )}
       </main>
 
-      <PerformanceTablesFabMenu
-        onOpenCreateModal={() => setIsCreateModalOpen(true)}
-        target={target}
-      />
+      <PerformanceTablesFabMenu onOpenCreateModal={() => setIsCreateOpen(true)} target={target} />
 
       <CreateFormulaModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
         onSubmit={(data) => {
-          setIsCreateModalOpen(false);
+          setIsCreateOpen(false);
           navigate(ROUTES.createPerformanceTable, { state: { ...data, target } });
         }}
+      />
+
+      <DeletePerformanceTableModal
+        isOpen={Boolean(deletion.tableToDelete)}
+        formulaTitle={deletion.tableToDelete?.nome ?? ''}
+        isLoading={deletion.isLoading}
+        onConfirm={deletion.handleConfirmDelete}
+        onCancel={() => deletion.setTableToDelete(null)}
       />
     </div>
   );
