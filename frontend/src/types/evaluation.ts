@@ -119,15 +119,17 @@ export type SaveSelfAssessmentPayload = {
   enviar: boolean;
 };
 
-export type SessionPeerItem = {
-  id: string;
+export type SessionPeerStudent = {
+  alunoId: string;
   nome: string;
+  iniciais: string;
   status: EvaluationStatus;
-  enviadaEm: string | null;
 };
 
 export type SessionPeersResponse = {
-  colegas: SessionPeerItem[];
+  liberada: boolean;
+  prazo: string | null;
+  colegas: SessionPeerStudent[];
 };
 
 export type PeerEvaluationResponse = {
@@ -141,4 +143,28 @@ export type PeerEvaluationResponse = {
 export type SavePeerEvaluationPayload = {
   itens: CriterionScore[];
   enviar: boolean;
+};
+
+export type StudentSelfAssessmentSummary = {
+  liberada: boolean;
+  prazo: string | null;
+  status: string;
+};
+
+export type StudentPeerAssessmentSummary = {
+  liberada: boolean;
+  prazo: string | null;
+  avaliados: number;
+  total: number;
+};
+
+export type StudentFeedbackSummary = {
+  disponivel: boolean;
+  novo: boolean;
+};
+
+export type StudentEvaluationSummaryResponse = {
+  autoavaliacao: StudentSelfAssessmentSummary;
+  pares: StudentPeerAssessmentSummary;
+  feedback: StudentFeedbackSummary;
 };

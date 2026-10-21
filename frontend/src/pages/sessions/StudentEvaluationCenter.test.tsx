@@ -1,44 +1,102 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { evaluationService } from '@/services/evaluation.service';
+import type { StudentEvaluationSummaryResponse } from '@/types/evaluation';
 import { StudentEvaluationCenter } from './StudentEvaluationCenter';
 
+vi.mock('@/services/evaluation.service');
+
+const mockReleasedSummary: StudentEvaluationSummaryResponse = {
+  autoavaliacao: {
+    liberada: true,
+    prazo: null,
+    status: 'PENDENTE',
+  },
+  pares: {
+    liberada: true,
+    prazo: null,
+    avaliados: 1,
+    total: 3,
+  },
+  feedback: {
+    disponivel: true,
+    novo: false,
+  },
+};
+
+const mockLockedSummary: StudentEvaluationSummaryResponse = {
+  autoavaliacao: {
+    liberada: false,
+    prazo: null,
+    status: 'INDISPONIVEL',
+  },
+  pares: {
+    liberada: false,
+    prazo: null,
+    avaliados: 0,
+    total: 3,
+  },
+  feedback: {
+    disponivel: false,
+    novo: false,
+  },
+};
+
 describe('StudentEvaluationCenter', () => {
-  it('renders all evaluation options as active links when params are present', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const renderComponent = (feedbackHref = '/turmas/r1/problemas/p1/sessoes/sess-1/feedback') => {
     render(
-      <MemoryRouter initialEntries={['/turmas/room-1/problemas/prob-1/sessoes/sess-1']}>
+      <MemoryRouter initialEntries={['/turmas/r1/problemas/p1/sessoes/sess-1']}>
         <Routes>
           <Route
             path="/turmas/:roomId/problemas/:problemId/sessoes/:sessionId"
-            element={<StudentEvaluationCenter />}
+            element={
+              <StudentEvaluationCenter feedbackHref={feedbackHref}>
+                <div data-testid="poker-notice">Aviso Poker</div>
+              </StudentEvaluationCenter>
+            }
           />
         </Routes>
       </MemoryRouter>,
     );
+  };
 
-    const autoavaliacaoLink = screen.getByRole('link', { name: /autoavaliação/i });
-    expect(autoavaliacaoLink).toHaveAttribute('href', '/sessoes/sess-1/autoavaliacao');
+  it('renders released evaluations with links and badges', async () => {
+    vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue(mockReleasedSummary);
+    renderComponent();
 
-    const paresLink = screen.getByRole('link', { name: /avaliar colegas/i });
-    expect(paresLink).toHaveAttribute('href', '/sessoes/sess-1/avaliar-colegas');
+    expect(screen.getByTestId('poker-notice')).toBeInTheDocument();
 
-    const feedbackLink = screen.getByRole('link', { name: /notas e feedbacks/i });
-    expect(feedbackLink).toHaveAttribute(
-      'href',
-      '/turmas/room-1/problemas/prob-1/sessoes/sess-1/feedback',
-    );
+    await waitFor(() => {
+      const selfLink = screen.getByRole('link', { name: /autoavaliação/i });
+      expect(selfLink).toHaveAttribute('href', '/sessoes/sess-1/autoavaliacao');
+      expect(screen.getByText('Pendente')).toBeInTheDocument();
 
-    expect(screen.queryByText('Em breve')).not.toBeInTheDocument();
+      const peerLink = screen.getByRole('link', { name: /avaliar colegas/i });
+      expect(peerLink).toHaveAttribute('href', '/sessoes/sess-1/avaliar-colegas');
+      expect(screen.getByText('1/3 avaliados')).toBeInTheDocument();
+
+      const feedbackLink = screen.getByRole('link', { name: /notas e feedbacks/i });
+      expect(feedbackLink).toHaveAttribute(
+        'href',
+        '/turmas/r1/problemas/p1/sessoes/sess-1/feedback',
+      );
+      expect(screen.getByText('Disponível')).toBeInTheDocument();
+    });
   });
 
-  it('renders locked state when session params are missing', () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <StudentEvaluationCenter />
-      </MemoryRouter>,
-    );
+  it('renders locked status and disables links when evaluations are not released', async () => {
+    vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue(mockLockedSummary);
+    renderComponent();
 
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
-    expect(screen.getAllByText('Em breve')).toHaveLength(3);
+    await waitFor(() => {
+      expect(screen.queryByRole('link')).not.toBeInTheDocument();
+      expect(screen.getAllByText('Bloqueada')).toHaveLength(2);
+      expect(screen.getByText('Indisponível')).toBeInTheDocument();
+    });
   });
 });

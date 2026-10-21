@@ -14,6 +14,7 @@ import type {
   SessionPeersResponse,
   PeerEvaluationResponse,
   SavePeerEvaluationPayload,
+  StudentEvaluationSummaryResponse,
 } from '@/types/evaluation';
 
 export const evaluationService = {
@@ -67,6 +68,11 @@ export const evaluationService = {
   getEvaluationHistory: (sessionId: string) =>
     api
       .get<SessionEvaluationHistoryResponse>(`/sessoes/${sessionId}/avaliacoes`)
+      .then((r) => r.data),
+
+  getMyEvaluationsSummary: (sessionId: string) =>
+    api
+      .get<StudentEvaluationSummaryResponse>(`/sessoes/${sessionId}/minhas-avaliacoes`)
       .then((r) => r.data),
 
   getSelfAssessment: (sessionId: string) =>
