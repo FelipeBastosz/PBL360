@@ -6,6 +6,7 @@ export enum FormulaComponentType {
   CRITERIOS = 'CRITERIOS',
   PAPEL = 'PAPEL',
   CRITERIO = 'CRITERIO',
+  SESSAO = 'SESSAO',
   MEDIA_SESSOES = 'MEDIA_SESSOES',
   AUTOAVALIACAO = 'AUTOAVALIACAO',
   PARES = 'PARES',
@@ -40,6 +41,15 @@ export class FormulaComponent {
   weight: number;
 
   assertIsValid(scope: FormulaScope): void {
+    if (
+      scope === FormulaScope.PROBLEMA &&
+      (this.type as FormulaComponentType) === FormulaComponentType.SESSAO
+    ) {
+      if (this.weight <= 0 || this.weight > 10 || !this.referenceId) {
+        throw new InvalidProblemError('O peso da sessão deve ser maior que zero e no máximo 10.');
+      }
+      return;
+    }
     if (this.weight < 0 || this.weight > 100) {
       throw new InvalidProblemError('O peso de um componente deve estar entre 0 e 100.');
     }
@@ -64,6 +74,7 @@ export class FormulaComponent {
 
   private assertProblemScope(): void {
     const validProblemTypes = [
+      FormulaComponentType.SESSAO,
       FormulaComponentType.MEDIA_SESSOES,
       FormulaComponentType.AUTOAVALIACAO,
       FormulaComponentType.PARES,
@@ -73,7 +84,7 @@ export class FormulaComponent {
         'Componente inválido para a fórmula da nota final do problema.',
       );
     }
-    if (this.referenceId) {
+    if (this.referenceId && (this.type as FormulaComponentType) !== FormulaComponentType.SESSAO) {
       throw new InvalidProblemError(
         'Componentes da nota final do problema não utilizam referência de critério.',
       );

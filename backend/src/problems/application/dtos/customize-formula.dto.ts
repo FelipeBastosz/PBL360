@@ -1,5 +1,6 @@
 import { IsArray, IsEnum, IsNumber, IsOptional, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 import { FormulaScope } from '../../domain/entities/formula.entity';
 import { FormulaComponentType } from '../../domain/entities/formula-component.entity';
 
@@ -23,4 +24,22 @@ export class CustomizeFormulaDto {
   @ValidateNested({ each: true })
   @Type(() => CustomizeFormulaComponentDto)
   componentes!: CustomizeFormulaComponentDto[];
+}
+
+export class CustomizeFinalGradeFormulaDto {
+  @ApiProperty({ type: () => [FinalGradeSessionWeightDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => FinalGradeSessionWeightDto)
+  sessoes!: FinalGradeSessionWeightDto[];
+}
+
+export class FinalGradeSessionWeightDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID('4')
+  sessaoId!: string;
+
+  @ApiProperty({ minimum: 0, maximum: 10, example: 1 })
+  @IsNumber()
+  peso!: number;
 }

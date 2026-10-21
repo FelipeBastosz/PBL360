@@ -8,7 +8,7 @@ export interface GradeCriterion {
 }
 
 export interface GradeComponent {
-  type: 'CRITERIOS' | 'PAPEL' | 'CRITERIO' | 'MEDIA_SESSOES' | 'AUTOAVALIACAO' | 'PARES';
+  type: 'CRITERIOS' | 'PAPEL' | 'CRITERIO' | 'SESSAO' | 'MEDIA_SESSOES' | 'AUTOAVALIACAO' | 'PARES';
   referenceId?: string | null;
   weight: number;
   value?: number | null;
@@ -104,19 +104,35 @@ function calculateFinalSessionGrade(
   return bonus !== null ? (average * 7 + bonus * 3) / 10 : average;
 }
 
+function problemComponentValue(
+  component: GradeComponent,
+  sessionGrades: Array<number | null | { sessionId: string; grade: number | null }>,
+): number | null {
+  if (component.type === 'SESSAO') {
+    const match = sessionGrades.find(
+      (entry) => typeof entry !== 'number' && entry?.sessionId === component.referenceId,
+    );
+    return typeof match === 'number' || match === null ? match : (match?.grade ?? null);
+  }
+  if (component.type === 'MEDIA_SESSOES') {
+    return weightedAverage(
+      sessionGrades.flatMap((entry) => {
+        const grade = typeof entry === 'number' || entry === null ? entry : entry.grade;
+        return grade === null ? [] : [{ value: grade, weight: 1 }];
+      }),
+    );
+  }
+  return component.value ?? null;
+}
+
 export const calculateProblemGrade = (
   components: GradeComponent[],
-  sessionGrades: Array<number | null>,
+  sessionGrades: Array<number | null | { sessionId: string; grade: number | null }>,
 ): ProblemGradeResult => {
-  const values = components.map((component) => {
-    const value =
-      component.type === 'MEDIA_SESSOES'
-        ? weightedAverage(
-            sessionGrades.flatMap((grade) => (grade === null ? [] : [{ value: grade, weight: 1 }])),
-          )
-        : (component.value ?? null);
-    return { value, weight: component.weight };
-  });
+  const values = components.map((component) => ({
+    value: problemComponentValue(component, sessionGrades),
+    weight: component.weight,
+  }));
   const grade = weightedAverage(
     values.filter((item): item is { value: number; weight: number } => item.value !== null),
   );

@@ -69,6 +69,13 @@ export class PgProblemRepository implements ProblemRepository {
     return row ? this.toEntity(row) : null;
   }
 
+  async listSessions(problemId: string): Promise<Array<{ id: string; title: string }>> {
+    return this.problems.query(
+      `SELECT id, title FROM sessions WHERE problem_id = $1 ORDER BY order_index, id;`,
+      [problemId],
+    );
+  }
+
   async findByRoomId(roomId: string): Promise<Problem[]> {
     const rows = await this.problems.query<ProblemRow[]>(
       `SELECT ${PROBLEM_COLUMNS}

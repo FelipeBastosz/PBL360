@@ -254,4 +254,21 @@ describe('grade calculator', () => {
     expect(presentGrade(7.55)).toBe(7.6);
     expect(presentGrade(null)).toBeNull();
   });
+
+  it('calculates the final grade using relative weights per session and skips missing grades', () => {
+    expect(
+      calculateProblemGrade(
+        [
+          { type: 'SESSAO', referenceId: 's1', weight: 3 },
+          { type: 'SESSAO', referenceId: 's2', weight: 1 },
+          { type: 'SESSAO', referenceId: 's3', weight: 10 },
+        ],
+        [
+          { sessionId: 's1', grade: 8 },
+          { sessionId: 's2', grade: 4 },
+          { sessionId: 's3', grade: null },
+        ],
+      ),
+    ).toEqual({ grade: 7 });
+  });
 });

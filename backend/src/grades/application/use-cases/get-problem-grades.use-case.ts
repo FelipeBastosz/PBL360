@@ -89,7 +89,7 @@ export class GetProblemGradesUseCase {
     const components = await this.loadComponents(formulas);
     const result = [...formulas];
     this.applySessionDefaults(result, components, criteria, sessions);
-    this.applyProblemDefault(result, components);
+    this.applyProblemDefault(result, components, sessions);
     return { formulas: result, components };
   }
 
@@ -124,8 +124,27 @@ export class GetProblemGradesUseCase {
     components.push(...buildDefaultSessionComponents(sessionId, formulaId));
   }
 
-  private applyProblemDefault(formulas: Row[], components: Row[]): void {
-    if (formulas.some((f) => f.scope === 'PROBLEMA')) return;
+  // eslint-disable-next-line max-lines-per-function
+  private applyProblemDefault(formulas: Row[], components: Row[], sessions: Row[]): void {
+    const existing = formulas.find((f) => f.scope === 'PROBLEMA');
+    if (existing) {
+      if (components.some((c) => c.formula_id === existing.id && c.type === 'SESSAO')) {
+        for (const session of sessions) {
+          const sessionId = String(session.id);
+          if (
+            !components.some((c) => c.formula_id === existing.id && c.reference_id === sessionId)
+          ) {
+            components.push({
+              formula_id: existing.id,
+              type: 'SESSAO',
+              reference_id: sessionId,
+              weight: 1,
+            });
+          }
+        }
+      }
+      return;
+    }
     formulas.push({ id: '__default_problem', scope: 'PROBLEMA', version: null });
     components.push({
       formula_id: '__default_problem',

@@ -166,6 +166,13 @@ export class Formula {
   }
 
   private assertWeights(): void {
+    if (
+      this.scope === FormulaScope.PROBLEMA &&
+      this.components.length > 0 &&
+      this.components.every((component) => component.type === 'SESSAO')
+    ) {
+      return;
+    }
     const totalWeight = this.components.reduce((sum, c) => sum + Number(c.weight), 0);
     // Allow small rounding tolerance for 100%
     if (Math.abs(totalWeight - 100) > 0.01) {

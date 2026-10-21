@@ -189,8 +189,11 @@ function processStudentSessionForGrade(ctx: StudentGradeContext, session: Row) {
   });
 }
 
-function sessionGrades(rows: Row[]): Array<number | null> {
-  return rows.map((row) => row.grade as number | null);
+function sessionGrades(rows: Row[]): Array<{ sessionId: string; grade: number | null }> {
+  return rows.map((row) => ({
+    sessionId: String(row.session_id),
+    grade: row.grade as number | null,
+  }));
 }
 
 function buildStudentResult(
