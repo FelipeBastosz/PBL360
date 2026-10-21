@@ -34,4 +34,19 @@ export class PgUserPhotoRepository implements UserPhotoRepository {
 
     return row ? this.photos.create(row) : null;
   }
+
+  async save(userId: string, photo: UserPhoto): Promise<void> {
+    await this.photos.query(
+      `INSERT INTO user_photos (user_id, content, mime_type)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (user_id) DO UPDATE
+          SET content = EXCLUDED.content, mime_type = EXCLUDED.mime_type, updated_at = now();`,
+      [userId, photo.content, photo.mimeType],
+    );
+  }
+
+  async deleteByUserId(userId: string): Promise<void> {
+    await this.photos.query(`DELETE FROM user_photos WHERE user_id = $1;`, [userId]);
+  }
 }
+
