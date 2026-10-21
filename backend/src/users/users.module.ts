@@ -1,9 +1,10 @@
-import { TutorsController } from './infrastructure/http/tutors.controller';
-import { SearchTutorsUseCase } from './application/use-cases/search-tutors.use-case';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GetUserPhotoUseCase } from './application/use-cases/get-user-photo.use-case';
 import { GetUserProfileUseCase } from './application/use-cases/get-user-profile.use-case';
+import { UpdateUserProfileUseCase } from './application/use-cases/update-user-profile.use-case';
+import { SearchTutorsUseCase } from './application/use-cases/search-tutors.use-case';
+import { TutorsController } from './infrastructure/http/tutors.controller';
 
 import { User } from './domain/entities/user.entity';
 import { UserPhoto } from './domain/entities/user-photo.entity';
@@ -19,7 +20,9 @@ import { UsersController } from './infrastructure/http/users.controller';
   providers: [
     GetUserPhotoUseCase,
     GetUserProfileUseCase,
+    UpdateUserProfileUseCase,
     SearchTutorsUseCase,
+
     {
       provide: USER_REPOSITORY,
       useClass: PgUserRepository,

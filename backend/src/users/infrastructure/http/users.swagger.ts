@@ -63,4 +63,30 @@ export const GetUserProfileSwaggerDocs = applyDecorators(
   }),
 );
 
+export const UpdateUserProfileSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Altera o nome da conta autenticada',
+    description:
+      'Recebe apenas o campo `nome` (3 a 120 caracteres). Campos extras como e-mail, matrícula ou tipo são rejeitados com 400. Retorna o perfil atualizado.',
+  }),
+  ApiOkResponse({
+    description: 'Perfil atualizado com sucesso.',
+    type: UserProfileResponseDto,
+  }),
+  ApiBadRequestResponse({
+    description: 'Nome inválido, corpo vazio ou campos não permitidos.',
+    type: ErrorResponseDto,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Usuário não encontrado.',
+    type: ErrorResponseDto,
+  }),
+);
+
+
 
