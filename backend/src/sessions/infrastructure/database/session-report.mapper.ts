@@ -1,3 +1,5 @@
+import type { AttendanceStatus } from '../../domain/enums/attendance-status.enum';
+import type { EvaluationSummary } from '@/evaluations/domain/repositories/evaluation.repository';
 import type {
   SessionReportData,
   SessionReportStudentData,
@@ -38,16 +40,24 @@ export function toItemScoreMap(
 }
 
 interface StudentMappingContext {
-  attendances: Map<string, string>;
+  attendances: Map<string, AttendanceStatus | string>;
   roles: Map<string, RoleRow>;
   tags: Map<string, string[]>;
   evals: Map<string, EvaluationRow>;
   items: Map<string, Array<{ criterionId: string; score: number }>>;
   feedbacks: Map<string, { text: string; authorName: string }>;
+  summaries: Map<string, EvaluationSummary>;
 }
 
 const num = (v: string | number | null | undefined): number | null =>
   v !== null && v !== undefined ? Number(v) : null;
+
+function resolveStudentScore(
+  summary: EvaluationSummary | undefined,
+  ev: EvaluationRow | undefined,
+): number | null {
+  return summary?.sessionScore != null ? summary.sessionScore : num(ev?.sessionScore);
+}
 
 function mapStudentData(student: StudentRow, ctx: StudentMappingContext): SessionReportStudentData {
   const role = ctx.roles.get(student.studentId);
@@ -60,8 +70,9 @@ function mapStudentData(student: StudentRow, ctx: StudentMappingContext): Sessio
     role: role?.role ?? null,
     roleScore: num(role?.roleScore),
     tags: ctx.tags.get(student.studentId) ?? [],
-    evaluationStatus: ev?.status ?? null,
+    evaluationStatus: ctx.summaries.get(student.studentId)?.status ?? ev?.status ?? null,
     appliedBonus: num(ev?.appliedBonus),
+    sessionScore: resolveStudentScore(ctx.summaries.get(student.studentId), ev),
     items: ev ? (ctx.items.get(ev.id) ?? []) : [],
     recordedSessionScore: num(ev?.sessionScore),
     feedback: ctx.feedbacks.get(student.studentId) ?? null,
@@ -77,8 +88,9 @@ function buildStudentContext(raw: SessionReportRawData): StudentMappingContext {
     roles: new Map(raw.roles.map((r) => [r.studentId, r])),
     tags: new Map(raw.observations.map((o) => [o.studentId, o.tags])),
     evals: new Map(raw.evaluations.map((e) => [e.studentId, e])),
-    items: toItemScoreMap(raw.items),
+    items: toItemScoreMap(raw.items ?? []),
     feedbacks: new Map(fbEntries),
+    summaries: new Map((raw.summaries ?? []).map((s) => [s.studentId, s])),
   };
 }
 
@@ -116,8 +128,8 @@ export function buildSessionReportData(raw: SessionReportRawData): SessionReport
     room,
     problem,
     session,
-    criteria: raw.criteria.map((c) => ({ id: c.id, name: c.name, weight: Number(c.weight) })),
-    formula: extractFormula(raw.formulas),
+    criteria: raw.criteria?.map((c) => ({ id: c.id, name: c.name, weight: Number(c.weight) })),
+    formula: raw.formulas ? extractFormula(raw.formulas) : undefined,
     students: raw.students.map((s) => mapStudentData(s, ctx)),
     generalFeedback: genFb ? { text: genFb.text, authorName: genFb.authorName } : null,
   };

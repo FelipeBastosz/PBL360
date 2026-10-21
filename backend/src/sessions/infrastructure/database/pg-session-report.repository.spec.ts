@@ -1,19 +1,20 @@
 import type { DataSource, EntityManager } from 'typeorm';
 import { EvaluationStatus } from '@/evaluations/domain/enums/evaluation-status.enum';
+import { readEvaluationSummaries } from '@/evaluations/infrastructure/database/evaluation-summary.reads';
 import { PgSessionReportRepository } from './pg-session-report.repository';
 import {
   FIND_ROOM_STUDENTS_QUERY,
   FIND_SESSION_ATTENDANCES_QUERY,
-  FIND_SESSION_EVALUATION_ITEMS_QUERY,
   FIND_SESSION_EVALUATIONS_QUERY,
   FIND_SESSION_FEEDBACKS_QUERY,
-  FIND_SESSION_FORMULA_COMPONENTS_QUERY,
   FIND_SESSION_HEADER_QUERY,
   FIND_SESSION_OBSERVATION_TAGS_QUERY,
   FIND_SESSION_ROLES_QUERY,
-  FIND_SNAPSHOT_CRITERIA_QUERY,
-  FIND_TABLE_CRITERIA_QUERY,
 } from './session-report.queries';
+
+jest.mock('@/evaluations/infrastructure/database/evaluation-summary.reads', () => ({
+  readEvaluationSummaries: jest.fn(),
+}));
 
 describe('PgSessionReportRepository', () => {
   let repository: PgSessionReportRepository;
@@ -21,6 +22,8 @@ describe('PgSessionReportRepository', () => {
   let dataSource: jest.Mocked<DataSource>;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+
     manager = {
       query: jest.fn(),
     } as unknown as jest.Mocked<EntityManager>;
@@ -42,7 +45,22 @@ describe('PgSessionReportRepository', () => {
     repository = new PgSessionReportRepository(dataSource);
   });
 
-  it('queries all session report data and maps students, attendances, roles, tags, evals and feedbacks', async () => {
+  it('queries all session report data and maps students, attendances, roles, tags, evals, summaries and feedbacks', async () => {
+    (readEvaluationSummaries as jest.Mock).mockResolvedValue([
+      {
+        studentId: 'stud-1',
+        name: 'Ana Souza',
+        status: EvaluationStatus.SUBMITTED,
+        sessionScore: 8.7,
+      },
+      {
+        studentId: 'stud-2',
+        name: 'Bruno Lima',
+        status: EvaluationStatus.DRAFT,
+        sessionScore: null,
+      },
+    ]);
+
     manager.query.mockImplementation(async (query: string) => {
       await Promise.resolve();
       if (query === FIND_SESSION_HEADER_QUERY) {
@@ -80,18 +98,6 @@ describe('PgSessionReportRepository', () => {
       if (query === FIND_SESSION_OBSERVATION_TAGS_QUERY) {
         return [{ studentId: 'stud-1', tags: ['Pontual', 'Participativo'] }];
       }
-      if (query === FIND_SNAPSHOT_CRITERIA_QUERY) {
-        return [
-          { id: 'crit-1', name: 'Participação', weight: '4.00' },
-          { id: 'crit-2', name: 'Fundamentação', weight: '6.00' },
-        ];
-      }
-      if (query === FIND_SESSION_FORMULA_COMPONENTS_QUERY) {
-        return [
-          { type: 'CRITERIOS', weight: '70' },
-          { type: 'PAPEL', weight: '30' },
-        ];
-      }
       if (query === FIND_SESSION_EVALUATIONS_QUERY) {
         return [
           {
@@ -108,13 +114,6 @@ describe('PgSessionReportRepository', () => {
             sessionScore: null,
             appliedBonus: null,
           },
-        ];
-      }
-      if (query === FIND_SESSION_EVALUATION_ITEMS_QUERY) {
-        return [
-          { evaluationId: 'eval-1', criterionId: 'crit-1', score: '8.00' },
-          { evaluationId: 'eval-1', criterionId: 'crit-2', score: '9.00' },
-          { evaluationId: 'eval-2', criterionId: 'crit-1', score: '7.00' },
         ];
       }
       if (query === FIND_SESSION_FEEDBACKS_QUERY) {
@@ -138,14 +137,14 @@ describe('PgSessionReportRepository', () => {
 
     const data = await repository.getSessionReportData('sess-1', 'room-1');
 
+    expect(readEvaluationSummaries).toHaveBeenCalledWith(manager, {
+      roomId: 'room-1',
+      sessionId: 'sess-1',
+      problemId: '',
+    });
     expect(data.room.name).toBe('Turma A');
     expect(data.problem.title).toBe('Dor torácica');
     expect(data.session.title).toBe('Abertura');
-    expect(data.criteria).toEqual([
-      { id: 'crit-1', name: 'Participação', weight: 4 },
-      { id: 'crit-2', name: 'Fundamentação', weight: 6 },
-    ]);
-    expect(data.formula).toEqual({ criteriaWeight: 70, roleWeight: 30 });
     expect(data.generalFeedback).toEqual({
       text: 'Feedback geral da sessão.',
       authorName: 'Prof. Carlos',
@@ -162,10 +161,7 @@ describe('PgSessionReportRepository', () => {
     expect(stud1.tags).toEqual(['Pontual', 'Participativo']);
     expect(stud1.evaluationStatus).toBe(EvaluationStatus.SUBMITTED);
     expect(stud1.appliedBonus).toBe(9.0);
-    expect(stud1.items).toEqual([
-      { criterionId: 'crit-1', score: 8 },
-      { criterionId: 'crit-2', score: 9 },
-    ]);
+    expect(stud1.sessionScore).toBe(8.7);
     expect(stud1.feedback).toEqual({
       text: 'Excelente participação.',
       authorName: 'Prof. Carlos',
@@ -178,10 +174,12 @@ describe('PgSessionReportRepository', () => {
     expect(stud2.roleScore).toBeNull();
     expect(stud2.tags).toEqual([]);
     expect(stud2.evaluationStatus).toBe(EvaluationStatus.DRAFT);
+    expect(stud2.sessionScore).toBeNull();
     expect(stud2.feedback).toBeNull();
   });
 
-  it('falls back to table criteria when snapshot criteria do not exist', async () => {
+  it('returns empty students and null generalFeedback when room has no students', async () => {
+    (readEvaluationSummaries as jest.Mock).mockResolvedValue([]);
     manager.query.mockImplementation(async (query: string) => {
       await Promise.resolve();
       if (query === FIND_SESSION_HEADER_QUERY) {
@@ -201,19 +199,14 @@ describe('PgSessionReportRepository', () => {
           },
         ];
       }
-      if (query === FIND_ROOM_STUDENTS_QUERY) return [];
-      if (query === FIND_SNAPSHOT_CRITERIA_QUERY) return []; // Empty snapshot
-      if (query === FIND_TABLE_CRITERIA_QUERY) {
-        return [{ id: 'pc-1', name: 'Critério da tabela', weight: '10.00' }];
-      }
-      if (query === FIND_SESSION_FORMULA_COMPONENTS_QUERY) return []; // Default formula fallback
       return [];
     });
 
     const data = await repository.getSessionReportData('sess-1', 'room-1');
 
-    expect(data.criteria).toEqual([{ id: 'pc-1', name: 'Critério da tabela', weight: 10 }]);
-    expect(data.formula).toEqual({ criteriaWeight: 70, roleWeight: 30 });
+    expect(data.room.name).toBe('Turma A');
+    expect(data.problem.title).toBe('Dor torácica');
+    expect(data.session.title).toBe('Abertura');
     expect(data.students).toEqual([]);
     expect(data.generalFeedback).toBeNull();
   });

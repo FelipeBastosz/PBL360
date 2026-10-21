@@ -107,7 +107,14 @@ export const FIND_SESSION_FEEDBACKS_QUERY = `
          f.texto AS "text",
          COALESCE(u.name, 'Professor') AS "authorName"
     FROM feedback f
-    LEFT JOIN users u ON u.id = f.autor_id
+    LEFT JOIN LATERAL (
+      SELECT r.edited_by
+        FROM feedback_revisions r
+       WHERE r.feedback_id = f.id
+       ORDER BY r.edited_at DESC
+       LIMIT 1
+    ) latest_rev ON TRUE
+    LEFT JOIN users u ON u.id = COALESCE(latest_rev.edited_by, f.autor_id)
    WHERE f.sessao_id = $1 AND f.escopo = 'SESSAO'
    ORDER BY f.criado_em ASC;
 `;

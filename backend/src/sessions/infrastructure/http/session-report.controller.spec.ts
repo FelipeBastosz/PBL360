@@ -1,4 +1,3 @@
-import { InternalServerErrorException } from '@nestjs/common';
 import { ReportFileFormat, type ReportFile } from '@/report-files/domain/report-document';
 import { ReportGenerationError } from '@/report-files/application/errors/report-generation.error';
 import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
@@ -63,12 +62,12 @@ describe('SessionReportController', () => {
     expect(headers.disposition).toContain('filename="relatorio-sessao-1.xlsx"');
   });
 
-  it('translates ReportGenerationError into 500 InternalServerErrorException', async () => {
+  it('propagates ReportGenerationError so ReportGenerationFilter can handle it', async () => {
     exportUseCase.execute.mockRejectedValue(new ReportGenerationError());
 
     await expect(
       controller.export('sess-1', { formato: ReportFileFormat.PDF }, 'tutor-1'),
-    ).rejects.toBeInstanceOf(InternalServerErrorException);
+    ).rejects.toBeInstanceOf(ReportGenerationError);
   });
 
   it('propagates ForbiddenError when tutor has no access', async () => {

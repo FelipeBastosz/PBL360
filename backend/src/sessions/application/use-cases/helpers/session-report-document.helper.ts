@@ -1,5 +1,7 @@
 import { EvaluationStatus } from '@/evaluations/domain/enums/evaluation-status.enum';
 import { SessionGradeCalculator } from '@/evaluations/domain/services/session-grade-calculator';
+import { AttendanceStatus } from '@/sessions/domain/enums/attendance-status.enum';
+import { SessionRole } from '@/sessions/domain/enums/session-role.enum';
 import {
   ReportColumnType,
   type ReportCellValue,
@@ -14,24 +16,17 @@ import type {
   SessionReportStudentData,
 } from '../../../domain/repositories/session-report.repository';
 
-const ATTENDANCE_LABELS: Record<string, string> = {
-  PRESENT: 'Presente',
-  LATE: 'Atrasado',
-  EXCUSED: 'Justificado',
-  ABSENT: 'Ausente',
-  PRESENTE: 'Presente',
-  ATRASADO: 'Atrasado',
-  JUSTIFICADO: 'Justificado',
-  AUSENTE: 'Ausente',
+const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {
+  [AttendanceStatus.PRESENT]: 'Presente',
+  [AttendanceStatus.LATE]: 'Atrasado',
+  [AttendanceStatus.EXCUSED]: 'Justificado',
+  [AttendanceStatus.ABSENT]: 'Ausente',
 };
 
-const ROLE_LABELS: Record<string, string> = {
-  COORDINATOR: 'Coordenador',
-  BOARD_SECRETARY: 'Secretário do quadro',
-  TABLE_SECRETARY: 'Secretário da mesa',
-  COORDENADOR: 'Coordenador',
-  SECRETARIO_QUADRO: 'Secretário do quadro',
-  SECRETARIO_MESA: 'Secretário da mesa',
+const ROLE_LABELS: Record<SessionRole, string> = {
+  [SessionRole.COORDINATOR]: 'Coordenador',
+  [SessionRole.BOARD_SECRETARY]: 'Secretário do quadro',
+  [SessionRole.TABLE_SECRETARY]: 'Secretário da mesa',
 };
 
 export const SESSION_REPORT_COLUMNS: ReportColumn[] = [
@@ -60,21 +55,26 @@ export function formatSessionDate(date: string | Date | null | undefined): strin
   return `${day}/${month}/${d.getUTCFullYear()}`;
 }
 
-const getAttendance = (s: string | null) => (s ? (ATTENDANCE_LABELS[s] ?? s) : 'Não registrada');
-const getRole = (r: string | null) => (r ? (ROLE_LABELS[r] ?? r) : null);
+const getAttendance = (s: AttendanceStatus | string | null) =>
+  s ? (ATTENDANCE_LABELS[s as AttendanceStatus] ?? s) : 'Não registrada';
+const getRole = (r: SessionRole | string | null) =>
+  r ? (ROLE_LABELS[r as SessionRole] ?? r) : null;
 
 export function buildStudentRow(
   student: SessionReportStudentData,
   data: SessionReportData,
 ): ReportCellValue[] {
   const { gradeStatus, grade } = calculateStudentGrade(student, data);
-  const score = student.roleScore ?? student.appliedBonus;
+  const score =
+    student.evaluationStatus === EvaluationStatus.SUBMITTED
+      ? student.appliedBonus
+      : student.roleScore;
   return [
     student.name,
     student.matricula ?? null,
     getAttendance(student.attendanceStatus),
     getRole(student.role),
-    score !== null ? Number(score) : null,
+    score !== null && score !== undefined ? Number(score) : null,
     student.tags.length > 0 ? student.tags.join(', ') : null,
     gradeStatus,
     grade,
@@ -83,7 +83,7 @@ export function buildStudentRow(
 
 export function calculateStudentGrade(
   student: SessionReportStudentData,
-  data: SessionReportData,
+  data?: SessionReportData,
 ): { gradeStatus: string; grade: number | null } {
   if (student.evaluationStatus === EvaluationStatus.DRAFT) {
     return { gradeStatus: 'Rascunho', grade: null };
@@ -91,30 +91,45 @@ export function calculateStudentGrade(
   if (student.evaluationStatus !== EvaluationStatus.SUBMITTED) {
     return { gradeStatus: 'Não registrada', grade: null };
   }
-  return { gradeStatus: 'Nota enviada', grade: computeCalculatedGrade(student, data) };
+
+  const rawGrade =
+    student.sessionScore !== undefined && student.sessionScore !== null
+      ? student.sessionScore
+      : computeCalculatedGrade(student, data);
+
+  const grade =
+    rawGrade !== null && rawGrade !== undefined && Number.isFinite(rawGrade)
+      ? Math.round((rawGrade + Number.EPSILON) * 100) / 100
+      : null;
+
+  return { gradeStatus: 'Nota enviada', grade };
 }
 
 function tryCalcGrade(student: SessionReportStudentData, data: SessionReportData): number | null {
-  const bonus = student.appliedBonus !== null ? student.appliedBonus : student.roleScore;
+  const bonus =
+    student.evaluationStatus === EvaluationStatus.SUBMITTED
+      ? student.appliedBonus
+      : (student.appliedBonus ?? student.roleScore);
   try {
     return SessionGradeCalculator.calculate(
-      student.items,
-      data.criteria as unknown as Parameters<typeof SessionGradeCalculator.calculate>[1],
+      student.items ?? [],
+      (data.criteria ?? []) as unknown as Parameters<typeof SessionGradeCalculator.calculate>[1],
       bonus,
       true,
       data.formula,
     );
   } catch {
-    return student.recordedSessionScore;
+    return student.recordedSessionScore ?? null;
   }
 }
 
 function computeCalculatedGrade(
   student: SessionReportStudentData,
-  data: SessionReportData,
+  data?: SessionReportData,
 ): number | null {
-  const canCalc = data.criteria.length > 0 && student.items.length > 0;
-  const grade = canCalc ? tryCalcGrade(student, data) : student.recordedSessionScore;
+  if (!data) return student.recordedSessionScore ?? null;
+  const canCalc = (data.criteria?.length ?? 0) > 0 && (student.items?.length ?? 0) > 0;
+  const grade = canCalc ? tryCalcGrade(student, data) : (student.recordedSessionScore ?? null);
   return grade !== null && Number.isFinite(grade)
     ? Math.round((grade + Number.EPSILON) * 100) / 100
     : null;
@@ -163,14 +178,28 @@ function buildReportSections(data: SessionReportData): ReportSection[] {
   ];
 }
 
+export function buildSessionFileName(data: SessionReportData): string {
+  const { session, problem } = data;
+  if (
+    problem?.orderIndex !== null &&
+    problem?.orderIndex !== undefined &&
+    session?.orderIndex !== null &&
+    session?.orderIndex !== undefined
+  ) {
+    return `relatorio-sessao-p${problem.orderIndex}-s${session.orderIndex}`;
+  }
+  if (session?.orderIndex !== null && session?.orderIndex !== undefined) {
+    return `relatorio-sessao-s${session.orderIndex}`;
+  }
+  return `relatorio-sessao-${session.title}`;
+}
+
 export function buildSessionReportDocument(
   format: ReportFileFormat,
   data: SessionReportData,
 ): ReportDocument {
   const { session } = data;
-  const fileName = session.orderIndex
-    ? `relatorio-sessao-${session.orderIndex}`
-    : `relatorio-sessao-${session.title}`;
+  const fileName = buildSessionFileName(data);
 
   return {
     format,

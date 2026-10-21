@@ -143,7 +143,7 @@ describe('ExportSessionReportUseCase', () => {
 
     expect(document.format).toBe(ReportFileFormat.PDF);
     expect(document.title).toBe('Relatório da sessão — Abertura');
-    expect(document.fileName).toBe('relatorio-sessao-1');
+    expect(document.fileName).toBe('relatorio-sessao-p1-s1');
     expect(document.identification).toEqual([
       { label: 'Turma', value: 'Turma A — Medicina 2026.2' },
       { label: 'Problema', value: 'Problema 1 — Dor torácica aguda' },
@@ -296,6 +296,71 @@ describe('ExportSessionReportUseCase', () => {
     if (tableSection.kind === 'table') {
       // Recalculated grade with items reflecting the adjustment: (9*4 + 9*6)/10 = 9.0
       expect(tableSection.rows[0]![7]).toBe(9.0);
+    }
+  });
+
+  it('uses frozen appliedBonus for submitted evaluation when roleScore changes after submission', async () => {
+    const postSubmissionData: SessionReportData = {
+      ...baseSessionReportData,
+      students: [
+        {
+          studentId: 'stud-ana',
+          name: 'Ana Souza',
+          matricula: '2026001',
+          attendanceStatus: 'PRESENT',
+          role: 'COORDINATOR',
+          roleScore: 10.0, // changed to 10 after submission
+          tags: [],
+          evaluationStatus: EvaluationStatus.SUBMITTED,
+          appliedBonus: 5.0, // frozen at submission time
+          items: [
+            { criterionId: 'crit-1', score: 8.0 },
+            { criterionId: 'crit-2', score: 8.0 },
+          ],
+          sessionScore: 7.1,
+          recordedSessionScore: 7.1,
+          feedback: null,
+        },
+        {
+          studentId: 'stud-joao',
+          name: 'João Silva',
+          matricula: '2026002',
+          attendanceStatus: 'PRESENT',
+          role: 'BOARD_SECRETARY',
+          roleScore: 10.0, // assigned role 10 after submission
+          tags: [],
+          evaluationStatus: EvaluationStatus.SUBMITTED,
+          appliedBonus: null, // evaluated without role bonus
+          items: [
+            { criterionId: 'crit-1', score: 8.0 },
+            { criterionId: 'crit-2', score: 8.0 },
+          ],
+          sessionScore: 8.0,
+          recordedSessionScore: 8.0,
+          feedback: null,
+        },
+      ],
+    };
+
+    reportRepository.getSessionReportData.mockResolvedValue(postSubmissionData);
+
+    await useCase.execute({
+      sessionId: 'sess-1',
+      format: ReportFileFormat.PDF,
+      tutorId: 'tutor-1',
+    });
+
+    const document: ReportDocument = reportGenerator.generate.mock.calls[0]![0];
+    const tableSection = document.sections[0]!;
+    if (tableSection.kind === 'table') {
+      const rows = tableSection.rows;
+      // Ana: role bonus column shows frozen 5.0, not changed 10.0; grade is 7.1
+      expect(rows[0]![4]).toBe(5.0);
+      expect(rows[0]![7]).toBe(7.1);
+
+      // João: role bonus column shows null, not 10.0; grade is 8.0
+      expect(rows[1]![4]).toBeNull();
+      expect(rows[1]![7]).toBe(8.0);
     }
   });
 

@@ -163,7 +163,7 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
     });
 
     expect(pdfReport.contentType).toBe('application/pdf');
-    expect(pdfReport.fileName).toBe('relatorio-sessao-3.pdf');
+    expect(pdfReport.fileName).toBe('relatorio-sessao-p2-s3.pdf');
     expect(pdfReport.content.subarray(0, 5).toString('utf8')).toBe('%PDF-');
     expect(pdfReport.content.length).toBeGreaterThan(1000);
 
@@ -177,7 +177,7 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
     expect(xlsxReport.contentType).toBe(
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
-    expect(xlsxReport.fileName).toBe('relatorio-sessao-3.xlsx');
+    expect(xlsxReport.fileName).toBe('relatorio-sessao-p2-s3.xlsx');
     expect(xlsxReport.content.subarray(0, 2).toString('utf8')).toBe('PK');
     expect(xlsxReport.content.length).toBeGreaterThan(1000);
 

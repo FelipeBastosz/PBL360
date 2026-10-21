@@ -1,4 +1,6 @@
 import type { EvaluationStatus } from '@/evaluations/domain/enums/evaluation-status.enum';
+import type { AttendanceStatus } from '../../domain/enums/attendance-status.enum';
+import type { SessionRole } from '../../domain/enums/session-role.enum';
 
 export const SESSION_REPORT_REPOSITORY = Symbol('SESSION_REPORT_REPOSITORY');
 
@@ -6,14 +8,15 @@ export interface SessionReportStudentData {
   studentId: string;
   name: string;
   matricula: string | null;
-  attendanceStatus: string | null;
-  role: string | null;
+  attendanceStatus: AttendanceStatus | string | null;
+  role: SessionRole | string | null;
   roleScore: number | null;
   tags: string[];
   evaluationStatus: EvaluationStatus | null;
   appliedBonus: number | null;
-  items: Array<{ criterionId: string; score: number }>;
-  recordedSessionScore: number | null;
+  sessionScore?: number | null;
+  items?: Array<{ criterionId: string; score: number }>;
+  recordedSessionScore?: number | null;
   feedback: { text: string; authorName: string } | null;
 }
 
@@ -35,12 +38,12 @@ export interface SessionReportData {
     orderIndex: number | null;
     date: string | Date;
   };
-  criteria: Array<{
+  criteria?: Array<{
     id: string;
     name: string;
     weight: number;
   }>;
-  formula: {
+  formula?: {
     criteriaWeight: number;
     roleWeight: number;
   };

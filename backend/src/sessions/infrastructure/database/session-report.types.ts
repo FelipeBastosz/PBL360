@@ -1,4 +1,6 @@
 import type { EvaluationStatus } from '@/evaluations/domain/enums/evaluation-status.enum';
+import type { AttendanceStatus } from '../../domain/enums/attendance-status.enum';
+import type { SessionRole } from '../../domain/enums/session-role.enum';
 
 export interface HeaderRow {
   sessionId: string;
@@ -22,12 +24,12 @@ export interface StudentRow {
 
 export interface AttendanceRow {
   studentId: string;
-  status: string;
+  status: AttendanceStatus | string;
 }
 
 export interface RoleRow {
   studentId: string;
-  role: string;
+  role: SessionRole | string;
   roleScore: string | number | null;
 }
 
@@ -68,6 +70,8 @@ export interface FeedbackRow {
   authorName: string;
 }
 
+import type { EvaluationSummary } from '@/evaluations/domain/repositories/evaluation.repository';
+
 export interface SessionReportRawData {
   header: HeaderRow | undefined;
   roomId: string;
@@ -76,9 +80,10 @@ export interface SessionReportRawData {
   attendances: AttendanceRow[];
   roles: RoleRow[];
   observations: ObservationTagsRow[];
-  criteria: CriterionRow[];
-  formulas: FormulaComponentRow[];
+  criteria?: CriterionRow[];
+  formulas?: FormulaComponentRow[];
   evaluations: EvaluationRow[];
-  items: EvaluationItemRow[];
+  items?: EvaluationItemRow[];
   feedbacks: FeedbackRow[];
+  summaries?: EvaluationSummary[];
 }
