@@ -48,6 +48,36 @@ describe('User (Domain)', () => {
     expect(user.passwordHash).toBe('new_hashed_password');
   });
 
+  describe('rename', () => {
+    it('updates user name and trims whitespace', () => {
+      const user = buildUser(UserType.STUDENT);
+
+      user.rename('  Novo Nome de Aluno  ');
+
+      expect(user.name).toBe('Novo Nome de Aluno');
+    });
+
+    it('rejects names shorter than 3 characters', () => {
+      const user = buildUser(UserType.STUDENT);
+
+      expect(() => user.rename('ab')).toThrow(InvalidUserError);
+      expect(() => user.rename('ab')).toThrow('O nome deve ter entre 3 e 120 caracteres.');
+    });
+
+    it('rejects names longer than 120 characters', () => {
+      const user = buildUser(UserType.STUDENT);
+
+      expect(() => user.rename('a'.repeat(121))).toThrow(InvalidUserError);
+    });
+
+    it('rejects empty or whitespace-only names', () => {
+      const user = buildUser(UserType.STUDENT);
+
+      expect(() => user.rename('   ')).toThrow(InvalidUserError);
+    });
+  });
+
+
   describe('create', () => {
     const newStudent = (overrides: Partial<NewUser> = {}): NewUser => ({
       name: 'Ana Souza',

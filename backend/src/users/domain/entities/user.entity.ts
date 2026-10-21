@@ -127,7 +127,16 @@ export class User {
     this.revokeSessions();
   }
 
+  rename(newName: string): void {
+    const trimmed = newName?.trim();
+    if (!trimmed || trimmed.length < 3 || trimmed.length > 120) {
+      throw new InvalidUserError('O nome deve ter entre 3 e 120 caracteres.');
+    }
+    this.name = trimmed;
+  }
+
   private revokeSessions(): void {
     this.tokenVersion = (this.tokenVersion ?? 0) + 1;
   }
 }
+
