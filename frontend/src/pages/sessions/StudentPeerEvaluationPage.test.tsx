@@ -1,7 +1,9 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionService } from '@/services/session.service';
+import type { MemberSession } from '@/types/session';
 import StudentPeerEvaluationPage from './StudentPeerEvaluationPage';
 
 vi.mock('react-router-dom', async () => {
@@ -12,17 +14,32 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+vi.mock('@/services/session.service');
+
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
-    user: { id: '1', nome: 'João Silva', possuiFoto: false, tipo: 'ALUNO' },
+    user: { id: 'user-1', nome: 'João Silva', possuiFoto: false, tipo: 'ALUNO' },
   }),
 }));
+
+const mockSessionData: MemberSession = {
+  id: 'sess-123',
+  titulo: 'Sessão 2 - Fechamento',
+  descricao: null,
+  data: '2024-10-08',
+  ordem: 2,
+  status: 'EM_ANDAMENTO',
+  problemaId: 'prob-1',
+  salaId: 'room-1',
+  problemaTitulo: 'Problema 1',
+};
 
 describe('StudentPeerEvaluationPage', () => {
   const mockNavigate = vi.fn();
 
   beforeEach(() => {
     vi.mocked(useNavigate).mockReturnValue(mockNavigate);
+    vi.mocked(sessionService.getForMember).mockResolvedValue(mockSessionData);
     vi.clearAllMocks();
   });
 
@@ -34,11 +51,15 @@ describe('StudentPeerEvaluationPage', () => {
     );
   };
 
-  it('renders the header and peer evaluation cards', () => {
+  it('renders the header with session title and peer evaluation cards', async () => {
     renderPage();
     expect(screen.getByText('Avaliação dos Colegas')).toBeInTheDocument();
     expect(screen.getByText('Ana Souza')).toBeInTheDocument();
     expect(screen.getByText('Carlos Lima')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('Sessão 2 - Fechamento')).toBeInTheDocument();
+    });
   });
 
   it('increments score for a specific peer', async () => {

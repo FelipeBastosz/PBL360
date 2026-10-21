@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeftIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Button } from '@/components/ui/Button';
 import { CARD_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
-import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useAuth } from '@/hooks/useAuth';
+import { sessionService } from '@/services/session.service';
+import type { MemberSession } from '@/types/session';
 import type { UserResponse } from '@/types/auth';
 import { cn } from '@/utils/cn';
 
@@ -115,35 +118,52 @@ function PeerEvaluationCard({ peer, onCriterionChange }: PeerCardProps) {
   );
 }
 
-type HeaderProps = {
+function PeerEvaluationHeader({
+  user,
+  subtitle,
+  onBack,
+}: {
   user: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
+  subtitle: string;
   onBack: () => void;
-};
-
-function PeerEvaluationHeader({ user, onBack }: HeaderProps) {
+}) {
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between bg-brand-900 px-4 text-white">
-      <div className="flex items-center gap-3">
-        <button onClick={onBack} aria-label="Voltar" className="rounded-md p-1 hover:bg-white/10">
-          <ChevronLeftIcon className="size-6" />
-        </button>
-        <div className="flex flex-col">
-          <h1 className="text-base font-semibold leading-tight">Avaliação dos Colegas</h1>
-          <span className="text-xs text-white/70">Sessão · 12 ago</span>
+    <header className="shrink-0 bg-brand-900 text-white">
+      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Voltar"
+            className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
+          >
+            <ChevronLeftIcon className="size-6" />
+          </button>
+          <div className="flex flex-col">
+            <h1 className="text-base font-semibold leading-tight">Avaliação dos Colegas</h1>
+            <span className="text-xs text-white/70">{subtitle}</span>
+          </div>
         </div>
+        <UserMenuButton user={user} className="ring-2 ring-white/20" />
       </div>
-      <UserAvatar
-        user={user ?? { id: '', nome: '', possuiFoto: false }}
-        className="ring-2 ring-white/20"
-      />
     </header>
   );
 }
 
 export default function StudentPeerEvaluationPage() {
+  const { sessionId = '' } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [peers, setPeers] = useState<Peer[]>(INITIAL_PEERS);
+  const [session, setSession] = useState<MemberSession | null>(null);
+
+  const { run: loadSession } = useAsyncAction(
+    useCallback(() => sessionService.getForMember(sessionId), [sessionId]),
+  );
+
+  useEffect(() => {
+    loadSession().then((res) => res.ok && setSession(res.data));
+  }, [loadSession]);
 
   const handleCriterionChange = (peerId: string, criterionId: string, newScore: number) => {
     setPeers((prev) =>
@@ -161,7 +181,11 @@ export default function StudentPeerEvaluationPage() {
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
-      <PeerEvaluationHeader user={user} onBack={() => navigate(-1)} />
+      <PeerEvaluationHeader
+        user={user}
+        subtitle={session?.titulo || 'Sessão'}
+        onBack={() => navigate(-1)}
+      />
 
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-6')}>
         {peers.map((peer) => (

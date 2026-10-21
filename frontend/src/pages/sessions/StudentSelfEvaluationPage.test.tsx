@@ -3,10 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { evaluationService } from '@/services/evaluation.service';
+import { sessionService } from '@/services/session.service';
 import type { SelfAssessmentResponse } from '@/types/evaluation';
+import type { MemberSession } from '@/types/session';
 import StudentSelfEvaluationPage from './StudentSelfEvaluationPage';
 
 vi.mock('@/services/evaluation.service');
+vi.mock('@/services/session.service');
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
@@ -35,9 +38,22 @@ const mockAssessmentData: SelfAssessmentResponse = {
   ],
 };
 
+const mockSessionData: MemberSession = {
+  id: 'sess-123',
+  titulo: 'Sessão 2 - Fechamento',
+  descricao: null,
+  data: '2024-10-08',
+  ordem: 2,
+  status: 'EM_ANDAMENTO',
+  problemaId: 'prob-1',
+  salaId: 'room-1',
+  problemaTitulo: 'Problema 1',
+};
+
 describe('StudentSelfEvaluationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(sessionService.getForMember).mockResolvedValue(mockSessionData);
   });
 
   const renderComponent = () => {
@@ -50,7 +66,7 @@ describe('StudentSelfEvaluationPage', () => {
     );
   };
 
-  it('loads and displays criteria and student data from backend', async () => {
+  it('loads and displays criteria, student data, and session title from backend', async () => {
     vi.mocked(evaluationService.getSelfAssessment).mockResolvedValue(mockAssessmentData);
     renderComponent();
 
@@ -58,6 +74,7 @@ describe('StudentSelfEvaluationPage', () => {
     expect(screen.getByText('João Silva')).toBeInTheDocument();
 
     await waitFor(() => {
+      expect(screen.getByText('Sessão 2 - Fechamento')).toBeInTheDocument();
       const segmentoGroup = screen.getByRole('group', { name: 'Segmento' });
       expect(within(segmentoGroup).getByText('8')).toBeInTheDocument();
     });
