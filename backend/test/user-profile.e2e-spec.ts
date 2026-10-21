@@ -8,8 +8,20 @@ import { api, cleanDatabase, insertUser, type TestUser } from './helpers/fixture
 
 jest.setTimeout(30000);
 
+interface UserProfileResponse {
+  id: string;
+  nome: string;
+  email: string;
+  tipo: UserTypePayload;
+  matricula: string | null;
+  possuiFoto: boolean;
+}
+
+const asProfile = (body: unknown): UserProfileResponse => body as UserProfileResponse;
+
 describe('User profile and photos (e2e)', () => {
   let app: INestApplication;
+
   let dataSource: DataSource;
   let student: TestUser;
   let tutor: TestUser;
@@ -79,7 +91,7 @@ describe('User profile and photos (e2e)', () => {
       });
 
       const profileCheck = await api(app, student).get('/usuarios/meu-perfil').expect(200);
-      expect(profileCheck.body.nome).toBe('Ana Maria Souza');
+      expect(asProfile(profileCheck.body).nome).toBe('Ana Maria Souza');
     });
 
     it('allows tutor to update only name', async () => {
@@ -88,7 +100,7 @@ describe('User profile and photos (e2e)', () => {
         .send({ nome: 'Prof. Carlos Mendes' })
         .expect(200);
 
-      expect(response.body.nome).toBe('Prof. Carlos Mendes');
+      expect(asProfile(response.body).nome).toBe('Prof. Carlos Mendes');
     });
 
     it('rejects empty body, missing name, or short name with 400', async () => {
@@ -118,8 +130,8 @@ describe('User profile and photos (e2e)', () => {
         .expect(400);
 
       const unchanged = await api(app, student).get('/usuarios/meu-perfil').expect(200);
-      expect(unchanged.body.email).toBe('20240001@discente.uefs.br');
-      expect(unchanged.body.matricula).toBe('20240001');
+      expect(asProfile(unchanged.body).email).toBe('20240001@discente.uefs.br');
+      expect(asProfile(unchanged.body).matricula).toBe('20240001');
     });
 
     it('requires authentication', async () => {
@@ -132,12 +144,12 @@ describe('User profile and photos (e2e)', () => {
       // 1. Student adds PNG photo
       await api(app, student)
         .put('/usuarios/minha-foto')
-        .attach('foto', pngPhotoBytes(), 'photo.png')
+        .attach('foto', pngPhotoBytes(), { filename: 'photo.png', contentType: 'image/png' })
         .expect(204);
 
       // Student profile reflects possuiFoto = true
       let profile = await api(app, student).get('/usuarios/meu-perfil').expect(200);
-      expect(profile.body.possuiFoto).toBe(true);
+      expect(asProfile(profile.body).possuiFoto).toBe(true);
 
       // Student photo is served
       let photoResponse = await api(app, student).get(`/usuarios/${student.id}/foto`).expect(200);
@@ -147,7 +159,7 @@ describe('User profile and photos (e2e)', () => {
       // 2. Student substitutes photo with JPEG
       await api(app, student)
         .put('/usuarios/minha-foto')
-        .attach('foto', jpegPhotoBytes(), 'photo.jpg')
+        .attach('foto', jpegPhotoBytes(), { filename: 'photo.jpg', contentType: 'image/jpeg' })
         .expect(204);
 
       photoResponse = await api(app, student).get(`/usuarios/${student.id}/foto`).expect(200);
@@ -156,17 +168,17 @@ describe('User profile and photos (e2e)', () => {
       // 3. Tutor can also add webp photo
       await api(app, tutor)
         .put('/usuarios/minha-foto')
-        .attach('foto', webpPhotoBytes(), 'photo.webp')
+        .attach('foto', webpPhotoBytes(), { filename: 'photo.webp', contentType: 'image/webp' })
         .expect(204);
 
       profile = await api(app, tutor).get('/usuarios/meu-perfil').expect(200);
-      expect(profile.body.possuiFoto).toBe(true);
+      expect(asProfile(profile.body).possuiFoto).toBe(true);
 
       // 4. Student removes photo
       await api(app, student).delete('/usuarios/minha-foto').expect(204);
 
       profile = await api(app, student).get('/usuarios/meu-perfil').expect(200);
-      expect(profile.body.possuiFoto).toBe(false);
+      expect(asProfile(profile.body).possuiFoto).toBe(false);
 
       await api(app, student).get(`/usuarios/${student.id}/foto`).expect(404);
     });
@@ -174,13 +186,16 @@ describe('User profile and photos (e2e)', () => {
     it('rejects invalid photo format and preserves previous photo', async () => {
       await api(app, student)
         .put('/usuarios/minha-foto')
-        .attach('foto', pngPhotoBytes(), 'valid.png')
+        .attach('foto', pngPhotoBytes(), { filename: 'valid.png', contentType: 'image/png' })
         .expect(204);
 
       // Attempt invalid file format
       await api(app, student)
         .put('/usuarios/minha-foto')
-        .attach('foto', Buffer.from('plain text file'), 'test.txt')
+        .attach('foto', Buffer.from('plain text file'), {
+          filename: 'test.txt',
+          contentType: 'text/plain',
+        })
         .expect(400);
 
       // Previous photo preserved
@@ -192,7 +207,7 @@ describe('User profile and photos (e2e)', () => {
       const largeBuffer = Buffer.alloc(2 * 1024 * 1024 + 10);
       await api(app, student)
         .put('/usuarios/minha-foto')
-        .attach('foto', largeBuffer, 'big.png')
+        .attach('foto', largeBuffer, { filename: 'big.png', contentType: 'image/png' })
         .expect(413);
     });
 

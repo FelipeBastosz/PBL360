@@ -27,7 +27,7 @@ describe('UpdateUserProfileUseCase', () => {
     user.type = UserType.TUTOR;
 
     usersRepository.findById.mockResolvedValue(user);
-    usersRepository.save.mockImplementation(async (saved) => saved);
+    usersRepository.save.mockImplementation((saved) => Promise.resolve(saved));
 
     const result = await useCase.execute({ userId: 'user-1', name: 'Nome Atualizado' });
 

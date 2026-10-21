@@ -19,7 +19,6 @@ import { PHOTO_MIME_TYPES } from '../../domain/entities/user-photo.entity';
 import { UserProfileResponseDto } from '../../application/dtos/user-profile-response.dto';
 import { UpdateUserPhotoFormDto } from '../../application/dtos/update-user-photo-form.dto';
 
-
 export const GetUserPhotoSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
@@ -126,7 +125,8 @@ export const DeleteUserPhotoSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
     summary: 'Remove a foto da conta autenticada',
-    description: 'Remove a foto do usuário logado (professor ou aluno). Idempotente se não houver foto.',
+    description:
+      'Remove a foto do usuário logado (professor ou aluno). Idempotente se não houver foto.',
   }),
   ApiNoContentResponse({ description: 'Foto removida com sucesso.' }),
   ApiUnauthorizedResponse({
@@ -138,7 +138,3 @@ export const DeleteUserPhotoSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
 );
-
-
-
-

@@ -34,5 +34,4 @@ export class UploadUserPhotoUseCase {
     const photo = UserPhoto.fromBytes(input.bytes);
     await this.photos.save(input.userId, photo);
   }
-
 }

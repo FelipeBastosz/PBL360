@@ -139,4 +139,3 @@ export class User {
     this.tokenVersion = (this.tokenVersion ?? 0) + 1;
   }
 }
-

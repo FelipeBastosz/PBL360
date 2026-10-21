@@ -60,9 +60,8 @@ describe('UploadUserPhotoUseCase', () => {
   });
 
   it('rejects when photo bytes are empty or undefined', async () => {
-    await expect(
-      useCase.execute({ userId: 'user-1', bytes: Buffer.alloc(0) }),
-    ).rejects.toThrow('Envie uma única foto no campo "foto".');
+    await expect(useCase.execute({ userId: 'user-1', bytes: Buffer.alloc(0) })).rejects.toThrow(
+      'Envie uma única foto no campo "foto".',
+    );
   });
 });
-

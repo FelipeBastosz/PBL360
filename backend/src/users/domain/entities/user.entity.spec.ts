@@ -77,7 +77,6 @@ describe('User (Domain)', () => {
     });
   });
 
-
   describe('create', () => {
     const newStudent = (overrides: Partial<NewUser> = {}): NewUser => ({
       name: 'Ana Souza',

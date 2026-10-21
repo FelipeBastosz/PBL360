@@ -49,4 +49,3 @@ export class PgUserPhotoRepository implements UserPhotoRepository {
     await this.photos.query(`DELETE FROM user_photos WHERE user_id = $1;`, [userId]);
   }
 }
-

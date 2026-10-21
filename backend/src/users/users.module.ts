@@ -27,7 +27,6 @@ import { UsersController } from './infrastructure/http/users.controller';
     DeleteUserPhotoUseCase,
     SearchTutorsUseCase,
 
-
     {
       provide: USER_REPOSITORY,
       useClass: PgUserRepository,

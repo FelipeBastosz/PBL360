@@ -14,7 +14,10 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
-import { PhotoUpload, type UploadedPhoto } from '@/auth/infrastructure/http/photo-upload.interceptor';
+import {
+  PhotoUpload,
+  type UploadedPhoto,
+} from '@/auth/infrastructure/http/photo-upload.interceptor';
 import { GetUserPhotoUseCase } from '../../application/use-cases/get-user-photo.use-case';
 import { GetUserProfileUseCase } from '../../application/use-cases/get-user-profile.use-case';
 import { UpdateUserProfileUseCase } from '../../application/use-cases/update-user-profile.use-case';
@@ -93,5 +96,3 @@ export class UsersController {
     });
   }
 }
-
-

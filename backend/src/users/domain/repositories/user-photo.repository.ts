@@ -6,5 +6,4 @@ export interface UserPhotoRepository {
   deleteByUserId(userId: string): Promise<void>;
 }
 
-
 export const USER_PHOTO_REPOSITORY = Symbol('UserPhotoRepository');
