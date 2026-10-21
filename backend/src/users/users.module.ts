@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { GetUserPhotoUseCase } from './application/use-cases/get-user-photo.use-case';
 import { GetUserProfileUseCase } from './application/use-cases/get-user-profile.use-case';
 import { UpdateUserProfileUseCase } from './application/use-cases/update-user-profile.use-case';
+import { UploadUserPhotoUseCase } from './application/use-cases/upload-user-photo.use-case';
+import { DeleteUserPhotoUseCase } from './application/use-cases/delete-user-photo.use-case';
 import { SearchTutorsUseCase } from './application/use-cases/search-tutors.use-case';
 import { TutorsController } from './infrastructure/http/tutors.controller';
 
@@ -21,7 +23,10 @@ import { UsersController } from './infrastructure/http/users.controller';
     GetUserPhotoUseCase,
     GetUserProfileUseCase,
     UpdateUserProfileUseCase,
+    UploadUserPhotoUseCase,
+    DeleteUserPhotoUseCase,
     SearchTutorsUseCase,
+
 
     {
       provide: USER_REPOSITORY,
