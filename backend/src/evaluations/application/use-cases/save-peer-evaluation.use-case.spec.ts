@@ -24,7 +24,7 @@ describe('SavePeerEvaluationUseCase', () => {
   const activeSession = {
     id: 'sess-1',
     peerEvalReleased: true,
-    peerEvalDeadline: new Date('2026-10-20T23:59:59Z'),
+    peerEvalDeadline: new Date('2099-10-20T23:59:59Z'),
   };
   const problem = { id: 'prob-1' };
 
