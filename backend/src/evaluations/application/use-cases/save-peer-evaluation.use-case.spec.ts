@@ -10,7 +10,6 @@ import { EVALUATION_REPOSITORY } from '../../domain/repositories/evaluation.repo
 import { SavePeerEvaluationUseCase } from './save-peer-evaluation.use-case';
 
 describe('SavePeerEvaluationUseCase', () => {
-  const now = new Date('2026-10-10T12:00:00.000Z');
   let useCase: SavePeerEvaluationUseCase;
   const sessionAccess = {
     assertMemberCanAccessSession: jest.fn(),
@@ -19,6 +18,8 @@ describe('SavePeerEvaluationUseCase', () => {
     isStudentParticipating: jest.fn(),
     recordPeerEvaluation: jest.fn(),
   };
+
+  const now = new Date('2026-10-20T15:00:00Z');
 
   const activeSession = {
     id: 'sess-1',
