@@ -10,6 +10,7 @@ import { EVALUATION_REPOSITORY } from '../../domain/repositories/evaluation.repo
 import { SavePeerEvaluationUseCase } from './save-peer-evaluation.use-case';
 
 describe('SavePeerEvaluationUseCase', () => {
+  const now = new Date('2026-10-10T12:00:00.000Z');
   let useCase: SavePeerEvaluationUseCase;
   const sessionAccess = {
     assertMemberCanAccessSession: jest.fn(),
@@ -47,6 +48,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [{ criterionId: 'crit-1', score: 9 }],
         enviar: true,
+        now,
       }),
     ).rejects.toThrow(UnprocessableEntityError);
     await expect(
@@ -56,6 +58,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [{ criterionId: 'crit-1', score: 9 }],
         enviar: true,
+        now,
       }),
     ).rejects.toThrow('Um aluno não pode avaliar a si mesmo como par.');
     expect(sessionAccess.assertMemberCanAccessSession).not.toHaveBeenCalled();
@@ -75,6 +78,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow(LockedError);
     await expect(
@@ -84,40 +88,44 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow('A avaliação entre pares não está liberada.');
   });
 
-  it('rejects when deadline has passed (prazo vencido)', async () => {
-    const expiredDeadline = new Date('2026-10-01T12:00:00Z');
-    sessionAccess.assertMemberCanAccessSession.mockResolvedValue({
-      session: { ...activeSession, peerEvalDeadline: expiredDeadline },
-      problem,
-      roomId: 'room-1',
-    });
+  it.each([new Date('2026-10-01T12:00:00Z'), now])(
+    'rejects when the deadline has been reached or passed: %s',
+    async (expiredDeadline) => {
+      sessionAccess.assertMemberCanAccessSession.mockResolvedValue({
+        session: { ...activeSession, peerEvalDeadline: expiredDeadline },
+        problem,
+        roomId: 'room-1',
+      });
 
-    const now = new Date('2026-10-09T10:00:00Z');
-    await expect(
-      useCase.execute({
-        sessionId: 'sess-1',
-        peerId: 'peer-1',
-        studentId: 'student-1',
-        itens: [{ criterionId: 'crit-1', score: 8 }],
-        enviar: true,
-        now,
-      }),
-    ).rejects.toThrow(LockedError);
-    await expect(
-      useCase.execute({
-        sessionId: 'sess-1',
-        peerId: 'peer-1',
-        studentId: 'student-1',
-        itens: [{ criterionId: 'crit-1', score: 8 }],
-        enviar: true,
-        now,
-      }),
-    ).rejects.toThrow('O prazo para avaliação entre pares expirou.');
-  });
+      await expect(
+        useCase.execute({
+          sessionId: 'sess-1',
+          peerId: 'peer-1',
+          studentId: 'student-1',
+          itens: [{ criterionId: 'crit-1', score: 8 }],
+          enviar: true,
+          now,
+        }),
+      ).rejects.toThrow(LockedError);
+      await expect(
+        useCase.execute({
+          sessionId: 'sess-1',
+          peerId: 'peer-1',
+          studentId: 'student-1',
+          itens: [{ criterionId: 'crit-1', score: 8 }],
+          enviar: true,
+          now,
+        }),
+      ).rejects.toThrow('O prazo para avaliação entre pares expirou.');
+      expect(repository.isStudentParticipating).not.toHaveBeenCalled();
+      expect(repository.recordPeerEvaluation).not.toHaveBeenCalled();
+    },
+  );
 
   it('rejects when evaluating student did not participate (avaliador que não participou)', async () => {
     sessionAccess.assertMemberCanAccessSession.mockResolvedValue({
@@ -137,6 +145,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-absent',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow(LockedError);
     await expect(
@@ -146,6 +155,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-absent',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow('Apenas alunos que participaram da sessão podem avaliar colegas.');
   });
@@ -168,6 +178,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow(UnprocessableEntityError);
     await expect(
@@ -177,6 +188,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow('O colega não participou da sessão.');
   });
@@ -199,6 +211,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [{ criterionId: 'crit-1', score: 10 }],
         enviar: true,
+        now,
       }),
     ).rejects.toThrow(ConflictError);
   });
@@ -221,6 +234,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [{ criterionId: 'crit-1', score: 12 }],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow(UnprocessableEntityError);
   });
@@ -254,6 +268,7 @@ describe('SavePeerEvaluationUseCase', () => {
       studentId: 'student-1',
       itens: [{ criterionId: 'crit-1', score: 7 }],
       enviar: false,
+      now,
     });
 
     expect(result).toEqual({
@@ -295,6 +310,7 @@ describe('SavePeerEvaluationUseCase', () => {
       studentId: 'student-1',
       itens: [{ criterionId: 'crit-1', score: 9.5 }],
       enviar: true,
+      now,
     });
 
     expect(result).toEqual({
