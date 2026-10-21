@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { SearchField } from '@/components/ui/SearchField';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { Spinner } from '@/components/ui/Spinner';
@@ -21,6 +22,7 @@ import {
   PerformanceTablesHeader,
   PerformanceTablesFabMenu,
 } from './components/PerformanceTablesLayout';
+import { isTableApplied } from './utils/isTableApplied';
 
 function usePerformanceTablesData(roomId?: string, sessionId?: string) {
   const [tables, setTables] = useState<PerformanceTableSummary[]>([]);
@@ -34,7 +36,7 @@ function usePerformanceTablesData(roomId?: string, sessionId?: string) {
 
   useEffect(() => {
     run().then((res) => res.ok && setTables(res.data));
-    if (sessionId && typeof sessionService.getEvaluationConfig === 'function') {
+    if (sessionId) {
       sessionService
         .getEvaluationConfig(sessionId)
         .then(setSessionConfig)
@@ -42,7 +44,7 @@ function usePerformanceTablesData(roomId?: string, sessionId?: string) {
     }
   }, [run, sessionId]);
 
-  return { tables, setTables, sessionConfig, isLoading, error, reload: run };
+  return { tables, sessionConfig, isLoading, error, reload: run };
 }
 
 function useTableDeletion(onDeleted: () => void) {
@@ -63,6 +65,24 @@ function useTableDeletion(onDeleted: () => void) {
   return { tableToDelete, setTableToDelete, isLoading, handleConfirmDelete };
 }
 
+function ActiveSessionFormulaBanner({ config }: { config: SessionEvaluationConfig | null }) {
+  if (!config?.tabela) return null;
+
+  return (
+    <div className="mb-4 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-900 shadow-xs">
+      <div className="flex items-center gap-2">
+        <CheckCircleIcon className="size-5 shrink-0 text-emerald-600" />
+        <span>
+          Fórmula em uso nesta sessão: <strong>{config.tabela.nome}</strong>
+        </span>
+      </div>
+      <span className="shrink-0 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-bold text-white">
+        Aplicada
+      </span>
+    </div>
+  );
+}
+
 export function PerformanceTablesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -75,9 +95,26 @@ export function PerformanceTablesPage() {
   const [query, setQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const allTables = useMemo(() => {
+    if (!sessionConfig?.tabela) return tables;
+    const alreadyInList = tables.some((t) => isTableApplied(t, sessionConfig));
+    if (alreadyInList) return tables;
+
+    const externalAppliedTable: PerformanceTableSummary = {
+      id: sessionConfig.tabela.id,
+      nome: sessionConfig.tabela.nome,
+      descricao: 'Fórmula em uso nesta sessão (aplicada por outro tutor).',
+      quantidadeCriterios: sessionConfig.tabela.criterios?.length ?? 0,
+      origem: 'TURMA',
+      autor: { id: null, nome: 'Outro tutor da turma' },
+      emUso: 1,
+    };
+    return [externalAppliedTable, ...tables];
+  }, [tables, sessionConfig]);
+
   const filtered = useMemo(
-    () => tables.filter((t) => t.nome.toLowerCase().includes(query.toLowerCase())),
-    [tables, query],
+    () => allTables.filter((t) => t.nome.toLowerCase().includes(query.toLowerCase())),
+    [allTables, query],
   );
 
   const isRoomContext = Boolean(target?.roomId);
@@ -91,10 +128,7 @@ export function PerformanceTablesPage() {
   }, [filtered, isRoomContext]);
 
   const checkApplied = useCallback(
-    (t: PerformanceTableSummary) => {
-      if (!sessionConfig?.tabela) return false;
-      return sessionConfig.tabela.id === t.id || sessionConfig.tabela.nome === t.nome;
-    },
+    (table: PerformanceTableSummary) => isTableApplied(table, sessionConfig),
     [sessionConfig],
   );
 
@@ -106,6 +140,7 @@ export function PerformanceTablesPage() {
       </div>
 
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
+        {target?.sessionId && <ActiveSessionFormulaBanner config={sessionConfig} />}
         {error && <Alert tone="error">{error.message}</Alert>}
         {isLoading && (
           <div className="mt-10 flex justify-center">

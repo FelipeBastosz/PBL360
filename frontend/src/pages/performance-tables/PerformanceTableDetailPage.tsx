@@ -16,6 +16,7 @@ import { readApplyTarget } from '@/utils/navigationState';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
 import { ApplyScopeModal, IgnoredSessionsModal } from './components/ApplyScopeModal';
+import { isTableApplied } from './utils/isTableApplied';
 
 function DetailHeader({ title }: { title: string }) {
   const { user } = useAuth();
@@ -25,9 +26,10 @@ function DetailHeader({ title }: { title: string }) {
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => navigate(-1)}
             aria-label="Voltar"
-            className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
+            className="-ml-1 rounded-full p-2 transition-transform hover:bg-white/10 active:scale-90"
           >
             <ChevronLeftIcon className="size-6" strokeWidth={2} />
           </button>
@@ -63,28 +65,29 @@ function CriteriaListCard({ criteria }: { criteria: PerformanceTable['criterios'
   );
 }
 
-function isAlreadyApplied(
-  table: PerformanceTable,
-  sessionId?: string,
-  config?: SessionEvaluationConfig | null,
-): boolean {
-  try {
-    if (sessionId) {
-      const appliedId = sessionStorage.getItem(`pbl360_applied_table_${sessionId}`);
-      if (appliedId) return appliedId === table.id;
-    }
-  } catch {
-    // ignore
-  }
-  if (!config?.tabela) return false;
-  if (config.tabela.id === table.id) return true;
-  const configName = (config.tabela.nome ?? '').trim().toLowerCase();
-  const tableName = (table.nome ?? '').trim().toLowerCase();
-  return configName !== '' && configName === tableName;
-}
-
-function useApplyNavigation(target: ReturnType<typeof readApplyTarget>) {
+function useApplyTable(table: PerformanceTable | null) {
+  const target = readApplyTarget(useLocation().state);
+  const { notify } = useToast();
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [ignoredList, setIgnoredList] = useState<SessionTableIgnored[]>([]);
+  const [sessionConfig, setSessionConfig] = useState<SessionEvaluationConfig | null>(null);
+  const { run, isLoading, error } = useAsyncAction(sessionService.applyTable);
+
+  const fetchConfig = useCallback(() => {
+    const sessionId = target?.sessionId;
+    if (!sessionId) return;
+
+    sessionService
+      .getEvaluationConfig(sessionId)
+      .then(setSessionConfig)
+      .catch(() => undefined);
+  }, [target?.sessionId]);
+
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
+
   const goToHub = useCallback(() => {
     if (!target?.sessionId) return;
     navigate(
@@ -95,47 +98,26 @@ function useApplyNavigation(target: ReturnType<typeof readApplyTarget>) {
       { replace: true },
     );
   }, [navigate, target]);
-  return { goToHub };
-}
-
-function useApplyTable(table: PerformanceTable | null) {
-  const target = readApplyTarget(useLocation().state);
-  const { notify } = useToast();
-  const { goToHub } = useApplyNavigation(target);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [ignoredList, setIgnoredList] = useState<SessionTableIgnored[]>([]);
-  const [sessionConfig, setSessionConfig] = useState<SessionEvaluationConfig | null>(null);
-  const { run, isLoading, error } = useAsyncAction(sessionService.applyTable);
-
-  useEffect(() => {
-    if (!target?.sessionId || typeof sessionService.getEvaluationConfig !== 'function') return;
-    sessionService
-      .getEvaluationConfig(target.sessionId)
-      .then(setSessionConfig)
-      .catch(() => undefined);
-  }, [target?.sessionId]);
 
   const handleApply = async (aplicarNasSeguintes: boolean) => {
     if (!target || !table) return;
     const res = await run(target.sessionId, { tabelaId: table.id, aplicarNasSeguintes });
     if (!res.ok) return;
 
-    // Atualiza a memória permanente com a nova tabela aplicada
-    try {
-      sessionStorage.setItem(`pbl360_applied_table_${target.sessionId}`, table.id);
-    } catch {
-      // ignore
-    }
-
+    fetchConfig();
     setIsModalOpen(false);
     notify({ tone: 'success', message: 'Fórmula aplicada com sucesso.' });
-    if (res.data?.sessoesIgnoradas?.length > 0) setIgnoredList(res.data.sessoesIgnoradas);
-    else goToHub();
+
+    if (res.data?.sessoesIgnoradas?.length > 0) {
+      setIgnoredList(res.data.sessoesIgnoradas);
+    } else {
+      goToHub();
+    }
   };
 
   return {
     canApply: target !== null,
-    isAlreadyApplied: table ? isAlreadyApplied(table, target?.sessionId, sessionConfig) : false,
+    isAlreadyApplied: isTableApplied(table, sessionConfig),
     isSessionLocked: sessionConfig?.bloqueada ?? false,
     currentTableName: sessionConfig?.tabela?.nome ?? null,
     isModalOpen,
@@ -159,56 +141,10 @@ function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: 
       )}
       {isLocked && (
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-          <LockClosedIcon className="size-4 shrink-0 mt-0.5 text-amber-600" />
+          <LockClosedIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
           <span>Esta sessão já possui avaliações enviadas e a tabela não pode ser alterada.</span>
         </div>
       )}
-    </>
-  );
-}
-
-function DetailBody({
-  table,
-  apply,
-}: {
-  table: PerformanceTable;
-  apply: ReturnType<typeof useApplyTable>;
-}) {
-  return (
-    <>
-      <DetailBanners isApplied={apply.isAlreadyApplied} isLocked={apply.isSessionLocked} />
-      {table.descricao && (
-        <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
-          <p className="mt-1 text-sm text-muted">{table.descricao}</p>
-        </div>
-      )}
-      <CriteriaListCard criteria={table.criterios} />
-      {apply.canApply && !apply.isAlreadyApplied && (
-        <div className="mt-8">
-          <button
-            type="button"
-            onClick={apply.openModal}
-            disabled={apply.isApplying || apply.isSessionLocked}
-            className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Aplicar fórmula
-          </button>
-        </div>
-      )}
-      <ApplyScopeModal
-        isOpen={apply.isModalOpen}
-        isLoading={apply.isApplying}
-        currentTableName={apply.currentTableName}
-        errorMessage={apply.applyError?.message}
-        onConfirm={apply.handleApply}
-        onClose={apply.closeModal}
-      />
-      <IgnoredSessionsModal
-        isOpen={apply.ignoredList.length > 0}
-        ignored={apply.ignoredList}
-        onClose={apply.closeIgnored}
-      />
     </>
   );
 }
@@ -235,7 +171,43 @@ export default function PerformanceTableDetailPage() {
           </div>
         )}
         {error && <Alert tone="error">{error.message}</Alert>}
-        {table && <DetailBody table={table} apply={apply} />}
+        {table && (
+          <>
+            <DetailBanners isApplied={apply.isAlreadyApplied} isLocked={apply.isSessionLocked} />
+            {table.descricao && (
+              <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
+                <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
+                <p className="mt-1 text-sm text-muted">{table.descricao}</p>
+              </div>
+            )}
+            <CriteriaListCard criteria={table.criterios} />
+            {apply.canApply && !apply.isAlreadyApplied && (
+              <div className="mt-8">
+                <button
+                  type="button"
+                  onClick={apply.openModal}
+                  disabled={apply.isApplying || apply.isSessionLocked}
+                  className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Aplicar fórmula
+                </button>
+              </div>
+            )}
+            <ApplyScopeModal
+              isOpen={apply.isModalOpen}
+              isLoading={apply.isApplying}
+              currentTableName={apply.currentTableName}
+              errorMessage={apply.applyError?.message}
+              onConfirm={apply.handleApply}
+              onClose={apply.closeModal}
+            />
+            <IgnoredSessionsModal
+              isOpen={apply.ignoredList.length > 0}
+              ignored={apply.ignoredList}
+              onClose={apply.closeIgnored}
+            />
+          </>
+        )}
       </main>
     </div>
   );
