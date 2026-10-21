@@ -12,16 +12,27 @@ import { ListGradeRecalculationNoticesUseCase } from './application/use-cases/li
 import { GRADE_RECALCULATION_REPOSITORY } from './domain/repositories/grade-recalculation.repository';
 import { PgGradeRecalculationRepository } from './infrastructure/database/pg-grade-recalculation.repository';
 
+import { ReportFilesModule } from '@/report-files/report-files.module';
+import { FeedbacksModule } from '@/feedbacks/feedbacks.module';
+import { ExportProblemReportUseCase } from './application/use-cases/export-problem-report.use-case';
+import { ProblemReportController } from './infrastructure/http/problem-report.controller';
+
 @Module({
-  imports: [RoomsModule, ProblemsModule],
-  controllers: [GradesController, GradeRecalculationNoticesController, ClassReportController],
+  imports: [RoomsModule, ProblemsModule, ReportFilesModule, FeedbacksModule],
+  controllers: [
+    GradesController,
+    GradeRecalculationNoticesController,
+    ClassReportController,
+    ProblemReportController,
+  ],
   providers: [
     GetProblemGradesUseCase,
     GetClassFinalReportUseCase,
+    ExportProblemReportUseCase,
     { provide: GRADES_REPOSITORY, useClass: PgGradesRepository },
     ListGradeRecalculationNoticesUseCase,
     { provide: GRADE_RECALCULATION_REPOSITORY, useClass: PgGradeRecalculationRepository },
   ],
-  exports: [GetProblemGradesUseCase, GetClassFinalReportUseCase],
+  exports: [GetProblemGradesUseCase, GetClassFinalReportUseCase, ExportProblemReportUseCase],
 })
 export class GradesModule {}

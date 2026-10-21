@@ -1,0 +1,34 @@
+import { Controller, Get, Query, StreamableFile } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
+import { Roles } from '@/shared/decorators/roles.decorator';
+import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
+import { UserType } from '@/users/domain/enums/user-type.enum';
+import { ReportExportQueryDto } from '@/report-files/application/dtos/report-export-query.dto';
+import { toReportFileResponse } from '@/report-files/infrastructure/http/report-file-response';
+import { ExportProblemReportUseCase } from '../../application/use-cases/export-problem-report.use-case';
+import { ExportProblemReportSwaggerDocs } from './problem-report.swagger';
+
+@ApiTags('Problemas')
+@Controller('salas/:salaId/problemas/:problemaId/relatorio')
+@Roles(UserType.TUTOR)
+export class ProblemReportController {
+  constructor(private readonly exportProblemReport: ExportProblemReportUseCase) {}
+
+  @Get('exportacao')
+  @ExportProblemReportSwaggerDocs
+  async export(
+    @UuidParam('salaId') roomId: string,
+    @UuidParam('problemaId') problemId: string,
+    @Query() query: ReportExportQueryDto,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<StreamableFile> {
+    const file = await this.exportProblemReport.execute({
+      roomId,
+      problemId,
+      tutorId,
+      format: query.formato,
+    });
+    return toReportFileResponse(file);
+  }
+}

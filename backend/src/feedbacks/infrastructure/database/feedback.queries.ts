@@ -146,3 +146,34 @@ export const toRevisionParams = (revision: FeedbackRevision): unknown[] => [
   revision.editedBy,
   revision.editedAt,
 ];
+
+export const FIND_PROBLEM_FEEDBACKS_WITH_DETAILS_QUERY = `
+  SELECT
+    f.id,
+    f.escopo AS scope,
+    f.autor_id AS "authorId",
+    u_author.name AS "authorName",
+    f.destinatario_id AS "recipientId",
+    u_rec.name AS "recipientName",
+    f.sessao_id AS "sessionId",
+    s.title AS "sessionTitle",
+    f.nota AS score,
+    f.texto AS text,
+    f.criado_em AS "createdAt",
+    f.editado_em AS "editedAt"
+  FROM feedback f
+  JOIN users u_author ON u_author.id = f.autor_id
+  LEFT JOIN users u_rec ON u_rec.id = f.destinatario_id
+  LEFT JOIN sessions s ON s.id = f.sessao_id
+  WHERE f.problema_id = $1
+  ORDER BY
+    CASE f.escopo
+      WHEN 'PROBLEMA' THEN 1
+      WHEN 'SESSAO' THEN 2
+      WHEN 'ALUNO' THEN 3
+      ELSE 4
+    END,
+    s.order_index ASC NULLS LAST,
+    u_rec.name ASC NULLS LAST,
+    f.criado_em ASC;
+`;
