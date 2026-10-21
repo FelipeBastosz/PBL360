@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode, SVGProps } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DocumentTextIcon, UserGroupIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 import { ROUTES } from '@/routes/paths';
 import { INTERACTIVE_CARD_CLASS } from '@/components/ui/cardStyles';
@@ -36,6 +36,9 @@ function ActionContent({
 }
 
 export function RoomTopActions({ isProfessor, roomId, onInvite }: RoomTopActionsProps) {
+  const navigate = useNavigate();
+  const finalReportPath = ROUTES.roomFinalReport.replace(':id', roomId);
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {isProfessor && (
@@ -44,7 +47,7 @@ export function RoomTopActions({ isProfessor, roomId, onInvite }: RoomTopActions
         </button>
       )}
       {isProfessor && (
-        <button type="button" onClick={() => {}} className={ACTION_CLASS}>
+        <button type="button" onClick={() => navigate(finalReportPath)} className={ACTION_CLASS}>
           <ActionContent
             Icon={DocumentTextIcon}
             title="Relatório Final"

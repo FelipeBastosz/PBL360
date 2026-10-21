@@ -19,6 +19,8 @@ describe('SavePeerEvaluationUseCase', () => {
     recordPeerEvaluation: jest.fn(),
   };
 
+  const now = new Date('2026-10-20T15:00:00Z');
+
   const activeSession = {
     id: 'sess-1',
     peerEvalReleased: true,
@@ -137,6 +139,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-absent',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow(LockedError);
     await expect(
@@ -146,6 +149,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-absent',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow('Apenas alunos que participaram da sessão podem avaliar colegas.');
   });
@@ -168,6 +172,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow(UnprocessableEntityError);
     await expect(
@@ -177,6 +182,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow('O colega não participou da sessão.');
   });
@@ -199,6 +205,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [{ criterionId: 'crit-1', score: 10 }],
         enviar: true,
+        now,
       }),
     ).rejects.toThrow(ConflictError);
   });
@@ -221,6 +228,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [{ criterionId: 'crit-1', score: 12 }],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow(UnprocessableEntityError);
   });
@@ -254,6 +262,7 @@ describe('SavePeerEvaluationUseCase', () => {
       studentId: 'student-1',
       itens: [{ criterionId: 'crit-1', score: 7 }],
       enviar: false,
+      now,
     });
 
     expect(result).toEqual({
@@ -295,6 +304,7 @@ describe('SavePeerEvaluationUseCase', () => {
       studentId: 'student-1',
       itens: [{ criterionId: 'crit-1', score: 9.5 }],
       enviar: true,
+      now,
     });
 
     expect(result).toEqual({

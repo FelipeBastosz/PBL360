@@ -21,7 +21,10 @@ import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 
 import { CreateRoomDto } from '../../application/dtos/create-room.dto';
-import type { RoomResponseDto } from '../../application/dtos/room-response.dto';
+import type {
+  RoomResponseDto,
+  RoomSummaryResponseDto,
+} from '../../application/dtos/room-response.dto';
 import { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 import { CreateRoomUseCase } from '../../application/use-cases/create-room.use-case';
 import { DeleteRoomUseCase } from '../../application/use-cases/delete-room.use-case';
@@ -38,7 +41,12 @@ import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
 import { RoomEntryThrottlerGuard } from '@/shared/throttling/room-entry-throttler.guard';
 import { AUTH_THROTTLER, ROOM_ENTRY_LIMIT } from '@/shared/throttling/throttlers';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
-import { roomCodeFromInviteLink, toRoomChanges, toRoomResponse } from './room.mapper';
+import {
+  roomCodeFromInviteLink,
+  toRoomChanges,
+  toRoomResponse,
+  toRoomSummaryResponse,
+} from './room.mapper';
 import {
   CreateRoomSwaggerDocs,
   DeleteRoomSwaggerDocs,
@@ -135,10 +143,10 @@ export class RoomsController {
 
   @Get()
   @ListRoomsSwaggerDocs
-  async list(@AuthenticatedUserId() tutorId: string): Promise<RoomResponseDto[]> {
+  async list(@AuthenticatedUserId() tutorId: string): Promise<RoomSummaryResponseDto[]> {
     const rooms = await this.listRoomsUseCase.execute(tutorId);
 
-    return rooms.map(toRoomResponse);
+    return rooms.map(toRoomSummaryResponse);
   }
 
   @Get(':id')
