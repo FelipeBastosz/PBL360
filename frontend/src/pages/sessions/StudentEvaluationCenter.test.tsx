@@ -99,4 +99,46 @@ describe('StudentEvaluationCenter', () => {
       expect(screen.getByText('Indisponível')).toBeInTheDocument();
     });
   });
+
+  it('renders deadline when provided in summary', async () => {
+    vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
+      ...mockReleasedSummary,
+      autoavaliacao: {
+        ...mockReleasedSummary.autoavaliacao,
+        prazo: '2026-10-15T17:00:00.000Z',
+      },
+      pares: {
+        ...mockReleasedSummary.pares,
+        prazo: '2026-10-20T23:59:00.000Z',
+      },
+    });
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Prazo: Até 15 de out\./i)).toBeInTheDocument();
+      expect(screen.getByText(/Prazo: Até 20 de out\./i)).toBeInTheDocument();
+    });
+  });
+
+  it('renders friendly empty state when student did not participate in the session', async () => {
+    vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
+      ...mockLockedSummary,
+      autoavaliacao: {
+        liberada: false,
+        prazo: null,
+        status: 'NAO_PARTICIPOU',
+      },
+    });
+    renderComponent();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Você não participou desta sessão, portanto não possui avaliações disponíveis.',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /autoavaliação/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /avaliar colegas/i })).not.toBeInTheDocument();
+    });
+  });
 });

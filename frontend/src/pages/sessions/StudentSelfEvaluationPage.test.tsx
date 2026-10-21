@@ -26,6 +26,7 @@ vi.mock('@/hooks/useToast', () => ({
 
 const mockAssessmentData: SelfAssessmentResponse = {
   status: 'PENDENTE',
+  prazo: '2026-10-15T17:00:00.000Z',
   enviadaEm: null,
   notaSessao: null,
   criterios: [
@@ -66,7 +67,7 @@ describe('StudentSelfEvaluationPage', () => {
     );
   };
 
-  it('loads and displays criteria, student data, and session title from backend', async () => {
+  it('loads and displays criteria, student data, session title, and deadline from backend', async () => {
     vi.mocked(evaluationService.getSelfAssessment).mockResolvedValue(mockAssessmentData);
     renderComponent();
 
@@ -75,16 +76,17 @@ describe('StudentSelfEvaluationPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Sessão 2 - Fechamento')).toBeInTheDocument();
+      expect(screen.getByText(/Prazo: Até 15 de out\./i)).toBeInTheDocument();
       const segmentoGroup = screen.getByRole('group', { name: 'Segmento' });
       expect(within(segmentoGroup).getByText('8')).toBeInTheDocument();
     });
   });
 
-  it('increments score and submits updated assessment', async () => {
+  it('auto-saves draft with debounce (enviar: false) when score changes', async () => {
     vi.mocked(evaluationService.getSelfAssessment).mockResolvedValue(mockAssessmentData);
     vi.mocked(evaluationService.saveSelfAssessment).mockResolvedValue({
       ...mockAssessmentData,
-      status: 'ENVIADA',
+      status: 'RASCUNHO',
     });
 
     renderComponent();
@@ -99,12 +101,54 @@ describe('StudentSelfEvaluationPage', () => {
 
     expect(within(segmentoGroup).getByText('9')).toBeInTheDocument();
 
-    const saveButton = screen.getByRole('button', { name: 'Salvar Autoavaliação' });
-    await userEvent.click(saveButton);
+    await waitFor(
+      () => {
+        expect(evaluationService.saveSelfAssessment).toHaveBeenCalledWith('sess-123', {
+          itens: [
+            { criterioId: 'crit-1', nota: 9 },
+            { criterioId: 'crit-2', nota: 6 },
+          ],
+          enviar: false,
+        });
+      },
+      { timeout: 1500 },
+    );
+  });
+
+  it('opens confirmation modal and submits final assessment only after confirmation', async () => {
+    vi.mocked(evaluationService.getSelfAssessment).mockResolvedValue(mockAssessmentData);
+    vi.mocked(evaluationService.saveSelfAssessment).mockResolvedValue({
+      ...mockAssessmentData,
+      status: 'ENVIADA',
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByRole('group', { name: 'Segmento' })).toBeInTheDocument();
+    });
+
+    const sendButton = screen.getByRole('button', { name: 'Enviar avaliação' });
+    await userEvent.click(sendButton);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Confirmar envio da avaliação?')).toBeInTheDocument();
+    expect(
+      screen.getByText('Após o envio definitivo, não será possível alterar as notas.'),
+    ).toBeInTheDocument();
+
+    // Not yet called with enviar: true
+    expect(evaluationService.saveSelfAssessment).not.toHaveBeenCalledWith('sess-123', {
+      itens: expect.any(Array),
+      enviar: true,
+    });
+
+    const confirmButton = screen.getByRole('button', { name: 'Confirmar Envio' });
+    await userEvent.click(confirmButton);
 
     expect(evaluationService.saveSelfAssessment).toHaveBeenCalledWith('sess-123', {
       itens: [
-        { criterioId: 'crit-1', nota: 9 },
+        { criterioId: 'crit-1', nota: 8 },
         { criterioId: 'crit-2', nota: 6 },
       ],
       enviar: true,
@@ -112,6 +156,24 @@ describe('StudentSelfEvaluationPage', () => {
     expect(mockNotify).toHaveBeenCalledWith({
       tone: 'success',
       message: 'Autoavaliação enviada com sucesso!',
+    });
+  });
+
+  it('renders friendly empty state when student did not participate', async () => {
+    vi.mocked(evaluationService.getSelfAssessment).mockResolvedValue({
+      ...mockAssessmentData,
+      status: 'NAO_PARTICIPOU',
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Você não participou desta sessão, portanto não possui avaliações disponíveis.',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Enviar avaliação' })).not.toBeInTheDocument();
     });
   });
 });

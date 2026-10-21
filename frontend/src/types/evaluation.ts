@@ -107,11 +107,13 @@ export type SessionEvaluationHistoryResponse = {
 };
 
 export type SelfAssessmentResponse = {
-  status: EvaluationStatus;
+  status: EvaluationStatus | 'NAO_PARTICIPOU' | 'INDISPONIVEL' | 'ENCERRADA';
+  prazo?: string | null;
   enviadaEm: string | null;
   itens: CriterionScore[];
   criterios: EvaluationCriterion[];
   notaSessao: number | null;
+  participou?: boolean;
 };
 
 export type SaveSelfAssessmentPayload = {
@@ -130,6 +132,7 @@ export type SessionPeersResponse = {
   liberada: boolean;
   prazo: string | null;
   colegas: SessionPeerStudent[];
+  participou?: boolean;
 };
 
 export type PeerEvaluationResponse = {
@@ -167,4 +170,5 @@ export type StudentEvaluationSummaryResponse = {
   autoavaliacao: StudentSelfAssessmentSummary;
   pares: StudentPeerAssessmentSummary;
   feedback: StudentFeedbackSummary;
+  participou?: boolean;
 };
