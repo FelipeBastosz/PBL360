@@ -58,6 +58,8 @@ export class MemberSessionsController {
       problemaId: problem.id,
       salaId: roomId,
       problemaTitulo: problem.title,
+      encerradaEm: session.closedAt,
+      encerradaPor: session.closedBy,
     };
   }
 }

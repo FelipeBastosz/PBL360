@@ -43,6 +43,18 @@ export class PgSessionRepository implements SessionRepository {
     });
   }
 
+  async close(sessionId: string, tutorId: string, closedAt: Date): Promise<Session> {
+    const rows = await this.sessions.query<SessionRow[]>(
+      `UPDATE sessions
+       SET status = 'concluida', closed_at = COALESCE(closed_at, $2),
+           closed_by = COALESCE(closed_by, $3), updated_at = now()
+       WHERE id = $1
+       RETURNING ${SESSION_COLUMNS};`,
+      [sessionId, closedAt, tutorId],
+    );
+    return this.toEntity(requireFirstRow(rows, 'Session not found after close.'));
+  }
+
   async findById(id: string): Promise<Session | null> {
     const rows = await this.sessions.query<SessionRow[]>(
       `SELECT ${SESSION_COLUMNS} FROM sessions WHERE id = $1 LIMIT 1;`,

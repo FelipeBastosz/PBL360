@@ -13,6 +13,7 @@ export interface SessionDeletionImpact {
 export interface SessionRepository {
   create(session: Session): Promise<Session>;
   save(session: Session): Promise<Session>;
+  close(sessionId: string, tutorId: string, closedAt: Date): Promise<Session>;
   findById(id: string): Promise<Session | null>;
   findByProblemId(problemId: string): Promise<Session[]>;
   getDeletionImpact(sessionId: string): Promise<SessionDeletionImpact>;

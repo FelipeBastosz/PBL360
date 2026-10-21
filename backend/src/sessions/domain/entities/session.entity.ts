@@ -65,6 +65,12 @@ export class Session {
   @Column({ type: 'varchar', length: 30, default: 'agendada' })
   status: string;
 
+  @Column({ name: 'closed_at', type: 'timestamptz', nullable: true, default: null })
+  closedAt: Date | null;
+
+  @Column({ name: 'closed_by', type: 'uuid', nullable: true, default: null })
+  closedBy: string | null;
+
   @Column({ name: 'self_eval_released', type: 'boolean', default: false })
   selfEvalReleased: boolean;
 

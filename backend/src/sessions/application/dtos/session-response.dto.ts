@@ -26,6 +26,12 @@ export class SessionDetailResponseDto extends SessionListResponseDto {
 
   @ApiProperty({ format: 'uuid' })
   salaId: string;
+
+  @ApiProperty({ format: 'date-time', nullable: true })
+  encerradaEm: Date | null;
+
+  @ApiProperty({ format: 'uuid', nullable: true })
+  encerradaPor: string | null;
 }
 
 export class SessionCreatedResponseDto extends SessionListResponseDto {

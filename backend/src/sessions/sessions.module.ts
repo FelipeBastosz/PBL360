@@ -43,6 +43,8 @@ import { SESSION_ATTACHMENT_REPOSITORY } from './domain/repositories/session-att
 import { PgSessionAttachmentRepository } from './infrastructure/database/pg-session-attachment.repository';
 import { SessionEvaluationConfigurationController } from './infrastructure/http/session-evaluation-configuration.controller';
 import { SessionEvaluationConfigurationService } from './application/services/session-evaluation-configuration.service';
+import { CloseSessionUseCase } from './application/use-cases/close-session.use-case';
+import { CloseSessionController } from './infrastructure/http/close-session.controller';
 
 import { SessionTableEditingController } from './infrastructure/http/session-table-editing.controller';
 import { GetSessionTableEditPermissionsUseCase } from './application/use-cases/get-session-table-edit-permissions.use-case';
@@ -65,9 +67,11 @@ import { PgSessionTableEditingRepository } from './infrastructure/database/pg-se
     SessionAttachmentsController,
     EvaluationReleasesController,
     SessionEvaluationConfigurationController,
+    CloseSessionController,
   ],
   providers: [
     CreateSessionUseCase,
+    CloseSessionUseCase,
     GetSessionTableEditPermissionsUseCase,
     EditSessionTableUseCase,
     { provide: SESSION_TABLE_EDITING_REPOSITORY, useClass: PgSessionTableEditingRepository },

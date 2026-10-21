@@ -26,6 +26,8 @@ export const toSessionDetailResponse = (
   ...toSessionResponse(session),
   problemaId: problemId,
   salaId: roomId,
+  encerradaEm: session.closedAt,
+  encerradaPor: session.closedBy,
 });
 
 export const toSessionCreatedResponse = (

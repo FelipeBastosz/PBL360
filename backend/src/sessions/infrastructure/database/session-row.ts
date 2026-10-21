@@ -8,6 +8,8 @@ export interface SessionRow {
   date: string;
   orderIndex: number;
   status: string;
+  closedAt: Date | null;
+  closedBy: string | null;
   selfEvalReleased: boolean;
   peerEvalReleased: boolean;
   selfEvalDeadline: Date | null;
@@ -28,6 +30,8 @@ export const SESSION_COLUMNS = `
   to_char(date, 'YYYY-MM-DD') AS date,
   order_index AS "orderIndex",
   status,
+  closed_at AS "closedAt",
+  closed_by AS "closedBy",
   self_eval_released AS "selfEvalReleased",
   peer_eval_released AS "peerEvalReleased",
   self_eval_deadline AS "selfEvalDeadline",
