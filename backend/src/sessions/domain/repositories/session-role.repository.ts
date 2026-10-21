@@ -19,4 +19,5 @@ export interface SessionRoleRepository {
     roleScore: number | null,
     transfer: boolean,
   ): Promise<{ studentId: string; role: SessionRole | null; roleScore: number | null }>;
+  removeForStudents(sessionId: string, studentIds: string[]): Promise<void>;
 }
