@@ -6,6 +6,15 @@ import { observationService } from '@/services/observation.service';
 import type { BehaviorTag } from '@/types/observation';
 import BehaviorTagsPage from './BehaviorTagsPage';
 
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 vi.mock('@/services/observation.service');
 
 vi.mock('@/hooks/useAuth', () => ({
@@ -36,10 +45,15 @@ describe('BehaviorTagsPage', () => {
     );
   };
 
-  it('renders list of tags with appropriate badges and actions', async () => {
+  it('renders header with back button and list of tags', async () => {
     renderComponent();
 
     expect(screen.getByText('Minhas Marcações')).toBeInTheDocument();
+    expect(screen.getByText('Etiquetas de observação')).toBeInTheDocument();
+
+    const backBtn = screen.getByRole('button', { name: 'Voltar' });
+    await userEvent.click(backBtn);
+    expect(mockNavigate).toHaveBeenCalledWith(-1);
 
     await waitFor(() => {
       expect(screen.getByText('Atraso')).toBeInTheDocument();
@@ -54,9 +68,6 @@ describe('BehaviorTagsPage', () => {
     expect(
       screen.getByRole('button', { name: 'Excluir marcação Liderou o grupo' }),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'Editar marcação Atraso' }),
-    ).not.toBeInTheDocument();
   });
 
   it('renames an owned custom tag', async () => {

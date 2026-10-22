@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { AppHeader } from '@/components/layout/AppHeader';
+import { useNavigate } from 'react-router-dom';
+import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { BackHeader } from '@/components/layout/BackHeader';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { CARD_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
@@ -158,15 +159,15 @@ function TagItemRow({
             type="button"
             onClick={() => setIsEditing(true)}
             aria-label={`Editar marcação ${tag.nome}`}
-            className="rounded-lg p-1.5 text-muted transition hover:bg-brand-50 hover:text-brand-900 active:scale-90"
+            className="rounded-lg p-1.5 text-brand-900 transition hover:bg-brand-50 active:scale-90"
           >
-            <PencilSquareIcon className="size-5" />
+            <PencilIcon className="size-5" />
           </button>
           <button
             type="button"
             onClick={() => onDelete(tag.id)}
             aria-label={`Excluir marcação ${tag.nome}`}
-            className="rounded-lg p-1.5 text-muted transition hover:bg-danger-soft hover:text-danger active:scale-90"
+            className="rounded-lg p-1.5 text-danger transition hover:bg-danger-soft active:scale-90"
           >
             <TrashIcon className="size-5" />
           </button>
@@ -177,6 +178,7 @@ function TagItemRow({
 }
 
 export default function BehaviorTagsPage() {
+  const navigate = useNavigate();
   const { notify } = useToast();
   const [tags, setTags] = useState<BehaviorTag[]>([]);
 
@@ -222,14 +224,12 @@ export default function BehaviorTagsPage() {
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
-      <AppHeader />
+      <BackHeader
+        title="Minhas Marcações"
+        subtitle="Etiquetas de observação"
+        onBack={() => navigate(-1)}
+      />
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-6')}>
-        <div>
-          <h1 className="text-xl font-bold text-brand-900">Minhas Marcações</h1>
-          <p className="text-sm text-muted">
-            Gerencie as etiquetas de observação usadas nas sessões.
-          </p>
-        </div>
         {error && <Alert tone="error">{error.message}</Alert>}
         <CreateTagForm onCreate={handleCreate} />
         {isLoading ? (
