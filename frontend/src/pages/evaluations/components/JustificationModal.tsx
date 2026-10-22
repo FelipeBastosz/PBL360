@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 type Props = {
   isOpen: boolean;
@@ -73,6 +74,7 @@ function JustificationForm({
 }
 
 export function JustificationModal({ isOpen, isLoading, onConfirm, onCancel }: Props) {
+  useEscapeKey(isOpen, onCancel, isLoading);
   if (!isOpen) return null;
 
   return (

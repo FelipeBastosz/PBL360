@@ -1,5 +1,6 @@
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import type { SessionDeletionImpact } from '@/types/session';
 
 type DeleteModalProps = {
@@ -59,6 +60,7 @@ export function DeleteSessionModal({
   onConfirm,
   onCancel,
 }: DeleteModalProps) {
+  useEscapeKey(isOpen, onCancel, isLoading);
   if (!isOpen) return null;
 
   return (

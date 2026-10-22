@@ -3,6 +3,7 @@ import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { Alert } from '@/components/ui/Alert';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 type ReleaseModalProps = {
   isOpen: boolean;
@@ -76,6 +77,7 @@ export function SetDeadlineModal({
   onCancel,
 }: ReleaseModalProps) {
   const [prazo, setPrazo] = useState('');
+  useEscapeKey(isOpen, onCancel, isLoading);
 
   if (!isOpen) return null;
 
@@ -140,6 +142,7 @@ export function ConfirmLockModal({
   onConfirm,
   onCancel,
 }: LockModalProps) {
+  useEscapeKey(isOpen, onCancel, isLoading);
   if (!isOpen) return null;
 
   return (

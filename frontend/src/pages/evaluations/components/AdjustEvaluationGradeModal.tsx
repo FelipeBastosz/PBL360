@@ -1,6 +1,7 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { getInitials } from '@/utils/initials';
 import { GradeInputs, JustificationField } from './AdjustEvaluationGradeFields';
 
@@ -38,17 +39,6 @@ function checkCanSubmit(
   const isGradeChanged = parsedGrade !== null && Math.abs(parsedGrade - currentGrade) >= 0.005;
   const isJustificationValid = justification.trim().length >= 10 && justification.length <= 500;
   return isGradeChanged && isJustificationValid;
-}
-
-function useEscapeKey(isOpen: boolean, onClose: () => void, disabled = false) {
-  useEffect(() => {
-    if (!isOpen || disabled) return undefined;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose, disabled]);
 }
 
 type ModalHeaderProps = {

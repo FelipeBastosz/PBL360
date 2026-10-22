@@ -5,6 +5,7 @@ import { TextField } from '@/components/ui/TextField';
 import { Alert } from '@/components/ui/Alert';
 import { useForm } from '@/hooks/useForm';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { sessionService } from '@/services/session.service';
 import { validateSessionForm, type SessionFormValues } from '@/utils/sessionsForm';
 import type { Session } from '@/types/session';
@@ -154,6 +155,8 @@ export function SessionFormModal({
     initialData,
     onSuccess,
   );
+
+  useEscapeKey(isOpen, onClose, isLoading);
 
   useEffect(() => {
     syncFormValues(setValue, isOpen ? initialData : null);
