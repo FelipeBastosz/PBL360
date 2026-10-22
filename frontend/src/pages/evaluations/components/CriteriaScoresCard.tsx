@@ -103,19 +103,19 @@ function CriterionRow({
 
   return (
     <div className="flex items-center justify-between border-b border-black/5 py-3.5 last:border-b-0">
-      <div className="flex flex-col pr-2">
-        <span className="text-sm font-semibold text-brand-900">{criterion.nome}</span>
+      <div className="flex min-w-0 flex-col pr-2">
+        <span className="text-sm font-semibold break-words text-brand-900">{criterion.nome}</span>
         <span className="text-xs text-muted">
           Peso {criterion.peso.toFixed(1).replace('.', ',')}
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <button
           type="button"
           aria-label={`Diminuir nota de ${criterion.nome}`}
           disabled={score <= 0}
           onClick={() => handleStep(-1)}
-          className="flex size-10 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-ink transition hover:bg-gray-50 active:scale-95 disabled:opacity-30"
+          className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-ink transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
         >
           −
         </button>
@@ -125,7 +125,7 @@ function CriterionRow({
           aria-label={`Aumentar nota de ${criterion.nome}`}
           disabled={score >= 10}
           onClick={() => handleStep(1)}
-          className="flex size-10 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-brand-900 transition hover:bg-gray-50 active:scale-95 disabled:opacity-30"
+          className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-brand-900 transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
         >
           +
         </button>
@@ -139,7 +139,9 @@ export function CriteriaScoresCard({ studentName, criteria, scores, onScoreChang
 
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
-      <h2 className="text-base font-bold text-brand-900">Notas do aluno: {studentName}</h2>
+      <h2 className="text-base font-bold break-words text-brand-900">
+        Notas do aluno: {studentName}
+      </h2>
       <div className="mt-3 flex flex-col">
         {criteria.map((criterion) => (
           <CriterionRow
