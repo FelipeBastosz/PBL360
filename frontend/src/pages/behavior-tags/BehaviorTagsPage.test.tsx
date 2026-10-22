@@ -45,29 +45,48 @@ describe('BehaviorTagsPage', () => {
     );
   };
 
-  it('renders header with back button and list of tags', async () => {
+  it('renders only custom tags and omits predefined tags', async () => {
     renderComponent();
 
     expect(screen.getByText('Minhas Marcações')).toBeInTheDocument();
-    expect(screen.getByText('Etiquetas de observação')).toBeInTheDocument();
-
-    const backBtn = screen.getByRole('button', { name: 'Voltar' });
-    await userEvent.click(backBtn);
-    expect(mockNavigate).toHaveBeenCalledWith(-1);
+    expect(screen.getByLabelText('Pesquisar marcação')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText('Atraso')).toBeInTheDocument();
-      expect(screen.getByText('Padrão')).toBeInTheDocument();
       expect(screen.getByText('Liderou o grupo')).toBeInTheDocument();
-      expect(screen.getByText('Personalizada')).toBeInTheDocument();
+      expect(screen.queryByText('Atraso')).not.toBeInTheDocument();
+      expect(screen.queryByText('Padrão')).not.toBeInTheDocument();
     });
 
-    expect(
-      screen.getByRole('button', { name: 'Editar marcação Liderou o grupo' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Excluir marcação Liderou o grupo' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar marcação Liderou o grupo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Excluir marcação Liderou o grupo' })).toBeInTheDocument();
+  });
+
+  it('clears input text when canceling creation', async () => {
+    renderComponent();
+
+    const openBtn = await screen.findByRole('button', { name: /criar nova marcação/i });
+    await userEvent.click(openBtn);
+
+    const input = screen.getByPlaceholderText('Nome da marcação');
+    await userEvent.type(input, 'Texto de teste');
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    await userEvent.click(screen.getByRole('button', { name: /criar nova marcação/i }));
+    expect(screen.getByPlaceholderText('Nome da marcação')).toHaveValue('');
+  });
+
+  it('filters tags by search query', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Liderou o grupo')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByLabelText('Pesquisar marcação');
+    await userEvent.type(searchInput, 'Inexistente');
+
+    expect(screen.queryByText('Liderou o grupo')).not.toBeInTheDocument();
+    expect(screen.getByText('Nenhuma marcação encontrada.')).toBeInTheDocument();
   });
 
   it('renames an owned custom tag', async () => {
