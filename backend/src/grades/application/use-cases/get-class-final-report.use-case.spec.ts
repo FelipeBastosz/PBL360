@@ -212,6 +212,15 @@ describe('GetClassFinalReportUseCase', () => {
     expect(result.alunos).toEqual([]);
   });
 
+  it('uses the existing presentation rounding for decimal averages', async () => {
+    getProblemGrades.execute
+      .mockResolvedValueOnce(buildGradeReport([{ alunoId: 'student-1', notaFinal: 8.3 }]))
+      .mockResolvedValueOnce(buildGradeReport([{ alunoId: 'student-1', notaFinal: 6.8 }]));
+
+    const result = await useCase.execute(input);
+    expect(result.alunos.find((student) => student.id === 'student-1')?.mediaGeral).toBe(7.6);
+  });
+
   it('handles room with no problems registered', async () => {
     problemRepository.findByRoomId.mockResolvedValue([]);
 
