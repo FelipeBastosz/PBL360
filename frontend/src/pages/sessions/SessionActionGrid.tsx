@@ -30,8 +30,8 @@ function ActionCardContent({
       <div className={`flex size-11 items-center justify-center rounded-xl ${color}`}>
         <Icon className="size-6" />
       </div>
-      <div>
-        <h3 className="text-sm font-bold text-ink">{title}</h3>
+      <div className="min-w-0">
+        <h3 className="text-sm font-bold break-words text-ink">{title}</h3>
         <p className="mt-1 text-xs text-muted leading-relaxed">{desc}</p>
       </div>
     </>
@@ -115,7 +115,7 @@ export function SessionActionGrid({
   } = useParams<{ roomId: string; problemId: string; sessionId: string }>();
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3 lg:row-span-2 [&>*]:min-w-0">
       <PrimaryActions basePath={basePath} isStudentEvalActive={isStudentEvalActive} />
       <ActionCard
         to={ROUTES.performanceTables}
