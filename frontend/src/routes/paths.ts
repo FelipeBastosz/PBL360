@@ -25,6 +25,7 @@ export const ROUTES = {
   performanceTableDetail: '/formulas/:id',
   managePerformanceTables: '/formulas/gerenciar',
   editPerformanceTable: '/formulas/:id/editar',
+  behaviorTags: '/marcacoes',
   problemSessions: '/turmas/:roomId/problemas/:problemId',
   manageSessions: '/turmas/:roomId/problemas/:problemId/sessoes/gerenciar',
   sessionHub: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId',
@@ -38,6 +39,8 @@ export const ROUTES = {
   studentEvaluation: '/sessoes/:sessionId/avaliacao/:studentId',
   sessionStudentEvaluation:
     '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId',
+  studentSelfEvaluation: '/sessoes/:sessionId/autoavaliacao',
+  studentPeerEvaluation: '/sessoes/:sessionId/avaliar-colegas',
   studentObservationTags: '/sessoes/:sessionId/avaliacao/:studentId/marcacoes',
   sessionStudentObservationTags:
     '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId/marcacoes',

@@ -1,6 +1,8 @@
 export type BehaviorTag = {
   id: string;
   nome: string;
+  predefinida?: boolean;
+  ativa?: boolean;
 };
 
 export type ObservationItem = {
