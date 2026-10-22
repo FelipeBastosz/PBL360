@@ -9,6 +9,20 @@ type Props = {
   onCancel: () => void;
 };
 
+function JustificationIntro() {
+  return (
+    <>
+      <h2 id="justification-modal-title" className="pr-8 text-base font-bold text-brand-900">
+        Justificativa da alteração
+      </h2>
+      <p className="text-xs leading-relaxed text-muted">
+        Esta avaliação já havia sido enviada. Informe uma justificativa (mínimo de 10 caracteres)
+        para registrar o ajuste.
+      </p>
+    </>
+  );
+}
+
 function JustificationForm({
   isLoading,
   onConfirm,
@@ -32,11 +46,7 @@ function JustificationForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      <h2 className="text-base font-bold text-brand-900">Justificativa da alteração</h2>
-      <p className="text-xs leading-relaxed text-muted">
-        Esta avaliação já havia sido enviada. Informe uma justificativa (mínimo de 10 caracteres)
-        para registrar o ajuste.
-      </p>
+      <JustificationIntro />
       <textarea
         rows={3}
         value={justificativa}
@@ -69,9 +79,10 @@ export function JustificationModal({ isOpen, isLoading, onConfirm, onCancel }: P
     <div
       role="dialog"
       aria-modal="true"
+      aria-labelledby="justification-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl">
         <button
           type="button"
           onClick={onCancel}

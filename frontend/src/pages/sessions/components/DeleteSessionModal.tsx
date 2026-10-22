@@ -68,7 +68,7 @@ export function DeleteSessionModal({
       aria-labelledby="delete-session-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative w-full max-w-sm rounded-[24px] border-2 border-danger bg-white p-6 shadow-2xl animate-pop-in">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 border-danger bg-white p-6 shadow-2xl animate-pop-in">
         <button
           type="button"
           onClick={isLoading ? undefined : onCancel}
@@ -85,7 +85,7 @@ export function DeleteSessionModal({
             <h2 id="delete-session-title" className="text-xl font-bold text-ink">
               Excluir sessão?
             </h2>
-            <p className="text-base font-semibold text-brand-900">{sessionTitle}</p>
+            <p className="text-base font-semibold break-words text-brand-900">{sessionTitle}</p>
             <div className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
               <p className="text-sm font-medium text-danger leading-relaxed">
                 Atenção: esta ação é irreversível e excluirá permanentemente esta sessão e todos os

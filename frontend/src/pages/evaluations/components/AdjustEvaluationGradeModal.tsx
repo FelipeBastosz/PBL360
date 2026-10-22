@@ -80,7 +80,7 @@ function ModalHeader({ student, hideNames, onClose, isLoading }: ModalHeaderProp
         onClick={onClose}
         disabled={isLoading}
         aria-label="Fechar"
-        className="rounded-lg bg-gray-100 p-1.5 text-gray-500 transition hover:bg-gray-200 hover:text-ink active:scale-95 disabled:opacity-50"
+        className="shrink-0 rounded-lg bg-gray-100 p-1.5 text-gray-500 transition hover:bg-gray-200 hover:text-ink active:scale-95 disabled:opacity-50"
       >
         <XMarkIcon className="size-5" />
       </button>
@@ -119,7 +119,7 @@ function AdjustEvaluationGradeForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative z-10 flex w-full max-w-md flex-col gap-4 rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-3xl"
+      className="relative z-10 flex max-h-full w-full max-w-md flex-col gap-4 overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-3xl"
     >
       <ModalHeader
         student={student}
