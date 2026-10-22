@@ -162,6 +162,51 @@ describe('UpdateEvaluationReleasesUseCase', () => {
     expect(repository.save).not.toHaveBeenCalled();
   });
 
+  it('rejects releasing self evaluation when tutor already submitted evaluations', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 0,
+      peerSubmitted: 0,
+      tutorSubmitted: 1,
+    });
+
+    await expect(
+      useCase.execute({ ...base, self: { released: true, deadline: null } }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects releasing peer evaluation when tutor already submitted evaluations', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 0,
+      peerSubmitted: 0,
+      tutorSubmitted: 1,
+    });
+
+    await expect(
+      useCase.execute({ ...base, peer: { released: true, deadline: null } }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('allows closing releases even when tutor already submitted evaluations', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 0,
+      peerSubmitted: 0,
+      tutorSubmitted: 1,
+    });
+
+    await expect(
+      useCase.execute({ ...base, self: { released: false, deadline: null } }),
+    ).resolves.toBeDefined();
+    expect(repository.save).toHaveBeenCalled();
+  });
+
   it('rejects a deadline in the past without saving anything', async () => {
     await expect(
       useCase.execute({

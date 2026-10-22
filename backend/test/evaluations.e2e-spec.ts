@@ -28,6 +28,9 @@ interface SummaryBody {
   notaSessao: number | null;
   presenca: null;
 }
+interface ErrorBody {
+  message: string;
+}
 
 describe('Tutor evaluations (e2e)', () => {
   let app: INestApplication;
@@ -565,5 +568,39 @@ describe('Tutor evaluations (e2e)', () => {
       { criterioId: firstCriterionId, nota: 7 },
     ]);
     await save({ itens: [{ criterioId: firstCriterionId, nota: 7 }], enviar: true }).expect(200);
+  });
+
+  it('rejects tutor evaluation when self assessment is released in the session', async () => {
+    await db.query('UPDATE sessions SET self_eval_released = true WHERE id = $1;', [sessionId]);
+
+    const res = await save({ itens: scores(), enviar: false }).expect(409);
+    expect((res.body as ErrorBody).message).toBe(
+      'A avaliação direta do tutor está bloqueada enquanto a autoavaliação ou pares estiver ativa na sessão.',
+    );
+
+    const submitRes = await save({ itens: scores(), enviar: true }).expect(409);
+    expect((submitRes.body as ErrorBody).message).toBe(
+      'A avaliação direta do tutor está bloqueada enquanto a autoavaliação ou pares estiver ativa na sessão.',
+    );
+  });
+
+  it('rejects tutor evaluation when peer assessment is released in the session', async () => {
+    await db.query('UPDATE sessions SET peer_eval_released = true WHERE id = $1;', [sessionId]);
+
+    const res = await save({ itens: scores(), enviar: false }).expect(409);
+    expect((res.body as ErrorBody).message).toBe(
+      'A avaliação direta do tutor está bloqueada enquanto a autoavaliação ou pares estiver ativa na sessão.',
+    );
+  });
+
+  it('allows tutor evaluation after releases are turned off', async () => {
+    await db.query('UPDATE sessions SET self_eval_released = true WHERE id = $1;', [sessionId]);
+    await save({ itens: scores(), enviar: false }).expect(409);
+
+    await db.query(
+      'UPDATE sessions SET self_eval_released = false, peer_eval_released = false WHERE id = $1;',
+      [sessionId],
+    );
+    await save({ itens: scores(), enviar: false }).expect(200);
   });
 });

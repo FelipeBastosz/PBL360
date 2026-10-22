@@ -1,5 +1,9 @@
 import type { EntityManager } from 'typeorm';
-import { NotFoundError, UnprocessableEntityError } from '@/shared/errors/application.error';
+import {
+  ConflictError,
+  NotFoundError,
+  UnprocessableEntityError,
+} from '@/shared/errors/application.error';
 import type { SessionEvaluationConfig } from '../../domain/entities/session-evaluation-config.entity';
 import type { SessionEvaluationCriterion } from '../../domain/entities/session-evaluation-criterion.entity';
 import {
@@ -131,16 +135,30 @@ async function insertSnapshotCriterion(
   );
 }
 
+interface SessionLockRow {
+  id: string;
+  selfEvalReleased: boolean;
+  peerEvalReleased: boolean;
+}
+
+const LOCK_SESSION_QUERY = `SELECT id, self_eval_released AS "selfEvalReleased", peer_eval_released AS "peerEvalReleased"
+ FROM sessions WHERE id = $1 AND problem_id = $2 FOR UPDATE;`;
+
 export async function assertSessionExists(
   manager: EntityManager,
   sessionId: string,
   problemId: string,
 ): Promise<void> {
-  const rows = await manager.query<{ id: string }[]>(
-    'SELECT id FROM sessions WHERE id = $1 AND problem_id = $2 FOR UPDATE;',
-    [sessionId, problemId],
-  );
-  if (rows.length === 0) throw new NotFoundError('Sessão não encontrada.');
+  const [session] = await manager.query<SessionLockRow[]>(LOCK_SESSION_QUERY, [
+    sessionId,
+    problemId,
+  ]);
+  if (!session) throw new NotFoundError('Sessão não encontrada.');
+  if (session.selfEvalReleased || session.peerEvalReleased) {
+    throw new ConflictError(
+      'A avaliação direta do tutor está bloqueada enquanto a autoavaliação ou pares estiver ativa na sessão.',
+    );
+  }
 }
 
 const toCriterion = (row: CriterionRow): SessionEvaluationCriterion => ({

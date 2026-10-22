@@ -55,6 +55,9 @@ export class UpdateEvaluationReleasesUseCase {
     if (!submissions.rollCallSaved) {
       throw new ConflictError('Salve a chamada da sessão antes de liberar as avaliações.');
     }
+    if ((input.self?.released || input.peer?.released) && (submissions.tutorSubmitted ?? 0) > 0) {
+      throw new ConflictError('A sessão já possui avaliações do tutor submetidas.');
+    }
     if (input.peer?.released && submissions.pokerStarted) {
       throw new ConflictError(
         'Esta sessão já usa o planning poker para a avaliação entre pares. Use um ou outro.',
