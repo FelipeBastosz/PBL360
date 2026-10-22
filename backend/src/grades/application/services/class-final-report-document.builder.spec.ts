@@ -1,4 +1,5 @@
 import { Workbook } from 'exceljs';
+import type { DynamicContent } from 'pdfmake/interfaces';
 import {
   ReportColumnType,
   ReportFileFormat,
@@ -26,6 +27,7 @@ describe('buildClassFinalReportDocument', () => {
         { label: 'Disciplina', value: 'MED101' },
         { label: 'Semestre', value: '2026.2' },
       ]);
+      expect(document.fileName).toBe('relatorio-final-MED101-2026.2-Turma A');
       expect(table.rows).toEqual([
         ['Ana Souza', '00000001', 8, 0, null, 4, 'Parcial'],
         ['Bruno Lima', null, null, null, null, null, 'Pendente'],
@@ -54,6 +56,15 @@ describe('buildClassFinalReportDocument', () => {
     );
 
     expect(tables).toHaveLength(7);
+    expect(tables.map((table) => table.title)).toEqual([
+      'Notas por problema — P1 a P3',
+      'Notas por problema — P4 a P6',
+      'Notas por problema — P7 a P9',
+      'Notas por problema — P10 a P12',
+      'Notas por problema — P13 a P15',
+      'Notas por problema — P16 a P18',
+      'Notas por problema — P19 a P20',
+    ]);
     expect(tables.map((table) => table.startOnNewPage)).toEqual([
       false,
       true,
@@ -75,6 +86,48 @@ describe('buildClassFinalReportDocument', () => {
     }
     const excel = buildClassFinalReportDocument(report, ReportFileFormat.XLSX);
     expect((excel.sections[0] as ReportTableSection).columns).toHaveLength(24);
+  });
+
+  it('uses the actual problem order in ranges and identifies a single final problem', () => {
+    const report = buildClassFinalReportFixture();
+    report.problemas = [4, 7, 9, 12].map((order) => ({
+      id: `p-${order}`,
+      titulo: `Problema ${order}`,
+      ordem: order,
+    }));
+    const document = buildClassFinalReportDocument(report, ReportFileFormat.PDF);
+
+    expect(document.sections.slice(0, 2).map((section) => section.title)).toEqual([
+      'Notas por problema — P4 a P9',
+      'Notas por problema — P12',
+    ]);
+  });
+
+  it('identifies the classroom on later PDF pages, including continuations of a table', () => {
+    const document = buildClassFinalReportDocument(
+      buildClassFinalReportFixture(),
+      ReportFileFormat.PDF,
+    );
+    const definition = buildPdfDefinition(document, logo);
+    const header = definition.header as DynamicContent;
+
+    expect(header(2, 10, { width: 842, height: 595, orientation: 'landscape' })).toMatchObject({
+      stack: [
+        { text: [{ text: 'Turma: ', bold: true }, 'Turma A'] },
+        { text: [{ text: 'Disciplina: ', bold: true }, 'MED101'] },
+        { text: [{ text: 'Semestre: ', bold: true }, '2026.2'] },
+      ],
+    });
+  });
+
+  it('distinguishes downloads for classrooms with the same name in different semesters', () => {
+    const report = buildClassFinalReportFixture();
+    const first = buildClassFinalReportDocument(report, ReportFileFormat.PDF);
+    report.sala.semestre = '2027.1';
+    const next = buildClassFinalReportDocument(report, ReportFileFormat.PDF);
+
+    expect(first.fileName).not.toBe(next.fileName);
+    expect(next.fileName).toBe('relatorio-final-MED101-2027.1-Turma A');
   });
 
   it('repeats PDF headers, keeps each student on one page and uses the grade display precision', () => {

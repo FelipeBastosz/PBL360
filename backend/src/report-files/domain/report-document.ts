@@ -49,6 +49,7 @@ export interface ReportDocument {
   title: string;
   fileName: string;
   identification: ReportIdentification[];
+  repeatIdentification?: boolean;
   sections: ReportSection[];
 }
 

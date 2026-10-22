@@ -31,10 +31,10 @@ const binaryParser = (
   response.on('error', (error: Error) => callback(error, Buffer.alloc(0)));
 };
 
-const excelStudentRow = (sheet: Worksheet, name: string, columns: number): unknown[] => {
+const excelRowByLabel = (sheet: Worksheet, label: string, columns: number): unknown[] => {
   let result: unknown[] = [];
   sheet.eachRow((row) => {
-    if (row.getCell(1).value === name)
+    if (row.getCell(1).value === label)
       result = Array.from({ length: columns }, (_, i) => row.getCell(i + 1).value);
   });
   return result;
@@ -101,7 +101,7 @@ describe('Class final report export (e2e)', () => {
     for (const student of report.alunos) {
       const status =
         student.mediaGeral === null ? 'Pendente' : student.isParcial ? 'Parcial' : 'Completa';
-      expect(excelStudentRow(sheet, student.nome, 7)).toEqual([
+      expect(excelRowByLabel(sheet, student.nome, 7)).toEqual([
         student.nome,
         student.matricula,
         ...student.notasProblemas.map((item) => item.notaFinal),
@@ -109,7 +109,7 @@ describe('Class final report export (e2e)', () => {
         status,
       ]);
     }
-    expect(sheet.getRow(3).getCell(2).value).toBe(report.sala.nome);
+    expect(excelRowByLabel(sheet, 'Turma', 2)[1]).toBe(report.sala.nome);
   }, 30000);
 
   it('renders the same consolidated values in a complete downloadable PDF', async () => {
@@ -150,7 +150,7 @@ describe('Class final report export (e2e)', () => {
     const sheet = (await readWorkbook()).getWorksheet('Notas finais')!;
     expect(report.alunos[0]).toMatchObject({ mediaGeral: 4.5, isParcial: true });
     expect(report.alunos[0]?.notasProblemas[0]?.notaFinal).toBe(9);
-    expect(excelStudentRow(sheet, 'Ana Souza', 7)).toEqual([
+    expect(excelRowByLabel(sheet, 'Ana Souza', 7)).toEqual([
       'Ana Souza',
       '00000001',
       9,
@@ -273,7 +273,7 @@ describe('Class final report export (e2e)', () => {
         {
           get: {
             parameters: Array<{ name: string; schema: { enum?: string[] } }>;
-            responses: Record<string, { content?: Record<string, unknown> }>;
+            responses: Record<string, { description: string; content?: Record<string, unknown> }>;
           };
         }
       >;
@@ -291,6 +291,8 @@ describe('Class final report export (e2e)', () => {
     expect(Object.keys(route.responses)).toEqual(
       expect.arrayContaining(['200', '400', '401', '403', '404', '500']),
     );
+    expect(route.responses['400']!.description).toContain('PDF nem XLSX');
+    expect(route.responses['400']!.description).toContain('UUID válido');
     expect(Object.keys(route.responses['200']!.content!)).toEqual(
       expect.arrayContaining([
         'application/pdf',

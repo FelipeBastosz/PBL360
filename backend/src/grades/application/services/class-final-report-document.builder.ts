@@ -68,7 +68,9 @@ const pdfSections = (report: ClassFinalReportResponseDto): ReportTableSection[] 
   const sections: ReportTableSection[] = [];
   for (let index = 0; index < report.problemas.length; index += PDF_PROBLEMS_PER_SECTION) {
     const problems = report.problemas.slice(index, index + PDF_PROBLEMS_PER_SECTION);
-    const title = `Notas por problema — bloco ${sections.length + 1}`;
+    const first = problems[0]!.ordem;
+    const last = problems[problems.length - 1]!.ordem;
+    const title = `Notas por problema — P${first}${first === last ? '' : ` a P${last}`}`;
     sections.push({ ...gradesSection(report, problems, title), startOnNewPage: index > 0 });
   }
   return sections;
@@ -110,7 +112,8 @@ export const buildClassFinalReportDocument = (
 ): ReportDocument => ({
   format,
   title: 'Relatório final da turma',
-  fileName: `relatorio-final-${report.sala.nome}`,
+  fileName: `relatorio-final-${report.sala.codigoDisciplina}-${report.sala.semestre}-${report.sala.nome}`,
+  repeatIdentification: true,
   identification: [
     { label: 'Turma', value: report.sala.nome },
     { label: 'Disciplina', value: report.sala.codigoDisciplina },

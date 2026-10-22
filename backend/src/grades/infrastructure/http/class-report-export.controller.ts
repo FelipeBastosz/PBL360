@@ -1,8 +1,7 @@
-import { Controller, Get, Header, Query, StreamableFile, UseFilters } from '@nestjs/common';
+import { Controller, Get, Header, Query, StreamableFile } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ReportExportQueryDto } from '@/report-files/application/dtos/report-export-query.dto';
 import { toReportFileResponse } from '@/report-files/infrastructure/http/report-file-response';
-import { ReportGenerationFilter } from '@/report-files/infrastructure/http/report-generation.filter';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
@@ -13,7 +12,6 @@ import { ExportClassFinalReportSwaggerDocs } from './class-report-export.swagger
 @ApiTags('Salas')
 @Controller('salas/:salaId/relatorio-final/exportacao')
 @Roles(UserType.TUTOR)
-@UseFilters(ReportGenerationFilter)
 export class ClassReportExportController {
   constructor(private readonly exportClassFinalReport: ExportClassFinalReportUseCase) {}
 

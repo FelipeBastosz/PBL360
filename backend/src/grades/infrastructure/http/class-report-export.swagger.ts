@@ -1,6 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBadRequestResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
@@ -25,6 +26,11 @@ export const ExportClassFinalReportSwaggerDocs = applyDecorators(
   ApiParam({ name: 'salaId', format: 'uuid', description: 'Identificador da sala.' }),
   ApiQuery({ name: 'formato', required: true, enum: ReportFileFormat }),
   ExportReportFileSwaggerDocs,
+  ApiBadRequestResponse({
+    description:
+      'O formato informado não é PDF nem XLSX ou o identificador da sala não é um UUID válido.',
+    type: ErrorResponseDto,
+  }),
   ApiUnauthorizedResponse({
     description: 'Autenticação ausente ou inválida.',
     type: ErrorResponseDto,
