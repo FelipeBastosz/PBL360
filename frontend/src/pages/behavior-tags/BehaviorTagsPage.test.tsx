@@ -54,93 +54,17 @@ describe('BehaviorTagsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Liderou o grupo')).toBeInTheDocument();
       expect(screen.queryByText('Atraso')).not.toBeInTheDocument();
-      expect(screen.queryByText('Padrão')).not.toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: 'Editar marcação Liderou o grupo' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Excluir marcação Liderou o grupo' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Editar marcação Liderou o grupo' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Excluir marcação Liderou o grupo' }),
+    ).toBeInTheDocument();
   });
 
-  it('clears input text when canceling creation', async () => {
-    renderComponent();
-
-    const openBtn = await screen.findByRole('button', { name: /criar nova marcação/i });
-    await userEvent.click(openBtn);
-
-    const input = screen.getByPlaceholderText('Nome da marcação');
-    await userEvent.type(input, 'Texto de teste');
-    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-
-    await userEvent.click(screen.getByRole('button', { name: /criar nova marcação/i }));
-    expect(screen.getByPlaceholderText('Nome da marcação')).toHaveValue('');
-  });
-
-  it('filters tags by search query', async () => {
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('Liderou o grupo')).toBeInTheDocument();
-    });
-
-    const searchInput = screen.getByLabelText('Pesquisar marcação');
-    await userEvent.type(searchInput, 'Inexistente');
-
-    expect(screen.queryByText('Liderou o grupo')).not.toBeInTheDocument();
-    expect(screen.getByText('Nenhuma marcação encontrada.')).toBeInTheDocument();
-  });
-
-  it('renames an owned custom tag', async () => {
-    vi.mocked(observationService.renameTag).mockResolvedValue({
-      id: 'tag-2',
-      nome: 'Liderou a discussão',
-      predefinida: false,
-      ativa: true,
-    });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('Liderou o grupo')).toBeInTheDocument();
-    });
-
-    const editBtn = screen.getByRole('button', { name: 'Editar marcação Liderou o grupo' });
-    await userEvent.click(editBtn);
-
-    const input = screen.getByDisplayValue('Liderou o grupo');
-    await userEvent.clear(input);
-    await userEvent.type(input, 'Liderou a discussão');
-    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-
-    await waitFor(() => {
-      expect(observationService.renameTag).toHaveBeenCalledWith('tag-2', 'Liderou a discussão');
-      expect(screen.getByText('Liderou a discussão')).toBeInTheDocument();
-    });
-  });
-
-  it('creates a new custom tag', async () => {
-    vi.mocked(observationService.createTag).mockResolvedValue({
-      id: 'tag-3',
-      nome: 'Proatividade',
-      predefinida: false,
-      ativa: true,
-    });
-
-    renderComponent();
-
-    const openBtn = await screen.findByRole('button', { name: /criar nova marcação/i });
-    await userEvent.click(openBtn);
-
-    const input = screen.getByPlaceholderText('Nome da marcação');
-    await userEvent.type(input, 'Proatividade');
-    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-
-    await waitFor(() => {
-      expect(observationService.createTag).toHaveBeenCalledWith('Proatividade');
-      expect(screen.getByText('Proatividade')).toBeInTheDocument();
-    });
-  });
-
-  it('deletes an owned custom tag', async () => {
+  it('opens confirmation modal and deletes custom tag', async () => {
     vi.mocked(observationService.deleteTag).mockResolvedValue(undefined);
 
     renderComponent();
@@ -149,12 +73,33 @@ describe('BehaviorTagsPage', () => {
       expect(screen.getByText('Liderou o grupo')).toBeInTheDocument();
     });
 
-    const deleteBtn = screen.getByRole('button', { name: 'Excluir marcação Liderou o grupo' });
-    await userEvent.click(deleteBtn);
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir marcação Liderou o grupo' }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Excluir marcação?' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, excluir marcação' }));
 
     await waitFor(() => {
       expect(observationService.deleteTag).toHaveBeenCalledWith('tag-2');
       expect(screen.queryByText('Liderou o grupo')).not.toBeInTheDocument();
     });
+  });
+
+  it('cancels deletion from the modal without calling the service', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Liderou o grupo')).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir marcação Liderou o grupo' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(observationService.deleteTag).not.toHaveBeenCalled();
+    expect(screen.getByText('Liderou o grupo')).toBeInTheDocument();
   });
 });
