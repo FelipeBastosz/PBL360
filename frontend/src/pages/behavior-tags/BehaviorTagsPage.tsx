@@ -136,7 +136,7 @@ export default function BehaviorTagsPage() {
     <div className="min-h-dvh bg-surface pb-24">
       <BehaviorTagsHeader user={user} onBack={() => navigate(-1)} />
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
-        {error && <Alert tone="error">{error.message}</Alert>}
+        {state.error && <Alert tone="error">{state.error.message}</Alert>}
         <CreateTagForm onCreate={state.handleCreate} />
         <SearchField label="Pesquisar marcação" value={state.query} onChange={state.setQuery} />
         <TagsList
