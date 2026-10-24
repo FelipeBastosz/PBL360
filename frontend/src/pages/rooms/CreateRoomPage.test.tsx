@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import type * as Router from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { roomService } from '@/services/room.service';
+import { disciplineService } from '@/services/discipline.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import CreateRoomPage from './CreateRoomPage';
@@ -11,6 +12,12 @@ import CreateRoomPage from './CreateRoomPage';
 vi.mock('@/services/room.service', () => ({
   roomService: {
     create: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/discipline.service', () => ({
+  disciplineService: {
+    list: vi.fn(),
   },
 }));
 
@@ -34,7 +41,16 @@ vi.mock('react-router-dom', async () => {
 describe('CreateRoomPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(disciplineService.list).mockResolvedValue([
+      { id: 'd-1', codigo: 'EXA863', nome: 'MI Programação' },
+      { id: 'd-2', codigo: 'TEC502', nome: 'MI Concorrência e Conectividade' },
+    ]);
   });
+
+  const selectDiscipline = async (user: ReturnType<typeof userEvent.setup>, value: string) => {
+    await screen.findByRole('option', { name: 'EXA863 - MI Programação' });
+    await user.selectOptions(screen.getByLabelText('Código'), value);
+  };
 
   const renderComponent = () => {
     return render(
@@ -70,14 +86,35 @@ describe('CreateRoomPage', () => {
     expect(roomService.create).not.toHaveBeenCalled();
   });
 
+  it('lists the disciplines registered in the database as options', async () => {
+    renderComponent();
+
+    expect(
+      await screen.findByRole('option', { name: 'EXA863 - MI Programação' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: 'TEC502 - MI Concorrência e Conectividade' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Outra disciplina...' })).toBeInTheDocument();
+  });
+
+  it('shows an error when the disciplines cannot be loaded', async () => {
+    vi.mocked(disciplineService.list).mockRejectedValue(new Error('Falha ao carregar'));
+
+    renderComponent();
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Outra disciplina...' })).toBeInTheDocument();
+  });
+
   it('auto-fills and disables discipline name when selecting an existing discipline', async () => {
     const user = userEvent.setup();
     renderComponent();
 
-    await user.selectOptions(screen.getByLabelText('Código'), '1');
+    await selectDiscipline(user, 'd-1');
 
     const disciplineInput = screen.getByLabelText('Nome da Disciplina');
-    expect(disciplineInput).toHaveValue('MI Progamação');
+    expect(disciplineInput).toHaveValue('MI Programação');
     expect(disciplineInput).toBeDisabled();
   });
 
@@ -85,7 +122,7 @@ describe('CreateRoomPage', () => {
     const user = userEvent.setup();
     renderComponent();
 
-    await user.selectOptions(screen.getByLabelText('Código'), 'outra');
+    await selectDiscipline(user, 'outra');
 
     expect(screen.getByLabelText('Código da Disciplina')).toBeInTheDocument();
 
@@ -96,14 +133,14 @@ describe('CreateRoomPage', () => {
 
   it('submits the form successfully and navigates to the success page with state', async () => {
     const user = userEvent.setup();
-    const mockRoom = { id: 'room-123', roomCode: 'ABC98765', nome: 'MI Progamação - TP01' };
+    const mockRoom = { id: 'room-123', roomCode: 'ABC98765', nome: 'MI Programação - TP01' };
 
     // Correção: substituímos o 'as any' por 'as unknown as Room'
     vi.mocked(roomService.create).mockResolvedValue(mockRoom as unknown as Room);
 
     renderComponent();
 
-    await user.selectOptions(screen.getByLabelText('Código'), '1');
+    await selectDiscipline(user, 'd-1');
     await user.type(screen.getByLabelText('Turma'), 'TP01');
     await user.type(screen.getByLabelText('Semestre'), '2026.2');
 
@@ -111,7 +148,7 @@ describe('CreateRoomPage', () => {
 
     await waitFor(() => {
       expect(roomService.create).toHaveBeenCalledWith({
-        nome: 'MI Progamação - TP01',
+        nome: 'MI Programação - TP01',
         codigoDisciplina: 'EXA863',
         semestre: '2026.2',
       });
@@ -127,7 +164,7 @@ describe('CreateRoomPage', () => {
 
     renderComponent();
 
-    await user.selectOptions(screen.getByLabelText('Código'), '1');
+    await selectDiscipline(user, 'd-1');
     await user.type(screen.getByLabelText('Turma'), 'TP01');
     await user.type(screen.getByLabelText('Semestre'), '2026.2');
 
