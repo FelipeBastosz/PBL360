@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CreateDisciplineUseCase } from './application/use-cases/create-discipline.use-case';
 import { ListDisciplinesUseCase } from './application/use-cases/list-disciplines.use-case';
 import { Discipline } from './domain/entities/discipline.entity';
 import { DISCIPLINE_REPOSITORY } from './domain/repositories/discipline.repository';
@@ -11,6 +12,7 @@ import { DisciplinesController } from './infrastructure/http/disciplines.control
   controllers: [DisciplinesController],
   providers: [
     ListDisciplinesUseCase,
+    CreateDisciplineUseCase,
     { provide: DISCIPLINE_REPOSITORY, useClass: PgDisciplineRepository },
   ],
 })

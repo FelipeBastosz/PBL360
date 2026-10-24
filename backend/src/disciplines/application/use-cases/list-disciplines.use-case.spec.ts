@@ -7,7 +7,10 @@ describe('ListDisciplinesUseCase', () => {
     const disciplines = [
       Object.assign(new Discipline(), { id: 'd-1', code: 'EXA863', name: 'MI Programação' }),
     ];
-    const repository: jest.Mocked<DisciplineRepository> = { findAll: jest.fn() };
+    const repository: jest.Mocked<DisciplineRepository> = {
+      findAll: jest.fn(),
+      create: jest.fn(),
+    };
     repository.findAll.mockResolvedValue(disciplines);
 
     const useCase = new ListDisciplinesUseCase(repository);
