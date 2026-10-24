@@ -347,4 +347,39 @@ describe('Sessions Swagger Documentation (e2e)', () => {
       ]);
     });
   });
+
+  describe('Session report export Swagger', () => {
+    const exportPath = '/api/sessoes/{sessaoId}/relatorio/exportacao';
+
+    it('documents the export endpoint with summary and tags', () => {
+      const operation = document.paths[exportPath]?.get;
+      expect(operation).toBeDefined();
+      expect(operation?.tags).toContain('Sessões');
+      expect(operation?.summary).toBe('Exporta o relatório da sessão em PDF ou Excel');
+    });
+
+    it('documents security requirements for export endpoint', () => {
+      expect(document.paths[exportPath]?.get?.security).toEqual(
+        expect.arrayContaining([{ jwt: [] }]),
+      );
+    });
+
+    it('documents query parameter formato and response codes 200, 400, 401, 403, 404, 500', () => {
+      const operation = document.paths[exportPath]?.get;
+      const responses = Object.keys(operation?.responses ?? {});
+      expect(responses).toEqual(expect.arrayContaining(['200', '400', '401', '403', '404', '500']));
+
+      const okResponse = operation?.responses['200'];
+      expect(Object.keys(okResponse?.content ?? {})).toEqual(
+        expect.arrayContaining([
+          'application/pdf',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]),
+      );
+
+      const formatParam = operation?.parameters?.find((p) => p.name === 'formato');
+      expect(formatParam).toBeDefined();
+      expect(formatParam?.in).toBe('query');
+    });
+  });
 });
