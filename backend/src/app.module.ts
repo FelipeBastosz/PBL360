@@ -23,6 +23,7 @@ import { BehaviorTagsModule } from './behavior-tags/behavior-tags.module';
 import { ObservationsModule } from './observations/observations.module';
 import { GradesModule } from './grades/grades.module';
 import { PlanningPokerModule } from './planning-poker/planning-poker.module';
+import { DisciplinesModule } from './disciplines/disciplines.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { PlanningPokerModule } from './planning-poker/planning-poker.module';
     ObservationsModule,
     GradesModule,
     PlanningPokerModule,
+    DisciplinesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
