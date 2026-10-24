@@ -3,3 +3,8 @@ export type Discipline = {
   codigo: string;
   nome: string;
 };
+
+export type CreateDisciplinePayload = {
+  codigo: string;
+  nome: string;
+};

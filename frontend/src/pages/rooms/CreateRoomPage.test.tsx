@@ -18,6 +18,7 @@ vi.mock('@/services/room.service', () => ({
 vi.mock('@/services/discipline.service', () => ({
   disciplineService: {
     list: vi.fn(),
+    create: vi.fn(),
   },
 }));
 
@@ -172,5 +173,72 @@ describe('CreateRoomPage', () => {
 
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  describe('registering a discipline that is not in the list', () => {
+    const newDiscipline = { id: 'd-3', codigo: 'EXA999', nome: 'MI Nova Disciplina' };
+
+    const fillCustomDiscipline = async (user: ReturnType<typeof userEvent.setup>) => {
+      await selectDiscipline(user, 'outra');
+      await user.type(screen.getByLabelText('Código da Disciplina'), 'exa999');
+      await user.type(screen.getByLabelText('Nome da Disciplina'), 'MI Nova Disciplina');
+      await user.type(screen.getByLabelText('Turma'), 'TP01');
+      await user.type(screen.getByLabelText('Semestre'), '2026.2');
+    };
+
+    it('registers the discipline before creating the room', async () => {
+      const user = userEvent.setup();
+      vi.mocked(disciplineService.create).mockResolvedValue(newDiscipline);
+      vi.mocked(roomService.create).mockResolvedValue({ id: 'room-1' } as unknown as Room);
+      renderComponent();
+
+      await fillCustomDiscipline(user);
+      await user.click(screen.getByRole('button', { name: 'Criar turma' }));
+
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
+      expect(disciplineService.create).toHaveBeenCalledWith({
+        codigo: 'EXA999',
+        nome: 'MI Nova Disciplina',
+      });
+      expect(roomService.create).toHaveBeenCalledWith({
+        nome: 'MI Nova Disciplina - TP01',
+        codigoDisciplina: 'EXA999',
+        semestre: '2026.2',
+      });
+    });
+
+    it('shows the conflict and does not create the room when the code already exists', async () => {
+      const user = userEvent.setup();
+      vi.mocked(disciplineService.create).mockRejectedValue(
+        new Error('Já existe uma disciplina com o código EXA999.'),
+      );
+      renderComponent();
+
+      await fillCustomDiscipline(user);
+      await user.click(screen.getByRole('button', { name: 'Criar turma' }));
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+      expect(roomService.create).not.toHaveBeenCalled();
+    });
+
+    it('keeps the registered discipline selected when the room creation fails', async () => {
+      const user = userEvent.setup();
+      vi.mocked(disciplineService.create).mockResolvedValue(newDiscipline);
+      vi.mocked(roomService.create).mockRejectedValueOnce(new Error('Falha'));
+      renderComponent();
+
+      await fillCustomDiscipline(user);
+      await user.click(screen.getByRole('button', { name: 'Criar turma' }));
+      await screen.findByRole('alert');
+
+      expect(screen.getByLabelText('Código')).toHaveValue('d-3');
+      expect(screen.getByLabelText('Nome da Disciplina')).toBeDisabled();
+
+      vi.mocked(roomService.create).mockResolvedValue({ id: 'room-1' } as unknown as Room);
+      await user.click(screen.getByRole('button', { name: 'Criar turma' }));
+
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
+      expect(disciplineService.create).toHaveBeenCalledTimes(1);
+    });
   });
 });

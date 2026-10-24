@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { disciplineService } from '@/services/discipline.service';
-import type { Discipline } from '@/types/discipline';
+import type { CreateDisciplinePayload, Discipline } from '@/types/discipline';
 
 export function useDisciplines() {
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
@@ -13,5 +13,11 @@ export function useDisciplines() {
     });
   }, [run]);
 
-  return { disciplines, isLoading, error };
+  const register = useCallback(async (payload: CreateDisciplinePayload) => {
+    const created = await disciplineService.create(payload);
+    setDisciplines((current) => [...current, created]);
+    return created;
+  }, []);
+
+  return { disciplines, isLoading, error, register };
 }
