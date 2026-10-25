@@ -212,6 +212,55 @@ describe('GetProblemGradesUseCase', () => {
       ],
     });
   });
+
+  it('assigns weight 1 to a session added after final formula customization', async () => {
+    gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
+    gradesRepository.findProblemData.mockResolvedValue({
+      ...emptyData,
+      sessions: ['session-1', 'session-2', 'session-3'].map((id) => ({ id, date: '2026-10-02' })),
+      students: [{ id: 'student-1', name: 'Ana Souza', matricula: '20260001' }],
+      formulas: [{ id: 'formula-problem', scope: 'PROBLEMA', version: 2 }],
+      criteria: ['session-1', 'session-2', 'session-3'].map((session_id) => ({
+        id: `criterion-${session_id}`,
+        session_id,
+        weight: 1,
+      })),
+      scores: [
+        {
+          session_id: 'session-1',
+          student_id: 'student-1',
+          criterion_id: 'criterion-session-1',
+          score: 8,
+        },
+        {
+          session_id: 'session-2',
+          student_id: 'student-1',
+          criterion_id: 'criterion-session-2',
+          score: 4,
+        },
+        {
+          session_id: 'session-3',
+          student_id: 'student-1',
+          criterion_id: 'criterion-session-3',
+          score: 10,
+        },
+      ],
+      attendances: ['session-1', 'session-2', 'session-3'].map((session_id) => ({
+        session_id,
+        student_id: 'student-1',
+        status: 'PRESENT',
+      })),
+    });
+    gradesRepository.findFormulaComponents.mockResolvedValue([
+      { formula_id: 'formula-problem', type: 'MEDIA_SESSOES', weight: '100' },
+      { formula_id: 'formula-problem', type: 'SESSAO', reference_id: 'session-1', weight: '3' },
+      { formula_id: 'formula-problem', type: 'SESSAO', reference_id: 'session-2', weight: '1' },
+    ]);
+
+    const result = await useCase.execute(input);
+
+    expect(result.alunos[0]?.notaFinal).toBe(7.6);
+  });
   describe('planning poker as the peer grade', () => {
     const pokerData = (pokerScores: ProblemGradeData['pokerScores']): ProblemGradeData => ({
       ...emptyData,

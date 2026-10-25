@@ -25,7 +25,8 @@ const renderer = new ExceljsReportRenderer();
 
 const renderWorkbook = async (document: ReportDocument): Promise<Workbook> => {
   const workbook = new Workbook();
-  await workbook.xlsx.load(await renderer.render(document));
+  const buffer = await renderer.render(document);
+  await workbook.xlsx.load(buffer as unknown as Parameters<typeof workbook.xlsx.load>[0]);
   return workbook;
 };
 

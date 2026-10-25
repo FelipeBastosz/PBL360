@@ -7,7 +7,7 @@ export class FinalGradeSessionWeightResponseDto {
   @ApiProperty({ example: 'Sessão 1' })
   rotulo!: string;
 
-  @ApiProperty({ example: 1, minimum: 0, maximum: 10, description: 'Peso relativo da sessão.' })
+  @ApiProperty({ example: 1, minimum: 0.01, maximum: 10, description: 'Peso relativo da sessão.' })
   peso!: number;
 }
 

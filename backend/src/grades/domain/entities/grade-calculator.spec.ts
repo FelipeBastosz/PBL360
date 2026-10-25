@@ -242,15 +242,24 @@ describe('grade calculator', () => {
           { type: 'MEDIA_SESSOES', weight: 60 },
           { type: 'AUTOAVALIACAO', weight: 40, value: null },
         ],
-        [8, null],
+        [
+          { sessionId: 's1', grade: 8 },
+          { sessionId: 's2', grade: null },
+        ],
       ),
     ).toEqual({ grade: 8 });
   });
 
   it('keeps internal precision and rounds only presentation', () => {
-    expect(calculateProblemGrade([{ type: 'MEDIA_SESSOES', weight: 100 }], [8, 7])).toEqual({
-      grade: 7.5,
-    });
+    expect(
+      calculateProblemGrade(
+        [{ type: 'MEDIA_SESSOES', weight: 100 }],
+        [
+          { sessionId: 's1', grade: 8 },
+          { sessionId: 's2', grade: 7 },
+        ],
+      ),
+    ).toEqual({ grade: 7.5 });
     expect(presentGrade(7.55)).toBe(7.6);
     expect(presentGrade(null)).toBeNull();
   });
@@ -259,6 +268,7 @@ describe('grade calculator', () => {
     expect(
       calculateProblemGrade(
         [
+          { type: 'MEDIA_SESSOES', weight: 100 },
           { type: 'SESSAO', referenceId: 's1', weight: 3 },
           { type: 'SESSAO', referenceId: 's2', weight: 1 },
           { type: 'SESSAO', referenceId: 's3', weight: 10 },
@@ -270,5 +280,39 @@ describe('grade calculator', () => {
         ],
       ),
     ).toEqual({ grade: 7 });
+  });
+
+  it('uses weight 1 for a newly created session and ignores justified sessions', () => {
+    expect(
+      calculateProblemGrade(
+        [
+          { type: 'MEDIA_SESSOES', weight: 100 },
+          { type: 'SESSAO', referenceId: 's1', weight: 3 },
+          { type: 'SESSAO', referenceId: 's2', weight: 1 },
+        ],
+        [
+          { sessionId: 's1', grade: 8 },
+          { sessionId: 's2', grade: null },
+          { sessionId: 's3', grade: 4 },
+        ],
+      ),
+    ).toEqual({ grade: 7 });
+  });
+
+  it('applies the weighted session average inside the media percentage component', () => {
+    expect(
+      calculateProblemGrade(
+        [
+          { type: 'MEDIA_SESSOES', weight: 80 },
+          { type: 'AUTOAVALIACAO', weight: 20, value: 6.5 },
+          { type: 'SESSAO', referenceId: 's1', weight: 3 },
+          { type: 'SESSAO', referenceId: 's2', weight: 1 },
+        ],
+        [
+          { sessionId: 's1', grade: 8 },
+          { sessionId: 's2', grade: 4 },
+        ],
+      ),
+    ).toEqual({ grade: 6.9 });
   });
 });

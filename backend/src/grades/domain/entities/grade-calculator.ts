@@ -106,20 +106,19 @@ function calculateFinalSessionGrade(
 
 function problemComponentValue(
   component: GradeComponent,
-  sessionGrades: Array<number | null | { sessionId: string; grade: number | null }>,
+  sessionGrades: Array<{ sessionId: string; grade: number | null }>,
+  sessionComponents: GradeComponent[],
 ): number | null {
-  if (component.type === 'SESSAO') {
-    const match = sessionGrades.find(
-      (entry) => typeof entry !== 'number' && entry?.sessionId === component.referenceId,
-    );
-    return typeof match === 'number' || match === null ? match : (match?.grade ?? null);
-  }
   if (component.type === 'MEDIA_SESSOES') {
+    const relativeWeights = new Map(
+      sessionComponents
+        .filter((entry) => entry.type === 'SESSAO')
+        .map((entry) => [entry.referenceId, entry.weight]),
+    );
     return weightedAverage(
-      sessionGrades.flatMap((entry) => {
-        const grade = typeof entry === 'number' || entry === null ? entry : entry.grade;
-        return grade === null ? [] : [{ value: grade, weight: 1 }];
-      }),
+      sessionGrades.flatMap(({ sessionId, grade }) =>
+        grade === null ? [] : [{ value: grade, weight: relativeWeights.get(sessionId) ?? 1 }],
+      ),
     );
   }
   return component.value ?? null;
@@ -127,12 +126,14 @@ function problemComponentValue(
 
 export const calculateProblemGrade = (
   components: GradeComponent[],
-  sessionGrades: Array<number | null | { sessionId: string; grade: number | null }>,
+  sessionGrades: Array<{ sessionId: string; grade: number | null }>,
 ): ProblemGradeResult => {
-  const values = components.map((component) => ({
-    value: problemComponentValue(component, sessionGrades),
-    weight: component.weight,
-  }));
+  const values = components
+    .filter((component) => component.type !== 'SESSAO')
+    .map((component) => ({
+      value: problemComponentValue(component, sessionGrades, components),
+      weight: component.weight,
+    }));
   const grade = weightedAverage(
     values.filter((item): item is { value: number; weight: number } => item.value !== null),
   );

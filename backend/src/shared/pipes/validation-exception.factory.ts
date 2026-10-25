@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, UnprocessableEntityException } from '@nestjs/common';
 import type { ValidationError } from 'class-validator';
 
 const WHITELIST_CONSTRAINT = 'whitelistValidation';
@@ -16,5 +16,29 @@ const messagesOf = (error: ValidationError, parent = ''): string[] => {
   return [...own, ...nested];
 };
 
-export const validationExceptionFactory = (errors: ValidationError[]): BadRequestException =>
-  new BadRequestException(errors.flatMap((error) => messagesOf(error)));
+function hasFinalFormulaWeightError(
+  errors: ValidationError[],
+  insideSessionWeights = false,
+): boolean {
+  return errors.some((error) => {
+    const isNumericWeightRangeError =
+      insideSessionWeights &&
+      error.property === 'peso' &&
+      !error.constraints?.isNumber &&
+      Boolean(error.constraints?.min || error.constraints?.max);
+    return (
+      isNumericWeightRangeError ||
+      hasFinalFormulaWeightError(
+        error.children ?? [],
+        insideSessionWeights || error.property === 'sessoes',
+      )
+    );
+  });
+}
+
+export const validationExceptionFactory = (errors: ValidationError[]) => {
+  const messages = errors.flatMap((error) => messagesOf(error));
+  return hasFinalFormulaWeightError(errors)
+    ? new UnprocessableEntityException(messages)
+    : new BadRequestException(messages);
+};

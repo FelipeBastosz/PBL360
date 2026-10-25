@@ -217,6 +217,40 @@ describe('RollCallPage', () => {
     expect(await screen.findByText('Chamada salva.')).toBeInTheDocument();
   });
 
+  it('takes a prefilled student off the table removing the presence in this session', async () => {
+    vi.mocked(sessionService.listRoles)
+      .mockResolvedValueOnce([
+        { alunoId: 'ana', nome: 'Ana Souza', papel: 'COORDENADOR', notaAdicional: null },
+      ])
+      .mockResolvedValueOnce([]);
+    vi.mocked(sessionService.saveRollCall).mockResolvedValue(
+      rollCall([student('ana', 'Ana Souza', { status: 'AUSENTE' }), bruno], {
+        origem: 'REGISTRADA',
+      }),
+    );
+    const { user } = openRollCall(
+      rollCall([student('ana', 'Ana Souza', { lugar: 1, status: 'PRESENTE' }), bruno], {
+        origem: 'SESSAO_ANTERIOR',
+        sessaoReferencia: { id: 's0', data: '2026-08-12' },
+      }),
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Lugar 1: Ana Souza, Presente' }));
+    await user.click(screen.getByRole('button', { name: 'Tirar da mesa' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Ana Souza, fora da mesa, Ausente' }),
+    ).toBeInTheDocument();
+    expect(within(counter('Presentes')).getByText('0')).toBeInTheDocument();
+    expect(within(counter('Ausentes')).getByText('1')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Salvar chamada' }));
+    expect(sessionService.saveRollCall).toHaveBeenCalledWith('s1', [
+      { alunoId: 'ana', status: 'AUSENTE', lugar: null, justificativa: null },
+    ]);
+    expect(await screen.findByText('Chamada salva.')).toBeInTheDocument();
+    expect(sessionService.listRoles).toHaveBeenCalledTimes(2);
+  });
+
   it('switches back from excused to present without getting stuck', async () => {
     const { user } = openRollCall(
       rollCall([student('ana', 'Ana Souza', { lugar: 1, status: 'PRESENTE' })], {

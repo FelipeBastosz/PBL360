@@ -30,7 +30,6 @@ export class FinalGradeFormulaUseCase {
     return this.read(problemId);
   }
 
-  // eslint-disable-next-line max-lines-per-function
   async customize(
     roomId: string,
     problemId: string,
@@ -39,38 +38,10 @@ export class FinalGradeFormulaUseCase {
   ): Promise<FinalGradeFormulaOutput> {
     await this.assertAccess(roomId, problemId, tutorId);
     const sessions = await this.problems.listSessions(problemId);
-    if (
-      weights.length !== sessions.length ||
-      new Set(weights.map((w) => w.sessaoId)).size !== weights.length ||
-      sessions.some((s) => !weights.some((w) => w.sessaoId === s.id))
-    ) {
-      throw new UnprocessableEntityError(
-        'Informe todas as sessões do problema exatamente uma vez.',
-      );
-    }
-    if (weights.some((w) => !Number.isFinite(w.peso) || w.peso <= 0 || w.peso > 10)) {
-      throw new UnprocessableEntityError(
-        'O peso de cada sessão deve ser maior que zero e no máximo 10.',
-      );
-    }
+    validateSessionWeights(sessions, weights);
     const old = await this.formulas.findActiveByProblemAndScope(problemId, FormulaScope.PROBLEMA);
-    const formula = Formula.create({
-      problemId,
-      scope: FormulaScope.PROBLEMA,
-      version: (old?.version ?? 0) + 1,
-      active: true,
-      createdBy: tutorId,
-      components: weights.map(({ sessaoId, peso }) => ({
-        type: 'SESSAO',
-        referenceId: sessaoId,
-        weight: peso,
-      })),
-    });
-    try {
-      await this.formulas.saveNewVersion(old, formula);
-    } catch (error) {
-      throw new UnprocessableEntityError(error instanceof Error ? error.message : String(error));
-    }
+    const formula = createFormulaVersion(problemId, tutorId, weights, old);
+    await this.formulas.saveNewVersion(old, formula);
     return this.read(problemId);
   }
 
@@ -84,7 +55,7 @@ export class FinalGradeFormulaUseCase {
       problemId,
       FormulaScope.PROBLEMA,
     );
-    if (active) await this.formulas.deactivate(active);
+    await restoreSessionWeights(active, problemId, tutorId, this.formulas);
     return this.read(problemId);
   }
 
@@ -100,19 +71,120 @@ export class FinalGradeFormulaUseCase {
       this.problems.listSessions(problemId),
       this.formulas.findActiveByProblemAndScope(problemId, FormulaScope.PROBLEMA),
     ]);
-    const weights = new Map(
-      (formula?.components ?? [])
-        .filter((c) => c.type === 'SESSAO')
-        .map((c) => [c.referenceId, Number(c.weight)]),
-    );
-    return {
-      padrao: !formula || formula.components.every((c) => c.type !== 'SESSAO'),
-      versao: formula?.version ?? null,
-      sessoes: sessions.map((s) => ({
-        sessaoId: s.id,
-        rotulo: s.title,
-        peso: weights.get(s.id) ?? 1,
-      })),
-    };
+    return toFinalGradeFormulaOutput(sessions, formula);
   }
+}
+
+function validateSessionWeights(
+  sessions: Array<{ id: string }>,
+  weights: Array<{ sessaoId: string; peso: number }>,
+): void {
+  const ids = weights.map((weight) => weight.sessaoId);
+  if (
+    sessions.length === 0 ||
+    ids.length !== sessions.length ||
+    new Set(ids).size !== ids.length ||
+    sessions.some((session) => !ids.includes(session.id))
+  ) {
+    throw new UnprocessableEntityError('Informe todas as sessões do problema exatamente uma vez.');
+  }
+  if (weights.some(({ peso }) => !Number.isFinite(peso) || peso <= 0 || peso > 10)) {
+    throw new UnprocessableEntityError(
+      'O peso de cada sessão deve ser maior que zero e no máximo 10.',
+    );
+  }
+}
+
+function createFormulaVersion(
+  problemId: string,
+  tutorId: string,
+  weights: Array<{ sessaoId: string; peso: number }>,
+  old: Formula | null,
+): Formula {
+  return Formula.create({
+    problemId,
+    scope: FormulaScope.PROBLEMA,
+    version: (old?.version ?? 0) + 1,
+    active: true,
+    createdBy: tutorId,
+    components: [...baseProblemComponents(old), ...sessionWeightComponents(weights)],
+  });
+}
+
+function sessionWeightComponents(weights: Array<{ sessaoId: string; peso: number }>) {
+  return weights.map(({ sessaoId, peso }) => ({
+    type: 'SESSAO',
+    referenceId: sessaoId,
+    weight: peso,
+  }));
+}
+
+function baseProblemComponents(formula: Formula | null): Array<{
+  type: string;
+  referenceId: string | null;
+  weight: number;
+}> {
+  const components = formula?.components
+    .filter((component) => component.type !== 'SESSAO')
+    .map((component) => ({
+      type: component.type,
+      referenceId: component.referenceId,
+      weight: Number(component.weight),
+    }));
+  return components?.length
+    ? components
+    : [
+        { type: 'MEDIA_SESSOES', referenceId: null, weight: 100 },
+        { type: 'AUTOAVALIACAO', referenceId: null, weight: 0 },
+        { type: 'PARES', referenceId: null, weight: 0 },
+      ];
+}
+
+function hasDefaultProblemWeights(components: Array<{ type: string; weight: number }>): boolean {
+  const weights = new Map(components.map(({ type, weight }) => [type, weight]));
+  return (
+    weights.get('MEDIA_SESSOES') === 100 &&
+    weights.get('AUTOAVALIACAO') === 0 &&
+    weights.get('PARES') === 0
+  );
+}
+
+async function restoreSessionWeights(
+  active: Formula | null,
+  problemId: string,
+  tutorId: string,
+  formulas: FormulaRepository,
+): Promise<void> {
+  if (!active?.components.some((component) => component.type === 'SESSAO')) return;
+  const percentageComponents = baseProblemComponents(active);
+  if (hasDefaultProblemWeights(percentageComponents)) return formulas.deactivate(active);
+  const restored = Formula.create({
+    problemId,
+    scope: FormulaScope.PROBLEMA,
+    version: active.version + 1,
+    active: true,
+    createdBy: tutorId,
+    components: percentageComponents,
+  });
+  await formulas.saveNewVersion(active, restored);
+}
+
+function toFinalGradeFormulaOutput(
+  sessions: Array<{ id: string; title: string }>,
+  formula: Formula | null,
+): FinalGradeFormulaOutput {
+  const sessionWeights =
+    formula?.components.filter((component) => component.type === 'SESSAO') ?? [];
+  const weights = new Map(
+    sessionWeights.map((component) => [component.referenceId, Number(component.weight)]),
+  );
+  return {
+    padrao: sessionWeights.length === 0,
+    versao: sessionWeights.length === 0 ? null : (formula?.version ?? null),
+    sessoes: sessions.map((session) => ({
+      sessaoId: session.id,
+      rotulo: session.title,
+      peso: weights.get(session.id) ?? 1,
+    })),
+  };
 }

@@ -68,16 +68,18 @@ export class GetProblemFormulaUseCase {
   }
 
   private buildActiveFormula(scope: FormulaScope, activeFormula: Formula): ProblemFormulaOutput {
+    const percentageComponents = activeFormula.components.filter((c) => c.type !== 'SESSAO');
     return {
       scope,
       isDefault: false,
       version: activeFormula.version,
-      components: activeFormula.components.map((c) => ({
-        type: c.type,
-        referenceId: c.referenceId,
-        name: this.getDefaultNameForType(c.type),
-        weight: Number(c.weight),
-      })),
+      components:
+        (percentageComponents.length ? percentageComponents : null)?.map((c) => ({
+          type: c.type,
+          referenceId: c.referenceId,
+          name: this.getDefaultNameForType(c.type),
+          weight: Number(c.weight),
+        })) ?? this.getProblemScopeComponents(),
     };
   }
 

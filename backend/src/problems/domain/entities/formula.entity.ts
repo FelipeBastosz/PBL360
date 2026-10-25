@@ -166,14 +166,12 @@ export class Formula {
   }
 
   private assertWeights(): void {
-    if (
-      this.scope === FormulaScope.PROBLEMA &&
-      this.components.length > 0 &&
-      this.components.every((component) => component.type === 'SESSAO')
-    ) {
-      return;
-    }
-    const totalWeight = this.components.reduce((sum, c) => sum + Number(c.weight), 0);
+    const percentageComponents =
+      this.scope === FormulaScope.PROBLEMA
+        ? this.components.filter((component) => component.type !== 'SESSAO')
+        : this.components;
+    if (this.scope === FormulaScope.PROBLEMA && percentageComponents.length === 0) return;
+    const totalWeight = percentageComponents.reduce((sum, c) => sum + Number(c.weight), 0);
     // Allow small rounding tolerance for 100%
     if (Math.abs(totalWeight - 100) > 0.01) {
       throw new InvalidProblemError('A soma dos pesos dos componentes deve ser exatamente 100%.');

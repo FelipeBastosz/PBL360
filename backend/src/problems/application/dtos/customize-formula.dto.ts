@@ -1,6 +1,7 @@
 import { IsArray, IsEnum, IsNumber, IsOptional, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { Max, Min } from 'class-validator';
 import { FormulaScope } from '../../domain/entities/formula.entity';
 import { FormulaComponentType } from '../../domain/entities/formula-component.entity';
 
@@ -28,7 +29,7 @@ export class CustomizeFormulaDto {
 
 export class CustomizeFinalGradeFormulaDto {
   @ApiProperty({ type: () => [FinalGradeSessionWeightDto] })
-  @IsArray()
+  @IsArray({ message: 'As sessões devem ser informadas em uma lista.' })
   @ValidateNested({ each: true })
   @Type(() => FinalGradeSessionWeightDto)
   sessoes!: FinalGradeSessionWeightDto[];
@@ -36,10 +37,12 @@ export class CustomizeFinalGradeFormulaDto {
 
 export class FinalGradeSessionWeightDto {
   @ApiProperty({ format: 'uuid' })
-  @IsUUID('4')
+  @IsUUID('4', { message: 'O ID da sessão deve ser um UUID válido.' })
   sessaoId!: string;
 
-  @ApiProperty({ minimum: 0, maximum: 10, example: 1 })
-  @IsNumber()
+  @ApiProperty({ minimum: 0.01, maximum: 10, example: 1 })
+  @IsNumber({}, { message: 'O peso deve ser numérico.' })
+  @Min(0.01, { message: 'O peso de cada sessão deve ser maior que zero.' })
+  @Max(10, { message: 'O peso de cada sessão não pode ser maior que 10.' })
   peso!: number;
 }

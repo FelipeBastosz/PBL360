@@ -29,6 +29,16 @@ interface SummaryBody {
   presenca: null;
 }
 
+interface ProblemFormulaBody {
+  componentes: { tipo: string; referenciaId: string | null; nome: string | null; peso: number }[];
+}
+
+interface FinalGradeFormulaBody {
+  padrao: boolean;
+  versao: number | null;
+  sessoes: { sessaoId: string; rotulo: string; peso: number }[];
+}
+
 describe('Tutor evaluations (e2e)', () => {
   let app: INestApplication;
   let db: DataSource;
@@ -435,6 +445,19 @@ describe('Tutor evaluations (e2e)', () => {
     expect(document.components?.schemas?.TutorEvaluationResponseDto).toHaveProperty(
       'properties.criterios',
     );
+    const finalFormula = document.paths['/api/salas/{roomId}/problemas/{problemId}/formula-final'];
+    expect(finalFormula?.get?.tags).toEqual(['Fórmulas de Avaliação']);
+    expect(finalFormula?.get?.responses['200']).toBeDefined();
+    for (const status of ['200', '400', '401', '403', '404', '422'] as const) {
+      expect(finalFormula?.put?.responses[status]).toBeDefined();
+    }
+    expect(
+      document.paths['/api/salas/{roomId}/problemas/{problemId}/formula-final/restaurar-padrao']
+        ?.post?.responses['200'],
+    ).toBeDefined();
+    expect(document.components?.schemas?.CustomizeFinalGradeFormulaDto).toHaveProperty(
+      'properties.sessoes',
+    );
   });
   it('reads submitted evaluations in the grade report and preserves an absent cargo score', async () => {
     await submit().expect(200);
@@ -496,6 +519,107 @@ describe('Tutor evaluations (e2e)', () => {
     const response = await api(app, owner).get(evaluationPath()).expect(200);
     expect((response.body as EvaluationBody).notaSessao).toBe(8.4);
     expect((response.body as EvaluationBody).ajustes).toHaveLength(1);
+  });
+
+  it('keeps session weights and percentage formulas independent', async () => {
+    const formulaPath = `${problemPath()}/formulas`;
+    const finalFormulaPath = `${problemPath()}/formula-final`;
+    const getProblemFormula = async () => {
+      const response = await api(app, owner).get(`${formulaPath}?escopo=PROBLEMA`).expect(200);
+      return response.body as ProblemFormulaBody;
+    };
+    const getFinalFormula = async () => {
+      const response = await api(app, owner).get(finalFormulaPath).expect(200);
+      return response.body as FinalGradeFormulaBody;
+    };
+    const percentFormula = (media: number, self: number, peers: number) => ({
+      escopo: 'PROBLEMA',
+      componentes: [
+        { tipo: 'MEDIA_SESSOES', peso: media },
+        { tipo: 'AUTOAVALIACAO', peso: self },
+        { tipo: 'PARES', peso: peers },
+      ],
+    });
+
+    await api(app, owner)
+      .put(formulaPath, percentFormula(80, 20, 0))
+      .expect(200);
+    await api(app, owner)
+      .put(finalFormulaPath, {
+        sessoes: [
+          { sessaoId: sessionId, peso: 0 },
+          { sessaoId: nextSessionId, peso: 1 },
+        ],
+      })
+      .expect(422);
+    await api(app, owner)
+      .put(finalFormulaPath, {
+        sessoes: [
+          { sessaoId: sessionId, peso: 11 },
+          { sessaoId: nextSessionId, peso: 1 },
+        ],
+      })
+      .expect(422);
+    await api(app, owner)
+      .put(finalFormulaPath, {
+        sessoes: [
+          { sessaoId: sessionId, peso: 3 },
+          { sessaoId: nextSessionId, peso: 1 },
+        ],
+      })
+      .expect(200);
+
+    expect((await getProblemFormula()).componentes).toEqual([
+      { tipo: 'MEDIA_SESSOES', referenciaId: null, nome: 'Média das Sessões', peso: 80 },
+      { tipo: 'AUTOAVALIACAO', referenciaId: null, nome: 'Autoavaliação', peso: 20 },
+      { tipo: 'PARES', referenciaId: null, nome: 'Avaliação por Pares', peso: 0 },
+    ]);
+    expect((await getFinalFormula()).sessoes).toEqual([
+      { sessaoId: sessionId, rotulo: 'Primeira', peso: 3 },
+      { sessaoId: nextSessionId, rotulo: 'Segunda', peso: 1 },
+    ]);
+
+    await api(app, owner)
+      .put(formulaPath, percentFormula(60, 30, 10))
+      .expect(200);
+    expect((await getFinalFormula()).sessoes).toEqual([
+      { sessaoId: sessionId, rotulo: 'Primeira', peso: 3 },
+      { sessaoId: nextSessionId, rotulo: 'Segunda', peso: 1 },
+    ]);
+
+    await api(app, owner).post(`${finalFormulaPath}/restaurar-padrao`).expect(200);
+    expect((await getProblemFormula()).componentes).toEqual([
+      { tipo: 'MEDIA_SESSOES', referenciaId: null, nome: 'Média das Sessões', peso: 60 },
+      { tipo: 'AUTOAVALIACAO', referenciaId: null, nome: 'Autoavaliação', peso: 30 },
+      { tipo: 'PARES', referenciaId: null, nome: 'Avaliação por Pares', peso: 10 },
+    ]);
+    expect((await getFinalFormula()).sessoes).toEqual([
+      { sessaoId: sessionId, rotulo: 'Primeira', peso: 1 },
+      { sessaoId: nextSessionId, rotulo: 'Segunda', peso: 1 },
+    ]);
+
+    await api(app, owner)
+      .put(finalFormulaPath, {
+        sessoes: [
+          { sessaoId: sessionId, peso: 3 },
+          { sessaoId: nextSessionId, peso: 1 },
+        ],
+      })
+      .expect(200);
+
+    await api(app, owner)
+      .post(`${formulaPath}/restaurar-padrao`, { escopo: 'PROBLEMA' })
+      .expect(200);
+    expect((await getFinalFormula()).sessoes).toEqual([
+      { sessaoId: sessionId, rotulo: 'Primeira', peso: 3 },
+      { sessaoId: nextSessionId, rotulo: 'Segunda', peso: 1 },
+    ]);
+    await api(app, owner).post(`${finalFormulaPath}/restaurar-padrao`).expect(200);
+    expect((await getProblemFormula()).componentes).toEqual([
+      { tipo: 'MEDIA_SESSOES', referenciaId: null, nome: 'Média das Sessões', peso: 100 },
+      { tipo: 'AUTOAVALIACAO', referenciaId: null, nome: 'Autoavaliação', peso: 0 },
+      { tipo: 'PARES', referenciaId: null, nome: 'Avaliação por Pares', peso: 0 },
+    ]);
   });
 
   it('rejects structural edits in both editors after a future-session evaluation is submitted', async () => {

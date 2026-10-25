@@ -157,7 +157,10 @@ describe('final grade with self and peer components', () => {
         { type: 'AUTOAVALIACAO', weight: 20, value: selfGrade },
         { type: 'PARES', weight: 20, value: peerGrade },
       ],
-      [8, 6],
+      [
+        { sessionId: 's1', grade: 8 },
+        { sessionId: 's2', grade: 6 },
+      ],
     );
 
     expect(selfGrade).toBe(4.5);
@@ -172,7 +175,10 @@ describe('final grade with self and peer components', () => {
         { type: 'AUTOAVALIACAO', weight: 20, value: 4.5 },
         { type: 'PARES', weight: 20, value: null },
       ],
-      [8, 6],
+      [
+        { sessionId: 's1', grade: 8 },
+        { sessionId: 's2', grade: 6 },
+      ],
     );
 
     expect(result.grade).toBeCloseTo(6.375, 10);
@@ -186,7 +192,10 @@ describe('final grade with self and peer components', () => {
           { type: 'AUTOAVALIACAO', weight: 0, value: 2 },
           { type: 'PARES', weight: 0, value: 3 },
         ],
-        [9, 7],
+        [
+          { sessionId: 's1', grade: 9 },
+          { sessionId: 's2', grade: 7 },
+        ],
       ),
     ).toEqual({ grade: 8 });
   });

@@ -8,7 +8,10 @@ import {
   type ProblemGradeData,
 } from '../../domain/repositories/grades.repository';
 import type { GradesResponseDto } from '../dtos/grades-response.dto';
-import { buildDefaultSessionComponents } from './helpers/session-formula.helper';
+import {
+  appendMissingSessionComponents,
+  buildDefaultSessionComponents,
+} from './helpers/session-formula.helper';
 import {
   processStudentGrades,
   type Row,
@@ -124,24 +127,11 @@ export class GetProblemGradesUseCase {
     components.push(...buildDefaultSessionComponents(sessionId, formulaId));
   }
 
-  // eslint-disable-next-line max-lines-per-function
   private applyProblemDefault(formulas: Row[], components: Row[], sessions: Row[]): void {
     const existing = formulas.find((f) => f.scope === 'PROBLEMA');
     if (existing) {
-      if (components.some((c) => c.formula_id === existing.id && c.type === 'SESSAO')) {
-        for (const session of sessions) {
-          const sessionId = String(session.id);
-          if (
-            !components.some((c) => c.formula_id === existing.id && c.reference_id === sessionId)
-          ) {
-            components.push({
-              formula_id: existing.id,
-              type: 'SESSAO',
-              reference_id: sessionId,
-              weight: 1,
-            });
-          }
-        }
+      if (typeof existing.id === 'string') {
+        appendMissingSessionComponents(existing.id, components, sessions);
       }
       return;
     }
