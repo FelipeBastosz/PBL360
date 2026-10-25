@@ -154,10 +154,27 @@ describe('setAttendance', () => {
 });
 
 describe('unseatStudent', () => {
-  it('frees the seat and keeps the status so the batch still updates the record', () => {
+  it('frees the seat and removes the presence of the student in the session', () => {
     const next = unseatStudent(board(student('ana', { lugar: 1, status: 'PRESENTE' })), 'ana');
 
-    expect(find(next, 'ana')).toMatchObject({ lugar: null, status: 'PRESENTE' });
+    expect(find(next, 'ana')).toMatchObject({ lugar: null, status: 'AUSENTE' });
+  });
+
+  it('removes the presence of a late student taken off the table', () => {
+    const next = unseatStudent(board(student('ana', { lugar: 1, status: 'ATRASADO' })), 'ana');
+
+    expect(find(next, 'ana')).toMatchObject({ lugar: null, status: 'AUSENTE' });
+    expect(countTotals(next)).toMatchObject({ presentes: 0, atrasados: 0, ausentes: 1 });
+  });
+
+  it('records the absence of a student prefilled from the previous session', () => {
+    const prefilled = board(student('ana', { lugar: 1, status: 'PRESENTE' }), student('bruno'));
+
+    const next = unseatStudent(prefilled, 'ana');
+
+    expect(toAttendanceRecords(next)).toEqual([
+      { alunoId: 'ana', status: 'AUSENTE', lugar: null, justificativa: null },
+    ]);
   });
 });
 
