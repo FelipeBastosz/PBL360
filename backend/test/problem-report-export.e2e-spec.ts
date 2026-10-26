@@ -234,7 +234,10 @@ describe('Problem Report Export (e2e)', () => {
         .expect(200);
 
       expect(res.headers['content-type']).toBe('application/pdf');
-      expect(res.headers['content-disposition']).toContain('relatorio-problema-1.pdf');
+      expect(res.headers['cache-control']).toBe('private, no-store');
+      expect(res.headers['content-disposition']).toContain('relatorio-problema-1');
+      expect(res.headers['content-disposition']).toContain('Turma-A');
+      expect(res.headers['content-disposition']).toContain('.pdf');
       expect(Buffer.isBuffer(res.body)).toBe(true);
 
       const pdfText = (res.body as Buffer).toString('latin1');
@@ -256,7 +259,10 @@ describe('Problem Report Export (e2e)', () => {
       expect(res.headers['content-type']).toBe(
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
-      expect(res.headers['content-disposition']).toContain('relatorio-problema-1.xlsx');
+      expect(res.headers['cache-control']).toBe('private, no-store');
+      expect(res.headers['content-disposition']).toContain('relatorio-problema-1');
+      expect(res.headers['content-disposition']).toContain('Turma-A');
+      expect(res.headers['content-disposition']).toContain('.xlsx');
 
       const workbook = new Workbook();
       await workbook.xlsx.load(res.body as Buffer);
@@ -267,6 +273,7 @@ describe('Problem Report Export (e2e)', () => {
       expect(sheetNames).toContain('Feedback geral do problema');
       expect(sheetNames).toContain('Feedbacks das sessões');
       expect(sheetNames).toContain('Feedbacks individuais');
+      expect(sheetNames).toContain('Informações do relatório');
 
       // Verify Table Sheet
       const gradesSheet = workbook.getWorksheet('Notas por sessão');
@@ -364,6 +371,43 @@ describe('Problem Report Export (e2e)', () => {
       expect(studentFeedbackFound).toBe(true);
     });
 
+    it('does not include students with justified absence in pendencies of evaluation', async () => {
+      // Mark Bruno Lima as EXCUSED in Session 1
+      const [p1s1] = await dataSource.query<[{ id: string }]>(
+        `SELECT id FROM sessions WHERE problem_id = $1 AND order_index = 1;`,
+        [problem1Id],
+      );
+      await dataSource.query(
+        `INSERT INTO attendances (session_id, student_id, recorded_by, status, justification)
+         VALUES ($1, $2, $3, 'EXCUSED', 'Atestado de saúde');`,
+        [p1s1.id, student2Id, tutorId],
+      );
+
+      const res = await server()
+        .get(exportPath(roomId, problem1Id, 'XLSX'))
+        .set('Authorization', `Bearer ${tutorToken}`)
+        .buffer(true)
+        .parse(binaryParser)
+        .expect(200);
+
+      const workbook = new Workbook();
+      await workbook.xlsx.load(res.body as Buffer);
+      const sheetNames = workbook.worksheets.map((w) => w.name);
+      expect(sheetNames).not.toContain('Pendências de avaliação');
+
+      const gradesSheet = workbook.getWorksheet('Notas por sessão');
+      let brunoRowValues: unknown[] = [];
+      gradesSheet?.eachRow((row) => {
+        if (row.getCell(1).text === 'Bruno Lima') {
+          brunoRowValues = (row.values as unknown[]).slice(1);
+        }
+      });
+      expect(brunoRowValues[0]).toBe('Bruno Lima');
+      expect(brunoRowValues[2] == null).toBe(true);
+      expect(typeof brunoRowValues[3]).toBe('number');
+      expect(typeof brunoRowValues[4]).toBe('number');
+    });
+
     it('allows an active co-tutor to export the problem report', async () => {
       const res = await server()
         .get(exportPath(roomId, problem1Id, 'PDF'))
@@ -371,6 +415,7 @@ describe('Problem Report Export (e2e)', () => {
         .expect(200);
 
       expect(res.headers['content-type']).toBe('application/pdf');
+      expect(res.headers['cache-control']).toBe('private, no-store');
     });
   });
 
@@ -438,7 +483,7 @@ describe('Problem Report Export (e2e)', () => {
 
         const body = res.body as { message: string };
         expect(res.headers['content-type']).toContain('application/json');
-        expect(body.message).toBe('Internal server error');
+        expect(body.message).toBe('Não foi possível gerar o arquivo do relatório.');
       } finally {
         await customApp.app.close();
       }

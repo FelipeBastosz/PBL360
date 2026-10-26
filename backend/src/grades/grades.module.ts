@@ -39,4 +39,3 @@ import { PgGradeRecalculationRepository } from './infrastructure/database/pg-gra
   exports: [GetProblemGradesUseCase, GetClassFinalReportUseCase],
 })
 export class GradesModule {}
-

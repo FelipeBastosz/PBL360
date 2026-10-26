@@ -24,16 +24,18 @@ export interface BuildProblemReportParams {
 }
 
 export function buildProblemReportDocument(params: BuildProblemReportParams): ReportDocument {
-  const fileName = params.problem.orderIndex
-    ? `relatorio-problema-${params.problem.orderIndex}`
-    : `relatorio-problema-${params.problem.title}`;
+  const problemSuffix = params.problem.orderIndex ?? params.problem.title;
+  const fileName = `relatorio-problema-${problemSuffix}-${params.room.name}`;
 
   return {
     format: params.format,
     title: 'Relatório do problema',
     fileName,
+    repeatIdentification: true,
     identification: [
-      { label: 'Sala', value: params.room.name },
+      { label: 'Turma', value: params.room.name },
+      { label: 'Disciplina', value: params.room.courseCode },
+      { label: 'Semestre', value: params.room.semester },
       { label: 'Problema', value: params.problem.title },
     ],
     sections: buildProblemSections(params.grades, params.feedbacks),
@@ -53,7 +55,26 @@ function buildProblemSections(
   if (sessionSection) sections.push(sessionSection);
   const studentSection = buildIndividualFeedbacksSection(feedbacks);
   if (studentSection) sections.push(studentSection);
+
+  sections.push(buildNotesSection());
   return sections;
+}
+
+function buildNotesSection(): ReportTextSection {
+  return {
+    kind: 'text',
+    title: 'Informações do relatório',
+    entries: [
+      {
+        label: 'Critérios e notas',
+        text: 'Notas das sessões consolidadas a partir das avaliações do professor e dos pesos cadastrados. A nota final pondera as notas das sessões disponíveis.',
+      },
+      {
+        label: 'Pendências e faltas justificadas',
+        text: 'Notas ausentes (— no PDF e células vazias no Excel) correspondem a sessões pendentes de avaliação ou com falta justificada. Faltas justificadas são desconsideradas no cálculo da nota final. Pendências de avaliação ativas são detalhadas na seção "Pendências de avaliação".',
+      },
+    ],
+  };
 }
 
 function buildPendenciesTableSection(grades: GradesResponseDto): ReportTableSection | null {
@@ -80,7 +101,7 @@ function extractStudentPendencies(
   sessionMap: Map<string, string>,
 ): ReportCellValue[][] {
   return student.sessoes
-    .filter((session) => session.nota === null || session.situacao === 'PENDENTE')
+    .filter((session) => session.situacao === 'PENDENTE')
     .map((session) => [
       student.nome,
       student.matricula ?? null,
@@ -95,8 +116,9 @@ function buildGradesTableSection(grades: GradesResponseDto): ReportTableSection 
     ...grades.sessoes.map((s) => ({
       header: s.title || s.rotulo || s.nome || 'Sessão',
       type: ReportColumnType.NUMBER,
+      decimals: 1,
     })),
-    { header: 'Nota final', type: ReportColumnType.NUMBER },
+    { header: 'Nota final', type: ReportColumnType.NUMBER, decimals: 1 },
   ];
 
   return {

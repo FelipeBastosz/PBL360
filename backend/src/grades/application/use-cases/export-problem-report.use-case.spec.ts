@@ -25,7 +25,12 @@ describe('ExportProblemReportUseCase', () => {
     format: ReportFileFormat.PDF,
   };
 
-  const room = { id: 'room-1', name: 'Turma A' } as Room;
+  const room = {
+    id: 'room-1',
+    name: 'Turma A',
+    courseCode: 'MED101',
+    semester: '2026.2',
+  } as Room;
   const problem = {
     id: 'problem-1',
     roomId: 'room-1',
@@ -40,7 +45,7 @@ describe('ExportProblemReportUseCase', () => {
   } as GradesResponseDto;
   const mockFile: ReportFile = {
     content: Buffer.from('%PDF-1.4 test'),
-    fileName: 'relatorio-problema-1.pdf',
+    fileName: 'relatorio-problema-1-Turma-A.pdf',
     contentType: 'application/pdf',
   };
 
@@ -111,7 +116,14 @@ describe('ExportProblemReportUseCase', () => {
       expect.objectContaining({
         format: ReportFileFormat.PDF,
         title: 'Relatório do problema',
-        fileName: 'relatorio-problema-1',
+        fileName: 'relatorio-problema-1-Turma A',
+        repeatIdentification: true,
+        identification: [
+          { label: 'Turma', value: 'Turma A' },
+          { label: 'Disciplina', value: 'MED101' },
+          { label: 'Semestre', value: '2026.2' },
+          { label: 'Problema', value: 'Problema 1' },
+        ],
       }),
     );
   });

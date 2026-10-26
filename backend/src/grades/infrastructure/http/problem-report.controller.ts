@@ -1,4 +1,4 @@
-import { Controller, Get, Query, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Header, Query, StreamableFile } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
@@ -16,6 +16,7 @@ export class ProblemReportController {
   constructor(private readonly exportProblemReport: ExportProblemReportUseCase) {}
 
   @Get('exportacao')
+  @Header('Cache-Control', 'private, no-store')
   @ExportProblemReportSwaggerDocs
   async export(
     @UuidParam('salaId') roomId: string,
