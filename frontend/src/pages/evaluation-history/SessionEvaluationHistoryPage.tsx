@@ -10,7 +10,6 @@ import { HistoryStudentCard } from './components/HistoryStudentCard';
 import { useEvaluationHistory } from './hooks/useEvaluationHistory';
 import { useHideNames } from './hooks/useHideNames';
 import { useGradeAdjustment } from './hooks/useGradeAdjustment';
-import { useHistoryExport } from './hooks/useHistoryExport';
 
 type HistoryListProps = {
   students: StudentEvaluationHistoryItem[];
@@ -56,7 +55,6 @@ export default function SessionEvaluationHistoryPage() {
   const { students, isLoading, error, handleAdjusted } = useEvaluationHistory(sessionId);
   const adjustment = useGradeAdjustment(sessionId, handleAdjusted);
   const { hideNames, setHideNames } = useHideNames();
-  const { exportPdf, exportExcel } = useHistoryExport(students, hideNames);
 
   return (
     <div className="min-h-dvh bg-surface">
@@ -77,11 +75,7 @@ export default function SessionEvaluationHistoryPage() {
             />
           )
         )}
-        <HistoryExportActions
-          disabled={isLoading || students.length === 0}
-          onExportPdf={exportPdf}
-          onExportExcel={exportExcel}
-        />
+        <HistoryExportActions />
       </main>
       <AdjustEvaluationGradeModal
         isOpen={Boolean(adjustment.selected)}

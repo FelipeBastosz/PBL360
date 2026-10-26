@@ -4,12 +4,20 @@ import { MemoryRouter } from 'react-router-dom';
 import type * as Router from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { roomService } from '@/services/room.service';
+import { disciplineService } from '@/services/discipline.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import CreateRoomPage from './CreateRoomPage';
 
 vi.mock('@/services/room.service', () => ({
   roomService: {
+    create: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/discipline.service', () => ({
+  disciplineService: {
+    list: vi.fn(),
     create: vi.fn(),
   },
 }));
@@ -34,7 +42,16 @@ vi.mock('react-router-dom', async () => {
 describe('CreateRoomPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(disciplineService.list).mockResolvedValue([
+      { id: 'd-1', codigo: 'EXA863', nome: 'MI Programação' },
+      { id: 'd-2', codigo: 'TEC502', nome: 'MI Concorrência e Conectividade' },
+    ]);
   });
+
+  const selectDiscipline = async (user: ReturnType<typeof userEvent.setup>, value: string) => {
+    await screen.findByRole('option', { name: 'EXA863 - MI Programação' });
+    await user.selectOptions(screen.getByLabelText('Código'), value);
+  };
 
   const renderComponent = () => {
     return render(
@@ -70,14 +87,35 @@ describe('CreateRoomPage', () => {
     expect(roomService.create).not.toHaveBeenCalled();
   });
 
+  it('lists the disciplines registered in the database as options', async () => {
+    renderComponent();
+
+    expect(
+      await screen.findByRole('option', { name: 'EXA863 - MI Programação' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: 'TEC502 - MI Concorrência e Conectividade' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Outra disciplina...' })).toBeInTheDocument();
+  });
+
+  it('shows an error when the disciplines cannot be loaded', async () => {
+    vi.mocked(disciplineService.list).mockRejectedValue(new Error('Falha ao carregar'));
+
+    renderComponent();
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Outra disciplina...' })).toBeInTheDocument();
+  });
+
   it('auto-fills and disables discipline name when selecting an existing discipline', async () => {
     const user = userEvent.setup();
     renderComponent();
 
-    await user.selectOptions(screen.getByLabelText('Código'), '1');
+    await selectDiscipline(user, 'd-1');
 
     const disciplineInput = screen.getByLabelText('Nome da Disciplina');
-    expect(disciplineInput).toHaveValue('MI Progamação');
+    expect(disciplineInput).toHaveValue('MI Programação');
     expect(disciplineInput).toBeDisabled();
   });
 
@@ -85,7 +123,7 @@ describe('CreateRoomPage', () => {
     const user = userEvent.setup();
     renderComponent();
 
-    await user.selectOptions(screen.getByLabelText('Código'), 'outra');
+    await selectDiscipline(user, 'outra');
 
     expect(screen.getByLabelText('Código da Disciplina')).toBeInTheDocument();
 
@@ -96,14 +134,14 @@ describe('CreateRoomPage', () => {
 
   it('submits the form successfully and navigates to the success page with state', async () => {
     const user = userEvent.setup();
-    const mockRoom = { id: 'room-123', roomCode: 'ABC98765', nome: 'MI Progamação - TP01' };
+    const mockRoom = { id: 'room-123', roomCode: 'ABC98765', nome: 'MI Programação - TP01' };
 
     // Correção: substituímos o 'as any' por 'as unknown as Room'
     vi.mocked(roomService.create).mockResolvedValue(mockRoom as unknown as Room);
 
     renderComponent();
 
-    await user.selectOptions(screen.getByLabelText('Código'), '1');
+    await selectDiscipline(user, 'd-1');
     await user.type(screen.getByLabelText('Turma'), 'TP01');
     await user.type(screen.getByLabelText('Semestre'), '2026.2');
 
@@ -111,7 +149,7 @@ describe('CreateRoomPage', () => {
 
     await waitFor(() => {
       expect(roomService.create).toHaveBeenCalledWith({
-        nome: 'MI Progamação - TP01',
+        nome: 'MI Programação - TP01',
         codigoDisciplina: 'EXA863',
         semestre: '2026.2',
       });
@@ -127,7 +165,7 @@ describe('CreateRoomPage', () => {
 
     renderComponent();
 
-    await user.selectOptions(screen.getByLabelText('Código'), '1');
+    await selectDiscipline(user, 'd-1');
     await user.type(screen.getByLabelText('Turma'), 'TP01');
     await user.type(screen.getByLabelText('Semestre'), '2026.2');
 
@@ -135,5 +173,72 @@ describe('CreateRoomPage', () => {
 
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  describe('registering a discipline that is not in the list', () => {
+    const newDiscipline = { id: 'd-3', codigo: 'EXA999', nome: 'MI Nova Disciplina' };
+
+    const fillCustomDiscipline = async (user: ReturnType<typeof userEvent.setup>) => {
+      await selectDiscipline(user, 'outra');
+      await user.type(screen.getByLabelText('Código da Disciplina'), 'exa999');
+      await user.type(screen.getByLabelText('Nome da Disciplina'), 'MI Nova Disciplina');
+      await user.type(screen.getByLabelText('Turma'), 'TP01');
+      await user.type(screen.getByLabelText('Semestre'), '2026.2');
+    };
+
+    it('registers the discipline before creating the room', async () => {
+      const user = userEvent.setup();
+      vi.mocked(disciplineService.create).mockResolvedValue(newDiscipline);
+      vi.mocked(roomService.create).mockResolvedValue({ id: 'room-1' } as unknown as Room);
+      renderComponent();
+
+      await fillCustomDiscipline(user);
+      await user.click(screen.getByRole('button', { name: 'Criar turma' }));
+
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
+      expect(disciplineService.create).toHaveBeenCalledWith({
+        codigo: 'EXA999',
+        nome: 'MI Nova Disciplina',
+      });
+      expect(roomService.create).toHaveBeenCalledWith({
+        nome: 'MI Nova Disciplina - TP01',
+        codigoDisciplina: 'EXA999',
+        semestre: '2026.2',
+      });
+    });
+
+    it('shows the conflict and does not create the room when the code already exists', async () => {
+      const user = userEvent.setup();
+      vi.mocked(disciplineService.create).mockRejectedValue(
+        new Error('Já existe uma disciplina com o código EXA999.'),
+      );
+      renderComponent();
+
+      await fillCustomDiscipline(user);
+      await user.click(screen.getByRole('button', { name: 'Criar turma' }));
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+      expect(roomService.create).not.toHaveBeenCalled();
+    });
+
+    it('keeps the registered discipline selected when the room creation fails', async () => {
+      const user = userEvent.setup();
+      vi.mocked(disciplineService.create).mockResolvedValue(newDiscipline);
+      vi.mocked(roomService.create).mockRejectedValueOnce(new Error('Falha'));
+      renderComponent();
+
+      await fillCustomDiscipline(user);
+      await user.click(screen.getByRole('button', { name: 'Criar turma' }));
+      await screen.findByRole('alert');
+
+      expect(screen.getByLabelText('Código')).toHaveValue('d-3');
+      expect(screen.getByLabelText('Nome da Disciplina')).toBeDisabled();
+
+      vi.mocked(roomService.create).mockResolvedValue({ id: 'room-1' } as unknown as Room);
+      await user.click(screen.getByRole('button', { name: 'Criar turma' }));
+
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
+      expect(disciplineService.create).toHaveBeenCalledTimes(1);
+    });
   });
 });

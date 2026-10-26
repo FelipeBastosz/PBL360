@@ -33,17 +33,17 @@ export function PokerStatusBar({
   onOpenProgress,
 }: PokerStatusBarProps) {
   return (
-    <div className="flex shrink-0 items-center gap-2 px-4 pt-3 whitespace-nowrap lg:px-6 lg:pt-4">
+    <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 pt-3 whitespace-nowrap lg:px-6 lg:pt-4">
       {connection === 'live' ? <LiveBadge /> : <ReconnectingBadge />}
       <span className="rounded-full border border-brand-200 bg-brand-100 px-2.5 py-0.5 text-xs font-semibold text-brand-900">
         {anonymous ? 'Anônimo' : 'Com nomes'}
       </span>
-      <span className="min-w-0 flex-1 truncate text-[13px] text-muted">{roundLabel}</span>
+      <span className="min-w-28 flex-1 truncate text-[13px] text-muted">{roundLabel}</span>
       {onOpenProgress && (
         <button
           type="button"
           onClick={onOpenProgress}
-          className="py-1 text-sm font-medium text-brand-900 underline underline-offset-4"
+          className="ml-auto py-1 text-sm font-medium text-brand-900 underline underline-offset-4"
         >
           Progresso
         </button>

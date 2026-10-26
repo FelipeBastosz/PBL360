@@ -11,13 +11,13 @@ vi.mock('@/services/room.service', () => ({
   roomService: { list: async () => [], listMyRooms: async () => [] },
 }));
 
-afterEach(() => {
-  vi.resetAllMocks();
-  localStorage.clear();
-  clearUserPhotoCache();
-});
-
 describe('AppHeader', () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+    localStorage.clear();
+    clearUserPhotoCache();
+  });
+
   it('shows the photo stored for the signed-in student', async () => {
     vi.mocked(userService.getPhoto).mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
     sessionStore.save(sessionFor({ ...studentUser, possuiFoto: true }));

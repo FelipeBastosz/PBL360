@@ -13,8 +13,8 @@ export async function persistTableUpdate(
   propagate: boolean,
   changedBy: string,
 ): Promise<void> {
-  await lockPerformanceTableSessions(manager, table.id);
   await lockTable(manager, table);
+  await lockPerformanceTableSessions(manager, table.id);
   await assertPastSessionUpdateAllowed(manager, table);
   await manager.query(UPDATE_PERFORMANCE_TABLE_QUERY, [table.id, table.name, table.description]);
   await syncPerformanceCriteria(manager, table);

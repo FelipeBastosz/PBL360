@@ -69,9 +69,11 @@ function TagRow({
   onDecrement: () => void;
 }) {
   return (
-    <div className="flex w-full items-center justify-between rounded-xl border border-black/5 bg-white p-3.5 shadow-xs">
-      <span className="text-sm font-semibold text-brand-900">{tag.nome}</span>
-      <div className="flex items-center gap-2">
+    <div className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-black/5 bg-white p-3.5 shadow-xs">
+      <span className="min-w-32 flex-1 text-sm font-semibold break-words text-brand-900">
+        {tag.nome}
+      </span>
+      <div className="ml-auto flex shrink-0 items-center gap-2">
         <TagRowActions
           tag={tag}
           count={count}
@@ -115,9 +117,10 @@ function CreateTagSection({ onCreate }: { onCreate: (nome: string) => void }) {
         type="text"
         placeholder="Nome da nova marcação"
         value={nome}
+        maxLength={80}
         onChange={(e) => setNome(e.target.value)}
         autoFocus
-        className="h-10 flex-1 rounded-xl border border-brand-900 px-3 text-xs text-ink focus:outline-none"
+        className="h-10 min-w-0 flex-1 rounded-xl border border-brand-900 px-3 text-xs text-ink focus:outline-none"
       />
       <button
         type="submit"
@@ -204,7 +207,7 @@ export function StudentObservationTagsPage() {
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <EvaluationHeader onBack={() => navigate(-1)} />
-      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4">
+      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4 sm:max-w-2xl">
         {isLoading && (
           <div className="mt-12 flex justify-center">
             <Spinner className="size-8 text-brand-900" />
@@ -213,7 +216,7 @@ export function StudentObservationTagsPage() {
         {error && <Alert tone="error">{error.message}</Alert>}
         {!isLoading && (
           <div className="flex flex-col gap-3">
-            <h2 className="text-base font-bold text-brand-900">
+            <h2 className="text-base font-bold break-words text-brand-900">
               Todas as marcações: {studentName}
             </h2>
             <CreateTagSection onCreate={handleCreateTag} />

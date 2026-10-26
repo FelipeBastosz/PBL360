@@ -7,6 +7,7 @@ import {
 import { AttendanceStatus } from '../../domain/enums/attendance-status.enum';
 import { InvalidAttendanceError } from '../../domain/errors/invalid-attendance.error';
 import type { AttendanceRepository } from '../../domain/repositories/attendance.repository';
+import type { SessionRoleRepository } from '../../domain/repositories/session-role.repository';
 import { RollCallOrigin, type AttendanceEntry } from '../../domain/roll-call/roll-call';
 import type { SessionAccessService } from '../services/session-access.service';
 import { GetRollCallUseCase } from './get-roll-call.use-case';
@@ -28,6 +29,7 @@ const present = (studentId: string, seatNumber: number | null): AttendanceEntry 
 describe('Roll call use cases', () => {
   let attendances: jest.Mocked<AttendanceRepository>;
   let access: jest.Mocked<SessionAccessService>;
+  let roles: jest.Mocked<SessionRoleRepository>;
 
   beforeEach(() => {
     attendances = {
@@ -39,6 +41,11 @@ describe('Roll call use cases', () => {
     access = {
       assertTutorCanAccessSessionById: jest.fn().mockResolvedValue({ session, roomId: 'room-1' }),
     } as unknown as jest.Mocked<SessionAccessService>;
+    roles = {
+      list: jest.fn(),
+      assign: jest.fn(),
+      removeForStudents: jest.fn().mockResolvedValue(undefined),
+    };
   });
 
   describe('GetRollCallUseCase', () => {
@@ -93,7 +100,7 @@ describe('Roll call use cases', () => {
 
   describe('RecordRollCallUseCase', () => {
     const record = (entries: AttendanceEntry[]) =>
-      new RecordRollCallUseCase(access, attendances).execute({
+      new RecordRollCallUseCase(access, attendances, roles).execute({
         sessionId: 'session-2',
         tutorId: 'tutor-1',
         entries,
@@ -113,11 +120,20 @@ describe('Roll call use cases', () => {
       expect(rollCall.students[0]).toMatchObject({ studentId: 'ana', seatNumber: 2 });
     });
 
+    it('releases the session roles of the students taken off the table', async () => {
+      const absent = { ...present('bruno', null), status: AttendanceStatus.ABSENT };
+
+      await record([present('ana', 1), absent]);
+
+      expect(roles.removeForStudents).toHaveBeenCalledWith('session-2', ['bruno']);
+    });
+
     it('rejects a seat for an absent student before touching the database', async () => {
       const absentSeated = { ...present('ana', 1), status: AttendanceStatus.ABSENT };
 
       await expect(record([absentSeated])).rejects.toBeInstanceOf(InvalidAttendanceError);
       expect(attendances.saveBatch).not.toHaveBeenCalled();
+      expect(roles.removeForStudents).not.toHaveBeenCalled();
     });
 
     it('rejects a student listed twice', async () => {

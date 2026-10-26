@@ -251,6 +251,33 @@ describe('Roll call (e2e)', () => {
       expect(studentOf(body, bruno)).toMatchObject({ status: 'PRESENTE', lugar: 2 });
     });
 
+    it('releases the session role of a student taken off the table', async () => {
+      const [ana, bruno] = students as [TestUser, TestUser];
+      await putRollCall(sessionId, [
+        { alunoId: ana.id, status: 'PRESENTE', lugar: 1 },
+        { alunoId: bruno.id, status: 'PRESENTE', lugar: 2 },
+      ]).expect(200);
+      await api(app, tutor)
+        .put(`/sessoes/${sessionId}/papeis/${ana.id}`, { papel: 'COORDENADOR' })
+        .expect(200);
+      await api(app, tutor)
+        .put(`/sessoes/${sessionId}/papeis/${bruno.id}`, { papel: 'SECRETARIO_MESA' })
+        .expect(200);
+
+      const body = (
+        await putRollCall(sessionId, [{ alunoId: ana.id, status: 'AUSENTE', lugar: null }]).expect(
+          200,
+        )
+      ).body as RollCallBody;
+
+      expect(studentOf(body, ana)).toMatchObject({ status: 'AUSENTE', lugar: null });
+      const roles = (await api(app, tutor).get(`/sessoes/${sessionId}/papeis`).expect(200))
+        .body as Array<{ alunoId: string; papel: string }>;
+      expect(roles).toEqual([
+        expect.objectContaining({ alunoId: bruno.id, papel: 'SECRETARIO_MESA' }),
+      ]);
+    });
+
     it('swaps two students between seats in one batch', async () => {
       const [ana, bruno] = students as [TestUser, TestUser];
       await putRollCall(sessionId, [

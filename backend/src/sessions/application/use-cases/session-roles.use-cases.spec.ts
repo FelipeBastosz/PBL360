@@ -24,6 +24,7 @@ describe('Session role use cases', () => {
         role: SessionRole.COORDINATOR,
         roleScore: 5.0,
       }),
+      removeForStudents: jest.fn(),
     };
     access = {
       assertTutorCanAccessSessionById: jest

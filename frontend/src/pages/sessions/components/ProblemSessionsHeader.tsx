@@ -28,20 +28,20 @@ export function ProblemSessionsHeader({
 
   return (
     <header className="shrink-0 bg-brand-900 text-white">
-      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
-        <div className="flex items-center gap-3">
+      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between gap-3')}>
+        <div className="flex min-w-0 items-center gap-3">
           <Link
             to={`/turmas/${room?.id}/problemas`}
             aria-label="Voltar para os problemas"
-            className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
+            className="-ml-1 shrink-0 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
           >
             <ChevronLeftIcon className="size-6" />
           </Link>
-          <div className="flex flex-col">
-            <h1 className="text-base font-semibold leading-tight">
+          <div className="flex min-w-0 flex-col">
+            <h1 className="truncate text-base font-semibold leading-tight">
               {problem?.titulo || 'Problema'}
             </h1>
-            {turma && <span className="text-xs text-white/70">{turma}</span>}
+            {turma && <span className="truncate text-xs text-white/70">{turma}</span>}
           </div>
         </div>
         <UserMenuButton
