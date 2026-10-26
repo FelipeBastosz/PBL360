@@ -92,6 +92,8 @@ export function createMockPerformanceTableService(): PerformanceTableService {
   return {
     list: async () => tables.map(toSummary),
 
+    listByRoom: async (_roomId: string) => tables.map(toSummary),
+
     getById: async (tableId) => structuredClone(find(tableId)),
 
     create: async (payload: CreatePerformanceTablePayload) => {
