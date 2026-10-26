@@ -1,22 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeftIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { useToast } from '@/hooks/useToast';
-import { ROUTES } from '@/routes/paths';
 import { performanceTableService } from '@/services/performance-table.service';
-import { sessionService } from '@/services/session.service';
 import type { PerformanceTable } from '@/types/performanceTable';
-import type { SessionTableIgnored, SessionEvaluationConfig } from '@/types/session';
-import { readApplyTarget } from '@/utils/navigationState';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
 import { ApplyScopeModal, IgnoredSessionsModal } from './components/ApplyScopeModal';
-import { isTableApplied } from './utils/isTableApplied';
+import { useApplyTableLogic } from './hooks/useApplyTableLogic';
 
 function DetailHeader({ title }: { title: string }) {
   const { user } = useAuth();
@@ -65,72 +60,6 @@ function CriteriaListCard({ criteria }: { criteria: PerformanceTable['criterios'
   );
 }
 
-function useApplyTable(table: PerformanceTable | null) {
-  const target = readApplyTarget(useLocation().state);
-  const { notify } = useToast();
-  const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [ignoredList, setIgnoredList] = useState<SessionTableIgnored[]>([]);
-  const [sessionConfig, setSessionConfig] = useState<SessionEvaluationConfig | null>(null);
-  const { run, isLoading, error } = useAsyncAction(sessionService.applyTable);
-
-  const fetchConfig = useCallback(() => {
-    const sessionId = target?.sessionId;
-    if (!sessionId) return;
-
-    sessionService
-      .getEvaluationConfig(sessionId)
-      .then(setSessionConfig)
-      .catch(() => undefined);
-  }, [target?.sessionId]);
-
-  useEffect(() => {
-    fetchConfig();
-  }, [fetchConfig]);
-
-  const goToHub = useCallback(() => {
-    if (!target?.sessionId) return;
-    navigate(
-      ROUTES.sessionHub
-        .replace(':roomId', target.roomId ?? '')
-        .replace(':problemId', target.problemId ?? '')
-        .replace(':sessionId', target.sessionId),
-      { replace: true },
-    );
-  }, [navigate, target]);
-
-  const handleApply = async (aplicarNasSeguintes: boolean) => {
-    if (!target || !table) return;
-    const res = await run(target.sessionId, { tabelaId: table.id, aplicarNasSeguintes });
-    if (!res.ok) return;
-
-    fetchConfig();
-    setIsModalOpen(false);
-    notify({ tone: 'success', message: 'Fórmula aplicada com sucesso.' });
-
-    if (res.data?.sessoesIgnoradas?.length > 0) {
-      setIgnoredList(res.data.sessoesIgnoradas);
-    } else {
-      goToHub();
-    }
-  };
-
-  return {
-    canApply: target !== null,
-    isAlreadyApplied: isTableApplied(table, sessionConfig),
-    isSessionLocked: sessionConfig?.bloqueada ?? false,
-    currentTableName: sessionConfig?.tabela?.nome ?? null,
-    isModalOpen,
-    openModal: () => setIsModalOpen(true),
-    closeModal: () => setIsModalOpen(false),
-    handleApply,
-    isApplying: isLoading,
-    applyError: error,
-    ignoredList,
-    closeIgnored: goToHub,
-  };
-}
-
 function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: boolean }) {
   return (
     <>
@@ -149,13 +78,59 @@ function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: 
   );
 }
 
-export default function PerformanceTableDetailPage() {
+function DetailContent({
+  table,
+  apply,
+}: {
+  table: PerformanceTable;
+  apply: ReturnType<typeof useApplyTableLogic>;
+}) {
+  return (
+    <>
+      <DetailBanners isApplied={apply.isAlreadyApplied} isLocked={apply.isSessionLocked} />
+      {table.descricao && (
+        <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
+          <p className="mt-1 text-sm text-muted">{table.descricao}</p>
+        </div>
+      )}
+      <CriteriaListCard criteria={table.criterios} />
+      {apply.canApply && !apply.isAlreadyApplied && (
+        <div className="mt-8">
+          <button
+            type="button"
+            onClick={apply.openModal}
+            disabled={apply.isApplying || apply.isSessionLocked}
+            className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Aplicar fórmula
+          </button>
+        </div>
+      )}
+      <ApplyScopeModal
+        isOpen={apply.isModalOpen}
+        isLoading={apply.isApplying}
+        currentTableName={apply.currentTableName}
+        errorMessage={apply.applyError?.message}
+        onConfirm={apply.handleApply}
+        onClose={apply.closeModal}
+      />
+      <IgnoredSessionsModal
+        isOpen={apply.ignoredList.length > 0}
+        ignored={apply.ignoredList}
+        onClose={apply.closeIgnored}
+      />
+    </>
+  );
+}
+
+export function PerformanceTableDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [table, setTable] = useState<PerformanceTable | null>(null);
   const { run, isLoading, error } = useAsyncAction(
     useCallback(() => performanceTableService.getById(id!), [id]),
   );
-  const apply = useApplyTable(table);
+  const apply = useApplyTableLogic(table);
 
   useEffect(() => {
     run().then((result) => result.ok && setTable(result.data));
@@ -171,44 +146,10 @@ export default function PerformanceTableDetailPage() {
           </div>
         )}
         {error && <Alert tone="error">{error.message}</Alert>}
-        {table && (
-          <>
-            <DetailBanners isApplied={apply.isAlreadyApplied} isLocked={apply.isSessionLocked} />
-            {table.descricao && (
-              <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
-                <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
-                <p className="mt-1 text-sm text-muted">{table.descricao}</p>
-              </div>
-            )}
-            <CriteriaListCard criteria={table.criterios} />
-            {apply.canApply && !apply.isAlreadyApplied && (
-              <div className="mt-8">
-                <button
-                  type="button"
-                  onClick={apply.openModal}
-                  disabled={apply.isApplying || apply.isSessionLocked}
-                  className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Aplicar fórmula
-                </button>
-              </div>
-            )}
-            <ApplyScopeModal
-              isOpen={apply.isModalOpen}
-              isLoading={apply.isApplying}
-              currentTableName={apply.currentTableName}
-              errorMessage={apply.applyError?.message}
-              onConfirm={apply.handleApply}
-              onClose={apply.closeModal}
-            />
-            <IgnoredSessionsModal
-              isOpen={apply.ignoredList.length > 0}
-              ignored={apply.ignoredList}
-              onClose={apply.closeIgnored}
-            />
-          </>
-        )}
+        {table && <DetailContent table={table} apply={apply} />}
       </main>
     </div>
   );
 }
+
+export default PerformanceTableDetailPage;

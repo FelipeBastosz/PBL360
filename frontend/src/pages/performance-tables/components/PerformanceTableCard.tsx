@@ -72,10 +72,9 @@ export function PerformanceTableCard({
             type="button"
             onClick={onDelete}
             aria-label={`Excluir fórmula ${table.nome}`}
-            className="flex items-center gap-1 text-danger transition-opacity hover:opacity-80"
+            className="flex items-center justify-center rounded-full p-1.5 text-danger transition-colors hover:bg-danger/10 hover:opacity-80"
           >
-            <TrashIcon className="size-4" aria-hidden="true" />
-            <span>Excluir</span>
+            <TrashIcon className="size-5" aria-hidden="true" />
           </button>
         )}
       </div>

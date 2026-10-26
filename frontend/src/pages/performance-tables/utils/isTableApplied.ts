@@ -4,8 +4,13 @@ import type { SessionEvaluationConfig } from '@/types/session';
 export function isTableApplied(
   table: PerformanceTableSummary | PerformanceTable | null,
   config: SessionEvaluationConfig | null,
+  expectedAuthorId?: string | null,
 ): boolean {
   if (!table || !config?.tabela) return false;
+
+  if (expectedAuthorId && table.autor?.id && table.autor.id !== expectedAuthorId) {
+    return false;
+  }
 
   if (config.tabela.id === table.id) return true;
 
