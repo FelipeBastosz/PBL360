@@ -1,4 +1,5 @@
 import {
+  PEER_ADJUSTMENTS_QUERY,
   PEER_RECEIVED_SCORES_QUERY,
   POKER_PEER_SCORES_QUERY,
   SELF_ASSESSMENT_SCORES_QUERY,
@@ -20,6 +21,7 @@ export function buildProblemQueries(roomId: string, problemId: string): GradeQue
     { sql: SELF_ASSESSMENT_SCORES_QUERY, params: [problemId] },
     { sql: PEER_RECEIVED_SCORES_QUERY, params: [problemId] },
     { sql: POKER_PEER_SCORES_QUERY, params: [problemId] },
+    { sql: PEER_ADJUSTMENTS_QUERY, params: [problemId] },
   ];
 }
 

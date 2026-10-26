@@ -6,11 +6,15 @@ import { SelfAssessmentAdjustmentRules } from '../../domain/services/self-assess
 import { validateEvaluationRules } from './evaluation-rule-validation';
 
 export interface PlannedAdjustment {
-  evaluationId: string;
+  evaluationId?: string;
+  pokerRoundId?: string;
+  sessionId?: string;
+  studentId?: string;
   originalScore: number;
   previousValue: number;
   newValue: number;
   justification: string;
+  tipo?: 'AUTOAVALIACAO' | 'PARES';
 }
 
 export interface SelfAssessmentAdjustmentsOutput {
@@ -25,27 +29,46 @@ export interface AdjustedSelfAssessmentOutput {
   adjustment: EvaluationAdjustment;
 }
 
+const buildPlanned = (
+  t: SelfAssessmentAdjustmentHistory & { originalScore: number },
+  previousValue: number,
+  newValue: number,
+  justification: string,
+  tipo?: 'AUTOAVALIACAO' | 'PARES',
+): PlannedAdjustment => ({
+  evaluationId: t.evaluationId,
+  pokerRoundId: t.pokerRoundId,
+  sessionId: t.sessionId,
+  studentId: t.studentId,
+  originalScore: t.originalScore,
+  previousValue,
+  newValue,
+  justification: justification.trim(),
+  tipo: t.tipo ?? tipo,
+});
+
 export function planSelfAssessmentAdjustment(
   history: SelfAssessmentAdjustmentHistory | null,
   newScore: number,
   justification: string,
+  tipo?: 'AUTOAVALIACAO' | 'PARES',
 ): PlannedAdjustment {
-  const { evaluationId, originalScore, adjustments } = assertSubmitted(history);
-  const currentScore = SelfAssessmentAdjustmentRules.currentScore(originalScore, adjustments);
-  assertValidAdjustment(currentScore, newScore, justification);
-  return {
-    evaluationId,
-    originalScore,
-    previousValue: currentScore,
-    newValue: newScore,
-    justification: justification.trim(),
-  };
+  const target = assertSubmitted(history, tipo);
+  const current = SelfAssessmentAdjustmentRules.currentScore(
+    target.originalScore,
+    target.adjustments,
+  );
+  assertValidAdjustment(current, newScore, justification);
+  return buildPlanned(target, current, newScore, justification, tipo);
 }
 
 export function summarizeSelfAssessmentAdjustments(
   history: SelfAssessmentAdjustmentHistory | null,
+  tipo?: 'AUTOAVALIACAO' | 'PARES',
 ): SelfAssessmentAdjustmentsOutput {
-  if (!history) throw new NotFoundError('Autoavaliação não encontrada.');
+  if (!history) {
+    throw new NotFoundError(notFoundMessage(tipo));
+  }
   const { originalScore, adjustments } = history;
   const currentScore =
     originalScore === null
@@ -56,14 +79,26 @@ export function summarizeSelfAssessmentAdjustments(
 
 function assertSubmitted(
   history: SelfAssessmentAdjustmentHistory | null,
+  tipo?: 'AUTOAVALIACAO' | 'PARES',
 ): SelfAssessmentAdjustmentHistory & { originalScore: number } {
-  if (!history) throw new NotFoundError('Autoavaliação não encontrada.');
+  const effectiveTipo = history?.tipo ?? tipo;
+  if (!history) {
+    throw new NotFoundError(notFoundMessage(effectiveTipo));
+  }
   const { originalScore } = history;
   if (history.status !== EvaluationStatus.SUBMITTED || originalScore === null) {
-    throw new ConflictError('A autoavaliação ainda não foi enviada.');
+    throw new ConflictError(notSubmittedMessage(effectiveTipo));
   }
   return { ...history, originalScore };
 }
+
+const notFoundMessage = (tipo?: 'AUTOAVALIACAO' | 'PARES') =>
+  tipo === 'PARES' ? 'Avaliação entre pares não encontrada.' : 'Autoavaliação não encontrada.';
+
+const notSubmittedMessage = (tipo?: 'AUTOAVALIACAO' | 'PARES') =>
+  tipo === 'PARES'
+    ? 'A avaliação entre pares ainda não foi finalizada.'
+    : 'A autoavaliação ainda não foi enviada.';
 
 function assertValidAdjustment(
   currentScore: number,

@@ -88,10 +88,29 @@ describe('self-assessment adjustment use cases', () => {
     expect(repository.findHistory).toHaveBeenCalledWith('session', 'student');
   });
 
+  it('lists the history of peer evaluations when tipo PARES is passed', async () => {
+    repository.findHistory.mockResolvedValue({ ...history, tipo: 'PARES' });
+
+    await expect(list.execute('session', 'student', 'tutor', 'PARES')).resolves.toEqual({
+      originalScore: 7,
+      currentScore: 9,
+      adjustments: [adjustment],
+    });
+    expect(repository.findHistory).toHaveBeenCalledWith('session', 'student', 'PARES');
+  });
+
   it('rejects listing a missing self-assessment', async () => {
     repository.findHistory.mockResolvedValue(null);
 
     await expect(list.execute('session', 'student', 'tutor')).rejects.toThrow(NotFoundError);
+  });
+
+  it('rejects listing a missing peer evaluation with peer message', async () => {
+    repository.findHistory.mockResolvedValue(null);
+
+    await expect(list.execute('session', 'student', 'tutor', 'PARES')).rejects.toThrow(
+      'Avaliação entre pares não encontrada.',
+    );
   });
 
   it('does not read the history when access is denied', async () => {

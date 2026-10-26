@@ -263,4 +263,93 @@ describe('GetProblemGradesUseCase', () => {
       expect(result.alunos[2]?.sessoes[0]?.pares.situacao).toBe('AUSENTE');
     });
   });
+
+  describe('session grade resolution from active student modalities', () => {
+    it('calculates session grade from self-assessment when tutor did not evaluate directly', async () => {
+      gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
+      gradesRepository.findProblemData.mockResolvedValue({
+        ...emptyData,
+        sessions: [{ id: 'session-1', date: '2026-10-02', self_eval_released: true }],
+        students: [{ id: 'student-1', name: 'Ana Souza', matricula: '20260001' }],
+        scores: [],
+        attendances: [{ session_id: 'session-1', student_id: 'student-1', status: 'PRESENT' }],
+        criteria: [{ id: 'c1', session_id: 'session-1', weight: 1 }],
+        selfScores: [{ session_id: 'session-1', student_id: 'student-1', score: '8.80' }],
+      });
+
+      const result = await useCase.execute(input, new Date('2026-10-12T12:00:00.000Z'));
+
+      expect(result.alunos[0]?.sessoes[0]).toMatchObject({
+        sessaoId: 'session-1',
+        nota: 8.8,
+        situacao: 'AVALIADA',
+      });
+      expect(result.alunos[0]?.notaFinal).toBe(8.8);
+    });
+
+    it('calculates session grade from peer evaluation form when tutor did not evaluate directly', async () => {
+      gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
+      gradesRepository.findProblemData.mockResolvedValue({
+        ...emptyData,
+        sessions: [
+          {
+            id: 'session-1',
+            date: '2026-10-02',
+            peer_eval_released: true,
+            peer_eval_deadline_ms: Date.parse('2026-10-05T12:00:00.000Z'),
+          },
+        ],
+        students: [{ id: 'student-1', name: 'Ana Souza', matricula: '20260001' }],
+        scores: [],
+        attendances: [{ session_id: 'session-1', student_id: 'student-1', status: 'PRESENT' }],
+        criteria: [{ id: 'c1', session_id: 'session-1', weight: 1 }],
+        peerScores: [
+          { session_id: 'session-1', student_id: 'student-1', score: '8.00' },
+          { session_id: 'session-1', student_id: 'student-1', score: '9.00' },
+        ],
+      });
+
+      const result = await useCase.execute(input, new Date('2026-10-12T12:00:00.000Z'));
+
+      expect(result.alunos[0]?.sessoes[0]).toMatchObject({
+        sessaoId: 'session-1',
+        nota: 8.5,
+        situacao: 'AVALIADA',
+      });
+      expect(result.alunos[0]?.notaFinal).toBe(8.5);
+    });
+
+    it('overrides peer original score with tutor adjustment in session and problem grades', async () => {
+      gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
+      gradesRepository.findProblemData.mockResolvedValue({
+        ...emptyData,
+        sessions: [
+          {
+            id: 'session-1',
+            date: '2026-10-02',
+            peer_eval_released: true,
+            peer_eval_deadline_ms: Date.parse('2026-10-05T12:00:00.000Z'),
+          },
+        ],
+        students: [{ id: 'student-1', name: 'Ana Souza', matricula: '20260001' }],
+        scores: [],
+        attendances: [{ session_id: 'session-1', student_id: 'student-1', status: 'PRESENT' }],
+        criteria: [{ id: 'c1', session_id: 'session-1', weight: 1 }],
+        peerScores: [
+          { session_id: 'session-1', student_id: 'student-1', score: '6.00' },
+          { session_id: 'session-1', student_id: 'student-1', score: '6.00' },
+        ],
+        peerAdjustments: [{ session_id: 'session-1', student_id: 'student-1', score: '9.50' }],
+      });
+
+      const result = await useCase.execute(input, new Date('2026-10-12T12:00:00.000Z'));
+
+      expect(result.alunos[0]?.sessoes[0]).toMatchObject({
+        sessaoId: 'session-1',
+        nota: 9.5,
+        situacao: 'AVALIADA',
+      });
+      expect(result.alunos[0]?.notaFinal).toBe(9.5);
+    });
+  });
 });

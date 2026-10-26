@@ -10,6 +10,8 @@ interface AdjustmentBody {
   justificativa: string;
   autor: { id: string; nome: string };
   ajustadoEm: string;
+  autorId?: string;
+  criadoEm?: string;
 }
 
 interface AdjustmentResponseBody {
@@ -115,7 +117,7 @@ describe('Self-assessment adjustments (e2e)', () => {
   it('adjusts the self-assessment keeping the original score and the latest-first history', async () => {
     const first = await api(app, tutor)
       .post(adjustmentsPath(), { novaNota: 9.25, justificativa: `  ${justificativa}  ` })
-      .expect(201);
+      .expect(200);
     expect(first.body as AdjustmentResponseBody).toMatchObject({
       alunoId: student.id,
       notaOriginal: 8.5,
@@ -124,13 +126,14 @@ describe('Self-assessment adjustments (e2e)', () => {
         valorAnterior: 8.5,
         valorNovo: 9.25,
         justificativa,
+        autorId: tutor.id,
         autor: { id: tutor.id, nome: 'Usuário de Teste' },
       },
     });
 
     await api(app, tutor)
       .post(adjustmentsPath(), { novaNota: 6, justificativa: 'Segunda revisão da nota.' })
-      .expect(201);
+      .expect(200);
 
     const history = await api(app, tutor).get(adjustmentsPath()).expect(200);
     const body = history.body as HistoryBody;
@@ -157,7 +160,7 @@ describe('Self-assessment adjustments (e2e)', () => {
       .post(adjustmentsPath(), { novaNota: 9, justificativa: 'a'.repeat(501) })
       .expect(422);
 
-    await api(app, tutor).post(adjustmentsPath(), { novaNota: 9, justificativa }).expect(201);
+    await api(app, tutor).post(adjustmentsPath(), { novaNota: 9, justificativa }).expect(200);
     await api(app, tutor).post(adjustmentsPath(), { novaNota: 9, justificativa }).expect(422);
   });
 

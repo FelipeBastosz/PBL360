@@ -21,9 +21,13 @@ export class ListSelfAssessmentAdjustmentsUseCase {
     sessionId: string,
     studentId: string,
     authorId: string,
+    tipo?: 'AUTOAVALIACAO' | 'PARES',
   ): Promise<SelfAssessmentAdjustmentsOutput> {
     await this.access.forStudent(sessionId, studentId, authorId);
-    const history = await this.adjustments.findHistory(sessionId, studentId);
-    return summarizeSelfAssessmentAdjustments(history);
+    const history =
+      tipo !== undefined
+        ? await this.adjustments.findHistory(sessionId, studentId, tipo)
+        : await this.adjustments.findHistory(sessionId, studentId);
+    return summarizeSelfAssessmentAdjustments(history, tipo);
   }
 }

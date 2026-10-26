@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
@@ -27,6 +27,7 @@ export class SelfAssessmentAdjustmentsController {
   ) {}
 
   @Post()
+  @HttpCode(HttpStatus.OK)
   @AdjustSelfAssessmentSwaggerDocs
   async create(
     @UuidParam('sessaoId') sessionId: string,
@@ -47,9 +48,10 @@ export class SelfAssessmentAdjustmentsController {
     @UuidParam('sessaoId') sessionId: string,
     @UuidParam('alunoId') studentId: string,
     @AuthenticatedUserId() authorId: string,
+    @Query('tipo') tipo?: 'AUTOAVALIACAO' | 'PARES',
   ) {
     return toSelfAssessmentAdjustmentHistoryResponse(
-      await this.listAdjustments.execute(sessionId, studentId, authorId),
+      await this.listAdjustments.execute(sessionId, studentId, authorId, tipo),
     );
   }
 }
