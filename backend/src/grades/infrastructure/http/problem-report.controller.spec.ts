@@ -33,6 +33,25 @@ describe('ProblemReportController', () => {
       problemId: 'problem-1',
       tutorId: 'tutor-1',
       format: ReportFileFormat.PDF,
+      ocultarNomes: undefined,
+    });
+    expect(response).toBeInstanceOf(StreamableFile);
+  });
+
+  it('delegates report export with ocultarNomes: true', async () => {
+    const response = await controller.export(
+      'room-1',
+      'problem-1',
+      { formato: ReportFileFormat.PDF, ocultarNomes: true },
+      'tutor-1',
+    );
+
+    expect(useCase.execute).toHaveBeenCalledWith({
+      roomId: 'room-1',
+      problemId: 'problem-1',
+      tutorId: 'tutor-1',
+      format: ReportFileFormat.PDF,
+      ocultarNomes: true,
     });
     expect(response).toBeInstanceOf(StreamableFile);
   });

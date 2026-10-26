@@ -127,4 +127,17 @@ describe('ExportProblemReportUseCase', () => {
       }),
     );
   });
+
+  it('forwards ocultarNomes to document builder when specified', async () => {
+    await useCase.execute({ ...input, ocultarNomes: true });
+
+    const [call] = reportFiles.generate.mock.calls;
+    const document = call?.[0];
+    expect(document?.title).toBe('Relatório do problema');
+    const table = document?.sections[0];
+    expect(table?.kind).toBe('table');
+    if (table?.kind === 'table') {
+      expect(table.columns[0]).toEqual(expect.objectContaining({ header: 'Matrícula' }));
+    }
+  });
 });

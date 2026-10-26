@@ -430,6 +430,60 @@ describe('Problem Report Export (e2e)', () => {
       expect(body.message).toContain('O formato do relatório deve ser PDF ou XLSX.');
     });
 
+    it('returns 400 when ocultarNomes is not a valid boolean', async () => {
+      const res = await server()
+        .get(`${exportPath(roomId, problem1Id, 'PDF')}&ocultarNomes=invalido`)
+        .set('Authorization', `Bearer ${tutorToken}`)
+        .expect(400);
+
+      const body = res.body as { message: string[] };
+      expect(body.message).toContain('O campo ocultarNomes deve ser um booleano.');
+    });
+
+    it('exports Problem 1 in XLSX without student names when ocultarNomes=true', async () => {
+      const res = await server()
+        .get(`${exportPath(roomId, problem1Id, 'XLSX')}&ocultarNomes=true`)
+        .set('Authorization', `Bearer ${tutorToken}`)
+        .buffer(true)
+        .parse(binaryParser)
+        .expect(200);
+
+      const workbook = new Workbook();
+      await workbook.xlsx.load(res.body as Buffer);
+
+      const gradesSheet = workbook.getWorksheet('Notas por sessão');
+      expect(gradesSheet).toBeDefined();
+
+      let headerValues: unknown[] = [];
+      const rowValues: unknown[][] = [];
+
+      gradesSheet?.eachRow((row) => {
+        const firstCell = row.getCell(1).text;
+        if (firstCell === 'Matrícula') {
+          headerValues = (row.values as unknown[]).slice(1);
+        } else if (firstCell === '20260001' || firstCell === '') {
+          rowValues.push((row.values as unknown[]).slice(1));
+        }
+      });
+
+      expect(headerValues).not.toContain('Aluno');
+      expect(headerValues[0]).toBe('Matrícula');
+
+      const allRowTexts = rowValues.map((r) => r.join(' ')).join(' ');
+      expect(allRowTexts).not.toContain('Ana Souza');
+      expect(allRowTexts).not.toContain('Bruno Lima');
+
+      const pendenciesSheet = workbook.getWorksheet('Pendências de avaliação');
+      expect(pendenciesSheet).toBeDefined();
+      let pendencyHeader: unknown[] = [];
+      pendenciesSheet?.eachRow((row) => {
+        if (row.getCell(1).text === 'Matrícula') {
+          pendencyHeader = (row.values as unknown[]).slice(1);
+        }
+      });
+      expect(pendencyHeader).toEqual(['Matrícula', 'Sessão pendente']);
+    });
+
     it('returns 401 when request is not authenticated', async () => {
       await server()
         .get(exportPath(roomId, problem1Id, 'PDF'))

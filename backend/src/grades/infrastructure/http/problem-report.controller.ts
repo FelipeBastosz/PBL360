@@ -4,7 +4,7 @@ import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.d
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
-import { ReportExportQueryDto } from '@/report-files/application/dtos/report-export-query.dto';
+import { ExportProblemReportQueryDto } from '../../application/dtos/export-problem-report-query.dto';
 import { toReportFileResponse } from '@/report-files/infrastructure/http/report-file-response';
 import { ExportProblemReportUseCase } from '../../application/use-cases/export-problem-report.use-case';
 import { ExportProblemReportSwaggerDocs } from './problem-report.swagger';
@@ -21,7 +21,7 @@ export class ProblemReportController {
   async export(
     @UuidParam('salaId') roomId: string,
     @UuidParam('problemaId') problemId: string,
-    @Query() query: ReportExportQueryDto,
+    @Query() query: ExportProblemReportQueryDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<StreamableFile> {
     const file = await this.exportProblemReport.execute({
@@ -29,6 +29,7 @@ export class ProblemReportController {
       problemId,
       tutorId,
       format: query.formato,
+      ocultarNomes: query.ocultarNomes,
     });
     return toReportFileResponse(file);
   }

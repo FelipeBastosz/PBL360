@@ -6,14 +6,13 @@ import {
   type ReportFileFormat,
   type ReportSection,
   type ReportTableSection,
-  type ReportTextEntry,
   type ReportTextSection,
 } from '@/report-files/domain/report-document';
 import type { Room } from '@/rooms/domain/entities/room.entity';
 import type { Problem } from '@/problems/domain/entities/problem.entity';
 import type { GradesResponseDto } from '../../dtos/grades-response.dto';
 import type { ProblemFeedbackDetail } from '@/feedbacks/domain/repositories/feedback.repository';
-import { FeedbackScope } from '@/feedbacks/domain/enums/feedback-scope.enum';
+import { buildFeedbackSections } from './problem-report-feedbacks.helper';
 
 export interface BuildProblemReportParams {
   room: Room;
@@ -21,6 +20,7 @@ export interface BuildProblemReportParams {
   grades: GradesResponseDto;
   feedbacks: ProblemFeedbackDetail[];
   format: ReportFileFormat;
+  ocultarNomes?: boolean;
 }
 
 export function buildProblemReportDocument(params: BuildProblemReportParams): ReportDocument {
@@ -38,24 +38,21 @@ export function buildProblemReportDocument(params: BuildProblemReportParams): Re
       { label: 'Semestre', value: params.room.semester },
       { label: 'Problema', value: params.problem.title },
     ],
-    sections: buildProblemSections(params.grades, params.feedbacks),
+    sections: buildProblemSections(params.grades, params.feedbacks, params.ocultarNomes ?? false),
   };
 }
 
 function buildProblemSections(
   grades: GradesResponseDto,
   feedbacks: ProblemFeedbackDetail[],
+  ocultarNomes = false,
 ): ReportSection[] {
-  const sections: ReportSection[] = [buildGradesTableSection(grades)];
-  const pendencies = buildPendenciesTableSection(grades);
+  const studentMatriculaMap = new Map(grades.alunos.map((a) => [a.alunoId, a.matricula]));
+  const sections: ReportSection[] = [buildGradesTableSection(grades, ocultarNomes)];
+  const pendencies = buildPendenciesTableSection(grades, ocultarNomes);
   if (pendencies) sections.push(pendencies);
 
-  sections.push(buildGeneralFeedbackSection(feedbacks));
-  const sessionSection = buildSessionFeedbacksSection(feedbacks);
-  if (sessionSection) sections.push(sessionSection);
-  const studentSection = buildIndividualFeedbacksSection(feedbacks);
-  if (studentSection) sections.push(studentSection);
-
+  sections.push(...buildFeedbackSections(feedbacks, studentMatriculaMap, ocultarNomes));
   sections.push(buildNotesSection());
   return sections;
 }
@@ -77,21 +74,34 @@ function buildNotesSection(): ReportTextSection {
   };
 }
 
-function buildPendenciesTableSection(grades: GradesResponseDto): ReportTableSection | null {
+const pendencyColumns = (ocultarNomes: boolean): ReportColumn[] =>
+  ocultarNomes
+    ? [
+        { header: 'Matrícula', type: ReportColumnType.TEXT },
+        { header: 'Sessão pendente', type: ReportColumnType.TEXT },
+      ]
+    : [
+        { header: 'Aluno', type: ReportColumnType.TEXT },
+        { header: 'Matrícula', type: ReportColumnType.TEXT },
+        { header: 'Sessão pendente', type: ReportColumnType.TEXT },
+      ];
+
+function buildPendenciesTableSection(
+  grades: GradesResponseDto,
+  ocultarNomes = false,
+): ReportTableSection | null {
   const sessionMap = new Map(
     grades.sessoes.map((s) => [s.id, s.title || s.rotulo || s.nome || 'Sessão']),
   );
-  const rows = grades.alunos.flatMap((student) => extractStudentPendencies(student, sessionMap));
+  const rows = grades.alunos.flatMap((student) =>
+    extractStudentPendencies(student, sessionMap, ocultarNomes),
+  );
   if (rows.length === 0) return null;
 
   return {
     kind: 'table',
     title: 'Pendências de avaliação',
-    columns: [
-      { header: 'Aluno', type: ReportColumnType.TEXT },
-      { header: 'Matrícula', type: ReportColumnType.TEXT },
-      { header: 'Sessão pendente', type: ReportColumnType.TEXT },
-    ],
+    columns: pendencyColumns(ocultarNomes),
     rows,
   };
 }
@@ -99,88 +109,60 @@ function buildPendenciesTableSection(grades: GradesResponseDto): ReportTableSect
 function extractStudentPendencies(
   student: GradesResponseDto['alunos'][number],
   sessionMap: Map<string, string>,
+  ocultarNomes = false,
 ): ReportCellValue[][] {
   return student.sessoes
     .filter((session) => session.situacao === 'PENDENTE')
-    .map((session) => [
-      student.nome,
-      student.matricula ?? null,
-      sessionMap.get(session.sessaoId) ?? 'Sessão',
-    ]);
+    .map((session) => {
+      const sessionTitle = sessionMap.get(session.sessaoId) ?? 'Sessão';
+      if (ocultarNomes) {
+        return [student.matricula ?? null, sessionTitle];
+      }
+      return [student.nome, student.matricula ?? null, sessionTitle];
+    });
 }
 
-function buildGradesTableSection(grades: GradesResponseDto): ReportTableSection {
-  const columns: ReportColumn[] = [
-    { header: 'Aluno', type: ReportColumnType.TEXT },
-    { header: 'Matrícula', type: ReportColumnType.TEXT },
-    ...grades.sessoes.map((s) => ({
-      header: s.title || s.rotulo || s.nome || 'Sessão',
-      type: ReportColumnType.NUMBER,
-      decimals: 1,
-    })),
-    { header: 'Nota final', type: ReportColumnType.NUMBER, decimals: 1 },
-  ];
+const gradesColumns = (
+  sessions: GradesResponseDto['sessoes'],
+  ocultarNomes: boolean,
+): ReportColumn[] => [
+  ...(ocultarNomes
+    ? [{ header: 'Matrícula', type: ReportColumnType.TEXT }]
+    : [
+        { header: 'Aluno', type: ReportColumnType.TEXT },
+        { header: 'Matrícula', type: ReportColumnType.TEXT },
+      ]),
+  ...sessions.map((s) => ({
+    header: s.title || s.rotulo || s.nome || 'Sessão',
+    type: ReportColumnType.NUMBER,
+    decimals: 1,
+  })),
+  { header: 'Nota final', type: ReportColumnType.NUMBER, decimals: 1 },
+];
 
+function buildGradesTableSection(
+  grades: GradesResponseDto,
+  ocultarNomes = false,
+): ReportTableSection {
   return {
     kind: 'table',
     title: 'Notas por sessão',
-    columns,
-    rows: grades.alunos.map((student) => buildStudentGradeRow(student, grades.sessoes)),
+    columns: gradesColumns(grades.sessoes, ocultarNomes),
+    rows: grades.alunos.map((student) =>
+      buildStudentGradeRow(student, grades.sessoes, ocultarNomes),
+    ),
   };
 }
 
 function buildStudentGradeRow(
   student: GradesResponseDto['alunos'][number],
   sessions: GradesResponseDto['sessoes'],
+  ocultarNomes = false,
 ): ReportCellValue[] {
   const sessionMap = new Map(student.sessoes.map((s) => [s.sessaoId, s.nota]));
   const sessionGrades = sessions.map((s) => sessionMap.get(s.id) ?? null);
+  if (ocultarNomes) {
+    return [student.matricula ?? null, ...sessionGrades, student.notaFinal];
+  }
   return [student.nome, student.matricula ?? null, ...sessionGrades, student.notaFinal];
-}
-
-function buildGeneralFeedbackSection(feedbacks: ProblemFeedbackDetail[]): ReportTextSection {
-  const general = feedbacks.find((f) => f.scope === FeedbackScope.PROBLEM);
-  const label = general?.authorName ? `Turma (Autor: ${general.authorName})` : 'Turma';
-  return {
-    kind: 'text',
-    title: 'Feedback geral do problema',
-    entries: [{ label, text: general?.text ?? null }],
-  };
-}
-
-function buildSessionFeedbacksSection(
-  feedbacks: ProblemFeedbackDetail[],
-): ReportTextSection | null {
-  const sessionFeedbacks = feedbacks.filter((f) => f.scope === FeedbackScope.SESSION);
-  if (sessionFeedbacks.length === 0) return null;
-  return {
-    kind: 'text',
-    title: 'Feedbacks das sessões',
-    entries: sessionFeedbacks.map(toSessionFeedbackEntry),
-  };
-}
-
-function toSessionFeedbackEntry(f: ProblemFeedbackDetail): ReportTextEntry {
-  const target = f.recipientName ?? 'Aluno';
-  const session = f.sessionTitle ?? 'Sessão';
-  const author = f.authorName ? ` (Autor: ${f.authorName})` : '';
-  return { label: `${target} — ${session}${author}`, text: f.text };
-}
-
-function buildIndividualFeedbacksSection(
-  feedbacks: ProblemFeedbackDetail[],
-): ReportTextSection | null {
-  const studentFeedbacks = feedbacks.filter((f) => f.scope === FeedbackScope.STUDENT);
-  if (studentFeedbacks.length === 0) return null;
-  return {
-    kind: 'text',
-    title: 'Feedbacks individuais',
-    entries: studentFeedbacks.map(toStudentFeedbackEntry),
-  };
-}
-
-function toStudentFeedbackEntry(f: ProblemFeedbackDetail): ReportTextEntry {
-  const target = f.recipientName ?? 'Aluno';
-  const author = f.authorName ? ` (Autor: ${f.authorName})` : '';
-  return { label: `${target}${author}`, text: f.text };
 }

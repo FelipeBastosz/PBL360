@@ -26,6 +26,7 @@ export interface ExportProblemReportInput {
   problemId: string;
   tutorId: string;
   format: ReportFileFormat;
+  ocultarNomes?: boolean;
 }
 
 @Injectable()
@@ -47,6 +48,7 @@ export class ExportProblemReportUseCase {
       grades,
       feedbacks,
       format: input.format,
+      ocultarNomes: input.ocultarNomes,
     });
     return this.reportFiles.generate(document);
   }

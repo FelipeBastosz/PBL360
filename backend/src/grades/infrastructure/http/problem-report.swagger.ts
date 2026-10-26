@@ -26,6 +26,13 @@ export const ExportProblemReportSwaggerDocs = applyDecorators(
     description: 'Formato do arquivo para exportação.',
     example: ReportFileFormat.PDF,
   }),
+  ApiQuery({
+    name: 'ocultarNomes',
+    required: false,
+    type: Boolean,
+    description: 'Se verdadeiro, oculta os nomes dos alunos e exibe apenas as matrículas.',
+    example: false,
+  }),
   ExportReportFileSwaggerDocs,
   ApiUnauthorizedResponse({ description: 'Sem autenticação.', type: ErrorResponseDto }),
   ApiForbiddenResponse({

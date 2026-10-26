@@ -298,4 +298,65 @@ describe('problem-report-document.helper', () => {
     const pendenciesSection = doc.sections.find((s) => s.title === 'Pendências de avaliação');
     expect(pendenciesSection).toBeUndefined();
   });
+
+  it('builds problem report document with ocultarNomes: true omitting student names from tables and feedback', () => {
+    const doc = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks,
+      format: ReportFileFormat.PDF,
+      ocultarNomes: true,
+    });
+
+    const table = doc.sections[0];
+    expect(table.kind).toBe('table');
+    if (table.kind === 'table') {
+      expect(table.columns).toEqual([
+        { header: 'Matrícula', type: ReportColumnType.TEXT },
+        { header: 'Abertura', type: ReportColumnType.NUMBER, decimals: 1 },
+        { header: 'Fechamento', type: ReportColumnType.NUMBER, decimals: 1 },
+        { header: 'Nota final', type: ReportColumnType.NUMBER, decimals: 1 },
+      ]);
+      expect(table.rows).toEqual([
+        ['20260001', 8.5, 9.0, 8.75],
+        [null, 7.0, null, null],
+      ]);
+    }
+
+    const pendenciesSection = doc.sections[1];
+    expect(pendenciesSection).toEqual({
+      kind: 'table',
+      title: 'Pendências de avaliação',
+      columns: [
+        { header: 'Matrícula', type: ReportColumnType.TEXT },
+        { header: 'Sessão pendente', type: ReportColumnType.TEXT },
+      ],
+      rows: [[null, 'Fechamento']],
+    });
+
+    const sessionSection = doc.sections[3];
+    expect(sessionSection).toEqual({
+      kind: 'text',
+      title: 'Feedbacks das sessões',
+      entries: [
+        {
+          label: 'Matrícula: 20260001 — Abertura (Autor: Prof. Carlos)',
+          text: 'Excelente participação na abertura.',
+        },
+      ],
+    });
+
+    const studentSection = doc.sections[4];
+    expect(studentSection).toEqual({
+      kind: 'text',
+      title: 'Feedbacks individuais',
+      entries: [
+        {
+          label: 'Matrícula: 20260001 (Autor: Profa. Maria)',
+          text: 'Desempenho consistente em todo o problema.',
+        },
+      ],
+    });
+  });
 });
