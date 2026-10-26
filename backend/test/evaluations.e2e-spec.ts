@@ -593,6 +593,19 @@ describe('Tutor evaluations (e2e)', () => {
     );
   });
 
+  it('rejects tutor evaluation when planning poker is started in the session', async () => {
+    await db.query(
+      `INSERT INTO poker_sessions (session_id, anonymous, order_mode, created_by, status)
+       VALUES ($1, false, 'SEQUENTIAL', $2, 'OPEN');`,
+      [sessionId, owner.id],
+    );
+
+    const res = await save({ itens: scores(), enviar: false }).expect(409);
+    expect((res.body as ErrorBody).message).toBe(
+      'A avaliação direta do tutor está bloqueada enquanto a autoavaliação ou pares estiver ativa na sessão.',
+    );
+  });
+
   it('allows tutor evaluation after releases are turned off', async () => {
     await db.query('UPDATE sessions SET self_eval_released = true WHERE id = $1;', [sessionId]);
     await save({ itens: scores(), enviar: false }).expect(409);

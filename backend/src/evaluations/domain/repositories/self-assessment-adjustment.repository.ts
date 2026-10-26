@@ -3,6 +3,8 @@ import type { EvaluationStatus } from '../enums/evaluation-status.enum';
 
 export const SELF_ASSESSMENT_ADJUSTMENT_REPOSITORY = Symbol('SelfAssessmentAdjustmentRepository');
 
+export type AdjustmentTarget = 'AUTOAVALIACAO' | 'PARES';
+
 export interface SelfAssessmentAdjustmentHistory {
   evaluationId?: string;
   pokerRoundId?: string;
@@ -11,7 +13,7 @@ export interface SelfAssessmentAdjustmentHistory {
   status: EvaluationStatus;
   originalScore: number | null;
   adjustments: EvaluationAdjustment[];
-  tipo?: 'AUTOAVALIACAO' | 'PARES';
+  tipo?: AdjustmentTarget;
 }
 
 export interface SelfAssessmentAdjustmentWrite {
@@ -20,7 +22,7 @@ export interface SelfAssessmentAdjustmentWrite {
   authorId: string;
   newScore: number;
   justification: string;
-  tipo?: 'AUTOAVALIACAO' | 'PARES';
+  tipo?: AdjustmentTarget;
 }
 
 export interface RecordedSelfAssessmentAdjustment {
@@ -32,7 +34,7 @@ export interface SelfAssessmentAdjustmentRepository {
   findHistory(
     sessionId: string,
     studentId: string,
-    tipo?: 'AUTOAVALIACAO' | 'PARES',
+    tipo?: AdjustmentTarget,
   ): Promise<SelfAssessmentAdjustmentHistory | null>;
   record(input: SelfAssessmentAdjustmentWrite): Promise<RecordedSelfAssessmentAdjustment>;
 }

@@ -20,6 +20,7 @@ const DEFAULT_SUBMISSIONS: ReleaseSubmissions = {
   selfSubmitted: 0,
   peerSubmitted: 0,
   tutorSubmitted: 0,
+  pokerStarted: false,
 };
 
 export async function countReleaseSubmissions(

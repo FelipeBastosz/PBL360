@@ -1,7 +1,10 @@
 import { ConflictError, NotFoundError } from '@/shared/errors/application.error';
 import type { EvaluationAdjustment } from '../../domain/entities/grade-adjustment.entity';
 import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
-import type { SelfAssessmentAdjustmentHistory } from '../../domain/repositories/self-assessment-adjustment.repository';
+import type {
+  AdjustmentTarget,
+  SelfAssessmentAdjustmentHistory,
+} from '../../domain/repositories/self-assessment-adjustment.repository';
 import { SelfAssessmentAdjustmentRules } from '../../domain/services/self-assessment-adjustment-rules';
 import { validateEvaluationRules } from './evaluation-rule-validation';
 
@@ -14,7 +17,7 @@ export interface PlannedAdjustment {
   previousValue: number;
   newValue: number;
   justification: string;
-  tipo?: 'AUTOAVALIACAO' | 'PARES';
+  tipo?: AdjustmentTarget;
 }
 
 export interface SelfAssessmentAdjustmentsOutput {
@@ -34,7 +37,7 @@ const buildPlanned = (
   previousValue: number,
   newValue: number,
   justification: string,
-  tipo?: 'AUTOAVALIACAO' | 'PARES',
+  tipo?: AdjustmentTarget,
 ): PlannedAdjustment => ({
   evaluationId: t.evaluationId,
   pokerRoundId: t.pokerRoundId,
@@ -51,7 +54,7 @@ export function planSelfAssessmentAdjustment(
   history: SelfAssessmentAdjustmentHistory | null,
   newScore: number,
   justification: string,
-  tipo?: 'AUTOAVALIACAO' | 'PARES',
+  tipo?: AdjustmentTarget,
 ): PlannedAdjustment {
   const target = assertSubmitted(history, tipo);
   const current = SelfAssessmentAdjustmentRules.currentScore(
@@ -64,7 +67,7 @@ export function planSelfAssessmentAdjustment(
 
 export function summarizeSelfAssessmentAdjustments(
   history: SelfAssessmentAdjustmentHistory | null,
-  tipo?: 'AUTOAVALIACAO' | 'PARES',
+  tipo?: AdjustmentTarget,
 ): SelfAssessmentAdjustmentsOutput {
   if (!history) {
     throw new NotFoundError(notFoundMessage(tipo));
@@ -79,7 +82,7 @@ export function summarizeSelfAssessmentAdjustments(
 
 function assertSubmitted(
   history: SelfAssessmentAdjustmentHistory | null,
-  tipo?: 'AUTOAVALIACAO' | 'PARES',
+  tipo?: AdjustmentTarget,
 ): SelfAssessmentAdjustmentHistory & { originalScore: number } {
   const effectiveTipo = history?.tipo ?? tipo;
   if (!history) {
@@ -92,10 +95,10 @@ function assertSubmitted(
   return { ...history, originalScore };
 }
 
-const notFoundMessage = (tipo?: 'AUTOAVALIACAO' | 'PARES') =>
+const notFoundMessage = (tipo?: AdjustmentTarget) =>
   tipo === 'PARES' ? 'Avaliação entre pares não encontrada.' : 'Autoavaliação não encontrada.';
 
-const notSubmittedMessage = (tipo?: 'AUTOAVALIACAO' | 'PARES') =>
+const notSubmittedMessage = (tipo?: AdjustmentTarget) =>
   tipo === 'PARES'
     ? 'A avaliação entre pares ainda não foi finalizada.'
     : 'A autoavaliação ainda não foi enviada.';

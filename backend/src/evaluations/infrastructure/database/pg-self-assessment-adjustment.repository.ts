@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
 import { planSelfAssessmentAdjustment } from '../../application/services/self-assessment-adjustment-policy';
 import type {
+  AdjustmentTarget,
   RecordedSelfAssessmentAdjustment,
   SelfAssessmentAdjustmentRepository,
   SelfAssessmentAdjustmentWrite,
@@ -16,7 +17,7 @@ import {
 export class PgSelfAssessmentAdjustmentRepository implements SelfAssessmentAdjustmentRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  findHistory(sessionId: string, studentId: string, tipo?: 'AUTOAVALIACAO' | 'PARES') {
+  findHistory(sessionId: string, studentId: string, tipo?: AdjustmentTarget) {
     return this.dataSource.transaction('REPEATABLE READ', (manager) =>
       resolveAndReadHistory(manager, sessionId, studentId, false, tipo),
     );

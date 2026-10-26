@@ -141,14 +141,15 @@ describe('Evaluation releases (e2e)', () => {
     sessionId = sessions[0]!.id;
     sessionWithoutRollCallId = sessions[1]!.id;
     await seedRollCall();
-    const [first, second] = students as [TestUser, TestUser];
-    const ids = { problemId: problem.id, tableId: table.id };
-    await insertEvaluation('SELF_ASSESSMENT', first, first, ids);
-    await insertEvaluation('PEER_ASSESSMENT', first, second, ids);
-    await insertEvaluation('PEER_ASSESSMENT', second, first, ids, false);
   }, 30000);
 
   it('returns closed releases with the adherence of present and late students', async () => {
+    const [first, second] = students as [TestUser, TestUser];
+    const ids = { problemId, tableId };
+    await insertEvaluation('SELF_ASSESSMENT', first, first, ids);
+    await insertEvaluation('PEER_ASSESSMENT', first, second, ids);
+    await insertEvaluation('PEER_ASSESSMENT', second, first, ids, false);
+
     const response = await api(app, owner).get(path()).expect(200);
 
     expect(response.body as ReleasesBody).toEqual({
@@ -201,6 +202,10 @@ describe('Evaluation releases (e2e)', () => {
   });
 
   it('turns a release off and preserves what was already submitted', async () => {
+    const [first, second] = students as [TestUser, TestUser];
+    const ids = { problemId, tableId };
+    await insertEvaluation('PEER_ASSESSMENT', first, second, ids);
+
     await api(app, owner)
       .put(path(), { pares: { liberada: true } })
       .expect(200);
@@ -283,6 +288,53 @@ describe('Evaluation releases (e2e)', () => {
     await api(app, owner)
       .put(path(), { autoavaliacao: { liberada: true } })
       .expect(200);
+  });
+
+  it('rejects releasing peer evaluation when self evaluation was already submitted', async () => {
+    await insertEvaluation(
+      'SELF_ASSESSMENT',
+      students[0]!,
+      students[0]!,
+      { problemId, tableId },
+      true,
+    );
+
+    const res = await api(app, owner)
+      .put(path(), { pares: { liberada: true } })
+      .expect(409);
+    expect((res.body as ErrorBody).message).toBe('A sessão já possui autoavaliações submetidas.');
+  });
+
+  it('rejects releasing self evaluation when peer evaluation was already submitted', async () => {
+    await insertEvaluation(
+      'PEER_ASSESSMENT',
+      students[0]!,
+      students[1]!,
+      { problemId, tableId },
+      true,
+    );
+
+    const res = await api(app, owner)
+      .put(path(), { autoavaliacao: { liberada: true } })
+      .expect(409);
+    expect((res.body as ErrorBody).message).toBe(
+      'A sessão já possui avaliações de pares submetidas.',
+    );
+  });
+
+  it('rejects releasing self evaluation when planning poker was started', async () => {
+    await db.query(
+      `INSERT INTO poker_sessions (session_id, anonymous, order_mode, created_by, status)
+       VALUES ($1, false, 'SEQUENTIAL', $2, 'OPEN');`,
+      [sessionId, owner.id],
+    );
+
+    const res = await api(app, owner)
+      .put(path(), { autoavaliacao: { liberada: true } })
+      .expect(409);
+    expect((res.body as ErrorBody).message).toBe(
+      'Esta sessão já usa o planning poker para a avaliação entre pares. Use um ou outro.',
+    );
   });
 
   it('returns not found for an unknown session', async () => {

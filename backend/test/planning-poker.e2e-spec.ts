@@ -145,6 +145,31 @@ describe('Planning poker (e2e)', () => {
         motivo: 'Salve a chamada para começar.',
       });
     });
+
+    it('blocks starting planning poker when tutor already submitted evaluations', async () => {
+      await db.query(
+        `INSERT INTO session_evaluation_configs (session_id, performance_table_id, table_name, created_by)
+         VALUES ($1, (SELECT id FROM performance_tables LIMIT 1), 'Critérios', $2)
+         ON CONFLICT (session_id) DO NOTHING;`,
+        [sessionId, tutor.id],
+      );
+      await db.query(
+        `INSERT INTO evaluations (session_id, student_id, evaluator_id, problem_id, performance_table_id, config_session_id, type, status, submitted_at, session_score, calculation_version, created_by)
+         VALUES ($1, $2, $3, (SELECT problem_id FROM sessions WHERE id = $1), (SELECT performance_table_id FROM session_evaluation_configs WHERE session_id = $1), $1, 'TUTOR_SESSION', 'SUBMITTED', NOW(), 8.5, 'WEIGHTED_SESSION_FORMULA_V3', $3);`,
+        [sessionId, ana.id, tutor.id],
+      );
+
+      const res = await start().expect(409);
+      expect((res.body as { message: string }).message).toBe(
+        'A sessão já possui avaliações do tutor submetidas.',
+      );
+
+      const availability = await api(app, tutor).get(path('/disponibilidade')).expect(200);
+      expect(availability.body).toMatchObject({
+        disponivel: false,
+        motivo: 'A sessão já possui avaliações do tutor submetidas.',
+      });
+    });
   });
 
   describe('a round with names', () => {

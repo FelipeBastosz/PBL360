@@ -36,7 +36,8 @@ const accessDocs = () => [
 export const AdjustSelfAssessmentSwaggerDocs = applyDecorators(
   ...accessDocs(),
   ApiOperation({
-    summary: 'Ajusta a nota da autoavaliação ou avaliação por pares do aluno na sessão',
+    summary:
+      'Ajusta a nota da autoavaliação, avaliação por pares ou planning poker do aluno na sessão',
     description:
       'Permite o registro de ajuste com justificativa tanto para a autoavaliação quanto para a nota consolidada de avaliação entre pares (formulário ou planning poker). A nota original nunca é alterada: o ajuste registra o valor anterior (nota vigente), o novo valor, a justificativa, o autor e a data na mesma transação. A nota vigente passa a ser a do ajuste mais recente.',
   }),
@@ -60,7 +61,8 @@ export const AdjustSelfAssessmentSwaggerDocs = applyDecorators(
 export const ListSelfAssessmentAdjustmentsSwaggerDocs = applyDecorators(
   ...accessDocs(),
   ApiOperation({
-    summary: 'Histórico de ajustes da avaliação (autoavaliação ou pares) do aluno na sessão',
+    summary:
+      'Histórico de ajustes da avaliação (autoavaliação, pares ou planning poker) do aluno na sessão',
     description:
       'Ajustes do mais recente para o mais antigo. Enquanto a avaliação está em rascunho ou não finalizada, as notas são nulas e não há ajustes.',
   }),

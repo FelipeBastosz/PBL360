@@ -107,4 +107,22 @@ describe('SaveTutorEvaluationUseCase', () => {
     ).rejects.toThrow(ConflictError);
     expect(repository.recordEvaluation).not.toHaveBeenCalled();
   });
+  it('rejects tutor evaluation when planning poker is active', async () => {
+    access.forStudent.mockResolvedValue({
+      ...context,
+      selfEvalReleased: false,
+      peerEvalReleased: false,
+      hasPoker: true,
+    });
+    await expect(
+      useCase.execute({
+        sessionId: 'session',
+        studentId: 'student',
+        authorId: 'tutor',
+        items: [],
+        submit: false,
+      }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.recordEvaluation).not.toHaveBeenCalled();
+  });
 });

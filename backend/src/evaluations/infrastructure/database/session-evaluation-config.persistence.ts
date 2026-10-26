@@ -139,9 +139,11 @@ interface SessionLockRow {
   id: string;
   selfEvalReleased: boolean;
   peerEvalReleased: boolean;
+  hasPoker: boolean;
 }
 
-const LOCK_SESSION_QUERY = `SELECT id, self_eval_released AS "selfEvalReleased", peer_eval_released AS "peerEvalReleased"
+const LOCK_SESSION_QUERY = `SELECT id, self_eval_released AS "selfEvalReleased", peer_eval_released AS "peerEvalReleased",
+  EXISTS (SELECT 1 FROM poker_sessions WHERE session_id = sessions.id) AS "hasPoker"
  FROM sessions WHERE id = $1 AND problem_id = $2 FOR UPDATE;`;
 
 export async function assertSessionExists(
@@ -154,7 +156,7 @@ export async function assertSessionExists(
     problemId,
   ]);
   if (!session) throw new NotFoundError('Sessão não encontrada.');
-  if (session.selfEvalReleased || session.peerEvalReleased) {
+  if (session.selfEvalReleased || session.peerEvalReleased || session.hasPoker) {
     throw new ConflictError(
       'A avaliação direta do tutor está bloqueada enquanto a autoavaliação ou pares estiver ativa na sessão.',
     );

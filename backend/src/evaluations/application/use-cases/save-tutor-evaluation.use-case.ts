@@ -16,7 +16,11 @@ export class SaveTutorEvaluationUseCase {
 
   async execute(input: SaveTutorEvaluationInput) {
     const context = await this.access.forStudent(input.sessionId, input.studentId, input.authorId);
-    if (context.selfEvalReleased || context.peerEvalReleased) {
+    if (
+      context.selfEvalReleased ||
+      context.peerEvalReleased ||
+      (context as { hasPoker?: boolean }).hasPoker
+    ) {
       throw new ConflictError(
         'A avaliação direta do tutor está bloqueada enquanto a autoavaliação ou pares estiver ativa na sessão.',
       );

@@ -5,6 +5,7 @@ import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.d
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { AdjustSelfAssessmentDto } from '../../application/dtos/adjust-self-assessment.dto';
+import { ListSelfAssessmentAdjustmentsQueryDto } from '../../application/dtos/list-self-assessment-adjustments-query.dto';
 import { AdjustSelfAssessmentUseCase } from '../../application/use-cases/adjust-self-assessment.use-case';
 import { ListSelfAssessmentAdjustmentsUseCase } from '../../application/use-cases/list-self-assessment-adjustments.use-case';
 import {
@@ -48,10 +49,10 @@ export class SelfAssessmentAdjustmentsController {
     @UuidParam('sessaoId') sessionId: string,
     @UuidParam('alunoId') studentId: string,
     @AuthenticatedUserId() authorId: string,
-    @Query('tipo') tipo?: 'AUTOAVALIACAO' | 'PARES',
+    @Query() query: ListSelfAssessmentAdjustmentsQueryDto,
   ) {
     return toSelfAssessmentAdjustmentHistoryResponse(
-      await this.listAdjustments.execute(sessionId, studentId, authorId, tipo),
+      await this.listAdjustments.execute(sessionId, studentId, authorId, query.tipo),
     );
   }
 }

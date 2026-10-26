@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import type { AdjustmentTarget } from '../../domain/repositories/self-assessment-adjustment.repository';
 
 export class AdjustSelfAssessmentDto {
   @ApiProperty({
@@ -34,6 +35,8 @@ export class AdjustSelfAssessmentDto {
       'Tipo de avaliação a ser ajustada. Se omitido, resolve a modalidade ativa na sessão.',
   })
   @IsOptional()
-  @IsString()
-  tipo?: 'AUTOAVALIACAO' | 'PARES';
+  @IsIn(['AUTOAVALIACAO', 'PARES'], {
+    message: 'O tipo deve ser AUTOAVALIACAO ou PARES.',
+  })
+  tipo?: AdjustmentTarget;
 }

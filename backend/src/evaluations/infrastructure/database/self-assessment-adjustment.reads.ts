@@ -1,7 +1,11 @@
 import type { EntityManager } from 'typeorm';
 import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
 import type { EvaluationAdjustment } from '../../domain/entities/grade-adjustment.entity';
-import type { SelfAssessmentAdjustmentHistory } from '../../domain/repositories/self-assessment-adjustment.repository';
+import type {
+  AdjustmentTarget,
+  SelfAssessmentAdjustmentHistory,
+} from '../../domain/repositories/self-assessment-adjustment.repository';
+import { presentGrade } from '@/grades/domain/entities/grade-calculator';
 import {
   FIND_EVALUATION_ADJUSTMENTS,
   FIND_PEER_FORM_ADJUSTMENTS,
@@ -42,7 +46,7 @@ export async function resolveAndReadHistory(
   sessionId: string,
   studentId: string,
   lock: boolean,
-  tipo?: 'AUTOAVALIACAO' | 'PARES',
+  tipo?: AdjustmentTarget,
 ): Promise<SelfAssessmentAdjustmentHistory | null> {
   const target = tipo ?? (await resolveModality(manager, sessionId, studentId));
   if (target === 'PARES') {
@@ -55,12 +59,12 @@ async function resolveModality(
   manager: EntityManager,
   sessionId: string,
   studentId: string,
-): Promise<'AUTOAVALIACAO' | 'PARES'> {
+): Promise<AdjustmentTarget> {
   const [session] = await manager.query<SessionReleaseRow[]>(FIND_SESSION_EVALUATION_RELEASES, [
     sessionId,
   ]);
-  if (session?.peerEvalReleased) return 'PARES';
   if (session?.selfEvalReleased) return 'AUTOAVALIACAO';
+  if (session?.peerEvalReleased) return 'PARES';
   return detectStudentModality(manager, sessionId, studentId);
 }
 
@@ -68,7 +72,7 @@ async function detectStudentModality(
   manager: EntityManager,
   sessionId: string,
   studentId: string,
-): Promise<'AUTOAVALIACAO' | 'PARES'> {
+): Promise<AdjustmentTarget> {
   const [self] = await manager.query<ScoreRow[]>(FIND_SELF_ASSESSMENT_SCORE, [
     sessionId,
     studentId,
@@ -154,14 +158,34 @@ const buildPeerFormHistory = (
   studentId: string,
   submitted: ScoreRow[],
   adjustments: AdjustmentRow[],
-): SelfAssessmentAdjustmentHistory => ({
-  sessionId,
-  studentId,
-  status: EvaluationStatus.SUBMITTED,
-  originalScore: averageScore(submitted),
-  adjustments: adjustments.map(toAdjustment),
-  tipo: 'PARES',
-});
+): SelfAssessmentAdjustmentHistory => {
+  const originalScore =
+    adjustments.length > 0
+      ? Number(adjustments[adjustments.length - 1]!.previousValue)
+      : averageScore(submitted);
+
+  return {
+    sessionId,
+    studentId,
+    status: EvaluationStatus.SUBMITTED,
+    originalScore,
+    adjustments: adjustments.map(toAdjustment),
+    tipo: 'PARES',
+  };
+};
+
+async function isPeerReleased(manager: EntityManager, sessionId: string): Promise<boolean> {
+  const [session] = await manager.query<SessionReleaseRow[]>(FIND_SESSION_EVALUATION_RELEASES, [
+    sessionId,
+  ]);
+  return Boolean(session?.peerEvalReleased);
+}
+
+const submittedScores = (rows: ScoreRow[]) =>
+  rows.filter((r) => r.status === EvaluationStatus.SUBMITTED && r.sessionScore !== null);
+
+const findPeerAdjustments = (manager: EntityManager, sessionId: string, studentId: string) =>
+  manager.query<AdjustmentRow[]>(FIND_PEER_FORM_ADJUSTMENTS, [sessionId, studentId]);
 
 async function readPeerFormHistory(
   manager: EntityManager,
@@ -169,22 +193,23 @@ async function readPeerFormHistory(
   studentId: string,
   lock: boolean,
 ): Promise<SelfAssessmentAdjustmentHistory | null> {
-  const query = lock ? LOCK_PEER_FORM_SCORES : FIND_PEER_FORM_SCORES;
-  const rows = await manager.query<ScoreRow[]>(query, [sessionId, studentId]);
-  if (rows.length === 0) return null;
-  const submitted = rows.filter(
-    (r) => r.status === EvaluationStatus.SUBMITTED && r.sessionScore !== null,
+  const rows = await manager.query<ScoreRow[]>(
+    lock ? LOCK_PEER_FORM_SCORES : FIND_PEER_FORM_SCORES,
+    [sessionId, studentId],
   );
+  if (rows.length === 0) return null;
+  if (await isPeerReleased(manager, sessionId)) return draftPeer(sessionId, studentId);
+
+  const submitted = submittedScores(rows);
   if (submitted.length === 0) return draftPeer(sessionId, studentId);
-  const adjustments = await manager.query<AdjustmentRow[]>(FIND_PEER_FORM_ADJUSTMENTS, [
-    sessionId,
-    studentId,
-  ]);
+  const adjustments = await findPeerAdjustments(manager, sessionId, studentId);
   return buildPeerFormHistory(sessionId, studentId, submitted, adjustments);
 }
 
-const averageScore = (rows: ScoreRow[]) =>
-  Math.round((rows.reduce((s, r) => s + Number(r.sessionScore), 0) / rows.length) * 100) / 100;
+const averageScore = (rows: ScoreRow[]) => {
+  const sum = rows.reduce((s, r) => s + Number(r.sessionScore), 0);
+  return presentGrade(sum / rows.length)!;
+};
 
 export const toAdjustment = (row: AdjustmentRow): EvaluationAdjustment => ({
   ...row,

@@ -141,6 +141,7 @@ describe('PgSelfAssessmentAdjustmentRepository', () => {
           { id: 'peer-eval-1', status: EvaluationStatus.SUBMITTED, sessionScore: '8.00' },
           { id: 'peer-eval-2', status: EvaluationStatus.SUBMITTED, sessionScore: '9.00' },
         ])
+        .mockResolvedValueOnce([{ selfEvalReleased: false, peerEvalReleased: false }])
         .mockResolvedValueOnce([
           {
             previousValue: '8.50',
@@ -172,10 +173,31 @@ describe('PgSelfAssessmentAdjustmentRepository', () => {
         ],
       });
       expect(manager.query).toHaveBeenCalledWith(FIND_PEER_FORM_SCORES, [sessionId, studentId]);
+      expect(manager.query).toHaveBeenCalledWith(FIND_SESSION_EVALUATION_RELEASES, [sessionId]);
       expect(manager.query).toHaveBeenCalledWith(FIND_PEER_FORM_ADJUSTMENTS, [
         sessionId,
         studentId,
       ]);
+    });
+
+    it('returns draft for peer form when peer evaluation is still released', async () => {
+      manager.query
+        .mockResolvedValueOnce([]) // no poker round
+        .mockResolvedValueOnce([
+          { id: 'peer-eval-1', status: EvaluationStatus.SUBMITTED, sessionScore: '8.00' },
+        ])
+        .mockResolvedValueOnce([{ selfEvalReleased: false, peerEvalReleased: true }]);
+
+      const result = await repository.findHistory(sessionId, studentId, 'PARES');
+
+      expect(result).toEqual({
+        sessionId,
+        studentId,
+        status: EvaluationStatus.DRAFT,
+        originalScore: null,
+        adjustments: [],
+        tipo: 'PARES',
+      });
     });
 
     it('returns draft when peer form evaluations exist but none submitted', async () => {
@@ -183,7 +205,8 @@ describe('PgSelfAssessmentAdjustmentRepository', () => {
         .mockResolvedValueOnce([]) // no poker
         .mockResolvedValueOnce([
           { id: 'peer-eval-1', status: EvaluationStatus.DRAFT, sessionScore: null },
-        ]);
+        ])
+        .mockResolvedValueOnce([{ selfEvalReleased: false, peerEvalReleased: false }]);
 
       const result = await repository.findHistory(sessionId, studentId, 'PARES');
 
@@ -302,6 +325,7 @@ describe('PgSelfAssessmentAdjustmentRepository', () => {
           { id: 'peer-1', status: EvaluationStatus.SUBMITTED, sessionScore: '8.00' },
           { id: 'peer-2', status: EvaluationStatus.SUBMITTED, sessionScore: '8.00' },
         ])
+        .mockResolvedValueOnce([{ selfEvalReleased: false, peerEvalReleased: false }])
         .mockResolvedValueOnce([]) // no previous adjustments
         .mockResolvedValueOnce([
           {
@@ -326,6 +350,7 @@ describe('PgSelfAssessmentAdjustmentRepository', () => {
       expect(result.originalScore).toBe(8);
       expect(result.adjustment.newValue).toBe(9.5);
       expect(manager.query).toHaveBeenCalledWith(LOCK_PEER_FORM_SCORES, [sessionId, studentId]);
+      expect(manager.query).toHaveBeenCalledWith(FIND_SESSION_EVALUATION_RELEASES, [sessionId]);
       expect(manager.query).toHaveBeenCalledWith(INSERT_PEER_FORM_ADJUSTMENT, [
         sessionId,
         studentId,
@@ -334,6 +359,31 @@ describe('PgSelfAssessmentAdjustmentRepository', () => {
         'Revisão da média de pares',
         authorId,
       ]);
+    });
+
+    it('keeps originalScore fixed to the first adjustment previousValue even if rows change', async () => {
+      manager.query
+        .mockResolvedValueOnce([]) // no poker
+        .mockResolvedValueOnce([
+          // say peer scores changed or re-read
+          { id: 'peer-1', status: EvaluationStatus.SUBMITTED, sessionScore: '6.00' },
+        ])
+        .mockResolvedValueOnce([{ selfEvalReleased: false, peerEvalReleased: false }])
+        .mockResolvedValueOnce([
+          // previous adjustments exist: first was previousValue 8.00 -> 9.00
+          {
+            previousValue: '8.00',
+            newValue: '9.00',
+            justification: 'Primeiro ajuste',
+            authorId,
+            authorName: 'Tutor',
+            createdAt,
+          },
+        ]);
+
+      const result = await repository.findHistory(sessionId, studentId, 'PARES');
+
+      expect(result?.originalScore).toBe(8);
     });
   });
 });
