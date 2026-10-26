@@ -14,6 +14,7 @@ export interface ReportColumn {
   header: string;
   type: ReportColumnType;
   decimals?: number;
+  pdfWidth?: number | 'auto' | '*';
 }
 
 export interface ReportTableSection {
@@ -21,6 +22,8 @@ export interface ReportTableSection {
   title: string;
   columns: ReportColumn[];
   rows: ReportCellValue[][];
+  keepRowsTogether?: boolean;
+  startOnNewPage?: boolean;
 }
 
 export interface ReportTextEntry {
@@ -46,6 +49,7 @@ export interface ReportDocument {
   title: string;
   fileName: string;
   identification: ReportIdentification[];
+  repeatIdentification?: boolean;
   sections: ReportSection[];
 }
 

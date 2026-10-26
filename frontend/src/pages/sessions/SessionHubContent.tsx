@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import type { SessionReleasesResponse } from '@/types/session';
 import { SessionActionGrid } from './SessionActionGrid';
@@ -29,21 +28,6 @@ function StudentHubContent({ sessionId, basePath, pokerPath }: StudentHubContent
       </StudentEvaluationCenter>
       <SessionAttachments sessionId={sessionId} canUpload />
     </>
-  );
-}
-
-function SessionCloseFooter() {
-  return (
-    <div className="flex flex-col gap-2 lg:col-span-2">
-      <Button
-        type="button"
-        variant="outline"
-        disabled
-        className="border-danger/30 text-danger cursor-not-allowed opacity-60"
-      >
-        Encerrar sessão
-      </Button>
-    </div>
   );
 }
 
@@ -86,7 +70,6 @@ export function SessionHubContent(props: SessionHubContentProps) {
         isLoading={props.isUpdating}
       />
       <SessionAttachments sessionId={props.sessionId} canUpload />
-      <SessionCloseFooter />
     </>
   );
 }
