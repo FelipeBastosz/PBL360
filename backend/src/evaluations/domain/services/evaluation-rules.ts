@@ -8,13 +8,17 @@ export interface CriterionScore {
   score: number;
 }
 
+export type ScoringCriterion = string | { id: string };
+
 export class EvaluationRules {
   static assertValidItems(
     items: readonly CriterionScore[],
-    criterionIds: readonly string[],
+    criteria: readonly ScoringCriterion[],
     requireComplete: boolean,
   ): void {
-    const allowedIds = new Set(criterionIds);
+    const allowedIds = new Set(
+      criteria.map((criterion) => (typeof criterion === 'string' ? criterion : criterion.id)),
+    );
     const receivedIds = new Set(items.map((item) => item.criterionId));
 
     this.assertUniqueItems(items, receivedIds);

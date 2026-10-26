@@ -122,8 +122,10 @@ export function RollCallScreen({
 
   async function save() {
     const result = await persist();
-    if (result?.ok) notify({ tone: 'success', message: 'Chamada salva.' });
-    else if (result) notify({ tone: 'error', message: result.error.message });
+    if (result?.ok) {
+      notify({ tone: 'success', message: 'Chamada salva.' });
+      void roles.reload();
+    } else if (result) notify({ tone: 'error', message: result.error.message });
   }
 
   return (

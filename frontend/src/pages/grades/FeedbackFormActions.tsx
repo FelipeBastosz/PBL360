@@ -13,11 +13,7 @@ export function FeedbackFormActions({
 }: FeedbackFormActionsProps) {
   return (
     <div className="mt-2 flex flex-col gap-3 pt-2">
-      {lastEditedText && (
-        <p className="text-xs text-muted">
-          Última edição em: <span className="font-medium text-ink">{lastEditedText}</span>
-        </p>
-      )}
+      {lastEditedText && <p className="text-sm text-gray-500">Última edição: {lastEditedText}</p>}
 
       <div className="flex items-center justify-end gap-3">
         <Button

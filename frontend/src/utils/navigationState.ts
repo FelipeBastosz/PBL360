@@ -1,3 +1,5 @@
+const STORAGE_KEY = 'pbl360_apply_target';
+
 export function readStringFields<K extends string>(
   state: unknown,
   keys: readonly K[],
@@ -8,9 +10,43 @@ export function readStringFields<K extends string>(
   return hasAll ? (record as Record<K, string>) : null;
 }
 
-// Problem a performance table is being applied to. The problem page sends it through the
-// formulas list to the table detail, where "Aplicar fórmula" links the table to the problem.
-export type ApplyTarget = { roomId: string; problemId: string };
+export type ApplyTarget = {
+  sessionId: string;
+  roomId?: string;
+  problemId?: string;
+};
 
-export const readApplyTarget = (state: unknown): ApplyTarget | null =>
-  readStringFields(state, ['roomId', 'problemId'] as const);
+export function readApplyTarget(state: unknown): ApplyTarget | null {
+  if (typeof state === 'object' && state !== null) {
+    const record = state as Record<string, unknown>;
+    if (typeof record.sessionId === 'string' && record.sessionId.trim() !== '') {
+      const target: ApplyTarget = {
+        sessionId: record.sessionId,
+        roomId: typeof record.roomId === 'string' ? record.roomId : '',
+        problemId: typeof record.problemId === 'string' ? record.problemId : '',
+      };
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(target));
+      } catch {
+        // ignore
+      }
+      return target;
+    }
+  }
+
+  try {
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as ApplyTarget;
+      if (parsed && typeof parsed.sessionId === 'string' && parsed.sessionId.trim() !== '') {
+        return parsed;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return null;
+}
+
+export function clearApplyTarget(): void {}

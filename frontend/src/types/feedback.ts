@@ -6,6 +6,7 @@ export interface StudentProblemFeedbackResponse {
   texto: string;
   criadoEm: string;
   editadoEm: string | null;
+  updatedAt?: string | null;
 }
 
 export interface GeneralFeedbackResponse {
@@ -14,6 +15,7 @@ export interface GeneralFeedbackResponse {
   texto: string;
   criadoEm: string;
   editadoEm: string | null;
+  updatedAt?: string | null;
 }
 
 export interface StudentWithFeedback {

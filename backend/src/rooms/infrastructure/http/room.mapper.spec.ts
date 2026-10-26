@@ -1,5 +1,18 @@
 import { InvalidRequestError } from '@/shared/errors/application.error';
-import { roomCodeFromInviteLink } from './room.mapper';
+import { buildRoom } from '../../testing/room-fixtures';
+import { roomCodeFromInviteLink, toRoomSummaryResponse } from './room.mapper';
+
+describe('toRoomSummaryResponse', () => {
+  it('maps the room and its student and problem totals', () => {
+    expect(
+      toRoomSummaryResponse({
+        room: buildRoom(),
+        totalStudents: 24,
+        totalProblems: 8,
+      }),
+    ).toMatchObject({ totalAlunos: 24, totalProblemas: 8, nome: 'Engenharia de Software' });
+  });
+});
 
 describe('roomCodeFromInviteLink', () => {
   it('extracts the code used by the frontend invite URL', () => {

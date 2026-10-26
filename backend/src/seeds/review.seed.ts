@@ -7,6 +7,7 @@ import {
   seedReviewCriterionGrades,
   seedReviewFeedbacksIfEmpty,
 } from './review-activities.seed';
+import { seedReviewEvaluationsIfEmpty } from './review-evaluations.seed';
 import { seedReviewProblem, seedReviewSessions } from './review-sessions.seed';
 
 const logger = new Logger('ReviewSeed');
@@ -143,5 +144,6 @@ async function seedReviewActivities(
   await seedReviewRoles(ds, sessions, users);
   await seedReviewBehaviorTagsAndObservations(ds, sessions[0], users);
   await seedReviewCriterionGrades(ds, sessions, users);
+  await seedReviewEvaluationsIfEmpty(ds, problemId, sessions[0], users);
   await seedReviewFeedbacksIfEmpty(ds, problemId, sessions[0], users);
 }

@@ -8,6 +8,12 @@ export interface StudentRoomSummary {
   totalProblems: number;
 }
 
+export interface TutorRoomSummary {
+  room: Room;
+  totalStudents: number;
+  totalProblems: number;
+}
+
 export interface RoomStudentSummary {
   id: string;
   name: string;
@@ -32,7 +38,7 @@ export interface RoomRepository {
 
   joinStudent(roomId: string, studentId: string): Promise<void>;
 
-  findByTutorId(tutorId: string): Promise<Room[]>;
+  findByTutorId(tutorId: string): Promise<TutorRoomSummary[]>;
 
   update(room: Room): Promise<Room>;
 

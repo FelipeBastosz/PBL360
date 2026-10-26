@@ -25,7 +25,7 @@ export const FIND_ADJUSTMENTS = `
    WHERE ei.evaluation_id = $1 ORDER BY ga.created_at, ga.id;
 `;
 export const LIST_EVALUATIONS = `
-  SELECT u.id AS "studentId", u.name, e.status, e.session_score AS "sessionScore"
+  SELECT u.id AS "studentId", u.name, e.status, e.id AS "evaluationId", e.applied_bonus AS "appliedBonus"
     FROM room_students rs JOIN users u ON u.id = rs.student_id
     LEFT JOIN evaluations e ON e.student_id = u.id AND e.session_id = $2 AND e.type = 'TUTOR_SESSION'
    WHERE rs.room_id = $1 ORDER BY u.name, u.id;

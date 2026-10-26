@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
+import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
 import { renderApp, sessionFor, studentUser } from '@/testing/renderApp';
 
 vi.mock('@/services/user.service');
@@ -10,12 +11,13 @@ vi.mock('@/services/room.service', () => ({
   roomService: { list: async () => [], listMyRooms: async () => [] },
 }));
 
-afterEach(() => {
-  vi.resetAllMocks();
-  localStorage.clear();
-});
-
 describe('AppHeader', () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+    localStorage.clear();
+    clearUserPhotoCache();
+  });
+
   it('shows the photo stored for the signed-in student', async () => {
     vi.mocked(userService.getPhoto).mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
     sessionStore.save(sessionFor({ ...studentUser, possuiFoto: true }));
@@ -48,7 +50,8 @@ describe('AppHeader', () => {
     sessionStore.save(sessionFor(studentUser));
     const { user } = renderApp('/turmas');
 
-    await user.click(await screen.findByRole('button', { name: 'Sair' }));
+    await user.click(await screen.findByRole('button', { name: 'Abrir menu da conta' }));
+    await user.click(screen.getByRole('button', { name: 'Sair da conta' }));
 
     expect(await screen.findByRole('button', { name: 'Entrar' })).toBeInTheDocument();
     expect(sessionStore.getToken()).toBeNull();

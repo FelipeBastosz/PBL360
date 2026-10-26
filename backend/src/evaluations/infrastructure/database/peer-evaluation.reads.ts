@@ -1,4 +1,6 @@
 import type { EntityManager } from 'typeorm';
+import { recalculateEvaluation } from '../../domain/services/recalculate-evaluation';
+import { readSubmittedConfig } from './submitted-student-config.reads';
 import { UnprocessableEntityError } from '@/shared/errors/application.error';
 import type { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
 import type {
@@ -69,18 +71,33 @@ export async function getPeerEvaluation(
   evaluatorId: string,
   peerId: string,
 ): Promise<PeerEvaluationDetail> {
-  const peer = await findPeerOrThrow(manager, context.sessionId, evaluatorId, peerId);
+  const sessionId = context.sessionId;
+  const peer = await findPeerOrThrow(manager, sessionId, evaluatorId, peerId);
   const config =
-    (await readSessionConfig(manager, context.sessionId)) ??
-    (await readSessionTableConfig(manager, context.sessionId));
+    (await readSessionConfig(manager, sessionId)) ??
+    (await readSessionTableConfig(manager, sessionId));
 
+  const evaluation = await readPeerEvaluation(manager, sessionId, evaluatorId, peerId);
+  const effective = await readSubmittedConfig(manager, sessionId, evaluation, config);
+  return {
+    peer,
+    config: effective,
+    evaluation: recalculateEvaluation(evaluation, effective, false),
+  };
+}
+
+async function readPeerEvaluation(
+  manager: EntityManager,
+  sessionId: string,
+  evaluatorId: string,
+  peerId: string,
+) {
   const [row] = await manager.query<EvaluationRow[]>(FIND_PEER_EVALUATION, [
-    context.sessionId,
+    sessionId,
     evaluatorId,
     peerId,
   ]);
-  if (!row) return { peer, config, evaluation: null };
-
+  if (!row) return null;
   const items = await manager.query<EvaluationItemRow[]>(FIND_PEER_ITEMS, [row.id]);
-  return { peer, config, evaluation: toEvaluation(row, items) };
+  return toEvaluation(row, items);
 }

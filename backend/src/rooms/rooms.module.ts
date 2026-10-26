@@ -47,6 +47,6 @@ import { RoomAccessService } from './application/services/room-access.service';
       useClass: PgRoomRepository,
     },
   ],
-  exports: [RoomAccessService],
+  exports: [RoomAccessService, ROOM_REPOSITORY],
 })
 export class RoomsModule {}

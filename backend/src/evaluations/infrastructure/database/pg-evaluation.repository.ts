@@ -17,17 +17,13 @@ import type {
   SelfAssessmentWrite,
   StudentEvaluationSummary,
 } from '../../domain/repositories/evaluation.repository';
-import { LIST_EVALUATIONS } from './evaluation.queries';
+import { readEvaluationSummaries } from './evaluation-summary.reads';
 import { readProblemConfig } from './session-evaluation-config.persistence';
 import { readEvaluationDetail } from './evaluation.reads';
 import { recordEvaluation } from './evaluation.persistence';
 import { getStudentEvaluationSummary } from './self-assessment.reads';
 import { readSelfAssessmentDetail } from './self-assessment.reads';
 import { recordSelfAssessment } from './self-assessment.persistence';
-
-interface SummaryRow extends Omit<EvaluationSummary, 'sessionScore'> {
-  sessionScore: string | null;
-}
 
 @Injectable()
 export class PgEvaluationRepository implements EvaluationRepository {
@@ -47,15 +43,10 @@ export class PgEvaluationRepository implements EvaluationRepository {
     return row?.exists ?? false;
   }
 
-  async list(context: EvaluationContext): Promise<EvaluationSummary[]> {
-    const rows = await this.dataSource.query<SummaryRow[]>(LIST_EVALUATIONS, [
-      context.roomId,
-      context.sessionId,
-    ]);
-    return rows.map((row) => ({
-      ...row,
-      sessionScore: row.sessionScore === null ? null : Number(row.sessionScore),
-    }));
+  list(context: EvaluationContext): Promise<EvaluationSummary[]> {
+    return this.dataSource.transaction('REPEATABLE READ', (manager) =>
+      readEvaluationSummaries(manager, context),
+    );
   }
 
   get(context: EvaluationContext, studentId: string) {

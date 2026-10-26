@@ -99,6 +99,7 @@ describe('PerformanceTablesController', () => {
           descricao: null,
           ordem: 1,
           peso: 10,
+          notaMaxima: 10,
         },
       ],
       criadoEm: mockDate,
@@ -141,7 +142,7 @@ describe('PerformanceTablesController', () => {
     ]);
   });
 
-  it('retrieves performance table by id with its criteria', async () => {
+  it('retrieves criteria with the fixed maximum score of 10', async () => {
     const table = new PerformanceTable();
     table.id = 'table-uuid-1';
     table.tutorId = 'tutor-uuid-1';
@@ -184,6 +185,7 @@ describe('PerformanceTablesController', () => {
           descricao: 'Desc 1',
           ordem: 1,
           peso: 5,
+          notaMaxima: 10,
         },
       ],
       criadoEm: mockDate,
@@ -228,7 +230,7 @@ describe('PerformanceTablesController', () => {
       changes: {
         name: 'Barema',
         description: null,
-        propagateToSessions: false,
+        propagateToSessions: undefined,
         criteria: [
           {
             id: 'criterion-1',

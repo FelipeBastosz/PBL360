@@ -43,6 +43,7 @@ const ManagePerformanceTablesPage = lazy(
 const EditPerformanceTablePage = lazy(
   () => import('@/pages/performance-tables/EditPerformanceTablePage'),
 );
+const BehaviorTagsPage = lazy(() => import('@/pages/behavior-tags/BehaviorTagsPage'));
 const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
 const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
 const SessionHubPage = lazy(() => import('@/pages/sessions/SessionHubPage'));
@@ -51,53 +52,77 @@ const SessionEvaluationsListPage = lazy(
   () => import('@/pages/evaluations/SessionEvaluationsListPage'),
 );
 const StudentEvaluationPage = lazy(() => import('@/pages/evaluations/StudentEvaluationPage'));
+const SessionEvaluationHistoryPage = lazy(
+  () => import('@/pages/evaluation-history/SessionEvaluationHistoryPage'),
+);
+const StudentObservationTagsPage = lazy(
+  () => import('@/pages/evaluations/StudentObservationTagsPage'),
+);
 const ProblemGradesPage = lazy(() => import('@/pages/grades/ProblemGradesPage'));
+const PlanningPokerPage = lazy(() => import('@/pages/planning-poker/PlanningPokerPage'));
 const SessionFeedbackPage = lazy(() => import('@/pages/feedbacks/SessionFeedbackPage'));
 const ProblemFeedbacksPage = lazy(() => import('@/pages/feedbacks/ProblemFeedbacksPage'));
+const ClassReportPage = lazy(() => import('@/pages/class-report/ClassReportPage'));
+
+const publicRoutes = (
+  <Route element={<PublicOnlyRoute />}>
+    <Route path={ROUTES.profileSelection} element={<ProfileSelectionPage />} />
+    <Route path={ROUTES.login} element={<LoginPage />} />
+    <Route path={ROUTES.register} element={<RegisterPage />} />
+    <Route path={ROUTES.verifyAccount} element={<VerifyAccountPage />} />
+    <Route path={ROUTES.registerSuccess} element={<RegisterSuccessPage />} />
+    <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+    <Route path={ROUTES.resetPasswordCode} element={<ResetPasswordCodePage />} />
+    <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
+    <Route path={ROUTES.resetPasswordSuccess} element={<ResetPasswordSuccessPage />} />
+  </Route>
+);
+
+const protectedRoutes = (
+  <Route element={<ProtectedRoute />}>
+    <Route path={ROUTES.rooms} element={<RoomsPage />} />
+    <Route path={ROUTES.createRoom} element={<CreateRoomPage />} />
+    <Route path={ROUTES.createRoomSuccess} element={<CreateRoomSuccessPage />} />
+    <Route path={ROUTES.manageRooms} element={<ManageRoomsPage />} />
+    <Route path={ROUTES.editRoom} element={<EditRoomPage />} />
+    <Route path={ROUTES.roomProblems} element={<RoomProblemsPage />} />
+    <Route path={ROUTES.roomMembers} element={<RoomMembersPage />} />
+    <Route path={ROUTES.roomFinalReport} element={<ClassReportPage />} />
+    <Route path={ROUTES.manageProblems} element={<ManageProblemsPage />} />
+    <Route path={ROUTES.performanceTables} element={<PerformanceTablesPage />} />
+    <Route path={ROUTES.createPerformanceTable} element={<CreatePerformanceTablePage />} />
+    <Route path={ROUTES.performanceTableDetail} element={<PerformanceTableDetailPage />} />
+    <Route path={ROUTES.managePerformanceTables} element={<ManagePerformanceTablesPage />} />
+    <Route path={ROUTES.editPerformanceTable} element={<EditPerformanceTablePage />} />
+    <Route path={ROUTES.behaviorTags} element={<BehaviorTagsPage />} />
+    <Route path={ROUTES.problemSessions} element={<ProblemSessionsPage />} />
+    <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />
+    <Route path={ROUTES.sessionHub} element={<SessionHubPage />} />
+    <Route path={ROUTES.sessionFormulas} element={<ProblemFormulaPage />} />
+    <Route path={ROUTES.rollCall} element={<RollCallPage />} />
+    <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
+    <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
+    <Route path={ROUTES.sessionEvaluationsList} element={<SessionEvaluationsListPage />} />
+    <Route path={ROUTES.sessionEvaluationHistory} element={<SessionEvaluationHistoryPage />} />
+    <Route path={ROUTES.studentEvaluation} element={<StudentEvaluationPage />} />
+    <Route path={ROUTES.sessionStudentEvaluation} element={<StudentEvaluationPage />} />
+    <Route path={ROUTES.studentObservationTags} element={<StudentObservationTagsPage />} />
+    <Route path={ROUTES.sessionStudentObservationTags} element={<StudentObservationTagsPage />} />
+    <Route path={ROUTES.evaluationHistory} element={<SessionEvaluationHistoryPage />} />
+    <Route path={ROUTES.problemGrades} element={<ProblemGradesPage />} />
+    <Route path={ROUTES.sessionPlanningPoker} element={<PlanningPokerPage />} />
+    <Route path={ROUTES.sessionFeedback} element={<SessionFeedbackPage />} />
+    <Route path={ROUTES.problemFeedbacks} element={<ProblemFeedbacksPage />} />
+  </Route>
+);
 
 export function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path={ROUTES.splash} element={<SplashPage />} />
-        <Route element={<PublicOnlyRoute />}>
-          <Route path={ROUTES.profileSelection} element={<ProfileSelectionPage />} />
-          <Route path={ROUTES.login} element={<LoginPage />} />
-          <Route path={ROUTES.register} element={<RegisterPage />} />
-          <Route path={ROUTES.verifyAccount} element={<VerifyAccountPage />} />
-          <Route path={ROUTES.registerSuccess} element={<RegisterSuccessPage />} />
-          <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
-          <Route path={ROUTES.resetPasswordCode} element={<ResetPasswordCodePage />} />
-          <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
-          <Route path={ROUTES.resetPasswordSuccess} element={<ResetPasswordSuccessPage />} />
-        </Route>
-        <Route element={<ProtectedRoute />}>
-          <Route path={ROUTES.rooms} element={<RoomsPage />} />
-          <Route path={ROUTES.createRoom} element={<CreateRoomPage />} />
-          <Route path={ROUTES.createRoomSuccess} element={<CreateRoomSuccessPage />} />
-          <Route path={ROUTES.manageRooms} element={<ManageRoomsPage />} />
-          <Route path={ROUTES.editRoom} element={<EditRoomPage />} />
-          <Route path={ROUTES.roomProblems} element={<RoomProblemsPage />} />
-          <Route path={ROUTES.roomMembers} element={<RoomMembersPage />} />
-          <Route path={ROUTES.manageProblems} element={<ManageProblemsPage />} />
-          <Route path={ROUTES.performanceTables} element={<PerformanceTablesPage />} />
-          <Route path={ROUTES.createPerformanceTable} element={<CreatePerformanceTablePage />} />
-          <Route path={ROUTES.performanceTableDetail} element={<PerformanceTableDetailPage />} />
-          <Route path={ROUTES.managePerformanceTables} element={<ManagePerformanceTablesPage />} />
-          <Route path={ROUTES.editPerformanceTable} element={<EditPerformanceTablePage />} />
-          <Route path={ROUTES.problemSessions} element={<ProblemSessionsPage />} />
-          <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />
-          <Route path={ROUTES.sessionHub} element={<SessionHubPage />} />
-          <Route path={ROUTES.sessionFormulas} element={<ProblemFormulaPage />} />
-          <Route path={ROUTES.rollCall} element={<RollCallPage />} />
-          <Route path={ROUTES.memberSession} element={<MemberSessionPage />} />
-          <Route path={ROUTES.sessionRollCall} element={<RollCallPage />} />
-          <Route path={ROUTES.sessionEvaluationsList} element={<SessionEvaluationsListPage />} />
-          <Route path={ROUTES.studentEvaluation} element={<StudentEvaluationPage />} />
-          <Route path={ROUTES.problemGrades} element={<ProblemGradesPage />} />
-          <Route path={ROUTES.sessionFeedback} element={<SessionFeedbackPage />} />
-          <Route path={ROUTES.problemFeedbacks} element={<ProblemFeedbacksPage />} />
-        </Route>
+        {publicRoutes}
+        {protectedRoutes}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>

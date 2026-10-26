@@ -14,8 +14,8 @@ import { UpdatePerformanceCriterionDto } from './update-performance-criterion.dt
 
 export class UpdatePerformanceTableDto {
   @ApiPropertyOptional({
-    description: 'Atualiza os snapshots e recalcula as notas das sessões vinculadas.',
-    default: false,
+    description:
+      'Nas tabelas aplicadas, propaga por padrão; informe falso para não propagar. Tabelas originais nunca alteram sessões.',
   })
   @IsOptional()
   @IsBoolean()

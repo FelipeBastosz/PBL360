@@ -44,23 +44,40 @@ import { PgSessionAttachmentRepository } from './infrastructure/database/pg-sess
 import { SessionEvaluationConfigurationController } from './infrastructure/http/session-evaluation-configuration.controller';
 import { SessionEvaluationConfigurationService } from './application/services/session-evaluation-configuration.service';
 
+import { SessionTableEditingController } from './infrastructure/http/session-table-editing.controller';
+import { GetSessionTableEditPermissionsUseCase } from './application/use-cases/get-session-table-edit-permissions.use-case';
+import { EditSessionTableUseCase } from './application/use-cases/edit-session-table.use-case';
+import { SESSION_TABLE_EDITING_REPOSITORY } from './domain/repositories/session-table-editing.repository';
+import { PgSessionTableEditingRepository } from './infrastructure/database/pg-session-table-editing.repository';
+import { ReportFilesModule } from '@/report-files/report-files.module';
+import { SessionReportController } from './infrastructure/http/session-report.controller';
+import { ExportSessionReportUseCase } from './application/use-cases/export-session-report.use-case';
+import { SESSION_REPORT_REPOSITORY } from './domain/repositories/session-report.repository';
+import { PgSessionReportRepository } from './infrastructure/database/pg-session-report.repository';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Session, SessionRoleAssignment, Attendance, SessionAttachment]),
     RoomsModule,
     ProblemsModule,
+    ReportFilesModule,
   ],
   controllers: [
     SessionsController,
+    SessionTableEditingController,
     SessionRolesController,
     RollCallController,
     MemberSessionsController,
     SessionAttachmentsController,
     EvaluationReleasesController,
     SessionEvaluationConfigurationController,
+    SessionReportController,
   ],
   providers: [
     CreateSessionUseCase,
+    GetSessionTableEditPermissionsUseCase,
+    EditSessionTableUseCase,
+    { provide: SESSION_TABLE_EDITING_REPOSITORY, useClass: PgSessionTableEditingRepository },
     ListSessionsUseCase,
     GetSessionUseCase,
     UpdateSessionUseCase,
@@ -80,11 +97,13 @@ import { SessionEvaluationConfigurationService } from './application/services/se
     GetEvaluationReleasesUseCase,
     UpdateEvaluationReleasesUseCase,
     SessionEvaluationConfigurationService,
+    ExportSessionReportUseCase,
     { provide: SESSION_REPOSITORY, useClass: PgSessionRepository },
     { provide: SESSION_ROLE_REPOSITORY, useClass: PgSessionRoleRepository },
     { provide: ATTENDANCE_REPOSITORY, useClass: PgAttendanceRepository },
     { provide: ROOM_SESSION_REPOSITORY, useClass: PgRoomSessionRepository },
     { provide: SESSION_ATTACHMENT_REPOSITORY, useClass: PgSessionAttachmentRepository },
+    { provide: SESSION_REPORT_REPOSITORY, useClass: PgSessionReportRepository },
   ],
   exports: [SESSION_REPOSITORY, SessionAccessService],
 })

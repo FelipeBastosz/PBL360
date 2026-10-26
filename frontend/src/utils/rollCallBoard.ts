@@ -59,7 +59,12 @@ export function seatStudent(board: RollCallBoard, studentId: string, seat: numbe
 }
 
 export function unseatStudent(board: RollCallBoard, studentId: string): RollCallBoard {
-  return update(board, studentId, (student) => ({ ...student, lugar: null }));
+  return update(board, studentId, (student) => ({
+    ...student,
+    lugar: null,
+    status: 'AUSENTE',
+    justificativa: null,
+  }));
 }
 
 export function setStudentStatus(

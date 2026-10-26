@@ -44,10 +44,6 @@ function assertValidItems(
   submit: boolean,
 ): void {
   validateEvaluationRules(() =>
-    EvaluationRules.assertValidItems(
-      items,
-      detail.config.criteria.map((criterion) => criterion.id),
-      submit,
-    ),
+    EvaluationRules.assertValidItems(items, detail.config.criteria, submit),
   );
 }

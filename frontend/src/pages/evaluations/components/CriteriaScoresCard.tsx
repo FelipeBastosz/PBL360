@@ -8,6 +8,33 @@ type Props = {
   onScoreChange: (criterioId: string, nextScore: number) => void;
 };
 
+function calculateFinalScore(
+  criteria: EvaluationCriterion[],
+  scores: Record<string, number>,
+): number {
+  const totalWeight = criteria.reduce((sum, c) => sum + c.peso, 0);
+  if (totalWeight <= 0) return 0;
+  const weightedSum = criteria.reduce((sum, c) => {
+    const score = scores[c.id] ?? 0;
+    return sum + score * c.peso;
+  }, 0);
+  return Math.round((weightedSum / totalWeight) * 10) / 10;
+}
+
+function FinalScoreRow({ score }: { score: number }) {
+  return (
+    <div className="mt-4 flex items-center justify-between border-t border-black/10 pt-4">
+      <span className="text-sm font-bold text-brand-900">Nota final da sessão</span>
+      <div className="flex items-center gap-1.5">
+        <span className="rounded-xl bg-brand-900 px-3.5 py-1 text-base font-bold text-white shadow-xs">
+          {score.toFixed(1)}
+        </span>
+        <span className="text-xs text-muted">/ 10</span>
+      </div>
+    </div>
+  );
+}
+
 function EditableScoreInput({
   value,
   onChange,
@@ -76,19 +103,19 @@ function CriterionRow({
 
   return (
     <div className="flex items-center justify-between border-b border-black/5 py-3.5 last:border-b-0">
-      <div className="flex flex-col pr-2">
-        <span className="text-sm font-semibold text-brand-900">{criterion.nome}</span>
+      <div className="flex min-w-0 flex-col pr-2">
+        <span className="text-sm font-semibold break-words text-brand-900">{criterion.nome}</span>
         <span className="text-xs text-muted">
           Peso {criterion.peso.toFixed(1).replace('.', ',')}
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <button
           type="button"
           aria-label={`Diminuir nota de ${criterion.nome}`}
           disabled={score <= 0}
           onClick={() => handleStep(-1)}
-          className="flex size-10 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-ink transition hover:bg-gray-50 active:scale-95 disabled:opacity-30"
+          className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-ink transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
         >
           −
         </button>
@@ -98,7 +125,7 @@ function CriterionRow({
           aria-label={`Aumentar nota de ${criterion.nome}`}
           disabled={score >= 10}
           onClick={() => handleStep(1)}
-          className="flex size-10 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-brand-900 transition hover:bg-gray-50 active:scale-95 disabled:opacity-30"
+          className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-brand-900 transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
         >
           +
         </button>
@@ -108,9 +135,13 @@ function CriterionRow({
 }
 
 export function CriteriaScoresCard({ studentName, criteria, scores, onScoreChange }: Props) {
+  const finalScore = calculateFinalScore(criteria, scores);
+
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
-      <h2 className="text-base font-bold text-brand-900">Notas do aluno: {studentName}</h2>
+      <h2 className="text-base font-bold break-words text-brand-900">
+        Notas do aluno: {studentName}
+      </h2>
       <div className="mt-3 flex flex-col">
         {criteria.map((criterion) => (
           <CriterionRow
@@ -121,6 +152,7 @@ export function CriteriaScoresCard({ studentName, criteria, scores, onScoreChang
           />
         ))}
       </div>
+      <FinalScoreRow score={finalScore} />
     </div>
   );
 }

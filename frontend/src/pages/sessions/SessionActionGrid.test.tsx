@@ -6,38 +6,34 @@ import { SessionActionGrid } from './SessionActionGrid';
 describe('SessionActionGrid', () => {
   const basePath = '/turmas/room-1/problemas/prob-1/sessoes/sess-1';
 
-  it('renders active action links with correct destination routes', () => {
+  it('renders active action links when student evaluation is inactive', () => {
     render(
       <MemoryRouter>
-        <SessionActionGrid basePath={basePath} />
+        <SessionActionGrid basePath={basePath} isStudentEvalActive={false} />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link', { name: /chamada/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /chamada/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /avaliar alunos/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /fórmulas/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /histórico de avaliações/i })).toHaveAttribute(
       'href',
-      `${basePath}/chamada`,
-    );
-    expect(screen.getByRole('link', { name: /avaliar alunos/i })).toHaveAttribute(
-      'href',
-      `${basePath}/avaliar`,
-    );
-    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute(
-      'href',
-      `${basePath}/formulas`,
+      `${basePath}/historico`,
     );
   });
 
-  it('renders disabled card for Histórico de avaliações with Em breve badge', () => {
+  it('disables "Avaliar alunos" card with explanation when student evaluations are active', () => {
     render(
       <MemoryRouter>
-        <SessionActionGrid basePath={basePath} />
+        <SessionActionGrid basePath={basePath} isStudentEvalActive={true} />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Histórico de avaliações')).toBeInTheDocument();
-    expect(screen.getByText('Em breve')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /avaliar alunos/i })).not.toBeInTheDocument();
+
+    expect(screen.getByText('Bloqueado')).toBeInTheDocument();
     expect(
-      screen.queryByRole('link', { name: /histórico de avaliações/i }),
-    ).not.toBeInTheDocument();
+      screen.getByText(/avaliações ativas. consulte e ajuste no histórico de avaliações/i),
+    ).toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ export interface SessionRow {
   id: string;
   problemId: string;
   performanceTableId: string;
+  usesDefaultTable: boolean;
   title: string;
   description: string | null;
   date: string;
@@ -21,6 +22,7 @@ export const SESSION_COLUMNS = `
   id,
   problem_id AS "problemId",
   performance_table_id AS "performanceTableId",
+  uses_default_table AS "usesDefaultTable",
   title,
   description,
   to_char(date, 'YYYY-MM-DD') AS date,
