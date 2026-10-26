@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
+import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
+import { cn } from '@/utils/cn';
 import type { Problem } from '@/types/problem';
 import type { Session, SessionDeletionImpact } from '@/types/session';
 import { DeleteSessionModal } from './components/DeleteSessionModal';
@@ -16,7 +18,7 @@ import { ManageSessionCard } from './components/ManageSessionCard';
 
 function ManageFooter({ onFinish }: { onFinish: () => void }) {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 border-t border-black/5 bg-surface/95 px-6 py-4 backdrop-blur-xs">
+    <footer className="fixed right-0 bottom-0 left-0 border-t border-black/5 bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
       <div className="mx-auto flex max-w-md flex-col gap-2">
         <Button onClick={onFinish}>Concluir edição</Button>
         <Button variant="link" onClick={onFinish}>
@@ -43,7 +45,7 @@ function ManageSessionsContent({ isLoading, sessions, onEdit, onDelete }: Conten
     );
   }
   return (
-    <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-3 px-4">
+    <main className={cn(PAGE_CONTAINER_CLASS, CARD_GRID_CLASS, 'mt-6')}>
       {sessions.map((s) => (
         <ManageSessionCard key={s.id} session={s} onEdit={onEdit} onDelete={onDelete} />
       ))}
@@ -166,7 +168,7 @@ export default function ManageSessionsPage() {
   const backUrl = `/turmas/${currentRoomId}/problemas/${problemId}`;
 
   return (
-    <div className="min-h-dvh bg-surface pb-36">
+    <div className="min-h-dvh bg-surface pb-[calc(10rem+env(safe-area-inset-bottom))]">
       <ManageSessionsHeader
         problem={state.problem}
         userNome={user?.nome}

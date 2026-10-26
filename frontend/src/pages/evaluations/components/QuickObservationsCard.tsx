@@ -20,9 +20,11 @@ function ActiveTagRow({
   onDecrement: () => void;
 }) {
   return (
-    <div className="flex w-full items-center justify-between rounded-xl border border-brand-900/15 bg-brand-50/60 p-3 shadow-xs">
-      <span className="text-xs font-semibold text-brand-900">{tag.nome}</span>
-      <div className="flex items-center gap-2">
+    <div className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-900/15 bg-brand-50/60 p-3 shadow-xs">
+      <span className="min-w-32 flex-1 text-xs font-semibold break-words text-brand-900">
+        {tag.nome}
+      </span>
+      <div className="ml-auto flex shrink-0 items-center gap-2">
         <button
           type="button"
           aria-label={`Diminuir marcação ${tag.nome}`}

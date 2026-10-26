@@ -34,7 +34,7 @@ function StudentHubContent({ sessionId, basePath, pokerPath }: StudentHubContent
 export function SessionHubContent(props: SessionHubContentProps) {
   if (props.isLoading) {
     return (
-      <div className="mt-10 flex justify-center">
+      <div className="mt-10 flex justify-center lg:col-span-2">
         <Spinner className="size-8 text-brand-900" />
       </div>
     );
