@@ -1,10 +1,12 @@
+import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { UserTypePayload } from '@/auth/application/dtos/user-type-payload.enum';
 import { jpegPhotoBytes, pngPhotoBytes, webpPhotoBytes } from '@/users/testing/photo-fixtures';
 import { createTestApp } from './helpers/create-test-app';
-import { api, cleanDatabase, insertUser, type TestUser } from './helpers/fixtures';
+import { api, cleanDatabase, insertUser, signAccessToken, type TestUser } from './helpers/fixtures';
 
 jest.setTimeout(30000);
 
@@ -140,12 +142,15 @@ describe('User profile and photos (e2e)', () => {
   });
 
   describe('PUT & DELETE /usuarios/minha-foto and GET /usuarios/:id/foto', () => {
+    const uploadPhoto = (user: TestUser, buffer: Buffer, filename: string, mime: string) =>
+      request(app.getHttpServer() as Server)
+        .put('/api/usuarios/minha-foto')
+        .set('Authorization', `Bearer ${user.token}`)
+        .attach('foto', buffer, { filename, contentType: mime });
+
     it('allows adding, updating and removing photo for student and tutor', async () => {
       // 1. Student adds PNG photo
-      await api(app, student)
-        .put('/usuarios/minha-foto')
-        .attach('foto', pngPhotoBytes(), { filename: 'photo.png', contentType: 'image/png' })
-        .expect(204);
+      await uploadPhoto(student, pngPhotoBytes(), 'photo.png', 'image/png').expect(204);
 
       // Student profile reflects possuiFoto = true
       let profile = await api(app, student).get('/usuarios/meu-perfil').expect(200);
@@ -157,19 +162,13 @@ describe('User profile and photos (e2e)', () => {
       expect(Buffer.from(photoResponse.body as Buffer).equals(pngPhotoBytes())).toBe(true);
 
       // 2. Student substitutes photo with JPEG
-      await api(app, student)
-        .put('/usuarios/minha-foto')
-        .attach('foto', jpegPhotoBytes(), { filename: 'photo.jpg', contentType: 'image/jpeg' })
-        .expect(204);
+      await uploadPhoto(student, jpegPhotoBytes(), 'photo.jpg', 'image/jpeg').expect(204);
 
       photoResponse = await api(app, student).get(`/usuarios/${student.id}/foto`).expect(200);
       expect(photoResponse.headers['content-type']).toBe('image/jpeg');
 
       // 3. Tutor can also add webp photo
-      await api(app, tutor)
-        .put('/usuarios/minha-foto')
-        .attach('foto', webpPhotoBytes(), { filename: 'photo.webp', contentType: 'image/webp' })
-        .expect(204);
+      await uploadPhoto(tutor, webpPhotoBytes(), 'photo.webp', 'image/webp').expect(204);
 
       profile = await api(app, tutor).get('/usuarios/meu-perfil').expect(200);
       expect(asProfile(profile.body).possuiFoto).toBe(true);
@@ -184,19 +183,12 @@ describe('User profile and photos (e2e)', () => {
     });
 
     it('rejects invalid photo format and preserves previous photo', async () => {
-      await api(app, student)
-        .put('/usuarios/minha-foto')
-        .attach('foto', pngPhotoBytes(), { filename: 'valid.png', contentType: 'image/png' })
-        .expect(204);
+      await uploadPhoto(student, pngPhotoBytes(), 'valid.png', 'image/png').expect(204);
 
       // Attempt invalid file format
-      await api(app, student)
-        .put('/usuarios/minha-foto')
-        .attach('foto', Buffer.from('plain text file'), {
-          filename: 'test.txt',
-          contentType: 'text/plain',
-        })
-        .expect(400);
+      await uploadPhoto(student, Buffer.from('plain text file'), 'test.txt', 'text/plain').expect(
+        400,
+      );
 
       // Previous photo preserved
       const photoResponse = await api(app, student).get(`/usuarios/${student.id}/foto`).expect(200);
@@ -205,15 +197,48 @@ describe('User profile and photos (e2e)', () => {
 
     it('rejects photo exceeding 2 MB', async () => {
       const largeBuffer = Buffer.alloc(2 * 1024 * 1024 + 10);
-      await api(app, student)
-        .put('/usuarios/minha-foto')
-        .attach('foto', largeBuffer, { filename: 'big.png', contentType: 'image/png' })
-        .expect(413);
+      await uploadPhoto(student, largeBuffer, 'big.png', 'image/png').expect(413);
     });
 
     it('requires authentication for photo modification', async () => {
       await api(app).put('/usuarios/minha-foto').expect(401);
       await api(app).delete('/usuarios/minha-foto').expect(401);
+    });
+  });
+
+  describe('Persistence after new access', () => {
+    it('persists updated name and photo on subsequent login', async () => {
+      // 1. Update name and upload photo
+      await api(app, student)
+        .patch('/usuarios/meu-perfil')
+        .send({ nome: 'Nome Persistido' })
+        .expect(200);
+
+      await request(app.getHttpServer() as Server)
+        .put('/api/usuarios/minha-foto')
+        .set('Authorization', `Bearer ${student.token}`)
+        .attach('foto', pngPhotoBytes(), { filename: 'photo.png', contentType: 'image/png' })
+        .expect(204);
+
+      // 2. User accesses the system again (simulating a fresh login / new session token)
+      const freshToken = signAccessToken(app, student.id, student.email, student.type);
+      const newAccessUser: TestUser = { ...student, token: freshToken };
+
+      const profileResponse = await api(app, newAccessUser).get('/usuarios/meu-perfil').expect(200);
+
+      expect(profileResponse.body).toEqual({
+        id: student.id,
+        nome: 'Nome Persistido',
+        email: student.email,
+        tipo: UserTypePayload.ALUNO,
+        matricula: '20240001',
+        possuiFoto: true,
+      });
+
+      const photoResponse = await api(app, newAccessUser)
+        .get(`/usuarios/${student.id}/foto`)
+        .expect(200);
+      expect(Buffer.from(photoResponse.body as Buffer).equals(pngPhotoBytes())).toBe(true);
     });
   });
 });

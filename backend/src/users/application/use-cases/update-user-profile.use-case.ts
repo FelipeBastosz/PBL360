@@ -21,6 +21,6 @@ export class UpdateUserProfileUseCase {
 
     user.rename(input.name);
 
-    return this.users.save(user);
+    return this.users.updateName(user.id, user.name);
   }
 }
