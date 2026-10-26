@@ -104,8 +104,16 @@ function PageModalsAndActions({ modals, deletion, target, navigate }: PageModals
 function usePageDependencies() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const target = readApplyTarget(useLocation().state);
-  const data = usePerformanceTablesData(target?.roomId, target?.sessionId);
+  const locationState = useLocation().state as Record<string, unknown> | null;
+  const target = readApplyTarget(locationState);
+
+  const roomId =
+    target?.roomId ||
+    (typeof locationState?.roomId === 'string' ? locationState.roomId : undefined);
+  const sessionId = target?.sessionId;
+  const activeTarget = target || (roomId ? { roomId, sessionId: '', problemId: '' } : null);
+
+  const data = usePerformanceTablesData(roomId, sessionId);
   const deletion = useTableDeletion(data.reload);
   const modals = usePageModals();
 
@@ -115,7 +123,7 @@ function usePageDependencies() {
   const externalAppliedTable = useAppliedSessionTable(
     data.sessionConfig,
     data.tables,
-    target?.roomId,
+    roomId,
     user,
   );
 
@@ -124,42 +132,46 @@ function usePageDependencies() {
     sessionConfig: data.sessionConfig,
     externalAppliedTable,
     query: modals.query,
-    isRoomContext: Boolean(target?.roomId),
+    isRoomContext: Boolean(roomId),
     currentUserId: user?.id,
     userName,
   });
 
-  return { navigate, user, target, data, deletion, modals, viewModel };
+  return { navigate, user, target: activeTarget, data, deletion, modals, viewModel, sessionId };
 }
 
 export function PerformanceTablesPage() {
-  const { navigate, user, target, data, deletion, modals, viewModel } = usePageDependencies();
+  const deps = usePageDependencies();
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
       <PerformanceTablesHeader />
       <div className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
-        <SearchField label="Pesquisar fórmula" value={modals.query} onChange={modals.setQuery} />
+        <SearchField
+          label="Pesquisar fórmula"
+          value={deps.modals.query}
+          onChange={deps.modals.setQuery}
+        />
       </div>
 
       <PerformanceTablesContent
-        isLoading={data.isLoading}
-        error={data.error}
-        hasTargetSession={Boolean(target?.sessionId)}
-        sessionConfig={data.sessionConfig}
-        filtered={viewModel.filtered}
-        sections={viewModel.sections}
-        currentUserId={user?.id}
-        target={target}
-        checkApplied={viewModel.checkApplied}
-        onDeleteTable={deletion.setTableToDelete}
+        isLoading={deps.data.isLoading}
+        error={deps.data.error}
+        hasTargetSession={Boolean(deps.sessionId)}
+        sessionConfig={deps.data.sessionConfig}
+        filtered={deps.viewModel.filtered}
+        sections={deps.viewModel.sections}
+        currentUserId={deps.user?.id}
+        target={deps.target}
+        checkApplied={deps.viewModel.checkApplied}
+        onDeleteTable={deps.deletion.setTableToDelete}
       />
 
       <PageModalsAndActions
-        modals={modals}
-        deletion={deletion}
-        target={target}
-        navigate={navigate}
+        modals={deps.modals}
+        deletion={deps.deletion}
+        target={deps.target}
+        navigate={deps.navigate}
       />
     </div>
   );

@@ -9,8 +9,11 @@ import type { PerformanceTableSummary } from '@/types/performanceTable';
 
 vi.mock('@/services/performance-table.service');
 vi.mock('@/hooks/useAuth');
+vi.mock('@/hooks/useToast', () => ({
+  useToast: () => ({ notify: vi.fn() }),
+}));
 
-const mockUser = { id: 'user-tutor-1', name: 'Professor Titular' };
+const mockUser = { id: 'user-tutor-1', nome: 'Professor Titular', name: 'Professor Titular' };
 
 const mockRoomTables: PerformanceTableSummary[] = [
   {
@@ -45,7 +48,19 @@ const mockRoomTables: PerformanceTableSummary[] = [
 describe('PerformanceTablesPage (Room Context)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useAuth).mockReturnValue({ user: mockUser } as ReturnType<typeof useAuth>);
+    vi.mocked(useAuth).mockReturnValue({
+      user: mockUser,
+      isAuthenticated: true,
+      token: 'fake-jwt',
+      login: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
+      verifyAccount: vi.fn(),
+      resendVerification: vi.fn(),
+      forgotPassword: vi.fn(),
+      resetPassword: vi.fn(),
+      updateProfile: vi.fn(),
+    } as unknown as ReturnType<typeof useAuth>);
   });
 
   it('renders tables divided into 3 groups when inside a room context', async () => {
@@ -65,7 +80,6 @@ describe('PerformanceTablesPage (Room Context)', () => {
     expect(screen.getByText('Barema Compartilhado Turma A')).toBeInTheDocument();
     expect(screen.getByText('Meu Barema Exclusivo')).toBeInTheDocument();
 
-    // Validates author and session usage
     expect(screen.getByText('Outro Professor')).toBeInTheDocument();
     expect(screen.getByText(/4 sessões em uso/i)).toBeInTheDocument();
   });
@@ -81,7 +95,6 @@ describe('PerformanceTablesPage (Room Context)', () => {
 
     await screen.findByText('Meu Barema Exclusivo');
 
-    // Only the user's table has the delete button
     expect(
       screen.getByRole('button', { name: 'Excluir fórmula Meu Barema Exclusivo' }),
     ).toBeInTheDocument();

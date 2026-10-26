@@ -48,15 +48,16 @@ function buildAppliedTable(
 }
 
 function injectAppliedTable(input: ViewModelInput, sys: boolean, match?: PerformanceTableSummary) {
-  if (!input.sessionConfig?.tabela || sys) return input.tables;
+  const tables = input.tables ?? [];
+  if (!input.sessionConfig?.tabela || sys) return tables;
   const authorId = input.externalAppliedTable?.autor?.id;
 
-  const alreadyInRoom = input.tables.some(
+  const alreadyInRoom = tables.some(
     (t) =>
       (t.origem === 'TURMA' || t.id === input.sessionConfig?.tabela.id) &&
       isTableApplied(t, input.sessionConfig, authorId),
   );
-  if (alreadyInRoom) return input.tables;
+  if (alreadyInRoom) return tables;
 
   const authorName = resolveAuthor(sys, input.externalAppliedTable, match, authorId, {
     id: input.currentUserId,
@@ -70,7 +71,7 @@ function injectAppliedTable(input: ViewModelInput, sys: boolean, match?: Perform
     input.externalAppliedTable,
   );
 
-  return [appliedRoomTable, ...input.tables];
+  return [appliedRoomTable, ...tables];
 }
 
 function groupSections(
@@ -92,7 +93,7 @@ export function usePerformanceTablesViewModel(input: ViewModelInput) {
   const appliedAuthorId = input.externalAppliedTable?.autor?.id;
 
   const catalogMatch = useMemo(
-    () => input.tables.find((t) => isTableApplied(t, input.sessionConfig, appliedAuthorId)),
+    () => (input.tables ?? []).find((t) => isTableApplied(t, input.sessionConfig, appliedAuthorId)),
     [input.tables, input.sessionConfig, appliedAuthorId],
   );
 
@@ -105,9 +106,10 @@ export function usePerformanceTablesViewModel(input: ViewModelInput) {
     [input, isSystemApplied, catalogMatch],
   );
 
+  const safeQuery = input.query ?? '';
   const filtered = useMemo(
-    () => allTables.filter((t) => t.nome.toLowerCase().includes(input.query.toLowerCase())),
-    [allTables, input.query],
+    () => allTables.filter((t) => t.nome.toLowerCase().includes(safeQuery.toLowerCase())),
+    [allTables, safeQuery],
   );
 
   const sections = useMemo(
