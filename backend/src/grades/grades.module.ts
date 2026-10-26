@@ -1,6 +1,12 @@
 import { Module } from '@nestjs/common';
 import { RoomsModule } from '@/rooms/rooms.module';
 import { ProblemsModule } from '@/problems/problems.module';
+import { ReportFilesModule } from '@/report-files/report-files.module';
+import { FeedbacksModule } from '@/feedbacks/feedbacks.module';
+import { ExportClassFinalReportUseCase } from './application/use-cases/export-class-final-report.use-case';
+import { ClassReportExportController } from './infrastructure/http/class-report-export.controller';
+import { ExportProblemReportUseCase } from './application/use-cases/export-problem-report.use-case';
+import { ProblemReportController } from './infrastructure/http/problem-report.controller';
 import { GetProblemGradesUseCase } from './application/use-cases/get-problem-grades.use-case';
 import { GetClassFinalReportUseCase } from './application/use-cases/get-class-final-report.use-case';
 import { GRADES_REPOSITORY } from './domain/repositories/grades.repository';
@@ -12,27 +18,25 @@ import { ListGradeRecalculationNoticesUseCase } from './application/use-cases/li
 import { GRADE_RECALCULATION_REPOSITORY } from './domain/repositories/grade-recalculation.repository';
 import { PgGradeRecalculationRepository } from './infrastructure/database/pg-grade-recalculation.repository';
 
-import { ReportFilesModule } from '@/report-files/report-files.module';
-import { FeedbacksModule } from '@/feedbacks/feedbacks.module';
-import { ExportProblemReportUseCase } from './application/use-cases/export-problem-report.use-case';
-import { ProblemReportController } from './infrastructure/http/problem-report.controller';
-
 @Module({
   imports: [RoomsModule, ProblemsModule, ReportFilesModule, FeedbacksModule],
   controllers: [
     GradesController,
     GradeRecalculationNoticesController,
     ClassReportController,
+    ClassReportExportController,
     ProblemReportController,
   ],
   providers: [
     GetProblemGradesUseCase,
     GetClassFinalReportUseCase,
+    ExportClassFinalReportUseCase,
     ExportProblemReportUseCase,
     { provide: GRADES_REPOSITORY, useClass: PgGradesRepository },
     ListGradeRecalculationNoticesUseCase,
     { provide: GRADE_RECALCULATION_REPOSITORY, useClass: PgGradeRecalculationRepository },
   ],
-  exports: [GetProblemGradesUseCase, GetClassFinalReportUseCase, ExportProblemReportUseCase],
+  exports: [GetProblemGradesUseCase, GetClassFinalReportUseCase],
 })
 export class GradesModule {}
+

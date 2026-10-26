@@ -89,4 +89,22 @@ describe('DeleteSessionModal', () => {
     await user.click(screen.getByRole('button', { name: 'Fechar confirmação' }));
     expect(onCancel).toHaveBeenCalledTimes(2);
   });
+
+  it('cancels on Escape unless the deletion is in progress', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    const props = { sessionTitle: 'Sessão 1', impact: mockImpact, isOpen: true };
+
+    const { rerender } = render(
+      <DeleteSessionModal {...props} isLoading={true} onConfirm={vi.fn()} onCancel={onCancel} />,
+    );
+    await user.keyboard('{Escape}');
+    expect(onCancel).not.toHaveBeenCalled();
+
+    rerender(
+      <DeleteSessionModal {...props} isLoading={false} onConfirm={vi.fn()} onCancel={onCancel} />,
+    );
+    await user.keyboard('{Escape}');
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
 });

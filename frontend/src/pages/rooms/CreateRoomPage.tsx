@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FlowShell } from '@/components/layout/FlowShell';
 import { Button } from '@/components/ui/Button';
@@ -10,18 +10,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { useForm } from '@/hooks/useForm';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { roomService } from '@/services/room.service';
+import type { Discipline } from '@/types/discipline';
 import { validateCreateRoomForm, type CreateRoomFormValues } from '@/utils/roomsForm';
 import { ROUTES } from '@/routes/paths';
+import { CUSTOM_DISCIPLINE, useDisciplineSelection } from './hooks/useDisciplineSelection';
 
-const MOCK_DISCIPLINES = [
-  { id: '1', codigo: 'EXA863', nome: 'MI Progamação' },
-  { id: '2', codigo: 'TEC502', nome: 'MI Concorrência e Conectividade' },
-];
-
-const selectOptions = [
-  ...MOCK_DISCIPLINES.map((d) => ({ value: d.id, label: `${d.codigo} - ${d.nome}` })),
-  { value: 'outra', label: 'Outra disciplina...' },
-];
+function toSelectOptions(disciplines: Discipline[]) {
+  return [
+    ...disciplines.map((d) => ({ value: d.id, label: `${d.codigo} - ${d.nome}` })),
+    { value: CUSTOM_DISCIPLINE, label: 'Outra disciplina...' },
+  ];
+}
 
 function CreateRoomActions({ isLoading, onCancel }: { isLoading: boolean; onCancel: () => void }) {
   return (
@@ -41,13 +40,15 @@ function CreateRoomActions({ isLoading, onCancel }: { isLoading: boolean; onCanc
 }
 
 type CreateRoomFieldsProps = {
+  disciplines: Discipline[];
   selectedDisciplineId: string;
   onSelectDiscipline: (id: string) => void;
   form: ReturnType<typeof useForm<CreateRoomFormValues>>;
   isCustom: boolean;
 };
 
-function CreateRoomFields({
+function DisciplineCodeFields({
+  disciplines,
   selectedDisciplineId,
   onSelectDiscipline,
   form,
@@ -59,7 +60,7 @@ function CreateRoomFields({
         label="Código"
         value={selectedDisciplineId}
         onChange={onSelectDiscipline}
-        options={selectOptions}
+        options={toSelectOptions(disciplines)}
         error={isCustom ? undefined : form.errors.codigo}
       />
       {isCustom && (
@@ -73,6 +74,16 @@ function CreateRoomFields({
           />
         </div>
       )}
+    </>
+  );
+}
+
+function CreateRoomFields(props: CreateRoomFieldsProps) {
+  const { form, isCustom } = props;
+
+  return (
+    <>
+      <DisciplineCodeFields {...props} />
       <TextField
         label="Nome da Disciplina"
         value={form.values.disciplina}
@@ -108,14 +119,14 @@ function FormError({ message }: { message: string }) {
 
 function CreateRoomForm() {
   const navigate = useNavigate();
-  const [selectedDisciplineId, setSelectedDisciplineId] = useState('');
   const form = useForm(
     { codigo: '', disciplina: '', turma: '', semestre: '' },
     validateCreateRoomForm,
   );
-  const isCustom = selectedDisciplineId === 'outra';
+  const selection = useDisciplineSelection(form);
 
   const { run, isLoading, error } = useAsyncAction(async () => {
+    await selection.registerCustomDiscipline();
     const payload = {
       nome: `${form.values.disciplina.trim()} - ${form.values.turma.trim()}`,
       codigoDisciplina: form.values.codigo.trim().toUpperCase(),
@@ -125,20 +136,6 @@ function CreateRoomForm() {
     navigate(ROUTES.createRoomSuccess, { state: { room: newRoom } });
   });
 
-  function handleDisciplineSelect(id: string) {
-    setSelectedDisciplineId(id);
-    if (id === 'outra') {
-      form.setValue('codigo', '');
-      form.setValue('disciplina', '');
-      return;
-    }
-    const found = MOCK_DISCIPLINES.find((d) => d.id === id);
-    if (found) {
-      form.setValue('codigo', found.codigo);
-      form.setValue('disciplina', found.nome);
-    }
-  }
-
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (form.validateAll()) run();
@@ -147,11 +144,13 @@ function CreateRoomForm() {
   return (
     <form onSubmit={handleSubmit} className="stagger-in flex flex-col gap-5">
       {error && <FormError message={error.message} />}
+      {selection.error && <FormError message={selection.error.message} />}
       <CreateRoomFields
-        selectedDisciplineId={selectedDisciplineId}
-        onSelectDiscipline={handleDisciplineSelect}
+        disciplines={selection.disciplines}
+        selectedDisciplineId={selection.selectedDisciplineId}
+        onSelectDiscipline={selection.selectDiscipline}
         form={form}
-        isCustom={isCustom}
+        isCustom={selection.isCustom}
       />
       <CreateRoomActions isLoading={isLoading} onCancel={() => navigate(-1)} />
     </form>

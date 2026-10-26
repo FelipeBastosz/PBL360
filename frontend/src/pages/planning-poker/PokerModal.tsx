@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { cn } from '@/utils/cn';
 
 type PokerModalProps = {
@@ -11,6 +12,7 @@ type PokerModalProps = {
 };
 
 export function PokerModal({ isOpen, label, onClose, danger = false, children }: PokerModalProps) {
+  useEscapeKey(isOpen, onClose);
   if (!isOpen) return null;
 
   return (

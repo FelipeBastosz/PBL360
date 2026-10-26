@@ -1,4 +1,6 @@
 import { Alert } from '@/components/ui/Alert';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 import { SessionHubHeader } from './SessionHubHeader';
 import { SessionHubContent } from './SessionHubContent';
 import { SessionReleaseModals } from './SessionReleaseModals';
@@ -15,9 +17,16 @@ export default function SessionHubPage() {
         userNome={hub.user?.nome}
         backUrl={hub.backUrl}
       />
-      <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">
+      <main
+        className={cn(
+          PAGE_CONTAINER_CLASS,
+          'mt-6 grid gap-4 lg:grid-cols-2 lg:items-start [&>*]:min-w-0',
+        )}
+      >
         {hub.combinedError && !hub.releases ? (
-          <Alert tone="error">{hub.combinedError.message}</Alert>
+          <Alert tone="error" className="lg:col-span-2">
+            {hub.combinedError.message}
+          </Alert>
         ) : (
           <SessionHubContent
             isLoading={hub.isLoading}

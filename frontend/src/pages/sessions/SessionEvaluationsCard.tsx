@@ -26,18 +26,19 @@ function EvaluationToggleRow({ label, info, isDisabled, onToggle }: ToggleRowPro
 
   return (
     <div className="flex flex-col gap-1.5 py-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-medium text-ink">
-          {isDisabled && <LockClosedIcon className="size-4 text-muted" />}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-ink">
+          {isDisabled && <LockClosedIcon className="size-4 shrink-0 text-muted" />}
           <span>{label}</span>
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={isLiberada}
+          aria-label={label}
           disabled={isDisabled}
           onClick={onToggle}
-          className={`relative h-6 w-11 rounded-full transition-colors ${
+          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
             isDisabled
               ? 'cursor-not-allowed opacity-40 bg-black/20'
               : isLiberada

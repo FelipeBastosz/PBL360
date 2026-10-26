@@ -69,15 +69,6 @@ const students: StudentEvaluationHistoryItem[] = [
   },
 ];
 
-// jsdom's Blob has no text(), so read it with FileReader.
-function readBlob(blob: Blob): Promise<string> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.readAsText(blob);
-  });
-}
-
 function renderPage() {
   return render(
     <AuthContext.Provider
@@ -199,18 +190,11 @@ describe('SessionEvaluationHistoryPage', () => {
     expect(screen.getByRole('button', { name: /exportar em pdf/i })).toBeDisabled();
   });
 
-  it('exports the data as a CSV file for Excel', async () => {
-    // jsdom does not implement object URLs.
-    const createObjectURL = vi.fn((_blob: Blob) => 'blob:history');
-    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
+  it('keeps the export buttons disabled until the report download is available', async () => {
     renderPage();
     await screen.findByText('Elisa Nunes');
 
-    await userEvent.click(screen.getByRole('button', { name: /exportar em excel/i }));
-
-    const csv = await readBlob(createObjectURL.mock.calls[0][0]);
-    expect(csv).toContain('Matrícula;Nome;Nota do aluno;Nota do tutor;Situação');
-    expect(csv).toContain('26121192;Carla Rocha;9,5;8,5;Ajustada com justificativa');
-    expect(csv).toContain('26121191;Bruno Mendes;;;Avaliação pendente');
+    expect(screen.getByRole('button', { name: /exportar em pdf/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /exportar em excel/i })).toBeDisabled();
   });
 });

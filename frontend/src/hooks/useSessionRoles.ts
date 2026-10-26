@@ -55,5 +55,5 @@ export function useSessionRoles(sessionId: string) {
     [roles],
   );
 
-  return { roles, roleOf, assign };
+  return { roles, roleOf, assign, reload };
 }

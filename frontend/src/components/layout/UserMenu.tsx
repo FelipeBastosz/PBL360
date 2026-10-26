@@ -13,6 +13,7 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowRightStartOnRectangleIcon,
   BookOpenIcon,
+  TagIcon,
   UserIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
@@ -44,6 +45,11 @@ function menuItems(isProfessor: boolean): MenuItem[] {
             label: 'Minhas Fórmulas',
             Icon: AdjustmentsHorizontalIcon,
             to: ROUTES.performanceTables,
+          },
+          {
+            label: 'Minhas Marcações',
+            Icon: TagIcon,
+            to: ROUTES.behaviorTags,
           },
         ]
       : []),
@@ -200,8 +206,6 @@ type UserMenuButtonProps = {
   className?: string;
 };
 
-// The profile photo in every header opens the account menu. Reads the context directly
-// so headers still render where no AuthProvider is mounted (e.g. isolated tests).
 export function UserMenuButton({ user, className }: UserMenuButtonProps) {
   const authUser = useContext(AuthContext)?.user ?? null;
   const [isOpen, setIsOpen] = useState(false);

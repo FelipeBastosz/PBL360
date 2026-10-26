@@ -63,6 +63,7 @@ const headerCell = (column: ReportColumn): TableCell => ({
 });
 
 const columnWidth = ({ rows }: ReportTableSection, column: ReportColumn, index: number): Size => {
+  if (column.pdfWidth !== undefined) return column.pdfWidth;
   if (column.type === ReportColumnType.NUMBER) return 'auto';
   const lengths = rows.map((row) => formatCellText(normalizeCell(row[index], column.type)).length);
   const isShort = Math.max(column.header.length, ...lengths) <= SHORT_TEXT_LENGTH;
@@ -83,7 +84,7 @@ const tableContent = (section: ReportTableSection): Content => {
   return {
     table: {
       headerRows: 1,
-      dontBreakRows: false,
+      dontBreakRows: section.keepRowsTogether ?? false,
       widths: tableWidths(section),
       body: [
         columns.map(headerCell),
@@ -108,6 +109,11 @@ const textContent = ({ entries }: ReportTextSection): Content => {
 };
 
 export const sectionContent = (section: ReportSection): Content[] => [
-  { text: section.title, style: 'sectionTitle', headlineLevel: SECTION_HEADLINE_LEVEL },
+  {
+    text: section.title,
+    style: 'sectionTitle',
+    headlineLevel: SECTION_HEADLINE_LEVEL,
+    ...(section.kind === 'table' && section.startOnNewPage ? { pageBreak: 'before' as const } : {}),
+  },
   section.kind === 'table' ? tableContent(section) : textContent(section),
 ];
