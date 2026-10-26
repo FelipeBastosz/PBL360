@@ -11,6 +11,11 @@ export const observationService = {
 
   createTag: (nome: string) => api.post<BehaviorTag>('/marcacoes', { nome }).then((r) => r.data),
 
+  renameTag: (id: string, nome: string) =>
+    api.put<BehaviorTag>(`/marcacoes/${id}`, { nome }).then((r) => r.data),
+
+  deleteTag: (id: string) => api.delete<void>(`/marcacoes/${id}`).then(() => undefined),
+
   listStudentObservations: (sessionId: string, studentId: string) =>
     api
       .get<StudentObservationsResponse>(`/sessoes/${sessionId}/alunos/${studentId}/observacoes`)
