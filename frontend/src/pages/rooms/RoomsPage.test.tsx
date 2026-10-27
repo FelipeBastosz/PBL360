@@ -177,7 +177,7 @@ describe('RoomsPage', () => {
       expect(screen.getByText('3 problemas')).toBeInTheDocument();
     });
 
-    it('shows creation and edit actions in fab menu', async () => {
+    it('shows creation, edit and leave actions in fab menu', async () => {
       renderWithUser(mockTeacher);
 
       const fab = screen.getByRole('button', { name: /ações de turma/i });
@@ -185,18 +185,25 @@ describe('RoomsPage', () => {
 
       expect(screen.getByRole('link', { name: 'Criar nova turma' })).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Editar uma turma' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Sair de uma turma' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Entrar em uma turma' })).not.toBeInTheDocument();
     });
 
-    it('hides leave room action when teacher is the owner of the room', async () => {
+    it('hides leave room action when teacher is the owner of the room even in leave mode', async () => {
       vi.mocked(roomService.list).mockResolvedValue(mockRooms);
       renderWithUser(mockTeacher);
 
       expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /sair da turma/i })).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: /ações de turma/i }));
+      await userEvent.click(screen.getByRole('button', { name: 'Sair de uma turma' }));
+
+      expect(screen.queryByRole('button', { name: /sair da turma/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Concluir' })).toBeInTheDocument();
     });
 
-    it('shows leave room action when teacher is a co-tutor of the room', async () => {
+    it('shows leave room action when teacher is a co-tutor and activates leave mode', async () => {
       vi.mocked(roomService.list).mockResolvedValue([
         {
           ...mockRooms[0],
@@ -206,7 +213,13 @@ describe('RoomsPage', () => {
       renderWithUser(mockTeacher);
 
       expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /sair da turma/i })).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: /ações de turma/i }));
+      await userEvent.click(screen.getByRole('button', { name: 'Sair de uma turma' }));
+
       expect(screen.getByRole('button', { name: /sair da turma/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Concluir' })).toBeInTheDocument();
     });
   });
 
@@ -220,13 +233,14 @@ describe('RoomsPage', () => {
       expect(screen.getByText(/para começar/i)).toBeInTheDocument();
     });
 
-    it('shows only the join room action in fab menu', async () => {
+    it('shows join and leave room actions in fab menu', async () => {
       renderWithUser(mockStudent);
 
       const fab = screen.getByRole('button', { name: /ações de turma/i });
       await userEvent.click(fab);
 
       expect(screen.getByRole('button', { name: 'Entrar em uma turma' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Sair de uma turma' })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: 'Criar nova turma' })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: 'Editar uma turma' })).not.toBeInTheDocument();
     });
@@ -264,7 +278,7 @@ describe('RoomsPage', () => {
       ).not.toBeInTheDocument();
     });
 
-    it('shows leave room action for student enrolled in room', async () => {
+    it('shows leave room action for student enrolled in room when leave mode is active', async () => {
       vi.mocked(roomService.listMyRooms).mockResolvedValue([
         {
           salaId: 'room-student-1',
@@ -276,7 +290,16 @@ describe('RoomsPage', () => {
       renderWithUser(mockStudent);
 
       expect(await screen.findByText('Engenharia de Software (Aluno)')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /sair da turma/i })).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: /ações de turma/i }));
+      await userEvent.click(screen.getByRole('button', { name: 'Sair de uma turma' }));
+
       expect(screen.getByRole('button', { name: /sair da turma/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Concluir' })).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Concluir' }));
+      expect(screen.queryByRole('button', { name: /sair da turma/i })).not.toBeInTheDocument();
     });
   });
 
@@ -294,6 +317,9 @@ describe('RoomsPage', () => {
       renderWithUser(mockStudent);
 
       expect(await screen.findByText('Engenharia de Software (Aluno)')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /ações de turma/i }));
+      await user.click(screen.getByRole('button', { name: 'Sair de uma turma' }));
+
       await user.click(screen.getByRole('button', { name: /sair da turma/i }));
 
       expect(screen.getByRole('dialog', { name: /sair da turma\?/i })).toBeInTheDocument();
@@ -319,6 +345,9 @@ describe('RoomsPage', () => {
       renderWithUser(mockStudent);
 
       expect(await screen.findByText('Engenharia de Software (Aluno)')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /ações de turma/i }));
+      await user.click(screen.getByRole('button', { name: 'Sair de uma turma' }));
+
       await user.click(screen.getByRole('button', { name: /sair da turma/i }));
 
       await user.click(screen.getByRole('button', { name: 'Sim, sair da turma' }));
