@@ -101,9 +101,16 @@ function assertFormulaCustomizationInput(input: CustomizeProblemFormulaInput): v
       'A fórmula da sessão deve ser personalizada pela configuração da própria sessão.',
     );
   }
-  if (input.components.some((component) => component.type === 'SESSAO')) {
+  const [component] = input.components;
+  if (
+    input.components.length !== 1 ||
+    !component ||
+    component.type !== 'MEDIA_SESSOES' ||
+    component.referenceId != null ||
+    component.weight !== 100
+  ) {
     throw new UnprocessableEntityError(
-      'Os pesos relativos das sessões devem ser configurados pela fórmula final.',
+      'A nota do problema é a média das sessões; configure os pesos pela fórmula final.',
     );
   }
 }

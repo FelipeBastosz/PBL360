@@ -238,10 +238,7 @@ describe('grade calculator', () => {
   it('calculates the final grade and redistributes unavailable components', () => {
     expect(
       calculateProblemGrade(
-        [
-          { type: 'MEDIA_SESSOES', weight: 60 },
-          { type: 'AUTOAVALIACAO', weight: 40, value: null },
-        ],
+        [{ type: 'MEDIA_SESSOES', weight: 100 }],
         [
           { sessionId: 's1', grade: 8 },
           { sessionId: 's2', grade: null },
@@ -299,12 +296,11 @@ describe('grade calculator', () => {
     ).toEqual({ grade: 7 });
   });
 
-  it('applies the weighted session average inside the media percentage component', () => {
+  it('calculates the problem grade only from weighted session grades', () => {
     expect(
       calculateProblemGrade(
         [
-          { type: 'MEDIA_SESSOES', weight: 80 },
-          { type: 'AUTOAVALIACAO', weight: 20, value: 6.5 },
+          { type: 'MEDIA_SESSOES', weight: 100 },
           { type: 'SESSAO', referenceId: 's1', weight: 3 },
           { type: 'SESSAO', referenceId: 's2', weight: 1 },
         ],
@@ -313,6 +309,6 @@ describe('grade calculator', () => {
           { sessionId: 's2', grade: 4 },
         ],
       ),
-    ).toEqual({ grade: 6.9 });
+    ).toEqual({ grade: 7 });
   });
 });

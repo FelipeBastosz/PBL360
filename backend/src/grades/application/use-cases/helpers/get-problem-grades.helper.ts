@@ -12,7 +12,6 @@ import { buildStudentResponse } from './grade-response.helper';
 import {
   calculateSessionComponents,
   summarizeEvaluationComponents,
-  withEvaluationValues,
   withSessionEvaluations,
   type StudentEvaluationComponents,
 } from './evaluation-components.helper';
@@ -167,8 +166,7 @@ export function processStudentGrades(ctx: StudentGradeContext) {
   const grades = results.map((result) =>
     withSessionEvaluations(result.responseSession, result.evaluations),
   );
-  const components = withEvaluationValues(ctx.problemComponents, evaluations);
-  const finalGrade = calculateProblemGrade(components, sessionGrades(sessionRows));
+  const finalGrade = calculateProblemGrade(ctx.problemComponents, sessionGrades(sessionRows));
 
   return buildStudentResult(ctx, grades, finalGrade.grade, sessionRows, evaluations);
 }

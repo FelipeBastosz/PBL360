@@ -17,7 +17,10 @@ describe('FinalGradeFormulaUseCase', () => {
   const formulas = {
     findActiveByProblemAndScope: jest.fn(() => Promise.resolve(active)),
     saveNewVersion,
-    deactivate: jest.fn(() => Promise.resolve()),
+    deactivate: jest.fn((formula: Formula) => {
+      if (active === formula) active = null;
+      return Promise.resolve();
+    }),
   };
   const problems = {
     findById: jest.fn(() => Promise.resolve({ id: 'problem-1', roomId: 'room-1' })),
@@ -32,9 +35,7 @@ describe('FinalGradeFormulaUseCase', () => {
       version: 4,
       createdBy: 'tutor-1',
       components: [
-        { type: 'MEDIA_SESSOES', weight: 80 },
-        { type: 'AUTOAVALIACAO', weight: 20 },
-        { type: 'PARES', weight: 0 },
+        { type: 'MEDIA_SESSOES', weight: 100 },
         { type: 'SESSAO', referenceId: 'session-1', weight: 3 },
         { type: 'SESSAO', referenceId: 'session-2', weight: 1 },
       ],
@@ -63,17 +64,13 @@ describe('FinalGradeFormulaUseCase', () => {
     });
   });
 
-  it('reports no session-formula version when only the percentage formula is customized', async () => {
+  it('reports the default session weights when only the average component is stored', async () => {
     active = Formula.create({
       problemId: 'problem-1',
       scope: FormulaScope.PROBLEMA,
       version: 4,
       createdBy: 'tutor-1',
-      components: [
-        { type: 'MEDIA_SESSOES', weight: 80 },
-        { type: 'AUTOAVALIACAO', weight: 20 },
-        { type: 'PARES', weight: 0 },
-      ],
+      components: [{ type: 'MEDIA_SESSOES', weight: 100 }],
     });
 
     await expect(useCase.get('room-1', 'problem-1', 'tutor-1')).resolves.toMatchObject({
@@ -82,7 +79,7 @@ describe('FinalGradeFormulaUseCase', () => {
     });
   });
 
-  it('saves relative weights as a new version and preserves the percentage formula', async () => {
+  it('saves relative weights as a new version with only the session average', async () => {
     active = existingFormula();
 
     const result = await useCase.customize('room-1', 'problem-1', 'tutor-1', [
@@ -94,9 +91,7 @@ describe('FinalGradeFormulaUseCase', () => {
     expect(
       active?.components.map(({ type, referenceId, weight }) => ({ type, referenceId, weight })),
     ).toEqual([
-      { type: 'MEDIA_SESSOES', referenceId: null, weight: 80 },
-      { type: 'AUTOAVALIACAO', referenceId: null, weight: 20 },
-      { type: 'PARES', referenceId: null, weight: 0 },
+      { type: 'MEDIA_SESSOES', referenceId: null, weight: 100 },
       { type: 'SESSAO', referenceId: 'session-1', weight: 2 },
       { type: 'SESSAO', referenceId: 'session-2', weight: 5 },
     ]);
@@ -121,18 +116,14 @@ describe('FinalGradeFormulaUseCase', () => {
     ).rejects.toThrow(UnprocessableEntityError);
   });
 
-  it('restores simple session averaging and keeps the percentage components', async () => {
+  it('restores simple session averaging by deactivating the weighted formula', async () => {
     active = existingFormula();
+    const previous = active;
 
     const result = await useCase.restore('room-1', 'problem-1', 'tutor-1');
 
-    expect(active?.version).toBe(5);
-    expect(active?.components.map(({ type, weight }) => ({ type, weight }))).toEqual([
-      { type: 'MEDIA_SESSOES', weight: 80 },
-      { type: 'AUTOAVALIACAO', weight: 20 },
-      { type: 'PARES', weight: 0 },
-    ]);
+    expect(active).toBeNull();
     expect(result).toMatchObject({ padrao: true, versao: null });
-    expect(formulas.deactivate).not.toHaveBeenCalled();
+    expect(formulas.deactivate).toHaveBeenCalledWith(previous);
   });
 });

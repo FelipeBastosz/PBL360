@@ -55,7 +55,7 @@ export class FinalGradeFormulaUseCase {
       problemId,
       FormulaScope.PROBLEMA,
     );
-    await restoreSessionWeights(active, problemId, tutorId, this.formulas);
+    await restoreSessionWeights(active, this.formulas);
     return this.read(problemId);
   }
 
@@ -107,7 +107,7 @@ function createFormulaVersion(
     version: (old?.version ?? 0) + 1,
     active: true,
     createdBy: tutorId,
-    components: [...baseProblemComponents(old), ...sessionWeightComponents(weights)],
+    components: [...baseProblemComponents(), ...sessionWeightComponents(weights)],
   });
 }
 
@@ -119,54 +119,19 @@ function sessionWeightComponents(weights: Array<{ sessaoId: string; peso: number
   }));
 }
 
-function baseProblemComponents(formula: Formula | null): Array<{
+function baseProblemComponents(): Array<{
   type: string;
   referenceId: string | null;
   weight: number;
 }> {
-  const components = formula?.components
-    .filter((component) => component.type !== 'SESSAO')
-    .map((component) => ({
-      type: component.type,
-      referenceId: component.referenceId,
-      weight: Number(component.weight),
-    }));
-  return components?.length
-    ? components
-    : [
-        { type: 'MEDIA_SESSOES', referenceId: null, weight: 100 },
-        { type: 'AUTOAVALIACAO', referenceId: null, weight: 0 },
-        { type: 'PARES', referenceId: null, weight: 0 },
-      ];
-}
-
-function hasDefaultProblemWeights(components: Array<{ type: string; weight: number }>): boolean {
-  const weights = new Map(components.map(({ type, weight }) => [type, weight]));
-  return (
-    weights.get('MEDIA_SESSOES') === 100 &&
-    weights.get('AUTOAVALIACAO') === 0 &&
-    weights.get('PARES') === 0
-  );
+  return [{ type: 'MEDIA_SESSOES', referenceId: null, weight: 100 }];
 }
 
 async function restoreSessionWeights(
   active: Formula | null,
-  problemId: string,
-  tutorId: string,
   formulas: FormulaRepository,
 ): Promise<void> {
-  if (!active?.components.some((component) => component.type === 'SESSAO')) return;
-  const percentageComponents = baseProblemComponents(active);
-  if (hasDefaultProblemWeights(percentageComponents)) return formulas.deactivate(active);
-  const restored = Formula.create({
-    problemId,
-    scope: FormulaScope.PROBLEMA,
-    version: active.version + 1,
-    active: true,
-    createdBy: tutorId,
-    components: percentageComponents,
-  });
-  await formulas.saveNewVersion(active, restored);
+  if (active) await formulas.deactivate(active);
 }
 
 function toFinalGradeFormulaOutput(

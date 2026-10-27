@@ -150,18 +150,32 @@ export class Formula {
     if (!this.components || this.components.length === 0) {
       throw new InvalidProblemError('A fórmula precisa ter ao menos um componente.');
     }
-    if (this.scope === FormulaScope.SESSAO) {
-      const componentTypes = this.components.map((component) => component.type);
-      if (
-        componentTypes.length !== 2 ||
-        new Set(componentTypes).size !== 2 ||
-        !componentTypes.includes('CRITERIOS') ||
-        !componentTypes.includes('PAPEL')
-      ) {
-        throw new InvalidProblemError(
-          'A fórmula da sessão deve conter exatamente um componente CRITERIOS e um PAPEL.',
-        );
-      }
+    if (this.scope === FormulaScope.SESSAO) return this.assertSessionComponents();
+    this.assertProblemComponents();
+  }
+
+  private assertSessionComponents(): void {
+    const componentTypes = this.components.map((component) => component.type);
+    if (
+      componentTypes.length !== 2 ||
+      new Set(componentTypes).size !== 2 ||
+      !componentTypes.includes('CRITERIOS') ||
+      !componentTypes.includes('PAPEL')
+    ) {
+      throw new InvalidProblemError(
+        'A fórmula da sessão deve conter exatamente um componente CRITERIOS e um PAPEL.',
+      );
+    }
+  }
+
+  private assertProblemComponents(): void {
+    const averageComponents = this.components.filter(
+      (component) => component.type === 'MEDIA_SESSOES',
+    );
+    if (averageComponents.length !== 1) {
+      throw new InvalidProblemError(
+        'A fórmula do problema deve conter exatamente um componente MEDIA_SESSOES.',
+      );
     }
   }
 

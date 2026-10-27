@@ -152,7 +152,7 @@ describe('GetProblemGradesUseCase', () => {
     ]);
   });
 
-  it('feeds the self and peer components of the final formula from each session', async () => {
+  it('keeps self and peer grades at session scope and excludes them from the final grade', async () => {
     const now = new Date('2026-10-12T12:00:00.000Z');
     gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
     gradesRepository.findProblemData.mockResolvedValue({
@@ -193,7 +193,7 @@ describe('GetProblemGradesUseCase', () => {
     const result = await useCase.execute(input, now);
 
     expect(result.alunos[0]).toMatchObject({
-      notaFinal: 8.3,
+      notaFinal: 8.5,
       autoavaliacao: { nota: 9, situacao: 'AVALIADA' },
       pares: { nota: 7, situacao: 'AVALIADA' },
       sessoes: [

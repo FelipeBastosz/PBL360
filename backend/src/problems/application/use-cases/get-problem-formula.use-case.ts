@@ -68,18 +68,11 @@ export class GetProblemFormulaUseCase {
   }
 
   private buildActiveFormula(scope: FormulaScope, activeFormula: Formula): ProblemFormulaOutput {
-    const percentageComponents = activeFormula.components.filter((c) => c.type !== 'SESSAO');
     return {
       scope,
       isDefault: false,
       version: activeFormula.version,
-      components:
-        (percentageComponents.length ? percentageComponents : null)?.map((c) => ({
-          type: c.type,
-          referenceId: c.referenceId,
-          name: this.getDefaultNameForType(c.type),
-          weight: Number(c.weight),
-        })) ?? this.getProblemScopeComponents(),
+      components: this.getProblemScopeComponents(),
     };
   }
 
@@ -93,29 +86,10 @@ export class GetProblemFormulaUseCase {
   }
 
   private getProblemScopeComponents() {
-    return [
-      this.createComponent(FormulaComponentType.MEDIA_SESSOES, 'Média das Sessões', 100),
-      this.createComponent(FormulaComponentType.AUTOAVALIACAO, 'Autoavaliação', 0),
-      this.createComponent(FormulaComponentType.PARES, 'Avaliação por Pares', 0),
-    ];
+    return [this.createComponent(FormulaComponentType.MEDIA_SESSOES, 'Média das Sessões', 100)];
   }
 
   private createComponent(type: string, name: string, weight: number): ProblemFormulaComponent {
     return { type, referenceId: null, name, weight };
-  }
-
-  private getDefaultNameForType(type: string): string | null {
-    switch (type as FormulaComponentType) {
-      case FormulaComponentType.MEDIA_SESSOES:
-        return 'Média das Sessões';
-      case FormulaComponentType.AUTOAVALIACAO:
-        return 'Autoavaliação';
-      case FormulaComponentType.PARES:
-        return 'Avaliação por Pares';
-      case FormulaComponentType.CRITERIO:
-        return null;
-      default:
-        return null;
-    }
   }
 }

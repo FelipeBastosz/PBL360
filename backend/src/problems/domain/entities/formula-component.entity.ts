@@ -73,12 +73,7 @@ export class FormulaComponent {
   }
 
   private assertProblemScope(): void {
-    const validProblemTypes = [
-      FormulaComponentType.SESSAO,
-      FormulaComponentType.MEDIA_SESSOES,
-      FormulaComponentType.AUTOAVALIACAO,
-      FormulaComponentType.PARES,
-    ];
+    const validProblemTypes = [FormulaComponentType.SESSAO, FormulaComponentType.MEDIA_SESSOES];
     if (!validProblemTypes.includes(this.type as FormulaComponentType)) {
       throw new InvalidProblemError(
         'Componente inválido para a fórmula da nota final do problema.',

@@ -8,7 +8,7 @@ export interface GradeCriterion {
 }
 
 export interface GradeComponent {
-  type: 'CRITERIOS' | 'PAPEL' | 'CRITERIO' | 'SESSAO' | 'MEDIA_SESSOES' | 'AUTOAVALIACAO' | 'PARES';
+  type: 'CRITERIOS' | 'PAPEL' | 'CRITERIO' | 'SESSAO' | 'MEDIA_SESSOES';
   referenceId?: string | null;
   weight: number;
   value?: number | null;
@@ -129,7 +129,7 @@ export const calculateProblemGrade = (
   sessionGrades: Array<{ sessionId: string; grade: number | null }>,
 ): ProblemGradeResult => {
   const values = components
-    .filter((component) => component.type !== 'SESSAO')
+    .filter((component) => component.type === 'MEDIA_SESSOES')
     .map((component) => ({
       value: problemComponentValue(component, sessionGrades, components),
       weight: component.weight,

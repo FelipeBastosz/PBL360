@@ -140,8 +140,8 @@ describe('problem evaluation component', () => {
   });
 });
 
-describe('final grade with self and peer components', () => {
-  it('combines 60% sessions (7), 20% self (4.5) and 20% peers (8.5) into 6.8', () => {
+describe('self and peer assessments do not alter the problem grade', () => {
+  it('uses only the session average even when self and peer assessments exist', () => {
     const selfGrade = calculateProblemEvaluationComponent([
       self({ score: 9 }),
       self({ release: closed }),
@@ -152,11 +152,7 @@ describe('final grade with self and peer components', () => {
     ]).grade;
 
     const result = calculateProblemGrade(
-      [
-        { type: 'MEDIA_SESSOES', weight: 60 },
-        { type: 'AUTOAVALIACAO', weight: 20, value: selfGrade },
-        { type: 'PARES', weight: 20, value: peerGrade },
-      ],
+      [{ type: 'MEDIA_SESSOES', weight: 100 }],
       [
         { sessionId: 's1', grade: 8 },
         { sessionId: 's2', grade: 6 },
@@ -165,38 +161,6 @@ describe('final grade with self and peer components', () => {
 
     expect(selfGrade).toBe(4.5);
     expect(peerGrade).toBe(8.5);
-    expect(result.grade).toBeCloseTo(6.8, 10);
-  });
-
-  it('redistributes the peer weight when peers have no data: (0.6×7 + 0.2×4.5) / 0.8 = 6.375', () => {
-    const result = calculateProblemGrade(
-      [
-        { type: 'MEDIA_SESSOES', weight: 60 },
-        { type: 'AUTOAVALIACAO', weight: 20, value: 4.5 },
-        { type: 'PARES', weight: 20, value: null },
-      ],
-      [
-        { sessionId: 's1', grade: 8 },
-        { sessionId: 's2', grade: 6 },
-      ],
-    );
-
-    expect(result.grade).toBeCloseTo(6.375, 10);
-  });
-
-  it('ignores self and peers when their weights are 0 in the formula', () => {
-    expect(
-      calculateProblemGrade(
-        [
-          { type: 'MEDIA_SESSOES', weight: 100 },
-          { type: 'AUTOAVALIACAO', weight: 0, value: 2 },
-          { type: 'PARES', weight: 0, value: 3 },
-        ],
-        [
-          { sessionId: 's1', grade: 9 },
-          { sessionId: 's2', grade: 7 },
-        ],
-      ),
-    ).toEqual({ grade: 8 });
+    expect(result.grade).toBe(7);
   });
 });

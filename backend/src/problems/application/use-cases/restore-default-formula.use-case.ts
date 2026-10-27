@@ -84,6 +84,4 @@ function sessionComponentInputs(formula: Formula) {
 
 const defaultProblemComponents: Array<{ type: string; referenceId: null; weight: number }> = [
   { type: 'MEDIA_SESSOES', referenceId: null, weight: 100 },
-  { type: 'AUTOAVALIACAO', referenceId: null, weight: 0 },
-  { type: 'PARES', referenceId: null, weight: 0 },
 ];
