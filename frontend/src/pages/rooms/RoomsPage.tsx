@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { FabMenu, type FabAction } from '@/components/ui/FabMenu';
@@ -12,45 +12,17 @@ import {
 import { cn } from '@/utils/cn';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
+import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
+import { useToast } from '@/hooks/useToast';
 import { roomService } from '@/services/room.service';
-import { problemService } from '@/services/problem.service';
 import { ROUTES } from '@/routes/paths';
-import type { Room, StudentRoom } from '@/types/room';
+import type { Room } from '@/types/room';
 import { countLabel } from '@/utils/countLabel';
 import { JoinRoomSheet } from './JoinRoomSheet';
-
-function toRoom(studentRoom: StudentRoom): Room {
-  return {
-    id: studentRoom.salaId,
-    nome: studentRoom.nome,
-    semestre: studentRoom.semestre,
-    codigoDisciplina: '',
-    codigoSala: '',
-    professorResponsavelId: '',
-    ativo: true,
-    criadoEm: '',
-    totalAlunos: studentRoom.totalAlunos,
-    totalProblemas: studentRoom.totalProblemas,
-  };
-}
-
-// GET /salas does not return the counts yet, so they are fetched per room when missing.
-async function withCounts(room: Room): Promise<Room> {
-  if (room.totalAlunos !== undefined && room.totalProblemas !== undefined) return room;
-
-  const [students, problems] = await Promise.allSettled([
-    roomService.listStudents(room.id),
-    problemService.list(room.id),
-  ]);
-
-  return {
-    ...room,
-    totalAlunos: students.status === 'fulfilled' ? students.value.length : room.totalAlunos,
-    totalProblemas: problems.status === 'fulfilled' ? problems.value.length : room.totalProblemas,
-  };
-}
+import { LeaveRoomModal } from './LeaveRoomModal';
+import { useRooms } from './hooks/useRooms';
 
 const TUTOR_ACTIONS: FabAction[] = [
   { label: 'Editar uma turma', to: ROUTES.manageRooms },
@@ -72,16 +44,24 @@ function RoomsEmptyState({ isStudent }: { isStudent: boolean }) {
   );
 }
 
-type RoomCardProps = { room: Room; professorNome?: string };
-function RoomCard({ room, professorNome }: RoomCardProps) {
+type RoomCardProps = {
+  room: Room;
+  professorNome?: string;
+  canLeave?: boolean;
+  onLeaveRequest?: (room: Room) => void;
+};
+
+function RoomCard({ room, professorNome, canLeave, onLeaveRequest }: RoomCardProps) {
   return (
-    <Link to={`${ROUTES.rooms}/${room.id}/problemas`} className={INTERACTIVE_CARD_CLASS}>
+    <div className={cn(INTERACTIVE_CARD_CLASS, 'group flex flex-col justify-between')}>
       <div className={CARD_ACCENT_CLASS} />
       <div className="flex flex-col gap-3 p-4">
-        <div>
-          <h3 className="line-clamp-2 text-base font-bold text-brand-900">{room.nome}</h3>
+        <Link to={`${ROUTES.rooms}/${room.id}/problemas`} className="focus-visible:outline-none">
+          <h3 className="line-clamp-2 text-base font-bold text-brand-900 group-hover:text-brand-900">
+            {room.nome}
+          </h3>
           {professorNome && <p className="text-sm text-muted">Prof. {professorNome}</p>}
-        </div>
+        </Link>
         <div className="mt-1 flex items-center justify-between">
           <span className="text-sm text-muted">
             {countLabel(room.totalAlunos ?? 0, 'aluno', 'alunos')}
@@ -90,8 +70,21 @@ function RoomCard({ room, professorNome }: RoomCardProps) {
             {countLabel(room.totalProblemas ?? 0, 'problema', 'problemas')}
           </span>
         </div>
+        {canLeave && onLeaveRequest && (
+          <div className="mt-1 flex justify-end border-t border-black/5 pt-2">
+            <button
+              type="button"
+              onClick={() => onLeaveRequest(room)}
+              aria-label={`Sair da turma ${room.nome}`}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-danger hover:text-danger/80 focus-visible:outline-2 focus-visible:outline-danger"
+            >
+              <ArrowRightStartOnRectangleIcon className="size-4" aria-hidden="true" />
+              Sair da turma
+            </button>
+          </div>
+        )}
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -101,9 +94,19 @@ type RoomsListProps = {
   isStudent: boolean;
   hasFilter: boolean;
   userNome?: string;
+  userId?: string;
+  onLeaveRequest: (room: Room) => void;
 };
 
-function RoomsList({ isLoading, rooms, isStudent, hasFilter, userNome }: RoomsListProps) {
+function RoomsList({
+  isLoading,
+  rooms,
+  isStudent,
+  hasFilter,
+  userNome,
+  userId,
+  onLeaveRequest,
+}: RoomsListProps) {
   if (isLoading) {
     return (
       <div className="mt-10 flex justify-center">
@@ -122,52 +125,103 @@ function RoomsList({ isLoading, rooms, isStudent, hasFilter, userNome }: RoomsLi
 
   return (
     <div className={cn(CARD_GRID_CLASS, 'mt-4')}>
-      {rooms.map((room) => (
-        <RoomCard key={room.id} room={room} professorNome={isStudent ? undefined : userNome} />
-      ))}
+      {rooms.map((room) => {
+        const isOwner = !isStudent && Boolean(userId) && room.professorResponsavelId === userId;
+        return (
+          <RoomCard
+            key={room.id}
+            room={room}
+            professorNome={isStudent ? undefined : userNome}
+            canLeave={!isOwner}
+            onLeaveRequest={onLeaveRequest}
+          />
+        );
+      })}
     </div>
   );
 }
 
-function useRooms(isStudent: boolean) {
-  const [rooms, setRooms] = useState<Room[]>([]);
+type RoomsContentProps = {
+  isLoading: boolean;
+  rooms: Room[];
+  error: { message: string } | null;
+  isStudent: boolean;
+  hasFilter: boolean;
+  userNome?: string;
+  userId?: string;
+  onLeaveRequest: (room: Room) => void;
+};
 
-  const fetchRooms = useCallback(async (): Promise<Room[]> => {
-    if (isStudent) {
-      const studentRooms = roomService.listMyRooms ? await roomService.listMyRooms() : [];
-      return studentRooms.map(toRoom);
+function RoomsContent({
+  isLoading,
+  rooms,
+  error,
+  isStudent,
+  hasFilter,
+  userNome,
+  userId,
+  onLeaveRequest,
+}: RoomsContentProps) {
+  return (
+    <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6')}>
+      <h2 className="text-xs font-bold uppercase tracking-widest text-muted">
+        Minhas turmas · {rooms.length}
+      </h2>
+      {error && (
+        <Alert tone="error" className="mt-4">
+          {error.message}
+        </Alert>
+      )}
+      <RoomsList
+        isLoading={isLoading}
+        rooms={rooms}
+        isStudent={isStudent}
+        hasFilter={hasFilter}
+        userNome={userNome}
+        userId={userId}
+        onLeaveRequest={onLeaveRequest}
+      />
+    </main>
+  );
+}
+
+function useLeaveRoom(onSuccess: (roomId: string) => void) {
+  const { notify } = useToast();
+  const [roomToLeave, setRoomToLeave] = useState<Room | null>(null);
+  const { run, isLoading } = useAsyncAction(roomService.leaveRoom);
+
+  const confirmLeave = async () => {
+    if (!roomToLeave) return;
+    const result = await run(roomToLeave.id);
+    if (result.ok) {
+      onSuccess(roomToLeave.id);
+      notify({ tone: 'success', message: 'Você saiu da turma com sucesso.' });
+      setRoomToLeave(null);
     }
-    const tutorRooms = await roomService.list();
-    return Promise.all(tutorRooms.map(withCounts));
-  }, [isStudent]);
+  };
 
-  const { run, isLoading, error } = useAsyncAction(fetchRooms);
-
-  const reload = useCallback(() => {
-    run().then((result) => {
-      if (result.ok) setRooms(result.data);
-    });
-  }, [run]);
-
-  useEffect(() => reload(), [reload]);
-
-  return { rooms, isLoading, error, reload };
+  return {
+    roomToLeave,
+    isLeaving: isLoading,
+    requestLeave: setRoomToLeave,
+    confirmLeave,
+    cancelLeave: () => setRoomToLeave(null),
+  };
 }
 
 export default function RoomsPage() {
   const { user } = useAuth();
   const [query, setQuery] = useState('');
   const isStudent = user?.tipo === 'ALUNO';
-  const { rooms, isLoading, error, reload } = useRooms(isStudent);
+  const { rooms, setRooms, isLoading, error, reload } = useRooms(isStudent);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
+  const { roomToLeave, isLeaving, requestLeave, confirmLeave, cancelLeave } = useLeaveRoom(
+    (roomId) => setRooms((current) => current.filter((r) => r.id !== roomId)),
+  );
+
   const studentActions: FabAction[] = [
     { label: 'Entrar em uma turma', onClick: () => setIsJoinOpen(true) },
   ];
-
-  function handleJoined() {
-    setIsJoinOpen(false);
-    reload();
-  }
 
   const filteredRooms = rooms.filter((r) => r.nome.toLowerCase().includes(query.toLowerCase()));
 
@@ -178,32 +232,35 @@ export default function RoomsPage() {
         <SearchField label="Pesquisar turma" value={query} onChange={setQuery} />
       </div>
 
-      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6')}>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted">
-          Minhas turmas · {filteredRooms.length}
-        </h2>
-        {error && (
-          <Alert tone="error" className="mt-4">
-            {error.message}
-          </Alert>
-        )}
-        <RoomsList
-          isLoading={isLoading}
-          rooms={filteredRooms}
-          isStudent={isStudent}
-          hasFilter={query.length > 0}
-          userNome={user?.nome}
-        />
-      </main>
+      <RoomsContent
+        isLoading={isLoading}
+        rooms={filteredRooms}
+        error={error}
+        isStudent={isStudent}
+        hasFilter={query.length > 0}
+        userNome={user?.nome}
+        userId={user?.id}
+        onLeaveRequest={requestLeave}
+      />
 
       <FabMenu label="Ações de turma" actions={isStudent ? studentActions : TUTOR_ACTIONS} />
       {isStudent && (
         <JoinRoomSheet
           isOpen={isJoinOpen}
           onClose={() => setIsJoinOpen(false)}
-          onJoined={handleJoined}
+          onJoined={() => {
+            setIsJoinOpen(false);
+            reload();
+          }}
         />
       )}
+      <LeaveRoomModal
+        roomName={roomToLeave?.nome ?? ''}
+        isOpen={Boolean(roomToLeave)}
+        isLoading={isLeaving}
+        onConfirm={confirmLeave}
+        onCancel={cancelLeave}
+      />
     </div>
   );
 }
