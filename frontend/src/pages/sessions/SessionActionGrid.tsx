@@ -6,7 +6,6 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline';
 import type { ComponentType, ReactNode } from 'react';
-import { ROUTES } from '@/routes/paths';
 
 type ActionCardProps = {
   to: string;
@@ -118,10 +117,10 @@ export function SessionActionGrid({
     <div className="grid grid-cols-2 gap-3 lg:row-span-2 [&>*]:min-w-0">
       <PrimaryActions basePath={basePath} isStudentEvalActive={isStudentEvalActive} />
       <ActionCard
-        to={ROUTES.performanceTables}
+        to={`${basePath}/formulas`}
         state={{ roomId, problemId, sessionId }}
         title="Fórmulas"
-        desc="Suas tabelas de critérios"
+        desc="Critérios e nota final"
         color="bg-amber-50 text-amber-600"
         Icon={AdjustmentsHorizontalIcon}
       />

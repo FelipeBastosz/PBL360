@@ -136,7 +136,10 @@ describe('SessionHubPage', () => {
       'href',
       `${basePath}/avaliar`,
     );
-    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute('href', '/formulas');
+    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute(
+      'href',
+      `${basePath}/formulas`,
+    );
   });
 
   it('renders active link for Histórico de avaliações', async () => {
