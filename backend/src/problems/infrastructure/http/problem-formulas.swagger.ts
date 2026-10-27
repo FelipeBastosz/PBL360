@@ -19,7 +19,7 @@ export const GetProblemFormulaSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Obtém a fórmula de avaliação (padrão ou personalizada)',
     description:
-      'Retorna a fórmula de avaliação para o escopo pedido. Se o professor não tiver personalizado, retorna a fórmula padrão convertida a partir da tabela de desempenho vinculada.',
+      'No escopo PROBLEMA, retorna somente a média das sessões. Os pesos relativos de cada sessão são consultados em formula-final.',
   }),
   ApiOkResponse({
     description: 'Fórmula retornada com sucesso.',
@@ -48,7 +48,7 @@ export const CustomizeProblemFormulaSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Personaliza a fórmula de avaliação',
     description:
-      'Salva uma nova versão personalizada da fórmula com os pesos informados. A soma deve ser exatamente 100.',
+      'No escopo PROBLEMA, a fórmula contém somente MEDIA_SESSOES com peso 100. Para ponderar sessões, use formula-final.',
   }),
   ApiOkResponse({
     description: 'Fórmula personalizada salva com sucesso.',
@@ -72,7 +72,7 @@ export const CustomizeProblemFormulaSwaggerDocs = applyDecorators(
   }),
   ApiUnprocessableEntityResponse({
     description:
-      'Soma dos pesos diferente de 100, componente de outro escopo ou critério inválido.',
+      'No escopo PROBLEMA, a única fórmula permitida é MEDIA_SESSOES; pesos de sessão devem ser configurados em formula-final.',
     type: ErrorResponseDto,
   }),
 );

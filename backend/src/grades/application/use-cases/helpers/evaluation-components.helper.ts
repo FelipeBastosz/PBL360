@@ -6,11 +6,7 @@ import {
   type EvaluationComponentResult,
   type EvaluationRelease,
 } from '../../../domain/entities/evaluation-component-grade';
-import {
-  presentGrade,
-  type GradeAttendance,
-  type GradeComponent,
-} from '../../../domain/entities/grade-calculator';
+import { presentGrade, type GradeAttendance } from '../../../domain/entities/grade-calculator';
 import type { GradeRow } from '../../../domain/repositories/grades.repository';
 import type { EvaluationComponentResponse } from '../../dtos/grades-response.dto';
 import type { SessionGradeResponse, StudentSessionResponse } from './get-problem-grades.helper';
@@ -45,17 +41,6 @@ export function summarizeEvaluationComponents(
     self: calculateProblemEvaluationComponent(sessions.map((session) => session.self)),
     peer: calculateProblemEvaluationComponent(sessions.map((session) => session.peer)),
   };
-}
-
-export function withEvaluationValues(
-  components: GradeComponent[],
-  evaluations: SessionEvaluationComponents,
-): GradeComponent[] {
-  return components.map((component) => {
-    if (component.type === 'AUTOAVALIACAO') return { ...component, value: evaluations.self.grade };
-    if (component.type === 'PARES') return { ...component, value: evaluations.peer.grade };
-    return component;
-  });
 }
 
 export function withSessionEvaluations(

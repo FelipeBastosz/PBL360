@@ -49,11 +49,10 @@ describe('SessionEvaluationsCard', () => {
       />,
     );
 
-    const switches = screen.getAllByRole('switch');
-    await user.click(switches[0]);
+    await user.click(screen.getByRole('switch', { name: 'Autoavaliação dos alunos' }));
     expect(onToggle).toHaveBeenCalledWith('autoavaliacao');
 
-    await user.click(switches[1]);
+    await user.click(screen.getByRole('switch', { name: 'Avaliação entre pares' }));
     expect(onToggle).toHaveBeenCalledWith('pares');
   });
 

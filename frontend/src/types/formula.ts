@@ -1,6 +1,6 @@
 export type FormulaScope = 'SESSAO' | 'PROBLEMA';
 
-export type FormulaComponentType = 'CRITERIO' | 'MEDIA_SESSOES' | 'AUTOAVALIACAO' | 'PARES';
+export type FormulaComponentType = 'CRITERIO' | 'MEDIA_SESSOES';
 
 // Mirrors GET /salas/:roomId/problemas/:problemId/formulas. Weights are percentages.
 export type FormulaComponent = {

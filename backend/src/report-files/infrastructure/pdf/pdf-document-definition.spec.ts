@@ -49,6 +49,8 @@ describe('buildPdfDefinition', () => {
         },
       ]);
       expect(definition.info).toMatchObject({ title: 'Relatório da sessão', creator: 'PBL360' });
+      expect(definition.header).toBeUndefined();
+      expect(definition.pageMargins).toEqual([40, 40, 40, 64]);
     });
 
     it('identifies each section with a heading kept with its content', () => {

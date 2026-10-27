@@ -18,6 +18,12 @@ const USER_PHOTO_COLUMNS = `
     mime_type AS "mimeType",
     updated_at AS "updatedAt"`;
 
+export const UPSERT_USER_PHOTO_QUERY = `
+  INSERT INTO user_photos (user_id, content, mime_type)
+  VALUES ($1, $2, $3)
+  ON CONFLICT (user_id) DO UPDATE
+    SET content = EXCLUDED.content, mime_type = EXCLUDED.mime_type, updated_at = now();`;
+
 @Injectable()
 export class PgUserPhotoRepository implements UserPhotoRepository {
   constructor(@InjectRepository(UserPhoto) private readonly photos: Repository<UserPhoto>) {}
@@ -33,5 +39,13 @@ export class PgUserPhotoRepository implements UserPhotoRepository {
     const row = firstRowOrNull(rows);
 
     return row ? this.photos.create(row) : null;
+  }
+
+  async save(userId: string, photo: UserPhoto): Promise<void> {
+    await this.photos.query(UPSERT_USER_PHOTO_QUERY, [userId, photo.content, photo.mimeType]);
+  }
+
+  async deleteByUserId(userId: string): Promise<void> {
+    await this.photos.query(`DELETE FROM user_photos WHERE user_id = $1;`, [userId]);
   }
 }

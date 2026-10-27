@@ -30,7 +30,7 @@ function DeleteConfirmation({
     <div
       role="group"
       aria-label={`Confirmar exclusão de ${fileName}`}
-      className="flex w-full animate-fade-up items-center justify-end gap-2 border-t border-black/5 pt-3 [animation-duration:200ms]"
+      className="flex w-full animate-fade-up flex-wrap items-center justify-end gap-2 border-t border-black/5 pt-3 [animation-duration:200ms]"
     >
       <span className="mr-auto text-sm text-ink">Excluir este documento?</span>
       <button

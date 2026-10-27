@@ -50,13 +50,23 @@ export const pageFooter =
 export const keepSectionTitleWithContent = (node: Node, queries: NodeQueries): boolean =>
   node.headlineLevel === SECTION_HEADLINE_LEVEL && queries.getFollowingNodesOnPage().length === 0;
 
-const documentHeader = ({ title, identification }: ReportDocument): Content[] => [
-  { text: title, style: 'title' },
-  ...identification.map(({ label, value }) => ({
+const identificationContent = ({ identification }: ReportDocument): Content[] =>
+  identification.map(({ label, value }) => ({
     text: [{ text: `${label}: `, bold: true }, value],
     style: 'identification',
-  })),
+  }));
+
+const documentHeader = (document: ReportDocument): Content[] => [
+  { text: document.title, style: 'title' },
+  ...(document.repeatIdentification ? [] : identificationContent(document)),
 ];
+
+const pageHeader =
+  (document: ReportDocument): DynamicContent =>
+  () => ({
+    stack: identificationContent(document),
+    margin: [40, 20, 40, 0],
+  });
 
 const documentBody = ({ sections }: ReportDocument): Content[] =>
   sections.length === 0
@@ -70,10 +80,11 @@ export const buildPdfDefinition = (
   info: { title: document.title, creator: 'PBL360', producer: 'PBL360' },
   pageSize: 'A4',
   pageOrientation: pageOrientationFor(document),
-  pageMargins: [40, 40, 40, 64],
+  pageMargins: [40, document.repeatIdentification ? 100 : 40, 40, 64],
   defaultStyle: { font: PDF_FONT, fontSize: 9, lineHeight: 1.2 },
   styles: PDF_STYLES,
   footer: pageFooter(logoSvg),
+  header: document.repeatIdentification ? pageHeader(document) : undefined,
   pageBreakBefore: keepSectionTitleWithContent,
   content: [...documentHeader(document), ...documentBody(document)],
 });

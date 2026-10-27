@@ -1,0 +1,213 @@
+import type { DataSource, EntityManager } from 'typeorm';
+import { EvaluationStatus } from '@/evaluations/domain/enums/evaluation-status.enum';
+import { readEvaluationSummaries } from '@/evaluations/infrastructure/database/evaluation-summary.reads';
+import { PgSessionReportRepository } from './pg-session-report.repository';
+import {
+  FIND_ROOM_STUDENTS_QUERY,
+  FIND_SESSION_ATTENDANCES_QUERY,
+  FIND_SESSION_EVALUATIONS_QUERY,
+  FIND_SESSION_FEEDBACKS_QUERY,
+  FIND_SESSION_HEADER_QUERY,
+  FIND_SESSION_OBSERVATION_TAGS_QUERY,
+  FIND_SESSION_ROLES_QUERY,
+} from './session-report.queries';
+
+jest.mock('@/evaluations/infrastructure/database/evaluation-summary.reads', () => ({
+  readEvaluationSummaries: jest.fn(),
+}));
+
+describe('PgSessionReportRepository', () => {
+  let repository: PgSessionReportRepository;
+  let manager: jest.Mocked<EntityManager>;
+  let dataSource: jest.Mocked<DataSource>;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    manager = {
+      query: jest.fn(),
+    } as unknown as jest.Mocked<EntityManager>;
+
+    dataSource = {
+      transaction: jest
+        .fn()
+        .mockImplementation(
+          (isolationOrCb: unknown, maybeCb?: (em: EntityManager) => Promise<unknown>) => {
+            const cb =
+              typeof isolationOrCb === 'function'
+                ? (isolationOrCb as (em: EntityManager) => Promise<unknown>)
+                : maybeCb;
+            return cb ? cb(manager) : Promise.resolve(null);
+          },
+        ),
+    } as unknown as jest.Mocked<DataSource>;
+
+    repository = new PgSessionReportRepository(dataSource);
+  });
+
+  it('queries all session report data and maps students, attendances, roles, tags, evals, summaries and feedbacks', async () => {
+    (readEvaluationSummaries as jest.Mock).mockResolvedValue([
+      {
+        studentId: 'stud-1',
+        name: 'Ana Souza',
+        status: EvaluationStatus.SUBMITTED,
+        sessionScore: 8.7,
+      },
+      {
+        studentId: 'stud-2',
+        name: 'Bruno Lima',
+        status: EvaluationStatus.DRAFT,
+        sessionScore: null,
+      },
+    ]);
+
+    manager.query.mockImplementation(async (query: string) => {
+      await Promise.resolve();
+      if (query === FIND_SESSION_HEADER_QUERY) {
+        return [
+          {
+            sessionId: 'sess-1',
+            sessionTitle: 'Abertura',
+            sessionOrderIndex: 1,
+            sessionDate: '2026-10-14',
+            problemId: 'prob-1',
+            problemTitle: 'Dor torácica',
+            problemOrderIndex: 1,
+            roomId: 'room-1',
+            roomName: 'Turma A',
+            courseCode: 'MED01',
+            semester: '2026.2',
+          },
+        ];
+      }
+      if (query === FIND_ROOM_STUDENTS_QUERY) {
+        return [
+          { studentId: 'stud-1', name: 'Ana Souza', matricula: '2026001' },
+          { studentId: 'stud-2', name: 'Bruno Lima', matricula: '2026002' },
+        ];
+      }
+      if (query === FIND_SESSION_ATTENDANCES_QUERY) {
+        return [
+          { studentId: 'stud-1', status: 'PRESENT' },
+          { studentId: 'stud-2', status: 'LATE' },
+        ];
+      }
+      if (query === FIND_SESSION_ROLES_QUERY) {
+        return [{ studentId: 'stud-1', role: 'COORDINATOR', roleScore: '9.00' }];
+      }
+      if (query === FIND_SESSION_OBSERVATION_TAGS_QUERY) {
+        return [{ studentId: 'stud-1', tags: ['Pontual', 'Participativo'] }];
+      }
+      if (query === FIND_SESSION_EVALUATIONS_QUERY) {
+        return [
+          {
+            id: 'eval-1',
+            studentId: 'stud-1',
+            status: EvaluationStatus.SUBMITTED,
+            sessionScore: '8.70',
+            appliedBonus: '9.00',
+          },
+          {
+            id: 'eval-2',
+            studentId: 'stud-2',
+            status: EvaluationStatus.DRAFT,
+            sessionScore: null,
+            appliedBonus: null,
+          },
+        ];
+      }
+      if (query === FIND_SESSION_FEEDBACKS_QUERY) {
+        return [
+          {
+            id: 'fb-1',
+            recipientId: 'stud-1',
+            text: 'Excelente participação.',
+            authorName: 'Prof. Carlos',
+          },
+          {
+            id: 'fb-gen',
+            recipientId: null,
+            text: 'Feedback geral da sessão.',
+            authorName: 'Prof. Carlos',
+          },
+        ];
+      }
+      return [];
+    });
+
+    const data = await repository.getSessionReportData('sess-1', 'room-1');
+
+    expect(readEvaluationSummaries).toHaveBeenCalledWith(manager, {
+      roomId: 'room-1',
+      sessionId: 'sess-1',
+      problemId: '',
+    });
+    expect(data.room.name).toBe('Turma A');
+    expect(data.problem.title).toBe('Dor torácica');
+    expect(data.session.title).toBe('Abertura');
+    expect(data.generalFeedback).toEqual({
+      text: 'Feedback geral da sessão.',
+      authorName: 'Prof. Carlos',
+    });
+
+    expect(data.students).toHaveLength(2);
+
+    const stud1 = data.students[0]!;
+    expect(stud1.name).toBe('Ana Souza');
+    expect(stud1.matricula).toBe('2026001');
+    expect(stud1.attendanceStatus).toBe('PRESENT');
+    expect(stud1.role).toBe('COORDINATOR');
+    expect(stud1.roleScore).toBe(9.0);
+    expect(stud1.tags).toEqual(['Pontual', 'Participativo']);
+    expect(stud1.evaluationStatus).toBe(EvaluationStatus.SUBMITTED);
+    expect(stud1.appliedBonus).toBe(9.0);
+    expect(stud1.sessionScore).toBe(8.7);
+    expect(stud1.feedback).toEqual({
+      text: 'Excelente participação.',
+      authorName: 'Prof. Carlos',
+    });
+
+    const stud2 = data.students[1]!;
+    expect(stud2.name).toBe('Bruno Lima');
+    expect(stud2.attendanceStatus).toBe('LATE');
+    expect(stud2.role).toBeNull();
+    expect(stud2.roleScore).toBeNull();
+    expect(stud2.tags).toEqual([]);
+    expect(stud2.evaluationStatus).toBe(EvaluationStatus.DRAFT);
+    expect(stud2.sessionScore).toBeNull();
+    expect(stud2.feedback).toBeNull();
+  });
+
+  it('returns empty students and null generalFeedback when room has no students', async () => {
+    (readEvaluationSummaries as jest.Mock).mockResolvedValue([]);
+    manager.query.mockImplementation(async (query: string) => {
+      await Promise.resolve();
+      if (query === FIND_SESSION_HEADER_QUERY) {
+        return [
+          {
+            sessionId: 'sess-1',
+            sessionTitle: 'Abertura',
+            sessionOrderIndex: 1,
+            sessionDate: '2026-10-14',
+            problemId: 'prob-1',
+            problemTitle: 'Dor torácica',
+            problemOrderIndex: 1,
+            roomId: 'room-1',
+            roomName: 'Turma A',
+            courseCode: 'MED01',
+            semester: '2026.2',
+          },
+        ];
+      }
+      return [];
+    });
+
+    const data = await repository.getSessionReportData('sess-1', 'room-1');
+
+    expect(data.room.name).toBe('Turma A');
+    expect(data.problem.title).toBe('Dor torácica');
+    expect(data.session.title).toBe('Abertura');
+    expect(data.students).toEqual([]);
+    expect(data.generalFeedback).toBeNull();
+  });
+});

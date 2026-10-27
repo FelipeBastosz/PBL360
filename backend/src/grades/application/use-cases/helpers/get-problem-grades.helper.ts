@@ -8,7 +8,6 @@ import { buildStudentResponse } from './grade-response.helper';
 import {
   calculateSessionComponents,
   summarizeEvaluationComponents,
-  withEvaluationValues,
   withSessionEvaluations,
   type StudentEvaluationComponents,
 } from './evaluation-components.helper';
@@ -91,14 +90,16 @@ export function processStudentGrades(ctx: StudentGradeContext) {
   const grades = results.map((result) =>
     withSessionEvaluations(result.responseSession, result.evaluations),
   );
-  const components = withEvaluationValues(ctx.problemComponents, evaluations);
-  const finalGrade = calculateProblemGrade(components, sessionGrades(sessionRows));
+  const finalGrade = calculateProblemGrade(ctx.problemComponents, sessionGrades(sessionRows));
 
   return buildStudentResult(ctx, grades, finalGrade.grade, sessionRows, evaluations);
 }
 
-function sessionGrades(rows: Row[]): Array<number | null> {
-  return rows.map((row) => row.grade as number | null);
+function sessionGrades(rows: Row[]): Array<{ sessionId: string; grade: number | null }> {
+  return rows.map((row) => ({
+    sessionId: String(row.session_id),
+    grade: row.grade as number | null,
+  }));
 }
 
 function buildStudentResult(

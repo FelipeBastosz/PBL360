@@ -149,11 +149,13 @@ export const FIND_ROOM_PERFORMANCE_TABLES_QUERY = `
            SELECT COUNT(DISTINCT s.id)::int
              FROM sessions s
              JOIN problems p ON p.id = s.problem_id
+             LEFT JOIN performance_tables copy ON copy.id = s.performance_table_id
              LEFT JOIN session_evaluation_configs sec ON sec.session_id = s.id
              LEFT JOIN evaluations e ON e.session_id = s.id
             WHERE p.room_id = $1
               AND (
                 s.performance_table_id = pt.id
+                OR copy.source_table_id = pt.id
                 OR sec.performance_table_id = pt.id
                 OR e.performance_table_id = pt.id
               )
@@ -172,12 +174,13 @@ export const FIND_ROOM_PERFORMANCE_TABLES_QUERY = `
      AND pt.is_session_copy = FALSE
      AND (
        pt.room_id = $1
-       OR pt.id IN (
-         SELECT s.performance_table_id
+       OR EXISTS (
+         SELECT 1
            FROM sessions s
            JOIN problems p ON p.id = s.problem_id
+           LEFT JOIN performance_tables copy ON copy.id = s.performance_table_id
           WHERE p.room_id = $1
-            AND s.performance_table_id IS NOT NULL
+            AND (s.performance_table_id = pt.id OR copy.source_table_id = pt.id)
        )
        OR (pt.tutor_id = $2 AND pt.room_id IS NULL AND pt.is_default = FALSE)
        OR pt.is_default = TRUE

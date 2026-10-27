@@ -1,0 +1,109 @@
+name: Auto Close on Subtasks Complete
+
+on:
+  issues:
+    types: [edited, closed]
+
+permissions:
+  issues: write
+
+jobs:
+  check-progress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Subtasks and Sub-issues Progress
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const action = context.payload.action;
+            const issue = context.payload.issue;
+
+            // CENÁRIO 1: Uma sub-issue nativa do GitHub foi fechada
+            if (action === 'closed') {
+              let parentUrl = issue.parent_issue_url;
+
+              // Caso o webhook não traga o parent_issue_url diretamente, consulta a API
+              if (!parentUrl) {
+                try {
+                  const { data: currentIssue } = await github.rest.issues.get({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number
+                  });
+                  parentUrl = currentIssue.parent_issue_url;
+                } catch (err) {
+                  console.error(`Erro ao consultar issue #${issue.number}:`, err);
+                }
+              }
+
+              if (!parentUrl) {
+                console.log(`Issue #${issue.number} não possui issue pai vinculada.`);
+                return;
+              }
+
+              const parentNumber = parseInt(parentUrl.split('/').pop(), 10);
+              if (isNaN(parentNumber)) return;
+
+              const { data: parentIssue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parentNumber
+              });
+
+              if (parentIssue.state !== 'open') {
+                console.log(`Issue pai #${parentNumber} já está fechada.`);
+                return;
+              }
+
+              const summary = parentIssue.sub_issues_summary;
+              if (summary && summary.total > 0 && summary.percent_completed === 100) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: parentNumber,
+                  state: 'closed',
+                  state_reason: 'completed'
+                });
+                console.log(`Issue pai #${parentNumber} fechada automaticamente: 100% das sub-issues concluídas.`);
+              } else {
+                console.log(`Issue pai #${parentNumber} permanece aberta (${summary ? summary.completed : 0}/${summary ? summary.total : 0} concluídas).`);
+              }
+              return;
+            }
+
+            // CENÁRIO 2: A issue foi editada (ex: checklist em Markdown marcado no corpo ou sub-issues atualizadas)
+            if (action === 'edited') {
+              if (issue.state !== 'open') {
+                return;
+              }
+
+              // Verifica se a issue possui sub-issues nativas em 100%
+              const summary = issue.sub_issues_summary;
+              if (summary && summary.total > 0 && summary.percent_completed === 100) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: 'closed',
+                  state_reason: 'completed'
+                });
+                console.log(`Issue #${issue.number} fechada: 100% das sub-issues concluídas.`);
+                return;
+              }
+
+              // Verifica se há checklist em Markdown (- [x]) no corpo da issue
+              const body = issue.body || "";
+              const totalTasks = (body.match(/[*-] \[[ xX]\]/g) || []).length;
+              const completedTasks = (body.match(/[*-] \[[xX]\]/g) || []).length;
+
+              if (totalTasks > 0 && totalTasks === completedTasks) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: 'closed',
+                  state_reason: 'completed'
+                });
+                console.log(`Issue #${issue.number} fechada: 100% das tarefas em markdown concluídas.`);
+              }
+            }
