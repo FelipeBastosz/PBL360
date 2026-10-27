@@ -100,14 +100,33 @@ test.describe('Rooms Page', () => {
     ).not.toBeVisible();
   });
 
-  test('should hide leave room button for the room owner even in leave mode', async ({ page }) => {
+  test('should show owner badge and blocked warning modal when owner tries to leave own room', async ({
+    page,
+  }) => {
     await expect(page.getByRole('button', { name: /sair da turma/i })).toHaveCount(0);
 
     await page.getByRole('button', { name: /ações de turma/i }).click();
     await page.getByRole('button', { name: 'Sair de uma turma' }).click();
 
-    await expect(page.getByRole('button', { name: /sair da turma/i })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Concluir' })).toBeVisible();
+    await expect(page.getByText('Professor responsável').first()).toBeVisible();
+
+    await page
+      .getByRole('button', { name: 'Sair da turma Turma de Engenharia de Software' })
+      .click();
+
+    const dialog = page.getByRole('dialog', { name: 'Não é possível sair da turma' });
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByText(
+        'O professor responsável não pode sair da turma. Transfira a responsabilidade ou exclua a sala.',
+      ),
+    ).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Entendi' }).click();
+    await expect(dialog).not.toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 3, name: 'Turma de Engenharia de Software' }),
+    ).toBeVisible();
   });
 
   test('should show leave room button when teacher is a co-tutor and activates leave mode', async ({
@@ -133,6 +152,7 @@ test.describe('Rooms Page', () => {
     await page.getByRole('button', { name: 'Sair de uma turma' }).click();
 
     await expect(page.getByRole('button', { name: /sair da turma/i })).toBeVisible();
+    await expect(page.getByText('Professor responsável')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Concluir' })).toBeVisible();
   });
 });
