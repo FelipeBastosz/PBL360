@@ -9,6 +9,7 @@ export const ROUTES = {
   resetPasswordCode: '/recuperar-senha/codigo',
   resetPassword: '/recuperar-senha/nova-senha',
   resetPasswordSuccess: '/recuperar-senha/concluido',
+  myAccount: '/minha-conta',
   home: '/inicio',
   rooms: '/turmas',
   createRoom: '/turmas/nova',

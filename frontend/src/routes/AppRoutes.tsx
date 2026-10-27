@@ -46,6 +46,7 @@ const EditPerformanceTablePage = lazy(
 const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
 const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
 const SessionHubPage = lazy(() => import('@/pages/sessions/SessionHubPage'));
+const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'));
 
 export function AppRoutes() {
   return (
@@ -65,6 +66,7 @@ export function AppRoutes() {
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route path={ROUTES.home} element={<HomePage />} />
+          <Route path={ROUTES.myAccount} element={<ProfilePage />} />
           <Route path={ROUTES.rooms} element={<RoomsPage />} />
           <Route path={ROUTES.createRoom} element={<CreateRoomPage />} />
           <Route path={ROUTES.createRoomSuccess} element={<CreateRoomSuccessPage />} />
