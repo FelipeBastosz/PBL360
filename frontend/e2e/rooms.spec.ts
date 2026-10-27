@@ -99,4 +99,116 @@ test.describe('Rooms Page', () => {
       page.getByRole('heading', { level: 3, name: 'Turma de Engenharia de Software' }),
     ).not.toBeVisible();
   });
+
+  test('should hide leave room button for the room owner', async ({ page }) => {
+    await expect(page.getByRole('button', { name: /sair da turma/i })).toHaveCount(0);
+  });
+
+  test('should show leave room button when teacher is a co-tutor', async ({ page }) => {
+    await page.route('**/api/salas', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            ...mockRooms[0],
+            professorResponsavelId: 'another-tutor-id',
+          },
+        ]),
+      });
+    });
+
+    await page.goto('/turmas');
+    await expect(page.getByRole('button', { name: /sair da turma/i })).toBeVisible();
+  });
+});
+
+test.describe('Student Voluntary Room Leave flow', () => {
+  const studentRoom = [
+    {
+      salaId: 'sala-aluno-1',
+      nome: 'Turma de Redes de Computadores',
+      semestre: '2026.1',
+      totalAlunos: 20,
+      totalProblemas: 2,
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'pbl360.session',
+        JSON.stringify({
+          token: 'mock-auth-token',
+          expiraEm: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          usuario: {
+            id: 'user-student-1',
+            nome: 'Marina Souza',
+            email: 'marina@faculdade.edu.br',
+            tipo: 'ALUNO',
+            ativo: true,
+          },
+        }),
+      );
+    });
+
+    await page.route('**/api/salas/minhas', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(studentRoom),
+      });
+    });
+
+    await page.goto('/turmas');
+  });
+
+  test('should display room with leave button for student', async ({ page }) => {
+    await expect(
+      page.getByRole('heading', { level: 3, name: 'Turma de Redes de Computadores' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /sair da turma/i })).toBeVisible();
+  });
+
+  test('should open confirmation modal and cancel room exit without leaving', async ({ page }) => {
+    await page.getByRole('button', { name: /sair da turma/i }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Sair da turma?' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('Turma de Redes de Computadores')).toBeVisible();
+    await expect(dialog.getByText(/ao sair da turma, você perderá o acesso às/i)).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Cancelar' }).click();
+
+    await expect(dialog).not.toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 3, name: 'Turma de Redes de Computadores' }),
+    ).toBeVisible();
+  });
+
+  test('should confirm leave room, call API, remove card and show success notification', async ({
+    page,
+  }) => {
+    let leaveRequestCalled = false;
+    await page.route('**/api/salas/sala-aluno-1/membros/me', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        leaveRequestCalled = true;
+        await route.fulfill({ status: 204 });
+      }
+    });
+
+    await page.getByRole('button', { name: /sair da turma/i }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Sair da turma?' });
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Sim, sair da turma' }).click();
+
+    await expect(dialog).not.toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 3, name: 'Turma de Redes de Computadores' }),
+    ).not.toBeVisible();
+    await expect(page.getByText('Você saiu da turma com sucesso.')).toBeVisible();
+    expect(leaveRequestCalled).toBe(true);
+  });
 });
