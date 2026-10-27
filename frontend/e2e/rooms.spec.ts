@@ -100,11 +100,19 @@ test.describe('Rooms Page', () => {
     ).not.toBeVisible();
   });
 
-  test('should hide leave room button for the room owner', async ({ page }) => {
+  test('should hide leave room button for the room owner even in leave mode', async ({ page }) => {
     await expect(page.getByRole('button', { name: /sair da turma/i })).toHaveCount(0);
+
+    await page.getByRole('button', { name: /ações de turma/i }).click();
+    await page.getByRole('button', { name: 'Sair de uma turma' }).click();
+
+    await expect(page.getByRole('button', { name: /sair da turma/i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Concluir' })).toBeVisible();
   });
 
-  test('should show leave room button when teacher is a co-tutor', async ({ page }) => {
+  test('should show leave room button when teacher is a co-tutor and activates leave mode', async ({
+    page,
+  }) => {
     await page.route('**/api/salas', async (route) => {
       await route.fulfill({
         status: 200,
@@ -119,7 +127,13 @@ test.describe('Rooms Page', () => {
     });
 
     await page.goto('/turmas');
+    await expect(page.getByRole('button', { name: /sair da turma/i })).not.toBeVisible();
+
+    await page.getByRole('button', { name: /ações de turma/i }).click();
+    await page.getByRole('button', { name: 'Sair de uma turma' }).click();
+
     await expect(page.getByRole('button', { name: /sair da turma/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Concluir' })).toBeVisible();
   });
 });
 
@@ -163,14 +177,28 @@ test.describe('Student Voluntary Room Leave flow', () => {
     await page.goto('/turmas');
   });
 
-  test('should display room with leave button for student', async ({ page }) => {
+  test('should display room and reveal leave button when student activates leave mode', async ({
+    page,
+  }) => {
     await expect(
       page.getByRole('heading', { level: 3, name: 'Turma de Redes de Computadores' }),
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: /sair da turma/i })).not.toBeVisible();
+
+    await page.getByRole('button', { name: /ações de turma/i }).click();
+    await page.getByRole('button', { name: 'Sair de uma turma' }).click();
+
     await expect(page.getByRole('button', { name: /sair da turma/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Concluir' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Concluir' }).click();
+    await expect(page.getByRole('button', { name: /sair da turma/i })).not.toBeVisible();
   });
 
   test('should open confirmation modal and cancel room exit without leaving', async ({ page }) => {
+    await page.getByRole('button', { name: /ações de turma/i }).click();
+    await page.getByRole('button', { name: 'Sair de uma turma' }).click();
+
     await page.getByRole('button', { name: /sair da turma/i }).click();
 
     const dialog = page.getByRole('dialog', { name: 'Sair da turma?' });
@@ -196,6 +224,9 @@ test.describe('Student Voluntary Room Leave flow', () => {
         await route.fulfill({ status: 204 });
       }
     });
+
+    await page.getByRole('button', { name: /ações de turma/i }).click();
+    await page.getByRole('button', { name: 'Sair de uma turma' }).click();
 
     await page.getByRole('button', { name: /sair da turma/i }).click();
 
