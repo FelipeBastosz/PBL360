@@ -109,19 +109,19 @@ Os quatro passando significa que seu ambiente reproduz o que a CI vai rodar.
 
 ## Scripts
 
-| Script                    | O que faz                                        |
-| ------------------------- | ------------------------------------------------ |
-| `npm run dev`             | Vite dev server com HMR                          |
-| `npm run build`           | Type-check + build de produção em `dist/`        |
-| `npm run preview`         | Serve o build localmente                         |
-| `npm run lint`            | ESLint                                           |
-| `npm run lint:fix`        | ESLint com correção automática                   |
-| `npm run format`          | Prettier em `src/`                               |
-| `npm run format:check`    | Falha se algo estiver desformatado (usado na CI) |
-| `npm run type-check`      | `tsc --noEmit`                                   |
-| `npm run test`            | Vitest (jsdom + Testing Library)                 |
-| `npm run test:watch`      | Vitest em watch                                  |
-| `npm run test:cov`        | Vitest + cobertura em `coverage/`                |
+| Script                 | O que faz                                        |
+| ---------------------- | ------------------------------------------------ |
+| `npm run dev`          | Vite dev server com HMR                          |
+| `npm run build`        | Type-check + build de produção em `dist/`        |
+| `npm run preview`      | Serve o build localmente                         |
+| `npm run lint`         | ESLint                                           |
+| `npm run lint:fix`     | ESLint com correção automática                   |
+| `npm run format`       | Prettier em `src/`                               |
+| `npm run format:check` | Falha se algo estiver desformatado (usado na CI) |
+| `npm run type-check`   | `tsc --noEmit`                                   |
+| `npm run test`         | Vitest (jsdom + Testing Library)                 |
+| `npm run test:watch`   | Vitest em watch                                  |
+| `npm run test:cov`     | Vitest + cobertura em `coverage/`                |
 | `npm run test:e2e`        | Playwright (testes E2E headless)                 |
 | `npm run test:e2e:ui`     | Playwright UI Mode (interface interativa visual) |
 | `npm run test:e2e:headed` | Executa exibindo a janela do navegador           |
