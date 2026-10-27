@@ -75,7 +75,8 @@ function RoomsList({
             key={room.id}
             room={room}
             professorNome={isStudent ? undefined : userNome}
-            canLeave={isLeaveMode && !isOwner}
+            isLeaveMode={isLeaveMode}
+            isOwner={isOwner}
             onLeaveRequest={onLeaveRequest}
           />
         );
@@ -136,6 +137,7 @@ type RoomsModalsProps = {
   isJoinOpen: boolean;
   onCloseJoin: () => void;
   onReload: () => void;
+  userId?: string;
   leaveState: ReturnType<typeof useLeaveRoom>;
 };
 
@@ -144,9 +146,12 @@ function RoomsModals({
   isJoinOpen,
   onCloseJoin,
   onReload,
+  userId,
   leaveState,
 }: RoomsModalsProps) {
   const { roomToLeave, isLeaving, confirmLeave, cancelLeave } = leaveState;
+  const isOwner = !isStudent && Boolean(userId) && roomToLeave?.professorResponsavelId === userId;
+
   return (
     <>
       {isStudent && (
@@ -163,6 +168,7 @@ function RoomsModals({
         roomName={roomToLeave?.nome ?? ''}
         isOpen={Boolean(roomToLeave)}
         isLoading={isLeaving}
+        isOwner={isOwner}
         onConfirm={confirmLeave}
         onCancel={cancelLeave}
       />
@@ -212,6 +218,7 @@ export default function RoomsPage() {
         isJoinOpen={isJoinOpen}
         onCloseJoin={() => setIsJoinOpen(false)}
         onReload={reload}
+        userId={user?.id}
         leaveState={leave}
       />
     </div>

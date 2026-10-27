@@ -16,6 +16,8 @@ export function useLeaveRoom(onSuccess: (roomId: string) => void) {
       onSuccess(roomToLeave.id);
       notify({ tone: 'success', message: 'Você saiu da turma com sucesso.' });
       setRoomToLeave(null);
+    } else {
+      notify({ tone: 'error', message: result.error.message });
     }
   };
 
