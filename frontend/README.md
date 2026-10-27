@@ -23,6 +23,7 @@ inglês, textos de tela em português, **50 linhas por função** e **250 por ar
 | React Router      | 7.18     | Roteamento                          |
 | Vitest            | 4.1      | Testes                              |
 | Testing Library   | 16.3     | Renderização e consultas nos testes |
+| Playwright        | 1.64     | Testes ponta a ponta (E2E)          |
 | ESLint / Prettier | 10 / 3.9 | Lint e formatação                   |
 
 ## Setup passo a passo
@@ -108,19 +109,23 @@ Os quatro passando significa que seu ambiente reproduz o que a CI vai rodar.
 
 ## Scripts
 
-| Script                 | O que faz                                        |
-| ---------------------- | ------------------------------------------------ |
-| `npm run dev`          | Vite dev server com HMR                          |
-| `npm run build`        | Type-check + build de produção em `dist/`        |
-| `npm run preview`      | Serve o build localmente                         |
-| `npm run lint`         | ESLint                                           |
-| `npm run lint:fix`     | ESLint com correção automática                   |
-| `npm run format`       | Prettier em `src/`                               |
-| `npm run format:check` | Falha se algo estiver desformatado (usado na CI) |
-| `npm run type-check`   | `tsc --noEmit`                                   |
-| `npm run test`         | Vitest (jsdom + Testing Library)                 |
-| `npm run test:watch`   | Vitest em watch                                  |
-| `npm run test:cov`     | Vitest + cobertura em `coverage/`                |
+| Script                    | O que faz                                        |
+| ------------------------- | ------------------------------------------------ |
+| `npm run dev`             | Vite dev server com HMR                          |
+| `npm run build`           | Type-check + build de produção em `dist/`        |
+| `npm run preview`         | Serve o build localmente                         |
+| `npm run lint`            | ESLint                                           |
+| `npm run lint:fix`        | ESLint com correção automática                   |
+| `npm run format`          | Prettier em `src/`                               |
+| `npm run format:check`    | Falha se algo estiver desformatado (usado na CI) |
+| `npm run type-check`      | `tsc --noEmit`                                   |
+| `npm run test`            | Vitest (jsdom + Testing Library)                 |
+| `npm run test:watch`      | Vitest em watch                                  |
+| `npm run test:cov`        | Vitest + cobertura em `coverage/`                |
+| `npm run test:e2e`        | Playwright (testes E2E headless)                 |
+| `npm run test:e2e:ui`     | Playwright UI Mode (interface interativa visual) |
+| `npm run test:e2e:headed` | Executa exibindo a janela do navegador           |
+| `npm run test:e2e:report` | Abre o relatório HTML de execução                |
 
 ## Variáveis de ambiente
 
@@ -171,6 +176,22 @@ npm test -- -t 'loading'    # filtra por nome do teste
 
 Como escrever, quais consultas usar (`getByRole` antes de `getByTestId`) e como substituir a
 camada de rede estão em **[ARCHITECTURE.md](ARCHITECTURE.md#7-testes)**.
+
+### Testes E2E (Playwright)
+
+Os testes ponta a ponta ficam em **`e2e/`** (`*.spec.ts`) e testam os fluxos da aplicação em um navegador Chromium real:
+
+```bash
+# Na primeira vez (ou após clone limpo), instale o Chromium do Playwright:
+npx playwright install chromium
+
+npm run test:e2e           # execução rápida em modo headless no terminal
+npm run test:e2e:ui        # interface visual interativa com time-travel (recomendado)
+npm run test:e2e:headed    # exibe a janela do navegador executando os cliques
+npm run test:e2e:report    # abre o relatório HTML de execuções
+```
+
+O dev server do Vite é iniciado automaticamente pelo Playwright durante os testes (`webServer` no `playwright.config.ts`).
 
 ## Alias de import
 

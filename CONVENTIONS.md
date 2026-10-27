@@ -201,11 +201,12 @@ tradução). Nesse caso, prefira mover o dado para um arquivo próprio.
 aprovado sem teste cobrindo esse comportamento — **unitário ou e2e**, o que fizer sentido
 para o que mudou. Não é preciso ter os dois.
 
-| Onde     | Fica onde                                   | Como rodar         |
-| -------- | ------------------------------------------- | ------------------ |
-| Backend  | unitário ao lado do código (`.spec.ts`)     | `npm test`         |
-|          | e2e em `backend/test/` (`.e2e-spec.ts`)     | `npm run test:e2e` |
-| Frontend | ao lado do arquivo (`.test.ts`/`.test.tsx`) | `npm test`         |
+| Onde     | Fica onde                                            | Como rodar         |
+| -------- | ---------------------------------------------------- | ------------------ |
+| Backend  | unitário ao lado do código (`.spec.ts`)              | `npm test`         |
+|          | e2e em `backend/test/` (`.e2e-spec.ts`)              | `npm run test:e2e` |
+| Frontend | unitário ao lado do arquivo (`.test.ts`/`.test.tsx`) | `npm test`         |
+|          | e2e em `frontend/e2e/` (`.spec.ts`)                  | `npm run test:e2e` |
 
 A escolha entre unitário e e2e, como escrever cada um e o que não vale a pena testar estão em
 [`backend/ARCHITECTURE.md`](backend/ARCHITECTURE.md#6-testes) e
