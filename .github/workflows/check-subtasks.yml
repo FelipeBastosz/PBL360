@@ -1,0 +1,40 @@
+name: Auto Close on Subtasks Complete
+
+on:
+  issues:
+    types: [edited]
+
+permissions:
+  issues: write
+
+jobs:
+  check-progress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Tasklist Progress
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            // Só processa se a issue estiver aberta
+            if (issue.state !== 'open') {
+              return;
+            }
+
+            // Regex para capturar padrões de caixas de seleção [ ] e [x] com hífen ou asterisco
+            const body = issue.body || "";
+            const totalTasks = (body.match(/[*-] \[[ xX]\]/g) || []).length;
+            const completedTasks = (body.match(/[*-] \[[xX]\]/g) || []).length;
+
+            // Só age se existirem subtasks criadas no corpo da Issue e todas estiverem concluídas
+            if (totalTasks > 0 && totalTasks === completedTasks) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed'
+              });
+              console.log(`Issue #${issue.number} fechada: 100% das subtasks concluídas.`);
+            }
