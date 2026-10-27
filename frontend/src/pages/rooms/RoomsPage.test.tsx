@@ -7,6 +7,7 @@ import { AuthContext } from '@/contexts/authContext';
 import { ToastProvider } from '@/contexts/ToastProvider';
 import { problemService } from '@/services/problem.service';
 import { roomService } from '@/services/room.service';
+import { ApiError } from '@/services/apiError';
 import type { UserResponse } from '@/types/auth';
 import type { Room } from '@/types/room';
 
@@ -189,7 +190,7 @@ describe('RoomsPage', () => {
       expect(screen.queryByRole('button', { name: 'Entrar em uma turma' })).not.toBeInTheDocument();
     });
 
-    it('hides leave room action when teacher is the owner of the room even in leave mode', async () => {
+    it('shows owner badge and blocked warning modal when teacher tries to leave owned room', async () => {
       vi.mocked(roomService.list).mockResolvedValue(mockRooms);
       renderWithUser(mockTeacher);
 
@@ -199,11 +200,30 @@ describe('RoomsPage', () => {
       await userEvent.click(screen.getByRole('button', { name: /ações de turma/i }));
       await userEvent.click(screen.getByRole('button', { name: 'Sair de uma turma' }));
 
-      expect(screen.queryByRole('button', { name: /sair da turma/i })).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Concluir' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Sair da turma MI - Engenharia de Software · TP01' }),
+      ).toBeInTheDocument();
+      expect(screen.getAllByText('Professor responsável')).toHaveLength(2);
+
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Sair da turma MI - Engenharia de Software · TP01' }),
+      );
+
+      expect(
+        screen.getByRole('dialog', { name: 'Não é possível sair da turma' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'O professor responsável não pode sair da turma. Transfira a responsabilidade ou exclua a sala.',
+        ),
+      ).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Entendi' }));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(roomService.leaveRoom).not.toHaveBeenCalled();
     });
 
-    it('shows leave room action when teacher is a co-tutor and activates leave mode', async () => {
+    it('shows leave room action without owner badge when teacher is a co-tutor', async () => {
       vi.mocked(roomService.list).mockResolvedValue([
         {
           ...mockRooms[0],
@@ -219,6 +239,7 @@ describe('RoomsPage', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Sair de uma turma' }));
 
       expect(screen.getByRole('button', { name: /sair da turma/i })).toBeInTheDocument();
+      expect(screen.queryByText('Professor responsável')).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Concluir' })).toBeInTheDocument();
     });
   });
@@ -359,6 +380,37 @@ describe('RoomsPage', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       expect(screen.queryByText('Engenharia de Software (Aluno)')).not.toBeInTheDocument();
       expect(await screen.findByText('Você saiu da turma com sucesso.')).toBeInTheDocument();
+    });
+
+    it('shows error notification when leaveRoom API call fails', async () => {
+      const user = userEvent.setup();
+      vi.mocked(roomService.listMyRooms).mockResolvedValue([
+        {
+          salaId: 'room-student-1',
+          nome: 'Engenharia de Software (Aluno)',
+          semestre: '2026.2',
+          totalAlunos: 25,
+        },
+      ]);
+      vi.mocked(roomService.leaveRoom).mockRejectedValue(
+        new ApiError(409, ['O professor responsável não pode sair da turma.']),
+      );
+      renderWithUser(mockStudent);
+
+      expect(await screen.findByText('Engenharia de Software (Aluno)')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /ações de turma/i }));
+      await user.click(screen.getByRole('button', { name: 'Sair de uma turma' }));
+
+      await user.click(screen.getByRole('button', { name: /sair da turma/i }));
+      await user.click(screen.getByRole('button', { name: 'Sim, sair da turma' }));
+
+      await waitFor(() => {
+        expect(roomService.leaveRoom).toHaveBeenCalledWith('room-student-1');
+      });
+
+      expect(
+        await screen.findByText('O professor responsável não pode sair da turma.'),
+      ).toBeInTheDocument();
     });
   });
 });

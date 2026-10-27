@@ -9,11 +9,18 @@ import type { Room } from '@/types/room';
 export type RoomCardProps = {
   room: Room;
   professorNome?: string;
-  canLeave?: boolean;
+  isLeaveMode?: boolean;
+  isOwner?: boolean;
   onLeaveRequest?: (room: Room) => void;
 };
 
-export function RoomCard({ room, professorNome, canLeave, onLeaveRequest }: RoomCardProps) {
+export function RoomCard({
+  room,
+  professorNome,
+  isLeaveMode = false,
+  isOwner = false,
+  onLeaveRequest,
+}: RoomCardProps) {
   return (
     <div className={cn(INTERACTIVE_CARD_CLASS, 'group flex flex-col justify-between')}>
       <div className={CARD_ACCENT_CLASS} />
@@ -32,8 +39,15 @@ export function RoomCard({ room, professorNome, canLeave, onLeaveRequest }: Room
             {countLabel(room.totalProblemas ?? 0, 'problema', 'problemas')}
           </span>
         </div>
-        {canLeave && onLeaveRequest && (
-          <div className="mt-1 flex justify-end border-t border-black/5 pt-2">
+        {isLeaveMode && onLeaveRequest && (
+          <div className="mt-1 flex items-center justify-between border-t border-black/5 pt-2">
+            {isOwner ? (
+              <span className="rounded-full bg-amber-100/70 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
+                Professor responsável
+              </span>
+            ) : (
+              <span />
+            )}
             <button
               type="button"
               onClick={() => onLeaveRequest(room)}
