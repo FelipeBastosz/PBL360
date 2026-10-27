@@ -19,6 +19,7 @@ export const SEED_PERFORMANCE_TABLES: SeedPerformanceTableData[] = [
     tutorEmail: 'carlos@uefs.br',
     name: 'Barema PBL',
     description: 'Critérios padrão do módulo de Algoritmos.',
+    isDefault: false,
     criteria: [
       {
         name: 'Domínio do tema',
@@ -62,25 +63,25 @@ export const SEED_PERFORMANCE_TABLES: SeedPerformanceTableData[] = [
     tutorEmail: 'carlos@uefs.br',
     name: 'Fórmula Padrão',
     description: 'Critérios padrão de avaliação.',
-    isDefault: true,
+    isDefault: false,
     criteria: [
       {
         name: 'Seguimento',
         description: 'Capacidade de seguir as orientações e metodologia do problema.',
         orderIndex: 1,
-        weight: 2,
+        weight: 4,
       },
       {
         name: 'Comportamento',
         description: 'Postura, ética, respeito e cooperação com o grupo.',
         orderIndex: 2,
-        weight: 3,
+        weight: 2,
       },
       {
         name: 'Participação',
         description: 'Engajamento ativo nas discussões e na resolução do problema.',
         orderIndex: 3,
-        weight: 5,
+        weight: 4,
       },
     ],
   },
@@ -88,6 +89,7 @@ export const SEED_PERFORMANCE_TABLES: SeedPerformanceTableData[] = [
     tutorEmail: 'carlos@uefs.br',
     name: 'Avaliação de sessão curta',
     description: 'Versão enxuta para sessões tutoriais rápidas.',
+    isDefault: false,
     criteria: [
       {
         name: 'Domínio do tema',
@@ -106,6 +108,32 @@ export const SEED_PERFORMANCE_TABLES: SeedPerformanceTableData[] = [
         description: 'Mantém postura adequada durante as atividades.',
         orderIndex: 3,
         weight: 5,
+      },
+    ],
+  },
+  {
+    tutorEmail: 'maria@uefs.br',
+    name: 'Fórmula Padrão',
+    description: 'Critérios padrão de avaliação.',
+    isDefault: false,
+    criteria: [
+      {
+        name: 'Seguimento',
+        description: 'Capacidade de seguir as orientações e metodologia do problema.',
+        orderIndex: 1,
+        weight: 4,
+      },
+      {
+        name: 'Comportamento',
+        description: 'Postura, ética, respeito e cooperação com o grupo.',
+        orderIndex: 2,
+        weight: 2,
+      },
+      {
+        name: 'Participação',
+        description: 'Engajamento ativo nas discussões e na resolução do problema.',
+        orderIndex: 3,
+        weight: 4,
       },
     ],
   },

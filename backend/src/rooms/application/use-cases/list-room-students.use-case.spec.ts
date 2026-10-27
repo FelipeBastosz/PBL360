@@ -1,35 +1,42 @@
-import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
-import { roomAccessStub, roomRepositoryStub } from '../../testing/room-fixtures';
+import { ForbiddenError } from '@/shared/errors/application.error';
 import type { RoomAccessService } from '../services/room-access.service';
+import { roomRepositoryStub } from '../../testing/room-fixtures';
 import { ListRoomStudentsUseCase } from './list-room-students.use-case';
 
 describe('ListRoomStudentsUseCase', () => {
-  let rooms: ReturnType<typeof roomRepositoryStub>;
-  let access: ReturnType<typeof roomAccessStub>;
+  const rooms = roomRepositoryStub();
+  const roomAccess = { assertMemberCanAccessRoom: jest.fn() };
   let useCase: ListRoomStudentsUseCase;
 
   beforeEach(() => {
-    rooms = roomRepositoryStub();
-    access = roomAccessStub();
-    useCase = new ListRoomStudentsUseCase(rooms, access as unknown as RoomAccessService);
+    jest.resetAllMocks();
+    useCase = new ListRoomStudentsUseCase(rooms, roomAccess as unknown as RoomAccessService);
   });
 
-  it('returns minimal student data after room access is granted', async () => {
-    const students = [{ name: 'Ana Souza', joinedAt: new Date('2026-01-01') }];
-    rooms.findStudents.mockResolvedValue(students);
+  it('allows a room member and returns student profile data', async () => {
+    const member = { id: 'student-1', type: 'STUDENT' as const };
+    const expected = [
+      {
+        id: 'student-1',
+        name: 'Ana',
+        email: 'ana@discente.uefs.br',
+        registrationNumber: '20260001',
+        joinedAt: new Date('2026-10-01T12:00:00.000Z'),
+      },
+    ];
+    rooms.findStudents.mockResolvedValue(expected);
 
-    await expect(useCase.execute('room-id', 'tutor-id')).resolves.toEqual(students);
-    expect(access.assertTutorCanAccessRoom).toHaveBeenCalledWith('room-id', 'tutor-id');
-    expect(rooms.findStudents).toHaveBeenCalledWith('room-id');
+    await expect(useCase.execute('room-1', member)).resolves.toEqual(expected);
+    expect(roomAccess.assertMemberCanAccessRoom).toHaveBeenCalledWith('room-1', member);
   });
 
-  it.each([new ForbiddenError('negado'), new NotFoundError('Sala não encontrada.')])(
-    'does not list students when room access is denied: %p',
-    async (error) => {
-      access.assertTutorCanAccessRoom.mockRejectedValue(error);
+  it('does not list students when member access is denied', async () => {
+    const error = new ForbiddenError('negado');
+    roomAccess.assertMemberCanAccessRoom.mockRejectedValue(error);
 
-      await expect(useCase.execute('room-id', 'other-tutor-id')).rejects.toBe(error);
-      expect(rooms.findStudents).not.toHaveBeenCalled();
-    },
-  );
+    await expect(useCase.execute('room-1', { id: 'outsider', type: 'STUDENT' })).rejects.toBe(
+      error,
+    );
+    expect(rooms.findStudents).not.toHaveBeenCalled();
+  });
 });

@@ -25,25 +25,29 @@ describe('UpdateRoomUseCase', () => {
   });
 
   it('applies only the informed changes', async () => {
-    const room = await useCase.execute(ROOM_ID, OWNER_ID, { name: ' Nova Sala ', active: false });
+    const room = await useCase.execute({
+      roomId: ROOM_ID,
+      tutorId: OWNER_ID,
+      changes: { name: ' Nova Sala ', active: false },
+    });
 
     expect(access.assertTutorCanAccessRoom).toHaveBeenCalledWith(ROOM_ID, OWNER_ID);
     expect(room).toMatchObject({ name: 'Nova Sala', semester: '2026.2', active: false });
   });
 
   it('rejects changes that break the room rules', async () => {
-    await expect(useCase.execute(ROOM_ID, OWNER_ID, { semester: '   ' })).rejects.toBeInstanceOf(
-      InvalidRoomError,
-    );
+    await expect(
+      useCase.execute({ roomId: ROOM_ID, tutorId: OWNER_ID, changes: { semester: '   ' } }),
+    ).rejects.toBeInstanceOf(InvalidRoomError);
     expect(rooms.update).not.toHaveBeenCalled();
   });
 
   it('does not update a room the tutor cannot access', async () => {
     access.assertTutorCanAccessRoom.mockRejectedValue(new ForbiddenError('negado'));
 
-    await expect(useCase.execute(ROOM_ID, 'other', { name: 'x' })).rejects.toBeInstanceOf(
-      ForbiddenError,
-    );
+    await expect(
+      useCase.execute({ roomId: ROOM_ID, tutorId: 'other', changes: { name: 'x' } }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(rooms.update).not.toHaveBeenCalled();
   });
 });

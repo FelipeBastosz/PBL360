@@ -1,4 +1,5 @@
 import type { ArgumentsHost } from '@nestjs/common';
+import { ReportGenerationError } from '@/report-files/application/errors/report-generation.error';
 import {
   ConflictError,
   ForbiddenError,
@@ -6,6 +7,7 @@ import {
   NotFoundError,
   UnauthorizedError,
   UnprocessableEntityError,
+  LockedError,
 } from '../errors/application.error';
 import { DomainError } from '../errors/domain.error';
 import { DomainExceptionFilter } from './domain-exception.filter';
@@ -44,10 +46,24 @@ describe('DomainExceptionFilter', () => {
     [new NotFoundError('x'), 404, 'Not Found'],
     [new ConflictError('x'), 409, 'Conflict'],
     [new UnprocessableEntityError('x'), 422, 'Unprocessable Entity'],
+    [new LockedError('x'), 423, 'Locked'],
   ])('maps %p to %i', (error, statusCode, label) => {
     new DomainExceptionFilter().catch(error, hostWith(status));
 
     expect(status).toHaveBeenCalledWith(statusCode);
     expect(json).toHaveBeenCalledWith({ statusCode, message: 'x', error: label });
+  });
+
+  it('answers report generation failures with 500 without exposing the cause', () => {
+    const error = new ReportGenerationError(new Error('Internal renderer details'));
+
+    new DomainExceptionFilter().catch(error, hostWith(status));
+
+    expect(status).toHaveBeenCalledWith(500);
+    expect(json).toHaveBeenCalledWith({
+      statusCode: 500,
+      message: 'Não foi possível gerar o arquivo do relatório.',
+      error: 'Internal Server Error',
+    });
   });
 });

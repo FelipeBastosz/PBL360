@@ -1,9 +1,9 @@
-import { ListRoomTutorsUseCase } from './application/use-cases/list-room-tutors.use-case';
 import { Module } from '@nestjs/common';
 import { UsersModule } from '@/users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { RoomTutorsController } from './infrastructure/http/room-tutors.controller';
+import { ListRoomTutorsUseCase } from './application/use-cases/list-room-tutors.use-case';
 
 import { CreateRoomUseCase } from './application/use-cases/create-room.use-case';
 import { UpdateRoomUseCase } from './application/use-cases/update-room.use-case';
@@ -29,8 +29,8 @@ import { RoomAccessService } from './application/services/room-access.service';
   controllers: [RoomsController, RoomTutorsController],
 
   providers: [
-    ListRoomTutorsUseCase,
     CreateRoomUseCase,
+    ListRoomTutorsUseCase,
     UpdateRoomUseCase,
     AddTutorToRoomUseCase,
     RemoveTutorFromRoomUseCase,
@@ -47,6 +47,6 @@ import { RoomAccessService } from './application/services/room-access.service';
       useClass: PgRoomRepository,
     },
   ],
-  exports: [RoomAccessService],
+  exports: [RoomAccessService, ROOM_REPOSITORY],
 })
 export class RoomsModule {}

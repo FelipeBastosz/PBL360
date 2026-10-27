@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -12,6 +13,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UpdatePerformanceCriterionDto } from './update-performance-criterion.dto';
 
 export class UpdatePerformanceTableDto {
+  @ApiPropertyOptional({
+    description:
+      'Nas tabelas aplicadas, propaga por padrão; informe falso para não propagar. Tabelas originais nunca alteram sessões.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  propagarParaSessoes?: boolean;
+
   @ApiProperty({ example: 'Barema PBL atualizado', maxLength: 120 })
   @IsString()
   @IsNotEmpty({ message: 'O nome da tabela de desempenho é obrigatório.' })

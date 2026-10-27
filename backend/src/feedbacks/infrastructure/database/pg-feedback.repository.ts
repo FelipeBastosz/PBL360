@@ -16,9 +16,11 @@ import {
   FIND_REVISIONS_QUERY,
   FIND_STUDENT_PROBLEM_FEEDBACK_QUERY,
   FIND_STUDENT_SESSION_FEEDBACK_QUERY,
+  FIND_STUDENT_SESSION_FEEDBACK_READ_AT_QUERY,
   INSERT_FEEDBACK_QUERY,
   INSERT_FEEDBACK_REVISION_QUERY,
   LIST_STUDENTS_FEEDBACK_QUERY,
+  MARK_STUDENT_SESSION_FEEDBACK_READ_QUERY,
   toFeedbackParams,
   toRevisionParams,
   UPDATE_FEEDBACK_QUERY,
@@ -77,6 +79,29 @@ export class PgFeedbackRepository implements FeedbackRepository {
     ]);
     const row = firstRowOrNull(rows);
     return row ? this.toEntity(row) : null;
+  }
+
+  async findStudentSessionFeedbackReadAt(
+    feedbackId: string,
+    studentId: string,
+  ): Promise<Date | null> {
+    const rows = await this.dataSource.query<Array<{ readAt: Date }>>(
+      FIND_STUDENT_SESSION_FEEDBACK_READ_AT_QUERY,
+      [feedbackId, studentId],
+    );
+    return firstRowOrNull(rows)?.readAt ?? null;
+  }
+
+  async markStudentSessionFeedbackRead(
+    feedbackId: string,
+    studentId: string,
+    readAt: Date,
+  ): Promise<void> {
+    await this.dataSource.query(MARK_STUDENT_SESSION_FEEDBACK_READ_QUERY, [
+      feedbackId,
+      studentId,
+      readAt,
+    ]);
   }
 
   async isStudentEnrolledInRoom(roomId: string, studentId: string): Promise<boolean> {

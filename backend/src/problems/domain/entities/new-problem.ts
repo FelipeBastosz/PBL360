@@ -4,7 +4,6 @@ export interface NewProblem {
   description?: string | null;
   orderIndex?: number;
   createdBy: string;
-  performanceTableId?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   selfEvalReleased?: boolean;

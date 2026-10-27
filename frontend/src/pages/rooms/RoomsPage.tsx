@@ -15,9 +15,11 @@ import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { roomService } from '@/services/room.service';
+import { problemService } from '@/services/problem.service';
 import { ROUTES } from '@/routes/paths';
 import type { Room, StudentRoom } from '@/types/room';
 import { countLabel } from '@/utils/countLabel';
+import { JoinRoomSheet } from './JoinRoomSheet';
 
 function toRoom(studentRoom: StudentRoom): Room {
   return {
@@ -34,12 +36,26 @@ function toRoom(studentRoom: StudentRoom): Room {
   };
 }
 
+// GET /salas does not return the counts yet, so they are fetched per room when missing.
+async function withCounts(room: Room): Promise<Room> {
+  if (room.totalAlunos !== undefined && room.totalProblemas !== undefined) return room;
+
+  const [students, problems] = await Promise.allSettled([
+    roomService.listStudents(room.id),
+    problemService.list(room.id),
+  ]);
+
+  return {
+    ...room,
+    totalAlunos: students.status === 'fulfilled' ? students.value.length : room.totalAlunos,
+    totalProblemas: problems.status === 'fulfilled' ? problems.value.length : room.totalProblemas,
+  };
+}
+
 const TUTOR_ACTIONS: FabAction[] = [
   { label: 'Editar uma turma', to: ROUTES.manageRooms },
   { label: 'Criar nova turma', to: ROUTES.createRoom },
 ];
-
-const STUDENT_ACTIONS: FabAction[] = [{ label: 'Entrar em uma turma' }];
 
 function RoomsEmptyState({ isStudent }: { isStudent: boolean }) {
   return (
@@ -113,27 +129,45 @@ function RoomsList({ isLoading, rooms, isStudent, hasFilter, userNome }: RoomsLi
   );
 }
 
-export default function RoomsPage() {
-  const { user } = useAuth();
+function useRooms(isStudent: boolean) {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [query, setQuery] = useState('');
-  const isStudent = user?.tipo === 'ALUNO';
 
   const fetchRooms = useCallback(async (): Promise<Room[]> => {
     if (isStudent) {
       const studentRooms = roomService.listMyRooms ? await roomService.listMyRooms() : [];
       return studentRooms.map(toRoom);
     }
-    return roomService.list();
+    const tutorRooms = await roomService.list();
+    return Promise.all(tutorRooms.map(withCounts));
   }, [isStudent]);
 
   const { run, isLoading, error } = useAsyncAction(fetchRooms);
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     run().then((result) => {
       if (result.ok) setRooms(result.data);
     });
   }, [run]);
+
+  useEffect(() => reload(), [reload]);
+
+  return { rooms, isLoading, error, reload };
+}
+
+export default function RoomsPage() {
+  const { user } = useAuth();
+  const [query, setQuery] = useState('');
+  const isStudent = user?.tipo === 'ALUNO';
+  const { rooms, isLoading, error, reload } = useRooms(isStudent);
+  const [isJoinOpen, setIsJoinOpen] = useState(false);
+  const studentActions: FabAction[] = [
+    { label: 'Entrar em uma turma', onClick: () => setIsJoinOpen(true) },
+  ];
+
+  function handleJoined() {
+    setIsJoinOpen(false);
+    reload();
+  }
 
   const filteredRooms = rooms.filter((r) => r.nome.toLowerCase().includes(query.toLowerCase()));
 
@@ -162,7 +196,14 @@ export default function RoomsPage() {
         />
       </main>
 
-      <FabMenu label="Ações de turma" actions={isStudent ? STUDENT_ACTIONS : TUTOR_ACTIONS} />
+      <FabMenu label="Ações de turma" actions={isStudent ? studentActions : TUTOR_ACTIONS} />
+      {isStudent && (
+        <JoinRoomSheet
+          isOpen={isJoinOpen}
+          onClose={() => setIsJoinOpen(false)}
+          onJoined={handleJoined}
+        />
+      )}
     </div>
   );
 }

@@ -25,7 +25,7 @@ export class RollCallController {
     @UuidParam('sessaoId') sessionId: string,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<RollCallResponseDto> {
-    return toRollCallResponse(await this.getRollCall.execute(sessionId, tutorId));
+    return toRollCallResponse(await this.getRollCall.execute({ sessionId, tutorId }));
   }
 
   @Put(':sessaoId/chamada')

@@ -4,7 +4,12 @@ import {
   type RoomRepository,
   type RoomTutor,
 } from '@/rooms/domain/repositories/room.repository';
-import { RoomAccessService } from '../services/room-access.service';
+import { RoomAccessService, type RoomMember } from '../services/room-access.service';
+
+export interface ListRoomTutorsInput {
+  roomId: string;
+  member: RoomMember;
+}
 
 @Injectable()
 export class ListRoomTutorsUseCase {
@@ -14,8 +19,9 @@ export class ListRoomTutorsUseCase {
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(roomId: string, tutorId: string): Promise<RoomTutor[]> {
-    await this.roomAccessService.assertTutorCanAccessRoom(roomId, tutorId);
+  // Linked tutors and students enrolled in the room can see who teaches it.
+  async execute({ roomId, member }: ListRoomTutorsInput): Promise<RoomTutor[]> {
+    await this.roomAccessService.assertMemberCanAccessRoom(roomId, member);
     return this.roomRepository.listTutors(roomId);
   }
 }

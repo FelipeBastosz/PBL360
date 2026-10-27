@@ -6,6 +6,21 @@ import {
   type SessionRoleRepository,
 } from '../../domain/repositories/session-role.repository';
 
+export interface AssignSessionRoleInput {
+  sessionId: string;
+  tutorId: string;
+  studentId: string;
+  role: SessionRole | null;
+  roleScore: number | null;
+  transfer: boolean;
+}
+
+export interface AssignSessionRoleOutput {
+  studentId: string;
+  role: SessionRole | null;
+  roleScore: number | null;
+}
+
 @Injectable()
 export class AssignSessionRoleUseCase {
   constructor(
@@ -13,14 +28,7 @@ export class AssignSessionRoleUseCase {
     @Inject(SESSION_ROLE_REPOSITORY) private readonly roles: SessionRoleRepository,
   ) {}
 
-  async execute(input: {
-    sessionId: string;
-    tutorId: string;
-    studentId: string;
-    role: SessionRole | null;
-    bonusScore: number | null;
-    transfer: boolean;
-  }) {
+  async execute(input: AssignSessionRoleInput): Promise<AssignSessionRoleOutput> {
     const { roomId } = await this.access.assertTutorCanAccessSessionById(
       input.sessionId,
       input.tutorId,
@@ -29,21 +37,15 @@ export class AssignSessionRoleUseCase {
   }
 
   private assignRole(
-    input: {
-      sessionId: string;
-      studentId: string;
-      role: SessionRole | null;
-      bonusScore: number | null;
-      transfer: boolean;
-    },
+    input: Omit<AssignSessionRoleInput, 'tutorId'>,
     roomId: string,
-  ) {
+  ): Promise<AssignSessionRoleOutput> {
     return this.roles.assign(
       input.sessionId,
       roomId,
       input.studentId,
       input.role,
-      input.bonusScore,
+      input.roleScore,
       input.transfer,
     );
   }

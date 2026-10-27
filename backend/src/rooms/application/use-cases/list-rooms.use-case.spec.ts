@@ -5,10 +5,10 @@ describe('ListRoomsUseCase', () => {
   it('returns the rooms linked to the tutor', async () => {
     const rooms = roomRepositoryStub();
     const room = buildRoom();
-    const summaries = [{ room, totalStudents: 3, totalProblems: 2 }];
-    rooms.findSummariesByTutorId.mockResolvedValue(summaries);
+    const expected = [{ room, totalStudents: 24, totalProblems: 8 }];
+    rooms.findByTutorId.mockResolvedValue(expected);
 
-    await expect(new ListRoomsUseCase(rooms).execute(OWNER_ID)).resolves.toEqual(summaries);
-    expect(rooms.findSummariesByTutorId).toHaveBeenCalledWith(OWNER_ID);
+    await expect(new ListRoomsUseCase(rooms).execute(OWNER_ID)).resolves.toEqual(expected);
+    expect(rooms.findByTutorId).toHaveBeenCalledWith(OWNER_ID);
   });
 });

@@ -30,6 +30,8 @@ describe('GetProblemFeedbacksUseCase', () => {
     mockProblem.roomId = 'room-1';
 
     problemRepository = {
+      hasEvaluations: jest.fn(),
+      updateDetails: jest.fn(),
       findById: jest.fn().mockResolvedValue(mockProblem),
       findByRoomId: jest.fn(),
       create: jest.fn(),

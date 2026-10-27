@@ -2,7 +2,8 @@ import type { MessageResponse } from '@/types/auth';
 import type {
   AddTutorToRoomPayload,
   CreateRoomPayload,
-  JoinRoomPayload,
+  JoinRoomByCodePayload,
+  JoinRoomByLinkPayload,
   Room,
   RoomStudent,
   RoomTutor,
@@ -36,8 +37,11 @@ export const roomService = {
 
   listMyRooms: () => api.get<StudentRoom[]>(`${BASE}/minhas`).then((r) => r.data),
 
-  join: (payload: JoinRoomPayload) =>
-    api.post<MessageResponse>(`${BASE}/entrar`, payload).then((r) => r.data),
+  joinByCode: (payload: JoinRoomByCodePayload) =>
+    api.post<MessageResponse>(`${BASE}/ingressar/codigo`, payload).then((r) => r.data),
+
+  joinByLink: (payload: JoinRoomByLinkPayload) =>
+    api.post<MessageResponse>(`${BASE}/ingressar/link`, payload).then((r) => r.data),
 
   listStudents: (roomId: string) =>
     api.get<RoomStudent[]>(`${BASE}/${roomId}/alunos`).then((r) => r.data),

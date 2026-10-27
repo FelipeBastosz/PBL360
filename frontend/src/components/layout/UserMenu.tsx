@@ -13,6 +13,7 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowRightStartOnRectangleIcon,
   BookOpenIcon,
+  TagIcon,
   UserIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
@@ -44,6 +45,11 @@ function menuItems(isProfessor: boolean): MenuItem[] {
             label: 'Minhas Fórmulas',
             Icon: AdjustmentsHorizontalIcon,
             to: ROUTES.performanceTables,
+          },
+          {
+            label: 'Minhas Marcações',
+            Icon: TagIcon,
+            to: ROUTES.behaviorTags,
           },
         ]
       : []),

@@ -26,22 +26,31 @@ export const toPerformanceTableResponse = (
   id: table.id,
   professorId: table.tutorId,
   nome: table.name,
+  isDefault: table.isDefault,
   descricao: table.description,
   quantidadeProblemas: table.problemCount ?? 0,
-  criterios: table.criteria.map((criterion) => ({
+  quantidadeSessoes: table.sessionCount ?? 0,
+  quantidadeSessoesPassadas: table.pastSessionCount ?? 0,
+  criterios: mapCriteria(table),
+  criadoEm: table.createdAt,
+  atualizadoEm: table.updatedAt,
+});
+
+function mapCriteria(table: PerformanceTable) {
+  return table.criteria.map((criterion) => ({
     id: criterion.id,
     nome: criterion.name,
     descricao: criterion.description,
     ordem: criterion.orderIndex,
     peso: Number(criterion.weight),
-  })),
-  criadoEm: table.createdAt,
-  atualizadoEm: table.updatedAt,
-});
+    notaMaxima: 10,
+  }));
+}
 
 export const toUpdatePerformanceTableInput = (
   dto: UpdatePerformanceTableDto,
 ): UpdatePerformanceTable => ({
+  propagateToSessions: dto.propagarParaSessoes,
   name: dto.nome,
   description: dto.descricao,
   criteria: dto.criterios.map((criterion) => ({

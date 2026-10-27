@@ -2,7 +2,13 @@ import type { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { api, cleanDatabase, insertUser, type TestUser } from './helpers/fixtures';
+import {
+  api,
+  cleanDatabase,
+  insertDefaultPerformanceTable,
+  insertUser,
+  type TestUser,
+} from './helpers/fixtures';
 
 interface RollCallStudentBody {
   alunoId: string;
@@ -108,6 +114,7 @@ describe('Roll call (e2e)', () => {
       })
       .expect(201);
     roomId = (room.body as { id: string }).id;
+    await insertDefaultPerformanceTable(dataSource, tutor.id);
     students = [
       await insertStudent(1, 'Ana Souza'),
       await insertStudent(2, 'Bruno Lima'),
@@ -242,6 +249,33 @@ describe('Roll call (e2e)', () => {
 
       expect(studentOf(body, ana)).toMatchObject({ status: 'ATRASADO', lugar: 1 });
       expect(studentOf(body, bruno)).toMatchObject({ status: 'PRESENTE', lugar: 2 });
+    });
+
+    it('releases the session role of a student taken off the table', async () => {
+      const [ana, bruno] = students as [TestUser, TestUser];
+      await putRollCall(sessionId, [
+        { alunoId: ana.id, status: 'PRESENTE', lugar: 1 },
+        { alunoId: bruno.id, status: 'PRESENTE', lugar: 2 },
+      ]).expect(200);
+      await api(app, tutor)
+        .put(`/sessoes/${sessionId}/papeis/${ana.id}`, { papel: 'COORDENADOR' })
+        .expect(200);
+      await api(app, tutor)
+        .put(`/sessoes/${sessionId}/papeis/${bruno.id}`, { papel: 'SECRETARIO_MESA' })
+        .expect(200);
+
+      const body = (
+        await putRollCall(sessionId, [{ alunoId: ana.id, status: 'AUSENTE', lugar: null }]).expect(
+          200,
+        )
+      ).body as RollCallBody;
+
+      expect(studentOf(body, ana)).toMatchObject({ status: 'AUSENTE', lugar: null });
+      const roles = (await api(app, tutor).get(`/sessoes/${sessionId}/papeis`).expect(200))
+        .body as Array<{ alunoId: string; papel: string }>;
+      expect(roles).toEqual([
+        expect.objectContaining({ alunoId: bruno.id, papel: 'SECRETARIO_MESA' }),
+      ]);
     });
 
     it('swaps two students between seats in one batch', async () => {

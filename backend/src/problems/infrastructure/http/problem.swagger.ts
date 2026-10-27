@@ -14,38 +14,17 @@ import {
 
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
-
 import { ProblemDeletionImpactDto } from '../../application/dtos/problem-deletion-impact.dto';
 import { ProblemResponseDto } from '../../application/dtos/problem-response.dto';
 
 export const CreateProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
-  ApiOperation({
-    summary: 'Cadastra um novo problema na sala',
-    description:
-      'Permite que um professor vinculado à sala cadastre um novo problema. ' +
-      'A ordem do problema na sala é definida automaticamente de forma sequencial.',
-  }),
-  ApiCreatedResponse({
-    description: 'Problema cadastrado com sucesso.',
-    type: ProblemResponseDto,
-  }),
-  ApiBadRequestResponse({
-    description: 'Dados inválidos ou erro de validação.',
-    type: ErrorResponseDto,
-  }),
-  ApiUnauthorizedResponse({
-    description: 'JWT não informado, inválido ou expirado.',
-    type: ErrorResponseDto,
-  }),
-  ApiForbiddenResponse({
-    description: 'Acesso negado. O professor não possui permissão nesta sala.',
-    type: ErrorResponseDto,
-  }),
-  ApiNotFoundResponse({
-    description: 'Sala não encontrada.',
-    type: ErrorResponseDto,
-  }),
+  ApiOperation({ summary: 'Cadastra um novo problema na sala' }),
+  ApiCreatedResponse({ description: 'Problema cadastrado com sucesso.', type: ProblemResponseDto }),
+  ApiBadRequestResponse({ description: 'Dados inválidos.', type: ErrorResponseDto }),
+  ApiUnauthorizedResponse({ description: 'JWT não informado.', type: ErrorResponseDto }),
+  ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
+  ApiNotFoundResponse({ description: 'Sala não encontrada.', type: ErrorResponseDto }),
 );
 
 export const ListProblemsSwaggerDocs = applyDecorators(
@@ -66,7 +45,7 @@ export const ListProblemsSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
   ApiForbiddenResponse({
-    description: 'Acesso negado. O professor não possui permissão nesta sala.',
+    description: 'Acesso negado. O usuário não possui permissão nesta sala.',
     type: ErrorResponseDto,
   }),
   ApiNotFoundResponse({
@@ -77,35 +56,17 @@ export const ListProblemsSwaggerDocs = applyDecorators(
 
 export const GetProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
-  ApiOperation({
-    summary: 'Obtém as informações de um problema da sala',
-    description:
-      'Retorna os dados detalhados de um problema específico. ' +
-      'Caso o problema não exista ou não pertença à sala informada, o sistema responde que ele não existe.',
-  }),
-  ApiOkResponse({
-    description: 'Problema encontrado com sucesso.',
-    type: ProblemResponseDto,
-  }),
-  ApiUnauthorizedResponse({
-    description: 'JWT não informado, inválido ou expirado.',
-    type: ErrorResponseDto,
-  }),
-  ApiForbiddenResponse({
-    description: 'Acesso negado. O professor não possui permissão nesta sala.',
-    type: ErrorResponseDto,
-  }),
-  ApiNotFoundResponse({
-    description: 'Problema ou sala não encontrada.',
-    type: ErrorResponseDto,
-  }),
+  ApiOperation({ summary: 'Obtém as informações de um problema da sala' }),
+  ApiOkResponse({ description: 'Problema encontrado.', type: ProblemResponseDto }),
+  ApiUnauthorizedResponse({ description: 'JWT não informado.', type: ErrorResponseDto }),
+  ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
+  ApiNotFoundResponse({ description: 'Problema ou sala não encontrada.', type: ErrorResponseDto }),
 );
+
 export const UpdateProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
-    summary: 'Atualiza título de um problema',
-    description:
-      'Permite que o professor atualize o título de um problema existente na sala. Apenas o campo "title" é editável.',
+    summary: 'Atualiza o título de um problema',
   }),
   ApiOkResponse({ description: 'Problema atualizado com sucesso.' }),
   ApiBadRequestResponse({
@@ -122,53 +83,19 @@ export const UpdateProblemSwaggerDocs = applyDecorators(
 
 export const GetProblemDeletionImpactSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
-  ApiOperation({
-    summary: 'Consulta o impacto da exclusão de um problema',
-    description:
-      'Retorna a contagem de registros que dependem do problema (sessões, notas, feedbacks e avaliações) ' +
-      'para confirmação prévia da exclusão.',
-  }),
-  ApiOkResponse({
-    description: 'Impacto da exclusão consultado com sucesso.',
-    type: ProblemDeletionImpactDto,
-  }),
-  ApiUnauthorizedResponse({
-    description: 'JWT não informado, inválido ou expirado.',
-    type: ErrorResponseDto,
-  }),
-  ApiForbiddenResponse({
-    description: 'Acesso negado. O professor não possui permissão nesta sala.',
-    type: ErrorResponseDto,
-  }),
-  ApiNotFoundResponse({
-    description: 'Problema ou sala não encontrada.',
-    type: ErrorResponseDto,
-  }),
+  ApiOperation({ summary: 'Consulta o impacto da exclusão de um problema' }),
+  ApiOkResponse({ description: 'Impacto consultado.', type: ProblemDeletionImpactDto }),
+  ApiUnauthorizedResponse({ description: 'JWT não informado.', type: ErrorResponseDto }),
+  ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
+  ApiNotFoundResponse({ description: 'Problema não encontrado.', type: ErrorResponseDto }),
 );
 
 export const DeleteProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
-  ApiOperation({
-    summary: 'Exclui um problema da sala',
-    description:
-      'Remove permanentemente o problema da sala mantendo a ordem sequencial dos problemas restantes. ' +
-      'Apenas o professor responsável pela sala possui permissão para excluir problemas.',
-  }),
-  ApiNoContentResponse({ description: 'Problema excluído com sucesso.' }),
-  ApiConflictResponse({
-    description: 'O problema possui sessões e não pode ser excluído.',
-    type: ErrorResponseDto,
-  }),
-  ApiUnauthorizedResponse({
-    description: 'JWT não informado, inválido ou expirado.',
-    type: ErrorResponseDto,
-  }),
-  ApiForbiddenResponse({
-    description: 'Acesso negado. Apenas o professor responsável pode excluir problemas da sala.',
-    type: ErrorResponseDto,
-  }),
-  ApiNotFoundResponse({
-    description: 'Problema ou sala não encontrada.',
-    type: ErrorResponseDto,
-  }),
+  ApiOperation({ summary: 'Exclui um problema da sala' }),
+  ApiNoContentResponse({ description: 'Problema excluído.' }),
+  ApiConflictResponse({ description: 'O problema possui sessões.', type: ErrorResponseDto }),
+  ApiUnauthorizedResponse({ description: 'JWT não informado.', type: ErrorResponseDto }),
+  ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
+  ApiNotFoundResponse({ description: 'Problema não encontrado.', type: ErrorResponseDto }),
 );

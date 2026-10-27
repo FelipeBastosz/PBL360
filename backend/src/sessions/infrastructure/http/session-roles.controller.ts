@@ -25,12 +25,12 @@ export class SessionRolesController {
   @Get(':sessionId/papeis')
   @ListSessionRolesSwaggerDocs
   async list(@UuidParam('sessionId') sessionId: string, @AuthenticatedUserId() tutorId: string) {
-    const roles = await this.listSessionRoles.execute(sessionId, tutorId);
+    const roles = await this.listSessionRoles.execute({ sessionId, tutorId });
     return roles.map((item) => ({
       alunoId: item.studentId,
       nome: item.name,
       papel: DOMAIN_TO_SESSION_ROLE[item.role],
-      notaAdicional: item.bonusScore === null ? null : Number(item.bonusScore),
+      notaPapel: item.roleScore === null ? null : Number(item.roleScore),
     }));
   }
 
@@ -48,7 +48,7 @@ export class SessionRolesController {
       tutorId,
       studentId,
       role: dto.papel == null ? null : SESSION_ROLE_TO_DOMAIN[dto.papel],
-      bonusScore: dto.papel == null ? null : (dto.notaAdicional ?? null),
+      roleScore: dto.papel == null ? null : (dto.notaPapel ?? null),
       transfer: dto.transferir ?? false,
     });
     return toRoleResponse(result);
@@ -58,9 +58,9 @@ export class SessionRolesController {
 const toRoleResponse = (result: {
   studentId: string;
   role: keyof typeof DOMAIN_TO_SESSION_ROLE | null;
-  bonusScore: number | null;
+  roleScore: number | null;
 }) => ({
   alunoId: result.studentId,
   papel: result.role === null ? null : DOMAIN_TO_SESSION_ROLE[result.role],
-  notaAdicional: result.bonusScore,
+  notaPapel: result.roleScore,
 });

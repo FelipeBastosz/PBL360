@@ -1,12 +1,13 @@
 import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
 import { hash } from 'bcrypt';
-import type { DataSource } from 'typeorm';
+import type { DataSource, Repository } from 'typeorm';
 import dataSource from '@/config/data-source';
 import { User } from '@/users/domain/entities/user.entity';
 import { UserPhoto } from '@/users/domain/entities/user-photo.entity';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { placeholderPhotoBytes } from './placeholder-photo';
+import { seedAllBehaviorTags } from './behavior-tags.seed';
 import { seedAllPerformanceTables } from './performance-tables.seed';
 import { seedReviewData } from './review.seed';
 
@@ -62,16 +63,28 @@ function buildSeedUser(data: SeedUserData, pwdHash: string): User {
   return user;
 }
 
+async function userAlreadyExists(repo: Repository<User>, data: SeedUserData): Promise<boolean> {
+  if (await repo.findOneBy({ email: data.email })) {
+    logger.log(`User ${data.email} already exists. Skipping.`);
+    return true;
+  }
+  if (
+    data.registrationNumber &&
+    (await repo.findOneBy({ registrationNumber: data.registrationNumber }))
+  ) {
+    logger.log(`User with registration ${data.registrationNumber} already exists. Skipping.`);
+    return true;
+  }
+  return false;
+}
+
 export async function seedUser(
   data: SeedUserData,
   pwdHash: string,
   ds: DataSource = dataSource,
 ): Promise<boolean> {
   const repo = ds.getRepository(User);
-  if (await repo.findOneBy({ email: data.email })) {
-    logger.log(`User ${data.email} already exists. Skipping.`);
-    return false;
-  }
+  if (await userAlreadyExists(repo, data)) return false;
   const user = buildSeedUser(data, pwdHash);
   const saved = await repo.save(user);
   if (user.pendingPhoto) {
@@ -105,6 +118,7 @@ async function seedAllUsers(ds: DataSource, env: NodeJS.ProcessEnv): Promise<voi
 async function executeSeeds(ds: DataSource, env: NodeJS.ProcessEnv): Promise<void> {
   await seedAllUsers(ds, env);
   await seedAllPerformanceTables(ds);
+  await seedAllBehaviorTags(ds);
   await seedReviewData(ds);
 }
 

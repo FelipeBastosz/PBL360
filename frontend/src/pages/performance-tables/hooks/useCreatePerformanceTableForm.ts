@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/useToast';
 import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
 import type { CriterionInput } from '@/types/performanceTable';
+import type { ApplyTarget } from '@/utils/navigationState';
 
 function validateFormula(nome: string, count: number, totalWeight: number) {
   if (!nome.trim()) {
@@ -28,10 +29,11 @@ export function useCreatePerformanceTableForm() {
   const navigate = useNavigate();
   const location = useLocation();
   const { notify } = useToast();
-  const initialData = (location.state as { nome?: string; descricao?: string }) || {};
+  const state =
+    (location.state as { nome?: string; descricao?: string; target?: ApplyTarget }) || {};
 
-  const [nome, setNome] = useState(initialData.nome || '');
-  const [descricao] = useState(initialData.descricao || '');
+  const [nome, setNome] = useState(state.nome || '');
+  const [descricao] = useState(state.descricao || '');
   const [criterios, setCriterios] = useState<CriterionInput[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -52,9 +54,10 @@ export function useCreatePerformanceTableForm() {
         nome: nome.trim(),
         descricao: descricao.trim() || undefined,
         criterios,
+        roomId: state.target?.roomId || undefined,
       });
       notify({ tone: 'success', message: 'Fórmula criada com sucesso.' });
-      navigate(ROUTES.performanceTables, { replace: true });
+      navigate(ROUTES.performanceTables, { replace: true, state: location.state });
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Ocorreu um erro ao salvar a fórmula.');
     }

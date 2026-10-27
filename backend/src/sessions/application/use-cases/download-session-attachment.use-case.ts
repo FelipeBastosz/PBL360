@@ -8,6 +8,12 @@ import {
 } from '../../domain/repositories/session-attachment.repository';
 import { SessionAccessService } from '../services/session-access.service';
 
+export interface DownloadSessionAttachmentInput {
+  sessionId: string;
+  attachmentId: string;
+  member: RoomMember;
+}
+
 @Injectable()
 export class DownloadSessionAttachmentUseCase {
   constructor(
@@ -16,11 +22,11 @@ export class DownloadSessionAttachmentUseCase {
     private readonly attachments: SessionAttachmentRepository,
   ) {}
 
-  async execute(
-    sessionId: string,
-    attachmentId: string,
-    member: RoomMember,
-  ): Promise<SessionAttachmentFile> {
+  async execute({
+    sessionId,
+    attachmentId,
+    member,
+  }: DownloadSessionAttachmentInput): Promise<SessionAttachmentFile> {
     await this.access.assertMemberCanAccessSession(sessionId, member);
     const file = await this.attachments.findFile(sessionId, attachmentId);
     if (!file) throw new NotFoundError('Anexo não encontrado.');

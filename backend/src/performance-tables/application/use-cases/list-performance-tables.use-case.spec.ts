@@ -9,6 +9,7 @@ describe('ListPerformanceTablesUseCase', () => {
         tutorId: 'tutor-1',
         name: 'Barema PBL',
         description: null,
+        isDefault: false,
         criteriaCount: 3,
         problemCount: 2,
         createdAt: new Date('2026-01-01T00:00:00.000Z'),

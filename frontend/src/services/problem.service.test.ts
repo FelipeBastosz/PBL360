@@ -108,4 +108,19 @@ describe('problemService', () => {
       url: '/salas/room-1/problemas/problem-1',
     });
   });
+
+  it('links a performance table to a problem', async () => {
+    const response = { problemaId: 'problem-1', tabela: { id: 'table-1', nome: 'Barema PBL' } };
+    const adapter = respondWith(response);
+
+    await expect(
+      problemService.changePerformanceTable('room-1', 'problem-1', 'table-1'),
+    ).resolves.toEqual(response);
+    const config = adapter.mock.calls[0]![0];
+    expect(config).toMatchObject({
+      method: 'put',
+      url: '/salas/room-1/problemas/problem-1/tabela-desempenho',
+    });
+    expect(JSON.parse(config.data as string)).toEqual({ tabelaId: 'table-1' });
+  });
 });

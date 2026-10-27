@@ -26,8 +26,12 @@ export class UpdateProblemUseCase {
       throw new NotFoundError('Problema não encontrado.');
     }
 
-    problem.title = input.dto.title.trim();
-    return this.repository.save(problem);
+    return this.repository.updateDetails({
+      id: problem.id,
+      roomId: input.roomId,
+      authorId: input.tutorId,
+      title: input.dto.title.trim(),
+    });
   }
 }
 

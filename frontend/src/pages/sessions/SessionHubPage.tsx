@@ -1,84 +1,57 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { Spinner } from '@/components/ui/Spinner';
-import { useAuth } from '@/hooks/useAuth';
-import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { problemService } from '@/services/problem.service';
-import { sessionService } from '@/services/session.service';
-import type { Problem } from '@/types/problem';
-import type { Session } from '@/types/session';
+import { Alert } from '@/components/ui/Alert';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 import { SessionHubHeader } from './SessionHubHeader';
-import { SessionActionGrid } from './SessionActionGrid';
-import { SessionEvaluationsCard } from './SessionEvaluationsCard';
-import { SessionAttachments } from './SessionAttachments';
-
-type SessionHubContentProps = { isLoading: boolean; basePath: string; sessionId: string };
-
-function SessionHubContent({ isLoading, basePath, sessionId }: SessionHubContentProps) {
-  if (isLoading) {
-    return (
-      <div className="mt-10 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <SessionActionGrid basePath={basePath} />
-      <SessionEvaluationsCard />
-      <SessionAttachments sessionId={sessionId} canUpload />
-      <div className="mt-4 flex flex-col gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          disabled
-          className="border-danger/30 text-danger cursor-not-allowed opacity-60"
-        >
-          Encerrar sessão
-        </Button>
-      </div>
-    </>
-  );
-}
+import { SessionHubContent } from './SessionHubContent';
+import { SessionReleaseModals } from './SessionReleaseModals';
+import { useSessionHub } from './useSessionHub';
 
 export default function SessionHubPage() {
-  const { roomId, problemId, sessionId } = useParams<{
-    roomId: string;
-    problemId: string;
-    sessionId: string;
-  }>();
-  const { user } = useAuth();
-
-  const [session, setSession] = useState<Session | null>(null);
-  const [problem, setProblem] = useState<Problem | null>(null);
-
-  const { run: fetchProblem } = useAsyncAction(problemService.getById);
-  const { run: fetchSession, isLoading } = useAsyncAction(sessionService.getById);
-
-  useEffect(() => {
-    if (roomId && problemId && sessionId) {
-      fetchProblem(roomId, problemId).then((r) => r.ok && setProblem(r.data));
-      fetchSession(roomId, problemId, sessionId).then((r) => r.ok && setSession(r.data));
-    }
-  }, [roomId, problemId, sessionId, fetchProblem, fetchSession]);
-
-  const basePath = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}`;
-  const backUrl = `/turmas/${roomId}/problemas/${problemId}`;
+  const hub = useSessionHub();
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <SessionHubHeader
-        session={session}
-        problem={problem}
-        userNome={user?.nome}
-        user={user}
-        backUrl={backUrl}
+        session={hub.session}
+        problem={hub.problem}
+        userNome={hub.user?.nome}
+        backUrl={hub.backUrl}
       />
-      <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4">
-        <SessionHubContent isLoading={isLoading} basePath={basePath} sessionId={sessionId ?? ''} />
+      <main
+        className={cn(
+          PAGE_CONTAINER_CLASS,
+          'mt-6 grid gap-4 lg:grid-cols-2 lg:items-start [&>*]:min-w-0',
+        )}
+      >
+        {hub.combinedError && !hub.releases ? (
+          <Alert tone="error" className="lg:col-span-2">
+            {hub.combinedError.message}
+          </Alert>
+        ) : (
+          <SessionHubContent
+            isLoading={hub.isLoading}
+            isProfessor={hub.isProfessor}
+            basePath={hub.basePath}
+            sessionId={hub.sessionId}
+            releases={hub.releases}
+            onToggle={hub.handleToggleClick}
+            isAttendancePending={hub.isAttendancePending}
+            isUpdating={hub.isUpdating}
+          />
+        )}
       </main>
+      <SessionReleaseModals
+        modalType={hub.modalType}
+        typeToLock={hub.typeToLock}
+        activeOtherType={hub.activeOtherType}
+        releases={hub.releases}
+        isLoading={hub.isUpdating}
+        errorMessage={hub.releaseError?.message}
+        onConfirmRelease={hub.confirmRelease}
+        onCloseRelease={hub.closeReleaseModal}
+        onConfirmLock={hub.confirmLock}
+        onCloseLock={hub.closeLockModal}
+      />
     </div>
   );
 }

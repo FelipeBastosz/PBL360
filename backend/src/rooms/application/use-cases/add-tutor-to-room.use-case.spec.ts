@@ -39,18 +39,22 @@ describe('AddTutorToRoomUseCase', () => {
     users.findById.mockResolvedValue(userOfType(UserType.TUTOR));
     rooms.addTutor.mockResolvedValue(true);
 
-    await useCase.execute(ROOM_ID, OWNER_ID, NEW_TUTOR_ID);
+    await useCase.execute({
+      roomId: ROOM_ID,
+      authenticatedTutorId: OWNER_ID,
+      tutorId: NEW_TUTOR_ID,
+    });
 
     expect(access.assertTutorIsRoomOwner).toHaveBeenCalledWith(ROOM_ID, OWNER_ID);
-    expect(rooms.addTutor).toHaveBeenCalledWith(ROOM_ID, NEW_TUTOR_ID, OWNER_ID);
+    expect(rooms.addTutor).toHaveBeenCalledWith(ROOM_ID, NEW_TUTOR_ID);
   });
 
   it('only lets the owner add tutors', async () => {
     access.assertTutorIsRoomOwner.mockRejectedValue(new ForbiddenError('negado'));
 
-    await expect(useCase.execute(ROOM_ID, 'other', NEW_TUTOR_ID)).rejects.toBeInstanceOf(
-      ForbiddenError,
-    );
+    await expect(
+      useCase.execute({ roomId: ROOM_ID, authenticatedTutorId: 'other', tutorId: NEW_TUTOR_ID }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(rooms.addTutor).not.toHaveBeenCalled();
   });
 
@@ -59,9 +63,9 @@ describe('AddTutorToRoomUseCase', () => {
     async (user) => {
       users.findById.mockResolvedValue(user);
 
-      await expect(useCase.execute(ROOM_ID, OWNER_ID, NEW_TUTOR_ID)).rejects.toThrow(
-        new NotFoundError('Professor não encontrado.'),
-      );
+      await expect(
+        useCase.execute({ roomId: ROOM_ID, authenticatedTutorId: OWNER_ID, tutorId: NEW_TUTOR_ID }),
+      ).rejects.toThrow(new NotFoundError('Professor não encontrado.'));
     },
   );
 
@@ -69,8 +73,8 @@ describe('AddTutorToRoomUseCase', () => {
     users.findById.mockResolvedValue(userOfType(UserType.TUTOR));
     rooms.addTutor.mockResolvedValue(false);
 
-    await expect(useCase.execute(ROOM_ID, OWNER_ID, NEW_TUTOR_ID)).rejects.toBeInstanceOf(
-      ConflictError,
-    );
+    await expect(
+      useCase.execute({ roomId: ROOM_ID, authenticatedTutorId: OWNER_ID, tutorId: NEW_TUTOR_ID }),
+    ).rejects.toBeInstanceOf(ConflictError);
   });
 });

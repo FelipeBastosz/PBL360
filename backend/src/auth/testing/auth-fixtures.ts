@@ -7,6 +7,7 @@ export const userRepositoryStub = (): jest.Mocked<UserRepository> => ({
   searchTutors: jest.fn(),
   findByEmail: jest.fn(),
   findById: jest.fn(),
+  updateName: jest.fn(),
   save: jest.fn((user: User) => Promise.resolve(user)),
 });
 

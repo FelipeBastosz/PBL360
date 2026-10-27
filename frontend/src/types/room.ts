@@ -48,12 +48,18 @@ export type StudentRoom = {
   totalProblemas?: number;
 };
 
-export type JoinRoomPayload = {
-  codigo: string;
+export type JoinRoomByCodePayload = {
+  codigoSala: string;
+};
+
+export type JoinRoomByLinkPayload = {
+  link: string;
 };
 
 export type RoomStudent = {
   id: string;
   nome: string;
+  email: string;
+  matricula: string | null;
   dataEntrada: string;
 };

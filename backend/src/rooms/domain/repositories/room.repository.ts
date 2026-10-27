@@ -15,7 +15,10 @@ export interface TutorRoomSummary {
 }
 
 export interface RoomStudentSummary {
+  id: string;
   name: string;
+  email: string;
+  registrationNumber: string | null;
   joinedAt: Date;
 }
 
@@ -35,15 +38,13 @@ export interface RoomRepository {
 
   joinStudent(roomId: string, studentId: string): Promise<void>;
 
-  findByTutorId(tutorId: string): Promise<Room[]>;
-
-  findSummariesByTutorId(tutorId: string): Promise<TutorRoomSummary[]>;
+  findByTutorId(tutorId: string): Promise<TutorRoomSummary[]>;
 
   update(room: Room): Promise<Room>;
 
   softDelete(room: Room): Promise<void>;
 
-  addTutor(roomId: string, tutorId: string, actorId: string): Promise<boolean>;
+  addTutor(roomId: string, tutorId: string): Promise<boolean>;
 
   hasTutor(roomId: string, tutorId: string): Promise<boolean>;
 
@@ -51,7 +52,7 @@ export interface RoomRepository {
 
   listTutors(roomId: string): Promise<RoomTutor[]>;
 
-  removeTutor(roomId: string, tutorId: string, actorId: string): Promise<boolean>;
+  removeTutor(roomId: string, tutorId: string): Promise<boolean>;
 
   findForStudent(studentId: string): Promise<StudentRoomSummary[]>;
 

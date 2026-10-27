@@ -1,59 +1,84 @@
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   ClipboardDocumentCheckIcon,
   StarIcon,
   AdjustmentsHorizontalIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
+import { ROUTES } from '@/routes/paths';
 
-type CardItemProps = {
+type ActionCardProps = {
   to: string;
+  state?: unknown;
   title: string;
   desc: string;
   color: string;
   Icon: ComponentType<{ className?: string }>;
+  disabled?: boolean;
+  badge?: string;
 };
 
-function ActionCard({ to, title, desc, color, Icon }: CardItemProps) {
+function ActionCardContent({
+  title,
+  desc,
+  color,
+  Icon,
+}: Pick<ActionCardProps, 'title' | 'desc' | 'color' | 'Icon'>) {
   return (
-    <Link
-      to={to}
-      className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md"
-    >
+    <>
       <div className={`flex size-11 items-center justify-center rounded-xl ${color}`}>
         <Icon className="size-6" />
       </div>
-      <div>
-        <h3 className="text-sm font-bold text-ink">{title}</h3>
+      <div className="min-w-0">
+        <h3 className="text-sm font-bold break-words text-ink">{title}</h3>
         <p className="mt-1 text-xs text-muted leading-relaxed">{desc}</p>
       </div>
+    </>
+  );
+}
+
+function ActionCard({ to, state, title, desc, color, Icon, disabled, badge }: ActionCardProps) {
+  if (disabled) {
+    return (
+      <div className="relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm opacity-60 cursor-not-allowed">
+        {badge && (
+          <span className="absolute right-3 top-3 rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-bold text-muted">
+            {badge}
+          </span>
+        )}
+        <ActionCardContent title={title} desc={desc} color={color} Icon={Icon} />
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={to}
+      state={state}
+      className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md"
+    >
+      <ActionCardContent title={title} desc={desc} color={color} Icon={Icon} />
     </Link>
   );
 }
 
-function DisabledHistoryCard() {
-  return (
-    <div className="relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm opacity-60 cursor-not-allowed">
-      <span className="absolute right-3 top-3 rounded-full bg-black/5 px-2.5 py-0.5 text-xs font-semibold text-muted">
-        Em breve
-      </span>
-      <div className="flex size-11 items-center justify-center rounded-xl bg-gray-100 text-gray-500">
-        <ClockIcon className="size-6" />
-      </div>
-      <div>
-        <h3 className="text-sm font-bold text-ink">Histórico de avaliações</h3>
-        <p className="mt-1 text-xs text-muted leading-relaxed">
-          Comparar e ajustar com justificativa
-        </p>
-      </div>
-    </div>
-  );
-}
+function PrimaryActions({
+  basePath,
+  isStudentEvalActive,
+}: {
+  basePath: string;
+  isStudentEvalActive: boolean;
+}) {
+  const evalDesc = isStudentEvalActive
+    ? 'Avaliações ativas. Consulte e ajuste no Histórico de avaliações.'
+    : 'Critérios, marcações e feedback';
+  const evalColor = isStudentEvalActive
+    ? 'bg-gray-100 text-gray-400'
+    : 'bg-emerald-50 text-emerald-600';
 
-export function SessionActionGrid({ basePath }: { basePath: string }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <>
       <ActionCard
         to={`${basePath}/chamada`}
         title="Chamada"
@@ -64,18 +89,50 @@ export function SessionActionGrid({ basePath }: { basePath: string }) {
       <ActionCard
         to={`${basePath}/avaliar`}
         title="Avaliar alunos"
-        desc="Critérios, marcações e feedback"
-        color="bg-emerald-50 text-emerald-600"
+        desc={evalDesc}
+        color={evalColor}
         Icon={StarIcon}
+        disabled={isStudentEvalActive}
+        badge={isStudentEvalActive ? 'Bloqueado' : undefined}
       />
+    </>
+  );
+}
+
+export function SessionActionGrid({
+  basePath,
+  isStudentEvalActive,
+  children,
+}: {
+  basePath: string;
+  isStudentEvalActive: boolean;
+  children?: ReactNode;
+}) {
+  const {
+    roomId = '',
+    problemId = '',
+    sessionId = '',
+  } = useParams<{ roomId: string; problemId: string; sessionId: string }>();
+
+  return (
+    <div className="grid grid-cols-2 gap-3 lg:row-span-2 [&>*]:min-w-0">
+      <PrimaryActions basePath={basePath} isStudentEvalActive={isStudentEvalActive} />
       <ActionCard
-        to={`${basePath}/formulas`}
+        to={ROUTES.performanceTables}
+        state={{ roomId, problemId, sessionId }}
         title="Fórmulas"
-        desc="Pesos da sessão e da nota final"
+        desc="Suas tabelas de critérios"
         color="bg-amber-50 text-amber-600"
         Icon={AdjustmentsHorizontalIcon}
       />
-      <DisabledHistoryCard />
+      <ActionCard
+        to={`${basePath}/historico`}
+        title="Histórico de avaliações"
+        desc="Comparar e ajustar com justificativa"
+        color="bg-violet-50 text-violet-600"
+        Icon={ClockIcon}
+      />
+      {children}
     </div>
   );
 }

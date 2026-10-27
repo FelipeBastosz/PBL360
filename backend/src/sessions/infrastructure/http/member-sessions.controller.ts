@@ -34,7 +34,7 @@ export class MemberSessionsController {
     @UuidParam('salaId') roomId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<RoomSessionResponseDto[]> {
-    const sessions = await this.listRoomSessions.execute(roomId, member);
+    const sessions = await this.listRoomSessions.execute({ roomId, member });
     return sessions.map((session) => ({
       id: session.id,
       titulo: session.title,
@@ -52,7 +52,7 @@ export class MemberSessionsController {
     @UuidParam('sessaoId') sessionId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<MemberSessionResponseDto> {
-    const { session, problem, roomId } = await this.getMemberSession.execute(sessionId, member);
+    const { session, problem, roomId } = await this.getMemberSession.execute({ sessionId, member });
     return {
       ...toSessionResponse(session),
       problemaId: problem.id,

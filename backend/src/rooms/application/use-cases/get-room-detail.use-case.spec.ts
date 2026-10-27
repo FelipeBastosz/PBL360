@@ -16,7 +16,7 @@ describe('GetRoomDetailUseCase', () => {
     const room = buildRoom();
     access.assertTutorCanAccessRoom.mockResolvedValue(room);
 
-    await expect(useCase.execute(ROOM_ID, OWNER_ID)).resolves.toBe(room);
+    await expect(useCase.execute({ roomId: ROOM_ID, tutorId: OWNER_ID })).resolves.toBe(room);
     expect(access.assertTutorCanAccessRoom).toHaveBeenCalledWith(ROOM_ID, OWNER_ID);
   });
 
@@ -25,7 +25,7 @@ describe('GetRoomDetailUseCase', () => {
     async (error) => {
       access.assertTutorCanAccessRoom.mockRejectedValue(error);
 
-      await expect(useCase.execute(ROOM_ID, 'other')).rejects.toBe(error);
+      await expect(useCase.execute({ roomId: ROOM_ID, tutorId: 'other' })).rejects.toBe(error);
     },
   );
 });

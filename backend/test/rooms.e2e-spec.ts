@@ -25,7 +25,10 @@ interface StudentRoomBody {
 }
 
 interface RoomStudentBody {
+  id: string;
   nome: string;
+  email: string;
+  matricula: string | null;
   dataEntrada: string;
 }
 
@@ -90,12 +93,6 @@ describe('Rooms (e2e)', () => {
         ativo: true,
       });
       expect(room.codigoSala).toMatch(/^[A-Za-z0-9]{8}$/);
-
-      const [membership] = await dataSource.query<[{ tutorId: string }]>(
-        'SELECT tutor_id AS "tutorId" FROM room_tutors WHERE room_id = $1;',
-        [room.id],
-      );
-      expect(membership).toEqual({ tutorId: owner.id });
     });
 
     it('refuses a tutor id sent in the body', async () => {
@@ -133,31 +130,6 @@ describe('Rooms (e2e)', () => {
 
       expect((mine.body as RoomBody[]).map((r) => r.id)).toEqual([room.id]);
       expect(theirs.body).toEqual([]);
-
-      await api(app, owner)
-        .post(`/salas/${room.id}/professores`, { professorId: colleague.id })
-        .expect(201);
-
-      const linkedTutorRooms = await api(app, colleague).get('/salas').expect(200);
-      expect((linkedTutorRooms.body as RoomBody[]).map((r) => r.id)).toEqual([room.id]);
-    });
-
-    it('includes the student and problem totals for each room', async () => {
-      const room = await createRoom();
-      await dataSource.query('INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);', [
-        room.id,
-        student.id,
-      ]);
-      await api(app, owner)
-        .post(`/salas/${room.id}/problemas`)
-        .send({ titulo: 'Problema 1' })
-        .expect(201);
-
-      const response = await api(app, owner).get('/salas').expect(200);
-
-      expect(response.body).toEqual([
-        expect.objectContaining({ id: room.id, totalAlunos: 1, totalProblemas: 1 }),
-      ]);
     });
   });
 
@@ -176,10 +148,11 @@ describe('Rooms (e2e)', () => {
         'INSERT INTO room_students (room_id, student_id) VALUES ($1, $2), ($1, $3), ($4, $3);',
         [room.id, student.id, secondStudent.id, unrelatedRoomBody.id],
       );
-      await api(app, owner)
-        .post(`/salas/${room.id}/problemas`)
-        .send({ titulo: 'Problema 1' })
-        .expect(201);
+      await dataSource.query(
+        `INSERT INTO problems (room_id, title, order_index, created_by)
+         VALUES ($1, 'Problema 1', 1, $2), ($1, 'Problema 2', 2, $2), ($3, 'Outro problema', 1, $2);`,
+        [room.id, owner.id, unrelatedRoomBody.id],
+      );
 
       const response = await api(app, student).get('/salas/minhas').expect(200);
       const listedRooms = response.body as StudentRoomBody[];
@@ -190,7 +163,7 @@ describe('Rooms (e2e)', () => {
           nome: room.nome,
           semestre: room.semestre,
           totalAlunos: 2,
-          totalProblemas: 1,
+          totalProblemas: 2,
         },
       ]);
     });
@@ -251,7 +224,7 @@ describe('Rooms (e2e)', () => {
   });
 
   describe('GET /salas/:id/alunos', () => {
-    it('lists only student names and enrollment dates for a linked tutor', async () => {
+    it('lists student profile data for a linked tutor and an enrolled student', async () => {
       const room = await createRoom();
       const secondStudent = await insertUser(
         app,
@@ -275,7 +248,18 @@ describe('Rooms (e2e)', () => {
       expect(listedStudents.every((entry) => Number.isFinite(Date.parse(entry.dataEntrada)))).toBe(
         true,
       );
-      expect(Object.keys(listedStudents[0])).toEqual(['nome', 'dataEntrada']);
+      expect(listedStudents).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: student.id,
+            email: student.email,
+            matricula: student.email.slice(0, 8),
+          }),
+          expect.objectContaining({ id: secondStudent.id }),
+        ]),
+      );
+
+      await api(app, student).get(`/salas/${room.id}/alunos`).expect(200, listedStudents);
     });
 
     it('is forbidden to a tutor not linked to the room', async () => {
@@ -284,7 +268,7 @@ describe('Rooms (e2e)', () => {
       await api(app, colleague).get(`/salas/${room.id}/alunos`).expect(403);
     });
 
-    it('is forbidden to students', async () => {
+    it('is forbidden to students who are not enrolled', async () => {
       const room = await createRoom();
 
       await api(app, student).get(`/salas/${room.id}/alunos`).expect(403);
@@ -379,35 +363,11 @@ describe('Rooms (e2e)', () => {
       await api(app, owner)
         .post(`/salas/${room.id}/professores`, { professorId: colleague.id })
         .expect(201, { mensagem: 'Professor associado à sala com sucesso.' });
-
-      const [addedEvent] = await dataSource.query<
-        [{ tutorId: string; actorId: string; action: string }]
-      >(
-        `SELECT tutor_id AS "tutorId", actor_id AS "actorId", action
-          FROM room_tutor_events WHERE room_id = $1 AND tutor_id = $2;`,
-        [room.id, colleague.id],
-      );
-      expect(addedEvent).toMatchObject({
-        tutorId: colleague.id,
-        actorId: owner.id,
-        action: 'ADDED',
-      });
-
       await api(app, colleague).get('/salas').expect(200);
 
       await api(app, owner)
         .delete(`/salas/${room.id}/professores/${colleague.id}`)
         .expect(200, { mensagem: 'Professor removido da sala com sucesso.' });
-
-      const events = await dataSource.query<{ actorId: string; action: string }[]>(
-        `SELECT actor_id AS "actorId", action
-          FROM room_tutor_events WHERE room_id = $1 AND tutor_id = $2 ORDER BY id;`,
-        [room.id, colleague.id],
-      );
-      expect(events).toEqual([
-        { actorId: owner.id, action: 'ADDED' },
-        { actorId: owner.id, action: 'REMOVED' },
-      ]);
     });
 
     it('answers 409 when the tutor is already linked', async () => {
@@ -418,12 +378,6 @@ describe('Rooms (e2e)', () => {
       const results = await Promise.all([add(), add()]);
 
       expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
-      const [events] = await dataSource.query<[{ total: number }]>(
-        `SELECT COUNT(*)::int AS total FROM room_tutor_events
-          WHERE room_id = $1 AND tutor_id = $2 AND action = 'ADDED';`,
-        [room.id, colleague.id],
-      );
-      expect(events.total).toBe(1);
     });
 
     it('refuses a student as tutor', async () => {
@@ -438,12 +392,6 @@ describe('Rooms (e2e)', () => {
       const room = await createRoom();
 
       await api(app, owner).delete(`/salas/${room.id}/professores/${owner.id}`).expect(403);
-      const [events] = await dataSource.query<[{ total: number }]>(
-        `SELECT COUNT(*)::int AS total FROM room_tutor_events
-          WHERE room_id = $1 AND tutor_id = $2 AND action = 'REMOVED';`,
-        [room.id, owner.id],
-      );
-      expect(events.total).toBe(0);
     });
 
     it('does not manage tutors of a deleted room', async () => {

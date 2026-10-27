@@ -2,20 +2,25 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
+import { ApiError } from '@/services/apiError';
 import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
 import type { UserResponse } from '@/types/auth';
 import type { Problem } from '@/types/problem';
-import type { Session } from '@/types/session';
+import type { Session, SessionReleasesResponse } from '@/types/session';
 import SessionHubPage from './SessionHubPage';
 
-// 1. Mocks dos serviços da API
 vi.mock('@/services/problem.service', () => ({
   problemService: { getById: vi.fn() },
 }));
 
 vi.mock('@/services/session.service', () => ({
-  sessionService: { getById: vi.fn(), listAttachments: vi.fn().mockResolvedValue([]) },
+  sessionService: {
+    getById: vi.fn(),
+    getForMember: vi.fn(),
+    listAttachments: vi.fn().mockResolvedValue([]),
+    getReleases: vi.fn(),
+  },
 }));
 
 vi.mock('@/hooks/useToast', () => ({
@@ -60,11 +65,27 @@ const mockSession: Session = {
   status: 'agendada',
 };
 
-function renderPage() {
+const mockReleases: SessionReleasesResponse = {
+  autoavaliacao: { liberada: false, prazo: null, enviadas: 0, esperadas: 10 },
+  pares: { liberada: false, prazo: null, enviadas: 0, esperadas: 10 },
+  atualizadoEm: '2026-01-01T00:00:00.000Z',
+  atualizadoPor: 'tutor-1',
+};
+
+const mockStudent: UserResponse = {
+  ...mockTeacher,
+  id: '2',
+  nome: 'Aluno Ciclano',
+  email: 'aluno@test.com',
+  tipo: 'ALUNO',
+  matricula: '123456',
+};
+
+function renderPage(user: UserResponse = mockTeacher) {
   return render(
     <AuthContext.Provider
       value={{
-        user: mockTeacher,
+        user,
         isAuthenticated: true,
         login: vi.fn(),
         logout: vi.fn(),
@@ -87,6 +108,7 @@ describe('SessionHubPage', () => {
     vi.clearAllMocks();
     vi.mocked(problemService.getById).mockResolvedValue(mockProblem);
     vi.mocked(sessionService.getById).mockResolvedValue(mockSession);
+    vi.mocked(sessionService.getReleases).mockResolvedValue(mockReleases);
   });
 
   it('renders header with session title, formatted date, problem subtitle and user initials', async () => {
@@ -114,34 +136,66 @@ describe('SessionHubPage', () => {
       'href',
       `${basePath}/avaliar`,
     );
-    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute(
-      'href',
-      `${basePath}/formulas`,
-    );
+    expect(screen.getByRole('link', { name: /fórmulas/i })).toHaveAttribute('href', '/formulas');
   });
 
-  it('renders disabled card for Histórico de avaliações with Em breve badge', async () => {
+  it('renders active link for Histórico de avaliações', async () => {
     renderPage();
 
-    expect(await screen.findByText('Histórico de avaliações')).toBeInTheDocument();
-    // 2 badges de "Em breve" (1 na grade e 1 no card de autoavaliação)
-    expect(screen.getAllByText('Em breve')).toHaveLength(2);
+    const basePath = '/turmas/room-1/problemas/prob-1/sessoes/sess-1';
+    const link = await screen.findByRole('link', { name: /histórico de avaliações/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', `${basePath}/historico`);
   });
 
-  it('renders Autoavaliação e pares card with locked toggles', async () => {
+  it('renders Autoavaliação e pares card with toggle switches', async () => {
     renderPage();
 
     expect(await screen.findByText('Autoavaliação e pares')).toBeInTheDocument();
     expect(screen.getByText('Autoavaliação dos alunos')).toBeInTheDocument();
     expect(screen.getByText('Avaliação entre pares')).toBeInTheDocument();
-    expect(screen.getAllByText('Bloqueada')).toHaveLength(2);
+    expect(screen.getAllByRole('switch')).toHaveLength(2);
   });
 
-  it('renders Encerrar sessão button as disabled', async () => {
-    renderPage();
+  describe('when user is a student', () => {
+    beforeEach(() => {
+      vi.mocked(sessionService.getForMember).mockResolvedValue({
+        ...mockSession,
+        problemaId: 'prob-1',
+        salaId: 'room-1',
+        problemaTitulo: 'Problema 01 - Diagnóstico',
+      });
+    });
 
-    const endBtn = await screen.findByRole('button', { name: 'Encerrar sessão' });
-    expect(endBtn).toBeInTheDocument();
-    expect(endBtn).toBeDisabled();
+    it('shows the session header and its attachments, without the tutor actions', async () => {
+      renderPage(mockStudent);
+
+      expect(await screen.findByText(/Sessão 1 · 12 ago/i)).toBeInTheDocument();
+      expect(screen.getByText('Problema 01 - Diagnóstico')).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { name: 'Anexos da Sessão' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Adicionar Documento/ })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Central de Avaliações' })).toBeInTheDocument();
+      expect(screen.getByText('Autoavaliação')).toBeInTheDocument();
+      expect(screen.getByText('Avaliar Colegas')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /Feedback do Tutor/i })).toHaveAttribute(
+        'href',
+        '/turmas/room-1/problemas/prob-1/sessoes/sess-1/feedback',
+      );
+      expect(screen.getAllByText('Em breve')).toHaveLength(2);
+      expect(screen.queryByRole('link', { name: /chamada/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('Autoavaliação e pares')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Encerrar sessão' })).not.toBeInTheDocument();
+      expect(sessionService.getById).not.toHaveBeenCalled();
+      expect(problemService.getById).not.toHaveBeenCalled();
+    });
+
+    it('explains when the student cannot open the session', async () => {
+      vi.mocked(sessionService.getForMember).mockRejectedValue(
+        new ApiError(403, ['Você não participa desta sala.']),
+      );
+      renderPage(mockStudent);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Você não participa desta sala.');
+    });
   });
 });

@@ -25,8 +25,11 @@ describe('CreateProblemUseCase', () => {
     assertTutorCanAccessRoomMock = jest.fn();
 
     const problemRepository: jest.Mocked<ProblemRepository> = {
+      updateDetails: jest.fn(),
+      hasSessions: jest.fn(),
+      countSessions: jest.fn(),
+      delete: jest.fn(),
       create: saveMock,
-      save: jest.fn(),
       findById: jest.fn(),
       findByRoomId: jest.fn(),
     };
@@ -64,35 +67,6 @@ describe('CreateProblemUseCase', () => {
         title: input.title,
         description: input.description,
         createdBy: input.authorId,
-      }),
-    );
-    expect(result.id).toBe('prob-uuid-1');
-  });
-
-  it('creates and saves a problem with a performance table', async () => {
-    const input = {
-      ...defaultInput(),
-      performanceTableId: 'table-uuid-1',
-    };
-    const fakeRoom = { id: input.roomId, tutorId: input.authorId };
-    assertTutorCanAccessRoomMock.mockResolvedValueOnce(fakeRoom);
-
-    const savedProblem = Problem.create({
-      roomId: input.roomId,
-      title: input.title,
-      description: input.description,
-      orderIndex: 1,
-      performanceTableId: 'table-uuid-1',
-      createdBy: input.authorId,
-    });
-    savedProblem.id = 'prob-uuid-1';
-    saveMock.mockResolvedValueOnce(savedProblem);
-
-    const result = await useCase.execute(input);
-
-    expect(saveMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        performanceTableId: 'table-uuid-1',
       }),
     );
     expect(result.id).toBe('prob-uuid-1');

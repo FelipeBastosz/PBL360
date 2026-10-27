@@ -36,6 +36,7 @@ describe('SaveSessionFeedbackUseCase', () => {
     sessionRepository = {
       findById: jest.fn().mockResolvedValue(mockSession),
       findByProblemId: jest.fn(),
+      countReleaseSubmissions: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
       getDeletionImpact: jest.fn(),
@@ -47,6 +48,8 @@ describe('SaveSessionFeedbackUseCase', () => {
     mockProblem.roomId = 'room-1';
 
     problemRepository = {
+      hasEvaluations: jest.fn(),
+      updateDetails: jest.fn(),
       findById: jest.fn().mockResolvedValue(mockProblem),
       findByRoomId: jest.fn(),
       create: jest.fn(),

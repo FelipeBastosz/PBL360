@@ -2,6 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ROOM_REPOSITORY, type RoomRepository } from '../../domain/repositories/room.repository';
 import { RoomAccessService } from '../services/room-access.service';
 
+export interface DeleteRoomInput {
+  roomId: string;
+  tutorId: string;
+}
+
 @Injectable()
 export class DeleteRoomUseCase {
   constructor(
@@ -10,7 +15,7 @@ export class DeleteRoomUseCase {
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(roomId: string, tutorId: string): Promise<void> {
+  async execute({ roomId, tutorId }: DeleteRoomInput): Promise<void> {
     const room = await this.roomAccessService.assertTutorIsRoomOwner(roomId, tutorId);
 
     room.delete();

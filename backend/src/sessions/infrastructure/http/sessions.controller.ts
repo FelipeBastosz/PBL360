@@ -12,8 +12,10 @@ import { GetSessionDeletionImpactUseCase } from '../../application/use-cases/get
 import { GetSessionUseCase } from '../../application/use-cases/get-session.use-case';
 import { ListSessionsUseCase } from '../../application/use-cases/list-sessions.use-case';
 import { UpdateSessionUseCase } from '../../application/use-cases/update-session.use-case';
+import type { SessionDeletionImpactDto } from '../../application/dtos/session-deletion-impact.dto';
 import {
   toSessionCreatedResponse,
+  toSessionDeletionImpactResponse,
   toSessionDetailResponse,
   toSessionResponse,
   toUpdateSessionInput,
@@ -101,13 +103,14 @@ export class SessionsController {
 
   @Get(':sessionId/impacto-exclusao')
   @GetSessionDeletionImpactSwaggerDocs
-  getImpact(
+  async getImpact(
     @UuidParam('roomId') roomId: string,
     @UuidParam('problemId') problemId: string,
     @UuidParam('sessionId') sessionId: string,
     @AuthenticatedUserId() tutorId: string,
-  ) {
-    return this.getDeletionImpact.execute({ roomId, problemId, sessionId, tutorId });
+  ): Promise<SessionDeletionImpactDto> {
+    const impact = await this.getDeletionImpact.execute({ roomId, problemId, sessionId, tutorId });
+    return toSessionDeletionImpactResponse(impact);
   }
 
   @Delete(':sessionId')

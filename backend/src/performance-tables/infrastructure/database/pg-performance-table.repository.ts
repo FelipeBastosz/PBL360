@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
-import { NotFoundError } from '@/shared/errors/application.error';
-import { syncPerformanceCriteria } from './performance-criteria.persistence';
+import { persistTableUpdate } from './performance-table-update.persistence';
 
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
+import { InvalidPerformanceTableError } from '../../domain/errors/invalid-performance-table.error';
 import type {
   PerformanceTableRepository,
   PerformanceTableSummary,
   PerformanceTableUsage,
+  RoomPerformanceTableItem,
 } from '../../domain/repositories/performance-table.repository';
 
 import {
@@ -17,12 +18,17 @@ import {
 } from './performance-table-detail.mapper';
 
 import {
+  type RoomPerformanceTableRow,
+  toRoomPerformanceTableItems,
+} from './room-performance-table.mapper';
+
+import {
   FIND_PERFORMANCE_TABLE_BY_ID_QUERY,
   PERFORMANCE_TABLE_SUMMARY_QUERY,
-  UPDATE_PERFORMANCE_TABLE_QUERY,
   INSERT_PERFORMANCE_TABLE_QUERY,
   FIND_PERFORMANCE_TABLE_USAGE_QUERY,
   FIND_PERFORMANCE_TABLE_BY_ID_INCLUDING_DELETED_QUERY,
+  FIND_ROOM_PERFORMANCE_TABLES_QUERY,
 } from './performance-table.queries';
 
 const CRITERION_COLUMNS = 5;
@@ -48,12 +54,16 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     });
   }
 
-  update(table: PerformanceTable): Promise<PerformanceTable> {
+  update(
+    table: PerformanceTable,
+    propagateToSessions = false,
+    changedBy = table.tutorId,
+  ): Promise<PerformanceTable> {
+    if (!changedBy) {
+      throw new InvalidPerformanceTableError('O professor responsável é obrigatório.');
+    }
     return this.performanceTables.manager.transaction(async (manager) => {
-      await this.lockTable(manager, table);
-      await this.updateTable(manager, table);
-      await syncPerformanceCriteria(manager, table);
-
+      await persistTableUpdate(manager, table, propagateToSessions, changedBy);
       return this.readUpdatedTable(manager, table.id);
     });
   }
@@ -65,7 +75,10 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
               updated_at = now()
         WHERE id = $1
           AND tutor_id = $3
+          AND is_session_copy = FALSE
+          AND is_default = FALSE
           AND deleted_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM sessions WHERE performance_table_id = $1)
         RETURNING id;`,
       [table.id, table.deletedAt, table.tutorId],
     );
@@ -89,21 +102,6 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     return rows.length > 0 ? toPerformanceTableWithCriteria(rows) : null;
   }
 
-  private async updateTable(manager: EntityManager, table: PerformanceTable): Promise<void> {
-    await manager.query(UPDATE_PERFORMANCE_TABLE_QUERY, [table.id, table.name, table.description]);
-  }
-
-  private async lockTable(manager: EntityManager, table: PerformanceTable): Promise<void> {
-    const rows = await manager.query<{ id: string }[]>(
-      `SELECT id FROM performance_tables
-        WHERE id = $1 AND tutor_id = $2 AND deleted_at IS NULL FOR UPDATE;`,
-      [table.id, table.tutorId],
-    );
-    if (rows.length === 0) {
-      throw new NotFoundError('Tabela de desempenho não encontrada.');
-    }
-  }
-
   private async readUpdatedTable(manager: EntityManager, id: string): Promise<PerformanceTable> {
     const rows = await manager.query<PerformanceTableDetailRow[]>(
       FIND_PERFORMANCE_TABLE_BY_ID_QUERY,
@@ -122,13 +120,22 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
     });
   }
 
+  async findTablesByRoom(roomId: string, tutorId: string): Promise<RoomPerformanceTableItem[]> {
+    const rows = await this.performanceTables.query<RoomPerformanceTableRow[]>(
+      FIND_ROOM_PERFORMANCE_TABLES_QUERY,
+      [roomId, tutorId],
+    );
+
+    return toRoomPerformanceTableItems(rows, roomId);
+  }
+
   private async insertTable(
     manager: EntityManager,
     table: PerformanceTable,
   ): Promise<PerformanceTable> {
     const [persistedTable] = await manager.query<PerformanceTable[]>(
       INSERT_PERFORMANCE_TABLE_QUERY,
-      [table.tutorId, table.name, table.description],
+      [table.tutorId, table.roomId ?? null, table.name, table.description, table.isDefault],
     );
 
     if (!persistedTable) {
@@ -188,7 +195,13 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
       [id],
     );
 
-    return usage ?? { problemCount: 0 };
+    return usage
+      ? {
+          problemCount: Number(usage.problemCount ?? 0),
+          sessionCount: Number(usage.sessionCount ?? 0),
+          pastSessionCount: Number(usage.pastSessionCount ?? 0),
+        }
+      : { problemCount: 0, sessionCount: 0, pastSessionCount: 0 };
   }
 
   async findByIdIncludingDeleted(id: string): Promise<PerformanceTable | null> {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { FabMenu } from '@/components/ui/FabMenu';
 import { SearchField } from '@/components/ui/SearchField';
 import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { Spinner } from '@/components/ui/Spinner';
@@ -8,18 +8,18 @@ import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { roomService } from '@/services/room.service';
-import { problemService } from '@/services/problem.service';
-import { sessionService } from '@/services/session.service';
+import {
+  memberRoomService,
+  type ProblemHeading,
+  type RoomHeading,
+} from '@/services/memberRoom.service';
 import { ROUTES } from '@/routes/paths';
-import type { Room } from '@/types/room';
-import type { Problem } from '@/types/problem';
 import type { Session } from '@/types/session';
 import { cn } from '@/utils/cn';
-import { SessionsEmptyState } from './SessionsEmptyState';
-import { SessionFormModal } from './SessionFormModal';
-import { SessionCard } from './SessionCard';
-import { ProblemSessionsHeader } from './ProblemSessionsHeader';
+import { SessionsEmptyState } from './components/SessionsEmptyState';
+import { SessionFormModal } from './components/SessionFormModal';
+import { SessionCard } from './components/SessionCard';
+import { ProblemSessionsHeader } from './components/ProblemSessionsHeader';
 import { ProblemTopActions } from './ProblemTopActions';
 
 function SessionsSearch({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
@@ -28,50 +28,28 @@ function SessionsSearch({ query, setQuery }: { query: string; setQuery: (v: stri
   );
 }
 
-type FabMenuProps = {
+type SessionsFabMenuProps = {
   isProfessor: boolean;
   roomId: string;
   problemId: string;
   onOpenCreate: () => void;
 };
 
-function SessionsFabMenu({ isProfessor, roomId, problemId, onOpenCreate }: FabMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
+function SessionsFabMenu({ isProfessor, roomId, problemId, onOpenCreate }: SessionsFabMenuProps) {
   if (!isProfessor) return null;
 
+  const manageSessionsPath = ROUTES.manageSessions
+    .replace(':roomId', roomId)
+    .replace(':problemId', problemId);
+
   return (
-    <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3">
-      {isOpen && (
-        <div className="flex animate-fade-up flex-col items-end gap-2">
-          <a
-            href={ROUTES.manageSessions.replace(':roomId', roomId).replace(':problemId', problemId)}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
-          >
-            Editar uma sessão
-          </a>
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(false);
-              onOpenCreate();
-            }}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
-          >
-            Criar nova sessão
-          </button>
-        </div>
-      )}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          'flex size-14 items-center justify-center rounded-full bg-brand-900 text-white shadow-lg transition-transform',
-          isOpen ? 'rotate-45 bg-danger' : '',
-        )}
-        aria-label="Ações da sessão"
-      >
-        <PlusIcon className="size-6" strokeWidth={2.5} />
-      </button>
-    </div>
+    <FabMenu
+      label="Ações da sessão"
+      actions={[
+        { label: 'Editar uma sessão', to: manageSessionsPath },
+        { label: 'Criar nova sessão', onClick: onOpenCreate },
+      ]}
+    />
   );
 }
 
@@ -99,7 +77,7 @@ function ProblemSessionsMain({
   return (
     <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
       {error && <Alert tone="error">{error.message}</Alert>}
-      <ProblemTopActions isProfessor={isProfessor} />
+      <ProblemTopActions isProfessor={isProfessor} roomId={roomId} problemId={problemId} />
       <SessionsSearch query={query} setQuery={setQuery} />
       {isLoading ? (
         <div className="mt-10 flex justify-center">
@@ -122,23 +100,28 @@ function ProblemSessionsMain({
   );
 }
 
-function useProblemSessions(roomId?: string, problemId?: string, onCreatedSuccess?: () => void) {
+function useProblemSessions(
+  isProfessor: boolean,
+  roomId?: string,
+  problemId?: string,
+  onCreatedSuccess?: () => void,
+) {
   const { notify } = useToast();
-  const [room, setRoom] = useState<Room | null>(null);
-  const [problem, setProblem] = useState<Problem | null>(null);
+  const [room, setRoom] = useState<RoomHeading | null>(null);
+  const [problem, setProblem] = useState<ProblemHeading | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
 
-  const { run: fetchRoom } = useAsyncAction(roomService.getById);
-  const { run: fetchProblem } = useAsyncAction(problemService.getById);
-  const { run: fetchSessions, isLoading, error } = useAsyncAction(sessionService.list);
+  const { run: fetchRoom } = useAsyncAction(memberRoomService.room);
+  const { run: fetchProblem } = useAsyncAction(memberRoomService.problem);
+  const { run: fetchSessions, isLoading, error } = useAsyncAction(memberRoomService.sessions);
 
   useEffect(() => {
     if (roomId && problemId) {
-      fetchRoom(roomId).then((res) => res.ok && setRoom(res.data));
-      fetchProblem(roomId, problemId).then((res) => res.ok && setProblem(res.data));
-      fetchSessions(roomId, problemId).then((res) => res.ok && setSessions(res.data as Session[]));
+      fetchRoom(roomId, isProfessor).then((res) => res.ok && setRoom(res.data));
+      fetchProblem(roomId, problemId, isProfessor).then((res) => res.ok && setProblem(res.data));
+      fetchSessions(roomId, problemId, isProfessor).then((res) => res.ok && setSessions(res.data));
     }
-  }, [roomId, problemId, fetchRoom, fetchProblem, fetchSessions]);
+  }, [isProfessor, roomId, problemId, fetchRoom, fetchProblem, fetchSessions]);
 
   function handleSessionCreated(newSession: Session) {
     setSessions((curr) => [...curr, newSession]);
@@ -160,6 +143,7 @@ export default function ProblemSessionsPage() {
 
   const isProfessor = user?.tipo === 'PROFESSOR';
   const { room, problem, sessions, isLoading, error, handleSessionCreated } = useProblemSessions(
+    isProfessor,
     currentRoomId,
     problemId,
     () => setIsCreateModalOpen(false),

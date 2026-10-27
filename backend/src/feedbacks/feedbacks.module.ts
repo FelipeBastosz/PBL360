@@ -15,22 +15,41 @@ import { SaveGeneralProblemFeedbackUseCase } from './application/use-cases/save-
 import { GetProblemFeedbacksUseCase } from './application/use-cases/get-problem-feedbacks.use-case';
 import { SaveSessionFeedbackUseCase } from './application/use-cases/save-session-feedback.use-case';
 import { GetSessionFeedbackUseCase } from './application/use-cases/get-session-feedback.use-case';
+import { GetOwnSessionFeedbackUseCase } from './application/use-cases/get-own-session-feedback.use-case';
 import { GetFeedbackRevisionsUseCase } from './application/use-cases/get-feedback-revisions.use-case';
+
+import { FeedbackView } from './domain/entities/feedback-view.entity';
+import { RECEIVED_FEEDBACK_REPOSITORY } from './domain/repositories/received-feedback.repository';
+import { PgReceivedFeedbackRepository } from './infrastructure/database/pg-received-feedback.repository';
+import { GetMySessionFeedbackUseCase } from './application/use-cases/get-my-session-feedback.use-case';
+import { GetMyProblemFeedbacksUseCase } from './application/use-cases/get-my-problem-feedbacks.use-case';
+import { MySessionFeedbackController } from './infrastructure/http/my-session-feedback.controller';
+import { MyProblemFeedbacksController } from './infrastructure/http/my-problem-feedbacks.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Feedback, FeedbackRevision]),
+    TypeOrmModule.forFeature([Feedback, FeedbackRevision, FeedbackView]),
     RoomsModule,
     ProblemsModule,
     SessionsModule,
   ],
-  controllers: [RoomFeedbacksController, SessionFeedbacksController, FeedbackRevisionsController],
+  controllers: [
+    MySessionFeedbackController,
+    MyProblemFeedbacksController,
+    RoomFeedbacksController,
+    SessionFeedbacksController,
+    FeedbackRevisionsController,
+  ],
   providers: [
+    GetMySessionFeedbackUseCase,
+    GetMyProblemFeedbacksUseCase,
+    { provide: RECEIVED_FEEDBACK_REPOSITORY, useClass: PgReceivedFeedbackRepository },
     SaveStudentProblemFeedbackUseCase,
     SaveGeneralProblemFeedbackUseCase,
     GetProblemFeedbacksUseCase,
     SaveSessionFeedbackUseCase,
     GetSessionFeedbackUseCase,
+    GetOwnSessionFeedbackUseCase,
     GetFeedbackRevisionsUseCase,
     {
       provide: FEEDBACK_REPOSITORY,

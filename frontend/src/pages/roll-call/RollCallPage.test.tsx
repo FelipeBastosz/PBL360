@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { problemService } from '@/services/problem.service';
@@ -80,9 +80,13 @@ describe('RollCallPage', () => {
   beforeEach(() => {
     vi.mocked(userService.getPhoto).mockRejectedValue(new ApiError(404, ['Foto não encontrada.']));
     vi.mocked(sessionService.listRoles).mockResolvedValue([]);
+    vi.mocked(problemService.getById).mockResolvedValue({} as never);
+    vi.mocked(sessionService.getById).mockResolvedValue({} as never);
   });
 
   afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
     vi.resetAllMocks();
     localStorage.clear();
     Reflect.deleteProperty(document, 'elementFromPoint');
@@ -213,6 +217,40 @@ describe('RollCallPage', () => {
     expect(await screen.findByText('Chamada salva.')).toBeInTheDocument();
   });
 
+  it('takes a prefilled student off the table removing the presence in this session', async () => {
+    vi.mocked(sessionService.listRoles)
+      .mockResolvedValueOnce([
+        { alunoId: 'ana', nome: 'Ana Souza', papel: 'COORDENADOR', notaAdicional: null },
+      ])
+      .mockResolvedValueOnce([]);
+    vi.mocked(sessionService.saveRollCall).mockResolvedValue(
+      rollCall([student('ana', 'Ana Souza', { status: 'AUSENTE' }), bruno], {
+        origem: 'REGISTRADA',
+      }),
+    );
+    const { user } = openRollCall(
+      rollCall([student('ana', 'Ana Souza', { lugar: 1, status: 'PRESENTE' }), bruno], {
+        origem: 'SESSAO_ANTERIOR',
+        sessaoReferencia: { id: 's0', data: '2026-08-12' },
+      }),
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Lugar 1: Ana Souza, Presente' }));
+    await user.click(screen.getByRole('button', { name: 'Tirar da mesa' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Ana Souza, fora da mesa, Ausente' }),
+    ).toBeInTheDocument();
+    expect(within(counter('Presentes')).getByText('0')).toBeInTheDocument();
+    expect(within(counter('Ausentes')).getByText('1')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Salvar chamada' }));
+    expect(sessionService.saveRollCall).toHaveBeenCalledWith('s1', [
+      { alunoId: 'ana', status: 'AUSENTE', lugar: null, justificativa: null },
+    ]);
+    expect(await screen.findByText('Chamada salva.')).toBeInTheDocument();
+    expect(sessionService.listRoles).toHaveBeenCalledTimes(2);
+  });
+
   it('switches back from excused to present without getting stuck', async () => {
     const { user } = openRollCall(
       rollCall([student('ana', 'Ana Souza', { lugar: 1, status: 'PRESENTE' })], {
@@ -249,12 +287,11 @@ describe('RollCallPage', () => {
     fireEvent.pointerDown(chip, { button: 0, clientX: 5, clientY: 5 });
     await vi.advanceTimersByTimeAsync(600);
     fireEvent.pointerUp(chip, { clientX: 5, clientY: 5 });
-    fireEvent.click(screen.getByRole('radio', { name: 'Atrasado' }));
+    fireEvent.click(await screen.findByRole('radio', { name: 'Atrasado' }));
 
     expect(
-      screen.getByRole('button', { name: 'Lugar 1: Ana Souza, Atrasado' }),
+      await screen.findByRole('button', { name: 'Lugar 1: Ana Souza, Atrasado' }),
     ).toBeInTheDocument();
-    vi.useRealTimers();
   });
 
   it('lets a student off the table be marked absent with a long press', async () => {
@@ -266,13 +303,16 @@ describe('RollCallPage', () => {
     await vi.advanceTimersByTimeAsync(600);
     fireEvent.pointerUp(chip, { clientX: 5, clientY: 5 });
 
-    expect(screen.getByText('Fora da mesa • Sem registro')).toBeInTheDocument();
+    expect(
+      await screen.findByText((_content, element) => {
+        return element?.textContent === 'Fora da mesa • Sem registro';
+      }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tirar da mesa' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('radio', { name: 'Ausente' }));
     expect(
-      screen.getByRole('button', { name: 'Ana Souza, fora da mesa, Ausente' }),
+      await screen.findByRole('button', { name: 'Ana Souza, fora da mesa, Ausente' }),
     ).toBeInTheDocument();
-    vi.useRealTimers();
   });
 
   it('offers to transfer a role that another student already holds', async () => {

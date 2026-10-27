@@ -1,6 +1,10 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
+import {
+  AuthenticatedUser,
+  type AuthenticatedUserRef,
+} from '@/shared/decorators/authenticated-user.decorator';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
@@ -17,7 +21,7 @@ import { GetProblemUseCase } from '../../application/use-cases/get-problem.use-c
 import { ListProblemsByRoomUseCase } from '../../application/use-cases/list-problems-by-room.use-case';
 import { UpdateProblemUseCase } from '../../application/use-cases/update-problem.use-case';
 import type { Problem } from '../../domain/entities/problem.entity';
-import { toProblemResponse } from './problem.mapper';
+import { toProblemDeletionImpactResponse, toProblemResponse } from './problem.mapper';
 import {
   CreateProblemSwaggerDocs,
   DeleteProblemSwaggerDocs,
@@ -55,19 +59,18 @@ export class ProblemsController {
       description: dto.descricao,
       startDate: dto.dataInicio ?? null,
       endDate: dto.dataFim ?? null,
-      performanceTableId: dto.tabelaId ?? null,
     });
 
     return toProblemResponse(problem);
   }
-
   @Get()
+  @Roles(UserType.TUTOR, UserType.STUDENT)
   @ListProblemsSwaggerDocs
   async list(
     @UuidParam('roomId') roomId: string,
-    @AuthenticatedUserId() tutorId: string,
+    @AuthenticatedUser() member: AuthenticatedUserRef,
   ): Promise<ProblemResponseDto[]> {
-    const problems = await this.listProblemsByRoomUseCase.execute({ roomId, tutorId });
+    const problems = await this.listProblemsByRoomUseCase.execute({ roomId, member });
 
     return problems.map(toProblemResponse);
   }
@@ -102,7 +105,12 @@ export class ProblemsController {
     @UuidParam('problemId') problemId: string,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<ProblemDeletionImpactDto> {
-    return this.getProblemDeletionImpactUseCase.execute({ roomId, problemId, tutorId });
+    const impact = await this.getProblemDeletionImpactUseCase.execute({
+      roomId,
+      problemId,
+      tutorId,
+    });
+    return toProblemDeletionImpactResponse(impact);
   }
 
   @Delete(':problemId')

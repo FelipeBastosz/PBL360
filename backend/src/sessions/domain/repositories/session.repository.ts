@@ -17,4 +17,13 @@ export interface SessionRepository {
   findByProblemId(problemId: string): Promise<Session[]>;
   getDeletionImpact(sessionId: string): Promise<SessionDeletionImpact>;
   delete(id: string, problemId: string): Promise<void>;
+  countReleaseSubmissions(sessionId: string): Promise<ReleaseSubmissions>;
+}
+
+export interface ReleaseSubmissions {
+  rollCallSaved: boolean;
+  presentStudents: number;
+  selfSubmitted: number;
+  peerSubmitted: number;
+  pokerStarted?: boolean;
 }

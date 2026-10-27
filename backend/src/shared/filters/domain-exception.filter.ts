@@ -4,18 +4,22 @@ import {
   Catch,
   ConflictException,
   ForbiddenException,
+  HttpStatus,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
   UnprocessableEntityException,
+  HttpException,
   type ExceptionFilter,
-  type HttpException,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { ReportGenerationError } from '@/report-files/application/errors/report-generation.error';
 import {
   ApplicationError,
   ConflictError,
   ForbiddenError,
   InvalidRequestError,
+  LockedError,
   NotFoundError,
   UnauthorizedError,
   UnprocessableEntityError,
@@ -23,6 +27,13 @@ import {
 import { DomainError } from '../errors/domain.error';
 
 type HttpExceptionClass = new (message: string) => HttpException;
+type HandledError = DomainError | ApplicationError | ReportGenerationError;
+
+class LockedHttpException extends HttpException {
+  constructor(message: string) {
+    super(HttpException.createBody(message, 'Locked', HttpStatus.LOCKED), HttpStatus.LOCKED);
+  }
+}
 
 const HTTP_EXCEPTIONS: [abstract new (message: string) => Error, HttpExceptionClass][] = [
   [InvalidRequestError, BadRequestException],
@@ -31,9 +42,11 @@ const HTTP_EXCEPTIONS: [abstract new (message: string) => Error, HttpExceptionCl
   [NotFoundError, NotFoundException],
   [ConflictError, ConflictException],
   [UnprocessableEntityError, UnprocessableEntityException],
+  [LockedError, LockedHttpException],
+  [ReportGenerationError, InternalServerErrorException],
 ];
 
-export const toHttpException = (error: DomainError | ApplicationError): HttpException => {
+export const toHttpException = (error: HandledError): HttpException => {
   if (error instanceof DomainError) {
     return new BadRequestException([error.message]);
   }
@@ -51,9 +64,9 @@ export const toHttpException = (error: DomainError | ApplicationError): HttpExce
   return exception;
 };
 
-@Catch(DomainError, ApplicationError)
-export class DomainExceptionFilter implements ExceptionFilter<DomainError | ApplicationError> {
-  catch(error: DomainError | ApplicationError, host: ArgumentsHost): void {
+@Catch(DomainError, ApplicationError, ReportGenerationError)
+export class DomainExceptionFilter implements ExceptionFilter<HandledError> {
+  catch(error: HandledError, host: ArgumentsHost): void {
     const exception = toHttpException(error);
 
     host

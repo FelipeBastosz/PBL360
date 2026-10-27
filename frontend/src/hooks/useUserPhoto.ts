@@ -3,6 +3,8 @@ import { userService } from '@/services/user.service';
 
 type LoadedPhoto = { userId: string; blob: Blob };
 
+// Photos are shared across every avatar of the same user (headers, side menu, lists),
+// so a remount shows the photo at once instead of refetching it.
 const loadedPhotos = new Map<string, Blob>();
 const pendingPhotos = new Map<string, Promise<Blob>>();
 

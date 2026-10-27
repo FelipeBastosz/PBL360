@@ -9,6 +9,11 @@ import {
   type RoomSessionSummary,
 } from '../../domain/repositories/room-session.repository';
 
+export interface ListRoomSessionsInput {
+  roomId: string;
+  member: RoomMember;
+}
+
 @Injectable()
 export class ListRoomSessionsUseCase {
   constructor(
@@ -16,7 +21,7 @@ export class ListRoomSessionsUseCase {
     @Inject(ROOM_SESSION_REPOSITORY) private readonly roomSessions: RoomSessionRepository,
   ) {}
 
-  async execute(roomId: string, member: RoomMember): Promise<RoomSessionSummary[]> {
+  async execute({ roomId, member }: ListRoomSessionsInput): Promise<RoomSessionSummary[]> {
     await this.roomAccess.assertMemberCanAccessRoom(roomId, member);
     return this.roomSessions.findByRoom(roomId);
   }

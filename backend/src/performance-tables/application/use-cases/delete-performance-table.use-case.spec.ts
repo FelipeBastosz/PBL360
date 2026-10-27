@@ -1,4 +1,4 @@
-import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
+import { ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { PerformanceTable } from '../../domain/entities/performance-table.entity';
 import type { PerformanceTableRepository } from '../../domain/repositories/performance-table.repository';
 import { DeletePerformanceTableUseCase } from './delete-performance-table.use-case';
@@ -13,10 +13,11 @@ describe('DeletePerformanceTableUseCase', () => {
     repository = {
       create: jest.fn(),
       findSummariesByTutorId: jest.fn(),
+      findTablesByRoom: jest.fn(),
       findById: jest.fn(),
       softDelete: jest.fn(),
       update: jest.fn(),
-      findUsageById: jest.fn(),
+      findUsageById: jest.fn().mockResolvedValue({ problemCount: 0, sessionCount: 0 }),
       findByIdIncludingDeleted: jest.fn(),
     };
     useCase = new DeletePerformanceTableUseCase(repository);
@@ -27,7 +28,7 @@ describe('DeletePerformanceTableUseCase', () => {
     repository.findById.mockResolvedValue(table);
     repository.softDelete.mockResolvedValue(true);
 
-    await useCase.execute(tableId, tutorId);
+    await useCase.execute({ tableId, tutorId });
 
     expect(repository.softDelete).toHaveBeenCalledWith(table);
     expect(table.deletedAt).toBeInstanceOf(Date);
@@ -38,23 +39,44 @@ describe('DeletePerformanceTableUseCase', () => {
       Object.assign(new PerformanceTable(), { tutorId: 'another-tutor' }),
     );
 
-    await expect(useCase.execute(tableId, tutorId)).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(useCase.execute({ tableId, tutorId })).rejects.toBeInstanceOf(ForbiddenError);
+    expect(repository.softDelete).not.toHaveBeenCalled();
+  });
+
+  it('rejects deletion of a table applied to sessions', async () => {
+    const table = Object.assign(new PerformanceTable(), {
+      id: tableId,
+      tutorId,
+      deletedAt: null,
+      isSessionCopy: true,
+    });
+    repository.findById.mockResolvedValue(table);
+
+    await expect(useCase.execute({ tableId, tutorId })).rejects.toBeInstanceOf(ConflictError);
+    expect(repository.softDelete).not.toHaveBeenCalled();
+  });
+
+  it('rejects deletion when a source table is still directly linked to a session', async () => {
+    const table = Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null });
+    repository.findById.mockResolvedValue(table);
+    repository.findUsageById.mockResolvedValue({ problemCount: 1, sessionCount: 1 });
+
+    await expect(useCase.execute({ tableId, tutorId })).rejects.toBeInstanceOf(ConflictError);
     expect(repository.softDelete).not.toHaveBeenCalled();
   });
 
   it('reports missing and already deleted tables as not found', async () => {
     repository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute(tableId, tutorId)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(useCase.execute({ tableId, tutorId })).rejects.toBeInstanceOf(NotFoundError);
     expect(repository.softDelete).not.toHaveBeenCalled();
   });
 
   it('propagates persistence failures', async () => {
-    repository.findById.mockResolvedValue(
-      Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null }),
-    );
+    const table = Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null });
+    repository.findById.mockResolvedValue(table);
     repository.softDelete.mockRejectedValue(new Error('Database failure'));
 
-    await expect(useCase.execute(tableId, tutorId)).rejects.toThrow('Database failure');
+    await expect(useCase.execute({ tableId, tutorId })).rejects.toThrow('Database failure');
   });
 });

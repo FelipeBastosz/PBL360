@@ -47,6 +47,20 @@ export const FIND_STUDENT_SESSION_FEEDBACK_QUERY = `
   LIMIT 1;
 `;
 
+export const FIND_STUDENT_SESSION_FEEDBACK_READ_AT_QUERY = `
+  SELECT read_at AS "readAt"
+  FROM student_session_feedback_reads
+  WHERE feedback_id = $1 AND student_id = $2
+  LIMIT 1;
+`;
+
+export const MARK_STUDENT_SESSION_FEEDBACK_READ_QUERY = `
+  INSERT INTO student_session_feedback_reads (feedback_id, student_id, read_at)
+  VALUES ($1, $2, $3)
+  ON CONFLICT (feedback_id, student_id)
+  DO UPDATE SET read_at = GREATEST(student_session_feedback_reads.read_at, EXCLUDED.read_at);
+`;
+
 export const FIND_REVISIONS_QUERY = `
   SELECT
     r.conteudo_anterior_nota AS "score",
