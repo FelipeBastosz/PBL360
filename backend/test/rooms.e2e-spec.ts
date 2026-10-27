@@ -404,6 +404,117 @@ describe('Rooms (e2e)', () => {
     });
   });
 
+  describe('DELETE /salas/:salaId/membros/me', () => {
+    it('allows a student to leave voluntarily (204) and keeps historical records intact', async () => {
+      const room = await createRoom();
+
+      await dataSource.query(
+        'INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);',
+        [room.id, student.id],
+      );
+      expect(await enrolledStudentCount(room.id)).toBe(1);
+
+      const [problem] = await dataSource.query<[{ id: string }]>(
+        `INSERT INTO problems (room_id, title, description, order_index, created_by)
+         VALUES ($1, 'Problema 1', 'Descrição', 1, $2)
+         RETURNING id;`,
+        [room.id, owner.id],
+      );
+      const [session] = await dataSource.query<[{ id: string }]>(
+        `INSERT INTO sessions (problem_id, title, date, order_index)
+         VALUES ($1, 'Sessão 1', CURRENT_DATE, 1)
+         RETURNING id;`,
+        [problem.id],
+      );
+      await dataSource.query(
+        `INSERT INTO attendances (session_id, student_id, recorded_by, status)
+         VALUES ($1, $2, $3, 'PRESENT');`,
+        [session.id, student.id, owner.id],
+      );
+
+      await api(app, student)
+        .delete(`/salas/${room.id}/membros/me`)
+        .expect(204);
+
+      expect(await enrolledStudentCount(room.id)).toBe(0);
+
+      const [attendance] = await dataSource.query<[{ count: string }]>(
+        'SELECT COUNT(*)::text AS count FROM attendances WHERE session_id = $1 AND student_id = $2;',
+        [session.id, student.id],
+      );
+      expect(Number(attendance.count)).toBe(1);
+    });
+
+    it('allows a co-tutor to leave voluntarily (204)', async () => {
+      const room = await createRoom();
+
+      await api(app, owner)
+        .post(`/salas/${room.id}/professores`, { professorId: colleague.id })
+        .expect(201);
+
+      await api(app, colleague)
+        .delete(`/salas/${room.id}/membros/me`)
+        .expect(204);
+
+      const [row] = await dataSource.query<[{ count: string }]>(
+        'SELECT COUNT(*)::text AS count FROM room_tutors WHERE room_id = $1 AND tutor_id = $2;',
+        [room.id, colleague.id],
+      );
+      expect(Number(row.count)).toBe(0);
+    });
+
+    it('prevents the responsible tutor (owner) from leaving with 409 Conflict', async () => {
+      const room = await createRoom();
+
+      const response = await api(app, owner)
+        .delete(`/salas/${room.id}/membros/me`)
+        .expect(409);
+
+      expect(response.body).toEqual({
+        statusCode: 409,
+        message:
+          'O professor responsável não pode sair da turma. Transfira a responsabilidade ou exclua a sala.',
+        error: 'Conflict',
+      });
+
+      const [roomRow] = await dataSource.query<[{ tutor_id: string }]>(
+        'SELECT tutor_id FROM rooms WHERE id = $1;',
+        [room.id],
+      );
+      expect(roomRow.tutor_id).toBe(owner.id);
+    });
+
+    it('returns 403 Forbidden when an unlinked user tries to leave', async () => {
+      const room = await createRoom();
+      const outsider = await insertUser(app, dataSource, 'outsider@uefs.br', UserType.STUDENT);
+
+      await api(app, outsider)
+        .delete(`/salas/${room.id}/membros/me`)
+        .expect(403);
+    });
+
+    it('returns 404 Not Found when trying to leave a non-existent or deleted room', async () => {
+      await api(app, student)
+        .delete(`/salas/${MISSING_ID}/membros/me`)
+        .expect(404);
+
+      const room = await createRoom();
+      await api(app, owner).delete(`/salas/${room.id}`).expect(204);
+
+      await api(app, student)
+        .delete(`/salas/${room.id}/membros/me`)
+        .expect(404);
+    });
+
+    it('returns 401 Unauthorized without auth token', async () => {
+      const room = await createRoom();
+
+      await api(app)
+        .delete(`/salas/${room.id}/membros/me`)
+        .expect(401);
+    });
+  });
+
   it('limits shared code and link attempts with a standardized 429 response', async () => {
     const enterWithInvalidCode = () =>
       api(app, student).post('/salas/ingressar/codigo', { codigoSala: 'invalid1' });
