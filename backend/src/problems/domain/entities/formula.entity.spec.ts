@@ -79,4 +79,21 @@ describe('Formula', () => {
       'Componente inválido para a fórmula da nota final',
     );
   });
+
+  it.each([FormulaComponentType.AUTOAVALIACAO, FormulaComponentType.PARES])(
+    'deve rejeitar %s como componente da fórmula do problema',
+    (type) => {
+      expect(() =>
+        Formula.create({
+          problemId: 'problem-1',
+          scope: FormulaScope.PROBLEMA,
+          createdBy: 'tutor-1',
+          components: [
+            { type: FormulaComponentType.MEDIA_SESSOES, weight: 80 },
+            { type, weight: 20 },
+          ],
+        }),
+      ).toThrow(InvalidProblemError);
+    },
+  );
 });

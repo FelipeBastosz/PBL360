@@ -8,7 +8,10 @@ import {
   type ProblemGradeData,
 } from '../../domain/repositories/grades.repository';
 import type { GradesResponseDto } from '../dtos/grades-response.dto';
-import { buildDefaultSessionComponents } from './helpers/session-formula.helper';
+import {
+  appendMissingSessionComponents,
+  buildDefaultSessionComponents,
+} from './helpers/session-formula.helper';
 import {
   processStudentGrades,
   type Row,
@@ -89,7 +92,7 @@ export class GetProblemGradesUseCase {
     const components = await this.loadComponents(formulas);
     const result = [...formulas];
     this.applySessionDefaults(result, components, criteria, sessions);
-    this.applyProblemDefault(result, components);
+    this.applyProblemDefault(result, components, sessions);
     return { formulas: result, components };
   }
 
@@ -124,8 +127,14 @@ export class GetProblemGradesUseCase {
     components.push(...buildDefaultSessionComponents(sessionId, formulaId));
   }
 
-  private applyProblemDefault(formulas: Row[], components: Row[]): void {
-    if (formulas.some((f) => f.scope === 'PROBLEMA')) return;
+  private applyProblemDefault(formulas: Row[], components: Row[], sessions: Row[]): void {
+    const existing = formulas.find((f) => f.scope === 'PROBLEMA');
+    if (existing) {
+      if (typeof existing.id === 'string') {
+        appendMissingSessionComponents(existing.id, components, sessions);
+      }
+      return;
+    }
     formulas.push({ id: '__default_problem', scope: 'PROBLEMA', version: null });
     components.push({
       formula_id: '__default_problem',
