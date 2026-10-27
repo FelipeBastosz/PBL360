@@ -4,8 +4,6 @@ type ProblemComponentType = Exclude<FormulaComponentType, 'CRITERIO'>;
 
 export const PROBLEM_COMPONENT_NAMES: Record<ProblemComponentType, string> = {
   MEDIA_SESSOES: 'Média das Sessões',
-  AUTOAVALIACAO: 'Autoavaliação',
-  PARES: 'Avaliação por Pares',
 };
 
 export type TableCriterion = { id: string; nome: string };
