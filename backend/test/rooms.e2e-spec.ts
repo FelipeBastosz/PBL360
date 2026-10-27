@@ -408,10 +408,10 @@ describe('Rooms (e2e)', () => {
     it('allows a student to leave voluntarily (204) and keeps historical records intact', async () => {
       const room = await createRoom();
 
-      await dataSource.query(
-        'INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);',
-        [room.id, student.id],
-      );
+      await dataSource.query('INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);', [
+        room.id,
+        student.id,
+      ]);
       expect(await enrolledStudentCount(room.id)).toBe(1);
 
       const [problem] = await dataSource.query<[{ id: string }]>(
@@ -432,9 +432,7 @@ describe('Rooms (e2e)', () => {
         [session.id, student.id, owner.id],
       );
 
-      await api(app, student)
-        .delete(`/salas/${room.id}/membros/me`)
-        .expect(204);
+      await api(app, student).delete(`/salas/${room.id}/membros/me`).expect(204);
 
       expect(await enrolledStudentCount(room.id)).toBe(0);
 
@@ -452,9 +450,7 @@ describe('Rooms (e2e)', () => {
         .post(`/salas/${room.id}/professores`, { professorId: colleague.id })
         .expect(201);
 
-      await api(app, colleague)
-        .delete(`/salas/${room.id}/membros/me`)
-        .expect(204);
+      await api(app, colleague).delete(`/salas/${room.id}/membros/me`).expect(204);
 
       const [row] = await dataSource.query<[{ count: string }]>(
         'SELECT COUNT(*)::text AS count FROM room_tutors WHERE room_id = $1 AND tutor_id = $2;',
@@ -466,9 +462,7 @@ describe('Rooms (e2e)', () => {
     it('prevents the responsible tutor (owner) from leaving with 409 Conflict', async () => {
       const room = await createRoom();
 
-      const response = await api(app, owner)
-        .delete(`/salas/${room.id}/membros/me`)
-        .expect(409);
+      const response = await api(app, owner).delete(`/salas/${room.id}/membros/me`).expect(409);
 
       expect(response.body).toEqual({
         statusCode: 409,
@@ -488,30 +482,22 @@ describe('Rooms (e2e)', () => {
       const room = await createRoom();
       const outsider = await insertUser(app, dataSource, 'outsider@uefs.br', UserType.STUDENT);
 
-      await api(app, outsider)
-        .delete(`/salas/${room.id}/membros/me`)
-        .expect(403);
+      await api(app, outsider).delete(`/salas/${room.id}/membros/me`).expect(403);
     });
 
     it('returns 404 Not Found when trying to leave a non-existent or deleted room', async () => {
-      await api(app, student)
-        .delete(`/salas/${MISSING_ID}/membros/me`)
-        .expect(404);
+      await api(app, student).delete(`/salas/${MISSING_ID}/membros/me`).expect(404);
 
       const room = await createRoom();
       await api(app, owner).delete(`/salas/${room.id}`).expect(204);
 
-      await api(app, student)
-        .delete(`/salas/${room.id}/membros/me`)
-        .expect(404);
+      await api(app, student).delete(`/salas/${room.id}/membros/me`).expect(404);
     });
 
     it('returns 401 Unauthorized without auth token', async () => {
       const room = await createRoom();
 
-      await api(app)
-        .delete(`/salas/${room.id}/membros/me`)
-        .expect(401);
+      await api(app).delete(`/salas/${room.id}/membros/me`).expect(401);
     });
   });
 

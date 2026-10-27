@@ -1,10 +1,5 @@
 import { ConflictError, ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
-import {
-  buildRoom,
-  OWNER_ID,
-  ROOM_ID,
-  roomRepositoryStub,
-} from '../../testing/room-fixtures';
+import { buildRoom, OWNER_ID, ROOM_ID, roomRepositoryStub } from '../../testing/room-fixtures';
 import { LeaveRoomUseCase, OWNER_CANNOT_LEAVE_MESSAGE } from './leave-room.use-case';
 
 describe('LeaveRoomUseCase', () => {
@@ -65,9 +60,9 @@ describe('LeaveRoomUseCase', () => {
   it('throws NotFoundError if the room does not exist', async () => {
     rooms.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute({ roomId: 'missing-room', userId: 'user-1' })).rejects.toBeInstanceOf(
-      NotFoundError,
-    );
+    await expect(
+      useCase.execute({ roomId: 'missing-room', userId: 'user-1' }),
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('throws NotFoundError if the room was deleted', async () => {
