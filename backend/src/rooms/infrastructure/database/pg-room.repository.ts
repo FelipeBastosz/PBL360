@@ -7,7 +7,12 @@ import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 
 import { Room } from '../../domain/entities/room.entity';
 import { RoomCodeInUseError } from '../../domain/errors/room-code-in-use.error';
-import { hasRoomStudent, hasRoomTutor, listRoomTutors } from './room-member-queries';
+import {
+  hasRoomStudent,
+  hasRoomTutor,
+  listRoomTutors,
+  removeRoomStudent,
+} from './room-member-queries';
 import { ROOM_COLUMNS, type RoomRow } from './room-row';
 import type {
   RoomRepository,
@@ -189,6 +194,10 @@ export class PgRoomRepository implements RoomRepository {
     );
 
     return rows.length > 0;
+  }
+
+  removeStudent(roomId: string, studentId: string): Promise<boolean> {
+    return removeRoomStudent(this.rooms, roomId, studentId);
   }
 
   private async insertWithOwner(manager: EntityManager, room: Room): Promise<Room> {

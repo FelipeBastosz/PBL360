@@ -16,6 +16,7 @@ vi.mock('@/services/room.service', () => ({
     listMyRooms: vi.fn(),
     listStudents: vi.fn(),
     joinByCode: vi.fn(),
+    leaveRoom: vi.fn(),
   },
 }));
 
@@ -94,6 +95,7 @@ describe('RoomsPage', () => {
     vi.mocked(roomService.listMyRooms).mockResolvedValue([]);
     vi.mocked(roomService.listStudents).mockResolvedValue([]);
     vi.mocked(problemService.list).mockResolvedValue([]);
+    vi.mocked(roomService.leaveRoom).mockResolvedValue(undefined);
   });
 
   describe('common behaviors', () => {
@@ -185,6 +187,27 @@ describe('RoomsPage', () => {
       expect(screen.getByRole('link', { name: 'Editar uma turma' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Entrar em uma turma' })).not.toBeInTheDocument();
     });
+
+    it('hides leave room action when teacher is the owner of the room', async () => {
+      vi.mocked(roomService.list).mockResolvedValue(mockRooms);
+      renderWithUser(mockTeacher);
+
+      expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /sair da turma/i })).not.toBeInTheDocument();
+    });
+
+    it('shows leave room action when teacher is a co-tutor of the room', async () => {
+      vi.mocked(roomService.list).mockResolvedValue([
+        {
+          ...mockRooms[0],
+          professorResponsavelId: 'other-teacher-id',
+        },
+      ]);
+      renderWithUser(mockTeacher);
+
+      expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /sair da turma/i })).toBeInTheDocument();
+    });
   });
 
   describe('when user is a student', () => {
@@ -239,6 +262,74 @@ describe('RoomsPage', () => {
       expect(
         screen.queryByText('Você ainda não faz parte de nenhuma turma.'),
       ).not.toBeInTheDocument();
+    });
+
+    it('shows leave room action for student enrolled in room', async () => {
+      vi.mocked(roomService.listMyRooms).mockResolvedValue([
+        {
+          salaId: 'room-student-1',
+          nome: 'Engenharia de Software (Aluno)',
+          semestre: '2026.2',
+          totalAlunos: 25,
+        },
+      ]);
+      renderWithUser(mockStudent);
+
+      expect(await screen.findByText('Engenharia de Software (Aluno)')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /sair da turma/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('voluntary room leave flow', () => {
+    it('opens confirmation modal and allows user to cancel leaving without calling API', async () => {
+      const user = userEvent.setup();
+      vi.mocked(roomService.listMyRooms).mockResolvedValue([
+        {
+          salaId: 'room-student-1',
+          nome: 'Engenharia de Software (Aluno)',
+          semestre: '2026.2',
+          totalAlunos: 25,
+        },
+      ]);
+      renderWithUser(mockStudent);
+
+      expect(await screen.findByText('Engenharia de Software (Aluno)')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /sair da turma/i }));
+
+      expect(screen.getByRole('dialog', { name: /sair da turma\?/i })).toBeInTheDocument();
+      expect(screen.getByText(/ao sair da turma, você perderá o acesso às/i)).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(screen.getByText('Engenharia de Software (Aluno)')).toBeInTheDocument();
+      expect(roomService.leaveRoom).not.toHaveBeenCalled();
+    });
+
+    it('confirms room exit, calls leaveRoom service, removes room from list and shows success toast', async () => {
+      const user = userEvent.setup();
+      vi.mocked(roomService.listMyRooms).mockResolvedValue([
+        {
+          salaId: 'room-student-1',
+          nome: 'Engenharia de Software (Aluno)',
+          semestre: '2026.2',
+          totalAlunos: 25,
+        },
+      ]);
+      renderWithUser(mockStudent);
+
+      expect(await screen.findByText('Engenharia de Software (Aluno)')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /sair da turma/i }));
+
+      await user.click(screen.getByRole('button', { name: 'Sim, sair da turma' }));
+
+      await waitFor(() => {
+        expect(roomService.leaveRoom).toHaveBeenCalledWith('room-student-1');
+      });
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(screen.queryByText('Engenharia de Software (Aluno)')).not.toBeInTheDocument();
+      expect(await screen.findByText('Você saiu da turma com sucesso.')).toBeInTheDocument();
     });
   });
 });

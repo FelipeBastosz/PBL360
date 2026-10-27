@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { NotFoundError, UnprocessableEntityError } from '@/shared/errors/application.error';
 import { Formula, FormulaScope } from '../../domain/entities/formula.entity';
+import { InvalidProblemError } from '../../domain/errors/invalid-problem.error';
 import { FORMULA_REPOSITORY } from '../../domain/repositories/formula.repository';
 import type { FormulaRepository } from '../../domain/repositories/formula.repository';
 import { PROBLEM_REPOSITORY } from '../../domain/repositories/problem.repository';
@@ -37,12 +38,7 @@ export class CustomizeProblemFormulaUseCase {
   async execute(input: CustomizeProblemFormulaInput): Promise<ProblemFormulaOutput> {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
     await this.validateProblem(input);
-    if (input.scope !== FormulaScope.PROBLEMA) {
-      throw new UnprocessableEntityError(
-        'A fórmula da sessão deve ser personalizada pela configuração da própria sessão.',
-      );
-    }
-
+    assertFormulaCustomizationInput(input);
     await this.updateFormula(input);
 
     return this.getFormulaUseCase.execute({
@@ -62,13 +58,11 @@ export class CustomizeProblemFormulaUseCase {
       const candidate = this.createFormulaCandidate(input, oldFormula);
       await this.formulas.saveNewVersion(oldFormula, candidate);
     } catch (error) {
-      this.handleFormulaError(error);
+      if (error instanceof InvalidProblemError) {
+        throw new UnprocessableEntityError(error.message);
+      }
+      throw error;
     }
-  }
-
-  private handleFormulaError(error: unknown): never {
-    const msg = error instanceof Error ? error.message : String(error);
-    throw new UnprocessableEntityError(msg);
   }
 
   private async validateProblem(input: CustomizeProblemFormulaInput) {
@@ -89,11 +83,46 @@ export class CustomizeProblemFormulaUseCase {
       version: oldFormula ? oldFormula.version + 1 : 1,
       active: true,
       createdBy: input.tutorId,
-      components: input.components.map((c) => ({
-        type: c.type,
-        referenceId: c.referenceId,
-        weight: c.weight,
-      })),
+      components: [
+        ...input.components.map(({ type, referenceId, weight }) => ({
+          type,
+          referenceId,
+          weight,
+        })),
+        ...preservedSessionComponents(oldFormula),
+      ],
     });
   }
+}
+
+function assertFormulaCustomizationInput(input: CustomizeProblemFormulaInput): void {
+  if (input.scope !== FormulaScope.PROBLEMA) {
+    throw new UnprocessableEntityError(
+      'A fórmula da sessão deve ser personalizada pela configuração da própria sessão.',
+    );
+  }
+  const [component] = input.components;
+  if (
+    input.components.length !== 1 ||
+    !component ||
+    component.type !== 'MEDIA_SESSOES' ||
+    component.referenceId != null ||
+    component.weight !== 100
+  ) {
+    throw new UnprocessableEntityError(
+      'A nota do problema é a média das sessões; configure os pesos pela fórmula final.',
+    );
+  }
+}
+
+function preservedSessionComponents(formula: Formula | null) {
+  return (
+    formula?.components
+      .filter((component) => component.type === 'SESSAO')
+      .map(({ type, referenceId, weight }) => ({
+        type,
+        referenceId,
+        weight: Number(weight),
+      })) ?? []
+  );
 }
