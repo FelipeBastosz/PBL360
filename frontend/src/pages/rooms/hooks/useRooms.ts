@@ -11,7 +11,8 @@ function toRoom(studentRoom: StudentRoom): Room {
     semestre: studentRoom.semestre,
     codigoDisciplina: '',
     codigoSala: '',
-    professorResponsavelId: '',
+    professorResponsavelId: studentRoom.professorResponsavel?.id ?? '',
+    professorResponsavel: studentRoom.professorResponsavel,
     ativo: true,
     criadoEm: '',
     totalAlunos: studentRoom.totalAlunos,
@@ -19,7 +20,6 @@ function toRoom(studentRoom: StudentRoom): Room {
   };
 }
 
-// GET /salas does not return the counts yet, so they are fetched per room when missing.
 async function withCounts(room: Room): Promise<Room> {
   if (room.totalAlunos !== undefined && room.totalProblemas !== undefined) return room;
 
