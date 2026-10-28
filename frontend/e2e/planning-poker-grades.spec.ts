@@ -140,22 +140,22 @@ async function signIn(page: Page, user: typeof tutor) {
   }, user);
 }
 
-async function mockPokerSocket(page: Page): Promise<() => WebSocketRoute> {
-  let socket: WebSocketRoute | undefined;
+async function mockPokerSocket(page: Page): Promise<() => Promise<WebSocketRoute>> {
+  let markConnected: (socket: WebSocketRoute) => void = () => undefined;
+  const connected = new Promise<WebSocketRoute>((resolve) => {
+    markConnected = resolve;
+  });
   await page.routeWebSocket('**/socket.io/**', (ws) => {
-    socket = ws;
     ws.send('0{"sid":"engine","upgrades":[],"pingInterval":25000,"pingTimeout":60000}');
     ws.onMessage((message) => {
       if (typeof message === 'string' && message.startsWith('40/poker')) {
         ws.send('40/poker,{"sid":"poker"}');
         ws.send('42/poker,["poker.conectado",{"perfil":"PROFESSOR"}]');
+        markConnected(ws);
       }
     });
   });
-  return () => {
-    if (!socket) throw new Error('The poker socket was not opened.');
-    return socket;
-  };
+  return () => connected;
 }
 
 const emitPokerEvent = (socket: WebSocketRoute, name: string, payload: unknown) =>
@@ -237,7 +237,7 @@ test.describe('Planning poker grades', () => {
 
     await expect(page.getByText('Pendente')).toBeVisible();
     anaGrade = 8.8;
-    emitPokerEvent(pokerSocket(), 'poker.decidida', {
+    emitPokerEvent(await pokerSocket(), 'poker.decidida', {
       rodadaId: ROUND_ID,
       notaFinal: 8.75,
       ajustada: false,
@@ -264,7 +264,7 @@ test.describe('Planning poker grades', () => {
 
     await expect(page.getByRole('button', { name: 'Votar' })).toBeVisible();
     decided = true;
-    emitPokerEvent(pokerSocket(), 'poker.decidida', { rodadaId: ROUND_ID });
+    emitPokerEvent(await pokerSocket(), 'poker.decidida', { rodadaId: ROUND_ID });
 
     await expect(page.getByText('Aguarde o tutor abrir a próxima rodada')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Votar' })).toHaveCount(0);
