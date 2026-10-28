@@ -9,8 +9,8 @@ import {
   type ReportDocument,
   type ReportFileFormat,
   type ReportSection,
-  type ReportTextEntry,
 } from '@/report-files/domain/report-document';
+import { buildFeedbackEntries } from './session-report-feedback.helper';
 import type {
   SessionReportData,
   SessionReportStudentData,
@@ -63,23 +63,28 @@ const getRole = (r: SessionRole | string | null) =>
 export function buildStudentRow(
   student: SessionReportStudentData,
   data: SessionReportData,
+  hiddenStudentName: boolean,
+  showTags: boolean,
 ): ReportCellValue[] {
   const { gradeStatus, grade } = calculateStudentGrade(student, data);
   const score =
     student.evaluationStatus === EvaluationStatus.SUBMITTED
       ? student.appliedBonus
       : student.roleScore;
+
   return [
-    student.name,
+    !hiddenStudentName ? student.name : null,
     student.matricula ?? null,
     getAttendance(student.attendanceStatus),
     getRole(student.role),
     score !== null && score !== undefined ? Number(score) : null,
-    student.tags.length > 0 ? student.tags.join(', ') : null,
+    showTags && student.tags.length > 0 ? student.tags.join(', ') : null,
     gradeStatus,
     grade,
   ];
 }
+
+
 
 export function calculateStudentGrade(
   student: SessionReportStudentData,
@@ -135,24 +140,6 @@ function computeCalculatedGrade(
     : null;
 }
 
-export function buildFeedbackEntries(data: SessionReportData): ReportTextEntry[] {
-  const entries: ReportTextEntry[] = [];
-  if (data.generalFeedback) {
-    entries.push({
-      label: `Geral (Autor: ${data.generalFeedback.authorName})`,
-      text: data.generalFeedback.text,
-    });
-  }
-  for (const student of data.students) {
-    const fb = student.feedback;
-    entries.push({
-      label: fb ? `${student.name} (Autor: ${fb.authorName})` : student.name,
-      text: fb?.text ?? null,
-    });
-  }
-  return entries;
-}
-
 function toLabel(prefix: string, title: string, orderIndex: number | null): string {
   return orderIndex ? `${prefix} ${orderIndex} — ${title}` : title;
 }
@@ -166,16 +153,28 @@ function buildReportIdentification(data: SessionReportData) {
   ];
 }
 
-function buildReportSections(data: SessionReportData): ReportSection[] {
-  return [
+function buildReportSections(
+  data: SessionReportData,
+  ocultarNome: boolean,
+  mostrarFeedBack: boolean,
+  mostrarMarcacoes: boolean,
+): ReportSection[] {
+  const sections: ReportSection[] = [
     {
       kind: 'table',
       title: 'Dados da sessão',
       columns: SESSION_REPORT_COLUMNS,
-      rows: data.students.map((s) => buildStudentRow(s, data)),
+      rows: data.students.map((s) => buildStudentRow(s, data, ocultarNome, mostrarMarcacoes)),
     },
-    { kind: 'text', title: 'Feedbacks da sessão', entries: buildFeedbackEntries(data) },
   ];
+  if (mostrarFeedBack) {
+    sections.push({
+      kind: 'text',
+      title: 'Feedbacks da sessão',
+      entries: buildFeedbackEntries(data, ocultarNome),
+    });
+  }
+  return sections;
 }
 
 export function buildSessionFileName(data: SessionReportData): string {
@@ -197,6 +196,7 @@ export function buildSessionFileName(data: SessionReportData): string {
 export function buildSessionReportDocument(
   format: ReportFileFormat,
   data: SessionReportData,
+  options: { ocultarNome?: boolean; mostrarFeedBack?: boolean; mostrarMarcacoes?: boolean } = {},
 ): ReportDocument {
   const { session } = data;
   const fileName = buildSessionFileName(data);
@@ -206,6 +206,11 @@ export function buildSessionReportDocument(
     title: `Relatório da sessão — ${session.title}`,
     fileName,
     identification: buildReportIdentification(data),
-    sections: buildReportSections(data),
+    sections: buildReportSections(
+      data,
+      options.ocultarNome ?? false,
+      options.mostrarFeedBack ?? false,
+      options.mostrarMarcacoes ?? false,
+    ),
   };
 }
