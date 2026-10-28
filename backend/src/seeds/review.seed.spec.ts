@@ -75,9 +75,15 @@ describe('review.seed.ts', () => {
       return Promise.resolve([]);
     });
 
-    await seedReviewData(mockDataSource as unknown as DataSource);
+    await seedReviewData(mockDataSource as unknown as DataSource, ['extra@discente.uefs.br']);
 
     expect(mockDataSource.query).toHaveBeenCalled();
+    expect(mockDataSource.query).toHaveBeenCalledWith(expect.stringContaining('email = ANY($4)'), [
+      'room-1',
+      'student-ana',
+      'student-joao',
+      ['extra@discente.uefs.br'],
+    ]);
     expect(mockDataSource.query).toHaveBeenCalledWith(
       expect.stringContaining('VALUES ($1, $7, $2, $3, $4, $5, $6)'),
       [
