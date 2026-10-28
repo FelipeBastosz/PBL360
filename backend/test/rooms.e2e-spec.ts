@@ -22,6 +22,11 @@ interface StudentRoomBody {
   semestre: string;
   totalAlunos: number;
   totalProblemas: number;
+  professorResponsavel?: {
+    id: string;
+    nome: string;
+    email: string;
+  };
 }
 
 interface RoomStudentBody {
@@ -87,6 +92,11 @@ describe('Rooms (e2e)', () => {
 
       expect(room).toMatchObject({
         professorResponsavelId: owner.id,
+        professorResponsavel: {
+          id: owner.id,
+          nome: 'Usuário de Teste',
+          email: owner.email,
+        },
         nome: 'Engenharia de Software',
         codigoDisciplina: 'EXA123',
         semestre: '2026.2',
@@ -164,6 +174,11 @@ describe('Rooms (e2e)', () => {
           semestre: room.semestre,
           totalAlunos: 2,
           totalProblemas: 2,
+          professorResponsavel: {
+            id: owner.id,
+            nome: 'Usuário de Teste',
+            email: owner.email,
+          },
         },
       ]);
     });

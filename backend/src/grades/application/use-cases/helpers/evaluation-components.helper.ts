@@ -17,6 +17,7 @@ export interface EvaluationComponentContext {
   selfScores: GradeRow[];
   peerScores: GradeRow[];
   pokerScores: GradeRow[];
+  peerAdjustments?: GradeRow[];
   now: Date;
 }
 
@@ -91,10 +92,11 @@ function peerComponent(
     const peer = calculatePokerPeerSession({ attendance: shared.attendance, finalGrade });
     return { peer, peerSource: 'PLANNING_POKER' };
   }
+  const adjustedScore = numberOrNull(ctx.peerAdjustments?.find(belongs)?.score);
   const receivedScores = ctx.peerScores.filter(belongs).map((row) => Number(row.score));
   const release = releaseOf(session, 'peer');
   return {
-    peer: calculatePeerAssessmentSession({ ...shared, release, receivedScores }),
+    peer: calculatePeerAssessmentSession({ ...shared, release, receivedScores, adjustedScore }),
     peerSource: 'FORMULARIO',
   };
 }

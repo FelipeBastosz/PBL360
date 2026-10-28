@@ -46,6 +46,8 @@ describe('self-assessment adjustments mapper', () => {
       valorAnterior: 8,
       valorNovo: 9,
       justificativa: 'Revisão após conversa com o aluno.',
+      autorId: 'tutor',
+      criadoEm: createdAt,
       autor: { id: 'tutor', nome: 'Tutor' },
       ajustadoEm: createdAt,
     });
@@ -62,7 +64,14 @@ describe('self-assessment adjustments mapper', () => {
       alunoId: 'student',
       notaOriginal: 7,
       notaVigente: 9,
-      ajuste: { valorAnterior: 8, valorNovo: 9, autor: { id: 'tutor', nome: 'Tutor' } },
+      ajuste: {
+        valorAnterior: 8,
+        valorNovo: 9,
+        justificativa: 'Revisão após conversa com o aluno.',
+        autorId: 'tutor',
+        criadoEm: createdAt,
+        autor: { id: 'tutor', nome: 'Tutor' },
+      },
     });
   });
 });

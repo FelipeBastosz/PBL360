@@ -53,8 +53,8 @@ async function associateReviewRoomMembers(
   users: ReviewUsers,
 ): Promise<void> {
   await ds.query(
-    `INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;`,
-    [roomId, users.coTutor.id],
+    `INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2), ($1, $3) ON CONFLICT DO NOTHING;`,
+    [roomId, users.tutor.id, users.coTutor.id],
   );
   await ds.query(
     `INSERT INTO room_students (room_id, student_id) VALUES ($1, $2), ($1, $3) ON CONFLICT DO NOTHING;`,

@@ -55,10 +55,26 @@ export class UpdateEvaluationReleasesUseCase {
     if (!submissions.rollCallSaved) {
       throw new ConflictError('Salve a chamada da sessão antes de liberar as avaliações.');
     }
-    if (input.peer?.released && submissions.pokerStarted) {
+    this.assertSubmissionsCompatible(input, submissions);
+    if ((input.self?.released || input.peer?.released) && submissions.pokerStarted) {
       throw new ConflictError(
         'Esta sessão já usa o planning poker para a avaliação entre pares. Use um ou outro.',
       );
+    }
+  }
+
+  private assertSubmissionsCompatible(
+    input: UpdateEvaluationReleasesInput,
+    submissions: ReleaseSubmissions,
+  ): void {
+    if ((input.self?.released || input.peer?.released) && (submissions.tutorSubmitted ?? 0) > 0) {
+      throw new ConflictError('A sessão já possui avaliações do tutor submetidas.');
+    }
+    if (input.peer?.released && (submissions.selfSubmitted ?? 0) > 0) {
+      throw new ConflictError('A sessão já possui autoavaliações submetidas.');
+    }
+    if (input.self?.released && (submissions.peerSubmitted ?? 0) > 0) {
+      throw new ConflictError('A sessão já possui avaliações de pares submetidas.');
     }
   }
 

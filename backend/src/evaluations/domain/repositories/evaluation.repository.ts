@@ -9,6 +9,8 @@ export interface EvaluationContext {
   sessionId: string;
   problemId: string;
   roomId: string;
+  selfEvalReleased?: boolean;
+  peerEvalReleased?: boolean;
 }
 export interface EvaluationDetail {
   config: SessionEvaluationConfig;

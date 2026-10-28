@@ -177,11 +177,7 @@ describe('SessionHubPage', () => {
       expect(screen.getByRole('heading', { name: 'Central de Avaliações' })).toBeInTheDocument();
       expect(screen.getByText('Autoavaliação')).toBeInTheDocument();
       expect(screen.getByText('Avaliar Colegas')).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /Feedback do Tutor/i })).toHaveAttribute(
-        'href',
-        '/turmas/room-1/problemas/prob-1/sessoes/sess-1/feedback',
-      );
-      expect(screen.getAllByText('Em breve')).toHaveLength(2);
+      expect(screen.getByText('Notas e Feedbacks')).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /chamada/i })).not.toBeInTheDocument();
       expect(screen.queryByText('Autoavaliação e pares')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Encerrar sessão' })).not.toBeInTheDocument();

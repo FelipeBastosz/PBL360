@@ -1,5 +1,9 @@
 import { Test } from '@nestjs/testing';
-import { ForbiddenError, UnprocessableEntityError } from '@/shared/errors/application.error';
+import {
+  ConflictError,
+  ForbiddenError,
+  UnprocessableEntityError,
+} from '@/shared/errors/application.error';
 import { EvaluationAccessService } from '../services/evaluation-access.service';
 import { EVALUATION_REPOSITORY } from '../../domain/repositories/evaluation.repository';
 import { SaveTutorEvaluationUseCase } from './save-tutor-evaluation.use-case';
@@ -68,5 +72,57 @@ describe('SaveTutorEvaluationUseCase', () => {
         submit: false,
       }),
     ).rejects.toThrow(UnprocessableEntityError);
+  });
+  it('rejects tutor evaluation when self assessment is active', async () => {
+    access.forStudent.mockResolvedValue({
+      ...context,
+      selfEvalReleased: true,
+      peerEvalReleased: false,
+    });
+    await expect(
+      useCase.execute({
+        sessionId: 'session',
+        studentId: 'student',
+        authorId: 'tutor',
+        items: [],
+        submit: false,
+      }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.recordEvaluation).not.toHaveBeenCalled();
+  });
+  it('rejects tutor evaluation when peer assessment is active', async () => {
+    access.forStudent.mockResolvedValue({
+      ...context,
+      selfEvalReleased: false,
+      peerEvalReleased: true,
+    });
+    await expect(
+      useCase.execute({
+        sessionId: 'session',
+        studentId: 'student',
+        authorId: 'tutor',
+        items: [],
+        submit: false,
+      }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.recordEvaluation).not.toHaveBeenCalled();
+  });
+  it('rejects tutor evaluation when planning poker is active', async () => {
+    access.forStudent.mockResolvedValue({
+      ...context,
+      selfEvalReleased: false,
+      peerEvalReleased: false,
+      hasPoker: true,
+    });
+    await expect(
+      useCase.execute({
+        sessionId: 'session',
+        studentId: 'student',
+        authorId: 'tutor',
+        items: [],
+        submit: false,
+      }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.recordEvaluation).not.toHaveBeenCalled();
   });
 });

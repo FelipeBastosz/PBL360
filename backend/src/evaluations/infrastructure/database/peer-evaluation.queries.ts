@@ -8,7 +8,7 @@ export const IS_STUDENT_PARTICIPATING = `
 export const LIST_SESSION_PEERS = `
   SELECT u.id AS "alunoId", u.name AS "nome", e.status AS "status"
     FROM attendances a
-    JOIN users u ON u.id = a.student_id
+    JOIN users u ON u.id = a.student_id AND u.type = 'STUDENT'
     LEFT JOIN evaluations e ON e.session_id = a.session_id
       AND e.evaluator_id = $2
       AND e.student_id = a.student_id
@@ -23,7 +23,9 @@ export const FIND_PEER_STUDENT = `
   SELECT u.id, u.name
     FROM users u
     JOIN attendances a ON a.student_id = u.id AND a.session_id = $1
-   WHERE u.id = $2 AND a.status IN ('PRESENT', 'LATE');
+   WHERE u.id = $2
+     AND u.type = 'STUDENT'
+     AND a.status IN ('PRESENT', 'LATE');
 `;
 
 export const FIND_PEER_EVALUATION = `
