@@ -10,7 +10,15 @@ export interface ProblemRepository {
   findByRoomId(roomId: string): Promise<Problem[]>;
   hasSessions(problemId: string): Promise<boolean>;
   countSessions(problemId: string): Promise<number>;
+  getDeletionImpact(problemId: string): Promise<ProblemDeletionImpactCounts>;
   delete(id: string, roomId: string): Promise<void>;
+}
+
+export interface ProblemDeletionImpactCounts {
+  sessions: number;
+  grades: number;
+  feedbacks: number;
+  evaluations: number;
 }
 
 export interface UpdateProblemDetails {
