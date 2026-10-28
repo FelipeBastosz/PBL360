@@ -1,5 +1,6 @@
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import type { ProblemDeletionImpact } from '@/types/problem';
 
 type DeleteModalProps = {
@@ -15,6 +16,29 @@ function DeleteIcon() {
   return (
     <div className="flex size-12 items-center justify-center rounded-full bg-danger/10 text-danger">
       <ExclamationTriangleIcon className="size-7" aria-hidden="true" />
+    </div>
+  );
+}
+
+function ImpactDescription({ impact }: { impact: ProblemDeletionImpact | null }) {
+  if (impact === null) {
+    return (
+      <div className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
+        <p className="text-sm font-medium text-danger leading-relaxed animate-pulse">
+          Carregando impacto da exclusão...
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
+      <p className="text-sm font-medium text-danger leading-relaxed">
+        Atenção: esta ação é irreversível e excluirá permanentemente este problema e todos os seus
+        dados vinculados:
+        <strong> {impact.sessoes} sessões</strong>,<strong> {impact.avaliacoes} avaliações</strong>{' '}
+        e<strong> {impact.notas} notas</strong> registradas.
+      </p>
     </div>
   );
 }
@@ -59,6 +83,7 @@ export function DeleteProblemModal({
   onConfirm,
   onCancel,
 }: DeleteModalProps) {
+  useEscapeKey(isOpen, onCancel, isLoading);
   if (!isOpen) return null;
 
   return (
@@ -68,7 +93,7 @@ export function DeleteProblemModal({
       aria-labelledby="delete-problem-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in"
     >
-      <div className="relative w-full max-w-sm rounded-[24px] border-2 border-danger bg-white p-6 shadow-2xl animate-pop-in">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 border-danger bg-white p-6 shadow-2xl animate-pop-in">
         <button
           type="button"
           onClick={isLoading ? undefined : onCancel}
@@ -85,16 +110,8 @@ export function DeleteProblemModal({
             <h2 id="delete-problem-title" className="text-xl font-bold text-ink">
               Excluir problema?
             </h2>
-            <p className="text-base font-semibold text-brand-900">{problemTitle}</p>
-            <div className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
-              <p className="text-sm font-medium text-danger leading-relaxed">
-                Atenção: esta ação é irreversível e excluirá permanentemente este problema e todos
-                os seus dados vinculados:
-                <strong> {impact?.sessoes ?? 0} sessões</strong>,
-                <strong> {impact?.avaliacoes ?? 0} avaliações</strong> e
-                <strong> {impact?.notas ?? 0} notas</strong> registradas.
-              </p>
-            </div>
+            <p className="text-base font-semibold break-words text-brand-900">{problemTitle}</p>
+            <ImpactDescription impact={impact} />
           </div>
           <ModalActions isLoading={isLoading} onConfirm={onConfirm} onCancel={onCancel} />
         </div>

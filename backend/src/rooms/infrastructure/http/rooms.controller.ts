@@ -47,6 +47,7 @@ import {
   toRoomChanges,
   toRoomResponse,
   toRoomSummaryResponse,
+  toStudentRoomResponse,
 } from './room.mapper';
 import {
   CreateRoomSwaggerDocs,
@@ -120,13 +121,7 @@ export class RoomsController {
   ): Promise<StudentRoomResponseDto[]> {
     const rooms = await this.listStudentRoomsUseCase.execute(studentId);
 
-    return rooms.map((room) => ({
-      salaId: room.roomId,
-      nome: room.name,
-      semestre: room.semester,
-      totalAlunos: room.totalStudents,
-      totalProblemas: room.totalProblems,
-    }));
+    return rooms.map(toStudentRoomResponse);
   }
 
   @Get(':id/alunos')

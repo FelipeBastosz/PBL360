@@ -2,15 +2,27 @@ import type {
   RoomResponseDto,
   RoomSummaryResponseDto,
 } from '../../application/dtos/room-response.dto';
+import type { StudentRoomResponseDto } from '../../application/dtos/student-room-response.dto';
 import type { UpdateRoomDto } from '../../application/dtos/update-room.dto';
 import type { Room, RoomChanges } from '../../domain/entities/room.entity';
-import type { RoomTutor, TutorRoomSummary } from '../../domain/repositories/room.repository';
+import type {
+  RoomTutor,
+  StudentRoomSummary,
+  TutorRoomSummary,
+} from '../../domain/repositories/room.repository';
 import type { RoomTutorResponseDto } from '../../application/dtos/room-tutor-response.dto';
 import { InvalidRequestError } from '@/shared/errors/application.error';
 
 export const toRoomResponse = (room: Room): RoomResponseDto => ({
   id: room.id,
   professorResponsavelId: room.tutorId,
+  professorResponsavel: room.tutor
+    ? {
+        id: room.tutor.id,
+        nome: room.tutor.name,
+        email: room.tutor.email,
+      }
+    : undefined,
   nome: room.name,
   codigoDisciplina: room.courseCode,
   codigoSala: room.roomCode,
@@ -23,6 +35,21 @@ export const toRoomSummaryResponse = (summary: TutorRoomSummary): RoomSummaryRes
   ...toRoomResponse(summary.room),
   totalAlunos: summary.totalStudents,
   totalProblemas: summary.totalProblems,
+});
+
+export const toStudentRoomResponse = (room: StudentRoomSummary): StudentRoomResponseDto => ({
+  salaId: room.roomId,
+  nome: room.name,
+  semestre: room.semester,
+  totalAlunos: room.totalStudents,
+  totalProblemas: room.totalProblems,
+  professorResponsavel: room.tutor
+    ? {
+        id: room.tutor.id,
+        nome: room.tutor.name,
+        email: room.tutor.email,
+      }
+    : undefined,
 });
 
 export const toRoomTutorResponse = (tutor: RoomTutor): RoomTutorResponseDto => ({

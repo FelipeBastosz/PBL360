@@ -4,11 +4,11 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConflictResponse,
-  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
@@ -36,18 +36,19 @@ const accessDocs = () => [
 export const AdjustSelfAssessmentSwaggerDocs = applyDecorators(
   ...accessDocs(),
   ApiOperation({
-    summary: 'Ajusta a nota da autoavaliação do aluno na sessão',
+    summary:
+      'Ajusta a nota da autoavaliação, avaliação por pares ou planning poker do aluno na sessão',
     description:
-      'Vale apenas para autoavaliação enviada; avaliações de pares não têm ajuste. A nota original nunca é alterada: o ajuste registra o valor anterior (nota vigente), o novo valor, a justificativa, o autor e a data na mesma transação. A nota vigente passa a ser a do ajuste mais recente.',
+      'Permite o registro de ajuste com justificativa tanto para a autoavaliação quanto para a nota consolidada de avaliação entre pares (formulário ou planning poker). A nota original nunca é alterada: o ajuste registra o valor anterior (nota vigente), o novo valor, a justificativa, o autor e a data na mesma transação. A nota vigente passa a ser a do ajuste mais recente.',
   }),
   ApiBody({ type: AdjustSelfAssessmentDto }),
-  ApiCreatedResponse({ type: SelfAssessmentAdjustmentResponseDto }),
+  ApiOkResponse({ type: SelfAssessmentAdjustmentResponseDto }),
   ApiBadRequestResponse({
     description: 'Formato inválido: nota não numérica, fora de 0–10 ou com mais de duas casas.',
     type: ErrorResponseDto,
   }),
   ApiConflictResponse({
-    description: 'A autoavaliação ainda não foi enviada.',
+    description: 'A avaliação ainda não foi enviada ou decidida.',
     type: ErrorResponseDto,
   }),
   ApiUnprocessableEntityResponse({
@@ -60,9 +61,16 @@ export const AdjustSelfAssessmentSwaggerDocs = applyDecorators(
 export const ListSelfAssessmentAdjustmentsSwaggerDocs = applyDecorators(
   ...accessDocs(),
   ApiOperation({
-    summary: 'Histórico de ajustes da autoavaliação do aluno na sessão',
+    summary:
+      'Histórico de ajustes da avaliação (autoavaliação, pares ou planning poker) do aluno na sessão',
     description:
-      'Ajustes do mais recente para o mais antigo. Enquanto a autoavaliação está em rascunho, as notas são nulas e não há ajustes.',
+      'Ajustes do mais recente para o mais antigo. Enquanto a avaliação está em rascunho ou não finalizada, as notas são nulas e não há ajustes.',
+  }),
+  ApiQuery({
+    name: 'tipo',
+    required: false,
+    enum: ['AUTOAVALIACAO', 'PARES'],
+    description: 'Tipo de avaliação para consultar histórico. Opcional.',
   }),
   ApiOkResponse({ type: SelfAssessmentAdjustmentHistoryResponseDto }),
   ApiBadRequestResponse({ description: 'Parâmetros inválidos.', type: ErrorResponseDto }),

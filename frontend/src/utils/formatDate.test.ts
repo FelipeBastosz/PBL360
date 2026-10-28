@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDayMonth, formatDayShortMonth, formatFullDate } from './formatDate';
+import { formatDeadline, formatDayMonth, formatDayShortMonth, formatFullDate } from './formatDate';
 
 describe('formatDayMonth', () => {
   it('shows a calendar date as day and month', () => {
@@ -25,5 +25,22 @@ describe('formatDayShortMonth', () => {
   it('shows the day and the short month name', () => {
     expect(formatDayShortMonth('2026-08-12')).toBe('12 ago');
     expect(formatDayShortMonth('2026-03-05')).toBe('5 mar');
+  });
+});
+
+describe('formatDeadline', () => {
+  it('returns fallback when isoDate is empty or null', () => {
+    expect(formatDeadline(null)).toBe('Sem prazo limite');
+    expect(formatDeadline(undefined)).toBe('Sem prazo limite');
+    expect(formatDeadline('')).toBe('Sem prazo limite');
+  });
+
+  it('formats valid ISO date with day, short month, and time', () => {
+    const formatted = formatDeadline('2026-10-15T17:00:00.000Z');
+    expect(formatted).toMatch(/Até \d{2} de \w+\.? às \d{2}:\d{2}/i);
+  });
+
+  it('returns invalid date string as is', () => {
+    expect(formatDeadline('invalid-date')).toBe('invalid-date');
   });
 });

@@ -74,7 +74,7 @@ function RoomsList({
           <RoomCard
             key={room.id}
             room={room}
-            professorNome={isStudent ? undefined : userNome}
+            professorNome={room.professorResponsavel?.nome ?? (isStudent ? undefined : userNome)}
             isLeaveMode={isLeaveMode}
             isOwner={isOwner}
             onLeaveRequest={onLeaveRequest}

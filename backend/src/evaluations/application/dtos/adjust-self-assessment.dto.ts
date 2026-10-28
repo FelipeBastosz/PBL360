@@ -1,6 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNumber, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import type { AdjustmentTarget } from '../../domain/repositories/self-assessment-adjustment.repository';
 
 export class AdjustSelfAssessmentDto {
   @ApiProperty({
@@ -8,7 +9,7 @@ export class AdjustSelfAssessmentDto {
     minimum: 0,
     maximum: 10,
     description:
-      'Nova nota da autoavaliação, com até duas casas decimais. Deve ser diferente da nota vigente.',
+      'Nova nota da autoavaliação ou pares, com até duas casas decimais. Deve ser diferente da nota vigente.',
   })
   @IsNumber(
     { allowNaN: false, allowInfinity: false, maxDecimalPlaces: 2 },
@@ -27,4 +28,15 @@ export class AdjustSelfAssessmentDto {
   @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
   @IsString({ message: 'A justificativa deve ser um texto.' })
   justificativa!: string;
+
+  @ApiPropertyOptional({
+    enum: ['AUTOAVALIACAO', 'PARES'],
+    description:
+      'Tipo de avaliação a ser ajustada. Se omitido, resolve a modalidade ativa na sessão.',
+  })
+  @IsOptional()
+  @IsIn(['AUTOAVALIACAO', 'PARES'], {
+    message: 'O tipo deve ser AUTOAVALIACAO ou PARES.',
+  })
+  tipo?: AdjustmentTarget;
 }
