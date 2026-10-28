@@ -143,14 +143,14 @@ describe('SessionEvaluationListPage', () => {
     expect(buttons[0]).toBeDisabled();
   });
 
-  it('shows the planning poker grade for a student decided in the poker', async () => {
+  it('shows the student decided in the planning poker as evaluated with the grade', async () => {
     vi.mocked(evaluationService.listBySession).mockResolvedValue(mockStudents);
     vi.mocked(evaluationService.getProblemCriteria).mockResolvedValue(mockCriteria);
     vi.mocked(gradesService.getProblemGrades).mockResolvedValue(gradesWithAna(pokerSession(8.8)));
 
     renderPage();
 
-    expect(await screen.findByText('Planning poker · 8,8')).toBeInTheDocument();
+    expect(await screen.findByText('Avaliada · 8,8')).toBeInTheDocument();
     expect(screen.queryByText('Pendente')).not.toBeInTheDocument();
     expect(gradesService.getProblemGrades).toHaveBeenCalledWith('room-1', 'prob-1');
   });
@@ -169,6 +169,6 @@ describe('SessionEvaluationListPage', () => {
     expect(vi.mocked(usePokerChannel).mock.calls.at(-1)![1]).toBe(true);
     act(() => handlers.onEvent('poker.decidida', {}));
 
-    expect(await screen.findByText('Planning poker · 7,5')).toBeInTheDocument();
+    expect(await screen.findByText('Avaliada · 7,5')).toBeInTheDocument();
   });
 });

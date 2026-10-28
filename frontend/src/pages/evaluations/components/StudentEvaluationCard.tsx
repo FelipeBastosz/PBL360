@@ -11,17 +11,14 @@ type StudentCardProps = {
   disabled?: boolean;
 };
 
-function modalityLabel(grade?: StudentSessionGrade): string | null {
-  if (grade?.situacao !== 'AVALIADA') return null;
-  if (grade.modalidade === 'AUTOAVALIACAO') return 'Autoavaliação';
-  if (grade.modalidade !== 'PARES') return null;
-  return grade.pares?.origem === 'PLANNING_POKER' ? 'Planning poker' : 'Avaliação entre pares';
-}
+const isEvaluatedByStudents = (grade?: StudentSessionGrade): grade is StudentSessionGrade =>
+  grade?.situacao === 'AVALIADA' &&
+  (grade.modalidade === 'AUTOAVALIACAO' || grade.modalidade === 'PARES');
 
-function ModalityBadge({ label, grade }: { label: string; grade: StudentSessionGrade }) {
+function EvaluatedBadge({ grade }: { grade: StudentSessionGrade }) {
   return (
     <span className="inline-flex items-center rounded-md border border-success/30 bg-success-soft px-2 py-0.5 text-xs font-semibold text-success">
-      {label} · {formatGrade(grade.nota)}
+      Avaliada · {formatGrade(grade.nota)}
     </span>
   );
 }
@@ -33,7 +30,7 @@ function EvaluationBadges({
   student: SessionEvaluationSummary;
   sessionGrade?: StudentSessionGrade;
 }) {
-  const modality = student.status === 'PENDENTE' ? modalityLabel(sessionGrade) : null;
+  const evaluated = student.status === 'PENDENTE' && isEvaluatedByStudents(sessionGrade);
   return (
     <div className="mt-1 flex flex-wrap items-center gap-1.5">
       {student.presenca === 'ausente' && (
@@ -46,8 +43,8 @@ function EvaluationBadges({
           Falta justificada
         </span>
       )}
-      {modality && sessionGrade && <ModalityBadge label={modality} grade={sessionGrade} />}
-      {student.status === 'PENDENTE' && !modality && (
+      {evaluated && sessionGrade && <EvaluatedBadge grade={sessionGrade} />}
+      {student.status === 'PENDENTE' && !evaluated && (
         <span className="inline-flex items-center rounded-md bg-black/5 px-2 py-0.5 text-xs font-medium text-muted">
           Pendente
         </span>

@@ -243,7 +243,7 @@ test.describe('Planning poker grades', () => {
       ajustada: false,
     });
 
-    await expect(page.getByText('Planning poker · 8,8')).toBeVisible();
+    await expect(page.getByText('Avaliada · 8,8')).toBeVisible();
     await expect(page.getByText('Pendente')).toHaveCount(0);
   });
 
