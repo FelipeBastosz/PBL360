@@ -18,7 +18,7 @@ const mockProblems = [
     id: 'prob-1',
     salaId: 'sala-1',
     titulo: 'Problema 1 - Introdução ao PBL',
-    descricao: 'Estudo de caso inicial para ambientação com a metodologia.',
+    descricao: 'Estudo de caso inicial com sessões em andamento.',
     ordem: 1,
     dataInicio: '2026-02-01T00:00:00.000Z',
     dataFim: '2026-02-15T00:00:00.000Z',
@@ -28,19 +28,26 @@ const mockProblems = [
     id: 'prob-2',
     salaId: 'sala-1',
     titulo: 'Problema 2 - Arquitetura em Camadas',
-    descricao: 'Modelagem de microsserviços e separação de responsabilidades.',
+    descricao: 'Planejamento futuro sem sessões vinculadas.',
     ordem: 2,
     dataInicio: '2026-02-16T00:00:00.000Z',
     dataFim: '2026-02-28T00:00:00.000Z',
-    totalSessoes: 2,
+    totalSessoes: 0,
   },
 ];
 
-const mockImpact = {
+const mockBlockedImpact = {
   sessoes: 3,
   notas: 24,
   feedbacks: 6,
   avaliacoes: 12,
+};
+
+const mockZeroImpact = {
+  sessoes: 0,
+  notas: 0,
+  feedbacks: 0,
+  avaliacoes: 0,
 };
 
 test.describe('Problem Deletion Flow (ManageProblemsPage)', () => {
@@ -84,22 +91,31 @@ test.describe('Problem Deletion Flow (ManageProblemsPage)', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(mockImpact),
+        body: JSON.stringify(mockBlockedImpact),
+      });
+    });
+
+    await page.route('**/api/salas/sala-1/problemas/prob-2/impacto-exclusao', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockZeroImpact),
       });
     });
 
     await page.goto('/turmas/sala-1/problemas/gerenciar');
   });
 
-  test('should display problem list and open deletion modal with impact metrics', async ({
+  test('should block deletion with warning and Entendi button when problem has linked sessions', async ({
     page,
   }) => {
-    await expect(
-      page.getByRole('heading', { level: 3, name: 'Problema 1 - Introdução ao PBL' }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('heading', { level: 3, name: 'Problema 2 - Arquitetura em Camadas' }),
-    ).toBeVisible();
+    let deleteCalled = false;
+    await page.route('**/api/salas/sala-1/problemas/*', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        deleteCalled = true;
+        await route.fulfill({ status: 204 });
+      }
+    });
 
     const deleteBtn = page.getByRole('button', {
       name: 'Excluir Problema 1 - Introdução ao PBL',
@@ -109,12 +125,25 @@ test.describe('Problem Deletion Flow (ManageProblemsPage)', () => {
 
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole('heading', { name: 'Excluir problema?' })).toBeVisible();
+    await expect(
+      dialog.getByRole('heading', { name: 'Não é possível excluir o problema' }),
+    ).toBeVisible();
     await expect(dialog.getByText('Problema 1 - Introdução ao PBL')).toBeVisible();
 
-    await expect(dialog.getByText(/3 sessões/i)).toBeVisible();
-    await expect(dialog.getByText(/24 notas/i)).toBeVisible();
+    await expect(dialog.getByText(/3 sessões vinculadas/i)).toBeVisible();
     await expect(dialog.getByText(/12 avaliações/i)).toBeVisible();
+    await expect(dialog.getByText(/24 notas/i)).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Sim, excluir problema' })).not.toBeVisible();
+
+    const entendiBtn = dialog.getByRole('button', { name: 'Entendi' });
+    await expect(entendiBtn).toBeVisible();
+    await entendiBtn.click();
+
+    await expect(dialog).not.toBeVisible();
+    expect(deleteCalled).toBe(false);
+    await expect(
+      page.getByRole('heading', { level: 3, name: 'Problema 1 - Introdução ao PBL' }),
+    ).toBeVisible();
   });
 
   test('should safely cancel deletion without removing problem or calling API', async ({
@@ -128,22 +157,23 @@ test.describe('Problem Deletion Flow (ManageProblemsPage)', () => {
       }
     });
 
-    await page.getByRole('button', { name: 'Excluir Problema 1 - Introdução ao PBL' }).click();
+    await page.getByRole('button', { name: 'Excluir Problema 2 - Arquitetura em Camadas' }).click();
 
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Excluir problema?' })).toBeVisible();
 
     await dialog.getByRole('button', { name: 'Cancelar' }).click();
 
     await expect(dialog).not.toBeVisible();
     expect(deleteCalled).toBe(false);
     await expect(
-      page.getByRole('heading', { level: 3, name: 'Problema 1 - Introdução ao PBL' }),
+      page.getByRole('heading', { level: 3, name: 'Problema 2 - Arquitetura em Camadas' }),
     ).toBeVisible();
   });
 
   test('should close deletion modal when pressing Escape key', async ({ page }) => {
-    await page.getByRole('button', { name: 'Excluir Problema 1 - Introdução ao PBL' }).click();
+    await page.getByRole('button', { name: 'Excluir Problema 2 - Arquitetura em Camadas' }).click();
 
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
@@ -152,25 +182,26 @@ test.describe('Problem Deletion Flow (ManageProblemsPage)', () => {
 
     await expect(dialog).not.toBeVisible();
     await expect(
-      page.getByRole('heading', { level: 3, name: 'Problema 1 - Introdução ao PBL' }),
+      page.getByRole('heading', { level: 3, name: 'Problema 2 - Arquitetura em Camadas' }),
     ).toBeVisible();
   });
 
-  test('should successfully delete problem, remove card and show toast notification', async ({
+  test('should successfully delete problem with zero sessions, remove card and show toast', async ({
     page,
   }) => {
     let deleteCalled = false;
-    await page.route('**/api/salas/sala-1/problemas/prob-1', async (route) => {
+    await page.route('**/api/salas/sala-1/problemas/prob-2', async (route) => {
       if (route.request().method() === 'DELETE') {
         deleteCalled = true;
         await route.fulfill({ status: 204 });
       }
     });
 
-    await page.getByRole('button', { name: 'Excluir Problema 1 - Introdução ao PBL' }).click();
+    await page.getByRole('button', { name: 'Excluir Problema 2 - Arquitetura em Camadas' }).click();
 
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Excluir problema?' })).toBeVisible();
 
     await dialog.getByRole('button', { name: 'Sim, excluir problema' }).click();
 
@@ -179,27 +210,29 @@ test.describe('Problem Deletion Flow (ManageProblemsPage)', () => {
 
     await expect(page.getByText('Problema excluído com sucesso!')).toBeVisible();
     await expect(
-      page.getByRole('heading', { level: 3, name: 'Problema 1 - Introdução ao PBL' }),
+      page.getByRole('heading', { level: 3, name: 'Problema 2 - Arquitetura em Camadas' }),
     ).not.toBeVisible();
     await expect(
-      page.getByRole('heading', { level: 3, name: 'Problema 2 - Arquitetura em Camadas' }),
+      page.getByRole('heading', { level: 3, name: 'Problema 1 - Introdução ao PBL' }),
     ).toBeVisible();
   });
 
-  test('should display error notification and keep problem if deletion fails', async ({ page }) => {
-    await page.route('**/api/salas/sala-1/problemas/prob-1', async (route) => {
+  test('should display error notification and keep problem if deletion API fails', async ({
+    page,
+  }) => {
+    await page.route('**/api/salas/sala-1/problemas/prob-2', async (route) => {
       if (route.request().method() === 'DELETE') {
         await route.fulfill({
-          status: 409,
+          status: 403,
           contentType: 'application/json',
           body: JSON.stringify({
-            message: 'O problema possui sessões vinculadas e não pode ser excluído.',
+            message: 'Apenas o professor responsável pela sala pode excluir o problema.',
           }),
         });
       }
     });
 
-    await page.getByRole('button', { name: 'Excluir Problema 1 - Introdução ao PBL' }).click();
+    await page.getByRole('button', { name: 'Excluir Problema 2 - Arquitetura em Camadas' }).click();
 
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
@@ -207,10 +240,10 @@ test.describe('Problem Deletion Flow (ManageProblemsPage)', () => {
     await dialog.getByRole('button', { name: 'Sim, excluir problema' }).click();
 
     await expect(
-      page.getByText('O problema possui sessões vinculadas e não pode ser excluído.'),
+      page.getByText('Apenas o professor responsável pela sala pode excluir o problema.'),
     ).toBeVisible();
     await expect(
-      page.getByRole('heading', { level: 3, name: 'Problema 1 - Introdução ao PBL' }),
+      page.getByRole('heading', { level: 3, name: 'Problema 2 - Arquitetura em Camadas' }),
     ).toBeVisible();
   });
 });
