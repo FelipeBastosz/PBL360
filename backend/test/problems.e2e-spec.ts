@@ -621,7 +621,7 @@ describe('Problems (e2e)', () => {
 
       await dataSource.query(
         `INSERT INTO evaluations (evaluator_id, student_id, problem_id, session_id, performance_table_id, type, status, submitted_at, session_score, created_by)
-         VALUES ($1, $2, $3, $4, $5, 'SELF', 'SUBMITTED', now(), 8.5, $1);`,
+         VALUES ($1, $2, $3, $4, $5, 'SELF_ASSESSMENT', 'SUBMITTED', now(), 8.5, $1);`,
         [studentId, studentId, created.id, session.id, table.id],
       );
 
