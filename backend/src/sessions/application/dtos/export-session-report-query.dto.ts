@@ -33,9 +33,9 @@ export class ExportSessionReportQueryDto extends ReportExportQueryDto {
   mostrarFeedBack?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Se falso, não inclui a seção de marcações no relatório.',
-    default: false,
-    example: false,
+    description: 'Se falso, não preenche a coluna de marcações no relatório.',
+    default: true,
+    example: true,
     type: Boolean,
   })
   @IsOptional()

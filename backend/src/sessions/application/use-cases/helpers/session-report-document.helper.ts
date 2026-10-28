@@ -1,5 +1,4 @@
 import { EvaluationStatus } from '@/evaluations/domain/enums/evaluation-status.enum';
-import { SessionGradeCalculator } from '@/evaluations/domain/services/session-grade-calculator';
 import { AttendanceStatus } from '@/sessions/domain/enums/attendance-status.enum';
 import { SessionRole } from '@/sessions/domain/enums/session-role.enum';
 import {
@@ -11,6 +10,7 @@ import {
   type ReportSection,
 } from '@/report-files/domain/report-document';
 import { buildFeedbackEntries } from './session-report-feedback.helper';
+import { calculateStudentGrade } from './session-report-grade.helper';
 import type {
   SessionReportData,
   SessionReportStudentData,
@@ -60,6 +60,12 @@ const getAttendance = (s: AttendanceStatus | string | null) =>
 const getRole = (r: SessionRole | string | null) =>
   r ? (ROLE_LABELS[r as SessionRole] ?? r) : null;
 
+export function getScore(student: SessionReportStudentData): number | null {
+  return student.evaluationStatus === EvaluationStatus.SUBMITTED
+    ? student.appliedBonus
+    : student.roleScore;
+}
+
 export function buildStudentRow(
   student: SessionReportStudentData,
   data: SessionReportData,
@@ -67,10 +73,7 @@ export function buildStudentRow(
   showTags: boolean,
 ): ReportCellValue[] {
   const { gradeStatus, grade } = calculateStudentGrade(student, data);
-  const score =
-    student.evaluationStatus === EvaluationStatus.SUBMITTED
-      ? student.appliedBonus
-      : student.roleScore;
+  const score = getScore(student);
 
   return [
     !hiddenStudentName ? student.name : null,
@@ -84,62 +87,6 @@ export function buildStudentRow(
   ];
 }
 
-
-
-export function calculateStudentGrade(
-  student: SessionReportStudentData,
-  data?: SessionReportData,
-): { gradeStatus: string; grade: number | null } {
-  if (student.evaluationStatus === EvaluationStatus.DRAFT) {
-    return { gradeStatus: 'Rascunho', grade: null };
-  }
-  if (student.evaluationStatus !== EvaluationStatus.SUBMITTED) {
-    return { gradeStatus: 'Não registrada', grade: null };
-  }
-
-  const rawGrade =
-    student.sessionScore !== undefined && student.sessionScore !== null
-      ? student.sessionScore
-      : computeCalculatedGrade(student, data);
-
-  const grade =
-    rawGrade !== null && rawGrade !== undefined && Number.isFinite(rawGrade)
-      ? Math.round((rawGrade + Number.EPSILON) * 100) / 100
-      : null;
-
-  return { gradeStatus: 'Nota enviada', grade };
-}
-
-function tryCalcGrade(student: SessionReportStudentData, data: SessionReportData): number | null {
-  const bonus =
-    student.evaluationStatus === EvaluationStatus.SUBMITTED
-      ? student.appliedBonus
-      : (student.appliedBonus ?? student.roleScore);
-  try {
-    return SessionGradeCalculator.calculate(
-      student.items ?? [],
-      (data.criteria ?? []) as unknown as Parameters<typeof SessionGradeCalculator.calculate>[1],
-      bonus,
-      true,
-      data.formula,
-    );
-  } catch {
-    return student.recordedSessionScore ?? null;
-  }
-}
-
-function computeCalculatedGrade(
-  student: SessionReportStudentData,
-  data?: SessionReportData,
-): number | null {
-  if (!data) return student.recordedSessionScore ?? null;
-  const canCalc = (data.criteria?.length ?? 0) > 0 && (student.items?.length ?? 0) > 0;
-  const grade = canCalc ? tryCalcGrade(student, data) : (student.recordedSessionScore ?? null);
-  return grade !== null && Number.isFinite(grade)
-    ? Math.round((grade + Number.EPSILON) * 100) / 100
-    : null;
-}
-
 function toLabel(prefix: string, title: string, orderIndex: number | null): string {
   return orderIndex ? `${prefix} ${orderIndex} — ${title}` : title;
 }
@@ -151,6 +98,22 @@ function buildReportIdentification(data: SessionReportData) {
     { label: 'Sessão', value: toLabel('Sessão', data.session.title, data.session.orderIndex) },
     { label: 'Data', value: formatSessionDate(data.session.date) },
   ];
+}
+
+function addFeedbackInSection(
+  data: SessionReportData,
+  hiddenName: boolean,
+  showFeedback: boolean,
+  sections: ReportSection[],
+): ReportSection[] {
+  if (showFeedback) {
+    sections.push({
+      kind: 'text',
+      title: 'Feedbacks da sessão',
+      entries: buildFeedbackEntries(data, hiddenName),
+    });
+  }
+  return sections;
 }
 
 function buildReportSections(
@@ -167,14 +130,8 @@ function buildReportSections(
       rows: data.students.map((s) => buildStudentRow(s, data, ocultarNome, mostrarMarcacoes)),
     },
   ];
-  if (mostrarFeedBack) {
-    sections.push({
-      kind: 'text',
-      title: 'Feedbacks da sessão',
-      entries: buildFeedbackEntries(data, ocultarNome),
-    });
-  }
-  return sections;
+
+  return addFeedbackInSection(data, ocultarNome, mostrarFeedBack, sections);
 }
 
 export function buildSessionFileName(data: SessionReportData): string {
@@ -209,8 +166,8 @@ export function buildSessionReportDocument(
     sections: buildReportSections(
       data,
       options.ocultarNome ?? false,
-      options.mostrarFeedBack ?? false,
-      options.mostrarMarcacoes ?? false,
+      options.mostrarFeedBack ?? true,
+      options.mostrarMarcacoes ?? true,
     ),
   };
 }

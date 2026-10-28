@@ -48,7 +48,7 @@ export const ExportSessionReportSwaggerDocs = applyDecorators(
     name: 'mostrarMarcacoes',
     required: false,
     type: Boolean,
-    description: 'Se falso, não inclui a seção de marcações no relatório.',
+    description: 'Se falso, não preenche a coluna de marcações no relatório.',
     example: false,
   }),
   ApiProduces(
