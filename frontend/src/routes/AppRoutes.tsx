@@ -63,6 +63,7 @@ const PlanningPokerPage = lazy(() => import('@/pages/planning-poker/PlanningPoke
 const SessionFeedbackPage = lazy(() => import('@/pages/feedbacks/SessionFeedbackPage'));
 const ProblemFeedbacksPage = lazy(() => import('@/pages/feedbacks/ProblemFeedbacksPage'));
 const ClassReportPage = lazy(() => import('@/pages/class-report/ClassReportPage'));
+const SessionReportPage = lazy(() => import('@/pages/sessions/SessionReportPage'));
 
 const publicRoutes = (
   <Route element={<PublicOnlyRoute />}>
@@ -111,6 +112,7 @@ const protectedRoutes = (
     <Route path={ROUTES.evaluationHistory} element={<SessionEvaluationHistoryPage />} />
     <Route path={ROUTES.problemGrades} element={<ProblemGradesPage />} />
     <Route path={ROUTES.sessionPlanningPoker} element={<PlanningPokerPage />} />
+    <Route path={ROUTES.sessionReport} element={<SessionReportPage />} />
     <Route path={ROUTES.sessionFeedback} element={<SessionFeedbackPage />} />
     <Route path={ROUTES.problemFeedbacks} element={<ProblemFeedbacksPage />} />
   </Route>
