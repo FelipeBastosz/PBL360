@@ -19,6 +19,12 @@ export interface TutorRoomSummary {
   totalProblems: number;
 }
 
+export interface TutorRoomSummary {
+  room: Room;
+  totalStudents: number;
+  totalProblems: number;
+}
+
 export interface RoomStudentSummary {
   id: string;
   name: string;
