@@ -1,7 +1,6 @@
 # PBL360
 
 Monorepo do PBL360: API em **NestJS + TypeORM + PostgreSQL** e SPA em **React + TypeScript + TailwindCSS**.
-a
 
 ## Estrutura
 
@@ -68,6 +67,9 @@ Se algo não subir, o passo a passo detalhado — com verificação e problemas 
 | `npm run lint`         | ESLint no backend e no frontend                        |
 | `npm run format`       | Prettier no backend e no frontend                      |
 | `npm run test`         | Testes do backend e do frontend                        |
+| `npm run test:e2e:backend`     | Testes E2E do backend (NestJS contra PostgreSQL real)  |
+| `npm run test:e2e:frontend`    | Testes E2E do frontend com Playwright (headless)       |
+| `npm run test:e2e:frontend:ui` | Interface interativa visual do Playwright (UI Mode)    |
 
 ## Qualidade de código
 
@@ -127,7 +129,8 @@ O hook `commit-msg` aborta o commit fora desse formato.
 | Linhas por arquivo | 200     | 250      |
 
 **Testes** — toda feature entra com teste, unitário ou e2e. No backend, unitário ao lado do
-código e e2e em `backend/test/`; no frontend, sempre ao lado do arquivo testado.
+código e e2e em `backend/test/`; no frontend, unitário ao lado do arquivo testado e e2e
+em `frontend/e2e/` (com Playwright).
 
 **Branches** — `<tipo>/#<issue>-<descrição-em-inglês>`, ex.: `feat/#50-create-evaluation-module`.
 `main` é protegida: toda mudança entra por pull request com a CI verde.

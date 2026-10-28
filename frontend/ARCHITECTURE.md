@@ -311,6 +311,17 @@ src/
 Sufixo `.test.ts` para o que não tem marcação (hooks, utils, services) e `.test.tsx` para
 componentes e páginas.
 
+Já os **testes ponta a ponta (E2E)** exercitam a aplicação inteira em um navegador Chromium real
+e ficam centralizados na pasta `e2e/` (`*.spec.ts`):
+
+```
+frontend/
+├── e2e/
+│   ├── login.spec.ts
+│   └── rooms.spec.ts
+└── src/
+```
+
 ### 7.2 O que testar e o que não
 
 | Você mexeu em...                              | Testa?                                         |
@@ -398,6 +409,12 @@ npm run test:cov            # com relatório de cobertura em coverage/
 
 npm test -- Button          # só os arquivos cujo caminho casa com "Button"
 npm test -- -t 'loading'    # só os testes cujo nome casa com "loading"
+
+# Testes E2E (Playwright)
+npm run test:e2e            # executa suíte E2E em modo headless
+npm run test:e2e:ui         # interface gráfica interativa do Playwright (time-travel)
+npm run test:e2e:headed     # executa abrindo a janela do navegador na tela
+npm run test:e2e:report     # exibe o relatório HTML
 ```
 
 Na CI, `npm test` roda a cada push, junto com lint, formatação, type-check e build.
