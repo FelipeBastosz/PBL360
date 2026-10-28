@@ -10,6 +10,7 @@ import type { UserResponse } from '@/types/auth';
 import type { Session } from '@/types/session';
 import type { SessionReportStudent } from '@/types/sessionReport';
 import { SessionReportPage } from './SessionReportPage';
+import * as sessionStudentsModule from './useSessionReportStudents';
 
 vi.mock('@/services/session.service', () => ({
   sessionService: {
@@ -322,6 +323,34 @@ describe('SessionReportPage', () => {
         tone: 'error',
         message: 'Erro ao gerar relatório',
       });
+    });
+  });
+
+  describe('Empty State', () => {
+    it('renders clean empty state and hides table and export actions when session has no students', async () => {
+      vi.spyOn(sessionStudentsModule, 'useSessionReportStudents').mockReturnValue({
+        students: [],
+        isLoading: false,
+      });
+
+      renderPage();
+
+      expect(await screen.findByText('Sessão 1 - Abertura')).toBeInTheDocument();
+      expect(screen.getByText('Não há alunos vinculados a esta sessão.')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'Assim que novos alunos entrarem na turma, as notas consolidadas aparecerão aqui.',
+        ),
+      ).toBeInTheDocument();
+
+      expect(screen.queryByRole('switch', { name: /ocultar nomes/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('Ocultar nomes')).not.toBeInTheDocument();
+      expect(screen.queryByText('ALUNO')).not.toBeInTheDocument();
+      expect(screen.queryByText('MATRÍCULA')).not.toBeInTheDocument();
+      expect(screen.queryByText('NOTA FINAL')).not.toBeInTheDocument();
+      expect(screen.queryByText('Média da turma')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /exportar em pdf/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /exportar em excel/i })).not.toBeInTheDocument();
     });
   });
 });

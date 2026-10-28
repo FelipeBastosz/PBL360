@@ -8,6 +8,7 @@ import { sessionService } from '@/services/session.service';
 import type { Session } from '@/types/session';
 import type { SessionReportStudent } from '@/types/sessionReport';
 import { cn } from '@/utils/cn';
+import { SessionReportEmptyState } from './components/SessionReportEmptyState';
 import { SessionReportTable } from './components/SessionReportTable';
 import { useSessionReportExport } from './useSessionReportExport';
 import { useSessionReportStudents } from './useSessionReportStudents';
@@ -112,14 +113,18 @@ export function SessionReportPage({ students: initialStudents }: SessionReportPa
           <div className="flex justify-center py-12">
             <Spinner className="size-8 text-brand-900" />
           </div>
+        ) : students.length === 0 ? (
+          <SessionReportEmptyState />
         ) : (
-          <SessionReportTable students={students} />
+          <>
+            <SessionReportTable students={students} />
+            <ReportExportActions
+              isExportingPDF={isExportingPDF}
+              isExportingExcel={isExportingExcel}
+              onExport={(formato) => void handleDownload(formato)}
+            />
+          </>
         )}
-        <ReportExportActions
-          isExportingPDF={isExportingPDF}
-          isExportingExcel={isExportingExcel}
-          onExport={(formato) => void handleDownload(formato)}
-        />
       </main>
     </div>
   );
