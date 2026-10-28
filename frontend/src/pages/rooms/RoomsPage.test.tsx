@@ -165,6 +165,24 @@ describe('RoomsPage', () => {
       expect(screen.getAllByText('0 problemas')).toHaveLength(2);
     });
 
+    it('renders the correct professor name from room.professorResponsavel instead of logged-in user', async () => {
+      vi.mocked(roomService.list).mockResolvedValue([
+        {
+          ...mockRooms[0],
+          professorResponsavel: {
+            id: 'tutor-other',
+            nome: 'Maria Silva',
+            email: 'maria@uefs.br',
+          },
+        },
+      ]);
+      renderWithUser(mockTeacher);
+
+      expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
+      expect(screen.getByText('Prof. Maria Silva')).toBeInTheDocument();
+      expect(screen.queryByText('Prof. Professor Fulano')).not.toBeInTheDocument();
+    });
+
     it('shows the real student and problem counts of each room', async () => {
       vi.mocked(roomService.list).mockResolvedValue([
         { ...mockRooms[0], totalAlunos: 1, totalProblemas: 3 },
@@ -231,11 +249,17 @@ describe('RoomsPage', () => {
           nome: 'Engenharia de Software (Aluno)',
           semestre: '2026.2',
           totalAlunos: 25,
+          professorResponsavel: {
+            id: 'tutor-1',
+            nome: 'Carlos Mendes',
+            email: 'carlos@uefs.br',
+          },
         },
       ]);
       renderWithUser(mockStudent);
 
       expect(await screen.findByText('Engenharia de Software (Aluno)')).toBeInTheDocument();
+      expect(screen.getByText('Prof. Carlos Mendes')).toBeInTheDocument();
       expect(
         screen.queryByText('Você ainda não faz parte de nenhuma turma.'),
       ).not.toBeInTheDocument();

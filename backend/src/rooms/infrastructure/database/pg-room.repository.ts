@@ -6,9 +6,11 @@ import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 
 import { Room } from '../../domain/entities/room.entity';
+import { User } from '@/users/domain/entities/user.entity';
 import { RoomCodeInUseError } from '../../domain/errors/room-code-in-use.error';
 import { hasRoomStudent, hasRoomTutor, listRoomTutors } from './room-member-queries';
-import { ROOM_COLUMNS, type RoomRow } from './room-row';
+import { listRoomStudents, queryStudentRooms } from './room-student-queries';
+import { ROOM_COLUMNS, ROOM_WITH_TUTOR_COLUMNS, type RoomRow } from './room-row';
 import type {
   RoomRepository,
   RoomTutor,
@@ -23,6 +25,17 @@ interface TutorRoomRow extends RoomRow {
   totalStudents: number;
   totalProblems: number;
 }
+
+const fetchTutor = async (
+  queryRunner: { query: EntityManager['query'] },
+  tutorId: string,
+): Promise<{ name: string; email: string } | undefined> => {
+  const [tutor] = await queryRunner.query<{ name: string; email: string }[]>(
+    'SELECT name, email FROM users WHERE id = $1 LIMIT 1;',
+    [tutorId],
+  );
+  return tutor;
+};
 
 @Injectable()
 export class PgRoomRepository implements RoomRepository {
@@ -43,10 +56,11 @@ export class PgRoomRepository implements RoomRepository {
 
   findById(id: string): Promise<Room | null> {
     return this.queryOne(
-      `SELECT ${ROOM_COLUMNS}
+      `SELECT ${ROOM_WITH_TUTOR_COLUMNS}
         FROM rooms
-        WHERE id = $1
-          AND deleted_at IS NULL
+        LEFT JOIN users u ON u.id = rooms.tutor_id
+        WHERE rooms.id = $1
+          AND rooms.deleted_at IS NULL
         LIMIT 1;`,
       [id],
     );
@@ -54,10 +68,11 @@ export class PgRoomRepository implements RoomRepository {
 
   findByRoomCode(roomCode: string): Promise<Room | null> {
     return this.queryOne(
-      `SELECT ${ROOM_COLUMNS}
+      `SELECT ${ROOM_WITH_TUTOR_COLUMNS}
         FROM rooms
-        WHERE room_code = $1
-          AND deleted_at IS NULL
+        LEFT JOIN users u ON u.id = rooms.tutor_id
+        WHERE rooms.room_code = $1
+          AND rooms.deleted_at IS NULL
         LIMIT 1;`,
       [roomCode],
     );
@@ -74,75 +89,44 @@ export class PgRoomRepository implements RoomRepository {
 
   async findByTutorId(tutorId: string): Promise<TutorRoomSummary[]> {
     const rows = await this.rooms.query<TutorRoomRow[]>(
-      `SELECT ${ROOM_COLUMNS},
-            (SELECT COUNT(*)::int FROM room_students members
-              WHERE members.room_id = rooms.id) AS "totalStudents",
-            (SELECT COUNT(*)::int FROM problems
-              WHERE problems.room_id = rooms.id) AS "totalProblems"
+      `SELECT ${ROOM_WITH_TUTOR_COLUMNS},
+            (SELECT COUNT(*)::int FROM room_students WHERE room_id = rooms.id) AS "totalStudents",
+            (SELECT COUNT(*)::int FROM problems WHERE room_id = rooms.id) AS "totalProblems"
         FROM rooms
-        WHERE deleted_at IS NULL
+        LEFT JOIN users u ON u.id = rooms.tutor_id
+        WHERE rooms.deleted_at IS NULL
           AND EXISTS (
-            SELECT 1
-            FROM room_tutors
-            WHERE room_tutors.room_id = rooms.id
-              AND room_tutors.tutor_id = $1
+            SELECT 1 FROM room_tutors WHERE room_id = rooms.id AND tutor_id = $1
           )
-        ORDER BY created_at ASC, id ASC;`,
+        ORDER BY rooms.created_at ASC, rooms.id ASC;`,
       [tutorId],
     );
 
     return rows.map((row) => this.toTutorSummary(row));
   }
 
-  private toTutorSummary(row: TutorRoomRow): TutorRoomSummary {
-    const { totalStudents, totalProblems, ...roomRow } = row;
-    return { room: this.toEntity(roomRow), totalStudents, totalProblems };
+  findForStudent(studentId: string): Promise<StudentRoomSummary[]> {
+    return queryStudentRooms(this.rooms, studentId);
   }
 
-  async findForStudent(studentId: string): Promise<StudentRoomSummary[]> {
-    const rows = await this.rooms.query<StudentRoomSummary[]>(
-      `SELECT rooms.id AS "roomId", rooms.name, rooms.semester,
-            COUNT(DISTINCT members.student_id)::int AS "totalStudents",
-            COUNT(DISTINCT problems.id)::int AS "totalProblems"
-         FROM room_students enrollment
-         JOIN rooms ON rooms.id = enrollment.room_id
-         JOIN room_students members ON members.room_id = rooms.id
-          LEFT JOIN problems ON problems.room_id = rooms.id
-        WHERE enrollment.student_id = $1
-          AND rooms.deleted_at IS NULL
-        GROUP BY rooms.id, rooms.name, rooms.semester
-        ORDER BY rooms.semester DESC, rooms.name ASC;`,
-      [studentId],
-    );
-
-    return rows;
-  }
-
-  async findStudents(roomId: string): Promise<RoomStudentSummary[]> {
-    return this.rooms.query<RoomStudentSummary[]>(
-      `SELECT users.id, users.name, users.email,
-              users.registration_number AS "registrationNumber",
-              enrollment.joined_at AS "joinedAt"
-         FROM room_students enrollment
-         JOIN users ON users.id = enrollment.student_id
-        WHERE enrollment.room_id = $1
-          AND users.type = 'STUDENT'
-        ORDER BY enrollment.joined_at ASC, users.name ASC;`,
-      [roomId],
-    );
+  findStudents(roomId: string): Promise<RoomStudentSummary[]> {
+    return listRoomStudents(this.rooms, roomId);
   }
 
   async update(room: Room): Promise<Room> {
     const [rows] = await this.rooms.query<[RoomRow[], number]>(
-      `UPDATE rooms
-        SET name = $2, semester = $3, active = $4
-        WHERE id = $1
-          AND deleted_at IS NULL
-        RETURNING ${ROOM_COLUMNS};`,
+      `UPDATE rooms SET name = $2, semester = $3, active = $4
+        WHERE id = $1 AND deleted_at IS NULL RETURNING ${ROOM_COLUMNS};`,
       [room.id, room.name, room.semester, room.active],
     );
+    const updatedRow = requireFirstRow(rows, `Room ${room.id} not found for update.`);
+    const tutor = await fetchTutor(this.rooms, updatedRow.tutorId);
 
-    return this.toEntity(requireFirstRow(rows, `Room ${room.id} not found for update.`));
+    return this.toEntity({
+      ...updatedRow,
+      tutorName: tutor?.name,
+      tutorEmail: tutor?.email,
+    });
   }
 
   async softDelete(room: Room): Promise<void> {
@@ -194,8 +178,7 @@ export class PgRoomRepository implements RoomRepository {
   private async insertWithOwner(manager: EntityManager, room: Room): Promise<Room> {
     const rows = await manager.query<RoomRow[]>(
       `INSERT INTO rooms (tutor_id, name, course_code, room_code, semester, active)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING ${ROOM_COLUMNS};`,
+        VALUES ($1, $2, $3, $4, $5, $6) RETURNING ${ROOM_COLUMNS};`,
       [room.tutorId, room.name, room.courseCode, room.roomCode, room.semester, room.active],
     );
     const row = requireFirstRow(rows, 'Failed to persist room.');
@@ -204,19 +187,37 @@ export class PgRoomRepository implements RoomRepository {
       row.id,
       room.tutorId,
     ]);
+    const tutor = await fetchTutor(manager, room.tutorId);
 
-    return this.toEntity(row);
+    return this.toEntity({
+      ...row,
+      tutorName: tutor?.name,
+      tutorEmail: tutor?.email,
+    });
   }
 
   private async queryOne(sql: string, params: unknown[]): Promise<Room | null> {
     const rows = await this.rooms.query<RoomRow[]>(sql, params);
-
     const row = firstRowOrNull(rows);
 
     return row ? this.toEntity(row) : null;
   }
 
+  private toTutorSummary(row: TutorRoomRow): TutorRoomSummary {
+    const { totalStudents, totalProblems, ...roomRow } = row;
+    return { room: this.toEntity(roomRow), totalStudents, totalProblems };
+  }
+
   private toEntity(row: RoomRow): Room {
-    return this.rooms.create(row);
+    const { tutorName, tutorEmail, ...baseRow } = row;
+    const room = this.rooms.create(baseRow);
+    if (baseRow.tutorId && tutorName) {
+      room.tutor = Object.assign(new User(), {
+        id: baseRow.tutorId,
+        name: tutorName,
+        email: tutorEmail ?? '',
+      });
+    }
+    return room;
   }
 }

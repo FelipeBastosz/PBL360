@@ -28,7 +28,8 @@ function toRoom(studentRoom: StudentRoom): Room {
     semestre: studentRoom.semestre,
     codigoDisciplina: '',
     codigoSala: '',
-    professorResponsavelId: '',
+    professorResponsavelId: studentRoom.professorResponsavel?.id ?? '',
+    professorResponsavel: studentRoom.professorResponsavel,
     ativo: true,
     criadoEm: '',
     totalAlunos: studentRoom.totalAlunos,
@@ -74,13 +75,15 @@ function RoomsEmptyState({ isStudent }: { isStudent: boolean }) {
 
 type RoomCardProps = { room: Room; professorNome?: string };
 function RoomCard({ room, professorNome }: RoomCardProps) {
+  const displayProf = room.professorResponsavel?.nome ?? professorNome;
+
   return (
     <Link to={`${ROUTES.rooms}/${room.id}/problemas`} className={INTERACTIVE_CARD_CLASS}>
       <div className={CARD_ACCENT_CLASS} />
       <div className="flex flex-col gap-3 p-4">
         <div>
           <h3 className="line-clamp-2 text-base font-bold text-brand-900">{room.nome}</h3>
-          {professorNome && <p className="text-sm text-muted">Prof. {professorNome}</p>}
+          {displayProf && <p className="text-sm text-muted">Prof. {displayProf}</p>}
         </div>
         <div className="mt-1 flex items-center justify-between">
           <span className="text-sm text-muted">
@@ -123,7 +126,11 @@ function RoomsList({ isLoading, rooms, isStudent, hasFilter, userNome }: RoomsLi
   return (
     <div className={cn(CARD_GRID_CLASS, 'mt-4')}>
       {rooms.map((room) => (
-        <RoomCard key={room.id} room={room} professorNome={isStudent ? undefined : userNome} />
+        <RoomCard
+          key={room.id}
+          room={room}
+          professorNome={room.professorResponsavel?.nome ?? (isStudent ? undefined : userNome)}
+        />
       ))}
     </div>
   );
