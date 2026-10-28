@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ScoreStepper } from '@/components/ui/ScoreStepper';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 import { SaveFormulaScopeModal } from './SaveFormulaScopeModal';
 import { useSessionFormulaEditor } from '../hooks/useSessionFormulaEditor';
 
@@ -20,8 +22,8 @@ function FormulaWeightRow({
   onChange: (val: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-black/5 p-4 last:border-b-0">
-      <div className="flex flex-col pr-2">
+    <div className="flex items-center justify-between border-b border-black/5 p-4 last:border-b-0 sm:p-5">
+      <div className="flex flex-col pr-4">
         <span className="text-base font-bold text-brand-900">{title}</span>
         <span className="text-xs text-muted">{subtitle}</span>
       </div>
@@ -30,7 +32,13 @@ function FormulaWeightRow({
   );
 }
 
-function FormulaSummary({ isBalanced, totalSum }: { isBalanced: boolean; totalSum: number }) {
+function FormulaBalanceSummary({
+  isBalanced,
+  totalSum,
+}: {
+  isBalanced: boolean;
+  totalSum: number;
+}) {
   return (
     <div className="flex items-center justify-between px-2 text-sm font-bold">
       <span className={isBalanced ? 'text-ink' : 'text-danger'}>Soma dos pesos</span>
@@ -43,10 +51,10 @@ function FormulaSummary({ isBalanced, totalSum }: { isBalanced: boolean; totalSu
 
 function FormulaActions({
   editor,
-  onOpenModal,
+  onSave,
 }: {
   editor: ReturnType<typeof useSessionFormulaEditor>;
-  onOpenModal: () => void;
+  onSave: () => void;
 }) {
   return (
     <>
@@ -58,9 +66,9 @@ function FormulaActions({
       >
         Restaurar padrão
       </button>
-      <div className="mt-4">
+      <div className="mt-2">
         <Button
-          onClick={onOpenModal}
+          onClick={onSave}
           disabled={!editor.isBalanced || editor.isSaving}
           isLoading={editor.isSaving}
           className="w-full py-4 text-base font-bold shadow-lg"
@@ -90,7 +98,7 @@ export function FinalScoreFormulaTab({ sessionId }: { sessionId: string }) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4">
+    <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4 pb-12')}>
       <div className="overflow-hidden rounded-[18px] border border-black/5 bg-white shadow-xs">
         <FormulaWeightRow
           title="Desempenho na Sessão"
@@ -106,8 +114,8 @@ export function FinalScoreFormulaTab({ sessionId }: { sessionId: string }) {
         />
       </div>
 
-      <FormulaSummary isBalanced={editor.isBalanced} totalSum={editor.totalSum} />
-      <FormulaActions editor={editor} onOpenModal={() => setIsModalOpen(true)} />
+      <FormulaBalanceSummary isBalanced={editor.isBalanced} totalSum={editor.totalSum} />
+      <FormulaActions editor={editor} onSave={() => setIsModalOpen(true)} />
 
       <SaveFormulaScopeModal
         isOpen={isModalOpen}
@@ -116,6 +124,6 @@ export function FinalScoreFormulaTab({ sessionId }: { sessionId: string }) {
         onConfirm={handleSaveConfirmed}
         onClose={() => setIsModalOpen(false)}
       />
-    </div>
+    </main>
   );
 }
