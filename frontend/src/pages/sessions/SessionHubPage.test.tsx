@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
@@ -148,6 +149,47 @@ describe('SessionHubPage', () => {
     expect(link).toHaveAttribute('href', `${basePath}/historico`);
   });
 
+  it('renders active link for Relatório da Sessão', async () => {
+    renderPage();
+
+    const basePath = '/turmas/room-1/problemas/prob-1/sessoes/sess-1';
+    const link = await screen.findByRole('link', { name: /relatório da sessão/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', `${basePath}/relatorio`);
+  });
+
+  it('navigates to the session report page when clicking the Relatório card', async () => {
+    const user = userEvent.setup();
+    render(
+      <AuthContext.Provider
+        value={{
+          user: mockTeacher,
+          isAuthenticated: true,
+          login: vi.fn(),
+          logout: vi.fn(),
+        }}
+      >
+        <MemoryRouter initialEntries={['/turmas/room-1/problemas/prob-1/sessoes/sess-1']}>
+          <Routes>
+            <Route
+              path="/turmas/:roomId/problemas/:problemId/sessoes/:sessionId"
+              element={<SessionHubPage />}
+            />
+            <Route
+              path="/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/relatorio"
+              element={<div>Página do Relatório da Sessão</div>}
+            />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    const reportCard = await screen.findByRole('link', { name: /relatório da sessão/i });
+    await user.click(reportCard);
+
+    expect(await screen.findByText('Página do Relatório da Sessão')).toBeInTheDocument();
+  });
+
   it('renders Autoavaliação e pares card with toggle switches', async () => {
     renderPage();
 
@@ -179,6 +221,7 @@ describe('SessionHubPage', () => {
       expect(screen.getByText('Avaliar Colegas')).toBeInTheDocument();
       expect(screen.getByText('Notas e Feedbacks')).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /chamada/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /relatório/i })).not.toBeInTheDocument();
       expect(screen.queryByText('Autoavaliação e pares')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Encerrar sessão' })).not.toBeInTheDocument();
       expect(sessionService.getById).not.toHaveBeenCalled();

@@ -85,6 +85,14 @@ export const sessionService = {
       .get<Blob>(`${BASE}/${sessionId}/anexos/${attachmentId}`, { responseType: 'blob' })
       .then((r) => r.data),
 
+  exportSessionReport: (sessaoId: string, formato: 'PDF' | 'XLSX') =>
+    api
+      .get<Blob>(`${BASE}/${sessaoId}/relatorio/exportacao`, {
+        params: { formato },
+        responseType: 'blob',
+      })
+      .then((r) => r.data),
+
   deleteAttachment: (sessionId: string, attachmentId: string) =>
     api.delete<void>(`${BASE}/${sessionId}/anexos/${attachmentId}`).then(() => undefined),
 

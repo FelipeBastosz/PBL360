@@ -4,6 +4,7 @@ import {
   StarIcon,
   AdjustmentsHorizontalIcon,
   ClockIcon,
+  DocumentChartBarIcon,
 } from '@heroicons/react/24/outline';
 import type { ComponentType, ReactNode } from 'react';
 import { ROUTES } from '@/routes/paths';
@@ -131,6 +132,13 @@ export function SessionActionGrid({
         desc="Comparar e ajustar com justificativa"
         color="bg-violet-50 text-violet-600"
         Icon={ClockIcon}
+      />
+      <ActionCard
+        to={`${basePath}/relatorio`}
+        title="Relatório da Sessão"
+        desc="Visualize notas finais e exporte dados"
+        color="bg-indigo-50 text-indigo-600"
+        Icon={DocumentChartBarIcon}
       />
       {children}
     </div>
