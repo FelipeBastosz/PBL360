@@ -22,6 +22,7 @@ export const toAdjustSelfAssessmentInput = (
   authorId,
   newScore: dto.novaNota,
   justification: dto.justificativa,
+  tipo: dto.tipo,
 });
 
 export const toSelfAssessmentAdjustmentHistoryResponse = (
@@ -46,6 +47,8 @@ const toAdjustment = (adjustment: EvaluationAdjustment): SelfAssessmentAdjustmen
   valorAnterior: adjustment.previousValue,
   valorNovo: adjustment.newValue,
   justificativa: adjustment.justification,
+  autorId: adjustment.authorId,
+  criadoEm: adjustment.createdAt,
   autor: { id: adjustment.authorId, nome: adjustment.authorName },
   ajustadoEm: adjustment.createdAt,
 });

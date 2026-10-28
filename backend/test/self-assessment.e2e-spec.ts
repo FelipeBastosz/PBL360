@@ -16,6 +16,10 @@ interface StudentEvaluationSummaryBody {
   feedback: { disponivel: boolean; novo: boolean };
 }
 
+interface ErrorBody {
+  message: string;
+}
+
 describe('Student self-assessment (e2e)', () => {
   let app: INestApplication;
   let db: DataSource;
@@ -160,7 +164,17 @@ describe('Student self-assessment (e2e)', () => {
       .expect(422);
   });
 
+  it('rejects tutor evaluation while self-assessment is active in the session', async () => {
+    const res = await api(app, tutor)
+      .put(`/sessoes/${sessionId}/avaliacoes/${student.id}`, { itens: items(), enviar: true })
+      .expect(409);
+    expect((res.body as ErrorBody).message).toBe(
+      'A avaliação direta do tutor está bloqueada enquanto a autoavaliação ou pares estiver ativa na sessão.',
+    );
+  });
+
   it('marks feedback new until the student opens it, then new again after an edit', async () => {
+    await db.query('UPDATE sessions SET self_eval_released = FALSE WHERE id = $1;', [sessionId]);
     await api(app, tutor)
       .put(`/sessoes/${sessionId}/avaliacoes/${student.id}`, { itens: items(), enviar: true })
       .expect(200);
