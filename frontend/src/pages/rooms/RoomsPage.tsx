@@ -14,42 +14,6 @@ import { RoomsFab } from './RoomsFab';
 import { useRooms } from './hooks/useRooms';
 import { useLeaveRoom } from './hooks/useLeaveRoom';
 
-function toRoom(studentRoom: StudentRoom): Room {
-  return {
-    id: studentRoom.salaId,
-    nome: studentRoom.nome,
-    semestre: studentRoom.semestre,
-    codigoDisciplina: '',
-    codigoSala: '',
-    professorResponsavelId: studentRoom.professorResponsavel?.id ?? '',
-    professorResponsavel: studentRoom.professorResponsavel,
-    ativo: true,
-    criadoEm: '',
-    totalAlunos: studentRoom.totalAlunos,
-    totalProblemas: studentRoom.totalProblemas,
-  };
-}
-
-async function withCounts(room: Room): Promise<Room> {
-  if (room.totalAlunos !== undefined && room.totalProblemas !== undefined) return room;
-
-  const [students, problems] = await Promise.allSettled([
-    roomService.listStudents(room.id),
-    problemService.list(room.id),
-  ]);
-
-  return {
-    ...room,
-    totalAlunos: students.status === 'fulfilled' ? students.value.length : room.totalAlunos,
-    totalProblemas: problems.status === 'fulfilled' ? problems.value.length : room.totalProblemas,
-  };
-}
-
-const TUTOR_ACTIONS: FabAction[] = [
-  { label: 'Editar uma turma', to: ROUTES.manageRooms },
-  { label: 'Criar nova turma', to: ROUTES.createRoom },
-];
-
 function RoomsEmptyState({ isStudent }: { isStudent: boolean }) {
   return (
     <div className="mt-20 flex flex-col items-center justify-center px-6 text-center">
