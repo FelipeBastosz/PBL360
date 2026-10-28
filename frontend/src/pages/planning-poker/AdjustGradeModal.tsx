@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
-import { formatPokerGrade, parsePokerGrade, roundToCents } from '@/utils/pokerFormat';
+import { formatPokerGrade, parsePokerGrade, roundToTenths } from '@/utils/pokerFormat';
 import { TextLink } from './PokerCard';
 import { PokerModal } from './PokerModal';
 
@@ -19,7 +19,8 @@ const STEPPER =
 
 function GradeStepper({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   const [raw, setRaw] = useState<string | null>(null);
-  const shift = (delta: number) => onChange(roundToCents(Math.min(10, Math.max(0, value + delta))));
+  const shift = (delta: number) =>
+    onChange(roundToTenths(Math.min(10, Math.max(0, value + delta))));
   return (
     <div className="flex items-center gap-2">
       <button
@@ -126,7 +127,7 @@ export function AdjustGradeModal({
   onSave,
   onClose,
 }: AdjustGradeModalProps) {
-  const [grade, setGrade] = useState(average ?? 0);
+  const [grade, setGrade] = useState(roundToTenths(average ?? 0));
   const [justification, setJustification] = useState('');
   const [hasError, setHasError] = useState(false);
   function save() {

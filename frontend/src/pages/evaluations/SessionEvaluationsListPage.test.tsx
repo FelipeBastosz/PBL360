@@ -1,8 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
 import { evaluationService } from '@/services/evaluation.service';
+import { gradesService } from '@/services/grades.service';
+import { usePokerChannel, type PokerChannelHandlers } from '@/hooks/usePokerChannel';
+import type { ProblemGradesResponse, StudentSessionGrade } from '@/types/grades';
 import type { UserResponse } from '@/types/auth';
 import type { SessionEvaluationSummary, ProblemEvaluationCriteria } from '@/types/evaluation';
 import SessionEvaluationListPage from './SessionEvaluationsListPage';
@@ -13,6 +16,33 @@ vi.mock('@/services/evaluation.service', () => ({
     getProblemCriteria: vi.fn(),
   },
 }));
+
+vi.mock('@/services/grades.service', () => ({
+  gradesService: { getProblemGrades: vi.fn() },
+}));
+
+vi.mock('@/hooks/usePokerChannel', () => ({ usePokerChannel: vi.fn(() => 'live') }));
+
+const pokerSession = (nota: number | null): StudentSessionGrade => ({
+  sessaoId: 'sess-1',
+  nota,
+  situacao: nota === null ? 'PENDENTE' : 'AVALIADA',
+  modalidade: 'PARES',
+  pares: {
+    nota,
+    situacao: nota === null ? 'SEM_AVALIACOES' : 'AVALIADA',
+    origem: 'PLANNING_POKER',
+  },
+});
+
+const gradesWithAna = (session: StudentSessionGrade): ProblemGradesResponse => ({
+  sessoes: [],
+  alunos: [
+    { alunoId: 'aluno-1', nome: 'Ana Souza', matricula: null, sessoes: [session], notaFinal: null },
+  ],
+  mediaTurma: null,
+  versoesFormula: { sessao: null, problema: null },
+});
 
 const mockTeacher: UserResponse = {
   id: 'tutor-1',
@@ -74,6 +104,12 @@ function renderPage() {
 describe('SessionEvaluationListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(gradesService.getProblemGrades).mockResolvedValue({
+      sessoes: [],
+      alunos: [],
+      mediaTurma: null,
+      versoesFormula: { sessao: null, problema: null },
+    });
   });
 
   it('renders student list successfully when problem has evaluation table', async () => {
@@ -105,5 +141,34 @@ describe('SessionEvaluationListPage', () => {
 
     const buttons = screen.getAllByRole('button', { name: 'Avaliar' });
     expect(buttons[0]).toBeDisabled();
+  });
+
+  it('shows the planning poker grade for a student decided in the poker', async () => {
+    vi.mocked(evaluationService.listBySession).mockResolvedValue(mockStudents);
+    vi.mocked(evaluationService.getProblemCriteria).mockResolvedValue(mockCriteria);
+    vi.mocked(gradesService.getProblemGrades).mockResolvedValue(gradesWithAna(pokerSession(8.8)));
+
+    renderPage();
+
+    expect(await screen.findByText('Planning poker · 8,8')).toBeInTheDocument();
+    expect(screen.queryByText('Pendente')).not.toBeInTheDocument();
+    expect(gradesService.getProblemGrades).toHaveBeenCalledWith('room-1', 'prob-1');
+  });
+
+  it('updates the card when the tutor decides the round in real time', async () => {
+    vi.mocked(evaluationService.listBySession).mockResolvedValue(mockStudents);
+    vi.mocked(evaluationService.getProblemCriteria).mockResolvedValue(mockCriteria);
+    vi.mocked(gradesService.getProblemGrades)
+      .mockResolvedValueOnce(gradesWithAna(pokerSession(null)))
+      .mockResolvedValueOnce(gradesWithAna(pokerSession(7.5)));
+
+    renderPage();
+    expect(await screen.findByText('Pendente')).toBeInTheDocument();
+
+    const handlers = vi.mocked(usePokerChannel).mock.calls.at(-1)![2] as PokerChannelHandlers;
+    expect(vi.mocked(usePokerChannel).mock.calls.at(-1)![1]).toBe(true);
+    act(() => handlers.onEvent('poker.decidida', {}));
+
+    expect(await screen.findByText('Planning poker · 7,5')).toBeInTheDocument();
   });
 });

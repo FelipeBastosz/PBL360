@@ -1,14 +1,39 @@
 import { Link } from 'react-router-dom';
 import type { SessionEvaluationSummary } from '@/types/evaluation';
+import type { StudentSessionGrade } from '@/types/grades';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { formatGrade } from '@/utils/gradeFormatters';
 
 type StudentCardProps = {
   student: SessionEvaluationSummary;
+  sessionGrade?: StudentSessionGrade;
   evaluationUrl: string;
   disabled?: boolean;
 };
 
-function EvaluationBadges({ student }: { student: SessionEvaluationSummary }) {
+function modalityLabel(grade?: StudentSessionGrade): string | null {
+  if (grade?.situacao !== 'AVALIADA') return null;
+  if (grade.modalidade === 'AUTOAVALIACAO') return 'Autoavaliação';
+  if (grade.modalidade !== 'PARES') return null;
+  return grade.pares?.origem === 'PLANNING_POKER' ? 'Planning poker' : 'Avaliação entre pares';
+}
+
+function ModalityBadge({ label, grade }: { label: string; grade: StudentSessionGrade }) {
+  return (
+    <span className="inline-flex items-center rounded-md border border-success/30 bg-success-soft px-2 py-0.5 text-xs font-semibold text-success">
+      {label} · {formatGrade(grade.nota)}
+    </span>
+  );
+}
+
+function EvaluationBadges({
+  student,
+  sessionGrade,
+}: {
+  student: SessionEvaluationSummary;
+  sessionGrade?: StudentSessionGrade;
+}) {
+  const modality = student.status === 'PENDENTE' ? modalityLabel(sessionGrade) : null;
   return (
     <div className="mt-1 flex flex-wrap items-center gap-1.5">
       {student.presenca === 'ausente' && (
@@ -21,7 +46,8 @@ function EvaluationBadges({ student }: { student: SessionEvaluationSummary }) {
           Falta justificada
         </span>
       )}
-      {student.status === 'PENDENTE' && (
+      {modality && sessionGrade && <ModalityBadge label={modality} grade={sessionGrade} />}
+      {student.status === 'PENDENTE' && !modality && (
         <span className="inline-flex items-center rounded-md bg-black/5 px-2 py-0.5 text-xs font-medium text-muted">
           Pendente
         </span>
@@ -80,7 +106,12 @@ function ActionButton({
   );
 }
 
-export function StudentEvaluationCard({ student, evaluationUrl, disabled }: StudentCardProps) {
+export function StudentEvaluationCard({
+  student,
+  sessionGrade,
+  evaluationUrl,
+  disabled,
+}: StudentCardProps) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-[20px] border border-black/5 bg-white p-4 shadow-sm">
       <div className="flex min-w-0 items-center gap-3">
@@ -90,7 +121,7 @@ export function StudentEvaluationCard({ student, evaluationUrl, disabled }: Stud
         />
         <div className="flex min-w-0 flex-col">
           <h3 className="line-clamp-2 text-base font-bold break-words text-ink">{student.nome}</h3>
-          <EvaluationBadges student={student} />
+          <EvaluationBadges student={student} sessionGrade={sessionGrade} />
         </div>
       </div>
       <ActionButton
