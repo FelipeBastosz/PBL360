@@ -7,6 +7,7 @@ import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 import { ConflictError } from '@/shared/errors/application.error';
 import type { UserType } from '../../domain/enums/user-type.enum';
 import type { UserRepository, TutorSummary } from '../../domain/repositories/user.repository';
+import { UPSERT_USER_PHOTO_QUERY } from './pg-user-photo.repository';
 
 interface UserRow {
   id: string;
@@ -76,6 +77,18 @@ export class PgUserRepository implements UserRepository {
     );
   }
 
+  async updateName(userId: string, name: string): Promise<User> {
+    const [rows] = await this.users.query<[UserRow[], number]>(
+      `UPDATE users
+        SET name = $2
+        WHERE id = $1
+        RETURNING ${USER_COLUMNS};`,
+      [userId, name],
+    );
+
+    return this.toEntity(requireFirstRow(rows, `User ${userId} not found.`));
+  }
+
   async save(user: User): Promise<User> {
     try {
       return await this.users.manager.transaction(async (manager) => {
@@ -129,13 +142,7 @@ export class PgUserRepository implements UserRepository {
       return saved;
     }
 
-    await manager.query(
-      `INSERT INTO user_photos (user_id, content, mime_type)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (user_id) DO UPDATE
-          SET content = EXCLUDED.content, mime_type = EXCLUDED.mime_type, updated_at = now();`,
-      [saved.id, photo.content, photo.mimeType],
-    );
+    await manager.query(UPSERT_USER_PHOTO_QUERY, [saved.id, photo.content, photo.mimeType]);
     saved.hasPhoto = true;
 
     return saved;

@@ -1,100 +1,133 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError } from '@/services/apiError';
+import { MemoryRouter } from 'react-router-dom';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { performanceTableService } from '@/services/performance-table.service';
-import { sessionService } from '@/services/session.service';
-import type { PerformanceTableSummary } from '@/types/performanceTable';
+import { useAuth } from '@/hooks/useAuth';
 import { PerformanceTablesPage } from './PerformanceTablesPage';
-
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({ user: { nome: 'Professor Fulano', tipo: 'TUTOR' } }),
-}));
+import type { PerformanceTableSummary } from '@/types/performanceTable';
 
 vi.mock('@/services/performance-table.service');
-vi.mock('@/services/session.service', () => ({
-  sessionService: {
-    getEvaluationConfig: vi.fn(),
-  },
+vi.mock('@/hooks/useAuth');
+vi.mock('@/hooks/useToast', () => ({
+  useToast: () => ({ notify: vi.fn() }),
 }));
 
-const mockSummaries: PerformanceTableSummary[] = [
+const mockUser = { id: 'user-tutor-1', nome: 'Professor Titular', name: 'Professor Titular' };
+
+const mockRoomTables: PerformanceTableSummary[] = [
   {
-    id: 'table-1',
-    nome: 'Barema PBL',
-    descricao: 'Critérios padrão do módulo.',
-    quantidadeCriterios: 6,
-    quantidadeProblemas: 2,
-    criadoEm: '2026-03-01T10:00:00Z',
-    atualizadoEm: '2026-03-01T10:00:00Z',
+    id: 't-padrao-1',
+    nome: 'Tabela Oficial Padrão',
+    descricao: 'Tabela do sistema',
+    quantidadeCriterios: 3,
+    origem: 'PADRAO',
+    autor: { id: null, nome: 'Sistema' },
+    emUso: 4,
   },
   {
-    id: 'table-2',
-    nome: 'Avaliação Curta',
-    descricao: null,
-    quantidadeCriterios: 3,
-    quantidadeProblemas: 0,
-    criadoEm: '2026-03-02T10:00:00Z',
-    atualizadoEm: '2026-03-02T10:00:00Z',
+    id: 't-turma-1',
+    nome: 'Barema Compartilhado Turma A',
+    descricao: 'Criada para a turma',
+    quantidadeCriterios: 4,
+    origem: 'TURMA',
+    autor: { id: 'other-tutor', nome: 'Outro Professor' },
+    emUso: 2,
+  },
+  {
+    id: 't-pessoal-1',
+    nome: 'Meu Barema Exclusivo',
+    descricao: 'Barema pessoal',
+    quantidadeCriterios: 2,
+    origem: 'PESSOAL',
+    autor: { id: 'user-tutor-1', nome: 'Professor Titular' },
+    emUso: 1,
   },
 ];
 
-describe('PerformanceTablesPage', () => {
+describe('PerformanceTablesPage (Room Context)', () => {
   beforeEach(() => {
-    vi.mocked(performanceTableService.list).mockResolvedValue([]);
-    vi.mocked(sessionService.getEvaluationConfig).mockResolvedValue({
-      tabela: { id: 'copy-1', nome: 'Barema PBL', padrao: false, criterios: [] },
-      formula: { padrao: true, versao: null, componentes: [] },
-      bloqueada: false,
-    });
+    vi.clearAllMocks();
+    vi.mocked(useAuth).mockReturnValue({
+      user: mockUser,
+      isAuthenticated: true,
+      token: 'fake-jwt',
+      login: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
+      verifyAccount: vi.fn(),
+      resendVerification: vi.fn(),
+      forgotPassword: vi.fn(),
+      resetPassword: vi.fn(),
+      updateProfile: vi.fn(),
+    } as unknown as ReturnType<typeof useAuth>);
   });
 
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
+  it('renders tables divided into 3 groups when inside a room context', async () => {
+    vi.mocked(performanceTableService.listByRoom).mockResolvedValue(mockRoomTables);
 
-  function renderPage(state = { sessionId: 'sess-1' }) {
-    return render(
-      <MemoryRouter initialEntries={[{ pathname: '/formulas', state }]}>
-        <Routes>
-          <Route path="/formulas" element={<PerformanceTablesPage />} />
-        </Routes>
+    render(
+      <MemoryRouter initialEntries={[{ state: { roomId: 'room-123' } }]}>
+        <PerformanceTablesPage />
       </MemoryRouter>,
     );
-  }
 
-  it('renders the header correctly with back button', () => {
-    renderPage();
-    expect(screen.getByRole('heading', { name: 'Fórmulas' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Voltar' })).toBeInTheDocument();
+    expect(await screen.findByText(/Padrão do sistema/i)).toBeInTheDocument();
+    expect(screen.getByText(/Da turma/i)).toBeInTheDocument();
+    expect(screen.getByText(/Minhas/i)).toBeInTheDocument();
+
+    expect(screen.getByText('Tabela Oficial Padrão')).toBeInTheDocument();
+    expect(screen.getByText('Barema Compartilhado Turma A')).toBeInTheDocument();
+    expect(screen.getByText('Meu Barema Exclusivo')).toBeInTheDocument();
+
+    expect(screen.getByText('Outro Professor')).toBeInTheDocument();
+    expect(screen.getByText(/4 sessões em uso/i)).toBeInTheDocument();
   });
 
-  it('renders tables with Applied badge when matching session configuration', async () => {
-    vi.mocked(performanceTableService.list).mockResolvedValue(mockSummaries);
-    renderPage();
+  it('allows delete action ONLY for tables created by the logged user', async () => {
+    vi.mocked(performanceTableService.listByRoom).mockResolvedValue(mockRoomTables);
 
-    expect(await screen.findByText('Barema PBL')).toBeInTheDocument();
-    expect(screen.getByText('Aplicada')).toBeInTheDocument();
-  });
-
-  it('filters tables based on search query', async () => {
-    vi.mocked(performanceTableService.list).mockResolvedValue(mockSummaries);
-    renderPage();
-
-    await screen.findByText('Barema PBL');
-    await userEvent.type(screen.getByPlaceholderText('Pesquisar fórmula'), 'Curta');
-
-    expect(screen.queryByText('Barema PBL')).not.toBeInTheDocument();
-    expect(screen.getByText('Avaliação Curta')).toBeInTheDocument();
-  });
-
-  it('displays an error alert when the service fails', async () => {
-    vi.mocked(performanceTableService.list).mockRejectedValue(
-      new ApiError(500, ['Erro de conexão com o servidor.']),
+    render(
+      <MemoryRouter initialEntries={[{ state: { roomId: 'room-123' } }]}>
+        <PerformanceTablesPage />
+      </MemoryRouter>,
     );
-    renderPage();
 
-    expect(await screen.findByText('Erro de conexão com o servidor.')).toBeInTheDocument();
+    await screen.findByText('Meu Barema Exclusivo');
+
+    expect(
+      screen.getByRole('button', { name: 'Excluir fórmula Meu Barema Exclusivo' }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole('button', { name: 'Excluir fórmula Barema Compartilhado Turma A' }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByRole('button', { name: 'Excluir fórmula Tabela Oficial Padrão' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('opens confirmation modal and removes table when author confirms deletion', async () => {
+    vi.mocked(performanceTableService.listByRoom).mockResolvedValue(mockRoomTables);
+    vi.mocked(performanceTableService.remove).mockResolvedValue(undefined);
+
+    render(
+      <MemoryRouter initialEntries={[{ state: { roomId: 'room-123' } }]}>
+        <PerformanceTablesPage />
+      </MemoryRouter>,
+    );
+
+    const deleteBtn = await screen.findByRole('button', {
+      name: 'Excluir fórmula Meu Barema Exclusivo',
+    });
+    await userEvent.click(deleteBtn);
+
+    expect(screen.getByText('Excluir fórmula?')).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole('button', { name: 'Sim, excluir fórmula' });
+    await userEvent.click(confirmBtn);
+
+    expect(performanceTableService.remove).toHaveBeenCalledWith('t-pessoal-1');
   });
 });

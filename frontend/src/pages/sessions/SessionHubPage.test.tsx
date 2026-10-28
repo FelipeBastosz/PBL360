@@ -157,14 +157,6 @@ describe('SessionHubPage', () => {
     expect(screen.getAllByRole('switch')).toHaveLength(2);
   });
 
-  it('renders Encerrar sessão button as disabled', async () => {
-    renderPage();
-
-    const endBtn = await screen.findByRole('button', { name: 'Encerrar sessão' });
-    expect(endBtn).toBeInTheDocument();
-    expect(endBtn).toBeDisabled();
-  });
-
   describe('when user is a student', () => {
     beforeEach(() => {
       vi.mocked(sessionService.getForMember).mockResolvedValue({

@@ -10,6 +10,7 @@ export interface UserRepository {
   searchTutors(query: string): Promise<TutorSummary[]>;
   findByEmail(email: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
+  updateName(userId: string, name: string): Promise<User>;
   save(user: User): Promise<User>;
 }
 

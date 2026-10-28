@@ -118,7 +118,7 @@ export function StudentEvaluationPage() {
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <EvaluationHeader />
-      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4">
+      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4 sm:max-w-2xl">
         {state.error && <Alert tone="error">{state.error.message}</Alert>}
         <EvaluationMainContent
           studentName={studentName}

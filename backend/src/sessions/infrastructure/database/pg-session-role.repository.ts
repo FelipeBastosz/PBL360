@@ -45,6 +45,14 @@ export class PgSessionRoleRepository implements SessionRoleRepository {
     });
   }
 
+  async removeForStudents(sessionId: string, studentIds: string[]): Promise<void> {
+    if (studentIds.length === 0) return;
+    await this.assignments.query(
+      `DELETE FROM session_roles WHERE session_id = $1 AND student_id = ANY($2::uuid[]);`,
+      [sessionId, studentIds],
+    );
+  }
+
   private async assertEnrolled(
     manager: EntityManager,
     roomId: string,

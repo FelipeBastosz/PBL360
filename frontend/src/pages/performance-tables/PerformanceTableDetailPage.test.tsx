@@ -99,7 +99,7 @@ describe('PerformanceTableDetailPage', () => {
 
   it('disables apply button and shows message when table is already applied', async () => {
     vi.mocked(sessionService.getEvaluationConfig).mockResolvedValue({
-      tabela: { id: 'copy-1', nome: 'Barema PBL', padrao: false, criterios: [] },
+      tabela: { id: 'table-1', nome: 'Barema PBL', padrao: false, criterios: [] },
       formula: { padrao: true, versao: null, componentes: [] },
       bloqueada: false,
     });

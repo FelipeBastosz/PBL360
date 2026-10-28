@@ -53,7 +53,7 @@ export const UpdateEvaluationReleasesSwaggerDocs = applyDecorators(
   }),
   ApiConflictResponse({
     description:
-      'A chamada da sessão ainda não foi salva, ou o pedido deixaria autoavaliação e pares liberadas ao mesmo tempo.',
+      'A chamada da sessão ainda não foi salva, a sessão já possui avaliações do tutor submetidas, ou o pedido deixaria autoavaliação e pares liberadas ao mesmo tempo.',
     type: ErrorResponseDto,
   }),
   ...commonErrors,

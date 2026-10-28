@@ -24,7 +24,7 @@ describe('SavePeerEvaluationUseCase', () => {
   const activeSession = {
     id: 'sess-1',
     peerEvalReleased: true,
-    peerEvalDeadline: new Date('2026-10-20T23:59:59Z'),
+    peerEvalDeadline: new Date('2099-10-20T23:59:59Z'),
   };
   const problem = { id: 'prob-1' };
 
@@ -49,6 +49,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [{ criterionId: 'crit-1', score: 9 }],
         enviar: true,
+        now,
       }),
     ).rejects.toThrow(UnprocessableEntityError);
     await expect(
@@ -58,6 +59,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [{ criterionId: 'crit-1', score: 9 }],
         enviar: true,
+        now,
       }),
     ).rejects.toThrow('Um aluno não pode avaliar a si mesmo como par.');
     expect(sessionAccess.assertMemberCanAccessSession).not.toHaveBeenCalled();
@@ -77,6 +79,7 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow(LockedError);
     await expect(
@@ -86,40 +89,44 @@ describe('SavePeerEvaluationUseCase', () => {
         studentId: 'student-1',
         itens: [],
         enviar: false,
+        now,
       }),
     ).rejects.toThrow('A avaliação entre pares não está liberada.');
   });
 
-  it('rejects when deadline has passed (prazo vencido)', async () => {
-    const expiredDeadline = new Date('2026-10-01T12:00:00Z');
-    sessionAccess.assertMemberCanAccessSession.mockResolvedValue({
-      session: { ...activeSession, peerEvalDeadline: expiredDeadline },
-      problem,
-      roomId: 'room-1',
-    });
+  it.each([new Date('2026-10-01T12:00:00Z'), now])(
+    'rejects when the deadline has been reached or passed: %s',
+    async (expiredDeadline) => {
+      sessionAccess.assertMemberCanAccessSession.mockResolvedValue({
+        session: { ...activeSession, peerEvalDeadline: expiredDeadline },
+        problem,
+        roomId: 'room-1',
+      });
 
-    const now = new Date('2026-10-09T10:00:00Z');
-    await expect(
-      useCase.execute({
-        sessionId: 'sess-1',
-        peerId: 'peer-1',
-        studentId: 'student-1',
-        itens: [{ criterionId: 'crit-1', score: 8 }],
-        enviar: true,
-        now,
-      }),
-    ).rejects.toThrow(LockedError);
-    await expect(
-      useCase.execute({
-        sessionId: 'sess-1',
-        peerId: 'peer-1',
-        studentId: 'student-1',
-        itens: [{ criterionId: 'crit-1', score: 8 }],
-        enviar: true,
-        now,
-      }),
-    ).rejects.toThrow('O prazo para avaliação entre pares expirou.');
-  });
+      await expect(
+        useCase.execute({
+          sessionId: 'sess-1',
+          peerId: 'peer-1',
+          studentId: 'student-1',
+          itens: [{ criterionId: 'crit-1', score: 8 }],
+          enviar: true,
+          now,
+        }),
+      ).rejects.toThrow(LockedError);
+      await expect(
+        useCase.execute({
+          sessionId: 'sess-1',
+          peerId: 'peer-1',
+          studentId: 'student-1',
+          itens: [{ criterionId: 'crit-1', score: 8 }],
+          enviar: true,
+          now,
+        }),
+      ).rejects.toThrow('O prazo para avaliação entre pares expirou.');
+      expect(repository.isStudentParticipating).not.toHaveBeenCalled();
+      expect(repository.recordPeerEvaluation).not.toHaveBeenCalled();
+    },
+  );
 
   it('rejects when evaluating student did not participate (avaliador que não participou)', async () => {
     sessionAccess.assertMemberCanAccessSession.mockResolvedValue({

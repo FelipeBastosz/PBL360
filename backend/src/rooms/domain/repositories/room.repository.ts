@@ -6,6 +6,17 @@ export interface StudentRoomSummary {
   semester: string;
   totalStudents: number;
   totalProblems: number;
+  tutor?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface TutorRoomSummary {
+  room: Room;
+  totalStudents: number;
+  totalProblems: number;
 }
 
 export interface TutorRoomSummary {

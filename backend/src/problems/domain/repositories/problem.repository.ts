@@ -3,6 +3,7 @@ import type { Problem } from '../entities/problem.entity';
 export const PROBLEM_REPOSITORY = Symbol('PROBLEM_REPOSITORY');
 
 export interface ProblemRepository {
+  listSessions(problemId: string): Promise<Array<{ id: string; title: string }>>;
   updateDetails(input: UpdateProblemDetails): Promise<Problem>;
   create(problem: Problem): Promise<Problem>;
   findById(id: string): Promise<Problem | null>;

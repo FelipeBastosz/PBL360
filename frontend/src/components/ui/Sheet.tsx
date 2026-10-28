@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { cn } from '@/utils/cn';
 
 type SheetProps = {
@@ -11,17 +12,6 @@ type SheetProps = {
   leading?: ReactNode;
   placement?: 'bottom' | 'center';
 };
-
-function useCloseOnEscape(isOpen: boolean, onClose: () => void) {
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
-}
 
 type SheetHeaderProps = Pick<SheetProps, 'title' | 'description' | 'leading' | 'onClose'> & {
   titleId: string;
@@ -53,7 +43,7 @@ export function Sheet({ isOpen, onClose, children, placement = 'bottom', ...head
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const isCentered = placement === 'center';
-  useCloseOnEscape(isOpen, onClose);
+  useEscapeKey(isOpen, onClose);
 
   useEffect(() => {
     if (isOpen) panelRef.current?.focus();

@@ -5,6 +5,7 @@ import {
   ApiBody,
   ApiOkResponse,
   ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -62,6 +63,11 @@ export const SaveTutorEvaluationSwaggerDocs = applyDecorators(
   ApiOkResponse({ type: TutorEvaluationResponseDto }),
   ApiBadRequestResponse({
     description: 'Formato inválido, justificativa inválida ou tentativa de voltar a rascunho.',
+    type: ErrorResponseDto,
+  }),
+  ApiConflictResponse({
+    description:
+      'Avaliação direta do tutor bloqueada enquanto autoavaliação ou pares estiver ativa na sessão.',
     type: ErrorResponseDto,
   }),
   ApiUnprocessableEntityResponse({

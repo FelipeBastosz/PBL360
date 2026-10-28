@@ -89,7 +89,7 @@ export function StudentEvaluationCard({ student, evaluationUrl, disabled }: Stud
           className="size-11 bg-brand-700 text-white"
         />
         <div className="flex min-w-0 flex-col">
-          <h3 className="truncate text-base font-bold text-ink">{student.nome}</h3>
+          <h3 className="line-clamp-2 text-base font-bold break-words text-ink">{student.nome}</h3>
           <EvaluationBadges student={student} />
         </div>
       </div>

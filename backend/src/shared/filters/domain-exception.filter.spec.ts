@@ -1,4 +1,5 @@
 import type { ArgumentsHost } from '@nestjs/common';
+import { ReportGenerationError } from '@/report-files/application/errors/report-generation.error';
 import {
   ConflictError,
   ForbiddenError,
@@ -51,5 +52,18 @@ describe('DomainExceptionFilter', () => {
 
     expect(status).toHaveBeenCalledWith(statusCode);
     expect(json).toHaveBeenCalledWith({ statusCode, message: 'x', error: label });
+  });
+
+  it('answers report generation failures with 500 without exposing the cause', () => {
+    const error = new ReportGenerationError(new Error('Internal renderer details'));
+
+    new DomainExceptionFilter().catch(error, hostWith(status));
+
+    expect(status).toHaveBeenCalledWith(500);
+    expect(json).toHaveBeenCalledWith({
+      statusCode: 500,
+      message: 'Não foi possível gerar o arquivo do relatório.',
+      error: 'Internal Server Error',
+    });
   });
 });

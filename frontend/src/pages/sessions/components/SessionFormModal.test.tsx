@@ -91,4 +91,21 @@ describe('SessionFormModal', () => {
       expect(mockOnSuccess).toHaveBeenCalledWith(createdSession);
     });
   });
+
+  it('closes on Escape', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SessionFormModal
+        isOpen={true}
+        roomId="room-1"
+        problemId="prob-1"
+        onClose={mockOnClose}
+        onSuccess={mockOnSuccess}
+      />,
+    );
+
+    await user.keyboard('{Escape}');
+    expect(mockOnClose).toHaveBeenCalledOnce();
+  });
 });

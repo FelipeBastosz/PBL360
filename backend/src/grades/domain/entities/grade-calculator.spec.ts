@@ -238,20 +238,155 @@ describe('grade calculator', () => {
   it('calculates the final grade and redistributes unavailable components', () => {
     expect(
       calculateProblemGrade(
+        [{ type: 'MEDIA_SESSOES', weight: 100 }],
         [
-          { type: 'MEDIA_SESSOES', weight: 60 },
-          { type: 'AUTOAVALIACAO', weight: 40, value: null },
+          { sessionId: 's1', grade: 8 },
+          { sessionId: 's2', grade: null },
         ],
-        [8, null],
       ),
     ).toEqual({ grade: 8 });
   });
 
-  it('keeps internal precision and rounds only presentation', () => {
-    expect(calculateProblemGrade([{ type: 'MEDIA_SESSOES', weight: 100 }], [8, 7])).toEqual({
-      grade: 7.5,
+  describe('active evaluation modalities', () => {
+    it('calculates session grade from self-assessment modality score', () => {
+      expect(
+        calculateSessionGrade({
+          attendance: 'PRESENT',
+          criteria: [],
+          components: criteria,
+          bonus: null,
+          modality: 'AUTOAVALIACAO',
+          modalityScore: 8.5,
+        }),
+      ).toEqual({ grade: 8.5, situation: 'AVALIADA' });
     });
+
+    it('calculates session grade from self-assessment with bonus applied', () => {
+      const result = calculateSessionGrade({
+        attendance: 'PRESENT',
+        criteria: [],
+        components: criteria,
+        bonus: 10,
+        defaultFormula: true,
+        modality: 'AUTOAVALIACAO',
+        modalityScore: 8,
+      });
+      expect(result.grade).toBeCloseTo(8.6, 5);
+      expect(result.situation).toBe('AVALIADA');
+    });
+
+    it('calculates session grade from peer / poker modality score', () => {
+      expect(
+        calculateSessionGrade({
+          attendance: 'PRESENT',
+          criteria: [],
+          components: criteria,
+          bonus: null,
+          modality: 'PARES',
+          modalityScore: 9.2,
+        }),
+      ).toEqual({ grade: 9.2, situation: 'AVALIADA' });
+    });
+
+    it('returns pending situation when student modality score is missing', () => {
+      expect(
+        calculateSessionGrade({
+          attendance: 'PRESENT',
+          criteria: [],
+          components: criteria,
+          bonus: null,
+          modality: 'AUTOAVALIACAO',
+          modalityScore: null,
+        }),
+      ).toEqual({ grade: null, situation: 'PENDENTE' });
+    });
+
+    it('still applies attendance rules even when modality score is available', () => {
+      expect(
+        calculateSessionGrade({
+          attendance: 'ABSENT',
+          criteria: [],
+          components: criteria,
+          bonus: null,
+          modality: 'AUTOAVALIACAO',
+          modalityScore: 9,
+        }),
+      ).toEqual({ grade: 0, situation: 'AUSENTE' });
+      expect(
+        calculateSessionGrade({
+          attendance: 'EXCUSED',
+          criteria: [],
+          components: criteria,
+          bonus: null,
+          modality: 'PARES',
+          modalityScore: 9,
+        }),
+      ).toEqual({ grade: null, situation: 'JUSTIFICADA' });
+    });
+  });
+
+  it('keeps internal precision and rounds only presentation', () => {
+    expect(
+      calculateProblemGrade(
+        [{ type: 'MEDIA_SESSOES', weight: 100 }],
+        [
+          { sessionId: 's1', grade: 8 },
+          { sessionId: 's2', grade: 7 },
+        ],
+      ),
+    ).toEqual({ grade: 7.5 });
     expect(presentGrade(7.55)).toBe(7.6);
     expect(presentGrade(null)).toBeNull();
+  });
+
+  it('calculates the final grade using relative weights per session and skips missing grades', () => {
+    expect(
+      calculateProblemGrade(
+        [
+          { type: 'MEDIA_SESSOES', weight: 100 },
+          { type: 'SESSAO', referenceId: 's1', weight: 3 },
+          { type: 'SESSAO', referenceId: 's2', weight: 1 },
+          { type: 'SESSAO', referenceId: 's3', weight: 10 },
+        ],
+        [
+          { sessionId: 's1', grade: 8 },
+          { sessionId: 's2', grade: 4 },
+          { sessionId: 's3', grade: null },
+        ],
+      ),
+    ).toEqual({ grade: 7 });
+  });
+
+  it('uses weight 1 for a newly created session and ignores justified sessions', () => {
+    expect(
+      calculateProblemGrade(
+        [
+          { type: 'MEDIA_SESSOES', weight: 100 },
+          { type: 'SESSAO', referenceId: 's1', weight: 3 },
+          { type: 'SESSAO', referenceId: 's2', weight: 1 },
+        ],
+        [
+          { sessionId: 's1', grade: 8 },
+          { sessionId: 's2', grade: null },
+          { sessionId: 's3', grade: 4 },
+        ],
+      ),
+    ).toEqual({ grade: 7 });
+  });
+
+  it('calculates the problem grade only from weighted session grades', () => {
+    expect(
+      calculateProblemGrade(
+        [
+          { type: 'MEDIA_SESSOES', weight: 100 },
+          { type: 'SESSAO', referenceId: 's1', weight: 3 },
+          { type: 'SESSAO', referenceId: 's2', weight: 1 },
+        ],
+        [
+          { sessionId: 's1', grade: 8 },
+          { sessionId: 's2', grade: 4 },
+        ],
+      ),
+    ).toEqual({ grade: 7 });
   });
 });

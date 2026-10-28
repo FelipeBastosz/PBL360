@@ -5,6 +5,7 @@ import { TextField } from '@/components/ui/TextField';
 import { Alert } from '@/components/ui/Alert';
 import { useForm } from '@/hooks/useForm';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { sessionService } from '@/services/session.service';
 import { validateSessionForm, type SessionFormValues } from '@/utils/sessionsForm';
 import type { Session } from '@/types/session';
@@ -34,7 +35,7 @@ function ModalDialog({
       aria-labelledby="session-form-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl animate-pop-in">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl animate-pop-in">
         <button
           type="button"
           onClick={isLoading ? undefined : onClose}
@@ -154,6 +155,8 @@ export function SessionFormModal({
     initialData,
     onSuccess,
   );
+
+  useEscapeKey(isOpen, onClose, isLoading);
 
   useEffect(() => {
     syncFormValues(setValue, isOpen ? initialData : null);
