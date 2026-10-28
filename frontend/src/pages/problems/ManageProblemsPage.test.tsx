@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type * as Router from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { roomService } from '@/services/room.service';
 import { problemService } from '@/services/problem.service';
+import { ApiError } from '@/services/apiError';
 import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
 import ManageProblemsPage from './ManageProblemsPage';
@@ -149,6 +150,52 @@ describe('ManageProblemsPage', () => {
         tone: 'success',
         message: 'Problema excluído com sucesso!',
       });
+    });
+  });
+
+  it('cancels deletion and keeps problem in list when clicking Cancelar in modal', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    const deleteBtn = await screen.findByRole('button', {
+      name: 'Excluir Problema 1 - Introdução',
+    });
+    await user.click(deleteBtn);
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+
+    // Clica no botão Cancelar dentro do modal
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(problemService.remove).not.toHaveBeenCalled();
+    expect(screen.getByText('Problema 1 - Introdução')).toBeInTheDocument();
+  });
+
+  it('shows error notification when problem deletion fails', async () => {
+    const user = userEvent.setup();
+    vi.mocked(problemService.remove).mockRejectedValue(
+      new ApiError(409, ['O problema possui sessões e não pode ser excluído.']),
+    );
+
+    renderComponent();
+
+    const deleteBtn = await screen.findByRole('button', {
+      name: 'Excluir Problema 1 - Introdução',
+    });
+    await user.click(deleteBtn);
+
+    await user.click(screen.getByRole('button', { name: 'Sim, excluir problema' }));
+
+    await waitFor(() => {
+      expect(mockNotify).toHaveBeenCalledWith({
+        tone: 'error',
+        message: 'O problema possui sessões e não pode ser excluído.',
+      });
+      expect(
+        screen.getByRole('heading', { level: 3, name: 'Problema 1 - Introdução' }),
+      ).toBeInTheDocument();
     });
   });
 

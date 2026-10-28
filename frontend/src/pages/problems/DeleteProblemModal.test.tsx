@@ -49,6 +49,21 @@ describe('DeleteProblemModal', () => {
     expect(screen.getByText(/24 notas/i)).toBeInTheDocument();
   });
 
+  it('renders loading feedback when impact data is null', () => {
+    render(
+      <DeleteProblemModal
+        problemTitle="Problema 1"
+        impact={null}
+        isOpen={true}
+        isLoading={false}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Carregando impacto da exclusão...')).toBeInTheDocument();
+  });
+
   it('calls onConfirm when confirm button is clicked', async () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();
@@ -88,5 +103,24 @@ describe('DeleteProblemModal', () => {
 
     await user.click(screen.getByRole('button', { name: 'Fechar confirmação' }));
     expect(onCancel).toHaveBeenCalledTimes(2);
+  });
+
+  it('calls onCancel when Escape key is pressed', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+
+    render(
+      <DeleteProblemModal
+        problemTitle="Problema 1"
+        impact={mockImpact}
+        isOpen={true}
+        isLoading={false}
+        onConfirm={vi.fn()}
+        onCancel={onCancel}
+      />,
+    );
+
+    await user.keyboard('{Escape}');
+    expect(onCancel).toHaveBeenCalledOnce();
   });
 });
