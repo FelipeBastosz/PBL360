@@ -182,8 +182,8 @@ describe('Problems (e2e)', () => {
       {
         titulo: 'Problema 1 - Primeiros Socorros',
         descricao: 'Descrição detalhada do caso clínico.',
-        dataInicio: '2026-03-01',
-        dataFim: '2026-03-15',
+        dataInicio: '01-03-2026',
+        dataFim: '15-03-2026',
       },
       tutor1Token,
     ).expect(201);
@@ -195,27 +195,29 @@ describe('Problems (e2e)', () => {
     expect(body.descricao).toBe('Descrição detalhada do caso clínico.');
     expect(body.ordem).toBe(1);
     expect(body.criadoPor).toBe(tutor1Id);
-    expect(body.dataInicio).toBe('2026-03-01');
-    expect(body.dataFim).toBe('2026-03-15');
+    expect(body.dataInicio).toBe('01-03-2026');
+    expect(body.dataFim).toBe('15-03-2026');
   });
 
   it('rejects dates with a time component', async () => {
     const body = (
       await postProblem(
         roomId,
-        { titulo: 'P', dataInicio: '2026-03-01T00:00:00.000Z' },
+        { titulo: 'P', dataInicio: '01-03-2026T00:00:00.000Z' },
         tutor1Token,
       ).expect(400)
     ).body as ErrorResponseBody;
 
-    expect(body.message).toContain('A data de início deve estar no formato AAAA-MM-DD.');
+    expect(body.message).toContain(
+      'A data de início deve estar no formato DD-MM-AAAA e ser válida.',
+    );
   });
 
   it('rejects an end date before the start date', async () => {
     const body = (
       await postProblem(
         roomId,
-        { titulo: 'P', dataInicio: '2026-03-15', dataFim: '2026-03-01' },
+        { titulo: 'P', dataInicio: '15-03-2026', dataFim: '01-03-2026' },
         tutor1Token,
       ).expect(400)
     ).body as ErrorResponseBody;
@@ -440,8 +442,8 @@ describe('Problems (e2e)', () => {
         {
           titulo: 'Problema Específico',
           descricao: 'Descrição detalhada do caso clínico.',
-          dataInicio: '2026-03-01',
-          dataFim: '2026-03-15',
+          dataInicio: '01-03-2026',
+          dataFim: '15-03-2026',
         },
         tutor1Token,
       ).expect(201);
