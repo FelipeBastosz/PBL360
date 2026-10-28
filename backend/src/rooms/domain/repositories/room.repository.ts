@@ -65,6 +65,8 @@ export interface RoomRepository {
 
   removeTutor(roomId: string, tutorId: string): Promise<boolean>;
 
+  removeStudent(roomId: string, studentId: string): Promise<boolean>;
+
   findForStudent(studentId: string): Promise<StudentRoomSummary[]>;
 
   findStudents(roomId: string): Promise<RoomStudentSummary[]>;
