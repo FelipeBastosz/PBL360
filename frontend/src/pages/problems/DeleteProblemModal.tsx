@@ -41,7 +41,8 @@ function ImpactDescription({ impact }: { impact: ProblemDeletionImpact | null })
           </strong>
           {impact.avaliacoes > 0 || impact.notas > 0 ? (
             <>
-              {' '}com <strong>{impact.avaliacoes} avaliações</strong> e{' '}
+              {' '}
+              com <strong>{impact.avaliacoes} avaliações</strong> e{' '}
               <strong>{impact.notas} notas</strong> registradas.
             </>
           ) : null}
