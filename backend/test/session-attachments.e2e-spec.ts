@@ -93,7 +93,7 @@ describe('Session attachments (e2e)', () => {
       .post(`/salas/${roomId}/problemas/${problemId}/sessoes`, {
         titulo: 'Abertura',
         descricao: null,
-        data: '2026-10-01',
+        data: '01-10-2026',
       })
       .expect(201);
     sessionId = (session.body as { id: string }).id;
@@ -107,7 +107,7 @@ describe('Session attachments (e2e)', () => {
         expect.objectContaining({
           id: sessionId,
           titulo: 'Abertura',
-          data: '2026-10-01',
+          data: '01-10-2026',
           problemaTitulo: 'Sistema de biblioteca',
         }),
       ]);
