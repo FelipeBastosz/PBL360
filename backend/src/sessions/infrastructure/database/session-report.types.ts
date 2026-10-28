@@ -38,29 +38,11 @@ export interface ObservationTagsRow {
   tags: string[];
 }
 
-export interface CriterionRow {
-  id: string;
-  name: string;
-  weight: string | number;
-}
-
-export interface FormulaComponentRow {
-  type: string;
-  weight: string | number;
-}
-
 export interface EvaluationRow {
   id: string;
   studentId: string;
   status: EvaluationStatus;
-  sessionScore: string | number | null;
   appliedBonus: string | number | null;
-}
-
-export interface EvaluationItemRow {
-  evaluationId: string;
-  criterionId: string;
-  score: string | number;
 }
 
 export interface FeedbackRow {
@@ -80,10 +62,7 @@ export interface SessionReportRawData {
   attendances: AttendanceRow[];
   roles: RoleRow[];
   observations: ObservationTagsRow[];
-  criteria?: CriterionRow[];
-  formulas?: FormulaComponentRow[];
   evaluations: EvaluationRow[];
-  items?: EvaluationItemRow[];
   feedbacks: FeedbackRow[];
   summaries?: EvaluationSummary[];
 }

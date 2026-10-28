@@ -14,6 +14,8 @@ import {
 } from './helpers/session-formula.helper';
 import {
   processStudentGrades,
+  type ProblemGradesInput,
+  type ProblemGradesWithSessionGrades,
   type Row,
   type StudentResponse,
 } from './helpers/get-problem-grades.helper';
@@ -56,10 +58,19 @@ export class GetProblemGradesUseCase {
     private readonly roomAccess: RoomAccessService,
   ) {}
 
-  async execute(
-    input: { roomId: string; problemId: string; tutorId: string },
+  async execute(input: ProblemGradesInput, now = new Date()): Promise<GradesResponseDto> {
+    return (await this.calculateAndSave(input, now)).response;
+  }
+
+  async executeWithSessionGrades(
+    input: ProblemGradesInput,
     now = new Date(),
-  ): Promise<GradesResponseDto> {
+  ): Promise<ProblemGradesWithSessionGrades> {
+    const result = await this.calculateAndSave(input, now);
+    return { response: result.response, sessionGrades: result.sessionRows };
+  }
+
+  private async calculateAndSave(input: ProblemGradesInput, now: Date): Promise<CalculationResult> {
     await this.roomAccess.assertTutorCanAccessRoom(input.roomId, input.tutorId);
     const problem = await this.gradesRepository.findProblem(input.problemId, input.roomId);
     if (!problem) throw new NotFoundError('Problema não encontrado na sala informada.');
@@ -69,7 +80,7 @@ export class GetProblemGradesUseCase {
 
     const result = this.calculate({ ...data, ...effective, now });
     await this.saveGrades(input.problemId, result);
-    return result.response;
+    return result;
   }
 
   private saveGrades(problemId: string, result: CalculationResult): Promise<void> {

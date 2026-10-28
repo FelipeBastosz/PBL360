@@ -12,6 +12,7 @@ import {
   insertUser,
   type TestUser,
 } from './helpers/fixtures';
+import { binaryParser, loadWorkbook } from './helpers/report-files';
 
 interface SeatBody {
   lugar: number;
@@ -44,6 +45,8 @@ describe('Planning poker (e2e)', () => {
   let bruno: TestUser;
   let carla: TestUser;
   let absent: TestUser;
+  let roomId: string;
+  let problemId: string;
   let sessionId: string;
 
   const path = (suffix = '') => `/sessoes/${sessionId}/poker${suffix}`;
@@ -83,6 +86,7 @@ describe('Planning poker (e2e)', () => {
        VALUES ($1, 'Sala do poker', 'EXA123', 'POKR1234', '2026.2', true) RETURNING id;`,
       [tutor.id],
     );
+    roomId = room.id;
     await db.query(
       'INSERT INTO room_students (room_id, student_id) VALUES ($1, $2), ($1, $3), ($1, $4), ($1, $5);',
       [room.id, ana.id, bruno.id, carla.id, absent.id],
@@ -93,6 +97,7 @@ describe('Planning poker (e2e)', () => {
        VALUES ($1, 'Dor torácica aguda', 1, $2) RETURNING id;`,
       [room.id, tutor.id],
     );
+    problemId = problem.id;
     const [session] = await db.query<[{ id: string }]>(
       `INSERT INTO sessions (problem_id, title, date, order_index, status)
        VALUES ($1, 'Sessão 3', '2026-10-12', 1, 'agendada') RETURNING id;`,
@@ -257,6 +262,79 @@ describe('Planning poker (e2e)', () => {
       const state = (await api(app, tutor).get(path()).expect(200)).body as StateBody;
 
       expect(state.fila).toEqual([ana.id, bruno.id, carla.id]);
+    });
+  });
+
+  describe('decided grade in the session', () => {
+    let round: RoundBody;
+
+    const studentRow = (rows: unknown[][], student: TestUser) =>
+      rows.find((values) => values.includes(student.email.slice(0, 8)));
+
+    beforeEach(async () => {
+      await start().expect(201);
+      round = await openRound();
+      await vote(bruno, round.rodadaId, 7).expect(200);
+      await vote(carla, round.rodadaId, 8).expect(200);
+      await api(app, tutor).post(roundPath(round.rodadaId, '/revelar')).expect(200);
+      await api(app, tutor)
+        .post(roundPath(round.rodadaId, '/decisao'), {
+          acao: 'REAJUSTAR',
+          nota: 8.75,
+          justificativa: 'Participação ativa na discussão do problema.',
+        })
+        .expect(200);
+    });
+
+    it('keeps the decision with its author and justification and locks the round', async () => {
+      const [decided] = await db.query<
+        [{ status: string; final_grade: string; justification: string; decided_by: string }]
+      >('SELECT status, final_grade, justification, decided_by FROM poker_rounds WHERE id = $1', [
+        round.rodadaId,
+      ]);
+
+      expect(decided).toEqual({
+        status: 'DECIDED',
+        final_grade: '8.75',
+        justification: 'Participação ativa na discussão do problema.',
+        decided_by: tutor.id,
+      });
+      await vote(bruno, round.rodadaId, 10).expect(409);
+    });
+
+    it('uses the decided grade as the session grade', async () => {
+      const grades = await api(app, tutor)
+        .get(`/salas/${roomId}/problemas/${problemId}/notas`)
+        .expect(200);
+      const anaGrades = (
+        grades.body as {
+          alunos: Array<{ alunoId: string; sessoes: unknown[]; notaFinal: number | null }>;
+        }
+      ).alunos.find((aluno) => aluno.alunoId === ana.id);
+
+      expect(anaGrades?.sessoes[0]).toMatchObject({
+        sessaoId: sessionId,
+        nota: 8.8,
+        situacao: 'AVALIADA',
+        modalidade: 'PARES',
+        pares: { nota: 8.8, situacao: 'AVALIADA', origem: 'PLANNING_POKER' },
+      });
+      expect(anaGrades?.notaFinal).toBe(8.8);
+    });
+
+    it('exports the decided grade with one decimal place in the session report', async () => {
+      const res = await api(app, tutor)
+        .get(`/sessoes/${sessionId}/relatorio/exportacao?formato=XLSX`)
+        .buffer(true)
+        .parse(binaryParser)
+        .expect(200);
+
+      const sheet = (await loadWorkbook(res.body)).getWorksheet('Dados da sessão')!;
+      const rows: unknown[][] = [];
+      sheet.eachRow((row) => rows.push(row.values as unknown[]));
+
+      expect(studentRow(rows, ana)?.slice(-2)).toEqual(['Nota do planning poker', 8.8]);
+      expect(studentRow(rows, bruno)?.slice(-1)).toEqual(['Não registrada']);
     });
   });
 

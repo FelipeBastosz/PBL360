@@ -165,6 +165,7 @@ describe('Grades (e2e)', () => {
             sessaoId: sessionId,
             nota: 8.5,
             situacao: 'AVALIADA',
+            modalidade: 'TUTOR',
             autoavaliacao: { nota: null, situacao: 'NAO_LIBERADA' },
             pares: { nota: null, situacao: 'NAO_LIBERADA', origem: 'FORMULARIO' },
           },

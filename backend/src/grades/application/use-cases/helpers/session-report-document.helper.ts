@@ -10,11 +10,15 @@ import {
   type ReportSection,
 } from '@/report-files/domain/report-document';
 import { buildFeedbackEntries } from './session-report-feedback.helper';
-import { calculateStudentGrade } from './session-report-grade.helper';
+import {
+  toSessionReportGrade,
+  type SessionReportGrade,
+  type SessionReportGrades,
+} from './session-report-grade.helper';
 import type {
   SessionReportData,
   SessionReportStudentData,
-} from '../../../domain/repositories/session-report.repository';
+} from '@/sessions/domain/repositories/session-report.repository';
 
 const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {
   [AttendanceStatus.PRESENT]: 'Presente',
@@ -68,11 +72,10 @@ export function getScore(student: SessionReportStudentData): number | null {
 
 export function buildStudentRow(
   student: SessionReportStudentData,
-  data: SessionReportData,
+  { gradeStatus, grade }: SessionReportGrade,
   hiddenStudentName: boolean,
   showTags: boolean,
 ): ReportCellValue[] {
-  const { gradeStatus, grade } = calculateStudentGrade(student, data);
   const score = getScore(student);
 
   return [
@@ -116,22 +119,42 @@ function addFeedbackInSection(
   return sections;
 }
 
+export interface SessionReportOptions {
+  ocultarNome?: boolean;
+  mostrarFeedBack?: boolean;
+  mostrarMarcacoes?: boolean;
+}
+
+function buildStudentRows(
+  data: SessionReportData,
+  grades: SessionReportGrades,
+  options: Required<SessionReportOptions>,
+): ReportCellValue[][] {
+  return data.students.map((student) =>
+    buildStudentRow(
+      student,
+      toSessionReportGrade(grades.get(student.studentId), student.evaluationStatus),
+      options.ocultarNome,
+      options.mostrarMarcacoes,
+    ),
+  );
+}
+
 function buildReportSections(
   data: SessionReportData,
-  ocultarNome: boolean,
-  mostrarFeedBack: boolean,
-  mostrarMarcacoes: boolean,
+  grades: SessionReportGrades,
+  options: Required<SessionReportOptions>,
 ): ReportSection[] {
   const sections: ReportSection[] = [
     {
       kind: 'table',
       title: 'Dados da sessão',
       columns: SESSION_REPORT_COLUMNS,
-      rows: data.students.map((s) => buildStudentRow(s, data, ocultarNome, mostrarMarcacoes)),
+      rows: buildStudentRows(data, grades, options),
     },
   ];
 
-  return addFeedbackInSection(data, ocultarNome, mostrarFeedBack, sections);
+  return addFeedbackInSection(data, options.ocultarNome, options.mostrarFeedBack, sections);
 }
 
 export function buildSessionFileName(data: SessionReportData): string {
@@ -153,21 +176,20 @@ export function buildSessionFileName(data: SessionReportData): string {
 export function buildSessionReportDocument(
   format: ReportFileFormat,
   data: SessionReportData,
-  options: { ocultarNome?: boolean; mostrarFeedBack?: boolean; mostrarMarcacoes?: boolean } = {},
+  grades: SessionReportGrades,
+  options: SessionReportOptions = {},
 ): ReportDocument {
   const { session } = data;
-  const fileName = buildSessionFileName(data);
 
   return {
     format,
     title: `Relatório da sessão — ${session.title}`,
-    fileName,
+    fileName: buildSessionFileName(data),
     identification: buildReportIdentification(data),
-    sections: buildReportSections(
-      data,
-      options.ocultarNome ?? false,
-      options.mostrarFeedBack ?? true,
-      options.mostrarMarcacoes ?? true,
-    ),
+    sections: buildReportSections(data, grades, {
+      ocultarNome: options.ocultarNome ?? false,
+      mostrarFeedBack: options.mostrarFeedBack ?? true,
+      mostrarMarcacoes: options.mostrarMarcacoes ?? true,
+    }),
   };
 }
