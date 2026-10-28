@@ -38,11 +38,6 @@ export class GetProblemDeletionImpactUseCase {
       throw new NotFoundError('Problema não encontrado.');
     }
 
-    return {
-      sessions: await this.problemRepository.countSessions(problem.id),
-      grades: 0,
-      feedbacks: 0,
-      evaluations: 0,
-    };
+    return this.problemRepository.getDeletionImpact(problem.id);
   }
 }
