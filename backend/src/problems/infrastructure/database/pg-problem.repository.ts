@@ -3,13 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
 
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
-import { ConflictError } from '@/shared/errors/application.error';
+import { assertProblemCanBeDeleted } from '../../domain/services/problem-deletion-policy';
+import { readProblemDeletionImpact } from './problem-deletion-impact.queries';
 
 import { updateProblemDetails } from './problem-update.persistence';
 
 import { Problem } from '../../domain/entities/problem.entity';
 import type {
   ProblemRepository,
+  ProblemDeletionImpact,
   UpdateProblemDetails,
 } from '../../domain/repositories/problem.repository';
 
@@ -104,6 +106,10 @@ export class PgProblemRepository implements ProblemRepository {
     return Number(firstRowOrNull(rows)?.count ?? 0);
   }
 
+  getDeletionImpact(problemId: string): Promise<ProblemDeletionImpact> {
+    return readProblemDeletionImpact(this.problems.manager, problemId);
+  }
+
   updateDetails(input: UpdateProblemDetails): Promise<Problem> {
     return this.problems.manager.transaction(async (manager) => {
       await updateProblemDetails(manager, input);
@@ -136,26 +142,13 @@ export class PgProblemRepository implements ProblemRepository {
         return;
       }
 
-      if (await this.hasSessionsInTransaction(manager, id)) {
-        throw new ConflictError('O problema possui sessões e não pode ser excluído.');
-      }
+      assertProblemCanBeDeleted(await readProblemDeletionImpact(manager, id));
 
       const orderIndex = Number(target.orderIndex);
 
       await manager.query(`DELETE FROM problems WHERE id = $1 AND room_id = $2;`, [id, roomId]);
       await this.decrementFollowingOrders(manager, roomId, orderIndex);
     });
-  }
-
-  private async hasSessionsInTransaction(
-    manager: EntityManager,
-    problemId: string,
-  ): Promise<boolean> {
-    const rows = await manager.query<Array<{ exists: boolean }>>(
-      `SELECT EXISTS (SELECT 1 FROM sessions WHERE problem_id = $1) AS exists;`,
-      [problemId],
-    );
-    return firstRowOrNull(rows)?.exists ?? false;
   }
 
   private async decrementFollowingOrders(

@@ -1022,7 +1022,12 @@ describe('Sessions (e2e)', () => {
 
       expect(deleteProblemRes.status).toBe(409);
       const body = deleteProblemRes.body as ErrorResponseBody;
-      expect(body.message).toContain('O problema possui sessões e não pode ser excluído.');
+      expect(body.message).toBe(
+        'O problema não pode ser excluído pois possui registros vinculados.',
+      );
+      expect(deleteProblemRes.body).toMatchObject({
+        detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0 },
+      });
     });
 
     it('allows problem deletion with 204 No Content once all its sessions are deleted', async () => {
