@@ -63,6 +63,35 @@ function TableFooter({ average }: { average: number | null }) {
   );
 }
 
+function StudentRow({
+  student,
+  isNamesHidden,
+}: {
+  student: SessionReportStudent;
+  isNamesHidden: boolean;
+}) {
+  const hasGrade =
+    student.notaFinal !== null &&
+    student.notaFinal !== undefined &&
+    !Number.isNaN(student.notaFinal);
+  const gradeColorClass = !hasGrade
+    ? 'text-ink'
+    : (student.notaFinal ?? 0) >= 7.0
+      ? 'text-green-600'
+      : 'text-red-600';
+
+  return (
+    <tr className="transition-colors hover:bg-black/[0.02]">
+      <td className="px-4 py-3.5 text-left font-medium text-ink">
+        {isNamesHidden ? student.matricula : student.nome}
+      </td>
+      <td className={cn('px-4 py-3.5 text-right font-bold', gradeColorClass)}>
+        {formatGrade(student.notaFinal)}
+      </td>
+    </tr>
+  );
+}
+
 export function SessionReportTable({ students }: SessionReportTableProps) {
   const [isNamesHidden, setIsNamesHidden] = useState(false);
   const classAverage = calculateAverage(students);
@@ -84,24 +113,17 @@ export function SessionReportTable({ students }: SessionReportTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-black/5 text-sm">
-            {students.map((student) => {
-              const isSuccess = (student.notaFinal ?? 0) >= 7.0;
-              return (
-                <tr key={student.id} className="transition-colors hover:bg-black/[0.02]">
-                  <td className="px-4 py-3.5 text-left font-medium text-ink">
-                    {isNamesHidden ? student.matricula : student.nome}
-                  </td>
-                  <td
-                    className={cn(
-                      'px-4 py-3.5 text-right font-bold',
-                      isSuccess ? 'text-green-600' : 'text-red-600',
-                    )}
-                  >
-                    {formatGrade(student.notaFinal)}
-                  </td>
-                </tr>
-              );
-            })}
+            {students.length === 0 ? (
+              <tr>
+                <td colSpan={2} className="px-4 py-8 text-center text-sm text-muted">
+                  Nenhum aluno encontrado para esta sessão.
+                </td>
+              </tr>
+            ) : (
+              students.map((student) => (
+                <StudentRow key={student.id} student={student} isNamesHidden={isNamesHidden} />
+              ))
+            )}
           </tbody>
           <TableFooter average={classAverage} />
         </table>

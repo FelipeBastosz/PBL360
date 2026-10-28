@@ -164,6 +164,17 @@ describe('sessionService', () => {
     expect(sent(download)).toMatchObject({ url: '/sessoes/s1/anexos/a1', responseType: 'blob' });
   });
 
+  it('exports session report in PDF and XLSX formats with responseType blob', async () => {
+    const download = respondWith(new Blob(['%PDF']));
+    await sessionService.exportSessionReport('s1', 'PDF');
+    expect(sent(download)).toMatchObject({
+      method: 'get',
+      url: '/sessoes/s1/relatorio/exportacao',
+      params: { formato: 'PDF' },
+      responseType: 'blob',
+    });
+  });
+
   it('fetches release status for a session', async () => {
     const mockReleases = {
       autoavaliacao: { liberada: true, prazo: null, enviadas: 4, esperadas: 12 },

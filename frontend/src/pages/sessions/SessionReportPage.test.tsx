@@ -1,8 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
+import { ToastContext } from '@/contexts/toastContext';
+import { gradesService } from '@/services/grades.service';
 import { sessionService } from '@/services/session.service';
 import type { UserResponse } from '@/types/auth';
 import type { Session } from '@/types/session';
@@ -12,8 +14,19 @@ import { SessionReportPage } from './SessionReportPage';
 vi.mock('@/services/session.service', () => ({
   sessionService: {
     getById: vi.fn(),
+    exportSessionReport: vi.fn(),
   },
 }));
+
+vi.mock('@/services/grades.service', () => ({
+  gradesService: {
+    getProblemGrades: vi.fn(),
+  },
+}));
+
+const mockNotify = vi.fn();
+const mockCreateObjectURL = vi.fn();
+const mockRevokeObjectURL = vi.fn();
 
 const mockTeacher: UserResponse = {
   id: '1',
@@ -48,6 +61,12 @@ const mockStudents: SessionReportStudent[] = [
     matricula: '20240002',
     notaFinal: 8.0,
   },
+  {
+    id: 'student-3',
+    nome: 'Carlos Lima',
+    matricula: '20240003',
+    notaFinal: null,
+  },
 ];
 
 function renderPage(
@@ -63,14 +82,16 @@ function renderPage(
         logout: vi.fn(),
       }}
     >
-      <MemoryRouter initialEntries={[initialEntry]}>
-        <Routes>
-          <Route
-            path="/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/relatorio"
-            element={<SessionReportPage students={students} />}
-          />
-        </Routes>
-      </MemoryRouter>
+      <ToastContext.Provider value={{ notify: mockNotify }}>
+        <MemoryRouter initialEntries={[initialEntry]}>
+          <Routes>
+            <Route
+              path="/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/relatorio"
+              element={<SessionReportPage students={students} />}
+            />
+          </Routes>
+        </MemoryRouter>
+      </ToastContext.Provider>
     </AuthContext.Provider>,
   );
 }
@@ -79,6 +100,20 @@ describe('SessionReportPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(sessionService.getById).mockResolvedValue(mockSession);
+    vi.mocked(gradesService.getProblemGrades).mockResolvedValue({
+      sessoes: [{ id: 'sess-1' }],
+      alunos: [],
+      mediaTurma: null,
+      versoesFormula: { sessao: null, problema: null },
+    });
+    mockCreateObjectURL.mockReturnValue('blob:http://localhost/test-blob');
+    window.URL.createObjectURL = mockCreateObjectURL;
+    window.URL.revokeObjectURL = mockRevokeObjectURL;
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Cabeçalho', () => {
@@ -108,21 +143,23 @@ describe('SessionReportPage', () => {
             logout: vi.fn(),
           }}
         >
-          <MemoryRouter
-            initialEntries={[
-              {
-                pathname: '/turmas/room-1/problemas/prob-1/sessoes/sess-1/relatorio',
-                state: { sessionTitle: 'Sessão 1 - Abertura' },
-              },
-            ]}
-          >
-            <Routes>
-              <Route
-                path="/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/relatorio"
-                element={<SessionReportPage />}
-              />
-            </Routes>
-          </MemoryRouter>
+          <ToastContext.Provider value={{ notify: mockNotify }}>
+            <MemoryRouter
+              initialEntries={[
+                {
+                  pathname: '/turmas/room-1/problemas/prob-1/sessoes/sess-1/relatorio',
+                  state: { sessionTitle: 'Sessão 1 - Abertura' },
+                },
+              ]}
+            >
+              <Routes>
+                <Route
+                  path="/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/relatorio"
+                  element={<SessionReportPage />}
+                />
+              </Routes>
+            </MemoryRouter>
+          </ToastContext.Provider>
         </AuthContext.Provider>,
       );
 
@@ -141,6 +178,7 @@ describe('SessionReportPage', () => {
       expect(screen.getByText('Ocultar nomes')).toBeInTheDocument();
       expect(screen.getByText('Ana Souza')).toBeInTheDocument();
       expect(screen.getByText('João Silva')).toBeInTheDocument();
+      expect(screen.getByText('Carlos Lima')).toBeInTheDocument();
     });
 
     it('toggles name masking to matricula when clicking Ocultar nomes switch', async () => {
@@ -155,11 +193,13 @@ describe('SessionReportPage', () => {
       expect(screen.queryByText('ALUNO')).not.toBeInTheDocument();
       expect(screen.queryByText('Ana Souza')).not.toBeInTheDocument();
       expect(screen.queryByText('João Silva')).not.toBeInTheDocument();
+      expect(screen.queryByText('Carlos Lima')).not.toBeInTheDocument();
       expect(screen.getByText('20240001')).toBeInTheDocument();
       expect(screen.getByText('20240002')).toBeInTheDocument();
+      expect(screen.getByText('20240003')).toBeInTheDocument();
     });
 
-    it('applies red color for grade < 7.0 and green color for grade >= 7.0', async () => {
+    it('applies red color for grade < 7.0 and green color for grade >= 7.0 and neutral color for null grade', async () => {
       renderPage(undefined, mockStudents);
 
       expect(await screen.findByText('Sessão 1 - Abertura')).toBeInTheDocument();
@@ -168,19 +208,120 @@ describe('SessionReportPage', () => {
 
       const highGradeCell = screen.getByText('8,0');
       expect(highGradeCell).toHaveClass('text-green-600');
+
+      const nullGradeCell = screen.getByText('—');
+      expect(nullGradeCell).toHaveClass('text-ink');
+      expect(nullGradeCell).not.toHaveClass('text-red-600');
+      expect(nullGradeCell).not.toHaveClass('text-green-600');
     });
 
-    it('calculates and renders the mathematically correct class average in table footer with neutral color', async () => {
+    it('calculates and renders the mathematically correct class average in table footer, ignoring null grades', async () => {
       renderPage(undefined, mockStudents);
 
       expect(await screen.findByText('Sessão 1 - Abertura')).toBeInTheDocument();
       expect(screen.getByText('Média da turma')).toBeInTheDocument();
-      // (6.5 + 8.0) / 2 = 7.25 -> formatGrade(7.25) = '7,3'
+      // (6.5 + 8.0) / 2 = 7.25 -> formatGrade(7.25) = '7,3', ignoring Carlos Lima with null grade
       const avgCell = screen.getByText('7,3');
       expect(avgCell).toBeInTheDocument();
       expect(avgCell).toHaveClass('text-ink', 'font-bold');
       expect(avgCell).not.toHaveClass('text-green-600');
       expect(avgCell).not.toHaveClass('text-red-600');
+    });
+
+    it('fetches and maps real session students from the API when students prop is not provided', async () => {
+      vi.mocked(gradesService.getProblemGrades).mockResolvedValue({
+        sessoes: [{ id: 'sess-1' }],
+        alunos: [
+          {
+            alunoId: 'aluno-real-1',
+            nome: 'Beatriz Santos',
+            matricula: '20241010',
+            sessoes: [{ sessaoId: 'sess-1', nota: 8.5, situacao: 'AVALIADA' }],
+            notaFinal: 8.5,
+          },
+          {
+            alunoId: 'aluno-real-2',
+            nome: 'Daniel Costa',
+            matricula: '20241020',
+            sessoes: [{ sessaoId: 'sess-1', nota: null, situacao: 'PENDENTE' }],
+            notaFinal: null,
+          },
+        ],
+        mediaTurma: 8.5,
+        versoesFormula: { sessao: null, problema: null },
+      });
+
+      renderPage();
+
+      expect(await screen.findByText('Beatriz Santos')).toBeInTheDocument();
+      const gradeCells = screen.getAllByText('8,5');
+      expect(gradeCells).toHaveLength(2);
+      expect(gradeCells[0]).toHaveClass('text-green-600');
+      expect(gradeCells[1]).toHaveClass('text-ink');
+      expect(screen.getByText('—')).toBeInTheDocument();
+    });
+  });
+
+  describe('Exportação de Relatório', () => {
+    it('downloads PDF report when clicking Exportar em PDF button', async () => {
+      const user = userEvent.setup();
+      const mockBlob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
+      vi.mocked(sessionService.exportSessionReport).mockResolvedValue(mockBlob);
+
+      renderPage(undefined, mockStudents);
+      expect(await screen.findByText('Sessão 1 - Abertura')).toBeInTheDocument();
+
+      const pdfButton = screen.getByRole('button', { name: /exportar em pdf/i });
+      await user.click(pdfButton);
+
+      expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'PDF');
+      expect(mockCreateObjectURL).toHaveBeenCalledWith(mockBlob);
+      expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:http://localhost/test-blob');
+    });
+
+    it('downloads Excel report when clicking Exportar em Excel button', async () => {
+      const user = userEvent.setup();
+      const mockBlob = new Blob(['mock-xlsx-data'], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      vi.mocked(sessionService.exportSessionReport).mockResolvedValue(mockBlob);
+
+      renderPage(undefined, mockStudents);
+      expect(await screen.findByText('Sessão 1 - Abertura')).toBeInTheDocument();
+
+      const excelButton = screen.getByRole('button', { name: /exportar em excel/i });
+      await user.click(excelButton);
+
+      expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'XLSX');
+      expect(mockCreateObjectURL).toHaveBeenCalledWith(mockBlob);
+      expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:http://localhost/test-blob');
+    });
+
+    it('handles export failure by not downloading and notifying error toast from blob', async () => {
+      const user = userEvent.setup();
+      const errorBlob = new Blob([JSON.stringify({ message: 'Erro ao gerar relatório' })], {
+        type: 'application/json',
+      });
+      const errorResponse = {
+        response: {
+          data: errorBlob,
+          status: 400,
+        },
+      };
+      vi.mocked(sessionService.exportSessionReport).mockRejectedValue(errorResponse);
+
+      renderPage(undefined, mockStudents);
+      expect(await screen.findByText('Sessão 1 - Abertura')).toBeInTheDocument();
+
+      const pdfButton = screen.getByRole('button', { name: /exportar em pdf/i });
+      await user.click(pdfButton);
+
+      expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'PDF');
+      expect(mockCreateObjectURL).not.toHaveBeenCalled();
+      expect(mockNotify).toHaveBeenCalledWith({
+        tone: 'error',
+        message: 'Erro ao gerar relatório',
+      });
     });
   });
 });
