@@ -16,12 +16,6 @@ export interface SessionReportGrade {
   grade: number | null;
 }
 
-const EVALUATED_LABELS: Record<StudentSessionGrade['modalidade'], string> = {
-  TUTOR: 'Nota enviada',
-  AUTOAVALIACAO: 'Nota da autoavaliação',
-  PARES: 'Nota dos pares',
-};
-
 const ABSENCE_LABELS: Record<string, string> = {
   AUSENTE: 'Ausente',
   JUSTIFICADA: 'Falta justificada',
@@ -61,10 +55,6 @@ function reportedGrade({ session, exactGrade }: SessionReportGradeEntry): number
   return toCents(exactGrade);
 }
 
-function evaluatedLabel(session: StudentSessionGrade): string {
-  return isPlanningPoker(session) ? 'Nota do planning poker' : EVALUATED_LABELS[session.modalidade];
-}
-
 function pendingLabel(
   session: StudentSessionGrade | undefined,
   evaluationStatus: EvaluationStatus | null,
@@ -80,7 +70,7 @@ export function toSessionReportGrade(
 ): SessionReportGrade {
   const session = entry?.session;
   if (entry && session?.situacao === 'AVALIADA') {
-    return { gradeStatus: evaluatedLabel(session), grade: reportedGrade(entry) };
+    return { gradeStatus: 'Nota enviada', grade: reportedGrade(entry) };
   }
   const absence = session ? ABSENCE_LABELS[session.situacao] : undefined;
   if (entry && absence) return { gradeStatus: absence, grade: reportedGrade(entry) };

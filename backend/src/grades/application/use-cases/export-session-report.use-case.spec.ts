@@ -283,7 +283,7 @@ describe('ExportSessionReportUseCase', () => {
       8.75,
     );
 
-    expect(row.slice(6)).toEqual(['Nota do planning poker', 8.8]);
+    expect(row.slice(6)).toEqual(['Nota enviada', 8.8]);
   });
 
   it('uses the peer form grade as the session grade', async () => {
@@ -298,7 +298,7 @@ describe('ExportSessionReportUseCase', () => {
       7.25,
     );
 
-    expect(row.slice(6)).toEqual(['Nota dos pares', 7.25]);
+    expect(row.slice(6)).toEqual(['Nota enviada', 7.25]);
   });
 
   it('uses the self-assessment grade as the session grade', async () => {
@@ -308,7 +308,7 @@ describe('ExportSessionReportUseCase', () => {
       9.125,
     );
 
-    expect(row.slice(6)).toEqual(['Nota da autoavaliação', 9.13]);
+    expect(row.slice(6)).toEqual(['Nota enviada', 9.13]);
   });
 
   it.each([

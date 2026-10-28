@@ -333,7 +333,7 @@ describe('Planning poker (e2e)', () => {
       const rows: unknown[][] = [];
       sheet.eachRow((row) => rows.push(row.values as unknown[]));
 
-      expect(studentRow(rows, ana)?.slice(-2)).toEqual(['Nota do planning poker', 8.8]);
+      expect(studentRow(rows, ana)?.slice(-2)).toEqual(['Nota enviada', 8.8]);
       expect(studentRow(rows, bruno)?.slice(-1)).toEqual(['Não registrada']);
     });
   });
