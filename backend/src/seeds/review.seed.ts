@@ -51,14 +51,18 @@ async function associateReviewRoomMembers(
   ds: DataSource,
   roomId: string,
   users: ReviewUsers,
+  studentEmails: string[],
 ): Promise<void> {
   await ds.query(
     `INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2), ($1, $3) ON CONFLICT DO NOTHING;`,
     [roomId, users.tutor.id, users.coTutor.id],
   );
   await ds.query(
-    `INSERT INTO room_students (room_id, student_id) VALUES ($1, $2), ($1, $3) ON CONFLICT DO NOTHING;`,
-    [roomId, users.student1.id, users.student2.id],
+    `INSERT INTO room_students (room_id, student_id)
+     SELECT $1, id FROM users
+     WHERE id IN ($2, $3) OR (type = 'STUDENT' AND email = ANY($4))
+     ON CONFLICT DO NOTHING;`,
+    [roomId, users.student1.id, users.student2.id, studentEmails],
   );
 }
 
@@ -120,14 +124,14 @@ async function seedReviewAttendances(
   await seedSession2Attendance(ds, sessionIds[1], users);
 }
 
-export async function seedReviewData(ds: DataSource): Promise<void> {
+export async function seedReviewData(ds: DataSource, studentEmails: string[] = []): Promise<void> {
   const users = await findReviewUsers(ds);
   if (!users) {
     logger.warn('Users not found for review seed. Skipping.');
     return;
   }
   const roomId = await findOrCreateReviewRoom(ds, users.tutor.id);
-  await associateReviewRoomMembers(ds, roomId, users);
+  await associateReviewRoomMembers(ds, roomId, users, studentEmails);
   const { problemId, tableId } = await seedReviewProblem(ds, roomId, users.tutor.id);
   const sessions = await seedReviewSessions(ds, problemId, tableId, users.tutor.id);
   await seedReviewActivities(ds, problemId, sessions, users);
