@@ -15,6 +15,9 @@ export interface ExportSessionReportInput {
   sessionId: string;
   format: ReportFileFormat;
   tutorId: string;
+  ocultarNome?: boolean;
+  mostrarFeedBack?: boolean;
+  mostrarMarcacoes?: boolean;
 }
 
 @Injectable()
@@ -34,7 +37,11 @@ export class ExportSessionReportUseCase {
     );
 
     const data = await this.reportRepository.getSessionReportData(session.id, roomId);
-    const document = buildSessionReportDocument(input.format, data);
+    const document = buildSessionReportDocument(input.format, data, {
+      ocultarNome: input.ocultarNome ?? false,
+      mostrarFeedBack: input.mostrarFeedBack ?? true,
+      mostrarMarcacoes: input.mostrarMarcacoes ?? true,
+    });
 
     return this.reportGenerator.generate(document);
   }

@@ -289,6 +289,28 @@ describe('Session report export (e2e)', () => {
     expect(foundGeneralFeedback).toBe(true);
   });
 
+  it('hides student names and excludes feedback when requested', async () => {
+    const res = await api(app, owner)
+      .get(`${exportPath(sessionId, 'XLSX')}&ocultarNome=true&mostrarFeedBack=false`)
+      .buffer(true)
+      .parse(binaryParser)
+      .expect(200);
+
+    const workbook = await loadWorkbook(res.body);
+    expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual(['Dados da sessão']);
+
+    const sheet = workbook.getWorksheet('Dados da sessão')!;
+    const exportedValues: unknown[] = [];
+    sheet.eachRow((row) => exportedValues.push(...(row.values as unknown[])));
+
+    expect(exportedValues).not.toContain('Ana Souza');
+    expect(exportedValues).not.toContain('João Silva');
+    expect(exportedValues).toContain('20260001');
+    expect(exportedValues).toContain('20260002');
+    expect(exportedValues).toContain(7.1);
+    expect(exportedValues).toContain(8);
+  });
+
   it('prevents role score divergence when role is modified or added after submission', async () => {
     // 1. Tutor modifies Ana's role score to 10 in session_roles
     await db.query(
@@ -390,6 +412,15 @@ describe('Session report export (e2e)', () => {
   it('rejects invalid inputs (missing format, invalid format, invalid uuid, nonexistent session)', async () => {
     await api(app, owner).get(`/sessoes/${sessionId}/relatorio/exportacao`).expect(400);
     await api(app, owner).get(exportPath(sessionId, 'CSV')).expect(400);
+    await api(app, owner)
+      .get(`${exportPath(sessionId, 'PDF')}&ocultarNome=invalido`)
+      .expect(400);
+    await api(app, owner)
+      .get(`${exportPath(sessionId, 'PDF')}&mostrarFeedBack=invalido`)
+      .expect(400);
+    await api(app, owner)
+      .get(`${exportPath(sessionId, 'PDF')}&mostrarMarcacoes=invalido`)
+      .expect(400);
     await api(app, owner).get('/sessoes/not-a-uuid/relatorio/exportacao?formato=PDF').expect(400);
     await api(app, owner).get(exportPath(randomUUID(), 'PDF')).expect(404);
   });
