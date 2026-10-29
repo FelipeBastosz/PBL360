@@ -7,6 +7,8 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { observationService } from '@/services/observation.service';
 import type { BehaviorTag, ObservationItem } from '@/types/observation';
 import { EvaluationHeader } from './components/EvaluationHeader';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 
 function TagRowActions({
   tag,
@@ -207,7 +209,7 @@ export function StudentObservationTagsPage() {
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <EvaluationHeader onBack={() => navigate(-1)} />
-      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4 sm:max-w-2xl">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4')}>
         {isLoading && (
           <div className="mt-12 flex justify-center">
             <Spinner className="size-8 text-brand-900" />
