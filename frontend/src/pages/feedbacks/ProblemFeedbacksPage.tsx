@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { BackHeader } from '@/components/layout/BackHeader';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
 import { FeedbackCard } from './FeedbackCard';
@@ -7,6 +8,7 @@ import { FeedbackEmptyState } from './FeedbackEmptyState';
 import { GeneralFeedbackSection, IndividualFeedbackSection } from './ProblemFeedbackSections';
 import { useProblemFeedbacks } from './useProblemFeedbacks';
 import type { ReceivedProblemFeedbacksResponse, ReceivedSessionFeedback } from '@/types/feedback';
+import { cn } from '@/utils/cn';
 
 function SessionItem({ item }: { item: ReceivedSessionFeedback }) {
   if (!item.feedback) {
@@ -66,7 +68,7 @@ export default function ProblemFeedbacksPage() {
         subtitle="Histórico completo"
         onBack={() => navigate(`/turmas/${roomId}/problemas/${problemId}`)}
       />
-      <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-6 px-4 sm:max-w-xl">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-6')}>
         {isLoading ? (
           <div className="mt-8 flex justify-center">
             <Spinner className="size-8 text-brand-900" />
