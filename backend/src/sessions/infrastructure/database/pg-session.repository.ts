@@ -4,7 +4,8 @@ import { SYSTEM_TABLE_IDS } from '@/performance-tables/domain/entities/system-pe
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
-import { ConflictError } from '@/shared/errors/application.error';
+import { assertSessionCanBeDeleted } from '../../domain/services/session-deletion-policy';
+import { readSessionDeletionImpact } from './session-deletion-impact.queries';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { Session } from '../../domain/entities/session.entity';
 import { countReleaseSubmissions } from './evaluation-release.queries';
@@ -63,21 +64,12 @@ export class PgSessionRepository implements SessionRepository {
     return rows.map((row) => this.toEntity(row));
   }
 
-  async getDeletionImpact(sessionId: string): Promise<SessionDeletionImpact> {
-    const evaluations = await this.countEvaluations(this.sessions.manager, sessionId);
-    return { chamada: 0, papeis: 0, observacoes: 0, avaliacoes: evaluations, feedbacks: 0 };
+  getDeletionImpact(sessionId: string): Promise<SessionDeletionImpact> {
+    return readSessionDeletionImpact(this.sessions.manager, sessionId);
   }
 
   countReleaseSubmissions(sessionId: string): Promise<ReleaseSubmissions> {
     return countReleaseSubmissions(this.sessions.manager, sessionId);
-  }
-
-  private async countEvaluations(manager: EntityManager, sessionId: string): Promise<number> {
-    const [row] = await manager.query<{ count: string }[]>(
-      'SELECT COUNT(*) AS count FROM evaluations WHERE session_id = $1;',
-      [sessionId],
-    );
-    return Number(row?.count ?? 0);
   }
 
   async delete(id: string, problemId: string): Promise<void> {
@@ -90,9 +82,7 @@ export class PgSessionRepository implements SessionRepository {
       );
       const target = firstRowOrNull(targetRows);
       if (!target) return;
-      if (await this.countEvaluations(manager, id)) {
-        throw new ConflictError('A sessão possui avaliações e não pode ser excluída.');
-      }
+      assertSessionCanBeDeleted(await readSessionDeletionImpact(manager, id));
       await manager.query(`DELETE FROM sessions WHERE id = $1;`, [id]);
       await this.decrementFollowingOrders(manager, problemId, Number(target.orderIndex));
       await reapplyDefaultSessionTables(manager, problemId);

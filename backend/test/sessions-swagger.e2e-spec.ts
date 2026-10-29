@@ -223,7 +223,7 @@ describe('Sessions Swagger Documentation (e2e)', () => {
         'Sessão excluída.',
       );
       expect(document.paths[itemPath]!.delete!.responses['409']?.description).toBe(
-        'A sessão possui registros vinculados.',
+        'A sessão possui registros vinculados. As quantidades são retornadas em detalhes.',
       );
     });
   });

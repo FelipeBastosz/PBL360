@@ -1,53 +1,7 @@
 import type { EntityManager } from 'typeorm';
-
 import { firstRowOrNull } from '@/shared/database/rows';
-import { ConflictError } from '@/shared/errors/application.error';
-
-import type { ProblemDeletionImpactCounts } from '../../domain/repositories/problem.repository';
-
-const DELETION_IMPACT_QUERY = `SELECT
-  (SELECT COUNT(*)::int FROM sessions WHERE problem_id = $1) AS sessions,
-  (SELECT COUNT(*)::int FROM evaluations WHERE problem_id = $1) AS evaluations,
-  (SELECT COUNT(*)::int FROM feedback WHERE problema_id = $1) AS feedbacks,
-  (SELECT COUNT(*)::int FROM problem_grades WHERE problem_id = $1) AS grades;`;
-
-export async function fetchProblemDeletionImpact(
-  manager: EntityManager,
-  problemId: string,
-): Promise<ProblemDeletionImpactCounts> {
-  type Row = { sessions: number; evaluations: number; feedbacks: number; grades: number };
-  const rows = await manager.query<Row[]>(DELETION_IMPACT_QUERY, [problemId]);
-  const row = firstRowOrNull(rows);
-  return {
-    sessions: Number(row?.sessions ?? 0),
-    evaluations: Number(row?.evaluations ?? 0),
-    feedbacks: Number(row?.feedbacks ?? 0),
-    grades: Number(row?.grades ?? 0),
-  };
-}
-
-async function assertNoSessions(manager: EntityManager, id: string): Promise<void> {
-  const rows = await manager.query<Array<{ exists: boolean }>>(
-    'SELECT EXISTS (SELECT 1 FROM sessions WHERE problem_id = $1) AS exists;',
-    [id],
-  );
-  if (firstRowOrNull(rows)?.exists) {
-    throw new ConflictError('O problema possui sessões e não pode ser excluído.');
-  }
-}
-
-async function cleanupProblemDependencies(
-  manager: EntityManager,
-  id: string,
-  roomId: string,
-): Promise<void> {
-  await manager.query(
-    'DELETE FROM feedback_revisions WHERE feedback_id IN (SELECT id FROM feedback WHERE problema_id = $1);',
-    [id],
-  );
-  await manager.query('DELETE FROM feedback WHERE problema_id = $1;', [id]);
-  await manager.query('DELETE FROM problems WHERE id = $1 AND room_id = $2;', [id, roomId]);
-}
+import { assertProblemCanBeDeleted } from '../../domain/services/problem-deletion-policy';
+import { readProblemDeletionImpact } from './problem-deletion-impact.queries';
 
 async function decrementFollowingOrders(
   manager: EntityManager,
@@ -73,7 +27,7 @@ export async function deleteProblemTransactionally(
   const target = firstRowOrNull(targetRows);
   if (!target) return;
 
-  await assertNoSessions(manager, id);
-  await cleanupProblemDependencies(manager, id, roomId);
+  assertProblemCanBeDeleted(await readProblemDeletionImpact(manager, id));
+  await manager.query('DELETE FROM problems WHERE id = $1 AND room_id = $2;', [id, roomId]);
   await decrementFollowingOrders(manager, roomId, Number(target.orderIndex));
 }

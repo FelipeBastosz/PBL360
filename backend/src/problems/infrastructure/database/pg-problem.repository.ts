@@ -4,16 +4,14 @@ import { type EntityManager, Repository } from 'typeorm';
 
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 
-import {
-  deleteProblemTransactionally,
-  fetchProblemDeletionImpact,
-} from './problem-deletion.persistence';
+import { deleteProblemTransactionally } from './problem-deletion.persistence';
+import { readProblemDeletionImpact } from './problem-deletion-impact.queries';
 import { updateProblemDetails } from './problem-update.persistence';
 
 import { Problem } from '../../domain/entities/problem.entity';
 import type {
-  ProblemDeletionImpactCounts,
   ProblemRepository,
+  ProblemDeletionImpact,
   UpdateProblemDetails,
 } from '../../domain/repositories/problem.repository';
 
@@ -108,8 +106,8 @@ export class PgProblemRepository implements ProblemRepository {
     return Number(firstRowOrNull(rows)?.count ?? 0);
   }
 
-  getDeletionImpact(problemId: string): Promise<ProblemDeletionImpactCounts> {
-    return fetchProblemDeletionImpact(this.problems.manager, problemId);
+  getDeletionImpact(problemId: string): Promise<ProblemDeletionImpact> {
+    return readProblemDeletionImpact(this.problems.manager, problemId);
   }
 
   updateDetails(input: UpdateProblemDetails): Promise<Problem> {

@@ -13,7 +13,7 @@ describe('Received feedback responses', () => {
     items: [{ score: 10 }],
   };
 
-  it('exposes only the public feedback fields, without evaluation scores', () => {
+  it('exposes only the public feedback fields, without criterion scores', () => {
     expect(toReceivedFeedbackResponse(feedback)).toEqual({
       id: 'feedback',
       autor: { id: 'tutor', nome: 'Tutor' },
@@ -21,18 +21,26 @@ describe('Received feedback responses', () => {
       criadoEm: feedback.createdAt,
       editadoEm: null,
       novo: true,
+      nota: 9,
     });
   });
 
-  it('includes a zero score only on the individual problem feedback', () => {
+  it('preserves associated scores and feedback types including zero', () => {
     const result = toReceivedProblemResponse({
+      finalScore: 9,
       individual: { ...feedback, score: 0 },
       general: feedback,
       sessions: [{ sessionId: 'session', label: 'Sessão', date: '2026-10-01', feedback }],
     });
     expect(result.individual?.nota).toBe(0);
-    expect(result.geral).not.toHaveProperty('nota');
-    expect(result.sessoes[0]?.feedback).not.toHaveProperty('nota');
+    expect(result.notaFinal).toBe(9);
+    expect(result.geral?.nota).toBe(9);
+    expect(result.feedbacks.map(({ tipo, nota }) => ({ tipo, nota }))).toEqual([
+      { tipo: 'INDIVIDUAL', nota: 0 },
+      { tipo: 'GERAL', nota: 9 },
+      { tipo: 'SESSAO', nota: 9 },
+    ]);
+    expect(result.sessoes[0]?.feedback?.nota).toBe(9);
     expect(result.sessoes[0]).toMatchObject({
       sessaoId: 'session',
       rotulo: 'Sessão',
@@ -41,7 +49,16 @@ describe('Received feedback responses', () => {
   });
 
   it('preserves unavailable feedback and an empty session list', () => {
-    expect(toReceivedProblemResponse({ individual: null, general: null, sessions: [] })).toEqual({
+    expect(
+      toReceivedProblemResponse({
+        finalScore: null,
+        individual: null,
+        general: null,
+        sessions: [],
+      }),
+    ).toEqual({
+      notaFinal: null,
+      feedbacks: [],
       individual: null,
       geral: null,
       sessoes: [],

@@ -10,13 +10,18 @@ import { DeleteProblemUseCase } from './delete-problem.use-case';
 describe('DeleteProblemUseCase', () => {
   let useCase: DeleteProblemUseCase;
   let findByIdMock: jest.Mock;
-  let hasSessionsMock: jest.Mock;
+  let getDeletionImpactMock: jest.Mock;
   let deleteMock: jest.Mock;
   let assertTutorIsRoomOwnerMock: jest.Mock;
 
   beforeEach(() => {
     findByIdMock = jest.fn();
-    hasSessionsMock = jest.fn().mockResolvedValue(false);
+    getDeletionImpactMock = jest.fn().mockResolvedValue({
+      sessions: 0,
+      grades: 0,
+      feedbacks: 0,
+      evaluations: 0,
+    });
     deleteMock = jest.fn();
     assertTutorIsRoomOwnerMock = jest.fn();
 
@@ -24,9 +29,9 @@ describe('DeleteProblemUseCase', () => {
       create: jest.fn(),
       findById: findByIdMock,
       findByRoomId: jest.fn(),
-      hasSessions: hasSessionsMock,
+      hasSessions: jest.fn(),
+      getDeletionImpact: getDeletionImpactMock,
       countSessions: jest.fn().mockResolvedValue(0),
-      getDeletionImpact: jest.fn(),
       delete: deleteMock,
     } as unknown as jest.Mocked<ProblemRepository>;
 
@@ -141,11 +146,38 @@ describe('DeleteProblemUseCase', () => {
     });
     problem.id = 'prob-1';
     findByIdMock.mockResolvedValueOnce(problem);
-    hasSessionsMock.mockResolvedValueOnce(true);
+    getDeletionImpactMock.mockResolvedValueOnce({
+      sessions: 1,
+      grades: 0,
+      feedbacks: 0,
+      evaluations: 0,
+    });
 
     await expect(
       useCase.execute({ roomId: 'room-1', problemId: problem.id, tutorId: 'tutor-owner' }),
-    ).rejects.toThrow('O problema possui sessões e não pode ser excluído.');
+    ).rejects.toMatchObject({
+      name: 'ConflictError',
+      details: { detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0 } },
+    });
+    expect(deleteMock).not.toHaveBeenCalled();
+  });
+
+  it('blocks a problem with feedbacks even when it has no sessions', async () => {
+    findByIdMock.mockResolvedValueOnce({ id: 'prob-1', roomId: 'room-1' });
+    getDeletionImpactMock.mockResolvedValueOnce({
+      sessions: 0,
+      grades: 0,
+      feedbacks: 3,
+      evaluations: 0,
+    });
+
+    await expect(
+      useCase.execute({ roomId: 'room-1', problemId: 'prob-1', tutorId: 'tutor-owner' }),
+    ).rejects.toMatchObject({
+      name: 'ConflictError',
+      message: 'O problema não pode ser excluído pois possui registros vinculados.',
+      details: { detalhes: { sessoes: 0, notas: 0, feedbacks: 3, avaliacoes: 0 } },
+    });
     expect(deleteMock).not.toHaveBeenCalled();
   });
 });

@@ -66,4 +66,21 @@ describe('DomainExceptionFilter', () => {
       error: 'Internal Server Error',
     });
   });
+
+  it('includes structured deletion details in the 409 response', () => {
+    const details = { feedbacks: 3, avaliacoes: 5, chamada: 12, observacoes: 1 };
+    const message = 'A sessão não pode ser excluída pois possui registros vinculados.';
+    new DomainExceptionFilter().catch(
+      new ConflictError(message, { detalhes: details }),
+      hostWith(status),
+    );
+
+    expect(status).toHaveBeenCalledWith(409);
+    expect(json).toHaveBeenCalledWith({
+      statusCode: 409,
+      message,
+      error: 'Conflict',
+      detalhes: details,
+    });
+  });
 });

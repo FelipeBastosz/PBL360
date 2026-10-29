@@ -705,12 +705,17 @@ describe('Problems (e2e)', () => {
 
       const response = await deleteProblem(roomId, created.id, tutor1Token).expect(409);
       const body = response.body as ErrorResponseBody;
-      expect(body.message).toBe('O problema possui sessões e não pode ser excluído.');
+      expect(body.message).toBe(
+        'O problema não pode ser excluído pois possui registros vinculados.',
+      );
+      expect(response.body).toMatchObject({
+        detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0 },
+      });
 
       await getProblemById(roomId, created.id, tutor1Token).expect(200);
     });
 
-    it('cleans up problem-level feedbacks when problem without sessions is deleted', async () => {
+    it('preserves problem-level feedbacks and returns their count when deletion is blocked', async () => {
       const res = await postProblem(
         roomId,
         { titulo: 'Problema com Feedback Sem Sessão' },
@@ -724,13 +729,17 @@ describe('Problems (e2e)', () => {
         [tutor1Id, created.id, studentId],
       );
 
-      await deleteProblem(roomId, created.id, tutor1Token).expect(204);
+      const response = await deleteProblem(roomId, created.id, tutor1Token).expect(409);
+      expect(response.body).toMatchObject({
+        detalhes: { sessoes: 0, notas: 0, feedbacks: 1, avaliacoes: 0 },
+      });
+      await getProblemById(roomId, created.id, tutor1Token).expect(200);
 
       const [countRow] = await dataSource.query<[{ count: string }]>(
         `SELECT COUNT(*)::int AS count FROM feedback WHERE problema_id = $1;`,
         [created.id],
       );
-      expect(Number(countRow.count)).toBe(0);
+      expect(Number(countRow.count)).toBe(1);
     });
 
     it('returns 204 No Content and reorders subsequent problems properly', async () => {

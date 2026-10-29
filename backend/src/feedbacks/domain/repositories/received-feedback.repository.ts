@@ -7,13 +7,13 @@ export interface ReceivedFeedback {
   createdAt: Date;
   editedAt: Date | null;
   isNew: boolean;
-}
-
-export interface ReceivedIndividualFeedback extends ReceivedFeedback {
   score: number | null;
 }
 
+export type ReceivedIndividualFeedback = ReceivedFeedback;
+
 export interface ReceivedProblemFeedbacks {
+  finalScore: number | null;
   individual: ReceivedIndividualFeedback | null;
   general: ReceivedFeedback | null;
   sessions: {
@@ -26,5 +26,9 @@ export interface ReceivedProblemFeedbacks {
 
 export interface ReceivedFeedbackRepository {
   readSession(sessionId: string, studentId: string): Promise<ReceivedFeedback | null>;
-  readProblem(problemId: string, studentId: string): Promise<ReceivedProblemFeedbacks>;
+  readProblem(
+    problemId: string,
+    studentId: string,
+    roomId: string,
+  ): Promise<ReceivedProblemFeedbacks>;
 }
