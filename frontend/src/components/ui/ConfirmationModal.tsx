@@ -69,7 +69,7 @@ export function ConfirmationModal({
       aria-labelledby="confirmation-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-fade-in"
     >
-      <div className="relative flex w-full max-w-md flex-col rounded-3xl bg-white p-6 shadow-2xl animate-pop-in">
+      <div className="relative flex max-h-full w-full max-w-md overflow-y-auto flex-col rounded-3xl bg-white p-6 shadow-2xl animate-pop-in">
         <div className="flex items-center justify-between gap-3">
           <h2 id="confirmation-modal-title" className="text-xl font-semibold text-ink text-left">
             {title}

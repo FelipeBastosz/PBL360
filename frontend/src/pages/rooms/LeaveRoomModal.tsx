@@ -130,7 +130,7 @@ export function LeaveRoomModal({
       className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
       <div
-        className={`animate-pop-in relative w-full max-w-sm rounded-[24px] border-2 bg-white p-6 shadow-2xl ${
+        className={`animate-pop-in relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 bg-white p-6 shadow-2xl ${
           isOwner ? 'border-amber-500' : 'border-danger'
         }`}
       >
