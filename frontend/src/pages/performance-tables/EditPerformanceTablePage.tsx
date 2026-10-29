@@ -224,7 +224,7 @@ export function EditPerformanceTablePage() {
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <Header title={form.nome || 'Sessão de apresentação'} onBack={handleExit} />
-      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4')}>
         {(form.errorMessage || form.error) && (
           <Alert tone="error">{form.errorMessage || form.error?.message}</Alert>
         )}

@@ -182,7 +182,7 @@ export function CreatePerformanceTablePage() {
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <Header title={form.nome || 'Nova fórmula'} onBack={() => form.navigate(-1)} />
-      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4')}>
         {form.errorMessage && <Alert tone="error">{form.errorMessage}</Alert>}
         <TitleCard
           value={form.nome}

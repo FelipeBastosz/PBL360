@@ -139,7 +139,7 @@ export function PerformanceTableDetailPage() {
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <DetailHeader title={table?.nome || 'Detalhes da fórmula'} />
-      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4')}>
         {isLoading && (
           <div className="mt-12 flex justify-center">
             <Spinner className="size-8 text-brand-900" />

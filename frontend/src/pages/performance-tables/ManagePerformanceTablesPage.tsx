@@ -38,7 +38,7 @@ function ManageHeader() {
 
 function ManageSearch({ query, setQuery }: { query: string; setQuery: (q: string) => void }) {
   return (
-    <div className="relative mt-4 px-4">
+    <div className={cn(PAGE_CONTAINER_CLASS, 'relative mt-4')}>
       <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center pl-3">
         <MagnifyingGlassIcon className="size-5 text-placeholder" aria-hidden />
       </div>
@@ -172,7 +172,7 @@ export function ManagePerformanceTablesPage() {
       <ManageHeader />
       <ManageSearch query={query} setQuery={setQuery} />
 
-      <main className="mx-auto mt-6 flex w-full max-w-md flex-col px-4">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col')}>
         {isLoading && (
           <div className="mt-12 flex justify-center">
             <Spinner className="size-8 text-brand-900" />
