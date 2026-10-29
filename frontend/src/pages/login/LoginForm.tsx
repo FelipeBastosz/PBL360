@@ -8,6 +8,9 @@ import type { FieldErrors } from '@/hooks/useForm';
 import { ROUTES } from '@/routes/paths';
 import type { LoginFormValues } from '@/utils/authForms';
 
+// Text links get extra vertical padding so they are comfortable to tap on phones.
+const TEXT_LINK_CLASS = '-my-3 inline-block py-3 text-brand-900 hover:underline';
+
 type LoginFormProps = {
   values: LoginFormValues;
   errors: FieldErrors<LoginFormValues>;
@@ -48,7 +51,7 @@ export function LoginForm(props: LoginFormProps) {
         error={errors.senha}
       />
       <div className="-mt-3 flex justify-end">
-        <Link to={ROUTES.forgotPassword} className="text-sm text-brand-900 hover:underline">
+        <Link to={ROUTES.forgotPassword} className={`${TEXT_LINK_CLASS} text-sm`}>
           Esqueceu a senha?
         </Link>
       </div>
@@ -58,7 +61,7 @@ export function LoginForm(props: LoginFormProps) {
       <div className="mt-6 flex flex-col items-center gap-1 text-sm">
         <p className="text-muted">
           Não tem conta?{' '}
-          <Link to={props.registerTo} className="text-brand-900 hover:underline">
+          <Link to={props.registerTo} className={TEXT_LINK_CLASS}>
             Criar conta
           </Link>
         </p>
