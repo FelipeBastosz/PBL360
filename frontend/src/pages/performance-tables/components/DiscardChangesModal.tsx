@@ -9,7 +9,7 @@ export function DiscardChangesModal({ isOpen, onConfirm, onCancel }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="relative flex w-full max-w-sm flex-col gap-4 rounded-[22px] bg-white p-6 text-center shadow-2xl">
+      <div className="relative flex max-h-full w-full max-w-sm overflow-y-auto flex-col gap-4 rounded-[22px] bg-white p-6 text-center shadow-2xl">
         <h2 className="text-lg font-bold text-brand-900">Descartar alterações?</h2>
         <p className="text-sm text-muted">
           As alterações feitas nesta fórmula não foram salvas e serão perdidas se você sair agora.
