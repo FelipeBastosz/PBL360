@@ -49,13 +49,16 @@ export function JustificationForm({ initialValue, onCancel, onConfirm }: Justifi
         </p>
       )}
       <p className="text-xs text-muted">O aluno sai da mesa e a falta não zera a nota.</p>
-      <div className="mt-1 flex gap-3">
-        <Button variant="outline" onClick={onCancel} className="flex-1">
+      <div className="mt-2 flex items-center gap-3">
+        <Button variant="outline" onClick={onCancel} className="h-12 flex-1 text-base">
           Cancelar
         </Button>
-        <Button type="submit" className="h-12 flex-1 text-base">
+        <button
+          type="submit"
+          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-brand-900 px-4 text-base font-semibold text-white shadow-sm transition-[background-color,scale] duration-200 hover:bg-brand-700 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-brand-900"
+        >
           Justificar falta
-        </Button>
+        </button>
       </div>
     </form>
   );

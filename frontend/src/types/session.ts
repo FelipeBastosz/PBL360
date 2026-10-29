@@ -72,19 +72,18 @@ export type SessionRoleAssignment = {
   alunoId: string;
   nome: string;
   papel: SessionRole;
-  notaAdicional: number | null;
+  notaPapel?: number | null;
 };
 
 export type AssignSessionRolePayload = {
   papel: SessionRole | null;
-  notaAdicional: number | null;
-  transferir: boolean;
+  transferir?: boolean;
 };
 
 export type AssignedSessionRole = {
   alunoId: string;
   papel: SessionRole | null;
-  notaAdicional: number | null;
+  notaPapel?: number | null;
 };
 
 export type RoleConflictResponse = {
