@@ -37,6 +37,8 @@ describe('SessionReportController', () => {
       sessionId: 'sess-1',
       format: ReportFileFormat.PDF,
       tutorId: 'tutor-1',
+      ocultarNome: undefined,
+      mostrarFeedBack: undefined,
     });
 
     const headers = result.getHeaders();
@@ -54,12 +56,36 @@ describe('SessionReportController', () => {
       sessionId: 'sess-1',
       format: ReportFileFormat.XLSX,
       tutorId: 'tutor-1',
+      ocultarNome: undefined,
+      mostrarFeedBack: undefined,
     });
 
     const headers = result.getHeaders();
     expect(headers.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     expect(headers.length).toBe(xlsxFile.content.length);
     expect(headers.disposition).toContain('filename="relatorio-sessao-1.xlsx"');
+  });
+
+  it('forwards optional anonymization and feedback settings', async () => {
+    exportUseCase.execute.mockResolvedValue(pdfFile);
+
+    await controller.export(
+      'sess-1',
+      {
+        formato: ReportFileFormat.PDF,
+        ocultarNome: true,
+        mostrarFeedBack: false,
+      },
+      'tutor-1',
+    );
+
+    expect(exportUseCase.execute).toHaveBeenCalledWith({
+      sessionId: 'sess-1',
+      format: ReportFileFormat.PDF,
+      tutorId: 'tutor-1',
+      ocultarNome: true,
+      mostrarFeedBack: false,
+    });
   });
 
   it('propagates ReportGenerationError so ReportGenerationFilter can handle it', async () => {
