@@ -86,8 +86,8 @@ describe('System performance tables (e2e)', () => {
   });
 
   it('assigns different tables and the same 70/30 formula to first and second sessions', async () => {
-    const first = await create('2099-11-10');
-    const second = await create('2099-11-11');
+    const first = await create('10-11-2099');
+    const second = await create('11-11-2099');
     expect(await assignment(first)).toEqual({
       tableId: SYSTEM_TABLE_IDS.firstSession,
       automatic: true,
@@ -115,12 +115,12 @@ describe('System performance tables (e2e)', () => {
   });
 
   it('reassigns automatic tables when creating an earlier session and changing dates', async () => {
-    const later = await create('2099-11-11');
-    const earlier = await create('2099-11-10');
+    const later = await create('11-11-2099');
+    const earlier = await create('10-11-2099');
     expect((await assignment(later)).tableId).toBe(SYSTEM_TABLE_IDS.standard);
     expect((await assignment(earlier)).tableId).toBe(SYSTEM_TABLE_IDS.firstSession);
     await api(app, tutor)
-      .put(`${path()}/${later}`, { titulo: 'Anterior', descricao: null, data: '2099-11-09' })
+      .put(`${path()}/${later}`, { titulo: 'Anterior', descricao: null, data: '09-11-2099' })
       .expect(200);
     expect((await assignment(later)).tableId).toBe(SYSTEM_TABLE_IDS.firstSession);
     expect((await assignment(earlier)).tableId).toBe(SYSTEM_TABLE_IDS.standard);
@@ -129,8 +129,8 @@ describe('System performance tables (e2e)', () => {
   it.each([SYSTEM_TABLE_IDS.standard, SYSTEM_TABLE_IDS.firstSession])(
     'preserves an explicit copy of %s when dates are reordered',
     async (sourceId) => {
-      const first = await create('2099-11-10');
-      const second = await create('2099-11-11');
+      const first = await create('10-11-2099');
+      const second = await create('11-11-2099');
       await api(app, tutor).put(`/sessoes/${first}/tabela`, { tabelaId: sourceId }).expect(200);
       const selected = await assignment(first);
       expect(selected.automatic).toBe(false);
@@ -170,7 +170,7 @@ describe('System performance tables (e2e)', () => {
         ),
       ).toBe(true);
       await api(app, tutor)
-        .put(`${path()}/${second}`, { titulo: 'Anterior', descricao: null, data: '2099-11-09' })
+        .put(`${path()}/${second}`, { titulo: 'Anterior', descricao: null, data: '09-11-2099' })
         .expect(200);
       expect(await assignment(first)).toEqual(selected);
       expect((await assignment(second)).tableId).toBe(SYSTEM_TABLE_IDS.firstSession);
@@ -178,13 +178,13 @@ describe('System performance tables (e2e)', () => {
   );
 
   it('does not reassign tables after a draft evaluation exists', async () => {
-    const first = await create('2099-11-10');
-    const second = await create('2099-11-11');
+    const first = await create('10-11-2099');
+    const second = await create('11-11-2099');
     await api(app, tutor)
       .put(`/sessoes/${first}/avaliacoes/${student.id}`, { itens: [], enviar: false })
       .expect(200);
     await api(app, tutor)
-      .put(`${path()}/${second}`, { titulo: 'Anterior', descricao: null, data: '2099-11-09' })
+      .put(`${path()}/${second}`, { titulo: 'Anterior', descricao: null, data: '09-11-2099' })
       .expect(200);
     expect((await assignment(first)).tableId).toBe(SYSTEM_TABLE_IDS.firstSession);
     expect((await assignment(second)).tableId).toBe(SYSTEM_TABLE_IDS.standard);
@@ -227,7 +227,7 @@ describe('System performance tables (e2e)', () => {
     await api(app, tutor).put(`/tabelas-desempenho/${source.id}`, changes).expect(403);
     await api(app, tutor).delete(`/tabelas-desempenho/${source.id}`).expect(403);
     await api(app, student).post(`/tabelas-desempenho/${source.id}/copias`).expect(403);
-    const session = await create('2099-11-10');
+    const session = await create('10-11-2099');
     await api(app, tutor)
       .put(`/sessoes/${session}/tabela/edicao`, {
         escopo: 'TODAS',

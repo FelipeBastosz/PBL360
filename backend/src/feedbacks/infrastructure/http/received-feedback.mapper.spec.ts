@@ -36,7 +36,7 @@ describe('Received feedback responses', () => {
     expect(result.sessoes[0]).toMatchObject({
       sessaoId: 'session',
       rotulo: 'Sessão',
-      data: '2026-10-01',
+      data: '01-10-2026',
     });
   });
 
