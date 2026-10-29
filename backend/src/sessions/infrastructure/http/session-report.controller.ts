@@ -4,10 +4,10 @@ import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.d
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
-import { ReportExportQueryDto } from '@/report-files/application/dtos/report-export-query.dto';
 import { ReportGenerationFilter } from '@/report-files/infrastructure/http/report-generation.filter';
 import { toReportFileResponse } from '@/report-files/infrastructure/http/report-file-response';
 import { ExportSessionReportUseCase } from '../../application/use-cases/export-session-report.use-case';
+import { ExportSessionReportQueryDto } from '../../application/dtos/export-session-report-query.dto';
 import { ExportSessionReportSwaggerDocs } from './session-report.swagger';
 
 @ApiTags('Sessões')
@@ -22,13 +22,16 @@ export class SessionReportController {
   @ExportSessionReportSwaggerDocs
   async export(
     @UuidParam('sessaoId') sessionId: string,
-    @Query() query: ReportExportQueryDto,
+    @Query() query: ExportSessionReportQueryDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<StreamableFile> {
     const file = await this.exportSessionReport.execute({
       sessionId,
       format: query.formato,
       tutorId,
+      ocultarNome: query.ocultarNome,
+      mostrarFeedBack: query.mostrarFeedBack,
+      mostrarMarcacoes: query.mostrarMarcacoes,
     });
 
     return toReportFileResponse(file);

@@ -47,7 +47,7 @@ const BehaviorTagsPage = lazy(() => import('@/pages/behavior-tags/BehaviorTagsPa
 const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
 const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
 const SessionHubPage = lazy(() => import('@/pages/sessions/SessionHubPage'));
-const ProblemFormulaPage = lazy(() => import('@/pages/formulas/ProblemFormulaPage'));
+const ProblemFormulaPage = lazy(() => import('@/pages/formulas/SessionFormulasPage'));
 const SessionEvaluationsListPage = lazy(
   () => import('@/pages/evaluations/SessionEvaluationsListPage'),
 );

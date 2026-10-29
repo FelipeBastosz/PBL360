@@ -132,6 +132,40 @@ describe('GetProblemDeletionImpactUseCase', () => {
     });
     expect(assertTutorCanAccessRoomMock).toHaveBeenCalledWith('room-1', 'tutor-1');
     expect(findByIdMock).toHaveBeenCalledWith(problem.id);
+    expect(getDeletionImpactMock).toHaveBeenCalledWith(problem.id);
+  });
+
+  it('returns real counts for all dependent records when dependencies exist', async () => {
+    assertTutorCanAccessRoomMock.mockResolvedValueOnce(new Room());
+
+    const problem = Problem.create({
+      roomId: 'room-1',
+      createdBy: 'tutor-1',
+      title: 'Problema com dependências',
+    });
+    problem.id = 'prob-2';
+    findByIdMock.mockResolvedValueOnce(problem);
+
+    getDeletionImpactMock.mockResolvedValueOnce({
+      sessions: 3,
+      grades: 12,
+      feedbacks: 6,
+      evaluations: 24,
+    });
+
+    const impact = await useCase.execute({
+      roomId: 'room-1',
+      problemId: problem.id,
+      tutorId: 'tutor-1',
+    });
+
+    expect(impact).toEqual({
+      sessions: 3,
+      grades: 12,
+      feedbacks: 6,
+      evaluations: 24,
+    });
+    expect(getDeletionImpactMock).toHaveBeenCalledWith(problem.id);
   });
 
   it('returns actual counts from the repository', async () => {

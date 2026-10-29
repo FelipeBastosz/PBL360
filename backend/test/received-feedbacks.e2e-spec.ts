@@ -203,7 +203,7 @@ describe('Received feedbacks (e2e)', () => {
     expect(body.sessoes.map((item) => item.sessaoId)).toEqual([sessionId, laterSessionId]);
     expect(body.sessoes[0]).toMatchObject({
       rotulo: 'Anterior',
-      data: '2099-10-10',
+      data: '10-10-2099',
       feedback: null,
     });
     expect(await views()).toHaveLength(2);
