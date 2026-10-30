@@ -18,6 +18,7 @@ export interface SavePeerEvaluationInput {
   studentId: string;
   itens: CriterionScore[];
   enviar: boolean;
+  notaCargo?: number | null;
   now?: Date;
 }
 
@@ -37,6 +38,7 @@ export class SavePeerEvaluationUseCase {
       peerId: input.peerId,
       items: input.itens,
       submit: input.enviar,
+      notaCargo: input.notaCargo,
     });
     return this.toOutput(detail);
   }

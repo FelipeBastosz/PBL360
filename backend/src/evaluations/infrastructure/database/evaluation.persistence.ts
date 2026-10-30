@@ -33,7 +33,8 @@ async function reviseEvaluation(
   evaluation: Evaluation,
   config: SessionEvaluationConfig,
 ): Promise<void> {
-  const revision = { ...input, bonus: await readBonus(manager, input), now: new Date() };
+  const bonus = input.notaCargo !== undefined ? input.notaCargo : await readBonus(manager, input);
+  const revision = { ...input, bonus, now: new Date() };
   const changes = validateEvaluationRules(() => evaluation.revise(revision, config));
   await persistAdjustments(
     manager,

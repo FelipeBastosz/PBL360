@@ -10,4 +10,5 @@ export interface SaveTutorEvaluationInput {
   items: EvaluationItemInput[];
   submit: boolean;
   justification?: string;
+  notaCargo?: number | null;
 }

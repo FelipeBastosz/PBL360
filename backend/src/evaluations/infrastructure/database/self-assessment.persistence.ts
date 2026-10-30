@@ -152,13 +152,38 @@ async function updateSelfStatus(
     await tx.query(UPDATE_SELF_DRAFT, [input.studentId, now, evaluationId]);
     return;
   }
+  await submitSelfAssessment(tx, evaluationId, input, now);
+}
+
+async function submitSelfAssessment(
+  tx: EntityManager,
+  evaluationId: string,
+  input: SelfAssessmentWrite,
+  now: Date,
+): Promise<void> {
   const detail = await readSelfAssessmentDetail(tx, input.context, input.studentId);
-  const score = SessionGradeCalculator.calculate(input.items, detail.config.criteria, 0);
+  const notaCargo = input.notaCargo ?? null;
+  const score = calculateSelfScore(input, detail.config, notaCargo);
   await tx.query(UPDATE_SELF_SUBMISSION, [
     now,
     score,
+    notaCargo,
     SESSION_CALCULATION_VERSION,
     input.studentId,
     evaluationId,
   ]);
+}
+
+function calculateSelfScore(
+  input: SelfAssessmentWrite,
+  config: Awaited<ReturnType<typeof readSelfAssessmentDetail>>['config'],
+  notaCargo: number | null,
+): number {
+  return SessionGradeCalculator.calculate(
+    input.items,
+    config.criteria,
+    notaCargo,
+    notaCargo !== null,
+    config.formula ?? { criteriaWeight: 70, roleWeight: 30 },
+  );
 }

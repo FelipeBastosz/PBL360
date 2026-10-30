@@ -16,6 +16,7 @@ export interface SaveSelfAssessmentInput {
   studentId: string;
   items: Array<{ criterionId: string; score: number }>;
   submit: boolean;
+  notaCargo?: number | null;
   now?: Date;
 }
 
@@ -79,13 +80,23 @@ export class SaveSelfAssessmentUseCase {
       studentId: input.studentId,
       items: input.items,
       submit: input.submit,
+      notaCargo: input.notaCargo,
     });
-    const status = studentSelfAssessmentStatus(
-      access.session,
-      participating,
-      saved.evaluation?.status ?? EvaluationStatus.DRAFT,
-      input.now ?? new Date(),
-    );
-    return toSelfAssessmentOutput(status, access.session.selfEvalDeadline, saved);
+    return buildSelfAssessmentResponse(input, access, participating, saved);
   }
+}
+
+function buildSelfAssessmentResponse(
+  input: SaveSelfAssessmentInput,
+  access: Awaited<ReturnType<SessionAccessService['assertMemberCanAccessSession']>>,
+  participating: boolean,
+  saved: Awaited<ReturnType<EvaluationRepository['recordSelfAssessment']>>,
+) {
+  const status = studentSelfAssessmentStatus(
+    access.session,
+    participating,
+    saved.evaluation?.status ?? EvaluationStatus.DRAFT,
+    input.now ?? new Date(),
+  );
+  return toSelfAssessmentOutput(status, access.session.selfEvalDeadline, saved);
 }
