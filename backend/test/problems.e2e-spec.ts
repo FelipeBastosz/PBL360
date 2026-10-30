@@ -46,10 +46,9 @@ describe('Problems (e2e)', () => {
   });
 
   const cleanupDb = async () => {
-    await dataSource.query('DELETE FROM problems;');
-    await dataSource.query('DELETE FROM room_tutors;');
-    await dataSource.query('DELETE FROM rooms;');
-    await dataSource.query('TRUNCATE performance_criteria, performance_tables, users CASCADE;');
+    await dataSource.query(
+      'TRUNCATE problem_grades, feedback_revisions, feedback, evaluations, sessions, problems, room_tutors, rooms, performance_criteria, performance_tables, users CASCADE;',
+    );
   };
 
   afterAll(async () => {
@@ -182,8 +181,8 @@ describe('Problems (e2e)', () => {
       {
         titulo: 'Problema 1 - Primeiros Socorros',
         descricao: 'Descrição detalhada do caso clínico.',
-        dataInicio: '2026-03-01',
-        dataFim: '2026-03-15',
+        dataInicio: '01-03-2026',
+        dataFim: '15-03-2026',
       },
       tutor1Token,
     ).expect(201);
@@ -195,27 +194,29 @@ describe('Problems (e2e)', () => {
     expect(body.descricao).toBe('Descrição detalhada do caso clínico.');
     expect(body.ordem).toBe(1);
     expect(body.criadoPor).toBe(tutor1Id);
-    expect(body.dataInicio).toBe('2026-03-01');
-    expect(body.dataFim).toBe('2026-03-15');
+    expect(body.dataInicio).toBe('01-03-2026');
+    expect(body.dataFim).toBe('15-03-2026');
   });
 
   it('rejects dates with a time component', async () => {
     const body = (
       await postProblem(
         roomId,
-        { titulo: 'P', dataInicio: '2026-03-01T00:00:00.000Z' },
+        { titulo: 'P', dataInicio: '01-03-2026T00:00:00.000Z' },
         tutor1Token,
       ).expect(400)
     ).body as ErrorResponseBody;
 
-    expect(body.message).toContain('A data de início deve estar no formato AAAA-MM-DD.');
+    expect(body.message).toContain(
+      'A data de início deve estar no formato DD-MM-AAAA e ser válida.',
+    );
   });
 
   it('rejects an end date before the start date', async () => {
     const body = (
       await postProblem(
         roomId,
-        { titulo: 'P', dataInicio: '2026-03-15', dataFim: '2026-03-01' },
+        { titulo: 'P', dataInicio: '15-03-2026', dataFim: '01-03-2026' },
         tutor1Token,
       ).expect(400)
     ).body as ErrorResponseBody;
@@ -440,8 +441,8 @@ describe('Problems (e2e)', () => {
         {
           titulo: 'Problema Específico',
           descricao: 'Descrição detalhada do caso clínico.',
-          dataInicio: '2026-03-01',
-          dataFim: '2026-03-15',
+          dataInicio: '01-03-2026',
+          dataFim: '15-03-2026',
         },
         tutor1Token,
       ).expect(201);
@@ -597,6 +598,55 @@ describe('Problems (e2e)', () => {
         avaliacoes: 0,
       });
     });
+
+    it('returns 200 OK with real counts when problem has dependent records', async () => {
+      const res = await postProblem(
+        roomId,
+        { titulo: 'Problema Com Várias Dependências' },
+        tutor1Token,
+      ).expect(201);
+      const created = res.body as ProblemResponseBody;
+
+      const [table] = await dataSource.query<[{ id: string }]>(
+        `INSERT INTO performance_tables (tutor_id, name, is_default)
+         VALUES ($1, 'Critérios de Avaliação', false)
+         RETURNING id;`,
+        [tutor1Id],
+      );
+
+      const [session] = await dataSource.query<[{ id: string }]>(
+        `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index)
+         VALUES ($1, $2, 'Sessão 1', '2026-03-01', 1)
+         RETURNING id;`,
+        [created.id, table.id],
+      );
+
+      await dataSource.query(
+        `INSERT INTO evaluations (evaluator_id, student_id, problem_id, session_id, performance_table_id, type, status, submitted_at, session_score, created_by)
+         VALUES ($1, $2, $3, $4, $5, 'SELF_ASSESSMENT', 'SUBMITTED', now(), 8.5, $1);`,
+        [studentId, studentId, created.id, session.id, table.id],
+      );
+
+      await dataSource.query(
+        `INSERT INTO feedback (autor_id, problema_id, destinatario_id, escopo, texto)
+         VALUES ($1, $2, $3, 'PROBLEMA', 'Bom trabalho');`,
+        [tutor1Id, created.id, studentId],
+      );
+
+      await dataSource.query(
+        `INSERT INTO problem_grades (problem_id, student_id, grade, formula_version)
+         VALUES ($1, $2, 9.0, 1);`,
+        [created.id, studentId],
+      );
+
+      const response = await getProblemDeletionImpact(roomId, created.id, tutor1Token).expect(200);
+      expect(response.body).toEqual({
+        sessoes: 1,
+        notas: 1,
+        feedbacks: 1,
+        avaliacoes: 1,
+      });
+    });
   });
 
   describe('DELETE /api/salas/:roomId/problemas/:problemId', () => {
@@ -630,6 +680,66 @@ describe('Problems (e2e)', () => {
       ).expect(404);
       const body = response.body as ErrorResponseBody;
       expect(body.message).toBe('Problema não encontrado.');
+    });
+
+    it('returns 409 Conflict when problem has linked sessions', async () => {
+      const res = await postProblem(
+        roomId,
+        { titulo: 'Problema com Sessão Vinculada' },
+        tutor1Token,
+      ).expect(201);
+      const created = res.body as ProblemResponseBody;
+
+      const [table] = await dataSource.query<[{ id: string }]>(
+        `INSERT INTO performance_tables (tutor_id, name, is_default)
+         VALUES ($1, 'Barema', false)
+         RETURNING id;`,
+        [tutor1Id],
+      );
+
+      await dataSource.query(
+        `INSERT INTO sessions (problem_id, performance_table_id, title, date, order_index)
+         VALUES ($1, $2, 'Sessão 1', '2026-03-01', 1);`,
+        [created.id, table.id],
+      );
+
+      const response = await deleteProblem(roomId, created.id, tutor1Token).expect(409);
+      const body = response.body as ErrorResponseBody;
+      expect(body.message).toBe(
+        'O problema não pode ser excluído pois possui registros vinculados.',
+      );
+      expect(response.body).toMatchObject({
+        detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0 },
+      });
+
+      await getProblemById(roomId, created.id, tutor1Token).expect(200);
+    });
+
+    it('preserves problem-level feedbacks and returns their count when deletion is blocked', async () => {
+      const res = await postProblem(
+        roomId,
+        { titulo: 'Problema com Feedback Sem Sessão' },
+        tutor1Token,
+      ).expect(201);
+      const created = res.body as ProblemResponseBody;
+
+      await dataSource.query(
+        `INSERT INTO feedback (autor_id, problema_id, destinatario_id, escopo, texto)
+         VALUES ($1, $2, $3, 'PROBLEMA', 'Feedback geral');`,
+        [tutor1Id, created.id, studentId],
+      );
+
+      const response = await deleteProblem(roomId, created.id, tutor1Token).expect(409);
+      expect(response.body).toMatchObject({
+        detalhes: { sessoes: 0, notas: 0, feedbacks: 1, avaliacoes: 0 },
+      });
+      await getProblemById(roomId, created.id, tutor1Token).expect(200);
+
+      const [countRow] = await dataSource.query<[{ count: string }]>(
+        `SELECT COUNT(*)::int AS count FROM feedback WHERE problema_id = $1;`,
+        [created.id],
+      );
+      expect(Number(countRow.count)).toBe(1);
     });
 
     it('returns 204 No Content and reorders subsequent problems properly', async () => {

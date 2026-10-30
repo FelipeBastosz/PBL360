@@ -23,14 +23,14 @@ describe('GetMyProblemFeedbacksUseCase', () => {
   });
 
   it('returns only the authenticated student feedbacks', async () => {
-    const result = { individual: null, general: null, sessions: [] };
+    const result = { finalScore: 8.5, individual: null, general: null, sessions: [] };
     feedbacks.readProblem.mockResolvedValue(result);
     expect(await useCase.execute('room', 'problem', 'student')).toBe(result);
     expect(access.assertMemberCanAccessRoom).toHaveBeenCalledWith('room', {
       id: 'student',
       type: UserType.STUDENT,
     });
-    expect(feedbacks.readProblem).toHaveBeenCalledWith('problem', 'student');
+    expect(feedbacks.readProblem).toHaveBeenCalledWith('problem', 'student', 'room');
   });
 
   it('rejects a student outside the room before reading feedbacks', async () => {

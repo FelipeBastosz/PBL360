@@ -167,8 +167,8 @@ describe('GetProblemGradesUseCase', () => {
     const result = await useCase.execute(input);
 
     expect(result.sessoes).toEqual([
-      { id: 'sess-1', rotulo: 'Sessão 1', title: 'Sessão 1', nome: 'Sessão 1', data: '2026-10-06' },
-      { id: 'sess-4', rotulo: 'Sessão 4', title: 'Sessão 4', nome: 'Sessão 4', data: '2026-10-12' },
+      { id: 'sess-1', rotulo: 'Sessão 1', title: 'Sessão 1', nome: 'Sessão 1', data: '06-10-2026' },
+      { id: 'sess-4', rotulo: 'Sessão 4', title: 'Sessão 4', nome: 'Sessão 4', data: '12-10-2026' },
     ]);
   });
 

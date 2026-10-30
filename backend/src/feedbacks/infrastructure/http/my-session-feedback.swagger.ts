@@ -20,7 +20,7 @@ export const GetMySessionFeedbackSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Consulta o feedback da sessão para o aluno autenticado',
     description:
-      'Disponível após o envio da avaliação do tutor para esse aluno. Registra a primeira leitura: novo é verdadeiro somente no primeiro acesso. Edições não reiniciam a leitura. Não retorna notas de sessão ou de critérios.',
+      'Disponível após o envio da avaliação do tutor para esse aluno, que libera a nota da sessão. Inclui nota calculada com os pesos vigentes e os ajustes registrados. Rascunhos não liberam feedback nem nota. Não retorna notas individuais dos critérios. Registra a primeira leitura: novo é verdadeiro somente no primeiro acesso; edições não reiniciam a leitura.',
   }),
   ApiOkResponse({
     description: 'Feedback disponível ou null. Sem feedback disponível, não registra leitura.',

@@ -126,7 +126,7 @@ describe('Roll call (e2e)', () => {
 
   describe('GET /sessoes/:sessaoId/chamada', () => {
     it('answers an empty roll call on the first session of the room', async () => {
-      const sessionId = await createSession(problemId, '2026-10-01');
+      const sessionId = await createSession(problemId, '01-10-2026');
 
       const body = await getRollCall(sessionId);
 
@@ -146,7 +146,7 @@ describe('Roll call (e2e)', () => {
     });
 
     it('suggests the table of the previous session of another problem without saving it', async () => {
-      const first = await createSession(problemId, '2026-10-01');
+      const first = await createSession(problemId, '01-10-2026');
       const [ana, bruno, carla] = students as [TestUser, TestUser, TestUser];
       await putRollCall(first, [
         { alunoId: ana.id, status: 'PRESENTE', lugar: 2 },
@@ -157,12 +157,12 @@ describe('Roll call (e2e)', () => {
       const newcomer = await insertStudent(4, 'Diego Alves');
       await enroll(newcomer);
       const otherProblem = await createProblem('Agenda de consultas');
-      const second = await createSession(otherProblem, '2026-10-08');
+      const second = await createSession(otherProblem, '08-10-2026');
 
       const body = await getRollCall(second);
 
       expect(body.origem).toBe('SESSAO_ANTERIOR');
-      expect(body.sessaoReferencia).toEqual({ id: first, data: '2026-10-01' });
+      expect(body.sessaoReferencia).toEqual({ id: first, data: '01-10-2026' });
       expect(body.lugares).toBe(3);
       expect(studentOf(body, ana)).toMatchObject({ lugar: 2, status: 'PRESENTE' });
       expect(studentOf(body, carla)).toMatchObject({
@@ -180,8 +180,8 @@ describe('Roll call (e2e)', () => {
     });
 
     it('does not use a later session as the previous one', async () => {
-      const early = await createSession(problemId, '2026-10-01');
-      const late = await createSession(problemId, '2026-10-20');
+      const early = await createSession(problemId, '01-10-2026');
+      const late = await createSession(problemId, '20-10-2026');
       await putRollCall(late, [{ alunoId: students[0]!.id, status: 'PRESENTE', lugar: 1 }]).expect(
         200,
       );
@@ -190,7 +190,7 @@ describe('Roll call (e2e)', () => {
     });
 
     it('denies a tutor who is not linked to the room', async () => {
-      const sessionId = await createSession(problemId, '2026-10-01');
+      const sessionId = await createSession(problemId, '01-10-2026');
 
       await api(app, outsider).get(rollCallPath(sessionId)).expect(403);
     });
@@ -200,7 +200,7 @@ describe('Roll call (e2e)', () => {
     let sessionId: string;
 
     beforeEach(async () => {
-      sessionId = await createSession(problemId, '2026-10-01');
+      sessionId = await createSession(problemId, '01-10-2026');
     });
 
     it('records the batch with the server time and the authenticated tutor', async () => {
@@ -374,8 +374,8 @@ describe('Roll call (e2e)', () => {
         await enroll(extra);
         students.push(extra);
       }
-      const first = await createSession(problemId, '2026-10-01');
-      const second = await createSession(problemId, '2026-10-08');
+      const first = await createSession(problemId, '01-10-2026');
+      const second = await createSession(problemId, '08-10-2026');
       const registros = students.map((student, index) => ({
         alunoId: student.id,
         status: 'PRESENTE',

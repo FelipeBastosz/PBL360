@@ -223,7 +223,7 @@ describe('Sessions Swagger Documentation (e2e)', () => {
         'Sessão excluída.',
       );
       expect(document.paths[itemPath]!.delete!.responses['409']?.description).toBe(
-        'A sessão possui registros vinculados.',
+        'A sessão possui registros vinculados. As quantidades são retornadas em detalhes.',
       );
     });
   });
@@ -233,7 +233,7 @@ describe('Sessions Swagger Documentation (e2e)', () => {
       const schema = document.components.schemas.CreateSessionDto;
       expect(schema).toBeDefined();
       expect(Object.keys(schema?.properties ?? {})).toEqual(['titulo', 'descricao', 'data']);
-      expect(schema?.properties?.data?.format).toBe('date');
+      expect(schema?.properties?.data?.pattern).toBe('^\\d{2}-\\d{2}-\\d{4}$');
       expect(schema?.properties?.descricao?.nullable).toBe(true);
     });
 
@@ -241,7 +241,7 @@ describe('Sessions Swagger Documentation (e2e)', () => {
       const schema = document.components.schemas.UpdateSessionDto;
       expect(schema).toBeDefined();
       expect(Object.keys(schema?.properties ?? {})).toEqual(['titulo', 'descricao', 'data']);
-      expect(schema?.properties?.data?.format).toBe('date');
+      expect(schema?.properties?.data?.pattern).toBe('^\\d{2}-\\d{2}-\\d{4}$');
     });
 
     it('publishes SessionListResponseDto with expected fields', () => {

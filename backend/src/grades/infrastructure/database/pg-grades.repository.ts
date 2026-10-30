@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { buildProblemQueries } from './grades-queries';
+import { readProblemGradeData, readFormulaComponents } from './problem-grade-data.reads';
 import type {
   GradePersistenceData,
   GradeRow,
@@ -22,24 +22,13 @@ export class PgGradesRepository implements GradesRepository {
   }
 
   async findProblemData(roomId: string, problemId: string): Promise<ProblemGradeData> {
-    const queries = buildProblemQueries(roomId, problemId);
-    const results = await this.grades.transaction('REPEATABLE READ', (manager) =>
-      Promise.all(queries.map(({ sql, params }) => manager.query<GradeRow[]>(sql, params))),
+    return this.grades.transaction('REPEATABLE READ', (manager) =>
+      readProblemGradeData(manager, roomId, problemId),
     );
-    return toProblemGradeData(results);
   }
 
-  async findFormulaComponents(formulaIds: unknown[]): Promise<GradeRow[]> {
-    if (formulaIds.length === 0) return [];
-
-    const rows = await this.grades.query<GradeRow[]>(
-      `SELECT fc.formula_id, fc.type, fc.reference_id, fc.weight, f.session_id
-         FROM formula_components fc
-         JOIN formulas f ON f.id = fc.formula_id
-        WHERE fc.formula_id = ANY($1::uuid[])`,
-      [formulaIds],
-    );
-    return rows ?? [];
+  findFormulaComponents(formulaIds: unknown[]): Promise<GradeRow[]> {
+    return readFormulaComponents(this.grades.manager, formulaIds);
   }
 
   async saveGrades(problemId: string, result: GradePersistenceData): Promise<void> {
@@ -59,21 +48,4 @@ export class PgGradesRepository implements GradesRepository {
       }
     });
   }
-}
-
-function toProblemGradeData(results: GradeRow[][]): ProblemGradeData {
-  const at = (index: number): GradeRow[] => results[index] ?? [];
-  return {
-    sessions: at(0),
-    students: at(1),
-    formulas: at(2),
-    scores: at(3),
-    attendances: at(4),
-    roles: at(5),
-    criteria: at(6),
-    selfScores: at(7),
-    peerScores: at(8),
-    pokerScores: at(9),
-    peerAdjustments: at(10),
-  };
 }
