@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/useToast';
 import { evaluationService } from '@/services/evaluation.service';
 import { sessionService } from '@/services/session.service';
 import type { EvaluationCriterion } from '@/types/evaluation';
-import type { MemberSession } from '@/types/session';
+import type { MemberSession, SessionRole } from '@/types/session';
 
 export type PeerEvaluationState = {
   peerId: string;
@@ -13,6 +13,7 @@ export type PeerEvaluationState = {
   isSubmitted: boolean;
   criteria: EvaluationCriterion[];
   scores: Record<string, number>;
+  papel?: SessionRole | null;
   notaCargo?: number | null;
 };
 
@@ -26,6 +27,9 @@ async function fetchPeerCards(
   sessionId: string,
   colegas: Array<{ alunoId: string; nome: string }>,
 ): Promise<PeerEvaluationState[]> {
+  const roles = await sessionService.listRoles(sessionId).catch(() => []);
+  const roleMap = new Map(roles.map((r) => [r.alunoId, r.papel]));
+
   return Promise.all(
     colegas.map(async (c) => {
       const evalData = await evaluationService.getPeerEvaluation(sessionId, c.alunoId);
@@ -40,6 +44,7 @@ async function fetchPeerCards(
         isSubmitted: evalData.status === 'ENVIADA',
         criteria: evalData.criterios,
         scores,
+        papel: roleMap.get(c.alunoId) ?? null,
         notaCargo: evalData.notaCargo ?? null,
       };
     }),
@@ -67,7 +72,7 @@ async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
 
 const toPeerPayload = (peer: PeerEvaluationState, enviar = true) => ({
   itens: Object.entries(peer.scores).map(([criterioId, nota]) => ({ criterioId, nota })),
-  notaCargo: peer.notaCargo,
+  notaCargo: peer.papel ? peer.notaCargo : null,
   enviar,
 });
 

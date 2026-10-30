@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import type { UserResponse } from '@/types/auth';
 import { cn } from '@/utils/cn';
 import { formatDeadline } from '@/utils/formatDate';
+import { roleLabel } from '@/utils/sessionRoles';
 import { CriterionStepper } from './components/CriterionStepper';
 import { EvaluationFinalScore } from './components/EvaluationFinalScore';
 import { NonParticipantEmptyState } from './components/NonParticipantEmptyState';
@@ -27,6 +28,8 @@ function PeerEvaluationCard({
   onCriterionChange: (peerId: string, critId: string, s: number) => void;
   onCargoChange: (peerId: string, s: number) => void;
 }) {
+  const hasRole = Boolean(peer.papel);
+
   return (
     <section aria-label={`Avaliação de ${peer.name}`} className={cn(CARD_CLASS, 'p-4')}>
       <div className="mb-2 flex items-center justify-between border-b border-black/5 pb-4">
@@ -34,7 +37,14 @@ function PeerEvaluationCard({
           <span className="flex size-12 items-center justify-center rounded-xl bg-surface">
             <UserCircleIcon className="size-7 text-ink" />
           </span>
-          <span className="text-lg font-semibold text-ink">{peer.name}</span>
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold text-ink">{peer.name}</span>
+            {hasRole && (
+              <span className="text-xs font-semibold text-warning">
+                Papel: {roleLabel(peer.papel!)}
+              </span>
+            )}
+          </div>
         </div>
         {peer.isSubmitted && (
           <span className="text-xs font-semibold text-success">Avaliação já enviada</span>
@@ -50,24 +60,26 @@ function PeerEvaluationCard({
             onChange={(critId, s) => onCriterionChange(peer.peerId, critId, s)}
           />
         ))}
-        <div className="mt-2 border-t border-black/5 pt-2">
-          <CriterionStepper
-            criterion={{
-              id: 'cargo-score',
-              nome: 'Avaliação no cargo',
-              peso: 3.0,
-              ordem: 99,
-              notaMaxima: 10,
-            }}
-            score={peer.notaCargo ?? 0}
-            disabled={peer.isSubmitted || isSaving}
-            onChange={(_id, s) => onCargoChange(peer.peerId, s)}
-          />
-        </div>
+        {hasRole && (
+          <div className="mt-2 border-t border-black/5 pt-2">
+            <CriterionStepper
+              criterion={{
+                id: 'cargo-score',
+                nome: `Desempenho como ${roleLabel(peer.papel!)}`,
+                peso: 3.0,
+                ordem: 99,
+                notaMaxima: 10,
+              }}
+              score={peer.notaCargo ?? 0}
+              disabled={peer.isSubmitted || isSaving}
+              onChange={(_id, s) => onCargoChange(peer.peerId, s)}
+            />
+          </div>
+        )}
         <EvaluationFinalScore
           criteria={peer.criteria}
           scores={peer.scores}
-          bonus={peer.notaCargo}
+          bonus={hasRole ? peer.notaCargo : null}
           studentId={peer.peerId}
         />
       </div>
