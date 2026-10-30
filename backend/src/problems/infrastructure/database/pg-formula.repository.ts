@@ -21,6 +21,13 @@ export class PgFormulaRepository implements FormulaRepository {
     });
   }
 
+  async findActiveByTutor(tutorId: string): Promise<Formula | null> {
+    return this.typeOrmRepository.findOne({
+      where: { createdBy: tutorId, scope: FormulaScope.PROFESSOR, active: true },
+      relations: ['components'],
+    });
+  }
+
   async saveNewVersion(oldFormula: Formula | null, newFormula: Formula): Promise<Formula> {
     return this.typeOrmRepository.manager.transaction(async (manager) => {
       if (oldFormula) {
