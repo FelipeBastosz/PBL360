@@ -10,6 +10,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "type-check": "tsc --noEmit -p tsconfig.build.json",
     "lint": "eslint \"{src,test}/**/*.ts\" --max-warnings 0",
     "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix --max-warnings 0",
     "format": "prettier --write \"{src,test}/**/*.ts\"",

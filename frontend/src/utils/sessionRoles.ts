@@ -30,3 +30,15 @@ export function normalizeSessionRole(role?: string | null): SessionRole | null {
   if (role === 'TABLE_SECRETARY' || role === 'SECRETARIO_MESA') return 'SECRETARIO_MESA';
   return role as SessionRole;
 }
+
+export function parseRoleScore(value: string): number | null | undefined {
+  const normalized = value.trim().replace(',', '.');
+  if (!normalized) return null;
+  const score = Number(normalized);
+  if (!Number.isFinite(score) || score < 0 || score > 10) return undefined;
+  return Math.round(score * 100) / 100;
+}
+
+export function formatRoleScore(score: number | null): string {
+  return score === null ? '' : score.toFixed(1).replace('.', ',');
+}

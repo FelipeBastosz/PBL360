@@ -103,6 +103,33 @@ function useSubmitSelfAssessment(
   return { isSaving, saveError, handleSave };
 }
 
+function useSelfScoreHandlers(
+  sessionId: string,
+  dataStatus: string | undefined,
+  setScores: React.Dispatch<React.SetStateAction<Record<string, number>>>,
+  notaCargo: number | null,
+  setNotaCargo: React.Dispatch<React.SetStateAction<number | null>>,
+  scores: Record<string, number>,
+  draftTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
+) {
+  const isEditable = dataStatus !== 'ENVIADA' && dataStatus !== 'NAO_PARTICIPOU';
+
+  const setScore = (id: string, s: number) => {
+    setScores((prev) => {
+      const updated = { ...prev, [id]: s };
+      if (isEditable) scheduleDraftSave(draftTimerRef, sessionId, updated, notaCargo);
+      return updated;
+    });
+  };
+
+  const handleCargoChange = (s: number) => {
+    setNotaCargo(s);
+    if (isEditable) scheduleDraftSave(draftTimerRef, sessionId, scores, s);
+  };
+
+  return { setScore, handleCargoChange };
+}
+
 export function useStudentSelfEvaluation(sessionId: string) {
   const { data, session, scores, setScores, notaCargo, setNotaCargo, isLoading, error } =
     useSelfEvaluationData(sessionId);
@@ -120,22 +147,15 @@ export function useStudentSelfEvaluation(sessionId: string) {
     };
   }, []);
 
-  const setScore = (id: string, s: number) => {
-    setScores((prev) => {
-      const updated = { ...prev, [id]: s };
-      if (data?.status !== 'ENVIADA' && data?.status !== 'NAO_PARTICIPOU') {
-        scheduleDraftSave(draftTimerRef, sessionId, updated, notaCargo);
-      }
-      return updated;
-    });
-  };
-
-  const handleCargoChange = (s: number) => {
-    setNotaCargo(s);
-    if (data?.status !== 'ENVIADA' && data?.status !== 'NAO_PARTICIPOU') {
-      scheduleDraftSave(draftTimerRef, sessionId, scores, s);
-    }
-  };
+  const { setScore, handleCargoChange } = useSelfScoreHandlers(
+    sessionId,
+    data?.status,
+    setScores,
+    notaCargo,
+    setNotaCargo,
+    scores,
+    draftTimerRef,
+  );
 
   const didNotParticipate =
     data?.participou === false ||

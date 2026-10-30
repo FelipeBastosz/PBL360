@@ -172,6 +172,50 @@ function useStudentObservationTagsState(sessionId: string, studentId: string) {
   return { tags, counts, handleTagClick, handleTagDecrement };
 }
 
+async function saveDraftAndNavigateHelper(
+  sessionId: string,
+  studentId: string,
+  evalData: ReturnType<typeof useFetchStudentEvaluation>,
+  runSave: (
+    sId: string,
+    stId: string,
+    payload: SaveTutorEvaluationPayload,
+  ) => Promise<{ ok: boolean }>,
+  navigate: ReturnType<typeof useNavigate>,
+  targetUrl: string,
+  stateData: unknown,
+) {
+  try {
+    sessionStorage.setItem(
+      draftStorageKey(sessionId, studentId),
+      JSON.stringify({
+        scores: evalData.scores,
+        feedback: evalData.feedback,
+        notaCargo: evalData.notaCargo,
+      }),
+    );
+  } catch {
+    // ignore
+  }
+
+  if (evalData.status !== 'ENVIADA') {
+    const itens = evalData.criteria.map((c) => ({
+      criterioId: c.id,
+      nota: evalData.scores[c.id] ?? 0,
+    }));
+    await runSave(sessionId, studentId, {
+      itens,
+      enviar: false,
+      notaCargo: evalData.notaCargo,
+    }).catch(() => null);
+    await evaluationService
+      .saveFeedback(sessionId, studentId, evalData.feedback.trim())
+      .catch(() => null);
+  }
+
+  navigate(targetUrl, { state: stateData });
+}
+
 export function useStudentEvaluation(sessionId: string, studentId: string) {
   const navigate = useNavigate();
   const { notify } = useToast();
@@ -197,37 +241,16 @@ export function useStudentEvaluation(sessionId: string, studentId: string) {
       navigate,
     );
 
-  async function saveDraftAndNavigate(targetUrl: string, stateData: unknown) {
-    try {
-      sessionStorage.setItem(
-        draftStorageKey(sessionId, studentId),
-        JSON.stringify({
-          scores: evalData.scores,
-          feedback: evalData.feedback,
-          notaCargo: evalData.notaCargo,
-        }),
-      );
-    } catch {
-      // ignore
-    }
-
-    if (evalData.status !== 'ENVIADA') {
-      const itens = evalData.criteria.map((c) => ({
-        criterioId: c.id,
-        nota: evalData.scores[c.id] ?? 0,
-      }));
-      await runSave(sessionId, studentId, {
-        itens,
-        enviar: false,
-        notaCargo: evalData.notaCargo,
-      }).catch(() => null);
-      await evaluationService
-        .saveFeedback(sessionId, studentId, evalData.feedback.trim())
-        .catch(() => null);
-    }
-
-    navigate(targetUrl, { state: stateData });
-  }
+  const saveDraftAndNavigate = (targetUrl: string, stateData: unknown) =>
+    saveDraftAndNavigateHelper(
+      sessionId,
+      studentId,
+      evalData,
+      runSave,
+      navigate,
+      targetUrl,
+      stateData,
+    );
 
   return {
     ...evalData,

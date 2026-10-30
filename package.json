@@ -18,6 +18,7 @@
     "format": "npm --prefix backend run format && npm --prefix frontend run format",
     "format:check": "npm --prefix backend run format:check && npm --prefix frontend run format:check",
     "test": "npm --prefix backend run test && npm --prefix frontend run test",
+    "type-check": "npm --prefix backend run type-check && npm --prefix frontend run type-check",
     "test:e2e:backend": "npm --prefix backend run test:e2e",
     "test:e2e:frontend": "npm --prefix frontend run test:e2e",
     "test:e2e:frontend:ui": "npm --prefix frontend run test:e2e:ui"

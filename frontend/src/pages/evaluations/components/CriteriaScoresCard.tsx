@@ -152,7 +152,7 @@ export function CriteriaScoresCard({
   onScoreChange,
   onCargoScoreChange,
 }: Props) {
-  const effectiveCargoScore = notaCargo ?? bonus ?? 0;
+  const effectiveCargoScore = notaCargo ?? bonus;
   const finalScore = calculateFinalScore(criteria, scores, effectiveCargoScore);
 
   return (
@@ -174,7 +174,7 @@ export function CriteriaScoresCard({
           <ScoreRow
             label="Desempenho no cargo"
             subtitle="Peso na fórmula (30%)"
-            score={effectiveCargoScore}
+            score={effectiveCargoScore ?? 0}
             onChange={onCargoScoreChange}
           />
         )}

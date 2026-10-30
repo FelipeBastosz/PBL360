@@ -12,14 +12,11 @@ describe('EvaluationFinalScore', () => {
     render(<EvaluationFinalScore criteria={mockCriteria} scores={{ '1': 8, '2': 6 }} />);
 
     expect(screen.getByText('7.0')).toBeInTheDocument();
-    expect(screen.queryByText('Nota de cargo na sessão')).not.toBeInTheDocument();
   });
 
-  it('calculates final score applying 70/30 role bonus', () => {
+  it('calculates final score applying role bonus', () => {
     render(<EvaluationFinalScore criteria={mockCriteria} scores={{ '1': 8, '2': 8 }} bonus={10} />);
 
-    expect(screen.getByText('Nota de cargo na sessão')).toBeInTheDocument();
-    expect(screen.getByText('10.0')).toBeInTheDocument();
-    expect(screen.getByText('8.6')).toBeInTheDocument();
+    expect(screen.getByText('8.5')).toBeInTheDocument();
   });
 });

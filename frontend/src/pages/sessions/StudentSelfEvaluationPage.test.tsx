@@ -108,6 +108,7 @@ describe('StudentSelfEvaluationPage', () => {
             { criterioId: 'crit-1', nota: 9 },
             { criterioId: 'crit-2', nota: 6 },
           ],
+          notaCargo: null,
           enviar: false,
         });
       },
@@ -151,6 +152,7 @@ describe('StudentSelfEvaluationPage', () => {
         { criterioId: 'crit-1', nota: 8 },
         { criterioId: 'crit-2', nota: 6 },
       ],
+      notaCargo: null,
       enviar: true,
     });
     expect(mockNotify).toHaveBeenCalledWith({

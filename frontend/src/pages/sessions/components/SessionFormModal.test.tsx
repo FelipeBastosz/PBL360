@@ -54,13 +54,13 @@ describe('SessionFormModal', () => {
     expect(sessionService.create).not.toHaveBeenCalled();
   });
 
-  it('creates session and calls onSuccess on valid submission', async () => {
+  it('creates session and calls onSuccess with converted DD-MM-AAAA date', async () => {
     const user = userEvent.setup();
     const createdSession: Session = {
       id: 'sess-10',
       titulo: 'Sessão 2',
       descricao: 'Fechamento',
-      data: '2026-10-20',
+      data: '20-10-2026',
       ordem: 2,
       status: 'agendada',
     };
@@ -83,13 +83,39 @@ describe('SessionFormModal', () => {
     await user.click(screen.getByRole('button', { name: 'Criar sessão' }));
 
     await waitFor(() => {
+      // Valida que o payload converteu a data para DD-MM-AAAA no envio:
       expect(sessionService.create).toHaveBeenCalledWith('room-1', 'prob-1', {
         titulo: 'Sessão 2',
         descricao: 'Fechamento',
-        data: '2026-10-20',
+        data: '20-10-2026',
       });
       expect(mockOnSuccess).toHaveBeenCalledWith(createdSession);
     });
+  });
+
+  it('pre-fills input date converting from API DD-MM-AAAA format when editing', () => {
+    const existingSession: Session = {
+      id: 'sess-10',
+      titulo: 'Sessão Existente',
+      descricao: 'Descrição existente',
+      data: '25-12-2026',
+      ordem: 1,
+      status: 'agendada',
+    };
+
+    render(
+      <SessionFormModal
+        isOpen={true}
+        roomId="room-1"
+        problemId="prob-1"
+        initialData={existingSession}
+        onClose={mockOnClose}
+        onSuccess={mockOnSuccess}
+      />,
+    );
+
+    // O input type="date" recebe convertido para AAAA-MM-DD:
+    expect(screen.getByLabelText('Data da Sessão')).toHaveValue('2026-12-25');
   });
 
   it('closes on Escape', async () => {

@@ -52,7 +52,7 @@ async function fetchPeerCards(
 async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
   const [response, summary] = await Promise.all([
     evaluationService.listSessionPeers(sessionId),
-    evaluationService.getMyEvaluationsSummary(sessionId).catch(() => null),
+    Promise.resolve(evaluationService.getMyEvaluationsSummary(sessionId)).catch(() => null),
   ]);
 
   const didNotParticipate =
@@ -126,24 +126,11 @@ function usePeerEvaluationData(sessionId: string) {
   return { peers, setPeers, prazo, didNotParticipate, session, isLoading, error };
 }
 
-export function useStudentPeerEvaluation(sessionId: string) {
-  const navigate = useNavigate();
-  const { notify } = useToast();
-  const { peers, setPeers, prazo, didNotParticipate, session, isLoading, error } =
-    usePeerEvaluationData(sessionId);
-  const draftTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  const {
-    run: saveAll,
-    isLoading: isSaving,
-    error: saveError,
-  } = useAsyncAction(useCallback(() => savePendingPeers(sessionId, peers), [sessionId, peers]));
-
-  useEffect(() => {
-    const timers = draftTimersRef.current;
-    return () => Object.values(timers).forEach(clearTimeout);
-  }, []);
-
+function usePeerScoreHandlers(
+  sessionId: string,
+  setPeers: React.Dispatch<React.SetStateAction<PeerEvaluationState[]>>,
+  draftTimersRef: React.RefObject<Record<string, ReturnType<typeof setTimeout>>>,
+) {
   const setScore = (peerId: string, critId: string, s: number) => {
     setPeers((prev) => {
       const next = prev.map((p) =>
@@ -165,6 +152,28 @@ export function useStudentPeerEvaluation(sessionId: string) {
       return next;
     });
   };
+
+  return { setScore, setCargoScore };
+}
+
+export function useStudentPeerEvaluation(sessionId: string) {
+  const navigate = useNavigate();
+  const { notify } = useToast();
+  const { peers, setPeers, prazo, didNotParticipate, session, isLoading, error } =
+    usePeerEvaluationData(sessionId);
+  const draftTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const { setScore, setCargoScore } = usePeerScoreHandlers(sessionId, setPeers, draftTimersRef);
+
+  const {
+    run: saveAll,
+    isLoading: isSaving,
+    error: saveError,
+  } = useAsyncAction(useCallback(() => savePendingPeers(sessionId, peers), [sessionId, peers]));
+
+  useEffect(() => {
+    const timers = draftTimersRef.current;
+    return () => Object.values(timers).forEach(clearTimeout);
+  }, []);
 
   const handleSave = async () => {
     Object.values(draftTimersRef.current).forEach(clearTimeout);
