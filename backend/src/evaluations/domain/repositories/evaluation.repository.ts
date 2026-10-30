@@ -30,6 +30,7 @@ export interface EvaluationWrite {
   items: CriterionScore[];
   submit: boolean;
   justification?: string;
+  notaCargo?: number | null;
 }
 export interface PeerEvaluationSummary {
   alunoId: string;
@@ -48,6 +49,7 @@ export interface PeerEvaluationWrite {
   peerId: string;
   items: CriterionScore[];
   submit: boolean;
+  notaCargo?: number | null;
 }
 export interface StudentEvaluationSummary {
   participating: boolean;
@@ -59,6 +61,7 @@ export interface SelfAssessmentWrite {
   studentId: string;
   items: CriterionScore[];
   submit: boolean;
+  notaCargo?: number | null;
 }
 export interface EvaluationRepository {
   getProblemCriteria(problemId: string): Promise<SessionEvaluationConfig>;

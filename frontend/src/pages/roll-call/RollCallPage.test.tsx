@@ -158,7 +158,7 @@ describe('RollCallPage', () => {
   it('seats everyone left in the free seats and then marks nobody absent', async () => {
     const { user } = openRollCall(rollCall([ana, bruno, carla]));
 
-    await user.click(await screen.findByRole('button', { name: 'Sentar todos' }));
+    await user.click(await screen.findByRole('button', { name: 'Todos presentes' }));
 
     expect(screen.getByText('Todos os alunos estão na mesa.')).toBeInTheDocument();
     expect(within(counter('Presentes')).getByText('3')).toBeInTheDocument();
@@ -220,7 +220,7 @@ describe('RollCallPage', () => {
   it('takes a prefilled student off the table removing the presence in this session', async () => {
     vi.mocked(sessionService.listRoles)
       .mockResolvedValueOnce([
-        { alunoId: 'ana', nome: 'Ana Souza', papel: 'COORDENADOR', notaAdicional: null },
+        { alunoId: 'ana', nome: 'Ana Souza', papel: 'COORDENADOR', notaPapel: null },
       ])
       .mockResolvedValueOnce([]);
     vi.mocked(sessionService.saveRollCall).mockResolvedValue(
@@ -322,7 +322,7 @@ describe('RollCallPage', () => {
           ocupadoPor: { studentId: 'carla', name: 'Carla Dias' },
         }),
       )
-      .mockResolvedValueOnce({ alunoId: 'ana', papel: 'COORDENADOR', notaAdicional: 0.5 });
+      .mockResolvedValueOnce({ alunoId: 'ana', papel: 'COORDENADOR', notaPapel: null });
     const { user } = openRollCall(
       rollCall([student('ana', 'Ana Souza', { lugar: 1, status: 'PRESENTE' }), carla], {
         origem: 'REGISTRADA',
@@ -332,7 +332,6 @@ describe('RollCallPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Lugar 1: Ana Souza, Presente' }));
     await user.click(screen.getByRole('button', { name: 'Atribuir papel na sessão' }));
     await user.click(screen.getByRole('radio', { name: 'Coordenador' }));
-    await user.type(screen.getByLabelText('Nota adicional pelo papel (opcional)'), '0,5');
     await user.click(screen.getByRole('button', { name: 'Confirmar' }));
 
     expect(await screen.findByText(/já é de/)).toHaveTextContent(
@@ -342,7 +341,6 @@ describe('RollCallPage', () => {
 
     expect(sessionService.assignRole).toHaveBeenLastCalledWith('s1', 'ana', {
       papel: 'COORDENADOR',
-      notaAdicional: 0.5,
       transferir: true,
     });
     expect(await screen.findByText('Papel atribuído.')).toBeInTheDocument();
@@ -372,7 +370,7 @@ describe('RollCallPage', () => {
   it('asks before leaving with unsaved changes', async () => {
     const { user } = openRollCall(rollCall([ana, bruno]));
 
-    await user.click(await screen.findByRole('button', { name: 'Sentar todos' }));
+    await user.click(await screen.findByRole('button', { name: 'Todos presentes' }));
     await user.click(screen.getByRole('button', { name: 'Voltar' }));
 
     expect(screen.getByRole('dialog', { name: 'Sair sem salvar?' })).toBeInTheDocument();

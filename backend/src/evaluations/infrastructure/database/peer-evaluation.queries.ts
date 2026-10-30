@@ -59,11 +59,11 @@ export const UPDATE_PEER_SUBMISSION = `
      SET status = 'SUBMITTED',
          submitted_at = $2,
          session_score = $3,
-         applied_bonus = NULL,
-         calculation_version = $4,
+         applied_bonus = $4,
+         calculation_version = $5,
          updated_by = $1,
          updated_at = $2
-   WHERE id = $5;
+   WHERE id = $6;
 `;
 
 export const UPDATE_PEER_DRAFT = `

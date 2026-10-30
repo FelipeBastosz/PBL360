@@ -20,6 +20,7 @@ export function toSavePeerEvaluationInput(
       score: item.nota,
     })),
     enviar: dto.enviar,
+    notaCargo: dto.notaCargo,
   };
 }
 

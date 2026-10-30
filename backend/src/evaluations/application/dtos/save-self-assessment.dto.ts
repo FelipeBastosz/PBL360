@@ -1,9 +1,29 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  Max,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { EvaluationItemDto } from './evaluation-item.dto';
 
 export class SaveSelfAssessmentDto {
+  @ApiPropertyOptional({
+    minimum: 0,
+    maximum: 10,
+    nullable: true,
+    description: 'Nota do papel desempenhado na sessão.',
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(10)
+  notaCargo?: number | null;
+
   @ApiProperty({
     type: EvaluationItemDto,
     isArray: true,

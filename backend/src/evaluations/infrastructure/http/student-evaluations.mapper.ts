@@ -16,6 +16,7 @@ export function toSaveSelfAssessmentInput(
     studentId,
     items: dto.itens.map((item) => ({ criterionId: item.criterioId, score: item.nota })),
     submit: dto.enviar,
+    notaCargo: dto.notaCargo,
   };
 }
 

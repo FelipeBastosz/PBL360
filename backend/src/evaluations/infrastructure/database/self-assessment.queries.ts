@@ -38,6 +38,6 @@ export const UPDATE_SELF_DRAFT = `
 
 export const UPDATE_SELF_SUBMISSION = `
   UPDATE evaluations SET status = 'SUBMITTED', submitted_at = $1,
-    session_score = $2, applied_bonus = NULL, calculation_version = $3,
-    updated_by = $4, updated_at = $1 WHERE id = $5;
+    session_score = $2, applied_bonus = $3, calculation_version = $4,
+    updated_by = $5, updated_at = $1 WHERE id = $6;
 `;
