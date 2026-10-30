@@ -30,6 +30,8 @@ export class ProblemReportController {
       tutorId,
       format: query.formato,
       ocultarNomes: query.ocultarNomes,
+      mostrarFeedback: query.mostrarFeedback,
+      mostrarMarcacoes: query.mostrarMarcacoes,
     });
     return toReportFileResponse(file);
   }
