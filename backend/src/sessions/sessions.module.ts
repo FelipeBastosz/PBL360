@@ -43,6 +43,7 @@ import { SESSION_ATTACHMENT_REPOSITORY } from './domain/repositories/session-att
 import { PgSessionAttachmentRepository } from './infrastructure/database/pg-session-attachment.repository';
 import { SessionEvaluationConfigurationController } from './infrastructure/http/session-evaluation-configuration.controller';
 import { SessionEvaluationConfigurationService } from './application/services/session-evaluation-configuration.service';
+import { GetSessionFormulaUseCase } from './application/use-cases/get-session-formula.use-case';
 
 import { SessionTableEditingController } from './infrastructure/http/session-table-editing.controller';
 import { GetSessionTableEditPermissionsUseCase } from './application/use-cases/get-session-table-edit-permissions.use-case';
@@ -97,6 +98,7 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     GetEvaluationReleasesUseCase,
     UpdateEvaluationReleasesUseCase,
     SessionEvaluationConfigurationService,
+    GetSessionFormulaUseCase,
     ExportSessionReportUseCase,
     { provide: SESSION_REPOSITORY, useClass: PgSessionRepository },
     { provide: SESSION_ROLE_REPOSITORY, useClass: PgSessionRoleRepository },
@@ -105,6 +107,6 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     { provide: SESSION_ATTACHMENT_REPOSITORY, useClass: PgSessionAttachmentRepository },
     { provide: SESSION_REPORT_REPOSITORY, useClass: PgSessionReportRepository },
   ],
-  exports: [SESSION_REPOSITORY, SessionAccessService],
+  exports: [SESSION_REPOSITORY, SessionAccessService, GetSessionFormulaUseCase],
 })
 export class SessionsModule {}

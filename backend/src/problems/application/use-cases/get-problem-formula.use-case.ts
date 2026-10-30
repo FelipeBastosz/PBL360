@@ -13,7 +13,7 @@ export interface GetProblemFormulaInput {
   roomId: string;
   problemId: string;
   tutorId: string;
-  scope: FormulaScope;
+  scope?: FormulaScope;
 }
 
 export interface ProblemFormulaComponent {
@@ -41,19 +41,17 @@ export class GetProblemFormulaUseCase {
   async execute(input: GetProblemFormulaInput): Promise<ProblemFormulaOutput> {
     await this.roomAccessService.assertTutorCanAccessRoom(input.roomId, input.tutorId);
 
-    if (input.scope !== FormulaScope.PROBLEMA) {
+    const scope = input.scope ?? FormulaScope.PROBLEMA;
+    if (scope !== FormulaScope.PROBLEMA) {
       throw new UnprocessableEntityError(
         'A fórmula da sessão deve ser consultada pela configuração da própria sessão.',
       );
     }
     await this.validateProblem(input);
 
-    const activeFormula = await this.formulas.findActiveByProblemAndScope(
-      input.problemId,
-      input.scope,
-    );
+    const activeFormula = await this.formulas.findActiveByProblemAndScope(input.problemId, scope);
     if (activeFormula) {
-      return this.buildActiveFormula(input.scope, activeFormula);
+      return this.buildActiveFormula(scope, activeFormula);
     }
 
     return this.buildProblemScopeFormula();
