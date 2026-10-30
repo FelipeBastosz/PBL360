@@ -19,6 +19,7 @@ export default function ProfilePage() {
     successMessage,
     reload,
     saveName,
+    changePassword,
     uploadPhoto,
     deletePhoto,
   } = useProfile();
@@ -31,10 +32,10 @@ export default function ProfilePage() {
       <BackHeader title="Meu Perfil" subtitle="Minha Conta" onBack={() => navigate(ROUTES.rooms)} />
 
       <main className={cn(PAGE_CONTAINER_CLASS, 'mx-auto max-w-2xl py-6')}>
-        <div className="rounded-2xl border border-line bg-card p-6 shadow-sm sm:p-8">
-          <div className="mb-6 flex flex-col gap-1 border-b border-line pb-4">
-            <h1 className="text-xl font-bold text-ink sm:text-2xl">Dados da Conta</h1>
-            <p className="text-sm text-muted">
+        <div className="rounded-[20px] border border-black/5 bg-white p-6 shadow-[0_4px_24px_rgba(0,0,80,0.08)] sm:p-10">
+          <div className="mb-6 flex flex-col gap-1 border-b border-gray-200 pb-4">
+            <h1 className="text-xl font-bold text-brand-900 sm:text-2xl">Dados da Conta</h1>
+            <p className="text-sm text-brand-300">
               Consulte suas informações acadêmicas e gerencie seu nome e foto de exibição.
             </p>
           </div>
@@ -53,9 +54,13 @@ export default function ProfilePage() {
 
           <ProfilePhotoSection profile={profile} onUpload={uploadPhoto} onDelete={deletePhoto} />
 
-          <hr className="my-6 border-line" />
+          <hr className="my-6 border-gray-200" />
 
-          <ProfileDetailsForm profile={profile} onSaveName={saveName} />
+          <ProfileDetailsForm
+            profile={profile}
+            onSaveName={saveName}
+            onSavePassword={changePassword}
+          />
         </div>
       </main>
     </div>

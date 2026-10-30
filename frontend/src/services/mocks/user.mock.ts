@@ -42,4 +42,8 @@ export const mockUserService = {
     }
     return mockPhotoBlob;
   },
+
+  changePassword: async (_payload: { senhaAtual: string; novaSenha: string }): Promise<void> => {
+    await new Promise((r) => setTimeout(r, 400));
+  },
 };

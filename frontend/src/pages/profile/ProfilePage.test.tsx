@@ -14,6 +14,7 @@ vi.mock('@/services/user.service', () => ({
     updateProfile: vi.fn(),
     uploadPhoto: vi.fn(),
     deletePhoto: vi.fn(),
+    changePassword: vi.fn(),
     getPhoto: vi.fn(),
   },
 }));
@@ -21,6 +22,7 @@ vi.mock('@/services/user.service', () => ({
 vi.mock('@/hooks/useUserPhoto', () => ({
   useUserPhoto: vi.fn(() => null),
   clearUserPhotoCache: vi.fn(),
+  setUserPhotoCache: vi.fn(),
 }));
 
 const mockStudentProfile: UserProfileResponse = {
@@ -88,7 +90,7 @@ describe('ProfilePage', () => {
     expect(screen.getByText('20241001')).toBeInTheDocument();
     expect(screen.getAllByText('Apenas para consulta.')).toHaveLength(2);
     expect(screen.getByText('Aluno')).toBeInTheDocument();
-    expect(screen.getByText('Adicionar foto')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /adicionar foto de perfil/i })).toBeInTheDocument();
   });
 
   it('renders tutor profile without matricula field', async () => {
@@ -98,8 +100,8 @@ describe('ProfilePage', () => {
     expect(screen.getByText('professor@uefs.br')).toBeInTheDocument();
     expect(screen.queryByText('Matrícula')).not.toBeInTheDocument();
     expect(screen.getByText('Professor')).toBeInTheDocument();
-    expect(screen.getByText('Alterar foto')).toBeInTheDocument();
-    expect(screen.getByText('Remover')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /trocar foto de perfil/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /remover foto/i })).toBeInTheDocument();
   });
 
   it('allows editing name with validation and cancellation', async () => {
@@ -149,10 +151,9 @@ describe('ProfilePage', () => {
     expect(updateUserMock).toHaveBeenCalledWith({ nome: 'Aluno Novo Nome' });
   });
 
-  it('handles photo upload and deletion', async () => {
+  it('handles photo upload and prevents deletion for student', async () => {
     const user = userEvent.setup();
     vi.mocked(userService.uploadPhoto).mockResolvedValue();
-    vi.mocked(userService.deletePhoto).mockResolvedValue();
 
     const { updateUserMock } = renderProfilePage(mockStudentProfile);
 
@@ -164,12 +165,47 @@ describe('ProfilePage', () => {
     expect(await screen.findByText('Foto atualizada com sucesso.')).toBeInTheDocument();
     expect(updateUserMock).toHaveBeenCalledWith({ possuiFoto: true });
 
-    // Now remove photo
-    const removeButton = screen.getByRole('button', { name: /remover/i });
+    // Students cannot see remove button
+    expect(screen.queryByRole('button', { name: /remover/i })).not.toBeInTheDocument();
+  });
+
+  it('allows photo deletion for tutor', async () => {
+    const user = userEvent.setup();
+    vi.mocked(userService.deletePhoto).mockResolvedValue();
+
+    const { updateUserMock } = renderProfilePage(mockTutorProfile);
+
+    const removeButton = await screen.findByRole('button', { name: /remover/i });
     await user.click(removeButton);
 
     expect(await screen.findByText('Foto removida com sucesso.')).toBeInTheDocument();
     expect(updateUserMock).toHaveBeenCalledWith({ possuiFoto: false });
+  });
+
+  it('allows changing password with validation and success feedback', async () => {
+    const user = userEvent.setup();
+    vi.mocked(userService.changePassword).mockResolvedValue();
+
+    renderProfilePage(mockStudentProfile);
+
+    const changePasswordBtn = await screen.findByRole('button', { name: /alterar senha/i });
+    await user.click(changePasswordBtn);
+
+    const currentPasswordInput = screen.getByPlaceholderText('Digite sua senha atual');
+    const newPasswordInput = screen.getByPlaceholderText('Digite sua nova senha');
+    const confirmPasswordInput = screen.getByPlaceholderText('Repita a nova senha');
+
+    await user.type(currentPasswordInput, 'senha-antiga');
+    await user.type(newPasswordInput, 'nova-senha-123');
+    await user.type(confirmPasswordInput, 'nova-senha-123');
+
+    await user.click(screen.getByRole('button', { name: /salvar nova senha/i }));
+
+    expect(userService.changePassword).toHaveBeenCalledWith({
+      senhaAtual: 'senha-antiga',
+      novaSenha: 'nova-senha-123',
+    });
+    expect(await screen.findByText('Senha alterada com sucesso.')).toBeInTheDocument();
   });
 
   it('renders error state and retry button on fetch failure', async () => {

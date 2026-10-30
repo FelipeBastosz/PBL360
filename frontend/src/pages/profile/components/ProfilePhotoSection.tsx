@@ -9,6 +9,17 @@ interface ProfilePhotoSectionProps {
   onDelete: () => Promise<boolean>;
 }
 
+function PhotoHelpText({ hasPhoto }: { hasPhoto: boolean }) {
+  return (
+    <>
+      <p className="text-sm font-medium text-brand-900">
+        Clique no ícone de câmera para {hasPhoto ? 'alterar' : 'adicionar'} sua foto.
+      </p>
+      <p className="text-xs text-brand-300">Formatos aceitos: JPG, PNG ou WebP (máx. 2 MB).</p>
+    </>
+  );
+}
+
 export function ProfilePhotoSection({ profile, onUpload, onDelete }: ProfilePhotoSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -35,8 +46,12 @@ export function ProfilePhotoSection({ profile, onUpload, onDelete }: ProfilePhot
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 py-4 sm:flex-row sm:items-center sm:gap-6">
-      <ProfilePhotoAvatar profile={profile} isBusy={isBusy} />
+    <div className="flex flex-col items-center gap-4 py-2 sm:flex-row sm:items-center sm:gap-6">
+      <ProfilePhotoAvatar
+        profile={profile}
+        isBusy={isBusy}
+        onPickPhoto={() => fileInputRef.current?.click()}
+      />
 
       <div className="flex flex-col items-center gap-2 sm:items-start">
         <input
@@ -48,14 +63,14 @@ export function ProfilePhotoSection({ profile, onUpload, onDelete }: ProfilePhot
           data-testid="photo-input"
         />
 
+        <PhotoHelpText hasPhoto={profile.possuiFoto} />
+
         <PhotoActionButtons
           hasPhoto={profile.possuiFoto}
+          canDeletePhoto={profile.tipo !== 'ALUNO'}
           isBusy={isBusy}
-          onPickPhoto={() => fileInputRef.current?.click()}
           onDeletePhoto={handleDelete}
         />
-
-        <p className="text-xs text-muted">Formatos aceitos: JPG, PNG ou WebP (máx. 2 MB).</p>
       </div>
     </div>
   );

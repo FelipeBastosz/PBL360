@@ -12,3 +12,9 @@ export interface UserProfileResponse {
 export interface UpdateUserProfilePayload {
   nome: string;
 }
+
+export interface ChangePasswordPayload {
+  senhaAtual: string;
+  novaSenha: string;
+}
+

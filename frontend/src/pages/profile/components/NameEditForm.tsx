@@ -36,7 +36,7 @@ export function NameEditForm({
           variant="outline"
           onClick={onCancel}
           disabled={isSaving}
-          className="h-10 w-auto px-3 text-xs"
+          className="h-11 w-auto rounded-xl border-brand-900 px-4 text-sm font-semibold text-brand-900"
         >
           <XMarkIcon className="size-4" aria-hidden />
           Cancelar
@@ -46,7 +46,7 @@ export function NameEditForm({
           variant="primary"
           onClick={onSave}
           disabled={isSaving}
-          className="h-10 w-auto px-4 text-xs"
+          className="h-11 w-auto rounded-xl px-5 text-sm font-semibold shadow-[0_10px_24px_-8px_rgb(0_0_119/0.55)]"
         >
           <CheckIcon className="size-4" aria-hidden />
           Salvar

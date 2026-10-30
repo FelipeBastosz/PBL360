@@ -1,23 +1,18 @@
 import type { TutorSummary } from '@/types/room';
-import type { UpdateUserProfilePayload, UserProfileResponse } from '@/types/user';
+import type {
+  ChangePasswordPayload,
+  UpdateUserProfilePayload,
+  UserProfileResponse,
+} from '@/types/user';
 import { api } from './api';
 
 const BASE = '/usuarios';
 
-import { mockUserService } from './mocks/user.mock';
-
 export const userService = {
-  getProfile: () =>
-    api
-      .get<UserProfileResponse>(`${BASE}/meu-perfil`)
-      .then((r) => r.data)
-      .catch(() => mockUserService.getProfile()),
+  getProfile: () => api.get<UserProfileResponse>(`${BASE}/meu-perfil`).then((r) => r.data),
 
   updateProfile: (payload: UpdateUserProfilePayload) =>
-    api
-      .patch<UserProfileResponse>(`${BASE}/meu-perfil`, payload)
-      .then((r) => r.data)
-      .catch(() => mockUserService.updateProfile(payload)),
+    api.patch<UserProfileResponse>(`${BASE}/meu-perfil`, payload).then((r) => r.data),
 
   uploadPhoto: (file: File) => {
     const formData = new FormData();
@@ -26,22 +21,18 @@ export const userService = {
       .put<void>(`${BASE}/minha-foto`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
-      .then((r) => r.data)
-      .catch(() => mockUserService.uploadPhoto(file));
+      .then((r) => r.data);
   },
 
-  deletePhoto: () =>
-    api
-      .delete<void>(`${BASE}/minha-foto`)
-      .then((r) => r.data)
-      .catch(() => mockUserService.deletePhoto()),
+  deletePhoto: () => api.delete<void>(`${BASE}/minha-foto`).then((r) => r.data),
+
+  changePassword: (payload: ChangePasswordPayload) =>
+    api.patch<void>(`${BASE}/minha-senha`, payload).then((r) => r.data),
 
   getPhoto: (userId: string) =>
-    api
-      .get<Blob>(`${BASE}/${userId}/foto`, { responseType: 'blob' })
-      .then((r) => r.data)
-      .catch(() => mockUserService.getPhoto(userId)),
+    api.get<Blob>(`${BASE}/${userId}/foto`, { responseType: 'blob' }).then((r) => r.data),
 
   searchTutors: (busca: string) =>
     api.get<TutorSummary[]>(`${BASE}/professores`, { params: { busca } }).then((r) => r.data),
 };
+

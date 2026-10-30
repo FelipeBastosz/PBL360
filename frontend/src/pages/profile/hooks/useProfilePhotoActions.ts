@@ -1,16 +1,23 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
+import { clearUserPhotoCache, setUserPhotoCache } from '@/hooks/useUserPhoto';
 import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
+import { ApiError } from '@/services/apiError';
 import type { UserProfileResponse } from '@/types/user';
 
 function getErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiError && err.messages.length > 0) {
+    return err.messages[0];
+  }
   if (err && typeof err === 'object' && 'response' in err) {
     const res = (err as { response?: { data?: { message?: string | string[] } } }).response;
     const msg = res?.data?.message;
     if (Array.isArray(msg)) return msg[0] ?? fallback;
     if (typeof msg === 'string') return msg;
+  }
+  if (err instanceof Error && err.message) {
+    return err.message;
   }
   return fallback;
 }
@@ -30,7 +37,7 @@ export function useProfilePhotoActions(
       try {
         await userService.uploadPhoto(file);
         if (profile) {
-          clearUserPhotoCache(profile.id);
+          setUserPhotoCache(profile.id, file);
           setProfile((prev) => (prev ? { ...prev, possuiFoto: true } : null));
           if (user) sessionStore.saveUser({ ...user, possuiFoto: true });
           updateUser?.({ possuiFoto: true });
@@ -58,8 +65,8 @@ export function useProfilePhotoActions(
       }
       setSuccessMessage('Foto removida com sucesso.');
       return true;
-    } catch {
-      setActionError('Erro ao remover a foto.');
+    } catch (err) {
+      setActionError(getErrorMessage(err, 'Erro ao remover a foto.'));
       return false;
     }
   }, [user, profile, setProfile, updateUser, setActionError, setSuccessMessage]);

@@ -18,6 +18,15 @@ export function clearUserPhotoCache(userId?: string) {
   }
 }
 
+export function setUserPhotoCache(userId: string, blob: Blob | null) {
+  if (blob) {
+    loadedPhotos.set(userId, blob);
+  } else {
+    loadedPhotos.delete(userId);
+  }
+  pendingPhotos.delete(userId);
+}
+
 function loadPhoto(userId: string): Promise<Blob> | null {
   const pending = pendingPhotos.get(userId);
   if (pending) return pending;

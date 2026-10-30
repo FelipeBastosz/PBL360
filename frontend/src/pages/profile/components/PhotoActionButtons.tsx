@@ -1,44 +1,35 @@
-import { CameraIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 
 interface PhotoActionButtonsProps {
   hasPhoto: boolean;
+  canDeletePhoto: boolean;
   isBusy: boolean;
-  onPickPhoto: () => void;
   onDeletePhoto: () => void;
 }
 
 export function PhotoActionButtons({
   hasPhoto,
+  canDeletePhoto,
   isBusy,
-  onPickPhoto,
   onDeletePhoto,
 }: PhotoActionButtonsProps) {
+  if (!hasPhoto || !canDeletePhoto) {
+    return null;
+  }
+
   return (
-    <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+    <div className="flex flex-wrap justify-center pt-0.5 sm:justify-start">
       <Button
         type="button"
-        variant="outline"
+        variant="link"
         disabled={isBusy}
-        onClick={onPickPhoto}
-        className="h-10 w-auto gap-2 px-3 text-xs"
+        onClick={onDeletePhoto}
+        className="h-auto gap-1.5 p-0 text-xs font-semibold text-danger hover:text-danger hover:underline"
       >
-        <CameraIcon className="size-4" aria-hidden />
-        {hasPhoto ? 'Alterar foto' : 'Adicionar foto'}
+        <TrashIcon className="size-3.5" aria-hidden />
+        Remover foto
       </Button>
-
-      {hasPhoto && (
-        <Button
-          type="button"
-          variant="link"
-          disabled={isBusy}
-          onClick={onDeletePhoto}
-          className="h-10 w-auto gap-2 px-3 text-xs text-danger hover:text-danger"
-        >
-          <TrashIcon className="size-4" aria-hidden />
-          Remover
-        </Button>
-      )}
     </div>
   );
 }
