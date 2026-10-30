@@ -132,6 +132,7 @@ export type SessionPeerStudent = {
   nome: string;
   iniciais: string;
   status: EvaluationStatus;
+  papel?: string | null;
 };
 
 export type SessionPeersResponse = {

@@ -36,6 +36,7 @@ export interface PeerEvaluationSummary {
   alunoId: string;
   nome: string;
   status: EvaluationStatus | null;
+  papel?: string | null;
 }
 export interface PeerEvaluationDetail {
   peer: { id: string; name: string };

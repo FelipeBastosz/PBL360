@@ -6,9 +6,10 @@ export const IS_STUDENT_PARTICIPATING = `
 `;
 
 export const LIST_SESSION_PEERS = `
-  SELECT u.id AS "alunoId", u.name AS "nome", e.status AS "status"
+  SELECT u.id AS "alunoId", u.name AS "nome", e.status AS "status", sr.role AS "papel"
     FROM attendances a
     JOIN users u ON u.id = a.student_id AND u.type = 'STUDENT'
+    LEFT JOIN session_roles sr ON sr.session_id = a.session_id AND sr.student_id = a.student_id
     LEFT JOIN evaluations e ON e.session_id = a.session_id
       AND e.evaluator_id = $2
       AND e.student_id = a.student_id

@@ -33,6 +33,7 @@ export function toSessionPeersResponse(output: ListSessionPeersOutput): SessionP
       nome: c.nome,
       iniciais: c.iniciais,
       status: c.status,
+      papel: c.papel,
     })),
   };
 }

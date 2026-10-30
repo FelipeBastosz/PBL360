@@ -4,8 +4,9 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useToast } from '@/hooks/useToast';
 import { evaluationService } from '@/services/evaluation.service';
 import { sessionService } from '@/services/session.service';
-import type { EvaluationCriterion } from '@/types/evaluation';
+import type { EvaluationCriterion, SessionPeerStudent } from '@/types/evaluation';
 import type { MemberSession, SessionRole } from '@/types/session';
+import { normalizeSessionRole } from '@/utils/sessionRoles';
 
 export type PeerEvaluationState = {
   peerId: string;
@@ -25,11 +26,8 @@ type LoadedPeersResult = {
 
 async function fetchPeerCards(
   sessionId: string,
-  colegas: Array<{ alunoId: string; nome: string }>,
+  colegas: SessionPeerStudent[],
 ): Promise<PeerEvaluationState[]> {
-  const roles = await sessionService.listRoles(sessionId).catch(() => []);
-  const roleMap = new Map(roles.map((r) => [r.alunoId, r.papel]));
-
   return Promise.all(
     colegas.map(async (c) => {
       const evalData = await evaluationService.getPeerEvaluation(sessionId, c.alunoId);
@@ -44,7 +42,7 @@ async function fetchPeerCards(
         isSubmitted: evalData.status === 'ENVIADA',
         criteria: evalData.criterios,
         scores,
-        papel: roleMap.get(c.alunoId) ?? null,
+        papel: normalizeSessionRole(c.papel),
         notaCargo: evalData.notaCargo ?? null,
       };
     }),

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EvaluationStatusResponse } from './session-evaluation-summary-response.dto';
 
 export class SessionPeerStudentDto {
@@ -27,6 +27,13 @@ export class SessionPeerStudentDto {
     description: 'Status da avaliação realizada pelo aluno autenticado para este colega.',
   })
   status!: EvaluationStatusResponse;
+
+  @ApiPropertyOptional({
+    example: 'COORDENADOR',
+    nullable: true,
+    description: 'Papel do colega na sessão, se houver.',
+  })
+  papel?: string | null;
 }
 
 export class SessionPeersResponseDto {
