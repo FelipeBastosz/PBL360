@@ -13,6 +13,7 @@ export type PeerEvaluationState = {
   isSubmitted: boolean;
   criteria: EvaluationCriterion[];
   scores: Record<string, number>;
+  notaCargo?: number | null;
 };
 
 type LoadedPeersResult = {
@@ -39,6 +40,7 @@ async function fetchPeerCards(
         isSubmitted: evalData.status === 'ENVIADA',
         criteria: evalData.criterios,
         scores,
+        notaCargo: evalData.notaCargo ?? null,
       };
     }),
   );
@@ -63,8 +65,9 @@ async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
   return { peers, prazo: response.prazo, didNotParticipate: false };
 }
 
-const toPeerPayload = (scores: Record<string, number>, enviar = true) => ({
-  itens: Object.entries(scores).map(([criterioId, nota]) => ({ criterioId, nota })),
+const toPeerPayload = (peer: PeerEvaluationState, enviar = true) => ({
+  itens: Object.entries(peer.scores).map(([criterioId, nota]) => ({ criterioId, nota })),
+  notaCargo: peer.notaCargo,
   enviar,
 });
 
@@ -72,7 +75,7 @@ async function savePendingPeers(sessionId: string, peers: PeerEvaluationState[])
   const pendings = peers.filter((p) => !p.isSubmitted);
   await Promise.all(
     pendings.map((p) =>
-      evaluationService.savePeerEvaluation(sessionId, p.peerId, toPeerPayload(p.scores, true)),
+      evaluationService.savePeerEvaluation(sessionId, p.peerId, toPeerPayload(p, true)),
     ),
   );
 }
@@ -86,7 +89,7 @@ function schedulePeerDraft(
   if (timers[peerId]) clearTimeout(timers[peerId]);
   timers[peerId] = setTimeout(() => {
     evaluationService
-      .savePeerEvaluation(sessionId, peerId, toPeerPayload(targetPeer.scores, false))
+      .savePeerEvaluation(sessionId, peerId, toPeerPayload(targetPeer, false))
       .catch(() => {});
   }, 500);
 }
@@ -150,6 +153,16 @@ export function useStudentPeerEvaluation(sessionId: string) {
     });
   };
 
+  const setCargoScore = (peerId: string, s: number) => {
+    setPeers((prev) => {
+      const next = prev.map((p) => (p.peerId === peerId ? { ...p, notaCargo: s } : p));
+      const target = next.find((p) => p.peerId === peerId);
+      if (target && !target.isSubmitted)
+        schedulePeerDraft(draftTimersRef.current, sessionId, target);
+      return next;
+    });
+  };
+
   const handleSave = async () => {
     Object.values(draftTimersRef.current).forEach(clearTimeout);
     const res = await saveAll();
@@ -174,5 +187,6 @@ export function useStudentPeerEvaluation(sessionId: string) {
     canSave: !isNonParticipant && peers.some((p) => !p.isSubmitted),
     handleSave,
     setScore,
+    setCargoScore,
   };
 }

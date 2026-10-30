@@ -43,12 +43,15 @@ export type TutorEvaluationData = {
   itens: CriterionScore[];
   criterios: EvaluationCriterion[];
   notaSessao: number | null;
+  notaCargo?: number | null;
+  adicionalAplicado?: number | null;
 };
 
 export type SaveTutorEvaluationPayload = {
   itens: CriterionScore[];
   enviar: boolean;
   justificativa?: string;
+  notaCargo?: number | null;
 };
 
 export type SessionFeedbackResponse = {
@@ -112,13 +115,16 @@ export type SelfAssessmentResponse = {
   enviadaEm: string | null;
   itens: CriterionScore[];
   criterios: EvaluationCriterion[];
-  notaSessao: number | null;
+  notaSessao?: number | null;
+  notaConsolidada?: number | null;
+  notaCargo?: number | null;
   participou?: boolean;
 };
 
 export type SaveSelfAssessmentPayload = {
   itens: CriterionScore[];
   enviar: boolean;
+  notaCargo?: number | null;
 };
 
 export type SessionPeerStudent = {
@@ -136,16 +142,18 @@ export type SessionPeersResponse = {
 };
 
 export type PeerEvaluationResponse = {
-  colegaId: string;
+  colega: { alunoId: string; nome: string };
   status: EvaluationStatus;
   enviadaEm: string | null;
   itens: CriterionScore[];
   criterios: EvaluationCriterion[];
+  notaCargo?: number | null;
 };
 
 export type SavePeerEvaluationPayload = {
   itens: CriterionScore[];
   enviar: boolean;
+  notaCargo?: number | null;
 };
 
 export type StudentSelfAssessmentSummary = {

@@ -12,6 +12,7 @@ import type { UserResponse } from '@/types/auth';
 import { cn } from '@/utils/cn';
 import { formatDeadline } from '@/utils/formatDate';
 import { CriterionStepper } from './components/CriterionStepper';
+import { EvaluationFinalScore } from './components/EvaluationFinalScore';
 import { NonParticipantEmptyState } from './components/NonParticipantEmptyState';
 import { useStudentPeerEvaluation, type PeerEvaluationState } from './useStudentPeerEvaluation';
 
@@ -19,10 +20,12 @@ function PeerEvaluationCard({
   peer,
   isSaving,
   onCriterionChange,
+  onCargoChange,
 }: {
   peer: PeerEvaluationState;
   isSaving: boolean;
   onCriterionChange: (peerId: string, critId: string, s: number) => void;
+  onCargoChange: (peerId: string, s: number) => void;
 }) {
   return (
     <section aria-label={`Avaliação de ${peer.name}`} className={cn(CARD_CLASS, 'p-4')}>
@@ -47,6 +50,26 @@ function PeerEvaluationCard({
             onChange={(critId, s) => onCriterionChange(peer.peerId, critId, s)}
           />
         ))}
+        <div className="mt-2 border-t border-black/5 pt-2">
+          <CriterionStepper
+            criterion={{
+              id: 'cargo-score',
+              nome: 'Avaliação no cargo',
+              peso: 3.0,
+              ordem: 99,
+              notaMaxima: 10,
+            }}
+            score={peer.notaCargo ?? 0}
+            disabled={peer.isSubmitted || isSaving}
+            onChange={(_id, s) => onCargoChange(peer.peerId, s)}
+          />
+        </div>
+        <EvaluationFinalScore
+          criteria={peer.criteria}
+          scores={peer.scores}
+          bonus={peer.notaCargo}
+          studentId={peer.peerId}
+        />
       </div>
     </section>
   );
@@ -115,6 +138,7 @@ function PeerListBody({ state }: { state: ReturnType<typeof useStudentPeerEvalua
           peer={peer}
           isSaving={state.isSaving}
           onCriterionChange={state.setScore}
+          onCargoChange={state.setCargoScore}
         />
       ))}
     </>

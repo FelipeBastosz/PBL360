@@ -74,7 +74,9 @@ function EvaluationMainContent({
         studentName={studentName}
         criteria={state.criteria}
         scores={state.scores}
+        notaCargo={state.notaCargo}
         onScoreChange={state.handleScoreChange}
+        onCargoScoreChange={state.setNotaCargo}
       />
       <QuickObservationsCard
         tags={state.tags}

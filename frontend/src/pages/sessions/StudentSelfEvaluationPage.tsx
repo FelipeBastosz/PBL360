@@ -12,6 +12,7 @@ import type { UserResponse } from '@/types/auth';
 import { cn } from '@/utils/cn';
 import { formatDeadline } from '@/utils/formatDate';
 import { CriterionStepper } from './components/CriterionStepper';
+import { EvaluationFinalScore } from './components/EvaluationFinalScore';
 import { NonParticipantEmptyState } from './components/NonParticipantEmptyState';
 import { useStudentSelfEvaluation } from './useStudentSelfEvaluation';
 
@@ -80,7 +81,7 @@ function EvaluationCriteriaForm({
   return (
     <>
       {evalState.data && (
-        <div className={cn(CARD_CLASS, 'px-4')}>
+        <div className={cn(CARD_CLASS, 'p-4')}>
           {evalState.data.criterios.map((c) => (
             <CriterionStepper
               key={c.id}
@@ -90,6 +91,25 @@ function EvaluationCriteriaForm({
               onChange={evalState.setScore}
             />
           ))}
+          <div className="mt-2 border-t border-black/5 pt-2">
+            <CriterionStepper
+              criterion={{
+                id: 'cargo-score',
+                nome: 'Autoavaliação no cargo',
+                peso: 3.0,
+                ordem: 99,
+                notaMaxima: 10,
+              }}
+              score={evalState.notaCargo ?? 0}
+              disabled={isSubmitted || evalState.isSaving}
+              onChange={(_id, s) => evalState.setNotaCargo?.(s)}
+            />
+          </div>
+          <EvaluationFinalScore
+            criteria={evalState.data.criterios}
+            scores={evalState.scores}
+            bonus={evalState.notaCargo}
+          />
         </div>
       )}
       {!isSubmitted && (
