@@ -26,8 +26,8 @@ export function RollCallPanels({ board, change, table, roles }: RollCallPanelsPr
     if (status === 'JUSTIFICADO' || status === 'AUSENTE') table.closePanel();
   }
 
-  async function assignRole(role: SessionRole | null, score: number | null, transfer: boolean) {
-    const result = await roles.assign({ studentId: roleStudent!.alunoId, role, score, transfer });
+  async function assignRole(role: SessionRole | null, _score: number | null, transfer: boolean) {
+    const result = await roles.assign({ studentId: roleStudent!.alunoId, role, transfer });
     if (result.ok)
       notify({ tone: 'success', message: role ? 'Papel atribuído.' : 'Papel removido.' });
     return result;

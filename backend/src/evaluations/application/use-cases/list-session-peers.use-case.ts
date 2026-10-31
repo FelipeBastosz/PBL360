@@ -16,6 +16,7 @@ export interface ListSessionPeersOutput {
     nome: string;
     iniciais: string;
     status: EvaluationStatusResponse;
+    papel: string | null;
   }>;
 }
 
@@ -42,6 +43,7 @@ export class ListSessionPeersUseCase {
         nome: peer.nome,
         iniciais: this.getInitials(peer.nome),
         status: this.mapStatus(peer.status),
+        papel: peer.papel ?? null,
       })),
     };
   }

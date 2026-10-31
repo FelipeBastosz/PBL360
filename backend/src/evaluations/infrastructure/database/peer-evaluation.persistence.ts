@@ -86,14 +86,40 @@ async function updatePeerStatus(
     await tx.query(UPDATE_PEER_DRAFT, [input.evaluatorId, now, evaluationId]);
     return;
   }
-  const score = SessionGradeCalculator.calculate(input.items, config.criteria, 0);
+  await submitPeerEvaluation(tx, input, config, evaluationId, now);
+}
+
+async function submitPeerEvaluation(
+  tx: EntityManager,
+  input: PeerEvaluationWrite,
+  config: SessionEvaluationConfig,
+  evaluationId: string,
+  now: Date,
+): Promise<void> {
+  const notaCargo = input.notaCargo ?? null;
+  const score = calculatePeerScore(input, config, notaCargo);
   await tx.query(UPDATE_PEER_SUBMISSION, [
     input.evaluatorId,
     now,
     score,
+    notaCargo,
     SESSION_CALCULATION_VERSION,
     evaluationId,
   ]);
+}
+
+function calculatePeerScore(
+  input: PeerEvaluationWrite,
+  config: SessionEvaluationConfig,
+  notaCargo: number | null,
+): number {
+  return SessionGradeCalculator.calculate(
+    input.items,
+    config.criteria,
+    notaCargo,
+    notaCargo !== null,
+    config.formula ?? { criteriaWeight: 70, roleWeight: 30 },
+  );
 }
 
 async function replaceEvaluationItems(

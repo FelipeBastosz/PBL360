@@ -12,6 +12,7 @@ import type { UserResponse } from '@/types/auth';
 import { cn } from '@/utils/cn';
 import { formatDeadline } from '@/utils/formatDate';
 import { CriterionStepper } from './components/CriterionStepper';
+import { EvaluationFinalScore } from './components/EvaluationFinalScore';
 import { NonParticipantEmptyState } from './components/NonParticipantEmptyState';
 import { useStudentSelfEvaluation } from './useStudentSelfEvaluation';
 
@@ -68,6 +69,33 @@ function UserSelfCard({ name, isSubmitted }: { name?: string; isSubmitted?: bool
   );
 }
 
+function SelfRoleCriterionStepper({
+  score,
+  disabled,
+  onChange,
+}: {
+  score: number;
+  disabled: boolean;
+  onChange?: (s: number) => void;
+}) {
+  return (
+    <div className="pt-2">
+      <CriterionStepper
+        criterion={{
+          id: 'cargo-score',
+          nome: 'Autoavaliação no cargo',
+          peso: 3.0,
+          ordem: 99,
+          notaMaxima: 10,
+        }}
+        score={score}
+        disabled={disabled}
+        onChange={(_id, s) => onChange?.(s)}
+      />
+    </div>
+  );
+}
+
 function EvaluationCriteriaForm({
   evalState,
   isSubmitted,
@@ -90,6 +118,16 @@ function EvaluationCriteriaForm({
               onChange={evalState.setScore}
             />
           ))}
+          <SelfRoleCriterionStepper
+            score={evalState.notaCargo ?? 0}
+            disabled={isSubmitted || evalState.isSaving}
+            onChange={evalState.setNotaCargo}
+          />
+          <EvaluationFinalScore
+            criteria={evalState.data.criterios}
+            scores={evalState.scores}
+            bonus={evalState.notaCargo}
+          />
         </div>
       )}
       {!isSubmitted && (

@@ -6,6 +6,28 @@ export type SessionFormValues = {
   data: string;
 };
 
+export function toInputDate(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const clean = dateStr.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+  const [day, month, year] = clean.split('-');
+  if (day && month && year && year.length === 4) {
+    return `${year}-${month}-${day}`;
+  }
+  return clean;
+}
+
+export function toApiDate(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const clean = dateStr.trim();
+  if (/^\d{2}-\d{2}-\d{4}$/.test(clean)) return clean;
+  const [year, month, day] = clean.split('-');
+  if (year && month && day && year.length === 4) {
+    return `${day}-${month}-${year}`;
+  }
+  return clean;
+}
+
 export function validateSessionForm(values: SessionFormValues): FieldErrors<SessionFormValues> {
   const errors: FieldErrors<SessionFormValues> = {};
 

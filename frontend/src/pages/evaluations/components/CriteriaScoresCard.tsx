@@ -5,12 +5,16 @@ type Props = {
   studentName: string;
   criteria: EvaluationCriterion[];
   scores: Record<string, number>;
+  bonus?: number | null;
+  notaCargo?: number | null;
   onScoreChange: (criterioId: string, nextScore: number) => void;
+  onCargoScoreChange?: (nextScore: number) => void;
 };
 
 function calculateFinalScore(
   criteria: EvaluationCriterion[],
   scores: Record<string, number>,
+  cargoScore?: number | null,
 ): number {
   const totalWeight = criteria.reduce((sum, c) => sum + c.peso, 0);
   if (totalWeight <= 0) return 0;
@@ -18,7 +22,12 @@ function calculateFinalScore(
     const score = scores[c.id] ?? 0;
     return sum + score * c.peso;
   }, 0);
-  return Math.round((weightedSum / totalWeight) * 10) / 10;
+  const criteriaAverage = weightedSum / totalWeight;
+
+  if (cargoScore !== undefined && cargoScore !== null) {
+    return Math.round(((criteriaAverage * 7 + cargoScore * 3) / 10 + Number.EPSILON) * 10) / 10;
+  }
+  return Math.round((criteriaAverage + Number.EPSILON) * 10) / 10;
 }
 
 function FinalScoreRow({ score }: { score: number }) {
@@ -87,12 +96,14 @@ function EditableScoreInput({
   );
 }
 
-function CriterionRow({
-  criterion,
+function ScoreRow({
+  label,
+  subtitle,
   score,
   onChange,
 }: {
-  criterion: EvaluationCriterion;
+  label: string;
+  subtitle: string;
   score: number;
   onChange: (val: number) => void;
 }) {
@@ -104,25 +115,23 @@ function CriterionRow({
   return (
     <div className="flex items-center justify-between border-b border-black/5 py-3.5 last:border-b-0">
       <div className="flex min-w-0 flex-col pr-2">
-        <span className="text-sm font-semibold break-words text-brand-900">{criterion.nome}</span>
-        <span className="text-xs text-muted">
-          Peso {criterion.peso.toFixed(1).replace('.', ',')}
-        </span>
+        <span className="text-sm font-semibold break-words text-brand-900">{label}</span>
+        <span className="text-xs text-muted">{subtitle}</span>
       </div>
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <button
           type="button"
-          aria-label={`Diminuir nota de ${criterion.nome}`}
+          aria-label={`Diminuir nota de ${label}`}
           disabled={score <= 0}
           onClick={() => handleStep(-1)}
           className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-ink transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
         >
           −
         </button>
-        <EditableScoreInput value={score} onChange={onChange} label={criterion.nome} />
+        <EditableScoreInput value={score} onChange={onChange} label={label} />
         <button
           type="button"
-          aria-label={`Aumentar nota de ${criterion.nome}`}
+          aria-label={`Aumentar nota de ${label}`}
           disabled={score >= 10}
           onClick={() => handleStep(1)}
           className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-brand-900 transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
@@ -134,8 +143,17 @@ function CriterionRow({
   );
 }
 
-export function CriteriaScoresCard({ studentName, criteria, scores, onScoreChange }: Props) {
-  const finalScore = calculateFinalScore(criteria, scores);
+export function CriteriaScoresCard({
+  studentName,
+  criteria,
+  scores,
+  bonus,
+  notaCargo,
+  onScoreChange,
+  onCargoScoreChange,
+}: Props) {
+  const effectiveCargoScore = notaCargo ?? bonus;
+  const finalScore = calculateFinalScore(criteria, scores, effectiveCargoScore);
 
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
@@ -144,13 +162,22 @@ export function CriteriaScoresCard({ studentName, criteria, scores, onScoreChang
       </h2>
       <div className="mt-3 flex flex-col">
         {criteria.map((criterion) => (
-          <CriterionRow
+          <ScoreRow
             key={criterion.id}
-            criterion={criterion}
+            label={criterion.nome}
+            subtitle={`Peso ${criterion.peso.toFixed(1).replace('.', ',')}`}
             score={scores[criterion.id] ?? 0}
             onChange={(val) => onScoreChange(criterion.id, val)}
           />
         ))}
+        {onCargoScoreChange && (
+          <ScoreRow
+            label="Desempenho no cargo"
+            subtitle="Peso na fórmula (30%)"
+            score={effectiveCargoScore ?? 0}
+            onChange={onCargoScoreChange}
+          />
+        )}
       </div>
       <FinalScoreRow score={finalScore} />
     </div>

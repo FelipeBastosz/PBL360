@@ -18,7 +18,13 @@ function draftStorageKey(sessionId: string, studentId: string) {
 function loadStoredDraft(sessionId: string, studentId: string) {
   try {
     const raw = sessionStorage.getItem(draftStorageKey(sessionId, studentId));
-    return raw ? (JSON.parse(raw) as { scores: Record<string, number>; feedback: string }) : null;
+    return raw
+      ? (JSON.parse(raw) as {
+          scores: Record<string, number>;
+          feedback: string;
+          notaCargo?: number;
+        })
+      : null;
   } catch {
     return null;
   }
@@ -45,6 +51,7 @@ async function sendEvaluation(
   studentId: string,
   criteria: EvaluationCriterion[],
   scores: Record<string, number>,
+  notaCargo: number | null,
   feedback: string,
   enviar: boolean,
   justificativa: string | undefined,
@@ -57,7 +64,7 @@ async function sendEvaluation(
   navigate: (to: number) => void,
 ) {
   const itens = criteria.map((c) => ({ criterioId: c.id, nota: scores[c.id] ?? 0 }));
-  const result = await runSave(sessionId, studentId, { itens, enviar, justificativa });
+  const result = await runSave(sessionId, studentId, { itens, enviar, justificativa, notaCargo });
   if (result.ok) {
     await evaluationService.saveFeedback(sessionId, studentId, feedback.trim());
     clearStoredDraft(sessionId, studentId);
@@ -72,6 +79,7 @@ async function sendEvaluation(
 function useFetchStudentEvaluation(sessionId: string, studentId: string) {
   const [criteria, setCriteria] = useState<EvaluationCriterion[]>([]);
   const [scores, setScores] = useState<Record<string, number>>({});
+  const [notaCargo, setNotaCargo] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
   const [status, setStatus] = useState<EvaluationStatus>('PENDENTE');
 
@@ -91,6 +99,7 @@ function useFetchStudentEvaluation(sessionId: string, studentId: string) {
         if (res.ok) {
           setCriteria(res.data.evalData.criterios);
           setStatus(res.data.evalData.status);
+          setNotaCargo(res.data.evalData.notaCargo ?? res.data.evalData.adicionalAplicado ?? null);
           const backendScores = toScoresMap(res.data.evalData.itens);
           const backendFeedback = res.data.fbData?.texto || '';
           const cached = loadStoredDraft(sessionId, studentId);
@@ -101,7 +110,18 @@ function useFetchStudentEvaluation(sessionId: string, studentId: string) {
     }
   }, [sessionId, studentId, run]);
 
-  return { criteria, scores, setScores, feedback, setFeedback, status, isLoading, error };
+  return {
+    criteria,
+    scores,
+    setScores,
+    notaCargo,
+    setNotaCargo,
+    feedback,
+    setFeedback,
+    status,
+    isLoading,
+    error,
+  };
 }
 
 function useStudentObservationTagsState(sessionId: string, studentId: string) {
@@ -152,6 +172,50 @@ function useStudentObservationTagsState(sessionId: string, studentId: string) {
   return { tags, counts, handleTagClick, handleTagDecrement };
 }
 
+async function saveDraftAndNavigateHelper(
+  sessionId: string,
+  studentId: string,
+  evalData: ReturnType<typeof useFetchStudentEvaluation>,
+  runSave: (
+    sId: string,
+    stId: string,
+    payload: SaveTutorEvaluationPayload,
+  ) => Promise<{ ok: boolean }>,
+  navigate: ReturnType<typeof useNavigate>,
+  targetUrl: string,
+  stateData: unknown,
+) {
+  try {
+    sessionStorage.setItem(
+      draftStorageKey(sessionId, studentId),
+      JSON.stringify({
+        scores: evalData.scores,
+        feedback: evalData.feedback,
+        notaCargo: evalData.notaCargo,
+      }),
+    );
+  } catch {
+    // ignore
+  }
+
+  if (evalData.status !== 'ENVIADA') {
+    const itens = evalData.criteria.map((c) => ({
+      criterioId: c.id,
+      nota: evalData.scores[c.id] ?? 0,
+    }));
+    await runSave(sessionId, studentId, {
+      itens,
+      enviar: false,
+      notaCargo: evalData.notaCargo,
+    }).catch(() => null);
+    await evaluationService
+      .saveFeedback(sessionId, studentId, evalData.feedback.trim())
+      .catch(() => null);
+  }
+
+  navigate(targetUrl, { state: stateData });
+}
+
 export function useStudentEvaluation(sessionId: string, studentId: string) {
   const navigate = useNavigate();
   const { notify } = useToast();
@@ -168,6 +232,7 @@ export function useStudentEvaluation(sessionId: string, studentId: string) {
       studentId,
       evalData.criteria,
       evalData.scores,
+      evalData.notaCargo,
       evalData.feedback,
       enviar,
       justificativa,
@@ -176,29 +241,16 @@ export function useStudentEvaluation(sessionId: string, studentId: string) {
       navigate,
     );
 
-  async function saveDraftAndNavigate(targetUrl: string, stateData: unknown) {
-    try {
-      sessionStorage.setItem(
-        draftStorageKey(sessionId, studentId),
-        JSON.stringify({ scores: evalData.scores, feedback: evalData.feedback }),
-      );
-    } catch {
-      // ignore
-    }
-
-    if (evalData.status !== 'ENVIADA') {
-      const itens = evalData.criteria.map((c) => ({
-        criterioId: c.id,
-        nota: evalData.scores[c.id] ?? 0,
-      }));
-      await runSave(sessionId, studentId, { itens, enviar: false }).catch(() => null);
-      await evaluationService
-        .saveFeedback(sessionId, studentId, evalData.feedback.trim())
-        .catch(() => null);
-    }
-
-    navigate(targetUrl, { state: stateData });
-  }
+  const saveDraftAndNavigate = (targetUrl: string, stateData: unknown) =>
+    saveDraftAndNavigateHelper(
+      sessionId,
+      studentId,
+      evalData,
+      runSave,
+      navigate,
+      targetUrl,
+      stateData,
+    );
 
   return {
     ...evalData,

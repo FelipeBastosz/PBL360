@@ -4,8 +4,9 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useToast } from '@/hooks/useToast';
 import { evaluationService } from '@/services/evaluation.service';
 import { sessionService } from '@/services/session.service';
-import type { EvaluationCriterion } from '@/types/evaluation';
-import type { MemberSession } from '@/types/session';
+import type { EvaluationCriterion, SessionPeerStudent } from '@/types/evaluation';
+import type { MemberSession, SessionRole } from '@/types/session';
+import { normalizeSessionRole } from '@/utils/sessionRoles';
 
 export type PeerEvaluationState = {
   peerId: string;
@@ -13,6 +14,8 @@ export type PeerEvaluationState = {
   isSubmitted: boolean;
   criteria: EvaluationCriterion[];
   scores: Record<string, number>;
+  papel?: SessionRole | null;
+  notaCargo?: number | null;
 };
 
 type LoadedPeersResult = {
@@ -23,7 +26,7 @@ type LoadedPeersResult = {
 
 async function fetchPeerCards(
   sessionId: string,
-  colegas: Array<{ alunoId: string; nome: string }>,
+  colegas: SessionPeerStudent[],
 ): Promise<PeerEvaluationState[]> {
   return Promise.all(
     colegas.map(async (c) => {
@@ -39,6 +42,8 @@ async function fetchPeerCards(
         isSubmitted: evalData.status === 'ENVIADA',
         criteria: evalData.criterios,
         scores,
+        papel: normalizeSessionRole(c.papel),
+        notaCargo: evalData.notaCargo ?? null,
       };
     }),
   );
@@ -47,7 +52,7 @@ async function fetchPeerCards(
 async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
   const [response, summary] = await Promise.all([
     evaluationService.listSessionPeers(sessionId),
-    evaluationService.getMyEvaluationsSummary(sessionId).catch(() => null),
+    Promise.resolve(evaluationService.getMyEvaluationsSummary(sessionId)).catch(() => null),
   ]);
 
   const didNotParticipate =
@@ -63,8 +68,9 @@ async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
   return { peers, prazo: response.prazo, didNotParticipate: false };
 }
 
-const toPeerPayload = (scores: Record<string, number>, enviar = true) => ({
-  itens: Object.entries(scores).map(([criterioId, nota]) => ({ criterioId, nota })),
+const toPeerPayload = (peer: PeerEvaluationState, enviar = true) => ({
+  itens: Object.entries(peer.scores).map(([criterioId, nota]) => ({ criterioId, nota })),
+  notaCargo: peer.papel ? peer.notaCargo : null,
   enviar,
 });
 
@@ -72,7 +78,7 @@ async function savePendingPeers(sessionId: string, peers: PeerEvaluationState[])
   const pendings = peers.filter((p) => !p.isSubmitted);
   await Promise.all(
     pendings.map((p) =>
-      evaluationService.savePeerEvaluation(sessionId, p.peerId, toPeerPayload(p.scores, true)),
+      evaluationService.savePeerEvaluation(sessionId, p.peerId, toPeerPayload(p, true)),
     ),
   );
 }
@@ -86,7 +92,7 @@ function schedulePeerDraft(
   if (timers[peerId]) clearTimeout(timers[peerId]);
   timers[peerId] = setTimeout(() => {
     evaluationService
-      .savePeerEvaluation(sessionId, peerId, toPeerPayload(targetPeer.scores, false))
+      .savePeerEvaluation(sessionId, peerId, toPeerPayload(targetPeer, false))
       .catch(() => {});
   }, 500);
 }
@@ -120,24 +126,11 @@ function usePeerEvaluationData(sessionId: string) {
   return { peers, setPeers, prazo, didNotParticipate, session, isLoading, error };
 }
 
-export function useStudentPeerEvaluation(sessionId: string) {
-  const navigate = useNavigate();
-  const { notify } = useToast();
-  const { peers, setPeers, prazo, didNotParticipate, session, isLoading, error } =
-    usePeerEvaluationData(sessionId);
-  const draftTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  const {
-    run: saveAll,
-    isLoading: isSaving,
-    error: saveError,
-  } = useAsyncAction(useCallback(() => savePendingPeers(sessionId, peers), [sessionId, peers]));
-
-  useEffect(() => {
-    const timers = draftTimersRef.current;
-    return () => Object.values(timers).forEach(clearTimeout);
-  }, []);
-
+function usePeerScoreHandlers(
+  sessionId: string,
+  setPeers: React.Dispatch<React.SetStateAction<PeerEvaluationState[]>>,
+  draftTimersRef: React.RefObject<Record<string, ReturnType<typeof setTimeout>>>,
+) {
   const setScore = (peerId: string, critId: string, s: number) => {
     setPeers((prev) => {
       const next = prev.map((p) =>
@@ -149,6 +142,38 @@ export function useStudentPeerEvaluation(sessionId: string) {
       return next;
     });
   };
+
+  const setCargoScore = (peerId: string, s: number) => {
+    setPeers((prev) => {
+      const next = prev.map((p) => (p.peerId === peerId ? { ...p, notaCargo: s } : p));
+      const target = next.find((p) => p.peerId === peerId);
+      if (target && !target.isSubmitted)
+        schedulePeerDraft(draftTimersRef.current, sessionId, target);
+      return next;
+    });
+  };
+
+  return { setScore, setCargoScore };
+}
+
+export function useStudentPeerEvaluation(sessionId: string) {
+  const navigate = useNavigate();
+  const { notify } = useToast();
+  const { peers, setPeers, prazo, didNotParticipate, session, isLoading, error } =
+    usePeerEvaluationData(sessionId);
+  const draftTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const { setScore, setCargoScore } = usePeerScoreHandlers(sessionId, setPeers, draftTimersRef);
+
+  const {
+    run: saveAll,
+    isLoading: isSaving,
+    error: saveError,
+  } = useAsyncAction(useCallback(() => savePendingPeers(sessionId, peers), [sessionId, peers]));
+
+  useEffect(() => {
+    const timers = draftTimersRef.current;
+    return () => Object.values(timers).forEach(clearTimeout);
+  }, []);
 
   const handleSave = async () => {
     Object.values(draftTimersRef.current).forEach(clearTimeout);
@@ -174,5 +199,6 @@ export function useStudentPeerEvaluation(sessionId: string) {
     canSave: !isNonParticipant && peers.some((p) => !p.isSubmitted),
     handleSave,
     setScore,
+    setCargoScore,
   };
 }

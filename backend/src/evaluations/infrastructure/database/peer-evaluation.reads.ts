@@ -36,13 +36,14 @@ export async function listSessionPeers(
   if (!participating) return [];
 
   const rows = await manager.query<
-    Array<{ alunoId: string; nome: string; status: EvaluationStatus | null }>
+    Array<{ alunoId: string; nome: string; status: EvaluationStatus | null; papel: string | null }>
   >(LIST_SESSION_PEERS, [sessionId, evaluatorId]);
 
   return rows.map((row) => ({
     alunoId: row.alunoId,
     nome: row.nome,
     status: row.status,
+    papel: row.papel ?? null,
   }));
 }
 
