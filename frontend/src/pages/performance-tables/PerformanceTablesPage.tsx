@@ -101,15 +101,13 @@ function PageModalsAndActions({ modals, deletion, target, navigate }: PageModals
   );
 }
 
-function usePageDependencies() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const location = useLocation();
-  const params = useParams<{ roomId?: string; sessionId?: string; problemId?: string }>();
-  const locationState = location.state as Record<string, unknown> | null;
-
+function resolvePageTarget(
+  pathname: string,
+  params: { roomId?: string; sessionId?: string; problemId?: string },
+  locationState: Record<string, unknown> | null,
+) {
   const isGlobalFormulasPage =
-    location.pathname === ROUTES.performanceTables &&
+    pathname === ROUTES.performanceTables &&
     !locationState?.sessionId &&
     !locationState?.roomId &&
     !params.sessionId &&
@@ -134,6 +132,22 @@ function usePageDependencies() {
       : roomId
         ? { roomId, sessionId: '', problemId: '' }
         : null);
+
+  return { target: activeTarget, roomId, sessionId };
+}
+
+function usePageDependencies() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const location = useLocation();
+  const params = useParams<{ roomId?: string; sessionId?: string; problemId?: string }>();
+  const locationState = location.state as Record<string, unknown> | null;
+
+  const {
+    target: activeTarget,
+    roomId,
+    sessionId,
+  } = resolvePageTarget(location.pathname, params, locationState);
 
   const data = usePerformanceTablesData(roomId, sessionId);
   const deletion = useTableDeletion(data.reload);
