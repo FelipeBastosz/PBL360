@@ -89,7 +89,7 @@ describe('GetProblemGradesUseCase', () => {
     expect(result.alunos[0]).toMatchObject({
       alunoId: 'student-1',
       notaFinal: 8.5,
-      sessoes: [{ sessaoId: 'session-1', nota: 8.5, situacao: 'AVALIADA' }],
+      sessoes: [{ sessaoId: 'session-1', nota: 8.5, situacao: 'AVALIADA', modalidade: 'TUTOR' }],
     });
     expect(result.mediaTurma).toBe(8.5);
     expect(gradesRepository.findProblemData).toHaveBeenCalledWith(input.roomId, input.problemId);
@@ -112,6 +112,26 @@ describe('GetProblemGradesUseCase', () => {
         },
       ],
     });
+  });
+
+  it('returns the exact session grades alongside the rounded response', async () => {
+    gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
+    gradesRepository.findProblemData.mockResolvedValue({
+      ...emptyData,
+      sessions: [{ id: 'session-1', date: '2026-10-02' }],
+      students: [{ id: 'student-1', name: 'Ana Souza', matricula: '20260001' }],
+      scores: [
+        { session_id: 'session-1', student_id: 'student-1', criterion_id: 'c1', score: 7.66 },
+      ],
+      criteria: [{ id: 'c1', session_id: 'session-1', weight: 1 }],
+    });
+
+    const result = await useCase.executeWithSessionGrades(input);
+
+    expect(result.response.alunos[0]?.sessoes[0]?.nota).toBe(7.7);
+    expect(result.sessionGrades).toEqual([
+      expect.objectContaining({ session_id: 'session-1', student_id: 'student-1', grade: 7.66 }),
+    ]);
   });
 
   it('uses the versions from active formulas', async () => {
@@ -296,6 +316,7 @@ describe('GetProblemGradesUseCase', () => {
         situacao: 'AVALIADA',
         origem: 'PLANNING_POKER',
       });
+      expect(result.alunos[0]?.sessoes[0]).toMatchObject({ nota: 8.4, modalidade: 'PARES' });
       expect(result.alunos[1]?.pares).toMatchObject({ nota: 9.5, situacao: 'AVALIADA' });
     });
 
@@ -332,6 +353,7 @@ describe('GetProblemGradesUseCase', () => {
         sessaoId: 'session-1',
         nota: 8.8,
         situacao: 'AVALIADA',
+        modalidade: 'AUTOAVALIACAO',
       });
       expect(result.alunos[0]?.notaFinal).toBe(8.8);
     });
@@ -364,6 +386,7 @@ describe('GetProblemGradesUseCase', () => {
         sessaoId: 'session-1',
         nota: 8.5,
         situacao: 'AVALIADA',
+        modalidade: 'PARES',
       });
       expect(result.alunos[0]?.notaFinal).toBe(8.5);
     });

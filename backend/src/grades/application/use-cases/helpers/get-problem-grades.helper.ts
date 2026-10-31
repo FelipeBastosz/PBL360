@@ -43,6 +43,17 @@ export type StudentSessionResponse = GradesResponseDto['alunos'][number]['sessoe
 export type SessionGradeResponse = Omit<StudentSessionResponse, 'autoavaliacao' | 'pares'>;
 export type StudentResponse = GradesResponseDto['alunos'][number];
 
+export interface ProblemGradesInput {
+  roomId: string;
+  problemId: string;
+  tutorId: string;
+}
+
+export interface ProblemGradesWithSessionGrades {
+  response: GradesResponseDto;
+  sessionGrades: Row[];
+}
+
 export function filterByStudentAndSession(
   rows: Row[],
   sessionId: string,

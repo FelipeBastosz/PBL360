@@ -8,6 +8,7 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { evaluationService } from '@/services/evaluation.service';
 import type { SessionEvaluationSummary, ProblemEvaluationCriteria } from '@/types/evaluation';
 import { StudentEvaluationCard } from './components/StudentEvaluationCard';
+import { useSessionGrades } from './hooks/useSessionGrades';
 import { UserMenuButton } from '@/components/layout/UserMenu';
 import type { UserResponse } from '@/types/auth';
 import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
@@ -104,6 +105,7 @@ export default function SessionEvaluationsListPage() {
     roomId,
     problemId,
   );
+  const sessionGrades = useSessionGrades(roomId, problemId, sessionId);
 
   const backUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}`;
   const formulasUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}/formulas`;
@@ -124,6 +126,7 @@ export default function SessionEvaluationsListPage() {
               <StudentEvaluationCard
                 key={student.alunoId}
                 student={student}
+                sessionGrade={sessionGrades.get(student.alunoId)}
                 disabled={hasMissingTable}
                 evaluationUrl={`/sessoes/${sessionId}/avaliacao/${student.alunoId}`}
               />

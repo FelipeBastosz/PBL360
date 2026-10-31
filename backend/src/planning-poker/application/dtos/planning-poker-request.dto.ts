@@ -26,6 +26,7 @@ export enum PokerDecisionPayload {
 }
 
 const GRADE_OPTIONS = { allowNaN: false, allowInfinity: false, maxDecimalPlaces: 2 };
+const POKER_GRADE_OPTIONS = { allowNaN: false, allowInfinity: false, maxDecimalPlaces: 1 };
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
 export class StartPlanningPokerDto {
@@ -68,7 +69,7 @@ export class DecidePokerRoundDto {
 
   @ApiPropertyOptional({ example: 8.5, description: 'Obrigatória em REAJUSTAR.' })
   @ValidateIf((dto: DecidePokerRoundDto) => dto.acao === PokerDecisionPayload.REAJUSTAR)
-  @IsNumber(GRADE_OPTIONS, { message: 'A nota deve ser um número com até duas casas decimais.' })
+  @IsNumber(POKER_GRADE_OPTIONS, { message: 'A nota deve ser um número com até uma casa decimal.' })
   @Min(0, { message: 'A nota mínima é 0.' })
   @Max(10, { message: 'A nota máxima é 10.' })
   nota?: number;

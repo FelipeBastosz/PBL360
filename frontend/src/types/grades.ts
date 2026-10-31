@@ -9,10 +9,21 @@ export interface SessionColumn {
   data?: string;
 }
 
+export type SessionGradeModality = 'TUTOR' | 'AUTOAVALIACAO' | 'PARES';
+
+export interface EvaluationComponentGrade {
+  nota: number | null;
+  situacao: string;
+  origem?: 'FORMULARIO' | 'PLANNING_POKER';
+}
+
 export interface StudentSessionGrade {
   sessaoId: string;
   nota: number | null;
   situacao: 'AVALIADA' | 'PENDENTE' | 'JUSTIFICADA' | 'AUSENTE' | string;
+  modalidade?: SessionGradeModality;
+  autoavaliacao?: EvaluationComponentGrade;
+  pares?: EvaluationComponentGrade;
   feedback?: string | null;
   updatedAt?: string | null;
 }

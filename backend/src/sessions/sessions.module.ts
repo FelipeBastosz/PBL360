@@ -49,9 +49,6 @@ import { GetSessionTableEditPermissionsUseCase } from './application/use-cases/g
 import { EditSessionTableUseCase } from './application/use-cases/edit-session-table.use-case';
 import { SESSION_TABLE_EDITING_REPOSITORY } from './domain/repositories/session-table-editing.repository';
 import { PgSessionTableEditingRepository } from './infrastructure/database/pg-session-table-editing.repository';
-import { ReportFilesModule } from '@/report-files/report-files.module';
-import { SessionReportController } from './infrastructure/http/session-report.controller';
-import { ExportSessionReportUseCase } from './application/use-cases/export-session-report.use-case';
 import { SESSION_REPORT_REPOSITORY } from './domain/repositories/session-report.repository';
 import { PgSessionReportRepository } from './infrastructure/database/pg-session-report.repository';
 
@@ -60,7 +57,6 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     TypeOrmModule.forFeature([Session, SessionRoleAssignment, Attendance, SessionAttachment]),
     RoomsModule,
     ProblemsModule,
-    ReportFilesModule,
   ],
   controllers: [
     SessionsController,
@@ -71,7 +67,6 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     SessionAttachmentsController,
     EvaluationReleasesController,
     SessionEvaluationConfigurationController,
-    SessionReportController,
   ],
   providers: [
     CreateSessionUseCase,
@@ -97,7 +92,6 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     GetEvaluationReleasesUseCase,
     UpdateEvaluationReleasesUseCase,
     SessionEvaluationConfigurationService,
-    ExportSessionReportUseCase,
     { provide: SESSION_REPOSITORY, useClass: PgSessionRepository },
     { provide: SESSION_ROLE_REPOSITORY, useClass: PgSessionRoleRepository },
     { provide: ATTENDANCE_REPOSITORY, useClass: PgAttendanceRepository },
@@ -105,6 +99,6 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     { provide: SESSION_ATTACHMENT_REPOSITORY, useClass: PgSessionAttachmentRepository },
     { provide: SESSION_REPORT_REPOSITORY, useClass: PgSessionReportRepository },
   ],
-  exports: [SESSION_REPOSITORY, SessionAccessService],
+  exports: [SESSION_REPOSITORY, SESSION_REPORT_REPOSITORY, SessionAccessService],
 })
 export class SessionsModule {}

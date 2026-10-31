@@ -54,50 +54,12 @@ export const FIND_SESSION_OBSERVATION_TAGS_QUERY = `
    GROUP BY o.student_id;
 `;
 
-export const FIND_SNAPSHOT_CRITERIA_QUERY = `
-  SELECT criterion_id AS id,
-         name,
-         weight
-    FROM session_evaluation_criteria
-   WHERE session_id = $1
-   ORDER BY order_index;
-`;
-
-export const FIND_TABLE_CRITERIA_QUERY = `
-  SELECT pc.id,
-         pc.name,
-         pc.weight
-    FROM sessions s
-    JOIN performance_tables pt ON pt.id = s.performance_table_id
-    JOIN performance_criteria pc ON pc.performance_table_id = pt.id
-   WHERE s.id = $1 AND pc.deleted_at IS NULL
-   ORDER BY pc.order_index;
-`;
-
-export const FIND_SESSION_FORMULA_COMPONENTS_QUERY = `
-  SELECT fc.type,
-         fc.weight
-    FROM formulas f
-    JOIN formula_components fc ON fc.formula_id = f.id
-   WHERE f.session_id = $1 AND f.scope = 'SESSAO' AND f.active = TRUE;
-`;
-
 export const FIND_SESSION_EVALUATIONS_QUERY = `
   SELECT e.id,
          e.student_id AS "studentId",
          e.status,
-         e.session_score AS "sessionScore",
          e.applied_bonus AS "appliedBonus"
     FROM evaluations e
-   WHERE e.session_id = $1 AND e.type = 'TUTOR_SESSION';
-`;
-
-export const FIND_SESSION_EVALUATION_ITEMS_QUERY = `
-  SELECT ei.evaluation_id AS "evaluationId",
-         ei.criterion_id AS "criterionId",
-         ei.score
-    FROM evaluation_items ei
-    JOIN evaluations e ON e.id = ei.evaluation_id
    WHERE e.session_id = $1 AND e.type = 'TUTOR_SESSION';
 `;
 

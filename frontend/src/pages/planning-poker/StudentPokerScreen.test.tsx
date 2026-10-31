@@ -63,7 +63,7 @@ describe('StudentPokerScreen', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Aumentar nota' }));
     await userEvent.click(screen.getByRole('button', { name: 'Votar' }));
 
-    expect(actions.vote).toHaveBeenCalledWith('rodada-1', 7.51);
+    expect(actions.vote).toHaveBeenCalledWith('rodada-1', 7.6);
   });
 
   it('shows the sent vote and lets the student change it', async () => {
@@ -106,7 +106,7 @@ describe('StudentPokerScreen', () => {
     });
     renderStudent(aState({ anonimo: true, rodadaAtual: round }));
 
-    expect(screen.getByText('8,00')).toBeInTheDocument();
+    expect(screen.getByText('8,0')).toBeInTheDocument();
     expect(screen.getByText('Você')).toBeInTheDocument();
     expect(screen.queryByText('Carla')).not.toBeInTheDocument();
     expect(screen.getByText(/A nota final é definida pelo tutor/)).toBeInTheDocument();
