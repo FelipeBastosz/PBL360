@@ -11,7 +11,12 @@ describe('EvaluationAccessService', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
     sessions.assertTutorCanAccessSessionById.mockResolvedValue({
-      session: { id: 'session', problemId: 'problem' },
+      session: {
+        id: 'session',
+        problemId: 'problem',
+        selfEvalReleased: false,
+        peerEvalReleased: false,
+      },
       roomId: 'room',
     });
     evaluations.isEnrolled.mockResolvedValue(true);
@@ -29,6 +34,8 @@ describe('EvaluationAccessService', () => {
       sessionId: 'session',
       problemId: 'problem',
       roomId: 'room',
+      selfEvalReleased: false,
+      peerEvalReleased: false,
     });
     expect(sessions.assertTutorCanAccessSessionById).toHaveBeenCalledWith('session', 'co-tutor');
     expect(evaluations.isEnrolled).toHaveBeenCalledWith('room', 'student');

@@ -13,6 +13,9 @@ import { UpdateProblemUseCase } from './application/use-cases/update-problem.use
 import { GetProblemFormulaUseCase } from './application/use-cases/get-problem-formula.use-case';
 import { CustomizeProblemFormulaUseCase } from './application/use-cases/customize-problem-formula.use-case';
 import { RestoreDefaultFormulaUseCase } from './application/use-cases/restore-default-formula.use-case';
+import { FinalGradeFormulaUseCase } from './application/use-cases/final-grade-formula.use-case';
+import { GetTeacherFormulaUseCase } from './application/use-cases/get-teacher-formula.use-case';
+import { UpdateTeacherFormulaUseCase } from './application/use-cases/update-teacher-formula.use-case';
 import { Problem } from './domain/entities/problem.entity';
 import { Formula } from './domain/entities/formula.entity';
 import { FormulaComponent } from './domain/entities/formula-component.entity';
@@ -22,6 +25,8 @@ import { PgProblemRepository } from './infrastructure/database/pg-problem.reposi
 import { PgFormulaRepository } from './infrastructure/database/pg-formula.repository';
 import { ProblemsController } from './infrastructure/http/problems.controller';
 import { ProblemFormulasController } from './infrastructure/http/problem-formulas.controller';
+import { FinalGradeFormulaController } from './infrastructure/http/final-grade-formula.controller';
+import { TeacherFormulasController } from './infrastructure/http/teacher-formulas.controller';
 
 @Module({
   imports: [
@@ -29,7 +34,12 @@ import { ProblemFormulasController } from './infrastructure/http/problem-formula
     RoomsModule,
     PerformanceTablesModule,
   ],
-  controllers: [ProblemsController, ProblemFormulasController],
+  controllers: [
+    ProblemsController,
+    ProblemFormulasController,
+    FinalGradeFormulaController,
+    TeacherFormulasController,
+  ],
   providers: [
     CreateProblemUseCase,
     GetProblemUseCase,
@@ -40,6 +50,9 @@ import { ProblemFormulasController } from './infrastructure/http/problem-formula
     GetProblemFormulaUseCase,
     CustomizeProblemFormulaUseCase,
     RestoreDefaultFormulaUseCase,
+    FinalGradeFormulaUseCase,
+    GetTeacherFormulaUseCase,
+    UpdateTeacherFormulaUseCase,
     {
       provide: PROBLEM_REPOSITORY,
       useClass: PgProblemRepository,

@@ -20,6 +20,10 @@ describe('SessionActionGrid', () => {
       'href',
       `${basePath}/historico`,
     );
+    expect(screen.getByRole('link', { name: /relatório da sessão/i })).toHaveAttribute(
+      'href',
+      `${basePath}/relatorio`,
+    );
   });
 
   it('disables "Avaliar alunos" card with explanation when student evaluations are active', () => {

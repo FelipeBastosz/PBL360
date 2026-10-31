@@ -41,10 +41,16 @@ export const SELF_ASSESSMENT_SCORES_QUERY = `
 
 export const POKER_PEER_SCORES_QUERY = `
   SELECT DISTINCT ON (ps.session_id, pr.student_id)
-         ps.session_id, pr.student_id, pr.final_grade AS score
+         ps.session_id, pr.student_id,
+         COALESCE(latest.new_value, pr.final_grade) AS score
     FROM poker_rounds pr
     JOIN poker_sessions ps ON ps.id = pr.poker_id
     JOIN sessions s ON s.id = ps.session_id
+    LEFT JOIN LATERAL (
+      SELECT ga.new_value FROM grade_adjustments ga
+       WHERE ga.poker_round_id = pr.id
+       ORDER BY ga.created_at DESC, ga.id DESC LIMIT 1
+    ) latest ON TRUE
    WHERE s.problem_id = $1 AND pr.status = 'DECIDED'
    ORDER BY ps.session_id, pr.student_id, pr.decided_at DESC;
 `;
@@ -55,4 +61,13 @@ export const PEER_RECEIVED_SCORES_QUERY = `
     JOIN sessions s ON s.id = e.session_id
    WHERE s.problem_id = $1 AND e.type = 'PEER_ASSESSMENT' AND e.status = 'SUBMITTED'
      AND e.evaluator_id <> e.student_id;
+`;
+
+export const PEER_ADJUSTMENTS_QUERY = `
+  SELECT DISTINCT ON (ga.session_id, ga.student_id)
+         ga.session_id, ga.student_id, ga.new_value AS score
+    FROM grade_adjustments ga
+    JOIN sessions s ON s.id = ga.session_id
+   WHERE s.problem_id = $1 AND ga.type = 'PEER_ASSESSMENT'
+   ORDER BY ga.session_id, ga.student_id, ga.created_at DESC, ga.id DESC;
 `;

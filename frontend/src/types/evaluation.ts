@@ -105,3 +105,70 @@ export type StudentEvaluationHistoryItem = {
 export type SessionEvaluationHistoryResponse = {
   alunos: StudentEvaluationHistoryItem[];
 };
+
+export type SelfAssessmentResponse = {
+  status: EvaluationStatus | 'NAO_PARTICIPOU' | 'INDISPONIVEL' | 'ENCERRADA';
+  prazo?: string | null;
+  enviadaEm: string | null;
+  itens: CriterionScore[];
+  criterios: EvaluationCriterion[];
+  notaSessao: number | null;
+  participou?: boolean;
+};
+
+export type SaveSelfAssessmentPayload = {
+  itens: CriterionScore[];
+  enviar: boolean;
+};
+
+export type SessionPeerStudent = {
+  alunoId: string;
+  nome: string;
+  iniciais: string;
+  status: EvaluationStatus;
+};
+
+export type SessionPeersResponse = {
+  liberada: boolean;
+  prazo: string | null;
+  colegas: SessionPeerStudent[];
+  participou?: boolean;
+};
+
+export type PeerEvaluationResponse = {
+  colegaId: string;
+  status: EvaluationStatus;
+  enviadaEm: string | null;
+  itens: CriterionScore[];
+  criterios: EvaluationCriterion[];
+};
+
+export type SavePeerEvaluationPayload = {
+  itens: CriterionScore[];
+  enviar: boolean;
+};
+
+export type StudentSelfAssessmentSummary = {
+  liberada: boolean;
+  prazo: string | null;
+  status: string;
+};
+
+export type StudentPeerAssessmentSummary = {
+  liberada: boolean;
+  prazo: string | null;
+  avaliados: number;
+  total: number;
+};
+
+export type StudentFeedbackSummary = {
+  disponivel: boolean;
+  novo: boolean;
+};
+
+export type StudentEvaluationSummaryResponse = {
+  autoavaliacao: StudentSelfAssessmentSummary;
+  pares: StudentPeerAssessmentSummary;
+  feedback: StudentFeedbackSummary;
+  participou?: boolean;
+};

@@ -41,8 +41,8 @@ describe('UpdateEvaluationReleasesUseCase', () => {
       countReleaseSubmissions: jest.fn().mockResolvedValue({
         rollCallSaved: true,
         presentStudents: 3,
-        selfSubmitted: 1,
-        peerSubmitted: 2,
+        selfSubmitted: 0,
+        peerSubmitted: 0,
       }),
     };
     assertTutorCanAccessSessionById = jest
@@ -61,6 +61,13 @@ describe('UpdateEvaluationReleasesUseCase', () => {
   });
 
   it('releases one evaluation and records the author', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 1,
+      peerSubmitted: 0,
+    });
+
     const result = await useCase.execute({
       ...base,
       self: { released: true, deadline: future },
@@ -72,7 +79,7 @@ describe('UpdateEvaluationReleasesUseCase', () => {
     expect(saved?.peerEvalReleased).toBe(false);
     expect(saved?.releasedBy).toBe('tutor-1');
     expect(result.self).toEqual({ released: true, deadline: future, submitted: 1, expected: 3 });
-    expect(result.peer).toEqual({ released: false, deadline: null, submitted: 2, expected: 6 });
+    expect(result.peer).toEqual({ released: false, deadline: null, submitted: 0, expected: 6 });
     expect(result.updatedAt).toBeInstanceOf(Date);
     expect(result.updatedBy).toBe('tutor-1');
   });
@@ -160,6 +167,96 @@ describe('UpdateEvaluationReleasesUseCase', () => {
       useCase.execute({ ...base, peer: { released: true, deadline: null } }),
     ).rejects.toThrow(ConflictError);
     expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects releasing self evaluation when tutor already submitted evaluations', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 0,
+      peerSubmitted: 0,
+      tutorSubmitted: 1,
+    });
+
+    await expect(
+      useCase.execute({ ...base, self: { released: true, deadline: null } }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects releasing peer evaluation when tutor already submitted evaluations', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 0,
+      peerSubmitted: 0,
+      tutorSubmitted: 1,
+    });
+
+    await expect(
+      useCase.execute({ ...base, peer: { released: true, deadline: null } }),
+    ).rejects.toThrow(ConflictError);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects releasing peer evaluation when self-assessment was already submitted', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 1,
+      peerSubmitted: 0,
+    });
+
+    await expect(
+      useCase.execute({ ...base, peer: { released: true, deadline: null } }),
+    ).rejects.toThrow('A sessão já possui autoavaliações submetidas.');
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects releasing self-assessment when peer evaluation was already submitted', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 0,
+      peerSubmitted: 2,
+    });
+
+    await expect(
+      useCase.execute({ ...base, self: { released: true, deadline: null } }),
+    ).rejects.toThrow('A sessão já possui avaliações de pares submetidas.');
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects releasing self-assessment when planning poker was started', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 0,
+      peerSubmitted: 0,
+      pokerStarted: true,
+    });
+
+    await expect(
+      useCase.execute({ ...base, self: { released: true, deadline: null } }),
+    ).rejects.toThrow(
+      'Esta sessão já usa o planning poker para a avaliação entre pares. Use um ou outro.',
+    );
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('allows closing releases even when tutor already submitted evaluations', async () => {
+    repository.countReleaseSubmissions.mockResolvedValue({
+      rollCallSaved: true,
+      presentStudents: 3,
+      selfSubmitted: 0,
+      peerSubmitted: 0,
+      tutorSubmitted: 1,
+    });
+
+    await expect(
+      useCase.execute({ ...base, self: { released: false, deadline: null } }),
+    ).resolves.toBeDefined();
+    expect(repository.save).toHaveBeenCalled();
   });
 
   it('rejects a deadline in the past without saving anything', async () => {

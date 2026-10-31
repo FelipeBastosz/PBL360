@@ -8,10 +8,12 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
+  ApiQuery,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
+import { ReportFileFormat } from '@/report-files/domain/report-document';
 
 export const ExportSessionReportSwaggerDocs = applyDecorators(
   ApiOperation({
@@ -19,7 +21,35 @@ export const ExportSessionReportSwaggerDocs = applyDecorators(
     description:
       'Gera um arquivo para download nos formatos PDF ou XLSX com os dados registrados na sessão ' +
       'escolhida pelo professor: chamada, papéis, notas adicionais de papel, marcações, notas ' +
-      'e feedbacks dos alunos matriculados.',
+      'e, por padrão, feedbacks dos alunos matriculados. É possível ocultar os nomes dos alunos ' +
+      'e remover a seção de feedbacks.',
+  }),
+  ApiQuery({
+    name: 'formato',
+    enum: ReportFileFormat,
+    description: 'Formato do arquivo para exportação.',
+    example: ReportFileFormat.PDF,
+  }),
+  ApiQuery({
+    name: 'ocultarNome',
+    required: false,
+    type: Boolean,
+    description: 'Se verdadeiro, oculta os nomes dos alunos e exibe apenas as matrículas.',
+    example: false,
+  }),
+  ApiQuery({
+    name: 'mostrarFeedBack',
+    required: false,
+    type: Boolean,
+    description: 'Se falso, não inclui a seção de feedbacks no relatório.',
+    example: false,
+  }),
+  ApiQuery({
+    name: 'mostrarMarcacoes',
+    required: false,
+    type: Boolean,
+    description: 'Se falso, não preenche a coluna de marcações no relatório.',
+    example: false,
   }),
   ApiProduces(
     'application/pdf',

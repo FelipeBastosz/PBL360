@@ -83,7 +83,7 @@ describe('Sessions (e2e)', () => {
   const validSessionPayload = {
     titulo: 'Sessão 1 - Abertura do Problema',
     descricao: 'Apresentação do cenário e definição dos objetivos de aprendizagem.',
-    data: '2026-10-15',
+    data: '15-10-2026',
   };
 
   const server = () => request(app.getHttpServer() as Server);
@@ -237,7 +237,7 @@ describe('Sessions (e2e)', () => {
           {
             titulo: 'Sessão do Professor Responsável',
             descricao: 'Desc',
-            data: '2026-10-16',
+            data: '16-10-2026',
           },
           ownerToken,
         );
@@ -252,7 +252,7 @@ describe('Sessions (e2e)', () => {
           {
             titulo: 'Sessão criada pela Co-tutora',
             descricao: 'Desc',
-            data: '2026-10-17',
+            data: '17-10-2026',
           },
           coTutorToken,
         );
@@ -347,7 +347,7 @@ describe('Sessions (e2e)', () => {
       const updatePayload = {
         titulo: 'Título Atualizado',
         descricao: 'Nova descrição',
-        data: '2026-10-20',
+        data: '20-10-2026',
       };
 
       it('returns 401 Unauthorized when request lacks authorization token', async () => {
@@ -511,13 +511,19 @@ describe('Sessions (e2e)', () => {
         status: 'agendada',
       });
       expect(body.id).toBeDefined();
+
+      const [stored] = await dataSource.query<[{ date: string }]>(
+        "SELECT to_char(date, 'YYYY-MM-DD') AS date FROM sessions WHERE id = $1;",
+        [body.id],
+      );
+      expect(stored.date).toBe('2026-10-15');
     });
 
     it('trims leading and trailing whitespace from title and description', async () => {
       const response = await createSessionHelper(roomId, problemId, {
         titulo: '  Sessão com Espaços  ',
         descricao: '   Descrição com espaços extras   ',
-        data: '2026-10-18',
+        data: '18-10-2026',
       });
 
       expect(response.status).toBe(201);
@@ -530,7 +536,7 @@ describe('Sessions (e2e)', () => {
       const response = await createSessionHelper(roomId, problemId, {
         titulo: 'Sessão Sem Descrição',
         descricao: null,
-        data: '2026-10-19',
+        data: '19-10-2026',
       });
 
       expect(response.status).toBe(201);
@@ -542,17 +548,17 @@ describe('Sessions (e2e)', () => {
       const res1 = await createSessionHelper(roomId, problemId, {
         titulo: 'Primeira Sessão',
         descricao: null,
-        data: '2026-10-01',
+        data: '01-10-2026',
       });
       const res2 = await createSessionHelper(roomId, problemId, {
         titulo: 'Segunda Sessão',
         descricao: null,
-        data: '2026-10-08',
+        data: '08-10-2026',
       });
       const res3 = await createSessionHelper(roomId, problemId, {
         titulo: 'Terceira Sessão',
         descricao: null,
-        data: '2026-10-15',
+        data: '15-10-2026',
       });
 
       expect(res1.status).toBe(201);
@@ -575,17 +581,17 @@ describe('Sessions (e2e)', () => {
       const prob1Session1 = await createSessionHelper(roomId, problemId, {
         titulo: 'Prob1 - Sessão 1',
         descricao: null,
-        data: '2026-10-01',
+        data: '01-10-2026',
       });
       const prob2Session1 = await createSessionHelper(roomId, anotherProblem.id, {
         titulo: 'Prob2 - Sessão 1',
         descricao: null,
-        data: '2026-10-01',
+        data: '01-10-2026',
       });
       const prob1Session2 = await createSessionHelper(roomId, problemId, {
         titulo: 'Prob1 - Sessão 2',
         descricao: null,
-        data: '2026-10-08',
+        data: '08-10-2026',
       });
 
       expect((prob1Session1.body as SessionCreatedResponseBody).ordem).toBe(1);
@@ -598,7 +604,7 @@ describe('Sessions (e2e)', () => {
         createSessionHelper(roomId, problemId, {
           titulo: `Sessão Concorrente ${i + 1}`,
           descricao: null,
-          data: `2026-10-0${i + 1}`,
+          data: `0${i + 1}-10-2026`,
         }),
       );
 
@@ -615,7 +621,7 @@ describe('Sessions (e2e)', () => {
       const response = await createSessionHelper(roomId, problemId, {
         titulo: undefined as unknown as string,
         descricao: null,
-        data: '2026-10-15',
+        data: '15-10-2026',
       });
 
       expect(response.status).toBe(400);
@@ -625,7 +631,7 @@ describe('Sessions (e2e)', () => {
       const response = await createSessionHelper(roomId, problemId, {
         titulo: '   ',
         descricao: null,
-        data: '2026-10-15',
+        data: '15-10-2026',
       });
 
       expect(response.status).toBe(400);
@@ -635,7 +641,7 @@ describe('Sessions (e2e)', () => {
       const response = await createSessionHelper(roomId, problemId, {
         titulo: 'A'.repeat(121),
         descricao: null,
-        data: '2026-10-15',
+        data: '15-10-2026',
       });
 
       expect(response.status).toBe(400);
@@ -645,7 +651,7 @@ describe('Sessions (e2e)', () => {
       const response = await createSessionHelper(roomId, problemId, {
         titulo: 'Sessão com Descrição Longa',
         descricao: 'D'.repeat(1001),
-        data: '2026-10-15',
+        data: '15-10-2026',
       });
 
       expect(response.status).toBe(400);
@@ -663,11 +669,11 @@ describe('Sessions (e2e)', () => {
 
     it('returns 400 Bad Request when date includes timestamp or invalid format', async () => {
       const invalidDates = [
-        '2026-10-15T14:30:00Z',
+        '15-10-2026T14:30:00Z',
         '15/10/2026',
         '2026/10/15',
         'amanha',
-        '2026-13-45',
+        '45-13-2026',
       ];
 
       for (const invalidDate of invalidDates) {
@@ -716,17 +722,17 @@ describe('Sessions (e2e)', () => {
       await createSessionHelper(roomId, problemId, {
         titulo: 'Sessão 2 - Fechamento',
         descricao: null,
-        data: '2026-10-22',
+        data: '22-10-2026',
       });
       await createSessionHelper(roomId, problemId, {
         titulo: 'Sessão 1 - Abertura',
         descricao: null,
-        data: '2026-10-15',
+        data: '15-10-2026',
       });
       await createSessionHelper(roomId, problemId, {
         titulo: 'Sessão Intermediária',
         descricao: null,
-        data: '2026-10-15',
+        data: '15-10-2026',
       });
 
       const response = await server()
@@ -738,15 +744,15 @@ describe('Sessions (e2e)', () => {
       expect(list).toHaveLength(3);
 
       expect(list[0].titulo).toBe('Sessão 1 - Abertura');
-      expect(list[0].data).toBe('2026-10-15');
+      expect(list[0].data).toBe('15-10-2026');
       expect(list[0].ordem).toBe(2);
 
       expect(list[1].titulo).toBe('Sessão Intermediária');
-      expect(list[1].data).toBe('2026-10-15');
+      expect(list[1].data).toBe('15-10-2026');
       expect(list[1].ordem).toBe(3);
 
       expect(list[2].titulo).toBe('Sessão 2 - Fechamento');
-      expect(list[2].data).toBe('2026-10-22');
+      expect(list[2].data).toBe('22-10-2026');
       expect(list[2].ordem).toBe(1);
     });
 
@@ -819,7 +825,7 @@ describe('Sessions (e2e)', () => {
         .send({
           titulo: 'Título Atualizado',
           descricao: 'Descrição Atualizada',
-          data: '2026-10-30',
+          data: '30-10-2026',
         });
 
       expect(response.status).toBe(200);
@@ -830,7 +836,7 @@ describe('Sessions (e2e)', () => {
         salaId: roomId,
         titulo: 'Título Atualizado',
         descricao: 'Descrição Atualizada',
-        data: '2026-10-30',
+        data: '30-10-2026',
         ordem: 1,
         status: 'agendada',
       });
@@ -846,7 +852,7 @@ describe('Sessions (e2e)', () => {
         .send({
           titulo: 'Título Mantido',
           descricao: null,
-          data: '2026-10-15',
+          data: '15-10-2026',
         });
 
       expect(response.status).toBe(200);
@@ -863,7 +869,7 @@ describe('Sessions (e2e)', () => {
         .send({
           titulo: '   ',
           descricao: null,
-          data: '2026-10-15',
+          data: '15-10-2026',
         });
 
       expect(response.status).toBe(400);
@@ -877,7 +883,7 @@ describe('Sessions (e2e)', () => {
         .send({
           titulo: 'Novo Título',
           descricao: null,
-          data: '2026-10-15',
+          data: '15-10-2026',
         });
 
       expect(response.status).toBe(404);
@@ -939,17 +945,17 @@ describe('Sessions (e2e)', () => {
       const res1 = await createSessionHelper(roomId, problemId, {
         titulo: 'Sessão 1',
         descricao: null,
-        data: '2026-10-01',
+        data: '01-10-2026',
       });
       const res2 = await createSessionHelper(roomId, problemId, {
         titulo: 'Sessão 2',
         descricao: null,
-        data: '2026-10-08',
+        data: '08-10-2026',
       });
       const res3 = await createSessionHelper(roomId, problemId, {
         titulo: 'Sessão 3',
         descricao: null,
-        data: '2026-10-15',
+        data: '15-10-2026',
       });
 
       const s1 = res1.body as SessionCreatedResponseBody;
@@ -996,12 +1002,12 @@ describe('Sessions (e2e)', () => {
       await createSessionHelper(roomId, problemId, {
         titulo: 'Sessão A',
         descricao: null,
-        data: '2026-10-01',
+        data: '01-10-2026',
       });
       await createSessionHelper(roomId, problemId, {
         titulo: 'Sessão B',
         descricao: null,
-        data: '2026-10-08',
+        data: '08-10-2026',
       });
 
       const impactRes = await server()
@@ -1022,7 +1028,12 @@ describe('Sessions (e2e)', () => {
 
       expect(deleteProblemRes.status).toBe(409);
       const body = deleteProblemRes.body as ErrorResponseBody;
-      expect(body.message).toContain('O problema possui sessões e não pode ser excluído.');
+      expect(body.message).toBe(
+        'O problema não pode ser excluído pois possui registros vinculados.',
+      );
+      expect(deleteProblemRes.body).toMatchObject({
+        detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0 },
+      });
     });
 
     it('allows problem deletion with 204 No Content once all its sessions are deleted', async () => {

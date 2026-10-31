@@ -18,7 +18,13 @@ export class EvaluationAccessService {
       sessionId,
       authorId,
     );
-    return { sessionId: session.id, problemId: session.problemId, roomId };
+    return {
+      sessionId: session.id,
+      problemId: session.problemId,
+      roomId,
+      selfEvalReleased: session.selfEvalReleased,
+      peerEvalReleased: session.peerEvalReleased,
+    };
   }
 
   async forStudent(sessionId: string, studentId: string, authorId: string) {

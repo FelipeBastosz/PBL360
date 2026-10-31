@@ -1,5 +1,6 @@
 import type { DataSource, Repository } from 'typeorm';
-import { DEFAULT_PASSWORD, runSeed, SEED_USERS, seedUser } from './seed';
+import { DEFAULT_PASSWORD, runSeed, seedUser } from './seed';
+import { SEED_USERS } from './seed-users';
 
 const TEST_ENV = { NODE_ENV: 'test', BCRYPT_ROUNDS: '4' };
 import { BehaviorTag } from '@/behavior-tags/domain/entities/behavior-tag.entity';

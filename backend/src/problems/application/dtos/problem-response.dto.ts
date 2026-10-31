@@ -16,10 +16,20 @@ export class ProblemResponseDto {
   @ApiProperty({ example: 1, description: 'Posição sequencial do problema na sala.' })
   ordem: number;
 
-  @ApiProperty({ nullable: true, type: String, format: 'date', example: '2026-03-01' })
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '01-03-2026',
+    pattern: '^\\d{2}-\\d{2}-\\d{4}$',
+  })
   dataInicio: string | null;
 
-  @ApiProperty({ nullable: true, type: String, format: 'date', example: '2026-03-15' })
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '15-03-2026',
+    pattern: '^\\d{2}-\\d{2}-\\d{4}$',
+  })
   dataFim: string | null;
 
   @ApiProperty({ example: false })

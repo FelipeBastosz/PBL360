@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
@@ -6,15 +5,11 @@ import { Spinner } from '@/components/ui/Spinner';
 import { CARD_CLASS, CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/useToast';
-import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { roomService } from '@/services/room.service';
-import { problemService } from '@/services/problem.service';
-import type { Room } from '@/types/room';
 import type { Problem, ProblemDeletionImpact } from '@/types/problem';
 import { RoomProblemsHeader } from './RoomProblemsHeader';
 import { DeleteProblemModal } from './DeleteProblemModal';
 import { ProblemFormModal } from './ProblemFormModal';
+import { useManageProblems } from './hooks/useManageProblems';
 
 function ManageProblemCard({
   problem,
@@ -131,104 +126,6 @@ function ManageProblemModals({
   );
 }
 
-type DeleteHandlerParams = {
-  id: string | undefined;
-  p: Problem;
-  setProblemToDelete: (p: Problem | null) => void;
-  setImpact: (i: ProblemDeletionImpact | null) => void;
-};
-
-type ConfirmDeleteParams = {
-  id: string | undefined;
-  problemToDelete: Problem | null;
-  deleteProblem: (
-    ...args: [string, string]
-  ) => Promise<{ ok: true; data: void } | { ok: false; error: unknown }>;
-  setProblems: React.Dispatch<React.SetStateAction<Problem[]>>;
-  setProblemToDelete: (p: Problem | null) => void;
-  notify: (toast: { tone: 'success' | 'error' | 'info'; message: string }) => void;
-};
-
-async function handleOpenDelete({ id, p, setProblemToDelete, setImpact }: DeleteHandlerParams) {
-  setProblemToDelete(p);
-  if (!id) return;
-  const data = await problemService
-    .getDeletionImpact(id, p.id)
-    .catch(() => ({ sessoes: 0, notas: 0, feedbacks: 0, avaliacoes: 0 }));
-  setImpact(data);
-}
-
-async function handleConfirmDelete({
-  id,
-  problemToDelete,
-  deleteProblem,
-  setProblems,
-  setProblemToDelete,
-  notify,
-}: ConfirmDeleteParams) {
-  if (!id || !problemToDelete) return;
-  const res = await deleteProblem(id, problemToDelete.id);
-  if (res.ok) {
-    setProblems((curr) => curr.filter((item) => item.id !== problemToDelete.id));
-    setProblemToDelete(null);
-    notify({ tone: 'success', message: 'Problema excluído com sucesso!' });
-  }
-}
-
-function useManageProblems(id: string | undefined) {
-  const { notify } = useToast();
-  const [room, setRoom] = useState<Room | null>(null);
-  const [problems, setProblems] = useState<Problem[]>([]);
-  const [problemToEdit, setProblemToEdit] = useState<Problem | null>(null);
-  const [problemToDelete, setProblemToDelete] = useState<Problem | null>(null);
-  const [impact, setImpact] = useState<ProblemDeletionImpact | null>(null);
-
-  const { run: fetchRoom } = useAsyncAction(roomService.getById);
-  const { run: fetchProblems, isLoading } = useAsyncAction(problemService.list);
-  const { run: deleteProblem, isLoading: isDeleting } = useAsyncAction(problemService.remove);
-
-  useEffect(() => {
-    if (!id) return;
-    fetchRoom(id).then((r) => r.ok && setRoom(r.data));
-    fetchProblems(id).then((r) => r.ok && setProblems(r.data as Problem[]));
-  }, [id, fetchRoom, fetchProblems]);
-
-  return {
-    room,
-    problems,
-    isLoading,
-    isDeleting,
-    problemToEdit,
-    setProblemToEdit,
-    problemToDelete,
-    setProblemToDelete,
-    impact,
-    onOpenDelete: (p: Problem) => handleOpenDelete({ id, p, setProblemToDelete, setImpact }),
-    onConfirmDelete: () =>
-      handleConfirmDelete({
-        id,
-        problemToDelete,
-        deleteProblem,
-        setProblems,
-        setProblemToDelete,
-        notify,
-      }),
-    handleEditSuccess: (updated: Problem & { title?: string }) => {
-      const tituloCorreto = updated.titulo || updated.title || '';
-
-      const problemNormalizado = {
-        ...updated,
-        titulo: tituloCorreto,
-      };
-      setProblems((curr) =>
-        curr.map((item) => (item.id === problemNormalizado.id ? problemNormalizado : item)),
-      );
-      setProblemToEdit(null);
-      notify({ tone: 'success', message: 'Problema atualizado com sucesso!' });
-    },
-  };
-}
-
 export default function ManageProblemsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -252,7 +149,7 @@ export default function ManageProblemsPage() {
         isDeleting={state.isDeleting}
         problemToEdit={state.problemToEdit}
         onConfirmDelete={state.onConfirmDelete}
-        onCancelDelete={() => state.setProblemToDelete(null)}
+        onCancelDelete={state.onCancelDelete}
         onEditSuccess={state.handleEditSuccess}
         onCloseEdit={() => state.setProblemToEdit(null)}
       />

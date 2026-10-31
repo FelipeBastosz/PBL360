@@ -8,12 +8,13 @@ import type { UpdateSessionDto } from '../../application/dtos/update-session.dto
 import type { UpdateSessionInput } from '../../application/use-cases/update-session.use-case';
 import type { SessionDeletionImpactDto } from '../../application/dtos/session-deletion-impact.dto';
 import type { GetSessionDeletionImpactOutput } from '../../application/use-cases/get-session-deletion-impact.use-case';
+import { toBrazilianDate, toIsoDate } from '@/shared/dates/brazilian-date';
 
 export const toSessionResponse = (session: Session): SessionListResponseDto => ({
   id: session.id,
   titulo: session.title,
   descricao: session.description,
-  data: session.date,
+  data: toBrazilianDate(session.date)!,
   ordem: session.orderIndex,
   status: session.status,
 });
@@ -46,7 +47,7 @@ export const toUpdateSessionInput = (
   tutorId,
   title: dto.titulo,
   description: dto.descricao,
-  date: dto.data,
+  date: toIsoDate(dto.data),
 });
 
 export const toSessionDeletionImpactResponse = (

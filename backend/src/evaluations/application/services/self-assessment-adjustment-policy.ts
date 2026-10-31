@@ -1,16 +1,23 @@
 import { ConflictError, NotFoundError } from '@/shared/errors/application.error';
 import type { EvaluationAdjustment } from '../../domain/entities/grade-adjustment.entity';
 import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
-import type { SelfAssessmentAdjustmentHistory } from '../../domain/repositories/self-assessment-adjustment.repository';
+import type {
+  AdjustmentTarget,
+  SelfAssessmentAdjustmentHistory,
+} from '../../domain/repositories/self-assessment-adjustment.repository';
 import { SelfAssessmentAdjustmentRules } from '../../domain/services/self-assessment-adjustment-rules';
 import { validateEvaluationRules } from './evaluation-rule-validation';
 
 export interface PlannedAdjustment {
-  evaluationId: string;
+  evaluationId?: string;
+  pokerRoundId?: string;
+  sessionId?: string;
+  studentId?: string;
   originalScore: number;
   previousValue: number;
   newValue: number;
   justification: string;
+  tipo?: AdjustmentTarget;
 }
 
 export interface SelfAssessmentAdjustmentsOutput {
@@ -25,27 +32,46 @@ export interface AdjustedSelfAssessmentOutput {
   adjustment: EvaluationAdjustment;
 }
 
+const buildPlanned = (
+  t: SelfAssessmentAdjustmentHistory & { originalScore: number },
+  previousValue: number,
+  newValue: number,
+  justification: string,
+  tipo?: AdjustmentTarget,
+): PlannedAdjustment => ({
+  evaluationId: t.evaluationId,
+  pokerRoundId: t.pokerRoundId,
+  sessionId: t.sessionId,
+  studentId: t.studentId,
+  originalScore: t.originalScore,
+  previousValue,
+  newValue,
+  justification: justification.trim(),
+  tipo: t.tipo ?? tipo,
+});
+
 export function planSelfAssessmentAdjustment(
   history: SelfAssessmentAdjustmentHistory | null,
   newScore: number,
   justification: string,
+  tipo?: AdjustmentTarget,
 ): PlannedAdjustment {
-  const { evaluationId, originalScore, adjustments } = assertSubmitted(history);
-  const currentScore = SelfAssessmentAdjustmentRules.currentScore(originalScore, adjustments);
-  assertValidAdjustment(currentScore, newScore, justification);
-  return {
-    evaluationId,
-    originalScore,
-    previousValue: currentScore,
-    newValue: newScore,
-    justification: justification.trim(),
-  };
+  const target = assertSubmitted(history, tipo);
+  const current = SelfAssessmentAdjustmentRules.currentScore(
+    target.originalScore,
+    target.adjustments,
+  );
+  assertValidAdjustment(current, newScore, justification);
+  return buildPlanned(target, current, newScore, justification, tipo);
 }
 
 export function summarizeSelfAssessmentAdjustments(
   history: SelfAssessmentAdjustmentHistory | null,
+  tipo?: AdjustmentTarget,
 ): SelfAssessmentAdjustmentsOutput {
-  if (!history) throw new NotFoundError('Autoavaliação não encontrada.');
+  if (!history) {
+    throw new NotFoundError(notFoundMessage(tipo));
+  }
   const { originalScore, adjustments } = history;
   const currentScore =
     originalScore === null
@@ -56,14 +82,26 @@ export function summarizeSelfAssessmentAdjustments(
 
 function assertSubmitted(
   history: SelfAssessmentAdjustmentHistory | null,
+  tipo?: AdjustmentTarget,
 ): SelfAssessmentAdjustmentHistory & { originalScore: number } {
-  if (!history) throw new NotFoundError('Autoavaliação não encontrada.');
+  const effectiveTipo = history?.tipo ?? tipo;
+  if (!history) {
+    throw new NotFoundError(notFoundMessage(effectiveTipo));
+  }
   const { originalScore } = history;
   if (history.status !== EvaluationStatus.SUBMITTED || originalScore === null) {
-    throw new ConflictError('A autoavaliação ainda não foi enviada.');
+    throw new ConflictError(notSubmittedMessage(effectiveTipo));
   }
   return { ...history, originalScore };
 }
+
+const notFoundMessage = (tipo?: AdjustmentTarget) =>
+  tipo === 'PARES' ? 'Avaliação entre pares não encontrada.' : 'Autoavaliação não encontrada.';
+
+const notSubmittedMessage = (tipo?: AdjustmentTarget) =>
+  tipo === 'PARES'
+    ? 'A avaliação entre pares ainda não foi finalizada.'
+    : 'A autoavaliação ainda não foi enviada.';
 
 function assertValidAdjustment(
   currentScore: number,

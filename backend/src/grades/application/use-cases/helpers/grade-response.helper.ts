@@ -5,6 +5,7 @@ import {
   toEvaluationComponentResponse,
   type StudentEvaluationComponents,
 } from './evaluation-components.helper';
+import { toBrazilianDate } from '@/shared/dates/brazilian-date';
 
 export function buildGradeResponse(
   sessions: Row[],
@@ -46,7 +47,7 @@ function sessionResponses(sessions: Row[]) {
       nome: title,
       title,
       rotulo: title,
-      data: String(session.date),
+      data: toBrazilianDate(String(session.date))!,
     };
   });
 }

@@ -265,7 +265,7 @@ describe('Grades (e2e)', () => {
     const bruno = grades.alunos.find((student) => student.alunoId === brunoId);
 
     expect(ana).toMatchObject({
-      notaFinal: 8.3,
+      notaFinal: 8.5,
       autoavaliacao: { nota: 9, situacao: 'AVALIADA' },
       pares: { nota: 7, situacao: 'AVALIADA' },
       sessoes: [
@@ -276,6 +276,13 @@ describe('Grades (e2e)', () => {
         },
       ],
     });
+    const formulaResponse = await server()
+      .get(`/api/salas/${roomId}/problemas/${problemId}/formulas?escopo=PROBLEMA`)
+      .set('Authorization', `Bearer ${tutorToken}`)
+      .expect(200);
+    expect((formulaResponse.body as { componentes: unknown[] }).componentes).toEqual([
+      { tipo: 'MEDIA_SESSOES', referenciaId: null, nome: 'Média das Sessões', peso: 100 },
+    ]);
     expect(bruno).toMatchObject({
       autoavaliacao: { nota: 0, situacao: 'AVALIADA' },
       pares: { nota: null, situacao: 'PENDENTE' },

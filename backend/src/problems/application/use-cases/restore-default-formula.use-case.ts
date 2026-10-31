@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { NotFoundError, UnprocessableEntityError } from '@/shared/errors/application.error';
-import { FormulaScope } from '../../domain/entities/formula.entity';
+import { Formula, FormulaScope } from '../../domain/entities/formula.entity';
 import {
   FORMULA_REPOSITORY,
   type FormulaRepository,
@@ -44,14 +44,44 @@ export class RestoreDefaultFormulaUseCase {
       throw new NotFoundError('Problema não encontrado na sala informada.');
     }
 
-    const activeFormula = await this.formulas.findActiveByProblemAndScope(
-      input.problemId,
-      input.scope,
-    );
-    if (activeFormula) {
-      await this.formulas.deactivate(activeFormula);
-    }
+    const active = await this.formulas.findActiveByProblemAndScope(input.problemId, input.scope);
+    await restorePercentageFormula(active, input, this.formulas);
 
     return this.getFormulaUseCase.execute(input);
   }
 }
+
+async function restorePercentageFormula(
+  active: Formula | null,
+  input: RestoreDefaultFormulaInput,
+  formulas: FormulaRepository,
+): Promise<void> {
+  if (!active) return;
+  const sessionComponents = active.components.filter((component) => component.type === 'SESSAO');
+  if (sessionComponents.length === 0) return formulas.deactivate(active);
+  await formulas.saveNewVersion(active, createDefaultPercentageFormula(active, input));
+}
+
+function createDefaultPercentageFormula(
+  active: Formula,
+  input: RestoreDefaultFormulaInput,
+): Formula {
+  return Formula.create({
+    problemId: input.problemId,
+    scope: input.scope,
+    version: active.version + 1,
+    active: true,
+    createdBy: input.tutorId,
+    components: [...defaultProblemComponents, ...sessionComponentInputs(active)],
+  });
+}
+
+function sessionComponentInputs(formula: Formula) {
+  return formula.components
+    .filter((component) => component.type === 'SESSAO')
+    .map(({ type, referenceId, weight }) => ({ type, referenceId, weight: Number(weight) }));
+}
+
+const defaultProblemComponents: Array<{ type: string; referenceId: null; weight: number }> = [
+  { type: 'MEDIA_SESSOES', referenceId: null, weight: 100 },
+];

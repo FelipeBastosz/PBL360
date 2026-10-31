@@ -10,7 +10,7 @@ import { toReceivedFeedbackResponse } from './received-feedback.mapper';
 import { GetMySessionFeedbackSwaggerDocs } from './my-session-feedback.swagger';
 
 @ApiTags('Feedbacks recebidos')
-@Controller('sessoes/:sessaoId/meu-feedback')
+@Controller(['sessoes/:sessaoId/meu-feedback', 'sessoes/:sessaoId/feedbacks/meu-feedback'])
 @Roles(UserType.STUDENT)
 export class MySessionFeedbackController {
   constructor(private readonly getFeedback: GetMySessionFeedbackUseCase) {}

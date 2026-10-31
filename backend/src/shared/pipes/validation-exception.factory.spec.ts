@@ -35,4 +35,17 @@ describe('validationExceptionFactory', () => {
       message: ['O campo "endereco.rua" não é permitido.'],
     });
   });
+
+  it('returns 422 when a final session weight is outside the supported range', () => {
+    const weightError: ValidationError = {
+      ...errorFor('peso', { max: 'O peso de cada sessão não pode ser maior que 10.' }),
+    };
+
+    const exception = validationExceptionFactory([errorFor('sessoes', {}, [weightError])]);
+
+    expect(exception.getStatus()).toBe(422);
+    expect(exception.getResponse()).toMatchObject({
+      message: ['O peso de cada sessão não pode ser maior que 10.'],
+    });
+  });
 });

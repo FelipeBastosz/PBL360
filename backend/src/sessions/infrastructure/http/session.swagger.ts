@@ -14,6 +14,7 @@ import {
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { SessionDeletionImpactDto } from '../../application/dtos/session-deletion-impact.dto';
+import { SessionDeletionConflictDto } from '../../application/dtos/session-deletion-conflict.dto';
 import {
   SessionCreatedResponseDto,
   SessionDetailResponseDto,
@@ -101,8 +102,8 @@ export const DeleteSessionSwaggerDocs = applyDecorators(
   ApiOperation({ summary: 'Exclui uma sessão sem registros vinculados' }),
   ApiNoContentResponse({ description: 'Sessão excluída.' }),
   ApiConflictResponse({
-    description: 'A sessão possui registros vinculados.',
-    type: ErrorResponseDto,
+    description: 'A sessão possui registros vinculados. As quantidades são retornadas em detalhes.',
+    type: SessionDeletionConflictDto,
   }),
   unauthorized,
   forbidden,
