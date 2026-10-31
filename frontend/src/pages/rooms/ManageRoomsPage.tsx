@@ -15,6 +15,7 @@ import type { Room } from '@/types/room';
 import { countLabel } from '@/utils/countLabel';
 import { DeleteRoomModal } from './DeleteRoomModal';
 import { Link } from 'react-router-dom';
+import { useRoomDeletion } from './hooks/useRoomDeletion';
 
 function ManageRoomCard({
   room,
@@ -107,25 +108,23 @@ export default function ManageRoomsPage() {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [query, setQuery] = useState('');
-  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
 
   const { run: fetchRooms, isLoading, error } = useAsyncAction(roomService.list);
-  const { run: deleteRoom, isLoading: isDeleting } = useAsyncAction(roomService.remove);
+  const {
+    roomToDelete,
+    isOwner,
+    isDeleting,
+    errorMessage,
+    onOpenDelete,
+    onCancelDelete,
+    onConfirmDelete,
+  } = useRoomDeletion(setRooms);
 
   useEffect(() => {
     fetchRooms().then((res) => {
       if (res.ok) setRooms(res.data);
     });
   }, [fetchRooms]);
-
-  async function handleConfirmDelete() {
-    if (!roomToDelete) return;
-    const res = await deleteRoom(roomToDelete.id);
-    if (res.ok) {
-      setRooms((current) => current.filter((r) => r.id !== roomToDelete.id));
-      setRoomToDelete(null);
-    }
-  }
 
   const filteredRooms = rooms.filter((r) => r.nome.toLowerCase().includes(query.toLowerCase()));
 
@@ -139,15 +138,17 @@ export default function ManageRoomsPage() {
         isLoading={isLoading}
         rooms={filteredRooms}
         error={error}
-        onDeleteRequest={setRoomToDelete}
+        onDeleteRequest={onOpenDelete}
       />
       <ManageRoomsFooter onFinish={() => navigate(ROUTES.rooms)} />
       <DeleteRoomModal
         roomName={roomToDelete?.nome ?? ''}
         isOpen={Boolean(roomToDelete)}
         isLoading={isDeleting}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setRoomToDelete(null)}
+        isOwner={isOwner}
+        errorMessage={errorMessage}
+        onConfirm={onConfirmDelete}
+        onCancel={onCancelDelete}
       />
     </div>
   );
