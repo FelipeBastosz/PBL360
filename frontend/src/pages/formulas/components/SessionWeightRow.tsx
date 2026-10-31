@@ -45,7 +45,7 @@ export function SessionWeightRow({
         value={session.peso}
         onChange={onChange}
         label={session.rotulo}
-        min={0.1}
+        min={1}
         max={10}
         step={1}
       />
