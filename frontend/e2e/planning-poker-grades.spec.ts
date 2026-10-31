@@ -201,7 +201,7 @@ test.describe('Planning poker grades', () => {
       nota: 8.9,
       justificativa: 'Conduziu a síntese do grupo.',
     });
-    await expect(page.getByText('8,9')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Mesa tutorial' }).getByText('8,9')).toBeVisible();
     await expect(page.getByText('1 de 3 avaliados')).toBeVisible();
   });
 

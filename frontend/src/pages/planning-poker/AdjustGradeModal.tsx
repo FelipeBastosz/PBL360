@@ -112,7 +112,7 @@ function GradeFields({ average, grade, onGrade }: GradeFieldsProps) {
       <div className="flex items-center justify-between gap-2 py-1.5">
         <div className="flex flex-col">
           <span className="text-[13px] font-semibold text-ink">Nova nota</span>
-          <span className="text-xs text-muted">De 0 a 10, até duas casas</span>
+          <span className="text-xs text-muted">De 0 a 10, de 0,1 em 0,1</span>
         </div>
         <GradeStepper value={grade} onChange={onGrade} />
       </div>

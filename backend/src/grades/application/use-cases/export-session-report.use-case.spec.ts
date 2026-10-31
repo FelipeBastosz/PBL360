@@ -323,6 +323,19 @@ describe('ExportSessionReportUseCase', () => {
     expect(row.slice(6)).toEqual([label, nota]);
   });
 
+  it('gives precedence to absence over a submitted evaluation', async () => {
+    const row = await exportWith(
+      student({
+        attendanceStatus: 'ABSENT',
+        evaluationStatus: EvaluationStatus.SUBMITTED,
+      }),
+      sessionGrade({ nota: 0, situacao: 'AUSENTE', modalidade: 'TUTOR' }),
+      0,
+    );
+
+    expect(row.slice(6)).toEqual(['Ausente', 0]);
+  });
+
   it('keeps a peer modality pending even when a stale tutor draft exists', async () => {
     const row = await exportWith(
       student({ evaluationStatus: EvaluationStatus.DRAFT }),

@@ -280,7 +280,7 @@ describe('Planning poker (e2e)', () => {
       await api(app, tutor)
         .post(roundPath(round.rodadaId, '/decisao'), {
           acao: 'REAJUSTAR',
-          nota: 8.75,
+          nota: 8.8,
           justificativa: 'Participação ativa na discussão do problema.',
         })
         .expect(200);
@@ -295,7 +295,7 @@ describe('Planning poker (e2e)', () => {
 
       expect(decided).toEqual({
         status: 'DECIDED',
-        final_grade: '8.75',
+        final_grade: '8.8',
         justification: 'Participação ativa na discussão do problema.',
         decided_by: tutor.id,
       });
