@@ -21,9 +21,9 @@ type SessionCardProps = {
 
 function formatSessionDate(dateString: string) {
   if (!dateString) return '';
-  const [year, month, day] = dateString.split('-');
-  const date = new Date(Number(year), Number(month) - 1, Number(day));
-  const dayStr = date.toLocaleDateString('pt-BR', { day: '2-digit' });
+  const [day, month, year] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const dayStr = String(day).padStart(2, '0');
   const monthStr = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
   return `${dayStr} ${monthStr}`;
 }

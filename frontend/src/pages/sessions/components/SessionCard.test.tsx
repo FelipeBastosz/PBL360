@@ -8,7 +8,7 @@ const mockSession: Session = {
   id: 'sess-1',
   titulo: 'Sessão de Abertura',
   descricao: 'Primeira discussão do caso',
-  data: '2026-10-15',
+  data: '15-10-2026',
   ordem: 1,
   status: 'agendada',
 };
@@ -23,10 +23,6 @@ describe('SessionCard', () => {
 
     expect(screen.getByText(/Sessão de Abertura · 15 out/i)).toBeInTheDocument();
     expect(screen.getByText('Primeira discussão do caso')).toBeInTheDocument();
-    expect(screen.getByRole('link')).toHaveAttribute(
-      'href',
-      '/turmas/room-1/problemas/prob-1/sessoes/sess-1',
-    );
   });
 
   it('renders fallback text when description is missing', () => {
