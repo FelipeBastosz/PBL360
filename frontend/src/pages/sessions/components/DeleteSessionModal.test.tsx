@@ -107,4 +107,34 @@ describe('DeleteSessionModal', () => {
     await user.keyboard('{Escape}');
     expect(onCancel).toHaveBeenCalledOnce();
   });
+
+  it('renders contextual error alert and Entendi button when errorMessage is provided', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+
+    render(
+      <DeleteSessionModal
+        sessionTitle="Sessão 1"
+        impact={mockImpact}
+        isOpen={true}
+        isLoading={false}
+        errorMessage="Não é possível excluir: existem 3 feedbacks e 5 avaliações vinculados a esta sessão."
+        onConfirm={vi.fn()}
+        onCancel={onCancel}
+      />,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Não é possível excluir a sessão' }),
+    ).toBeInTheDocument();
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent(
+      'Não é possível excluir: existem 3 feedbacks e 5 avaliações vinculados a esta sessão.',
+    );
+    expect(screen.queryByRole('button', { name: 'Sim, excluir sessão' })).not.toBeInTheDocument();
+
+    const entendiBtn = screen.getByRole('button', { name: 'Entendi' });
+    await user.click(entendiBtn);
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
 });

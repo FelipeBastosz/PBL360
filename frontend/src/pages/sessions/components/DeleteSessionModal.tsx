@@ -8,6 +8,7 @@ type DeleteModalProps = {
   impact: SessionDeletionImpact | null;
   isOpen: boolean;
   isLoading: boolean;
+  errorMessage?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -21,14 +22,30 @@ function DeleteIcon() {
 }
 
 function ModalActions({
+  isBlocked,
   isLoading,
   onConfirm,
   onCancel,
 }: {
+  isBlocked: boolean;
   isLoading: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  if (isBlocked) {
+    return (
+      <div className="mt-2 flex w-full flex-col gap-2">
+        <Button
+          type="button"
+          onClick={onCancel}
+          className="h-12 w-full rounded-xl bg-brand-900 text-white hover:bg-brand-700"
+        >
+          Entendi
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-2 flex w-full flex-col gap-2">
       <Button
@@ -52,11 +69,48 @@ function ModalActions({
   );
 }
 
+function SessionModalContent({
+  sessionTitle,
+  impact,
+  errorMessage,
+}: {
+  sessionTitle: string;
+  impact: SessionDeletionImpact | null;
+  errorMessage?: string | null;
+}) {
+  const title = errorMessage ? 'Não é possível excluir a sessão' : 'Excluir sessão?';
+
+  return (
+    <div className="flex flex-col gap-2">
+      <h2 id="delete-session-title" className="text-xl font-bold text-ink">
+        {title}
+      </h2>
+      <p className="text-base font-semibold break-words text-brand-900">{sessionTitle}</p>
+      {errorMessage ? (
+        <div role="alert" className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
+          <p className="text-sm font-medium text-danger leading-relaxed">{errorMessage}</p>
+        </div>
+      ) : (
+        <div className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
+          <p className="text-sm font-medium text-danger leading-relaxed">
+            Atenção: esta ação é irreversível e excluirá permanentemente esta sessão e todos os seus
+            dados vinculados:
+            <strong> {impact?.papeis ?? 0} papéis atribuídos</strong>,
+            <strong> {impact?.chamada ?? 0} registros de chamada</strong> e
+            <strong> {impact?.avaliacoes ?? 0} avaliações</strong>.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DeleteSessionModal({
   sessionTitle,
   impact,
   isOpen,
   isLoading,
+  errorMessage,
   onConfirm,
   onCancel,
 }: DeleteModalProps) {
@@ -83,22 +137,17 @@ export function DeleteSessionModal({
 
         <div className="flex flex-col items-center gap-4 text-center">
           <DeleteIcon />
-          <div className="flex flex-col gap-2">
-            <h2 id="delete-session-title" className="text-xl font-bold text-ink">
-              Excluir sessão?
-            </h2>
-            <p className="text-base font-semibold break-words text-brand-900">{sessionTitle}</p>
-            <div className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
-              <p className="text-sm font-medium text-danger leading-relaxed">
-                Atenção: esta ação é irreversível e excluirá permanentemente esta sessão e todos os
-                seus dados vinculados:
-                <strong> {impact?.papeis ?? 0} papéis atribuídos</strong>,
-                <strong> {impact?.chamada ?? 0} registros de chamada</strong> e
-                <strong> {impact?.avaliacoes ?? 0} avaliações</strong>.
-              </p>
-            </div>
-          </div>
-          <ModalActions isLoading={isLoading} onConfirm={onConfirm} onCancel={onCancel} />
+          <SessionModalContent
+            sessionTitle={sessionTitle}
+            impact={impact}
+            errorMessage={errorMessage}
+          />
+          <ModalActions
+            isBlocked={Boolean(errorMessage)}
+            isLoading={isLoading}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+          />
         </div>
       </div>
     </div>
