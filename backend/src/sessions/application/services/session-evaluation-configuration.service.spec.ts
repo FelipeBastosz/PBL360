@@ -51,4 +51,30 @@ describe('SessionEvaluationConfigurationService', () => {
       ),
     ).rejects.toBeInstanceOf(UnprocessableEntityError);
   });
+
+  it('delegates authorization to SessionAccessService.assertTutorCanAccessSession on getFormula', async () => {
+    const queryMock = jest.fn().mockResolvedValue([
+      { isDefault: true, version: 1, type: 'CRITERIOS', weight: 70 },
+      { isDefault: true, version: 1, type: 'PAPEL', weight: 30 },
+    ]);
+    const dataSource = {
+      manager: { query: queryMock },
+    } as unknown as DataSource;
+    const access = {
+      assertTutorCanAccessSession: jest.fn().mockResolvedValue({ id: 'session-1' }),
+    } as unknown as SessionAccessService;
+    const service = new SessionEvaluationConfigurationService(dataSource, access);
+
+    const result = await service.getFormula('session-1', 'co-tutor-1');
+
+    expect(access.assertTutorCanAccessSession).toHaveBeenCalledWith('session-1', 'co-tutor-1');
+    expect(result).toEqual({
+      padrao: true,
+      versao: null,
+      componentes: [
+        { tipo: 'CRITERIOS', peso: 70 },
+        { tipo: 'PAPEL', peso: 30 },
+      ],
+    });
+  });
 });
