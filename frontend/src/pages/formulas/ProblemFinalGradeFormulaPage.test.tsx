@@ -127,4 +127,22 @@ describe('ProblemFinalGradeFormulaPage', () => {
 
     expect(screen.getByRole('button', { name: /Restaurar padrão/i })).toBeInTheDocument();
   });
+
+  it('renders empty state when there are no sessions in the problem', async () => {
+    vi.mocked(formulaService.getFinalGrade).mockResolvedValue({
+      padrao: true,
+      versao: null,
+      sessoes: [],
+    });
+
+    renderPage();
+
+    expect(
+      await screen.findByText('Nenhuma sessão cadastrada para este problema.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Cadastre sessões para definir os pesos da nota final.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Salvar fórmula' })).not.toBeInTheDocument();
+  });
 });

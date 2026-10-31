@@ -3,26 +3,24 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
-import type { FinalGradeSessionWeight } from '@/types/formula';
 import { ProblemFormulaHeader } from './components/ProblemFormulaHeader';
 import { SessionWeightRow } from './components/SessionWeightRow';
 import { useProblemFormulaViewModel } from './hooks/useProblemFormulaViewModel';
 
-const SECONDARY_BTN =
-  'w-full rounded-2xl border border-black/5 bg-white py-3.5 text-sm font-semibold text-brand-900 shadow-xs transition-colors hover:bg-brand-50 disabled:opacity-50';
-
-function ProblemFormulaLoading() {
+function FormulaEmptyState() {
   return (
-    <div className="flex min-h-dvh flex-col bg-surface">
-      <ProblemFormulaHeader />
-      <div className="mt-16 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
-      </div>
+    <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-black/5 bg-white p-8 text-center shadow-xs">
+      <p className="text-base font-semibold text-ink">
+        Nenhuma sessão cadastrada para este problema.
+      </p>
+      <p className="mt-1 text-sm text-muted">
+        Cadastre sessões para definir os pesos da nota final.
+      </p>
     </div>
   );
 }
 
-function CalculationTypeBadge({ isSimpleAverage }: { isSimpleAverage: boolean }) {
+function FormulaCalculationBadge({ isSimpleAverage }: { isSimpleAverage: boolean }) {
   return (
     <div className="flex items-center justify-between rounded-xl border border-black/5 bg-white p-4 shadow-xs">
       <span className="text-sm font-bold text-ink">Tipo de cálculo:</span>
@@ -38,67 +36,50 @@ function CalculationTypeBadge({ isSimpleAverage }: { isSimpleAverage: boolean })
   );
 }
 
-function SessionWeightsList({
-  sessions,
-  methods,
-  totalWeight,
-  onWeightChange,
-}: {
-  sessions: FinalGradeSessionWeight[];
-  methods: Record<string, string>;
-  totalWeight: number;
-  onWeightChange: (sessaoId: string, weight: number) => void;
-}) {
-  return (
-    <div className="overflow-hidden rounded-[18px] border border-black/5 bg-white shadow-xs">
-      {sessions.map((session) => {
-        const pct =
-          totalWeight > 0
-            ? ((session.peso / totalWeight) * 100).toFixed(1).replace('.', ',')
-            : '0,0';
-        return (
-          <SessionWeightRow
-            key={session.sessaoId}
-            session={session}
-            percentage={`${pct}%`}
-            method={methods[session.sessaoId]}
-            onChange={(w) => onWeightChange(session.sessaoId, w)}
-          />
-        );
-      })}
-    </div>
-  );
-}
+type ContentProps = {
+  vm: ReturnType<typeof useProblemFormulaViewModel>;
+};
 
-function ProblemFormulaActions({
-  isRestoring,
-  isSaving,
-  hasSessions,
-  onRestore,
-  onSave,
-}: {
-  isRestoring: boolean;
-  isSaving: boolean;
-  hasSessions: boolean;
-  onRestore: () => void;
-  onSave: () => void;
-}) {
+function FormulaContent({ vm }: ContentProps) {
   return (
     <>
-      <button
+      <FormulaCalculationBadge isSimpleAverage={vm.isSimpleAverage} />
+
+      <div className="overflow-hidden rounded-[18px] border border-black/5 bg-white shadow-xs">
+        {vm.sessions.map((session) => {
+          const pct =
+            vm.totalWeight > 0
+              ? ((session.peso / vm.totalWeight) * 100).toFixed(1).replace('.', ',')
+              : '0,0';
+          return (
+            <SessionWeightRow
+              key={session.sessaoId}
+              session={session}
+              percentage={`${pct}%`}
+              method={vm.methods[session.sessaoId]}
+              onChange={(w) => vm.setWeight(session.sessaoId, w)}
+            />
+          );
+        })}
+      </div>
+
+      <Button
         type="button"
-        disabled={isRestoring || isSaving}
-        onClick={onRestore}
-        className={SECONDARY_BTN}
+        variant="outline"
+        disabled={vm.isRestoring || vm.isSaving}
+        isLoading={vm.isRestoring}
+        onClick={vm.restore}
+        className="h-12 w-full rounded-2xl border-brand-900 bg-white font-semibold text-brand-900 hover:bg-brand-50"
       >
-        Restaurar padrão (Média simples)
-      </button>
+        Restaurar padrão
+      </Button>
 
       <div className="mt-2">
         <Button
-          onClick={onSave}
-          disabled={!hasSessions || isSaving}
-          isLoading={isSaving}
+          type="button"
+          onClick={vm.save}
+          disabled={vm.isSaving}
+          isLoading={vm.isSaving}
           className="w-full py-4 text-base font-bold shadow-lg"
         >
           Salvar fórmula
@@ -113,30 +94,21 @@ export function ProblemFinalGradeFormulaPage() {
   const vm = useProblemFormulaViewModel(roomId, problemId);
 
   if (vm.isLoading) {
-    return <ProblemFormulaLoading />;
+    return (
+      <div className="flex min-h-dvh flex-col bg-surface">
+        <ProblemFormulaHeader />
+        <div className="mt-16 flex justify-center">
+          <Spinner className="size-8 text-brand-900" />
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="flex min-h-dvh flex-col bg-surface pb-16">
       <ProblemFormulaHeader />
-
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4')}>
-        <CalculationTypeBadge isSimpleAverage={vm.isSimpleAverage} />
-
-        <SessionWeightsList
-          sessions={vm.sessions}
-          methods={vm.methods}
-          totalWeight={vm.totalWeight}
-          onWeightChange={vm.setWeight}
-        />
-
-        <ProblemFormulaActions
-          isRestoring={vm.isRestoring}
-          isSaving={vm.isSaving}
-          hasSessions={vm.sessions.length > 0}
-          onRestore={vm.restore}
-          onSave={vm.save}
-        />
+        {vm.sessions.length === 0 ? <FormulaEmptyState /> : <FormulaContent vm={vm} />}
       </main>
     </div>
   );
