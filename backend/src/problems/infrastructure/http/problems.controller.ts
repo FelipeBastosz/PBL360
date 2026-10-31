@@ -9,6 +9,7 @@ import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.d
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { toIsoDate } from '@/shared/dates/brazilian-date';
 
 import { CreateProblemDto } from '../../application/dtos/create-problem.dto';
 import type { ProblemDeletionImpactDto } from '../../application/dtos/problem-deletion-impact.dto';
@@ -57,8 +58,8 @@ export class ProblemsController {
       authorId,
       title: dto.titulo,
       description: dto.descricao,
-      startDate: dto.dataInicio ?? null,
-      endDate: dto.dataFim ?? null,
+      startDate: dto.dataInicio ? toIsoDate(dto.dataInicio) : null,
+      endDate: dto.dataFim ? toIsoDate(dto.dataFim) : null,
     });
 
     return toProblemResponse(problem);

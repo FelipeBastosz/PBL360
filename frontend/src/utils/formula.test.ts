@@ -30,10 +30,10 @@ describe('formatWeight', () => {
 });
 
 describe('componentName', () => {
-  it('falls back to the fixed name of the problem components', () => {
-    expect(componentName({ tipo: 'PARES', referenciaId: null, nome: null, peso: 0 })).toBe(
-      'Avaliação por Pares',
-    );
+  it('falls back to the name of the session average component', () => {
+    expect(
+      componentName({ tipo: 'MEDIA_SESSOES', referenciaId: null, nome: null, peso: 100 }),
+    ).toBe('Média das Sessões');
   });
 });
 
@@ -53,14 +53,11 @@ describe('missingComponents', () => {
     ]);
   });
 
-  it('offers the problem components that are not in the final formula', () => {
+  it('offers no extra components after the session average is configured', () => {
     const current: FormulaComponent[] = [
       { tipo: 'MEDIA_SESSOES', referenciaId: null, nome: 'Média das Sessões', peso: 100 },
     ];
 
-    expect(missingComponents('PROBLEMA', current, []).map((option) => option.tipo)).toEqual([
-      'AUTOAVALIACAO',
-      'PARES',
-    ]);
+    expect(missingComponents('PROBLEMA', current, [])).toEqual([]);
   });
 });

@@ -1,5 +1,8 @@
-import { screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AppHeader } from './AppHeader';
+import { AuthContext } from '@/contexts/authContext';
 import { ApiError } from '@/services/apiError';
 import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
@@ -55,5 +58,38 @@ describe('AppHeader', () => {
 
     expect(await screen.findByRole('button', { name: 'Entrar' })).toBeInTheDocument();
     expect(sessionStore.getToken()).toBeNull();
+  });
+
+  it('renders title, subtitle and back link instead of logo when provided', () => {
+    render(
+      <AuthContext.Provider
+        value={{
+          user: null,
+          isAuthenticated: false,
+          login: vi.fn(),
+          logout: vi.fn(),
+        }}
+      >
+        <MemoryRouter>
+          <AppHeader
+            title="Problema 1 - Prontuário Eletrônico"
+            subtitle="Turma A"
+            backUrl="/turmas/room-1/problemas/prob-1/sessoes/sess-1"
+          />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Problema 1 - Prontuário Eletrônico',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Turma A')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /voltar para a sessão/i })).toHaveAttribute(
+      'href',
+      '/turmas/room-1/problemas/prob-1/sessoes/sess-1',
+    );
   });
 });

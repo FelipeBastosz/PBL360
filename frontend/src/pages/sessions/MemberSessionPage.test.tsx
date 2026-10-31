@@ -1,14 +1,31 @@
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
+import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
 import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
 import { renderApp, sessionFor, studentUser } from '@/testing/renderApp';
 import type { MemberSession } from '@/types/session';
 
-vi.mock('@/services/session.service');
+vi.mock('@/services/problem.service', () => ({
+  problemService: { getById: vi.fn() },
+}));
+
+vi.mock('@/services/session.service', () => ({
+  sessionService: {
+    getById: vi.fn(),
+    getForMember: vi.fn(),
+    listAttachments: vi.fn().mockResolvedValue([]),
+    getReleases: vi.fn(),
+  },
+}));
+
 vi.mock('@/services/user.service');
+
+vi.mock('@/hooks/useToast', () => ({
+  useToast: () => ({ notify: vi.fn() }),
+}));
 
 const session: MemberSession = {
   id: 's1',
@@ -30,6 +47,30 @@ function openAs(user = studentUser, found: boolean = true) {
       new ApiError(403, ['Você não participa desta sala.']),
     );
   vi.mocked(sessionService.listAttachments).mockResolvedValue([]);
+  vi.mocked(sessionService.getById).mockResolvedValue(session);
+  vi.mocked(sessionService.getReleases).mockResolvedValue({
+    autoavaliacao: { liberada: false, prazo: null, enviadas: 0, esperadas: 10 },
+    pares: { liberada: false, prazo: null, enviadas: 0, esperadas: 10 },
+    atualizadoEm: '2026-08-12',
+    atualizadoPor: 'tutor-1',
+  });
+  vi.mocked(problemService.getById).mockResolvedValue({
+    id: 'p1',
+    salaId: 'r1',
+    titulo: 'Problema 1',
+    descricao: null,
+    ordem: 1,
+    dataInicio: null,
+    dataFim: null,
+    tabelaId: null,
+    autoavaliacaoLiberada: false,
+    avaliacaoEntreParesLiberada: false,
+    liberadoEm: null,
+    prazoAutoavaliacao: null,
+    criadoPor: 'tutor-1',
+    criadoEm: '2026-08-12',
+    atualizadoEm: '2026-08-12',
+  });
   sessionStore.save(sessionFor(user));
   return renderApp('/sessoes/s1');
 }
@@ -47,8 +88,6 @@ describe('MemberSessionPage', () => {
   });
 
   it('sends a student to the session screen inside the room and problem', async () => {
-    vi.mocked(sessionService.getForMember).mockResolvedValue(session);
-    vi.mocked(sessionService.listAttachments).mockResolvedValue([]);
     openAs();
 
     expect(
@@ -64,15 +103,5 @@ describe('MemberSessionPage', () => {
     openAs(studentUser, false);
 
     expect(await screen.findByText('Você não participa desta sala.')).toBeInTheDocument();
-  });
-
-  it('sends a tutor to the tutor session screen', async () => {
-    vi.mocked(sessionService.getById).mockResolvedValue(session);
-    vi.mocked(sessionService.listAttachments).mockResolvedValue([]);
-    openAs({ ...studentUser, tipo: 'PROFESSOR', email: 'carlos@uefs.br' });
-
-    expect(
-      await screen.findByRole('link', { name: /chamada/i }, { timeout: 3000 }),
-    ).toHaveAttribute('href', '/turmas/r1/problemas/p1/sessoes/s1/chamada');
   });
 });

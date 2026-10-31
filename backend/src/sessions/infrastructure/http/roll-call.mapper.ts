@@ -7,6 +7,7 @@ import {
   type RollCallStudentResponseDto,
 } from '../../application/dtos/roll-call.dto';
 import type { AttendanceEntry, RollCall, RollCallStudent } from '../../domain/roll-call/roll-call';
+import { toBrazilianDate } from '@/shared/dates/brazilian-date';
 
 export const toAttendanceEntries = (dto: RecordRollCallDto): AttendanceEntry[] =>
   dto.registros.map((record) => ({
@@ -29,7 +30,7 @@ export const toRollCallResponse = (rollCall: RollCall): RollCallResponseDto => (
   sessaoId: rollCall.sessionId,
   origem: DOMAIN_TO_ROLL_CALL_ORIGIN[rollCall.origin],
   sessaoReferencia: rollCall.referenceSession
-    ? { id: rollCall.referenceSession.id, data: rollCall.referenceSession.date }
+    ? { id: rollCall.referenceSession.id, data: toBrazilianDate(rollCall.referenceSession.date)! }
     : null,
   registradaEm: rollCall.recordedAt,
   lugares: rollCall.seats,

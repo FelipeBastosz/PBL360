@@ -10,6 +10,8 @@ interface AdjustmentBody {
   justificativa: string;
   autor: { id: string; nome: string };
   ajustadoEm: string;
+  autorId?: string;
+  criadoEm?: string;
 }
 
 interface AdjustmentResponseBody {
@@ -115,7 +117,7 @@ describe('Self-assessment adjustments (e2e)', () => {
   it('adjusts the self-assessment keeping the original score and the latest-first history', async () => {
     const first = await api(app, tutor)
       .post(adjustmentsPath(), { novaNota: 9.25, justificativa: `  ${justificativa}  ` })
-      .expect(201);
+      .expect(200);
     expect(first.body as AdjustmentResponseBody).toMatchObject({
       alunoId: student.id,
       notaOriginal: 8.5,
@@ -124,13 +126,14 @@ describe('Self-assessment adjustments (e2e)', () => {
         valorAnterior: 8.5,
         valorNovo: 9.25,
         justificativa,
+        autorId: tutor.id,
         autor: { id: tutor.id, nome: 'Usuário de Teste' },
       },
     });
 
     await api(app, tutor)
       .post(adjustmentsPath(), { novaNota: 6, justificativa: 'Segunda revisão da nota.' })
-      .expect(201);
+      .expect(200);
 
     const history = await api(app, tutor).get(adjustmentsPath()).expect(200);
     const body = history.body as HistoryBody;
@@ -157,7 +160,7 @@ describe('Self-assessment adjustments (e2e)', () => {
       .post(adjustmentsPath(), { novaNota: 9, justificativa: 'a'.repeat(501) })
       .expect(422);
 
-    await api(app, tutor).post(adjustmentsPath(), { novaNota: 9, justificativa }).expect(201);
+    await api(app, tutor).post(adjustmentsPath(), { novaNota: 9, justificativa }).expect(200);
     await api(app, tutor).post(adjustmentsPath(), { novaNota: 9, justificativa }).expect(422);
   });
 
@@ -194,6 +197,68 @@ describe('Self-assessment adjustments (e2e)', () => {
       .post(adjustmentsPath(), { novaNota: 9, justificativa })
       .expect(403);
     await api(app).get(adjustmentsPath()).expect(401);
+  });
+
+  it('validates tipo parameter returning 400 when invalid in POST and GET', async () => {
+    await api(app, tutor)
+      .post(adjustmentsPath(), { novaNota: 9, justificativa, tipo: 'XYZ' })
+      .expect(400);
+
+    await api(app, tutor).get(`${adjustmentsPath()}?tipo=XYZ`).expect(400);
+  });
+
+  it('handles peer assessment adjustments: blocks while release is open and keeps original score immutable after close', async () => {
+    const peerStudent = draftStudent;
+    // Insert peer evaluations for peerStudent
+    await db.query(
+      `INSERT INTO evaluations (evaluator_id, student_id, problem_id, session_id, performance_table_id, type, status, submitted_at, session_score, created_by)
+       VALUES ($1, $2, (SELECT problem_id FROM sessions WHERE id = $3), $3, (SELECT performance_table_id FROM sessions WHERE id = $3), 'PEER_ASSESSMENT', 'SUBMITTED', NOW(), 7.55, $1);`,
+      [student.id, peerStudent.id, sessionId],
+    );
+
+    // When peer release is open, adjustments are blocked with 409
+    await db.query('UPDATE sessions SET peer_eval_released = true WHERE id = $1;', [sessionId]);
+    const blocked = await api(app, tutor)
+      .post(adjustmentsPath(peerStudent.id), { novaNota: 8.5, justificativa, tipo: 'PARES' })
+      .expect(409);
+    expect((blocked.body as { message: string }).message).toBe(
+      'A avaliação entre pares ainda não foi finalizada.',
+    );
+
+    const draftHistory = await api(app, tutor)
+      .get(`${adjustmentsPath(peerStudent.id)}?tipo=PARES`)
+      .expect(200);
+    expect(draftHistory.body as HistoryBody).toEqual({
+      notaOriginal: null,
+      notaVigente: null,
+      ajustes: [],
+    });
+
+    // Close peer release
+    await db.query('UPDATE sessions SET peer_eval_released = false WHERE id = $1;', [sessionId]);
+
+    // Now adjustment is accepted; original score uses presentGrade (7.55 -> 7.6)
+    const adjusted = await api(app, tutor)
+      .post(adjustmentsPath(peerStudent.id), { novaNota: 8.5, justificativa, tipo: 'PARES' })
+      .expect(200);
+    expect(adjusted.body as AdjustmentResponseBody).toMatchObject({
+      alunoId: peerStudent.id,
+      notaOriginal: 7.6,
+      notaVigente: 8.5,
+      ajuste: {
+        valorAnterior: 7.6,
+        valorNovo: 8.5,
+      },
+    });
+
+    // Check history reflects the immutable original score
+    const history = await api(app, tutor)
+      .get(`${adjustmentsPath(peerStudent.id)}?tipo=PARES`)
+      .expect(200);
+    expect(history.body as HistoryBody).toMatchObject({
+      notaOriginal: 7.6,
+      notaVigente: 8.5,
+    });
   });
 
   it('requires exactly one adjustment target in the database', async () => {

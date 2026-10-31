@@ -36,6 +36,7 @@ export interface PeerAssessmentSessionInput {
   release: EvaluationRelease;
   receivedScores: number[];
   now: Date;
+  adjustedScore?: number | null;
 }
 
 const isOpen = (release: EvaluationRelease, now: Date): boolean =>
@@ -73,6 +74,9 @@ export function calculatePeerAssessmentSession(
 ): EvaluationComponentResult {
   const excluded = excludedByAttendance(input.attendance);
   if (excluded) return excluded;
+  if (input.adjustedScore !== undefined && input.adjustedScore !== null) {
+    return { grade: input.adjustedScore, situation: 'AVALIADA' };
+  }
   if (isOpen(input.release, input.now)) return withoutData('PENDENTE');
   const average = averageOf(input.receivedScores);
   if (average !== null) return { grade: average, situation: 'AVALIADA' };

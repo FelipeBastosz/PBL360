@@ -3,13 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type EntityManager, Repository } from 'typeorm';
 
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
-import { ConflictError } from '@/shared/errors/application.error';
 
+import { deleteProblemTransactionally } from './problem-deletion.persistence';
+import { readProblemDeletionImpact } from './problem-deletion-impact.queries';
 import { updateProblemDetails } from './problem-update.persistence';
 
 import { Problem } from '../../domain/entities/problem.entity';
 import type {
   ProblemRepository,
+  ProblemDeletionImpact,
   UpdateProblemDetails,
 } from '../../domain/repositories/problem.repository';
 
@@ -69,6 +71,13 @@ export class PgProblemRepository implements ProblemRepository {
     return row ? this.toEntity(row) : null;
   }
 
+  async listSessions(problemId: string): Promise<Array<{ id: string; title: string }>> {
+    return this.problems.query(
+      `SELECT id, title FROM sessions WHERE problem_id = $1 ORDER BY order_index, id;`,
+      [problemId],
+    );
+  }
+
   async findByRoomId(roomId: string): Promise<Problem[]> {
     const rows = await this.problems.query<ProblemRow[]>(
       `SELECT ${PROBLEM_COLUMNS}
@@ -97,6 +106,10 @@ export class PgProblemRepository implements ProblemRepository {
     return Number(firstRowOrNull(rows)?.count ?? 0);
   }
 
+  getDeletionImpact(problemId: string): Promise<ProblemDeletionImpact> {
+    return readProblemDeletionImpact(this.problems.manager, problemId);
+  }
+
   updateDetails(input: UpdateProblemDetails): Promise<Problem> {
     return this.problems.manager.transaction(async (manager) => {
       await updateProblemDetails(manager, input);
@@ -116,51 +129,9 @@ export class PgProblemRepository implements ProblemRepository {
     });
   }
 
-  async delete(id: string, roomId: string): Promise<void> {
-    await this.problems.manager.transaction(async (manager): Promise<void> => {
-      await manager.query(`SELECT id FROM rooms WHERE id = $1 FOR UPDATE;`, [roomId]);
-      const targetRows = await manager.query<Array<{ orderIndex: number }>>(
-        `SELECT order_index AS "orderIndex" FROM problems WHERE id = $1 AND room_id = $2 FOR UPDATE;`,
-        [id, roomId],
-      );
-
-      const target = firstRowOrNull(targetRows);
-      if (!target) {
-        return;
-      }
-
-      if (await this.hasSessionsInTransaction(manager, id)) {
-        throw new ConflictError('O problema possui sessões e não pode ser excluído.');
-      }
-
-      const orderIndex = Number(target.orderIndex);
-
-      await manager.query(`DELETE FROM problems WHERE id = $1 AND room_id = $2;`, [id, roomId]);
-      await this.decrementFollowingOrders(manager, roomId, orderIndex);
-    });
-  }
-
-  private async hasSessionsInTransaction(
-    manager: EntityManager,
-    problemId: string,
-  ): Promise<boolean> {
-    const rows = await manager.query<Array<{ exists: boolean }>>(
-      `SELECT EXISTS (SELECT 1 FROM sessions WHERE problem_id = $1) AS exists;`,
-      [problemId],
-    );
-    return firstRowOrNull(rows)?.exists ?? false;
-  }
-
-  private async decrementFollowingOrders(
-    manager: EntityManager,
-    roomId: string,
-    orderIndex: number,
-  ): Promise<void> {
-    await manager.query(
-      `UPDATE problems
-       SET order_index = order_index - 1
-       WHERE room_id = $1 AND order_index > $2;`,
-      [roomId, orderIndex],
+  delete(id: string, roomId: string): Promise<void> {
+    return this.problems.manager.transaction((manager) =>
+      deleteProblemTransactionally(manager, id, roomId),
     );
   }
 

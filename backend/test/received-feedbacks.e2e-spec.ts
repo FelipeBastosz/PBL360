@@ -158,7 +158,7 @@ describe('Received feedbacks (e2e)', () => {
     expect(await db.query<unknown[]>('SELECT * FROM student_session_feedback_reads;')).toEqual([]);
   });
 
-  it('returns an identified tutor, hides scores and shares the first read across both endpoints', async () => {
+  it('returns an identified tutor and the submitted score and shares the first read across both endpoints', async () => {
     const id = await feedback('SESSAO', student, 9);
     await createEvaluation();
     const first = await api(app, student).get(sessionPath()).expect(200);
@@ -168,12 +168,14 @@ describe('Received feedbacks (e2e)', () => {
       autor: { id: tutor.id, nome: 'Usuário de Teste' },
       novo: true,
       editadoEm: null,
+      nota: 8,
     });
     expect(Object.keys(first.body as FeedbackBody).sort()).toEqual([
       'autor',
       'criadoEm',
       'editadoEm',
       'id',
+      'nota',
       'novo',
       'texto',
     ]);
@@ -192,21 +194,22 @@ describe('Received feedbacks (e2e)', () => {
     const body = response.body as ProblemBody;
     expect(body.individual).toMatchObject({
       id: individualId,
-      nota: 0,
+      nota: null,
       novo: true,
       autor: { id: tutor.id },
     });
     expect(body.geral).toMatchObject({ id: generalId, novo: true });
-    expect(body.geral).not.toHaveProperty('nota');
+    expect(body.geral?.nota).toBeNull();
     expect(body.sessoes.map((item) => item.sessaoId)).toEqual([sessionId, laterSessionId]);
     expect(body.sessoes[0]).toMatchObject({
       rotulo: 'Anterior',
-      data: '2099-10-10',
+      data: '10-10-2099',
       feedback: null,
     });
     expect(await views()).toHaveLength(2);
     await createEvaluation();
     const visible = await api(app, student).get(problemPath()).expect(200);
+    expect((visible.body as ProblemBody).individual?.nota).toBe(0);
     expect((visible.body as ProblemBody).sessoes[0]?.feedback?.novo).toBe(true);
     const direct = await api(app, student).get(sessionPath()).expect(200);
     expect((direct.body as FeedbackBody).novo).toBe(false);
@@ -286,6 +289,7 @@ describe('Received feedbacks (e2e)', () => {
 
   it('keeps the first read after editing while showing the current author and text', async () => {
     const id = await feedback('ALUNO', student, 8);
+    await createEvaluation();
     await api(app, student).get(problemPath()).expect(200);
     const originalViews = await views();
     const editor = await insertUser(app, db, 'editor@uefs.br');
@@ -341,7 +345,13 @@ describe('Received feedbacks (e2e)', () => {
   it('returns null feedbacks and an empty array when the problem has no sessions', async () => {
     await db.query('DELETE FROM sessions WHERE problem_id = $1;', [problemId]);
     const response = await api(app, student).get(problemPath()).expect(200);
-    expect(response.body as ProblemBody).toEqual({ individual: null, geral: null, sessoes: [] });
+    expect(response.body as ProblemBody).toEqual({
+      notaFinal: null,
+      feedbacks: [],
+      individual: null,
+      geral: null,
+      sessoes: [],
+    });
     expect(await views()).toHaveLength(0);
   });
 

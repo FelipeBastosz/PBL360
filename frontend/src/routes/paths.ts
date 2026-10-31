@@ -37,6 +37,7 @@ export const ROUTES = {
   sessionPlanningPoker: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/planning-poker',
   sessionEvaluationsList: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar',
   sessionEvaluationHistory: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/historico',
+  sessionReport: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/relatorio',
   studentEvaluation: '/sessoes/:sessionId/avaliacao/:studentId',
   sessionStudentEvaluation:
     '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/avaliar/:studentId',

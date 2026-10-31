@@ -47,5 +47,8 @@ describe('SessionReport Swagger Docs', () => {
     const formatParam = parameters?.find((p) => p.name === 'formato');
     expect(formatParam).toBeDefined();
     expect(formatParam?.in).toBe('query');
+    expect(parameters?.map((parameter) => parameter.name)).toEqual(
+      expect.arrayContaining(['ocultarNome', 'mostrarFeedBack', 'mostrarMarcacoes']),
+    );
   });
 });

@@ -6,11 +6,7 @@ import {
   type EvaluationComponentResult,
   type EvaluationRelease,
 } from '../../../domain/entities/evaluation-component-grade';
-import {
-  presentGrade,
-  type GradeAttendance,
-  type GradeComponent,
-} from '../../../domain/entities/grade-calculator';
+import { presentGrade, type GradeAttendance } from '../../../domain/entities/grade-calculator';
 import type { GradeRow } from '../../../domain/repositories/grades.repository';
 import type { EvaluationComponentResponse } from '../../dtos/grades-response.dto';
 import type { SessionGradeResponse, StudentSessionResponse } from './get-problem-grades.helper';
@@ -21,6 +17,7 @@ export interface EvaluationComponentContext {
   selfScores: GradeRow[];
   peerScores: GradeRow[];
   pokerScores: GradeRow[];
+  peerAdjustments?: GradeRow[];
   now: Date;
 }
 
@@ -44,17 +41,6 @@ export function summarizeEvaluationComponents(
     self: calculateProblemEvaluationComponent(sessions.map((session) => session.self)),
     peer: calculateProblemEvaluationComponent(sessions.map((session) => session.peer)),
   };
-}
-
-export function withEvaluationValues(
-  components: GradeComponent[],
-  evaluations: SessionEvaluationComponents,
-): GradeComponent[] {
-  return components.map((component) => {
-    if (component.type === 'AUTOAVALIACAO') return { ...component, value: evaluations.self.grade };
-    if (component.type === 'PARES') return { ...component, value: evaluations.peer.grade };
-    return component;
-  });
 }
 
 export function withSessionEvaluations(
@@ -106,10 +92,11 @@ function peerComponent(
     const peer = calculatePokerPeerSession({ attendance: shared.attendance, finalGrade });
     return { peer, peerSource: 'PLANNING_POKER' };
   }
+  const adjustedScore = numberOrNull(ctx.peerAdjustments?.find(belongs)?.score);
   const receivedScores = ctx.peerScores.filter(belongs).map((row) => Number(row.score));
   const release = releaseOf(session, 'peer');
   return {
-    peer: calculatePeerAssessmentSession({ ...shared, release, receivedScores }),
+    peer: calculatePeerAssessmentSession({ ...shared, release, receivedScores, adjustedScore }),
     peerSource: 'FORMULARIO',
   };
 }

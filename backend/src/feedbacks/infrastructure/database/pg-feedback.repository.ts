@@ -7,12 +7,13 @@ import type {
   FeedbackRepository,
   FeedbackRevisionItem,
   FeedbackWithStudent,
+  ProblemFeedbackDetail,
 } from '../../domain/repositories/feedback.repository';
-import type { FeedbackScope } from '../../domain/enums/feedback-scope.enum';
 import {
   CHECK_STUDENT_ENROLLED_QUERY,
   FIND_FEEDBACK_BY_ID_QUERY,
   FIND_GENERAL_PROBLEM_FEEDBACK_QUERY,
+  FIND_PROBLEM_FEEDBACKS_WITH_DETAILS_QUERY,
   FIND_REVISIONS_QUERY,
   FIND_STUDENT_PROBLEM_FEEDBACK_QUERY,
   FIND_STUDENT_SESSION_FEEDBACK_QUERY,
@@ -25,25 +26,13 @@ import {
   toRevisionParams,
   UPDATE_FEEDBACK_QUERY,
 } from './feedback.queries';
-
-interface FeedbackRow {
-  id: string;
-  authorId: string;
-  problemId: string;
-  recipientId: string | null;
-  sessionId: string | null;
-  scope: FeedbackScope;
-  score: string | number | null;
-  text: string;
-  createdAt: Date;
-  editedAt: Date | null;
-}
-
-interface StudentFeedbackRow extends FeedbackRow {
-  studentId: string;
-  studentName: string;
-  feedbackId: string | null;
-}
+import {
+  toFeedbackEntity,
+  toProblemFeedbackDetail,
+  type FeedbackRow,
+  type ProblemFeedbackDetailRow,
+  type StudentFeedbackRow,
+} from './feedback-row.mapper';
 
 @Injectable()
 export class PgFeedbackRepository implements FeedbackRepository {
@@ -173,18 +162,15 @@ export class PgFeedbackRepository implements FeedbackRepository {
     });
   }
 
+  async findProblemFeedbacksWithDetails(problemId: string): Promise<ProblemFeedbackDetail[]> {
+    const rows = await this.dataSource.query<ProblemFeedbackDetailRow[]>(
+      FIND_PROBLEM_FEEDBACKS_WITH_DETAILS_QUERY,
+      [problemId],
+    );
+    return rows.map(toProblemFeedbackDetail);
+  }
+
   private toEntity(row: FeedbackRow): Feedback {
-    const entity = new Feedback();
-    entity.id = row.id;
-    entity.authorId = row.authorId;
-    entity.problemId = row.problemId;
-    entity.recipientId = row.recipientId;
-    entity.sessionId = row.sessionId;
-    entity.scope = row.scope;
-    entity.score = row.score !== null ? Number(row.score) : null;
-    entity.text = row.text;
-    entity.createdAt = row.createdAt;
-    entity.editedAt = row.editedAt;
-    return entity;
+    return toFeedbackEntity(row);
   }
 }

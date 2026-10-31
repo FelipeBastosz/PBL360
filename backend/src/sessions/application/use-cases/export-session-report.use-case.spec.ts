@@ -258,6 +258,43 @@ describe('ExportSessionReportUseCase', () => {
     }
   });
 
+  it('hides student names and omits the feedback section when requested', async () => {
+    await useCase.execute({
+      sessionId: 'sess-1',
+      format: ReportFileFormat.XLSX,
+      tutorId: 'tutor-1',
+      ocultarNome: true,
+      mostrarFeedBack: false,
+    });
+
+    const document: ReportDocument = reportGenerator.generate.mock.calls[0]![0];
+    const tableSection = document.sections[0]!;
+    expect(tableSection.kind).toBe('table');
+    if (tableSection.kind === 'table') {
+      expect(tableSection.rows[0]![0]).toBeNull();
+      expect(tableSection.rows[0]![1]).toBe('2026001');
+      expect(tableSection.rows[0]![7]).toBe(8.72);
+    }
+    expect(document.sections).toHaveLength(1);
+  });
+
+  it('uses the student registration instead of their name in visible feedback labels', async () => {
+    await useCase.execute({
+      sessionId: 'sess-1',
+      format: ReportFileFormat.PDF,
+      tutorId: 'tutor-1',
+      ocultarNome: true,
+    });
+
+    const document: ReportDocument = reportGenerator.generate.mock.calls[0]![0];
+    const feedbackSection = document.sections[1]!;
+    expect(feedbackSection.kind).toBe('text');
+    if (feedbackSection.kind === 'text') {
+      expect(feedbackSection.entries[1]?.label).toBe('2026001 (Autor: Prof. Carlos)');
+      expect(feedbackSection.entries.map((entry) => entry.label)).not.toContain('Ana Souza');
+    }
+  });
+
   it('reflects grade adjustment in calculated score', async () => {
     // Student with an adjusted criterion score from 5.0 to 9.0
     const adjustedData: SessionReportData = {

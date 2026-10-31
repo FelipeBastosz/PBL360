@@ -6,6 +6,17 @@ export interface StudentRoomSummary {
   semester: string;
   totalStudents: number;
   totalProblems: number;
+  tutor?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface TutorRoomSummary {
+  room: Room;
+  totalStudents: number;
+  totalProblems: number;
 }
 
 export interface TutorRoomSummary {
@@ -53,6 +64,8 @@ export interface RoomRepository {
   listTutors(roomId: string): Promise<RoomTutor[]>;
 
   removeTutor(roomId: string, tutorId: string): Promise<boolean>;
+
+  removeStudent(roomId: string, studentId: string): Promise<boolean>;
 
   findForStudent(studentId: string): Promise<StudentRoomSummary[]>;
 

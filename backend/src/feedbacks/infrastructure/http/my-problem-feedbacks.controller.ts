@@ -9,7 +9,10 @@ import { toReceivedProblemResponse } from './received-feedback.mapper';
 import { GetMyProblemFeedbacksSwaggerDocs } from './my-problem-feedbacks.swagger';
 
 @ApiTags('Feedbacks recebidos')
-@Controller('salas/:salaId/problemas/:problemaId/meus-feedbacks')
+@Controller([
+  'salas/:salaId/problemas/:problemaId/meus-feedbacks',
+  'minhas-salas/:salaId/problemas/:problemaId/feedbacks',
+])
 @Roles(UserType.STUDENT)
 export class MyProblemFeedbacksController {
   constructor(private readonly getFeedbacks: GetMyProblemFeedbacksUseCase) {}

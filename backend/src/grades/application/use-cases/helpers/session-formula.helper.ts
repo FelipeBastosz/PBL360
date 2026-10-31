@@ -31,3 +31,34 @@ export function sessionFormulaFor(
     }
   );
 }
+
+export function appendMissingSessionComponents(
+  formulaId: string,
+  components: GradeRow[],
+  sessions: GradeRow[],
+): void {
+  if (
+    !components.some(
+      (component) => component.formula_id === formulaId && component.type === 'SESSAO',
+    )
+  )
+    return;
+  components.push(...missingSessionComponents(formulaId, components, sessions));
+}
+
+function missingSessionComponents(formulaId: string, components: GradeRow[], sessions: GradeRow[]) {
+  const existingIds = new Set(
+    components
+      .filter((component) => component.formula_id === formulaId)
+      .map((component) => component.reference_id),
+  );
+  return sessions
+    .map((session) => String(session.id))
+    .filter((sessionId) => !existingIds.has(sessionId))
+    .map((sessionId) => ({
+      formula_id: formulaId,
+      type: 'SESSAO',
+      reference_id: sessionId,
+      weight: 1,
+    }));
+}

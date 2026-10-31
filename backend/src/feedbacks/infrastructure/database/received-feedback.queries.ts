@@ -1,6 +1,7 @@
 const COLUMNS = `f.id, f.autor_id AS "authorId", u.name AS "authorName",
   f.texto AS text, f.criado_em AS "createdAt", f.editado_em AS "editedAt",
-  f.escopo AS scope, f.sessao_id AS "sessionId", f.nota AS score`;
+  f.escopo AS scope, f.sessao_id AS "sessionId", f.nota AS score,
+  f.problema_id AS "problemId", p.room_id AS "roomId"`;
 
 const SUBMITTED = `EXISTS (
   SELECT 1 FROM evaluations e
@@ -10,6 +11,7 @@ const SUBMITTED = `EXISTS (
 
 export const READ_SESSION_FEEDBACK = `
   SELECT ${COLUMNS} FROM feedback f JOIN users u ON u.id = f.autor_id
+  JOIN problems p ON p.id = f.problema_id
   WHERE f.sessao_id = $1 AND f.destinatario_id = $2 AND f.escopo = 'SESSAO'
     AND ${SUBMITTED}
   ORDER BY f.criado_em DESC, f.id LIMIT 1;
@@ -17,6 +19,7 @@ export const READ_SESSION_FEEDBACK = `
 
 export const READ_PROBLEM_FEEDBACKS = `
   SELECT ${COLUMNS} FROM feedback f JOIN users u ON u.id = f.autor_id
+  JOIN problems p ON p.id = f.problema_id
   WHERE f.problema_id = $1 AND (
     (f.escopo = 'PROBLEMA' AND f.destinatario_id IS NULL)
     OR (f.destinatario_id = $2 AND f.escopo = 'ALUNO')

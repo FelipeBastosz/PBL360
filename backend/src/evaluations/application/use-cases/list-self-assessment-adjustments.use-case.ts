@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   SELF_ASSESSMENT_ADJUSTMENT_REPOSITORY,
+  type AdjustmentTarget,
   type SelfAssessmentAdjustmentRepository,
 } from '../../domain/repositories/self-assessment-adjustment.repository';
 import { EvaluationAccessService } from '../services/evaluation-access.service';
@@ -21,9 +22,13 @@ export class ListSelfAssessmentAdjustmentsUseCase {
     sessionId: string,
     studentId: string,
     authorId: string,
+    tipo?: AdjustmentTarget,
   ): Promise<SelfAssessmentAdjustmentsOutput> {
     await this.access.forStudent(sessionId, studentId, authorId);
-    const history = await this.adjustments.findHistory(sessionId, studentId);
-    return summarizeSelfAssessmentAdjustments(history);
+    const history =
+      tipo !== undefined
+        ? await this.adjustments.findHistory(sessionId, studentId, tipo)
+        : await this.adjustments.findHistory(sessionId, studentId);
+    return summarizeSelfAssessmentAdjustments(history, tipo);
   }
 }

@@ -45,4 +45,7 @@ export const roomService = {
 
   listStudents: (roomId: string) =>
     api.get<RoomStudent[]>(`${BASE}/${roomId}/alunos`).then((r) => r.data),
+
+  leaveRoom: (roomId: string) =>
+    api.delete<void>(`${BASE}/${roomId}/membros/me`).then(() => undefined),
 };
