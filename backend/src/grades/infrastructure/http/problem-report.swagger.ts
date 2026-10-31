@@ -33,6 +33,21 @@ export const ExportProblemReportSwaggerDocs = applyDecorators(
     description: 'Se verdadeiro, oculta os nomes dos alunos e exibe apenas as matrículas.',
     example: false,
   }),
+  ApiQuery({
+    name: 'mostrarFeedback',
+    required: false,
+    type: Boolean,
+    description: 'Se falso ou null, omite a seção de feedbacks do relatório.',
+    example: true,
+  }),
+  ApiQuery({
+    name: 'mostrarMarcacoes',
+    required: false,
+    type: Boolean,
+    description:
+      'Se falso ou null, omite a seção de marcações (tags de comportamento) das sessões.',
+    example: true,
+  }),
   ExportReportFileSwaggerDocs,
   ApiUnauthorizedResponse({ description: 'Sem autenticação.', type: ErrorResponseDto }),
   ApiForbiddenResponse({

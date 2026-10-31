@@ -1,6 +1,7 @@
 import { ReportColumnType, ReportFileFormat } from '@/report-files/domain/report-document';
 import { FeedbackScope } from '@/feedbacks/domain/enums/feedback-scope.enum';
 import type { ProblemFeedbackDetail } from '@/feedbacks/domain/repositories/feedback.repository';
+import type { ProblemObservationTagDetail } from '../../domain/repositories/grades.repository';
 import type { Room } from '@/rooms/domain/entities/room.entity';
 import type { Problem } from '@/problems/domain/entities/problem.entity';
 import type { GradesResponseDto } from '../../dtos/grades-response.dto';
@@ -126,6 +127,23 @@ describe('problem-report-document.helper', () => {
       text: 'Desempenho consistente em todo o problema.',
       createdAt: new Date(),
       editedAt: null,
+    },
+  ];
+
+  const marcacoes: ProblemObservationTagDetail[] = [
+    {
+      studentId: 'aluno-1',
+      sessionId: 'sess-1',
+      sessionTitle: 'Abertura',
+      sessionOrderIndex: 1,
+      tags: ['Participativo', 'Pontual'],
+    },
+    {
+      studentId: 'aluno-2',
+      sessionId: 'sess-1',
+      sessionTitle: 'Abertura',
+      sessionOrderIndex: 1,
+      tags: ['Disperso'],
     },
   ];
 
@@ -364,5 +382,131 @@ describe('problem-report-document.helper', () => {
         },
       ],
     });
+  });
+
+  it('includes observation tags section when marcacoes are provided', () => {
+    const doc = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks,
+      marcacoes,
+      format: ReportFileFormat.PDF,
+    });
+
+    const tagsSection = doc.sections.find((s) => s.title === 'Marcações das sessões');
+    expect(tagsSection).toBeDefined();
+    expect(tagsSection).toEqual({
+      kind: 'table',
+      title: 'Marcações das sessões',
+      columns: [
+        { header: 'Aluno', type: ReportColumnType.TEXT },
+        { header: 'Matrícula', type: ReportColumnType.TEXT },
+        { header: 'Sessão', type: ReportColumnType.TEXT },
+        { header: 'Marcações', type: ReportColumnType.TEXT },
+      ],
+      rows: [
+        ['Ana Souza', '20260001', 'Abertura', 'Participativo, Pontual'],
+        ['Bruno Lima', null, 'Abertura', 'Disperso'],
+      ],
+    });
+  });
+
+  it('formats observation tags table with ocultarNomes: true', () => {
+    const doc = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks,
+      marcacoes,
+      format: ReportFileFormat.PDF,
+      ocultarNomes: true,
+    });
+
+    const tagsSection = doc.sections.find((s) => s.title === 'Marcações das sessões');
+    expect(tagsSection).toEqual({
+      kind: 'table',
+      title: 'Marcações das sessões',
+      columns: [
+        { header: 'Matrícula', type: ReportColumnType.TEXT },
+        { header: 'Sessão', type: ReportColumnType.TEXT },
+        { header: 'Marcações', type: ReportColumnType.TEXT },
+      ],
+      rows: [
+        ['20260001', 'Abertura', 'Participativo, Pontual'],
+        [null, 'Abertura', 'Disperso'],
+      ],
+    });
+  });
+
+  it('omits feedbacks when feedbacks is null or mostrarFeedback is false', () => {
+    const docNull = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks: null,
+      marcacoes,
+      format: ReportFileFormat.PDF,
+    });
+
+    expect(docNull.sections.some((s) => s.title.includes('Feedback'))).toBe(false);
+    expect(docNull.sections.some((s) => s.title === 'Marcações das sessões')).toBe(true);
+
+    const docFalse = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks,
+      marcacoes,
+      format: ReportFileFormat.PDF,
+      mostrarFeedback: false,
+    });
+
+    expect(docFalse.sections.some((s) => s.title.includes('Feedback'))).toBe(false);
+  });
+
+  it('omits marcacoes when marcacoes is null or mostrarMarcacoes is false', () => {
+    const docNull = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks,
+      marcacoes: null,
+      format: ReportFileFormat.PDF,
+    });
+
+    expect(docNull.sections.some((s) => s.title === 'Marcações das sessões')).toBe(false);
+    expect(docNull.sections.some((s) => s.title.includes('Feedback'))).toBe(true);
+
+    const docFalse = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks,
+      marcacoes,
+      format: ReportFileFormat.PDF,
+      mostrarMarcacoes: false,
+    });
+
+    expect(docFalse.sections.some((s) => s.title === 'Marcações das sessões')).toBe(false);
+  });
+
+  it('omits both feedbacks and marcacoes when both flags are false', () => {
+    const doc = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks,
+      marcacoes,
+      format: ReportFileFormat.PDF,
+      mostrarFeedback: false,
+      mostrarMarcacoes: false,
+    });
+
+    expect(doc.sections.map((s) => s.title)).toEqual([
+      'Notas por sessão',
+      'Pendências de avaliação',
+      'Informações do relatório',
+    ]);
   });
 });

@@ -34,15 +34,22 @@ describe('ProblemReportController', () => {
       tutorId: 'tutor-1',
       format: ReportFileFormat.PDF,
       ocultarNomes: undefined,
+      mostrarFeedback: undefined,
+      mostrarMarcacoes: undefined,
     });
     expect(response).toBeInstanceOf(StreamableFile);
   });
 
-  it('delegates report export with ocultarNomes: true', async () => {
+  it('delegates report export with ocultarNomes: true, mostrarFeedback: false, and mostrarMarcacoes: false', async () => {
     const response = await controller.export(
       'room-1',
       'problem-1',
-      { formato: ReportFileFormat.PDF, ocultarNomes: true },
+      {
+        formato: ReportFileFormat.PDF,
+        ocultarNomes: true,
+        mostrarFeedback: false,
+        mostrarMarcacoes: false,
+      },
       'tutor-1',
     );
 
@@ -52,6 +59,8 @@ describe('ProblemReportController', () => {
       tutorId: 'tutor-1',
       format: ReportFileFormat.PDF,
       ocultarNomes: true,
+      mostrarFeedback: false,
+      mostrarMarcacoes: false,
     });
     expect(response).toBeInstanceOf(StreamableFile);
   });
