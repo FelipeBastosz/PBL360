@@ -126,36 +126,11 @@ export const DeleteUserPhotoSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Remove a foto da conta autenticada',
     description:
-      'Remove a foto do usuário logado (apenas professor). Alunos não podem remover foto.',
+      'Remove a foto do usuário logado (professor ou aluno). Idempotente se não houver foto.',
   }),
   ApiNoContentResponse({ description: 'Foto removida com sucesso.' }),
   ApiUnauthorizedResponse({
     description: 'JWT não informado, inválido ou expirado.',
-    type: ErrorResponseDto,
-  }),
-  ApiForbiddenResponse({
-    description: 'Alunos não podem remover a foto de perfil.',
-    type: ErrorResponseDto,
-  }),
-  ApiNotFoundResponse({
-    description: 'Usuário não encontrado.',
-    type: ErrorResponseDto,
-  }),
-);
-
-export const ChangeUserPasswordSwaggerDocs = applyDecorators(
-  ApiBearerAuth(JWT_SECURITY_SCHEME),
-  ApiOperation({
-    summary: 'Altera a senha da conta autenticada',
-    description: 'Valida a senha atual do usuário logado e aplica a nova senha informada.',
-  }),
-  ApiNoContentResponse({ description: 'Senha alterada com sucesso.' }),
-  ApiBadRequestResponse({
-    description: 'Dados inválidos ou tamanhos fora do permitido.',
-    type: ErrorResponseDto,
-  }),
-  ApiUnauthorizedResponse({
-    description: 'Senha atual incorreta ou JWT inválido.',
     type: ErrorResponseDto,
   }),
   ApiNotFoundResponse({

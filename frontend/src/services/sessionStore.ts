@@ -1,4 +1,4 @@
-import type { SessionResponse, UserResponse } from '@/types/auth';
+import type { SessionResponse } from '@/types/auth';
 import { isSessionExpired } from '@/utils/session';
 
 const STORAGE_KEY = 'pbl360.session';
@@ -38,13 +38,6 @@ export const sessionStore = {
     if (session && !isSessionExpired(session.expiraEm)) return session;
     localStorage.removeItem(STORAGE_KEY);
     return null;
-  },
-
-  saveUser(usuario: UserResponse): void {
-    const current = read();
-    if (current) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...current, usuario }));
-    }
   },
 
   getToken(): string | null {

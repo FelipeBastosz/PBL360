@@ -37,7 +37,7 @@ const ITEM_CLASS =
 
 function menuItems(isProfessor: boolean): MenuItem[] {
   return [
-    { label: 'Meu Perfil', Icon: UserIcon, to: ROUTES.myAccount },
+    { label: 'Meu Perfil', Icon: UserIcon },
     { label: 'Minhas Turmas', Icon: BookOpenIcon, to: ROUTES.rooms },
     ...(isProfessor
       ? [

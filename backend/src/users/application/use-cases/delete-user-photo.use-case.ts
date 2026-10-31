@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
+import { NotFoundError } from '@/shared/errors/application.error';
 import {
   USER_PHOTO_REPOSITORY,
   type UserPhotoRepository,
@@ -22,10 +22,6 @@ export class DeleteUserPhotoUseCase {
 
     if (!user) {
       throw new NotFoundError('Usuário não encontrado.');
-    }
-
-    if (user.isStudent()) {
-      throw new ForbiddenError('Alunos não podem remover a foto de perfil.');
     }
 
     await this.photos.deleteByUserId(input.userId);

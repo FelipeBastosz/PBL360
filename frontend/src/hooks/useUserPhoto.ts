@@ -8,23 +8,9 @@ type LoadedPhoto = { userId: string; blob: Blob };
 const loadedPhotos = new Map<string, Blob>();
 const pendingPhotos = new Map<string, Promise<Blob>>();
 
-export function clearUserPhotoCache(userId?: string) {
-  if (userId) {
-    loadedPhotos.delete(userId);
-    pendingPhotos.delete(userId);
-  } else {
-    loadedPhotos.clear();
-    pendingPhotos.clear();
-  }
-}
-
-export function setUserPhotoCache(userId: string, blob: Blob | null) {
-  if (blob) {
-    loadedPhotos.set(userId, blob);
-  } else {
-    loadedPhotos.delete(userId);
-  }
-  pendingPhotos.delete(userId);
+export function clearUserPhotoCache() {
+  loadedPhotos.clear();
+  pendingPhotos.clear();
 }
 
 function loadPhoto(userId: string): Promise<Blob> | null {
