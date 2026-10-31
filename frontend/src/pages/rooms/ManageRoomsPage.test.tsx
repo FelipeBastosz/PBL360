@@ -5,10 +5,16 @@ import type * as Router from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { roomService } from '@/services/room.service';
 import { userService } from '@/services/user.service';
+import { ApiError } from '@/services/apiError';
 import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
 import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import ManageRoomsPage from './ManageRoomsPage';
+
+const mockNotify = vi.fn();
+vi.mock('@/hooks/useToast', () => ({
+  useToast: () => ({ notify: mockNotify }),
+}));
 
 vi.mock('@/services/room.service', () => ({
   roomService: {
@@ -47,7 +53,7 @@ const mockRooms: Room[] = [
     semestre: '2026.2',
     ativo: true,
     criadoEm: '2026-01-01T00:00:00.000Z',
-    professorResponsavelId: '1',
+    professorResponsavelId: 'tutor-1',
   },
   {
     id: 'room-2',
@@ -57,7 +63,7 @@ const mockRooms: Room[] = [
     semestre: '2026.2',
     ativo: true,
     criadoEm: '2026-01-01T00:00:00.000Z',
-    professorResponsavelId: '1',
+    professorResponsavelId: 'tutor-2',
   },
 ];
 
@@ -69,19 +75,6 @@ describe('ManageRoomsPage', () => {
     vi.mocked(userService.getPhoto).mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
   });
 
-  it('shows the photo of the signed-in user in the header', async () => {
-    render(
-      <MemoryRouter>
-        <ManageRoomsPage />
-      </MemoryRouter>,
-    );
-
-    expect(
-      await screen.findByRole('img', { name: 'Foto de Professor Fulano' }),
-    ).toBeInTheDocument();
-    expect(userService.getPhoto).toHaveBeenCalledWith('tutor-1');
-  });
-
   const renderComponent = () => {
     return render(
       <MemoryRouter>
@@ -89,6 +82,15 @@ describe('ManageRoomsPage', () => {
       </MemoryRouter>,
     );
   };
+
+  it('shows the photo of the signed-in user in the header', async () => {
+    renderComponent();
+
+    expect(
+      await screen.findByRole('img', { name: 'Foto de Professor Fulano' }),
+    ).toBeInTheDocument();
+    expect(userService.getPhoto).toHaveBeenCalledWith('tutor-1');
+  });
 
   it('renders room list with action buttons and bottom footer', async () => {
     renderComponent();
@@ -104,7 +106,7 @@ describe('ManageRoomsPage', () => {
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
   });
 
-  it('opens delete confirmation modal when trash icon is clicked', async () => {
+  it('opens delete confirmation modal when owner clicks trash icon', async () => {
     const user = userEvent.setup();
     renderComponent();
 
@@ -116,9 +118,34 @@ describe('ManageRoomsPage', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Excluir turma?' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sim, excluir turma' })).toBeInTheDocument();
   });
 
-  it('deletes room via API and removes card from list on confirmation', async () => {
+  it('opens blocked warning modal when co-tutor clicks trash icon and does not call API', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    expect(await screen.findByText('MI - Algoritmos · TP02')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Excluir MI - Algoritmos · TP02' }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Não é possível excluir a turma' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Você não possui permissão para excluir esta turma. Apenas o professor responsável pode realizar a exclusão.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sim, excluir turma' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Entendi' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(roomService.remove).not.toHaveBeenCalled();
+  });
+
+  it('deletes room via API and notifies with success toast on confirmation', async () => {
     const user = userEvent.setup();
     vi.mocked(roomService.remove).mockResolvedValue(undefined);
 
@@ -135,6 +162,40 @@ describe('ManageRoomsPage', () => {
       expect(roomService.remove).toHaveBeenCalledWith('room-1');
       expect(screen.queryByText('MI - Engenharia de Software · TP01')).not.toBeInTheDocument();
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(mockNotify).toHaveBeenCalledWith({
+        tone: 'success',
+        message: 'Turma excluída com sucesso!',
+      });
+    });
+  });
+
+  it('displays error in modal and triggers error toast when API deletion fails', async () => {
+    const user = userEvent.setup();
+    vi.mocked(roomService.remove).mockRejectedValue(
+      new ApiError(403, ['Apenas o professor responsável pode realizar esta ação.']),
+    );
+
+    renderComponent();
+
+    expect(await screen.findByText('MI - Engenharia de Software · TP01')).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Excluir MI - Engenharia de Software · TP01' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Sim, excluir turma' }));
+
+    await waitFor(() => {
+      expect(mockNotify).toHaveBeenCalledWith({
+        tone: 'error',
+        message: 'Apenas o professor responsável pode realizar esta ação.',
+      });
+      expect(
+        screen.getByRole('heading', { name: 'Não é possível excluir a turma' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Apenas o professor responsável pode realizar esta ação.'),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Entendi' })).toBeInTheDocument();
     });
   });
 

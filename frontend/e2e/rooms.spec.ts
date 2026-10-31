@@ -263,3 +263,158 @@ test.describe('Student Voluntary Room Leave flow', () => {
     expect(leaveRequestCalled).toBe(true);
   });
 });
+
+test.describe('Room Deletion Flow (ManageRoomsPage)', () => {
+  const roomsForManage = [
+    {
+      id: 'sala-1',
+      nome: 'Turma de Engenharia de Software',
+      semestre: '2026.1',
+      codigoDisciplina: 'ES101',
+      codigoSala: 'SALA-01',
+      professorResponsavelId: 'user-tutor-1',
+      ativo: true,
+      criadoEm: '2026-01-10T10:00:00.000Z',
+      totalAlunos: 32,
+      totalProblemas: 4,
+    },
+    {
+      id: 'sala-2',
+      nome: 'Turma de Banco de Dados',
+      semestre: '2026.1',
+      codigoDisciplina: 'BD202',
+      codigoSala: 'SALA-02',
+      professorResponsavelId: 'another-tutor-id',
+      ativo: true,
+      criadoEm: '2026-01-12T10:00:00.000Z',
+      totalAlunos: 25,
+      totalProblemas: 2,
+    },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'pbl360.session',
+        JSON.stringify({
+          token: 'mock-auth-token',
+          expiraEm: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          usuario: {
+            id: 'user-tutor-1',
+            nome: 'Carlos Silva',
+            email: 'carlos@faculdade.edu.br',
+            tipo: 'PROFESSOR',
+            ativo: true,
+          },
+        }),
+      );
+    });
+
+    await page.route('**/api/salas', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(roomsForManage),
+      });
+    });
+
+    await page.goto('/turmas/gerenciar');
+  });
+
+  test('should show blocked warning modal when co-tutor tries to delete room', async ({ page }) => {
+    await expect(
+      page.getByRole('heading', { level: 3, name: 'Turma de Banco de Dados' }),
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Excluir Turma de Banco de Dados' }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByRole('heading', { name: 'Não é possível excluir a turma' }),
+    ).toBeVisible();
+    await expect(
+      dialog.getByText(
+        'Você não possui permissão para excluir esta turma. Apenas o professor responsável pode realizar a exclusão.',
+      ),
+    ).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Sim, excluir turma' })).not.toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Entendi' }).click();
+    await expect(dialog).not.toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 3, name: 'Turma de Banco de Dados' }),
+    ).toBeVisible();
+  });
+
+  test('should allow owner to delete room successfully, remove card and show toast', async ({
+    page,
+  }) => {
+    let deleteCalled = false;
+    await page.route('**/api/salas/sala-1', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        deleteCalled = true;
+        await route.fulfill({ status: 204 });
+      }
+    });
+
+    await page.getByRole('button', { name: 'Excluir Turma de Engenharia de Software' }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Excluir turma?' })).toBeVisible();
+    await expect(
+      dialog.getByText(/esta ação excluirá permanentemente a turma e todos os/i),
+    ).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Sim, excluir turma' }).click();
+
+    await expect(dialog).not.toBeVisible();
+    expect(deleteCalled).toBe(true);
+
+    await expect(page.getByText('Turma excluída com sucesso!')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 3, name: 'Turma de Engenharia de Software' }),
+    ).not.toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 3, name: 'Turma de Banco de Dados' }),
+    ).toBeVisible();
+  });
+
+  test('should show error in modal and notification when API rejects deletion', async ({
+    page,
+  }) => {
+    await page.route('**/api/salas/sala-1', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        await route.fulfill({
+          status: 403,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            message: 'Apenas o professor responsável pode realizar esta ação.',
+          }),
+        });
+      }
+    });
+
+    await page.getByRole('button', { name: 'Excluir Turma de Engenharia de Software' }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Sim, excluir turma' }).click();
+
+    await expect(
+      dialog.getByRole('heading', { name: 'Não é possível excluir a turma' }),
+    ).toBeVisible();
+    await expect(dialog.getByRole('alert')).toHaveText(
+      'Apenas o professor responsável pode realizar esta ação.',
+    );
+    await expect(dialog.getByRole('button', { name: 'Entendi' })).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Entendi' }).click();
+    await expect(dialog).not.toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 3, name: 'Turma de Engenharia de Software' }),
+    ).toBeVisible();
+  });
+});
