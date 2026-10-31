@@ -47,6 +47,7 @@ const BehaviorTagsPage = lazy(() => import('@/pages/behavior-tags/BehaviorTagsPa
 const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
 const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
 const SessionHubPage = lazy(() => import('@/pages/sessions/SessionHubPage'));
+const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'));
 const ProblemFormulaPage = lazy(() => import('@/pages/formulas/SessionFormulasPage'));
 const SessionEvaluationsListPage = lazy(
   () => import('@/pages/evaluations/SessionEvaluationsListPage'),
@@ -83,6 +84,7 @@ const publicRoutes = (
 
 const protectedRoutes = (
   <Route element={<ProtectedRoute />}>
+    <Route path={ROUTES.myAccount} element={<ProfilePage />} />
     <Route path={ROUTES.rooms} element={<RoomsPage />} />
     <Route path={ROUTES.createRoom} element={<CreateRoomPage />} />
     <Route path={ROUTES.createRoomSuccess} element={<CreateRoomSuccessPage />} />

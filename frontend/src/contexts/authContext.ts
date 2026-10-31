@@ -6,6 +6,7 @@ export type AuthContextValue = {
   isAuthenticated: boolean;
   login: (payload: LoginPayload) => Promise<UserResponse>;
   logout: () => void;
+  updateUser?: (user: Partial<UserResponse>) => void;
 };
 
 export const SESSION_EXPIRED_MESSAGE = 'Sua sessão expirou. Entre novamente para continuar.';

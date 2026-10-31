@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/useToast';
 import { setUnauthorizedHandler } from '@/services/api';
 import { authService } from '@/services/auth.service';
 import { sessionStore } from '@/services/sessionStore';
-import type { LoginPayload, SessionResponse } from '@/types/auth';
+import type { LoginPayload, SessionResponse, UserResponse } from '@/types/auth';
 import { AuthContext, SESSION_EXPIRED_MESSAGE, SESSION_SWITCHED_MESSAGE } from './authContext';
 import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
 
@@ -45,9 +45,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return nextSession.usuario;
   }, []);
 
+  const updateUser = useCallback((updatedPartial: Partial<UserResponse>) => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const updatedUser = { ...prev.usuario, ...updatedPartial };
+      sessionStore.saveUser(updatedUser);
+      return { ...prev, usuario: updatedUser };
+    });
+  }, []);
+
   const value = useMemo(
-    () => ({ user: session?.usuario ?? null, isAuthenticated: session !== null, login, logout }),
-    [session, login, logout],
+    () => ({
+      user: session?.usuario ?? null,
+      isAuthenticated: session !== null,
+      login,
+      logout,
+      updateUser,
+    }),
+    [session, login, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
