@@ -52,4 +52,34 @@ describe('classReportService', () => {
     });
     expect(result).toEqual(mockData);
   });
+
+  it('exports class final report in PDF format as blob', async () => {
+    const fakeBlob = new Blob(['pdf-content'], { type: 'application/pdf' });
+    const adapter = respondWith(fakeBlob);
+
+    await expect(classReportService.exportFinalReport('room-1', 'PDF')).resolves.toEqual(fakeBlob);
+
+    expect(sentRequest(adapter)).toMatchObject({
+      method: 'get',
+      url: '/salas/room-1/relatorio-final/exportacao',
+      params: { formato: 'PDF' },
+      responseType: 'blob',
+    });
+  });
+
+  it('exports class final report in XLSX format as blob', async () => {
+    const fakeBlob = new Blob(['xlsx-content'], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const adapter = respondWith(fakeBlob);
+
+    await expect(classReportService.exportFinalReport('room-1', 'XLSX')).resolves.toEqual(fakeBlob);
+
+    expect(sentRequest(adapter)).toMatchObject({
+      method: 'get',
+      url: '/salas/room-1/relatorio-final/exportacao',
+      params: { formato: 'XLSX' },
+      responseType: 'blob',
+    });
+  });
 });
