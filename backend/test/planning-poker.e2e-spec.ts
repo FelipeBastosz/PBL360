@@ -295,7 +295,7 @@ describe('Planning poker (e2e)', () => {
 
       expect(decided).toEqual({
         status: 'DECIDED',
-        final_grade: '8.8',
+        final_grade: '8.80',
         justification: 'Participação ativa na discussão do problema.',
         decided_by: tutor.id,
       });
