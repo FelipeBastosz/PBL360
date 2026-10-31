@@ -173,13 +173,16 @@ describe('User profile and photos (e2e)', () => {
       profile = await api(app, tutor).get('/usuarios/meu-perfil').expect(200);
       expect(asProfile(profile.body).possuiFoto).toBe(true);
 
-      // 4. Student removes photo
-      await api(app, student).delete('/usuarios/minha-foto').expect(204);
+      // 4. Student is forbidden from removing photo
+      await api(app, student).delete('/usuarios/minha-foto').expect(403);
 
-      profile = await api(app, student).get('/usuarios/meu-perfil').expect(200);
+      // 5. Tutor removes photo
+      await api(app, tutor).delete('/usuarios/minha-foto').expect(204);
+
+      profile = await api(app, tutor).get('/usuarios/meu-perfil').expect(200);
       expect(asProfile(profile.body).possuiFoto).toBe(false);
 
-      await api(app, student).get(`/usuarios/${student.id}/foto`).expect(404);
+      await api(app, tutor).get(`/usuarios/${tutor.id}/foto`).expect(404);
     });
 
     it('rejects invalid photo format and preserves previous photo', async () => {

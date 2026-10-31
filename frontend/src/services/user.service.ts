@@ -35,4 +35,3 @@ export const userService = {
   searchTutors: (busca: string) =>
     api.get<TutorSummary[]>(`${BASE}/professores`, { params: { busca } }).then((r) => r.data),
 };
-
