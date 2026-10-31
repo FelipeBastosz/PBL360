@@ -46,11 +46,11 @@ export class SessionAccessService {
     third?: string,
     fourth?: string,
   ): Promise<Session> {
-    if (!third || !fourth) {
+    if (third === undefined) {
       const { session } = await this.assertTutorCanAccessSessionById(first, second);
       return session;
     }
-    return this.assertSessionInRoom(first, second, third, fourth);
+    return this.assertSessionInRoom(first, second, third, fourth!);
   }
 
   private async assertSessionInRoom(

@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
@@ -24,7 +24,7 @@ import {
 
 @ApiTags('Fórmulas de Avaliação')
 @ApiBearerAuth(JWT_SECURITY_SCHEME)
-@Controller('salas')
+@Controller('salas/:roomId/problemas/:problemId')
 @Roles(UserType.TUTOR)
 export class ProblemFormulasController {
   constructor(
@@ -33,7 +33,7 @@ export class ProblemFormulasController {
     private readonly restoreDefaultFormulaUseCase: RestoreDefaultFormulaUseCase,
   ) {}
 
-  @Get([':roomId/problemas/:problemId/formulas', ':roomId/problemas/:problemId/formula'])
+  @Get(['formulas', 'formula'])
   @GetProblemFormulaSwaggerDocs
   get(
     @UuidParam('roomId') roomId: string,
@@ -41,29 +41,17 @@ export class ProblemFormulasController {
     @Query('escopo') escopo: FormulaScope,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<FormulaResponseDto> {
-    return this.executeGet(roomId, problemId, tutorId, escopo);
+    return this.getFormulaUseCase
+      .execute({
+        roomId,
+        problemId,
+        tutorId,
+        scope: escopo ?? FormulaScope.PROBLEMA,
+      })
+      .then(toFormulaResponse);
   }
 
-  @Get([':salaId/problemas/:problemaId/formula', ':salaId/problemas/:problemaId/formulas'])
-  @ApiOperation({
-    summary: 'Obtém a fórmula de avaliação do problema',
-    description:
-      'Retorna a fórmula de avaliação do problema para qualquer professor ou co-tutor vinculado à sala.',
-  })
-  @ApiOkResponse({
-    description: 'Fórmula retornada com sucesso.',
-    type: FormulaResponseDto,
-  })
-  getByPortugueseParams(
-    @UuidParam('salaId') salaId: string,
-    @UuidParam('problemaId') problemaId: string,
-    @Query('escopo') escopo: FormulaScope,
-    @AuthenticatedUserId() tutorId: string,
-  ): Promise<FormulaResponseDto> {
-    return this.executeGet(salaId, problemaId, tutorId, escopo);
-  }
-
-  @Put([':roomId/problemas/:problemId/formulas', ':roomId/problemas/:problemId/formula'])
+  @Put(['formulas', 'formula'])
   @HttpCode(HttpStatus.OK)
   @CustomizeProblemFormulaSwaggerDocs
   customize(
@@ -72,24 +60,18 @@ export class ProblemFormulasController {
     @Body() dto: CustomizeFormulaDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<FormulaResponseDto> {
-    return this.executeCustomize(roomId, problemId, tutorId, dto);
+    return this.customizeFormulaUseCase
+      .execute({
+        roomId,
+        problemId,
+        tutorId,
+        scope: dto.escopo,
+        components: toCustomizeFormulaComponents(dto),
+      })
+      .then(toFormulaResponse);
   }
 
-  @Put([':salaId/problemas/:problemaId/formula', ':salaId/problemas/:problemaId/formulas'])
-  @HttpCode(HttpStatus.OK)
-  customizeByPortugueseParams(
-    @UuidParam('salaId') salaId: string,
-    @UuidParam('problemaId') problemaId: string,
-    @Body() dto: CustomizeFormulaDto,
-    @AuthenticatedUserId() tutorId: string,
-  ): Promise<FormulaResponseDto> {
-    return this.executeCustomize(salaId, problemaId, tutorId, dto);
-  }
-
-  @Post([
-    ':roomId/problemas/:problemId/formulas/restaurar-padrao',
-    ':roomId/problemas/:problemId/formula/restaurar-padrao',
-  ])
+  @Post(['formulas/restaurar-padrao', 'formula/restaurar-padrao'])
   @HttpCode(HttpStatus.OK)
   @RestoreDefaultFormulaSwaggerDocs
   restoreDefault(
@@ -98,66 +80,13 @@ export class ProblemFormulasController {
     @Body() dto: RestoreDefaultFormulaDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<FormulaResponseDto> {
-    return this.executeRestore(roomId, problemId, tutorId, dto);
-  }
-
-  @Post([
-    ':salaId/problemas/:problemaId/formula/restaurar-padrao',
-    ':salaId/problemas/:problemaId/formulas/restaurar-padrao',
-  ])
-  @HttpCode(HttpStatus.OK)
-  restoreDefaultByPortugueseParams(
-    @UuidParam('salaId') salaId: string,
-    @UuidParam('problemaId') problemaId: string,
-    @Body() dto: RestoreDefaultFormulaDto,
-    @AuthenticatedUserId() tutorId: string,
-  ): Promise<FormulaResponseDto> {
-    return this.executeRestore(salaId, problemaId, tutorId, dto);
-  }
-
-  private async executeGet(
-    roomId: string,
-    problemId: string,
-    tutorId: string,
-    escopo?: FormulaScope,
-  ): Promise<FormulaResponseDto> {
-    const formula = await this.getFormulaUseCase.execute({
-      roomId,
-      problemId,
-      tutorId,
-      scope: escopo ?? FormulaScope.PROBLEMA,
-    });
-    return toFormulaResponse(formula);
-  }
-
-  private async executeCustomize(
-    roomId: string,
-    problemId: string,
-    tutorId: string,
-    dto: CustomizeFormulaDto,
-  ): Promise<FormulaResponseDto> {
-    const formula = await this.customizeFormulaUseCase.execute({
-      roomId,
-      problemId,
-      tutorId,
-      scope: dto.escopo,
-      components: toCustomizeFormulaComponents(dto),
-    });
-    return toFormulaResponse(formula);
-  }
-
-  private async executeRestore(
-    roomId: string,
-    problemId: string,
-    tutorId: string,
-    dto: RestoreDefaultFormulaDto,
-  ): Promise<FormulaResponseDto> {
-    const formula = await this.restoreDefaultFormulaUseCase.execute({
-      roomId,
-      problemId,
-      tutorId,
-      scope: dto.escopo,
-    });
-    return toFormulaResponse(formula);
+    return this.restoreDefaultFormulaUseCase
+      .execute({
+        roomId,
+        problemId,
+        tutorId,
+        scope: dto.escopo,
+      })
+      .then(toFormulaResponse);
   }
 }
