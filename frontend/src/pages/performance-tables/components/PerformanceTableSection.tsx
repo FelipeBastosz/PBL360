@@ -29,7 +29,14 @@ export function PerformanceTableSection({
       </h2>
       <div className={CARD_GRID_CLASS}>
         {tables.map((table) => {
-          const isAuthor = Boolean(currentUserId && table.autor?.id === currentUserId);
+          const isAuthor =
+            table.origem !== 'PADRAO' &&
+            Boolean(
+              (currentUserId && table.autor?.id === currentUserId) ||
+              (currentUserId &&
+                (table as { professorId?: string }).professorId === currentUserId) ||
+              !table.autor?.id,
+            );
           return (
             <PerformanceTableCard
               key={table.id}

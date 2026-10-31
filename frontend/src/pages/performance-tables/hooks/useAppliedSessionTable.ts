@@ -56,8 +56,12 @@ export function useAppliedSessionTable(
     }
 
     let isMounted = true;
-    performanceTableService
-      .getById(activeTable.id)
+    const request = performanceTableService.getById(activeTable.id);
+    if (!request || typeof request.then !== 'function') {
+      return;
+    }
+
+    request
       .then(async (details) => {
         if (!isMounted) return;
         const authorName = await resolveAuthorName(details.professorId, roomId, tables, user);

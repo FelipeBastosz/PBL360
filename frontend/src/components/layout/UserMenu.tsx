@@ -22,6 +22,7 @@ import { AuthContext } from '@/contexts/authContext';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/routes/paths';
 import type { UserResponse } from '@/types/auth';
+import { clearApplyTarget } from '@/utils/navigationState';
 import { cn } from '@/utils/cn';
 
 type AvatarUser = Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'>;
@@ -30,6 +31,7 @@ type MenuItem = {
   label: string;
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
   to?: string;
+  state?: unknown;
 };
 
 const ITEM_CLASS =
@@ -45,6 +47,7 @@ function menuItems(isProfessor: boolean): MenuItem[] {
             label: 'Minhas Fórmulas',
             Icon: AdjustmentsHorizontalIcon,
             to: ROUTES.performanceTables,
+            state: { clearTarget: true },
           },
           {
             label: 'Minhas Marcações',
@@ -78,7 +81,13 @@ function MenuEntry({ item, onNavigate }: { item: MenuItem; onNavigate: () => voi
   return (
     <Link
       to={item.to}
-      onClick={onNavigate}
+      state={item.state}
+      onClick={() => {
+        if (item.to === ROUTES.performanceTables) {
+          clearApplyTarget();
+        }
+        onNavigate();
+      }}
       className={cn(
         ITEM_CLASS,
         'transition-colors duration-200 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-900',

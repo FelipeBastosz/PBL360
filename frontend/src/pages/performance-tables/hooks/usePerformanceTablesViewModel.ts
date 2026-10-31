@@ -79,14 +79,17 @@ function groupSections(
   isRoomContext: boolean,
   currentUserId?: string,
 ) {
-  if (!isRoomContext) return null;
-  return {
-    padrao: tables.filter((t) => t.origem === 'PADRAO'),
-    turma: tables.filter((t) => t.origem === 'TURMA'),
-    minhas: tables.filter(
-      (t) => t.origem === 'PESSOAL' && (t.autor?.id === currentUserId || !t.autor?.id),
-    ),
-  };
+  const padrao = tables.filter(
+    (t) => t.origem === 'PADRAO' || (t as { isDefault?: boolean }).isDefault,
+  );
+  const turma = isRoomContext ? tables.filter((t) => t.origem === 'TURMA') : [];
+  const minhas = tables.filter((t) => {
+    if (t.origem === 'PADRAO' || (t as { isDefault?: boolean }).isDefault) return false;
+    if (t.origem === 'TURMA') return false;
+    return t.autor?.id === currentUserId || !t.autor?.id;
+  });
+
+  return { padrao, turma, minhas };
 }
 
 export function usePerformanceTablesViewModel(input: ViewModelInput) {

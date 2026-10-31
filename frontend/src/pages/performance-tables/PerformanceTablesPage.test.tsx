@@ -131,3 +131,61 @@ describe('PerformanceTablesPage (Room Context)', () => {
     expect(performanceTableService.remove).toHaveBeenCalledWith('t-pessoal-1');
   });
 });
+
+describe('PerformanceTablesPage (Global / User Menu Context)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    vi.mocked(useAuth).mockReturnValue({
+      user: mockUser,
+      isAuthenticated: true,
+      token: 'fake-jwt',
+      login: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
+      verifyAccount: vi.fn(),
+      resendVerification: vi.fn(),
+      forgotPassword: vi.fn(),
+      resetPassword: vi.fn(),
+      updateProfile: vi.fn(),
+    } as unknown as ReturnType<typeof useAuth>);
+  });
+
+  it('renders user and default formulas when navigating to /formulas without room/session', async () => {
+    vi.mocked(performanceTableService.list).mockResolvedValue(mockRoomTables);
+
+    render(
+      <MemoryRouter initialEntries={['/formulas']}>
+        <PerformanceTablesPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText(/Padrão do sistema/i)).toBeInTheDocument();
+    expect(screen.getByText(/Minhas/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Da turma/i)).not.toBeInTheDocument();
+
+    expect(screen.getByText('Tabela Oficial Padrão')).toBeInTheDocument();
+    expect(screen.getByText('Meu Barema Exclusivo')).toBeInTheDocument();
+    expect(screen.queryByText(/Fórmula em uso nesta sessão/i)).not.toBeInTheDocument();
+  });
+
+  it('clears stale sessionStorage apply target when accessing /formulas', async () => {
+    sessionStorage.setItem(
+      'pbl360_apply_target',
+      JSON.stringify({ sessionId: 'stale-session-id', roomId: 'stale-room-id' }),
+    );
+    vi.mocked(performanceTableService.list).mockResolvedValue(mockRoomTables);
+
+    render(
+      <MemoryRouter initialEntries={['/formulas']}>
+        <PerformanceTablesPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Meu Barema Exclusivo')).toBeInTheDocument();
+    expect(sessionStorage.getItem('pbl360_apply_target')).toBeNull();
+    expect(screen.queryByText(/Fórmula em uso nesta sessão/i)).not.toBeInTheDocument();
+    expect(performanceTableService.list).toHaveBeenCalled();
+    expect(performanceTableService.listByRoom).not.toHaveBeenCalled();
+  });
+});

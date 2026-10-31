@@ -19,6 +19,10 @@ export type ApplyTarget = {
 export function readApplyTarget(state: unknown): ApplyTarget | null {
   if (typeof state === 'object' && state !== null) {
     const record = state as Record<string, unknown>;
+    if (record.clearTarget) {
+      clearApplyTarget();
+      return null;
+    }
     if (typeof record.sessionId === 'string' && record.sessionId.trim() !== '') {
       const target: ApplyTarget = {
         sessionId: record.sessionId,
@@ -49,4 +53,10 @@ export function readApplyTarget(state: unknown): ApplyTarget | null {
   return null;
 }
 
-export function clearApplyTarget(): void {}
+export function clearApplyTarget(): void {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}

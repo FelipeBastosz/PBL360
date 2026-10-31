@@ -62,6 +62,9 @@ function toSummary(table: PerformanceTable): PerformanceTableSummary {
     descricao: table.descricao,
     quantidadeCriterios: table.criterios.length,
     quantidadeProblemas: table.quantidadeProblemas,
+    origem: table.origem ?? 'PESSOAL',
+    autor: table.autor,
+    emUso: table.quantidadeProblemas,
     criadoEm: table.criadoEm,
     atualizadoEm: table.atualizadoEm,
   };

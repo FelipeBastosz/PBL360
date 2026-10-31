@@ -1,58 +1,82 @@
-const STORAGE_KEY = 'pbl360_apply_target';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { clearApplyTarget, readApplyTarget, readStringFields } from './navigationState';
 
-export function readStringFields<K extends string>(
-  state: unknown,
-  keys: readonly K[],
-): Record<K, string> | null {
-  if (typeof state !== 'object' || state === null) return null;
-  const record = state as Record<string, unknown>;
-  const hasAll = keys.every((key) => typeof record[key] === 'string' && record[key] !== '');
-  return hasAll ? (record as Record<K, string>) : null;
-}
+describe('readStringFields', () => {
+  it('returns the state when every key holds a non-empty string', () => {
+    expect(readStringFields({ email: 'ana@uefs.br', token: 'x' }, ['email', 'token'])).toEqual({
+      email: 'ana@uefs.br',
+      token: 'x',
+    });
+  });
 
-export type ApplyTarget = {
-  sessionId: string;
-  roomId?: string;
-  problemId?: string;
-};
+  it('returns null when a key is missing, empty or not a string', () => {
+    expect(readStringFields({ email: 'ana@uefs.br' }, ['email', 'token'])).toBeNull();
+    expect(readStringFields({ email: '' }, ['email'])).toBeNull();
+    expect(readStringFields({ email: 1 }, ['email'])).toBeNull();
+  });
 
-export function readApplyTarget(state: unknown): ApplyTarget | null {
-  if (typeof state === 'object' && state !== null) {
-    const record = state as Record<string, unknown>;
-    if (typeof record.sessionId === 'string' && record.sessionId.trim() !== '') {
-      const target: ApplyTarget = {
-        sessionId: record.sessionId,
-        roomId: typeof record.roomId === 'string' ? record.roomId : '',
-        problemId: typeof record.problemId === 'string' ? record.problemId : '',
-      };
-      try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(target));
-      } catch {
-        // ignore
-      }
-      return target;
-    }
-  }
+  it('returns null for a missing state', () => {
+    expect(readStringFields(null, ['email'])).toBeNull();
+    expect(readStringFields(undefined, ['email'])).toBeNull();
+  });
+});
 
-  try {
-    const stored = sessionStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as ApplyTarget;
-      if (parsed && typeof parsed.sessionId === 'string' && parsed.sessionId.trim() !== '') {
-        return parsed;
-      }
-    }
-  } catch {
-    // ignore
-  }
+describe('readApplyTarget and clearApplyTarget', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
 
-  return null;
-}
+  it('reads target from state and persists to sessionStorage', () => {
+    const target = readApplyTarget({
+      sessionId: 'session-1',
+      roomId: 'room-1',
+      problemId: 'prob-1',
+    });
 
-export function clearApplyTarget(): void {
-  try {
-    sessionStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // ignore
-  }
-}
+    expect(target).toEqual({
+      sessionId: 'session-1',
+      roomId: 'room-1',
+      problemId: 'prob-1',
+    });
+    expect(sessionStorage.getItem('pbl360_apply_target')).toBe(JSON.stringify(target));
+  });
+
+  it('falls back to sessionStorage when state is null', () => {
+    sessionStorage.setItem(
+      'pbl360_apply_target',
+      JSON.stringify({
+        sessionId: 'session-cached',
+        roomId: 'room-cached',
+        problemId: 'prob-cached',
+      }),
+    );
+
+    const target = readApplyTarget(null);
+    expect(target).toEqual({
+      sessionId: 'session-cached',
+      roomId: 'room-cached',
+      problemId: 'prob-cached',
+    });
+  });
+
+  it('clears sessionStorage and returns null when clearTarget is true', () => {
+    sessionStorage.setItem(
+      'pbl360_apply_target',
+      JSON.stringify({ sessionId: 'session-cached', roomId: '', problemId: '' }),
+    );
+
+    const target = readApplyTarget({ clearTarget: true });
+    expect(target).toBeNull();
+    expect(sessionStorage.getItem('pbl360_apply_target')).toBeNull();
+  });
+
+  it('clearApplyTarget removes stored target from sessionStorage', () => {
+    sessionStorage.setItem(
+      'pbl360_apply_target',
+      JSON.stringify({ sessionId: 'session-cached', roomId: '', problemId: '' }),
+    );
+
+    clearApplyTarget();
+    expect(sessionStorage.getItem('pbl360_apply_target')).toBeNull();
+  });
+});

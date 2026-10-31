@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { SearchField } from '@/components/ui/SearchField';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,7 +11,7 @@ import { ROUTES } from '@/routes/paths';
 import type { PerformanceTableSummary } from '@/types/performanceTable';
 import type { SessionEvaluationConfig } from '@/types/session';
 import { cn } from '@/utils/cn';
-import { readApplyTarget, type ApplyTarget } from '@/utils/navigationState';
+import { clearApplyTarget, readApplyTarget, type ApplyTarget } from '@/utils/navigationState';
 import { CreateFormulaModal } from './components/CreateFormulaModal';
 import { DeletePerformanceTableModal } from './components/DeletePerformanceTableModal';
 import {
@@ -104,14 +104,36 @@ function PageModalsAndActions({ modals, deletion, target, navigate }: PageModals
 function usePageDependencies() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const locationState = useLocation().state as Record<string, unknown> | null;
-  const target = readApplyTarget(locationState);
+  const location = useLocation();
+  const params = useParams<{ roomId?: string; sessionId?: string; problemId?: string }>();
+  const locationState = location.state as Record<string, unknown> | null;
+
+  const isGlobalFormulasPage =
+    location.pathname === ROUTES.performanceTables &&
+    !locationState?.sessionId &&
+    !locationState?.roomId &&
+    !params.sessionId &&
+    !params.roomId;
+
+  if (isGlobalFormulasPage || locationState?.clearTarget) {
+    clearApplyTarget();
+  }
+
+  const target =
+    isGlobalFormulasPage || locationState?.clearTarget ? null : readApplyTarget(locationState);
 
   const roomId =
     target?.roomId ||
+    params.roomId ||
     (typeof locationState?.roomId === 'string' ? locationState.roomId : undefined);
-  const sessionId = target?.sessionId;
-  const activeTarget = target || (roomId ? { roomId, sessionId: '', problemId: '' } : null);
+  const sessionId = target?.sessionId || params.sessionId;
+  const activeTarget =
+    target ||
+    (sessionId
+      ? { sessionId, roomId: roomId ?? '', problemId: params.problemId ?? '' }
+      : roomId
+        ? { roomId, sessionId: '', problemId: '' }
+        : null);
 
   const data = usePerformanceTablesData(roomId, sessionId);
   const deletion = useTableDeletion(data.reload);
