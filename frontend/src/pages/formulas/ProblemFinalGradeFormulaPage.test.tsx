@@ -97,9 +97,13 @@ describe('ProblemFinalGradeFormulaPage', () => {
     renderPage();
 
     await screen.findByText('P1S1');
+
+    await user.click(screen.getByRole('button', { name: 'Aumentar nota de P1S1' }));
+    expect(screen.getByText('Média ponderada')).toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: /Restaurar padrão/i }));
 
-    expect(formulaService.restoreDefaultFinalGrade).toHaveBeenCalledWith('room-1', 'prob-1');
+    expect(await screen.findByText('Média simples')).toBeInTheDocument();
   });
 
   it('shows error toast when saving formula fails', async () => {
