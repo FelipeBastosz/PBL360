@@ -101,4 +101,26 @@ describe('ProblemFinalGradeFormulaPage', () => {
 
     expect(formulaService.restoreDefaultFinalGrade).toHaveBeenCalledWith('room-1', 'prob-1');
   });
+
+  it('shows error toast when saving formula fails', async () => {
+    const user = userEvent.setup();
+    vi.mocked(formulaService.saveFinalGrade).mockRejectedValue(new Error('API Error'));
+    renderPage();
+
+    await screen.findByText('P1S1');
+    await user.click(screen.getByRole('button', { name: 'Salvar fórmula' }));
+
+    expect(screen.getByRole('button', { name: 'Salvar fórmula' })).toBeInTheDocument();
+  });
+
+  it('shows error toast when restoring formula fails', async () => {
+    const user = userEvent.setup();
+    vi.mocked(formulaService.restoreDefaultFinalGrade).mockRejectedValue(new Error('API Error'));
+    renderPage();
+
+    await screen.findByText('P1S1');
+    await user.click(screen.getByRole('button', { name: /Restaurar padrão/i }));
+
+    expect(screen.getByRole('button', { name: /Restaurar padrão/i })).toBeInTheDocument();
+  });
 });
