@@ -222,6 +222,33 @@ describe('ManageProblemsPage', () => {
     });
   });
 
+  it('displays contextual conflict message in toast and modal when problem deletion returns 409 with detalhes', async () => {
+    const user = userEvent.setup();
+    vi.mocked(problemService.remove).mockRejectedValue(
+      new ApiError(409, ['Conflict'], {
+        detalhes: { sessoes: 2, feedbacks: 1 },
+      }),
+    );
+
+    renderComponent();
+    const deleteBtn = await screen.findByRole('button', {
+      name: 'Excluir Problema 1 - Introdução',
+    });
+    await user.click(deleteBtn);
+    await user.click(screen.getByRole('button', { name: 'Sim, excluir problema' }));
+
+    await waitFor(() => {
+      expect(mockNotify).toHaveBeenCalledWith({
+        tone: 'error',
+        message:
+          'Não é possível excluir: existem 2 sessões e 1 feedback vinculados a este problema.',
+      });
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Não é possível excluir: existem 2 sessões e 1 feedback vinculados a este problema.',
+      );
+    });
+  });
+
   it('navigates back to problems list when clicking Concluir edição or Cancelar', async () => {
     const user = userEvent.setup();
     renderComponent();
