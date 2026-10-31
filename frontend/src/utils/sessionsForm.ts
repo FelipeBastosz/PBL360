@@ -47,3 +47,24 @@ export function validateSessionForm(values: SessionFormValues): FieldErrors<Sess
 
   return errors;
 }
+
+export function formatSessionDisplayDate(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const parts = dateStr.trim().split('-');
+  if (parts.length !== 3) return dateStr;
+
+  let year: number;
+  let month: number;
+  let day: number;
+
+  if (parts[0].length === 4) {
+    [year, month, day] = parts.map(Number);
+  } else {
+    [day, month, year] = parts.map(Number);
+  }
+
+  const date = new Date(year, month - 1, day);
+  const dayStr = String(day).padStart(2, '0');
+  const monthStr = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+  return `${dayStr} ${monthStr}`;
+}

@@ -3,6 +3,7 @@ import {
   validateSessionForm,
   toInputDate,
   toApiDate,
+  formatSessionDisplayDate,
   type SessionFormValues,
 } from './sessionsForm';
 
@@ -83,5 +84,20 @@ describe('toApiDate (Input AAAA-MM-DD -> API DD-MM-AAAA)', () => {
 
   it('preserves date if it is already in DD-MM-AAAA format', () => {
     expect(toApiDate('20-10-2026')).toBe('20-10-2026');
+  });
+
+  describe('formatSessionDisplayDate', () => {
+    it('returns empty string when date is null or empty', () => {
+      expect(formatSessionDisplayDate(null)).toBe('');
+      expect(formatSessionDisplayDate('')).toBe('');
+    });
+
+    it('formats DD-MM-AAAA date correctly', () => {
+      expect(formatSessionDisplayDate('15-10-2026')).toMatch(/15 out/i);
+    });
+
+    it('formats AAAA-MM-DD date correctly', () => {
+      expect(formatSessionDisplayDate('2026-10-15')).toMatch(/15 out/i);
+    });
   });
 });
