@@ -229,13 +229,20 @@ describe('Peer evaluations (e2e)', () => {
         .expect(422);
     });
 
-    it('returns 422 when colleague was absent in the session (colega ausente na sessão)', async () => {
-      await api(app, evaluatorStudent)
+    it('returns 400 when colleague was absent in the session (colega ausente na sessão)', async () => {
+      const response = await api(app, evaluatorStudent)
         .put(peerDetailPath(peerAbsentStudent.id), {
           itens: [{ criterioId: crit1Id, nota: 8 }],
           enviar: false,
         })
-        .expect(422);
+        .expect(400);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          statusCode: 400,
+          message: 'Não é possível avaliar um aluno que não esteve presente nesta sessão.',
+        }),
+      );
     });
 
     it('returns 423 when peer evaluation is not released (liberação desligada)', async () => {
