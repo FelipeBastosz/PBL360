@@ -1,9 +1,15 @@
 import { useState } from 'react';
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
-import { TextField } from '@/components/ui/TextField';
 import { Alert } from '@/components/ui/Alert';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import {
+  EMPTY_DEADLINE,
+  resolveDeadline,
+  type DeadlineDraft,
+  type DeadlineErrors,
+} from '@/utils/deadlineForm';
+import { DeadlineFields } from './DeadlineFields';
 
 type ReleaseModalProps = {
   isOpen: boolean;
@@ -31,19 +37,14 @@ function SetDeadlineActions({
   isLoading,
   onConfirm,
   onCancel,
-  prazo,
 }: {
   isLoading: boolean;
-  onConfirm: (p: string | null) => void;
+  onConfirm: () => void;
   onCancel: () => void;
-  prazo: string;
 }) {
   return (
     <div className="mt-2 flex flex-col gap-2">
-      <Button
-        isLoading={isLoading}
-        onClick={() => onConfirm(prazo ? new Date(prazo).toISOString() : null)}
-      >
+      <Button isLoading={isLoading} onClick={onConfirm}>
         Confirmar liberação
       </Button>
       <Button variant="link" disabled={isLoading} onClick={onCancel}>
@@ -76,13 +77,25 @@ export function SetDeadlineModal({
   onConfirm,
   onCancel,
 }: ReleaseModalProps) {
-  const [prazo, setPrazo] = useState('');
+  const [draft, setDraft] = useState<DeadlineDraft>(EMPTY_DEADLINE);
+  const [errors, setErrors] = useState<DeadlineErrors>({});
   useEscapeKey(isOpen, onCancel, isLoading);
 
   if (!isOpen) return null;
 
   const currentName = type === 'autoavaliacao' ? 'Autoavaliação' : 'Avaliação por pares';
   const otherName = activeOtherType === 'autoavaliacao' ? 'Autoavaliação' : 'Avaliação por pares';
+
+  const handleChange = (next: DeadlineDraft) => {
+    setDraft(next);
+    setErrors({});
+  };
+
+  const handleConfirm = () => {
+    const result = resolveDeadline(draft);
+    if (result.ok) onConfirm(result.prazo);
+    else setErrors(result.errors);
+  };
 
   return (
     <div
@@ -106,19 +119,9 @@ export function SetDeadlineModal({
           {activeOtherType && <OtherReleaseWarning otherName={otherName} />}
           {errorMessage && <Alert tone="error">{errorMessage}</Alert>}
 
-          <TextField
-            label="Prazo (Opcional)"
-            type="datetime-local"
-            value={prazo}
-            onChange={setPrazo}
-          />
+          <DeadlineFields draft={draft} errors={errors} onChange={handleChange} />
 
-          <SetDeadlineActions
-            isLoading={isLoading}
-            onConfirm={onConfirm}
-            onCancel={onCancel}
-            prazo={prazo}
-          />
+          <SetDeadlineActions isLoading={isLoading} onConfirm={handleConfirm} onCancel={onCancel} />
         </div>
       </div>
     </div>
