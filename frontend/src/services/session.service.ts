@@ -18,6 +18,9 @@ import type {
   SessionEvaluationConfig,
   UpdateSessionFormulaPayload,
   SessionFormulaConfig,
+  SessionTableEditPermissions,
+  EditSessionTablePayload,
+  EditSessionTableResponse,
 } from '@/types/session';
 import { api } from './api';
 
@@ -118,5 +121,15 @@ export const sessionService = {
   restoreDefaultFormula: (sessionId: string) =>
     api
       .post<SessionFormulaConfig>(`${BASE}/${sessionId}/formula/restaurar-padrao`)
+      .then((r) => r.data),
+
+  getTableEditPermissions: (sessionId: string) =>
+    api
+      .get<SessionTableEditPermissions>(`${BASE}/${sessionId}/tabela/permissoes-edicao`)
+      .then((r) => r.data),
+
+  editSessionTable: (sessionId: string, payload: EditSessionTablePayload) =>
+    api
+      .put<EditSessionTableResponse>(`${BASE}/${sessionId}/tabela/edicao`, payload)
       .then((r) => r.data),
 };

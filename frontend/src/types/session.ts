@@ -189,6 +189,35 @@ export type SessionTableUpdateResult = {
   sessoesIgnoradas: SessionTableIgnored[];
 };
 
+export type TableSessionUsage = {
+  sessaoId: string;
+  rotulo: string;
+  jaAconteceu: boolean;
+};
+
+export type SessionTableEditPermissions = {
+  podeEditarCriterios: boolean;
+  motivo: string | null;
+  sessoesQueUsam: TableSessionUsage[];
+};
+
+export type EditSessionCriterionPayload = {
+  id?: string;
+  nome?: string;
+  peso: number;
+};
+
+export type EditSessionTablePayload = {
+  escopo: 'SESSAO' | 'TODAS';
+  nome?: string;
+  criterios: EditSessionCriterionPayload[];
+};
+
+export type EditSessionTableResponse = {
+  tabela: { id: string; nome: string };
+  sessoesAtualizadas: Array<{ sessaoId: string; rotulo: string }>;
+};
+
 export type UpdateSessionFormulaPayload = {
   componentes: SessionFormulaComponent[];
   aplicarNasSeguintes?: boolean;

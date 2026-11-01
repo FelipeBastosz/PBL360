@@ -40,4 +40,19 @@ describe('SessionCard', () => {
 
     expect(screen.getByText('Sem descrição')).toBeInTheDocument();
   });
+
+  it('renders formula name tag when session has an attached table', () => {
+    const sessionWithTable = {
+      ...mockSession,
+      tabelaNome: 'Barema PBL — P1S1',
+    };
+
+    render(
+      <MemoryRouter>
+        <SessionCard session={sessionWithTable} roomId="room-1" problemId="prob-1" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Fórmula: Barema PBL — P1S1')).toBeInTheDocument();
+  });
 });

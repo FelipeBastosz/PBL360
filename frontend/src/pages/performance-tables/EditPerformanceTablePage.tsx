@@ -1,20 +1,16 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { UserMenuButton } from '@/components/layout/UserMenu';
-import { Spinner } from '@/components/ui/Spinner';
-import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
-import type { CriterionInput } from '@/types/performanceTable';
-import { EditCriteriaCard } from './components/EditCriteriaCard';
-import { DescriptionCard, EditActions } from './components/EditPerformanceTableCards';
-import { EditPerformanceTableModals } from './components/EditPerformanceTableModals';
-import { DiscardChangesModal } from './components/DiscardChangesModal';
-import { SaveFormulaWarningModal } from './components/SaveFormulaWarningModal';
+import { readApplyTarget } from '@/utils/navigationState';
 import { useEditPerformanceTableForm } from './hooks/useEditPerformanceTableForm';
+import { useEditModals } from './hooks/useEditModals';
+import { EditPageBody } from './components/EditPageBody';
+import { EditModalsSection } from './components/EditModalsSection';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
 
@@ -38,34 +34,6 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
       </div>
     </header>
   );
-}
-
-function useEditModals(setCriterios: React.Dispatch<React.SetStateAction<CriterionInput[]>>) {
-  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingCriterion, setEditingCriterion] = useState<CriterionInput | null>(null);
-  const [criterionToDelete, setCriterionToDelete] = useState<CriterionInput | null>(null);
-  const [isDeleteFormulaOpen, setIsDeleteFormulaOpen] = useState(false);
-
-  const handleSaveCriterion = (upd: CriterionInput) => {
-    setCriterios((prev) =>
-      prev.map((c) => ((c.id && c.id === upd.id) || c.ordem === upd.ordem ? upd : c)),
-    );
-  };
-
-  return {
-    isInfoModalOpen,
-    setIsInfoModalOpen,
-    isAddModalOpen,
-    setIsAddModalOpen,
-    editingCriterion,
-    setEditingCriterion,
-    criterionToDelete,
-    setCriterionToDelete,
-    isDeleteFormulaOpen,
-    setIsDeleteFormulaOpen,
-    handleSaveCriterion,
-  };
 }
 
 function useEditPageDeletion(
@@ -108,145 +76,96 @@ function useEditPageDeletion(
   return { isDeletingFormula, handleConfirmDeleteCriterion, handleConfirmDeleteFormula };
 }
 
-type MainContentProps = {
-  form: ReturnType<typeof useEditPerformanceTableForm>;
-  modals: ReturnType<typeof useEditModals>;
-  onRequestSave: () => void;
-  onExit: () => void;
-};
-
-function EditMainContent({ form, modals, onRequestSave, onExit }: MainContentProps) {
-  if (form.isLoading) {
-    return (
-      <div className="mt-12 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <DescriptionCard
-        description={form.descricao}
-        onOpenEdit={() => modals.setIsInfoModalOpen(true)}
-      />
-      <EditCriteriaCard
-        items={form.criterios}
-        onOpenAdd={() => modals.setIsAddModalOpen(true)}
-        onOpenEdit={modals.setEditingCriterion}
-        onOpenDelete={modals.setCriterionToDelete}
-      />
-      <EditActions
-        onSave={onRequestSave}
-        onCancel={onExit}
-        onDeleteFormula={() => modals.setIsDeleteFormulaOpen(true)}
-      />
-    </>
-  );
-}
-
-type ModalsProps = {
-  form: ReturnType<typeof useEditPerformanceTableForm>;
-  modals: ReturnType<typeof useEditModals>;
-  totalWeight: number;
-  otherWeightsSum: number;
-  onConfirmDeleteCriterion: () => void;
-  isDeletingFormula: boolean;
-  onConfirmDeleteFormula: () => void;
-  isDiscardOpen: boolean;
-  onCloseDiscard: () => void;
-  isSaveWarningOpen: boolean;
-  onCloseSaveWarning: () => void;
-};
-
-function EditModalsSection(props: ModalsProps) {
-  return (
-    <>
-      <EditPerformanceTableModals
-        isInfoModalOpen={props.modals.isInfoModalOpen}
-        onCloseInfoModal={() => props.modals.setIsInfoModalOpen(false)}
-        initialNome={props.form.nome}
-        initialDescricao={props.form.descricao}
-        onSaveInfo={({ nome, descricao }) => {
-          props.form.setNome(nome);
-          props.form.setDescricao(descricao);
-        }}
-        isAddModalOpen={props.modals.isAddModalOpen}
-        onCloseAddModal={() => props.modals.setIsAddModalOpen(false)}
-        onAddCriterion={(c) => props.form.setCriterios((prev) => [...prev, c])}
-        nextOrder={props.form.criterios.length + 1}
-        totalWeight={props.totalWeight}
-        editingCriterion={props.modals.editingCriterion}
-        onCloseEditModal={() => props.modals.setEditingCriterion(null)}
-        onSaveCriterion={props.modals.handleSaveCriterion}
-        otherWeightsSum={props.otherWeightsSum}
-        criterionToDelete={props.modals.criterionToDelete}
-        onCloseDeleteCriterion={() => props.modals.setCriterionToDelete(null)}
-        onConfirmDeleteCriterion={props.onConfirmDeleteCriterion}
-        isDeleteFormulaOpen={props.modals.isDeleteFormulaOpen}
-        isDeletingFormula={props.isDeletingFormula}
-        onCloseDeleteFormula={() => props.modals.setIsDeleteFormulaOpen(false)}
-        onConfirmDeleteFormula={props.onConfirmDeleteFormula}
-      />
-      <DiscardChangesModal
-        isOpen={props.isDiscardOpen}
-        onConfirm={() => props.form.navigate(-1)}
-        onCancel={props.onCloseDiscard}
-      />
-      <SaveFormulaWarningModal
-        isOpen={props.isSaveWarningOpen}
-        isLoading={props.form.isSaving}
-        onConfirm={props.form.executeSave}
-        onCancel={props.onCloseSaveWarning}
-      />
-    </>
-  );
-}
-
-export function EditPerformanceTablePage() {
+function usePageSessionState() {
   const { id } = useParams<{ id: string }>();
-  const form = useEditPerformanceTableForm(id!);
-  const modals = useEditModals(form.setCriterios);
-  const { notify } = useToast();
+  const location = useLocation();
+  const locationState = location.state as Record<string, unknown> | null;
+  const target = readApplyTarget(locationState);
+  const sessionId =
+    target?.sessionId ??
+    (typeof locationState?.sessionId === 'string' ? locationState.sessionId : undefined);
+
+  return { id: id!, sessionId, target, locationState };
+}
+
+function useEditPageDialogs(
+  form: ReturnType<typeof useEditPerformanceTableForm>,
+  modals: ReturnType<typeof useEditModals>,
+  sessionId?: string,
+) {
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
   const [isSaveWarningOpen, setIsSaveWarningOpen] = useState(false);
-  const deletion = useEditPageDeletion(id!, form, modals, notify);
+  const [isScopeModalOpen, setIsScopeModalOpen] = useState(false);
 
+  const canEditCriteria = form.permissions ? form.permissions.podeEditarCriterios : true;
   const totalWeight = form.criterios.reduce((sum, c) => sum + c.peso, 0);
   const otherWeightsSum = modals.editingCriterion
     ? totalWeight - modals.editingCriterion.peso
     : totalWeight;
-  const handleExit = () => (form.isDirty ? setIsDiscardOpen(true) : form.navigate(-1));
+
   const handleRequestSave = () => {
-    if (form.prepareSave()) setIsSaveWarningOpen(true);
+    if (!form.prepareSave()) return;
+    if (sessionId) setIsScopeModalOpen(true);
+    else setIsSaveWarningOpen(true);
   };
+
+  const handleScopeSave = async (scope: 'SESSAO' | 'TODAS') => {
+    await form.executeSessionSave(scope);
+    setIsScopeModalOpen(false);
+  };
+
+  return {
+    isDiscardOpen,
+    setIsDiscardOpen,
+    isSaveWarningOpen,
+    setIsSaveWarningOpen,
+    isScopeModalOpen,
+    setIsScopeModalOpen,
+    canEditCriteria,
+    totalWeight,
+    otherWeightsSum,
+    handleRequestSave,
+    handleScopeSave,
+  };
+}
+
+export function EditPerformanceTablePage() {
+  const { id, sessionId, target, locationState } = usePageSessionState();
+  const form = useEditPerformanceTableForm(id, sessionId, target ?? locationState);
+  const modals = useEditModals(form.setCriterios);
+  const { notify } = useToast();
+  const deletion = useEditPageDeletion(id, form, modals, notify);
+  const dialogs = useEditPageDialogs(form, modals, sessionId);
+
+  const onExit = () => (form.isDirty ? dialogs.setIsDiscardOpen(true) : form.navigate(-1));
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
-      <Header title={form.nome || 'Sessão de apresentação'} onBack={handleExit} />
-      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4">
-        {(form.errorMessage || form.error) && (
-          <Alert tone="error">{form.errorMessage || form.error?.message}</Alert>
-        )}
-        <EditMainContent
-          form={form}
-          modals={modals}
-          onRequestSave={handleRequestSave}
-          onExit={handleExit}
-        />
-      </main>
+      <Header title={form.nome || 'Sessão de apresentação'} onBack={onExit} />
+      <EditPageBody
+        form={form}
+        modals={modals}
+        canEditCriteria={dialogs.canEditCriteria}
+        isSessionContext={Boolean(sessionId)}
+        onRequestSave={dialogs.handleRequestSave}
+        onExit={onExit}
+      />
       <EditModalsSection
         form={form}
         modals={modals}
-        totalWeight={totalWeight}
-        otherWeightsSum={otherWeightsSum}
+        totalWeight={dialogs.totalWeight}
+        otherWeightsSum={dialogs.otherWeightsSum}
+        canEditCriteria={dialogs.canEditCriteria}
         onConfirmDeleteCriterion={deletion.handleConfirmDeleteCriterion}
         isDeletingFormula={deletion.isDeletingFormula}
         onConfirmDeleteFormula={deletion.handleConfirmDeleteFormula}
-        isDiscardOpen={isDiscardOpen}
-        onCloseDiscard={() => setIsDiscardOpen(false)}
-        isSaveWarningOpen={isSaveWarningOpen}
-        onCloseSaveWarning={() => setIsSaveWarningOpen(false)}
+        isDiscardOpen={dialogs.isDiscardOpen}
+        onCloseDiscard={() => dialogs.setIsDiscardOpen(false)}
+        isSaveWarningOpen={dialogs.isSaveWarningOpen}
+        onCloseSaveWarning={() => dialogs.setIsSaveWarningOpen(false)}
+        isScopeModalOpen={dialogs.isScopeModalOpen}
+        onCloseScopeModal={() => dialogs.setIsScopeModalOpen(false)}
+        onConfirmScopeSave={dialogs.handleScopeSave}
       />
     </div>
   );
