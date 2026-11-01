@@ -8,7 +8,7 @@ const mockSession: Session = {
   id: 'sess-1',
   titulo: 'Sessão de Abertura',
   descricao: 'Primeira discussão do caso',
-  data: '2026-10-15',
+  data: '15-10-2026',
   ordem: 1,
   status: 'agendada',
 };

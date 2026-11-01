@@ -31,7 +31,7 @@ const session: MemberSession = {
   id: 's1',
   titulo: 'Sessão',
   descricao: null,
-  data: '2026-08-12',
+  data: '12-08-2026',
   ordem: 1,
   status: 'agendada',
   problemaId: 'p1',

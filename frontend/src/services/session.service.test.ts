@@ -24,7 +24,7 @@ const mockSession = {
   id: 'sess-1',
   titulo: 'Sessão 1',
   descricao: 'Primeira sessão',
-  data: '2026-10-15',
+  data: '15-10-2026',
   ordem: 1,
   status: 'agendada',
 };
@@ -51,7 +51,7 @@ describe('sessionService', () => {
 
   it('creates a session', async () => {
     const adapter = respondWith(mockSession, 201);
-    const payload = { titulo: 'Sessão 1', descricao: null, data: '2026-10-15' };
+    const payload = { titulo: 'Sessão 1', descricao: null, data: '15-10-2026' };
 
     await expect(sessionService.create('room-1', 'prob-1', payload)).resolves.toEqual(mockSession);
     expect(adapter.mock.calls[0][0]).toMatchObject({
@@ -63,7 +63,7 @@ describe('sessionService', () => {
   it('updates a session', async () => {
     const updated = { ...mockSession, titulo: 'Sessão Atualizada' };
     const adapter = respondWith(updated);
-    const payload = { titulo: 'Sessão Atualizada', descricao: null, data: '2026-10-15' };
+    const payload = { titulo: 'Sessão Atualizada', descricao: null, data: '15-10-2026' };
 
     await expect(sessionService.update('room-1', 'prob-1', 'sess-1', payload)).resolves.toEqual(
       updated,
