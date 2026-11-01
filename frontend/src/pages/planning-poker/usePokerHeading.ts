@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { memberRoomService } from '@/services/memberRoom.service';
 import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
-import { formatDayShortMonth } from '@/utils/formatDate';
+import { formatDayShortMonth } from '@/utils/date';
 
 type PokerHeadingParams = {
   roomId: string;

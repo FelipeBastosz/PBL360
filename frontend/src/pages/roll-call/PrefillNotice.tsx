@@ -1,5 +1,5 @@
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
-import { formatDayMonth } from '@/utils/formatDate';
+import { formatDayMonth } from '@/utils/date';
 
 export function PrefillNotice({ date }: { date: string }) {
   return (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
-import { formatDayMonth } from '@/utils/formatDate';
+import { formatDayMonth } from '@/utils/date';
 
 export type RollCallTitle = { title: string; subtitle: string };
 

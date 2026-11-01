@@ -1,3 +1,5 @@
+import { formatDate } from './date';
+
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
@@ -13,5 +15,5 @@ export function formatRelativeTime(isoDate: string, now: Date = new Date()): str
   if (elapsed < DAY) return plural(Math.floor(elapsed / HOUR), 'hora', 'horas');
   if (elapsed < 2 * DAY) return 'Ontem';
   if (elapsed < 7 * DAY) return plural(Math.floor(elapsed / DAY), 'dia', 'dias');
-  return date.toLocaleDateString('pt-BR');
+  return formatDate(isoDate);
 }

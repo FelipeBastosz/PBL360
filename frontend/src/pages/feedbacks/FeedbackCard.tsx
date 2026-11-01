@@ -1,5 +1,5 @@
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { formatDayShortMonth, formatFullDate } from '@/utils/formatDate';
+import { formatDayShortMonth, formatDate } from '@/utils/date';
 import type { FeedbackAuthor } from '@/types/feedback';
 import { FeedbackBadge } from './FeedbackBadge';
 
@@ -22,8 +22,8 @@ export function FeedbackCard({
   nota,
   tag,
 }: FeedbackCardProps) {
-  const displayDate = formatDayShortMonth(criadoEm.split('T')[0] ?? criadoEm);
-  const formattedFullDate = formatFullDate(criadoEm);
+  const displayDate = formatDayShortMonth(criadoEm);
+  const formattedFullDate = formatDate(criadoEm);
 
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
@@ -60,7 +60,7 @@ export function FeedbackCard({
 
       {editadoEm && (
         <footer className="text-right text-[11px] text-muted/80">
-          editado em {formatFullDate(editadoEm)}
+          editado em {formatDate(editadoEm)}
         </footer>
       )}
     </article>
