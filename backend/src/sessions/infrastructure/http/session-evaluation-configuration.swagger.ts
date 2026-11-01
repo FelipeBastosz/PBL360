@@ -50,6 +50,12 @@ export const SetSessionTableSwaggerDocs = applyDecorators(
   ...accessErrors,
 );
 
+export const GetSessionFormulaSwaggerDocs = applyDecorators(
+  ApiOperation({ summary: 'Consulta a fórmula vigente da nota da sessão.' }),
+  ApiOkResponse({ type: SessionFormulaDto }),
+  ...accessErrors,
+);
+
 export const SetSessionFormulaSwaggerDocs = applyDecorators(
   ApiOperation({ summary: 'Personaliza a fórmula da nota da sessão.' }),
   ApiOkResponse({ type: SessionFormulaDto }),

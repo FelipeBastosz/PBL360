@@ -7,12 +7,14 @@ import { UserType } from '@/users/domain/enums/user-type.enum';
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import {
   SessionEvaluationConfigurationDto,
+  SessionFormulaDto,
   UpdateSessionFormulaDto,
   UpdateSessionTableDto,
 } from '../../application/dtos/session-evaluation-configuration.dto';
 import { SessionEvaluationConfigurationService } from '../../application/services/session-evaluation-configuration.service';
 import {
   GetSessionEvaluationConfigurationSwaggerDocs,
+  GetSessionFormulaSwaggerDocs,
   RestoreSessionFormulaSwaggerDocs,
   SetSessionFormulaSwaggerDocs,
   SetSessionTableSwaggerDocs,
@@ -32,6 +34,15 @@ export class SessionEvaluationConfigurationController {
     @AuthenticatedUserId() tutorId: string,
   ): Promise<SessionEvaluationConfigurationDto> {
     return this.configuration.get(sessionId, tutorId);
+  }
+
+  @Get('formula')
+  @GetSessionFormulaSwaggerDocs
+  getFormula(
+    @UuidParam('sessaoId') sessionId: string,
+    @AuthenticatedUserId() tutorId: string,
+  ): Promise<SessionFormulaDto> {
+    return this.configuration.getFormula(sessionId, tutorId);
   }
 
   @Put('tabela')
