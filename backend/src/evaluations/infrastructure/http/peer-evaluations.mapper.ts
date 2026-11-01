@@ -27,6 +27,7 @@ export function toSessionPeersResponse(output: ListSessionPeersOutput): SessionP
   return {
     liberada: output.liberada,
     prazo: output.prazo,
+    chamadaRealizada: output.chamadaRealizada ?? true,
     colegas: output.colegas.map((c) => ({
       alunoId: c.alunoId,
       nome: c.nome,

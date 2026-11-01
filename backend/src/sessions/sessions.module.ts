@@ -99,6 +99,11 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     { provide: SESSION_ATTACHMENT_REPOSITORY, useClass: PgSessionAttachmentRepository },
     { provide: SESSION_REPORT_REPOSITORY, useClass: PgSessionReportRepository },
   ],
-  exports: [SESSION_REPOSITORY, SESSION_REPORT_REPOSITORY, SessionAccessService],
+  exports: [
+    SESSION_REPOSITORY,
+    SESSION_REPORT_REPOSITORY,
+    SessionAccessService,
+    ATTENDANCE_REPOSITORY,
+  ],
 })
 export class SessionsModule {}
