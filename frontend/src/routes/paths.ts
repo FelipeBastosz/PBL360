@@ -50,4 +50,5 @@ export const ROUTES = {
   problemGrades: '/turmas/:roomId/problemas/:problemId/notas',
   sessionFeedback: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/feedback',
   problemFeedbacks: '/turmas/:roomId/problemas/:problemId/feedbacks',
+  problemFormula: '/turmas/:roomId/problemas/:problemId/formula',
 } as const;
