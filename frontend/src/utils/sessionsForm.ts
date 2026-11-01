@@ -1,8 +1,10 @@
 import type { FieldErrors } from '@/hooks/useForm';
+import { parseDisplayDate } from './date';
 
 export type SessionFormValues = {
   titulo: string;
   descricao: string;
+  /** DD/MM/AAAA, as typed in the date field. */
   data: string;
 };
 
@@ -21,6 +23,8 @@ export function validateSessionForm(values: SessionFormValues): FieldErrors<Sess
 
   if (!values.data) {
     errors.data = 'A data da sessão é obrigatória.';
+  } else if (!parseDisplayDate(values.data)) {
+    errors.data = 'Informe uma data válida no formato DD/MM/AAAA.';
   }
 
   return errors;

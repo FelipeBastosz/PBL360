@@ -2,12 +2,14 @@ import { type FormEvent, useEffect, type ReactNode } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
+import { DateField } from '@/components/ui/DateField';
 import { Alert } from '@/components/ui/Alert';
 import { useForm } from '@/hooks/useForm';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { sessionService } from '@/services/session.service';
 import { validateSessionForm, type SessionFormValues } from '@/utils/sessionsForm';
+import { fromApiDate, toApiDate } from '@/utils/date';
 import type { Session } from '@/types/session';
 
 type SessionFormModalProps = {
@@ -81,10 +83,8 @@ function SessionFormContent({ isEditing, isLoading, error, form, onSubmit }: For
         onChange={(v) => form.setValue('descricao', v)}
         error={form.errors.descricao}
       />
-      <TextField
+      <DateField
         label="Data da Sessão"
-        type="date"
-        placeholder="dd/mm/aaaa"
         value={form.values.data}
         onChange={(v) => form.setValue('data', v)}
         error={form.errors.data}
@@ -102,14 +102,15 @@ function syncFormValues(
 ) {
   setValue('titulo', data?.titulo || '');
   setValue('descricao', data?.descricao || '');
-  setValue('data', data?.data || '');
+  setValue('data', fromApiDate(data?.data));
 }
 
 function buildSessionPayload(values: SessionFormValues) {
   return {
     titulo: values.titulo.trim(),
     descricao: values.descricao.trim() || null,
-    data: values.data,
+    // validateSessionForm has already guaranteed a valid date at this point
+    data: toApiDate(values.data) ?? values.data,
   };
 }
 
@@ -125,7 +126,7 @@ function useSessionSubmit(
     {
       titulo: initialData?.titulo || '',
       descricao: initialData?.descricao || '',
-      data: initialData?.data || '',
+      data: fromApiDate(initialData?.data),
     },
     validateSessionForm,
   );
