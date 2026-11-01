@@ -272,4 +272,43 @@ describe('sessionService', () => {
       url: '/sessoes/sess-1/formula/restaurar-padrao',
     });
   });
+
+  it('fetches session table editing permissions', async () => {
+    const mockPermissions = {
+      podeEditarCriterios: false,
+      motivo: 'Esta tabela já foi usada em sessões que aconteceram',
+      sessoesQueUsam: [{ sessaoId: 's1', rotulo: 'S1', jaAconteceu: true }],
+    };
+    const adapter = respondWith(mockPermissions);
+
+    await expect(sessionService.getTableEditPermissions('sess-1')).resolves.toEqual(
+      mockPermissions,
+    );
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'get',
+      url: '/sessoes/sess-1/tabela/permissoes-edicao',
+    });
+  });
+
+  it('edits session table with scope and criteria', async () => {
+    const mockResponse = {
+      tabela: { id: 'copy-1', nome: 'Barema — P1S1' },
+      sessoesAtualizadas: [{ sessaoId: 'sess-1', rotulo: 'P1S1' }],
+    };
+    const adapter = respondWith(mockResponse);
+    const payload = {
+      escopo: 'SESSAO' as const,
+      nome: 'Barema',
+      criterios: [
+        { id: 'c1', peso: 5 },
+        { id: 'c2', peso: 5 },
+      ],
+    };
+
+    await expect(sessionService.editSessionTable('sess-1', payload)).resolves.toEqual(mockResponse);
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'put',
+      url: '/sessoes/sess-1/tabela/edicao',
+    });
+  });
 });

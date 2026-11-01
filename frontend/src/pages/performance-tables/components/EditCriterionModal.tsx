@@ -8,6 +8,7 @@ type Props = {
   criterion: CriterionInput | null;
   onSave: (updated: CriterionInput) => void;
   otherWeightsSum: number;
+  canEditFields?: boolean;
 };
 
 type FieldProps = {
@@ -18,6 +19,7 @@ type FieldProps = {
   placeholder?: string;
   type?: string;
   hasError?: boolean;
+  disabled?: boolean;
 };
 
 function CriterionField({
@@ -28,6 +30,7 @@ function CriterionField({
   placeholder,
   type = 'text',
   hasError,
+  disabled = false,
 }: FieldProps) {
   return (
     <div className="flex flex-col gap-1">
@@ -37,12 +40,13 @@ function CriterionField({
       <input
         id={id}
         type={type}
+        disabled={disabled}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`h-10 w-full rounded-[10px] border px-3 text-sm text-ink ${
-          hasError ? 'border-danger' : 'border-black/10'
-        }`}
+          disabled ? 'bg-black/5 opacity-60 cursor-not-allowed border-black/10' : ''
+        } ${hasError ? 'border-danger' : 'border-black/10'}`}
       />
     </div>
   );
@@ -109,27 +113,21 @@ function useEditCriterionForm(
   };
 }
 
-function EditCriterionForm({
-  criterion,
-  otherWeightsSum,
-  onSave,
-  onClose,
+function CriterionInputs({
+  form,
+  canEditFields,
 }: {
-  criterion: CriterionInput;
-  otherWeightsSum: number;
-  onSave: (updated: CriterionInput) => void;
-  onClose: () => void;
+  form: ReturnType<typeof useEditCriterionForm>;
+  canEditFields: boolean;
 }) {
-  const form = useEditCriterionForm(criterion, otherWeightsSum, onSave, onClose);
-
   return (
-    <form noValidate onSubmit={form.handleSubmit} className="flex flex-col gap-3 pt-2">
-      {form.errorMsg && <p className="text-xs font-semibold text-danger">{form.errorMsg}</p>}
+    <>
       <CriterionField
         id="edit-criterion-name"
         label="Nome do Critério"
         placeholder="Critério"
         value={form.nome}
+        disabled={!canEditFields}
         onChange={(v) => {
           form.setNome(v);
           form.setErrorMsg(null);
@@ -141,6 +139,7 @@ function EditCriterionForm({
         label="Descrição do Critério"
         placeholder="Critério"
         value={form.descricao}
+        disabled={!canEditFields}
         onChange={form.setDescricao}
       />
       <CriterionField
@@ -155,12 +154,42 @@ function EditCriterionForm({
         }}
         hasError={Boolean(form.errorMsg)}
       />
+    </>
+  );
+}
+
+function EditCriterionForm({
+  criterion,
+  otherWeightsSum,
+  canEditFields = true,
+  onSave,
+  onClose,
+}: {
+  criterion: CriterionInput;
+  otherWeightsSum: number;
+  canEditFields?: boolean;
+  onSave: (updated: CriterionInput) => void;
+  onClose: () => void;
+}) {
+  const form = useEditCriterionForm(criterion, otherWeightsSum, onSave, onClose);
+
+  return (
+    <form noValidate onSubmit={form.handleSubmit} className="flex flex-col gap-3 pt-2">
+      {form.errorMsg && <p className="text-xs font-semibold text-danger">{form.errorMsg}</p>}
+      <CriterionInputs form={form} canEditFields={canEditFields} />
       <FormSubmitButton />
     </form>
   );
 }
 
-export function EditCriterionModal({ isOpen, onClose, criterion, onSave, otherWeightsSum }: Props) {
+export function EditCriterionModal({
+  isOpen,
+  onClose,
+  criterion,
+  onSave,
+  otherWeightsSum,
+  canEditFields = true,
+}: Props) {
   if (!isOpen || !criterion) return null;
 
   return (
@@ -178,6 +207,7 @@ export function EditCriterionModal({ isOpen, onClose, criterion, onSave, otherWe
           key={criterion.id ?? criterion.ordem}
           criterion={criterion}
           otherWeightsSum={otherWeightsSum}
+          canEditFields={canEditFields}
           onSave={onSave}
           onClose={onClose}
         />

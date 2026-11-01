@@ -7,6 +7,9 @@ import { ROUTES } from '@/routes/paths';
 import { readApplyTarget } from '@/utils/navigationState';
 import type { CriterionInput } from '@/types/performanceTable';
 
+import { sessionService } from '@/services/session.service';
+import type { SessionTableEditPermissions } from '@/types/session';
+
 function validateEditFormula(nome: string, count: number, totalWeight: number) {
   if (!nome.trim()) return 'O título da fórmula é obrigatório.';
   if (count === 0) return 'A tabela deve possuir ao menos um critério.';
@@ -50,10 +53,37 @@ async function submitUpdate(
   navigate(ROUTES.performanceTables, { replace: true, state: target });
 }
 
-function useFetchTableInitialData(id: string) {
+async function submitSessionUpdate(
+  sessionId: string,
+  scope: 'SESSAO' | 'TODAS',
+  payload: { nome: string; criterios: CriterionInput[] },
+  canEditCriteria: boolean,
+  notify: (t: { tone: 'success'; message: string }) => void,
+  navigate: (to: string, opts?: { replace?: boolean; state?: unknown }) => void,
+  targetState: unknown,
+) {
+  const criteriaPayload = payload.criterios.map((c) => ({
+    ...(c.id ? { id: c.id } : {}),
+    ...(canEditCriteria ? { nome: c.nome } : {}),
+    peso: c.peso,
+  }));
+
+  const res = await sessionService.editSessionTable(sessionId, {
+    escopo: scope,
+    ...(canEditCriteria ? { nome: payload.nome } : {}),
+    criterios: criteriaPayload,
+  });
+
+  notify({ tone: 'success', message: 'Fórmula da sessão atualizada com sucesso.' });
+  navigate(ROUTES.performanceTables, { replace: true, state: targetState });
+  return res;
+}
+
+function useFetchTableInitialData(id: string, sessionId?: string) {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [criterios, setCriterios] = useState<CriterionInput[]>([]);
+  const [permissions, setPermissions] = useState<SessionTableEditPermissions | null>(null);
   const [initialData, setInitialData] = useState<{
     nome: string;
     descricao: string;
@@ -76,7 +106,13 @@ function useFetchTableInitialData(id: string) {
         });
       }
     });
-  }, [run]);
+    if (sessionId) {
+      sessionService
+        .getTableEditPermissions(sessionId)
+        .then(setPermissions)
+        .catch(() => undefined);
+    }
+  }, [run, sessionId]);
 
   return {
     nome,
@@ -86,12 +122,56 @@ function useFetchTableInitialData(id: string) {
     criterios,
     setCriterios,
     initialData,
+    permissions,
     isLoading,
     error,
   };
 }
 
-function useSaveExecution(id: string, data: ReturnType<typeof useFetchTableInitialData>) {
+async function performSave(
+  id: string,
+  data: ReturnType<typeof useFetchTableInitialData>,
+  notify: (t: { tone: 'success'; message: string }) => void,
+  navigate: (to: string, opts?: { replace?: boolean; state?: unknown }) => void,
+) {
+  await submitUpdate(
+    id,
+    {
+      nome: data.nome.trim(),
+      descricao: data.descricao.trim() || null,
+      criterios: data.criterios,
+    },
+    notify,
+    navigate,
+  );
+}
+
+async function performSessionSave(
+  sessionId: string,
+  scope: 'SESSAO' | 'TODAS',
+  data: ReturnType<typeof useFetchTableInitialData>,
+  notify: (t: { tone: 'success'; message: string }) => void,
+  navigate: (to: string, opts?: { replace?: boolean; state?: unknown }) => void,
+  targetState?: unknown,
+) {
+  const canEditCriteria = data.permissions?.podeEditarCriterios ?? true;
+  await submitSessionUpdate(
+    sessionId,
+    scope,
+    { nome: data.nome.trim(), criterios: data.criterios },
+    canEditCriteria,
+    notify,
+    navigate,
+    targetState,
+  );
+}
+
+function useSaveExecution(
+  id: string,
+  data: ReturnType<typeof useFetchTableInitialData>,
+  sessionId?: string,
+  targetState?: unknown,
+) {
   const navigate = useNavigate();
   const { notify } = useToast();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -108,32 +188,35 @@ function useSaveExecution(id: string, data: ReturnType<typeof useFetchTableIniti
     return true;
   }
 
-  async function executeSave() {
+  const runWithSaving = async (action: () => Promise<void>) => {
     setIsSaving(true);
     try {
-      await submitUpdate(
-        id,
-        {
-          nome: data.nome.trim(),
-          descricao: data.descricao.trim() || null,
-          criterios: data.criterios,
-        },
-        notify,
-        navigate,
-      );
+      await action();
     } catch (caught: unknown) {
       setErrorMessage(caught instanceof Error ? caught.message : 'Erro ao atualizar a fórmula.');
     } finally {
       setIsSaving(false);
     }
-  }
+  };
 
-  return { isSaving, prepareSave, executeSave, errorMessage, setErrorMessage, navigate };
+  return {
+    isSaving,
+    prepareSave,
+    executeSave: () => runWithSaving(() => performSave(id, data, notify, navigate)),
+    executeSessionSave: (scope: 'SESSAO' | 'TODAS') =>
+      sessionId &&
+      runWithSaving(() =>
+        performSessionSave(sessionId, scope, data, notify, navigate, targetState),
+      ),
+    errorMessage,
+    setErrorMessage,
+    navigate,
+  };
 }
 
-export function useEditPerformanceTableForm(id: string) {
-  const data = useFetchTableInitialData(id);
-  const save = useSaveExecution(id, data);
+export function useEditPerformanceTableForm(id: string, sessionId?: string, targetState?: unknown) {
+  const data = useFetchTableInitialData(id, sessionId);
+  const save = useSaveExecution(id, data, sessionId, targetState);
   const isDirty = useMemo(
     () =>
       checkIsDirty(

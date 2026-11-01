@@ -12,6 +12,8 @@ type ExtendedSession = Session & {
   avaliacaoEntreParesLiberada?: boolean;
   self_eval_released?: boolean;
   peer_eval_released?: boolean;
+  tabelaNome?: string | null;
+  tabela?: { nome?: string };
 };
 
 type SessionCardProps = {
@@ -48,6 +50,11 @@ export function SessionCard({ session, roomId, problemId }: SessionCardProps) {
             {session.titulo} · {formatSessionDisplayDate(session.data)}
           </h3>
           <p className="truncate text-xs text-muted">{session.descricao || 'Sem descrição'}</p>
+          {(session.tabelaNome || session.tabela?.nome) && (
+            <span className="mt-0.5 truncate text-[11px] font-medium text-brand-900">
+              Fórmula: {session.tabelaNome || session.tabela?.nome}
+            </span>
+          )}
         </div>
       </div>
 

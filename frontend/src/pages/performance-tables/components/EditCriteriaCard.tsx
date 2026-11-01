@@ -5,10 +5,12 @@ function CriterionRow({
   item,
   onEdit,
   onDelete,
+  canDelete = true,
 }: {
   item: CriterionInput;
   onEdit: () => void;
   onDelete: () => void;
+  canDelete?: boolean;
 }) {
   return (
     <div className="border-b border-black/5 px-4 py-3">
@@ -29,14 +31,16 @@ function CriterionRow({
           >
             <PencilIcon className="size-5" />
           </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            aria-label={`Excluir critério ${item.nome}`}
-            className="inline-flex size-11 items-center justify-center rounded-full transition-[background-color,scale] duration-200 active:scale-90 focus-visible:outline-2 text-danger hover:bg-danger-soft focus-visible:outline-danger"
-          >
-            <TrashIcon className="size-5" />
-          </button>
+          {canDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label={`Excluir critério ${item.nome}`}
+              className="inline-flex size-11 items-center justify-center rounded-full transition-[background-color,scale] duration-200 active:scale-90 focus-visible:outline-2 text-danger hover:bg-danger-soft focus-visible:outline-danger"
+            >
+              <TrashIcon className="size-5" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -45,11 +49,13 @@ function CriterionRow({
 
 export function EditCriteriaCard({
   items,
+  canEditCriteria = true,
   onOpenAdd,
   onOpenEdit,
   onOpenDelete,
 }: {
   items: CriterionInput[];
+  canEditCriteria?: boolean;
   onOpenAdd: () => void;
   onOpenEdit: (criterion: CriterionInput) => void;
   onOpenDelete: (criterion: CriterionInput) => void;
@@ -67,16 +73,19 @@ export function EditCriteriaCard({
             item={item}
             onEdit={() => onOpenEdit(item)}
             onDelete={() => onOpenDelete(item)}
+            canDelete={canEditCriteria}
           />
         ))}
       </div>
-      <button
-        type="button"
-        onClick={onOpenAdd}
-        className="w-full px-4 py-3 text-left text-sm font-semibold text-brand-900 hover:bg-brand-50"
-      >
-        +Adicionar critério
-      </button>
+      {canEditCriteria && (
+        <button
+          type="button"
+          onClick={onOpenAdd}
+          className="w-full px-4 py-3 text-left text-sm font-semibold text-brand-900 hover:bg-brand-50"
+        >
+          +Adicionar critério
+        </button>
+      )}
     </div>
   );
 }
