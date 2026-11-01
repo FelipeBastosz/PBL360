@@ -36,7 +36,7 @@ function ManageRoomCard({
             <Link
               to={ROUTES.editRoom.replace(':id', room.id)}
               aria-label={`Editar ${room.nome}`}
-              className="p-1 text-ink/70 hover:text-brand-900 focus-visible:outline-2 focus-visible:outline-brand-900"
+              className="relative p-1 text-ink/70 hover:text-brand-900 after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-brand-900"
             >
               <PencilIcon className="size-5" />
             </Link>
@@ -44,7 +44,7 @@ function ManageRoomCard({
               type="button"
               onClick={() => onDeleteRequest(room)}
               aria-label={`Excluir ${room.nome}`}
-              className="p-1 text-danger hover:text-danger/80 focus-visible:outline-2 focus-visible:outline-danger"
+              className="relative p-1 text-danger hover:text-danger/80 after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-danger"
             >
               <TrashIcon className="size-5" />
             </button>

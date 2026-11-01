@@ -15,7 +15,7 @@ export function DescriptionCard({
           type="button"
           onClick={onOpenEdit}
           aria-label="Editar descrição e título"
-          className="text-brand-900"
+          className="relative text-brand-900 after:absolute after:-inset-3"
         >
           <PencilIcon className="size-5" />
         </button>
@@ -53,7 +53,7 @@ export function EditActions({
       <button
         type="button"
         onClick={onCancel}
-        className="text-center text-sm font-semibold text-brand-900 underline"
+        className="relative text-center text-sm font-semibold text-brand-900 underline after:absolute after:inset-x-0 after:-inset-y-2"
       >
         Cancelar
       </button>

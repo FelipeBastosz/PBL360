@@ -28,7 +28,7 @@ function ManageProblemCard({
           type="button"
           onClick={() => onEdit(problem)}
           aria-label={`Editar ${problem.titulo}`}
-          className="p-1 text-ink/70 hover:text-brand-900 focus-visible:outline-2"
+          className="relative p-1 text-ink/70 hover:text-brand-900 after:absolute after:-inset-1.5 focus-visible:outline-2"
         >
           <PencilIcon className="size-5" />
         </button>
@@ -36,7 +36,7 @@ function ManageProblemCard({
           type="button"
           onClick={() => onDelete(problem)}
           aria-label={`Excluir ${problem.titulo}`}
-          className="p-1 text-danger hover:text-danger/80 focus-visible:outline-2 focus-visible:outline-danger"
+          className="relative p-1 text-danger hover:text-danger/80 after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-danger"
         >
           <TrashIcon className="size-5" />
         </button>
