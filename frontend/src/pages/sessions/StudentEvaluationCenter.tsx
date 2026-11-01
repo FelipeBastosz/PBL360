@@ -23,12 +23,13 @@ import { NonParticipantEmptyState } from './components/NonParticipantEmptyState'
 type EvaluationCardProps = {
   title: string;
   badge: string;
+  reason?: string;
   deadline?: string | null;
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
   path?: string;
 };
 
-function EvaluationCard({ title, badge, deadline, Icon, path }: EvaluationCardProps) {
+function EvaluationCard({ title, badge, reason, deadline, Icon, path }: EvaluationCardProps) {
   const isLocked = !path;
 
   const content = (
@@ -46,6 +47,7 @@ function EvaluationCard({ title, badge, deadline, Icon, path }: EvaluationCardPr
             <span className="text-xs text-muted">Prazo: {formatDeadline(deadline)}</span>
           )}
         </div>
+        {reason && <span className="text-xs leading-relaxed text-muted">{reason}</span>}
       </span>
       <ChevronRightIcon className="size-5 shrink-0 text-muted/60" aria-hidden />
     </>
@@ -119,6 +121,11 @@ function EvaluationCardsList({
       <EvaluationCard
         title="Notas e Feedbacks"
         badge={summary?.feedback.disponivel ? 'Disponível' : 'Indisponível'}
+        reason={
+          summary && !summary.feedback.disponivel && !summary.feedback.avaliacaoTutorEnviada
+            ? 'Você ainda não foi avaliado pelo tutor nesta sessão.'
+            : undefined
+        }
         Icon={ChatBubbleBottomCenterTextIcon}
         path={feedbackPath}
       />

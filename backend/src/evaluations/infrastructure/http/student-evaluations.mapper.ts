@@ -22,21 +22,42 @@ export function toSaveSelfAssessmentInput(
 export function toStudentEvaluationSummaryResponse(output: {
   self: { released: boolean; deadline: Date | null; status: string };
   peers: { released: boolean; deadline: Date | null; submitted: number; total: number };
-  feedback: { available: boolean; new: boolean };
+  feedback: { available: boolean; new: boolean; tutorEvaluationSubmitted: boolean };
 }): StudentEvaluationSummaryResponseDto {
   return {
-    autoavaliacao: {
-      liberada: output.self.released,
-      prazo: output.self.deadline,
-      status: output.self.status,
-    },
-    pares: {
-      liberada: output.peers.released,
-      prazo: output.peers.deadline,
-      avaliados: output.peers.submitted,
-      total: output.peers.total,
-    },
-    feedback: { disponivel: output.feedback.available, novo: output.feedback.new },
+    autoavaliacao: toSelfSummaryResponse(output.self),
+    pares: toPeerSummaryResponse(output.peers),
+    feedback: toFeedbackSummaryResponse(output.feedback),
+  };
+}
+
+function toSelfSummaryResponse(self: { released: boolean; deadline: Date | null; status: string }) {
+  return { liberada: self.released, prazo: self.deadline, status: self.status };
+}
+
+function toPeerSummaryResponse(peers: {
+  released: boolean;
+  deadline: Date | null;
+  submitted: number;
+  total: number;
+}) {
+  return {
+    liberada: peers.released,
+    prazo: peers.deadline,
+    avaliados: peers.submitted,
+    total: peers.total,
+  };
+}
+
+function toFeedbackSummaryResponse(feedback: {
+  available: boolean;
+  new: boolean;
+  tutorEvaluationSubmitted: boolean;
+}) {
+  return {
+    disponivel: feedback.available,
+    novo: feedback.new,
+    avaliacaoTutorEnviada: feedback.tutorEvaluationSubmitted,
   };
 }
 

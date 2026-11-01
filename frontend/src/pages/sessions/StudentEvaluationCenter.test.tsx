@@ -22,6 +22,7 @@ const mockReleasedSummary: StudentEvaluationSummaryResponse = {
   feedback: {
     disponivel: true,
     novo: false,
+    avaliacaoTutorEnviada: true,
   },
 };
 
@@ -40,6 +41,7 @@ const mockLockedSummary: StudentEvaluationSummaryResponse = {
   feedback: {
     disponivel: false,
     novo: false,
+    avaliacaoTutorEnviada: false,
   },
 };
 
@@ -97,6 +99,27 @@ describe('StudentEvaluationCenter', () => {
       expect(screen.queryByRole('link')).not.toBeInTheDocument();
       expect(screen.getAllByText('Bloqueada')).toHaveLength(2);
       expect(screen.getByText('Indisponível')).toBeInTheDocument();
+      expect(
+        screen.getByText('Você ainda não foi avaliado pelo tutor nesta sessão.'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('does not show the unevaluated reason after the tutor has submitted an evaluation', async () => {
+    vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
+      ...mockLockedSummary,
+      feedback: {
+        ...mockLockedSummary.feedback,
+        avaliacaoTutorEnviada: true,
+      },
+    });
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Indisponível')).toBeInTheDocument();
+      expect(
+        screen.queryByText('Você ainda não foi avaliado pelo tutor nesta sessão.'),
+      ).not.toBeInTheDocument();
     });
   });
 

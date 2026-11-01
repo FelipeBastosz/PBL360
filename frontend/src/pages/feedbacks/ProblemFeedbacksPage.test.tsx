@@ -36,6 +36,7 @@ describe('ProblemFeedbacksPage', () => {
 
   it('renders individual feedback at the top with score, general feedback, and sessions in order', async () => {
     vi.mocked(feedbackService.getMyProblemFeedbacks).mockResolvedValueOnce({
+      notaFinal: 8.7,
       individual: {
         id: 'fb-ind',
         autor: { id: 'prof-1', nome: 'Prof. Silva' },
@@ -52,6 +53,7 @@ describe('ProblemFeedbacksPage', () => {
         criadoEm: '2026-04-09T10:00:00Z',
         editadoEm: null,
         novo: false,
+        nota: null,
       },
       sessoes: [
         {
@@ -65,6 +67,7 @@ describe('ProblemFeedbacksPage', () => {
             criadoEm: '2026-04-02T10:00:00Z',
             editadoEm: null,
             novo: false,
+            nota: 8.5,
           },
         },
         {
@@ -81,7 +84,8 @@ describe('ProblemFeedbacksPage', () => {
     // Verify sections and ordering
     expect(await screen.findByRole('heading', { name: 'Feedback Individual' })).toBeInTheDocument();
     expect(screen.getByText('Desempenho individual excelente.')).toBeInTheDocument();
-    expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 9.0');
+    expect(screen.getByText('Nota 9.0')).toBeInTheDocument();
+    expect(screen.getByTestId('feedback-nota-final')).toHaveTextContent('Nota final 8.7');
     expect(screen.getByTestId('badge-novo')).toBeInTheDocument();
 
     expect(screen.getByRole('heading', { name: 'Geral da Turma' })).toBeInTheDocument();
@@ -89,11 +93,13 @@ describe('ProblemFeedbacksPage', () => {
 
     expect(screen.getByRole('heading', { name: 'Por Sessão' })).toBeInTheDocument();
     expect(screen.getByText('Bom início de abertura.')).toBeInTheDocument();
+    expect(screen.getByText('Nota 8.5')).toBeInTheDocument();
     expect(screen.getByText('Feedback ainda não disponível para esta sessão.')).toBeInTheDocument();
   });
 
   it('renders empty state when there are no feedbacks', async () => {
     vi.mocked(feedbackService.getMyProblemFeedbacks).mockResolvedValueOnce({
+      notaFinal: null,
       individual: null,
       geral: null,
       sessoes: [],
@@ -104,5 +110,21 @@ describe('ProblemFeedbacksPage', () => {
     expect(
       await screen.findByText('Nenhum feedback disponível para este problema ainda.'),
     ).toBeInTheDocument();
+  });
+
+  it('renders the final score even when no feedbacks are available', async () => {
+    vi.mocked(feedbackService.getMyProblemFeedbacks).mockResolvedValueOnce({
+      notaFinal: 8.75,
+      individual: null,
+      geral: null,
+      sessoes: [],
+    });
+
+    renderPage();
+
+    expect(await screen.findByTestId('feedback-nota-final')).toHaveTextContent('Nota final 8.8');
+    expect(
+      screen.queryByText('Nenhum feedback disponível para este problema ainda.'),
+    ).not.toBeInTheDocument();
   });
 });
