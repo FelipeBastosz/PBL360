@@ -38,7 +38,7 @@ function ReportExportActions({
   onExport,
 }: ReportExportActionsProps) {
   return (
-    <div className="mt-6 flex flex-col gap-3">
+    <div className="mt-6 flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4">
       <Button variant="primary" isLoading={isExportingPDF} onClick={() => onExport('PDF')}>
         Exportar em PDF
       </Button>
