@@ -26,15 +26,15 @@ function PeerEvaluationCard({
 }) {
   return (
     <section aria-label={`Avaliação de ${peer.name}`} className={cn(CARD_CLASS, 'p-4')}>
-      <div className="mb-2 flex items-center justify-between border-b border-black/5 pb-4">
-        <div className="flex items-center gap-4">
-          <span className="flex size-12 items-center justify-center rounded-xl bg-surface">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-black/5 pb-4">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-surface">
             <UserCircleIcon className="size-7 text-ink" />
           </span>
-          <span className="text-lg font-semibold text-ink">{peer.name}</span>
+          <span className="truncate text-lg font-semibold text-ink">{peer.name}</span>
         </div>
         {peer.isSubmitted && (
-          <span className="text-xs font-semibold text-success">Avaliação já enviada</span>
+          <span className="shrink-0 text-xs font-semibold text-success">Avaliação já enviada</span>
         )}
       </div>
       <div>
