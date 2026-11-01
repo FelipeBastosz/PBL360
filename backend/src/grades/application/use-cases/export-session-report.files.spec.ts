@@ -262,7 +262,7 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
     expect(anaRow.getCell(6).value).toBe('Participativo, Liderança');
     expect(anaRow.getCell(7).value).toBe('Nota enviada');
     expect(typeof anaRow.getCell(8).value).toBe('number');
-    expect(anaRow.getCell(8).value).toBe(8.98);
+    expect(anaRow.getCell(8).value).toBe(9);
 
     // Verify Row 10 (Bruno Lima - Draft evaluation)
     const brunoRow = sheet1.getRow(10);

@@ -1,4 +1,5 @@
 import { EvaluationStatus } from '@/evaluations/domain/enums/evaluation-status.enum';
+import { roundGrade } from '@/shared/utils/grade-precision';
 import type { GradesResponseDto } from '../../dtos/grades-response.dto';
 import type { ProblemGradesWithSessionGrades } from './get-problem-grades.helper';
 
@@ -20,8 +21,6 @@ const ABSENCE_LABELS: Record<string, string> = {
   AUSENTE: 'Ausente',
   JUSTIFICADA: 'Falta justificada',
 };
-
-const toCents = (grade: number): number => Math.round((grade + Number.EPSILON) * 100) / 100;
 
 function exactGradeOf(
   sessionGrades: ProblemGradesWithSessionGrades['sessionGrades'],
@@ -52,7 +51,7 @@ const isPlanningPoker = (session: StudentSessionGrade): boolean =>
 
 function reportedGrade({ session, exactGrade }: SessionReportGradeEntry): number | null {
   if (isPlanningPoker(session) || exactGrade === null) return session.nota;
-  return toCents(exactGrade);
+  return roundGrade(exactGrade);
 }
 
 function pendingLabel(

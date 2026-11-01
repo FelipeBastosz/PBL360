@@ -39,7 +39,8 @@ describe('normalizeCell', () => {
 
 describe('formatCellText', () => {
   it('formats numbers in Brazilian Portuguese with fixed decimals', () => {
-    expect(formatCellText(8.5)).toBe('8,50');
+    expect(formatCellText(8.5)).toBe('8,5');
+    expect(formatCellText(8.5, 2)).toBe('8,50');
     expect(formatCellText(7.333, 1)).toBe('7,3');
     expect(formatCellText(3, 0)).toBe('3');
   });
@@ -50,12 +51,12 @@ describe('formatCellText', () => {
 });
 
 describe('columnDecimals', () => {
-  it('defaults to two decimals and keeps the value within bounds', () => {
+  it('defaults to one decimal and keeps the value within bounds', () => {
     const column = { header: 'Nota', type: ReportColumnType.NUMBER };
-    expect(columnDecimals(column)).toBe(2);
+    expect(columnDecimals(column)).toBe(1);
     expect(columnDecimals({ ...column, decimals: 0 })).toBe(0);
     expect(columnDecimals({ ...column, decimals: -3 })).toBe(0);
     expect(columnDecimals({ ...column, decimals: 40 })).toBe(6);
-    expect(columnDecimals({ ...column, decimals: Number.NaN })).toBe(2);
+    expect(columnDecimals({ ...column, decimals: Number.NaN })).toBe(1);
   });
 });

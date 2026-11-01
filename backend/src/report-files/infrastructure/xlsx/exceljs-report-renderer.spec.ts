@@ -95,7 +95,7 @@ describe('ExceljsReportRenderer', () => {
       expect(first.getCell(2).numFmt).toBe('@');
       expect(first.getCell(3).value).toBe(8.5);
       expect(first.getCell(6).value).toBe(8.62);
-      expect(first.getCell(6).numFmt).toBe('0.00');
+      expect(first.getCell(6).numFmt).toBe('0.0');
     });
 
     it('leaves missing grades empty instead of writing zero', () => {

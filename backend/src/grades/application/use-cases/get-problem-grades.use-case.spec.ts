@@ -114,7 +114,7 @@ describe('GetProblemGradesUseCase', () => {
     });
   });
 
-  it('returns the exact session grades alongside the rounded response', async () => {
+  it('returns the standardized session grades alongside the rounded response', async () => {
     gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
     gradesRepository.findProblemData.mockResolvedValue({
       ...emptyData,
@@ -130,7 +130,7 @@ describe('GetProblemGradesUseCase', () => {
 
     expect(result.response.alunos[0]?.sessoes[0]?.nota).toBe(7.7);
     expect(result.sessionGrades).toEqual([
-      expect.objectContaining({ session_id: 'session-1', student_id: 'student-1', grade: 7.66 }),
+      expect.objectContaining({ session_id: 'session-1', student_id: 'student-1', grade: 7.7 }),
     ]);
   });
 

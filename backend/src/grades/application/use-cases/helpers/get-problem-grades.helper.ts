@@ -2,6 +2,7 @@ import {
   calculateProblemGrade,
   type GradeComponent,
 } from '../../../domain/entities/grade-calculator';
+import { roundGrade } from '@/shared/utils/grade-precision';
 import type { GradeRow } from '../../../domain/repositories/grades.repository';
 import type { GradesResponseDto } from '../../dtos/grades-response.dto';
 import { buildStudentResponse } from './grade-response.helper';
@@ -113,6 +114,13 @@ function sessionGrades(rows: Row[]): Array<{ sessionId: string; grade: number | 
   }));
 }
 
+function toPersistedSessionRows(rows: Row[]): Row[] {
+  return rows.map((row) => ({
+    ...row,
+    grade: roundGrade(row.grade as number | null),
+  }));
+}
+
 function buildStudentResult(
   ctx: StudentGradeContext,
   grades: StudentSessionResponse[],
@@ -122,10 +130,10 @@ function buildStudentResult(
 ) {
   return {
     responseStudent: buildStudentResponse(ctx.student, grades, finalGrade, evaluations),
-    sessionRows,
+    sessionRows: toPersistedSessionRows(sessionRows),
     problemRow: {
       student_id: ctx.student.id,
-      grade: finalGrade,
+      grade: roundGrade(finalGrade),
       formula_version: ctx.problemFormulaVersion,
     },
   };
