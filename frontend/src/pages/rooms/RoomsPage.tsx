@@ -188,7 +188,7 @@ export default function RoomsPage() {
   const filteredRooms = rooms.filter((r) => r.nome.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div className={cn('min-h-dvh bg-surface', isLeaveMode ? 'pb-36' : 'pb-24')}>
+    <div className={cn('min-h-dvh bg-surface', isLeaveMode ? 'pb-[calc(10rem+env(safe-area-inset-bottom))]' : 'pb-24')}>
       <AppHeader />
       <div className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
         <SearchField label="Pesquisar turma" value={query} onChange={setQuery} />

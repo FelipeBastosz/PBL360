@@ -57,7 +57,7 @@ function ManageRoomCard({
 
 function ManageRoomsFooter({ onFinish }: { onFinish: () => void }) {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 border-t border-black/5 bg-surface/95 px-6 py-4 backdrop-blur-xs">
+    <footer className="fixed right-0 bottom-0 left-0 border-t border-black/5 bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
       <div className="mx-auto flex max-w-md flex-col gap-2">
         <Button onClick={onFinish}>Concluir edição</Button>
         <Button variant="link" onClick={onFinish}>
@@ -130,7 +130,7 @@ export default function ManageRoomsPage() {
   const filteredRooms = rooms.filter((r) => r.nome.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div className="min-h-dvh bg-surface pb-36">
+    <div className="min-h-dvh bg-surface pb-[calc(10rem+env(safe-area-inset-bottom))]">
       <AppHeader />
       <div className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
         <SearchField label="Pesquisar turma" value={query} onChange={setQuery} />

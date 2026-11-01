@@ -22,8 +22,10 @@ function ManageProblemCard({
 }) {
   return (
     <div className={cn(CARD_CLASS, 'flex-row items-center justify-between gap-3 p-4')}>
-      <h3 className="font-bold text-ink">{problem.titulo}</h3>
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-col">
+        <h3 className="font-bold break-words text-ink">{problem.titulo}</h3>
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
         <button
           type="button"
           onClick={() => onEdit(problem)}
@@ -47,7 +49,7 @@ function ManageProblemCard({
 
 function ManageFooter({ onFinish }: { onFinish: () => void }) {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 border-t border-black/5 bg-surface/95 px-6 py-4 backdrop-blur-xs">
+    <footer className="fixed right-0 bottom-0 left-0 border-t border-black/5 bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
       <div className="mx-auto flex max-w-md flex-col gap-2">
         <Button onClick={onFinish}>Concluir edição</Button>
         <Button variant="link" onClick={onFinish}>
@@ -133,7 +135,7 @@ export default function ManageProblemsPage() {
   const state = useManageProblems(id);
 
   return (
-    <div className="min-h-dvh bg-surface pb-36">
+    <div className="min-h-dvh bg-surface pb-[calc(10rem+env(safe-area-inset-bottom))]">
       <RoomProblemsHeader room={state.room} user={user} />
       <ManageProblemsContent
         isLoading={state.isLoading}
