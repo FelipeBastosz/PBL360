@@ -51,6 +51,7 @@ export default function SessionFeedbackPage() {
             criadoEm={feedback.criadoEm}
             editadoEm={feedback.editadoEm}
             novo={feedback.novo}
+            nota={feedback.nota}
           />
         ) : (
           <FeedbackEmptyState />

@@ -51,6 +51,7 @@ export interface PeerEvaluationWrite {
 }
 export interface StudentEvaluationSummary {
   participating: boolean;
+  tutorEvaluationSubmitted: boolean;
   peerSubmitted: number;
   peerTotal: number;
 }

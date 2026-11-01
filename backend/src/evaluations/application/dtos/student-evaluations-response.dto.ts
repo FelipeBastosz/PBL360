@@ -25,6 +25,10 @@ export class StudentPeerAssessmentSummaryDto {
 export class StudentFeedbackSummaryDto {
   @ApiProperty() disponivel!: boolean;
   @ApiProperty() novo!: boolean;
+  @ApiProperty({
+    description: 'Indica se o tutor já enviou a avaliação deste aluno para a sessão.',
+  })
+  avaliacaoTutorEnviada!: boolean;
 }
 
 export class StudentEvaluationSummaryResponseDto {

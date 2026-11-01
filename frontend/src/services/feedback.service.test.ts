@@ -22,6 +22,7 @@ describe('feedbackService', () => {
       criadoEm: '2026-03-20T10:00:00Z',
       editadoEm: null,
       novo: true,
+      nota: null,
     };
     vi.mocked(api.get).mockResolvedValueOnce({ data: mockData });
 
@@ -33,6 +34,7 @@ describe('feedbackService', () => {
 
   it('fetches problem feedbacks for the student', async () => {
     const mockData = {
+      notaFinal: 8.5,
       individual: {
         id: 'fb-ind',
         autor: { id: 'tutor-1', nome: 'Prof. Silva' },

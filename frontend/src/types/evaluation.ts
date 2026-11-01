@@ -164,6 +164,7 @@ export type StudentPeerAssessmentSummary = {
 export type StudentFeedbackSummary = {
   disponivel: boolean;
   novo: boolean;
+  avaliacaoTutorEnviada: boolean;
 };
 
 export type StudentEvaluationSummaryResponse = {

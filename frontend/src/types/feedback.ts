@@ -55,11 +55,10 @@ export interface ReceivedFeedbackResponse {
   criadoEm: string;
   editadoEm: string | null;
   novo: boolean;
-}
-
-export interface ReceivedIndividualFeedbackResponse extends ReceivedFeedbackResponse {
   nota: number | null;
 }
+
+export type ReceivedIndividualFeedbackResponse = ReceivedFeedbackResponse;
 
 export interface ReceivedSessionFeedback {
   sessaoId: string;
@@ -69,6 +68,7 @@ export interface ReceivedSessionFeedback {
 }
 
 export interface ReceivedProblemFeedbacksResponse {
+  notaFinal: number | null;
   individual: ReceivedIndividualFeedbackResponse | null;
   geral: ReceivedFeedbackResponse | null;
   sessoes: ReceivedSessionFeedback[];
