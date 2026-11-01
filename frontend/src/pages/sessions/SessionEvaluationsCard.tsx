@@ -1,5 +1,6 @@
 import { LockClosedIcon, CalendarIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import type { SessionReleasesResponse, EvaluationReleaseInfo } from '@/types/session';
+import { formatDeadline } from '@/utils/date';
 
 type CardProps = {
   releases: SessionReleasesResponse | null;
@@ -7,12 +8,6 @@ type CardProps = {
   isAttendancePending: boolean;
   isLoading: boolean;
 };
-
-function formatDeadline(isoDate: string | null) {
-  if (!isoDate) return 'Sem prazo limite';
-  const date = new Date(isoDate);
-  return `Até ${date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} às ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-}
 
 type ToggleRowProps = {
   label: string;

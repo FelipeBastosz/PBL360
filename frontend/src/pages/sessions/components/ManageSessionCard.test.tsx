@@ -8,7 +8,7 @@ const mockSession: Session = {
   id: 'sess-1',
   titulo: 'Sessão 1 - Introdução',
   descricao: 'Abertura do problema',
-  data: '2026-10-15',
+  data: '15-10-2026',
   ordem: 1,
   status: 'agendada',
 };
@@ -18,7 +18,7 @@ describe('ManageSessionCard', () => {
     render(<ManageSessionCard session={mockSession} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
     expect(screen.getByText('Sessão 1 - Introdução')).toBeInTheDocument();
-    expect(screen.getByText('2026-10-15')).toBeInTheDocument();
+    expect(screen.getByText('15/10/2026')).toBeInTheDocument();
   });
 
   it('calls onEdit when pencil button is clicked', async () => {

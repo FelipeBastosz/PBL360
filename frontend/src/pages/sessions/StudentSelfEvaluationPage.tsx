@@ -10,7 +10,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import type { UserResponse } from '@/types/auth';
 import { cn } from '@/utils/cn';
-import { formatDeadline } from '@/utils/formatDate';
+import { formatDeadline } from '@/utils/date';
 import { CriterionStepper } from './components/CriterionStepper';
 import { NonParticipantEmptyState } from './components/NonParticipantEmptyState';
 import { useStudentSelfEvaluation } from './useStudentSelfEvaluation';

@@ -3,6 +3,18 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { SetDeadlineModal, ConfirmLockModal } from './EvaluationReleaseModals';
 
+function renderDeadlineModal(onConfirm: (prazo: string | null) => void) {
+  render(
+    <SetDeadlineModal
+      isOpen={true}
+      type="autoavaliacao"
+      isLoading={false}
+      onConfirm={onConfirm}
+      onCancel={vi.fn()}
+    />,
+  );
+}
+
 describe('EvaluationReleaseModals', () => {
   describe('SetDeadlineModal', () => {
     it('renders modal and confirms without deadline when empty', async () => {
@@ -81,6 +93,33 @@ describe('EvaluationReleaseModals', () => {
       expect(
         screen.getByText(/automaticamente desativada/i, { selector: 'strong' }),
       ).toBeInTheDocument();
+    });
+    it('sends the typed DD/MM/AAAA date and time as an ISO deadline', async () => {
+      const user = userEvent.setup();
+      const onConfirm = vi.fn();
+      renderDeadlineModal(onConfirm);
+
+      await user.type(screen.getByLabelText(/Data do prazo/), '15102026');
+      await user.type(screen.getByLabelText(/Horário/), '1430');
+      expect(screen.getByLabelText(/Data do prazo/)).toHaveValue('15/10/2026');
+      expect(screen.getByLabelText(/Horário/)).toHaveValue('14:30');
+      await user.click(screen.getByRole('button', { name: 'Confirmar liberação' }));
+
+      expect(onConfirm).toHaveBeenCalledWith(new Date(2026, 9, 15, 14, 30).toISOString());
+    });
+
+    it('does not confirm an invalid deadline date', async () => {
+      const user = userEvent.setup();
+      const onConfirm = vi.fn();
+      renderDeadlineModal(onConfirm);
+
+      await user.type(screen.getByLabelText(/Data do prazo/), '31022026');
+      await user.click(screen.getByRole('button', { name: 'Confirmar liberação' }));
+
+      expect(
+        screen.getByText('Informe uma data válida no formato DD/MM/AAAA.'),
+      ).toBeInTheDocument();
+      expect(onConfirm).not.toHaveBeenCalled();
     });
   });
 

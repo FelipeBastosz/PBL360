@@ -1,6 +1,6 @@
 import { Sheet } from '@/components/ui/Sheet';
 import type { RoomStudent, RoomTutor } from '@/types/room';
-import { formatFullDate } from '@/utils/formatDate';
+import { formatDate } from '@/utils/date';
 import { MemberAvatar } from './MemberAvatar';
 
 export type SelectedMember =
@@ -37,7 +37,7 @@ function MemberDetails({ member }: { member: SelectedMember }) {
           <DetailRow label="Matrícula" value={member.student.matricula} />
         )}
         <DetailRow label="E-mail" value={member.student.email} />
-        <DetailRow label="Na turma desde" value={formatFullDate(member.student.dataEntrada)} />
+        <DetailRow label="Na turma desde" value={formatDate(member.student.dataEntrada)} />
       </dl>
     );
   }

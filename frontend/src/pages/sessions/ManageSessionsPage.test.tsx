@@ -70,7 +70,7 @@ const mockSessions: Session[] = [
     id: 'sess-1',
     titulo: 'Sessão 1',
     descricao: 'Primeira sessão',
-    data: '2026-10-15',
+    data: '15-10-2026',
     ordem: 1,
     status: 'agendada',
   },

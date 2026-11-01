@@ -96,7 +96,7 @@ describe('RollCallPage', () => {
     openRollCall(
       rollCall([student('ana', 'Ana Souza', { lugar: 2, status: 'PRESENTE' }), bruno], {
         origem: 'SESSAO_ANTERIOR',
-        sessaoReferencia: { id: 's0', data: '2026-08-12' },
+        sessaoReferencia: { id: 's0', data: '12-08-2026' },
       }),
     );
 
@@ -231,7 +231,7 @@ describe('RollCallPage', () => {
     const { user } = openRollCall(
       rollCall([student('ana', 'Ana Souza', { lugar: 1, status: 'PRESENTE' }), bruno], {
         origem: 'SESSAO_ANTERIOR',
-        sessaoReferencia: { id: 's0', data: '2026-08-12' },
+        sessaoReferencia: { id: 's0', data: '12-08-2026' },
       }),
     );
 
@@ -355,7 +355,7 @@ describe('RollCallPage', () => {
     } as never);
     vi.mocked(sessionService.getById).mockResolvedValue({
       titulo: 'Abertura',
-      data: '2026-08-12',
+      data: '12-08-2026',
     } as never);
     sessionStore.save(sessionFor(tutor));
 

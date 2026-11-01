@@ -33,7 +33,7 @@ describe('SessionEvaluationsCard', () => {
     );
 
     expect(screen.getByText('4 de 12 enviaram')).toBeInTheDocument();
-    expect(screen.getByText(/Até 15 de out\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Até 15\/10\/2026 às/)).toBeInTheDocument();
   });
 
   it('calls onToggle when clicking the switches', async () => {

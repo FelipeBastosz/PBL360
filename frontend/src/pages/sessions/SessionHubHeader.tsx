@@ -6,15 +6,7 @@ import type { Problem } from '@/types/problem';
 import type { Session } from '@/types/session';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
-
-function formatSessionDate(dateString?: string) {
-  if (!dateString) return '';
-  const [year, month, day] = dateString.split('-');
-  const date = new Date(Number(year), Number(month) - 1, Number(day));
-  const dayStr = date.toLocaleDateString('pt-BR', { day: '2-digit' });
-  const monthStr = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-  return `${dayStr} ${monthStr}`;
-}
+import { formatDayShortMonth } from '@/utils/date';
 
 type HeaderProps = {
   session: Session | null;
@@ -38,7 +30,7 @@ export function SessionHubHeader({ session, problem, userNome, user, backUrl }: 
           </Link>
           <div className="flex min-w-0 flex-col">
             <h1 className="truncate text-base font-semibold leading-tight">
-              {session ? `${session.titulo} · ${formatSessionDate(session.data)}` : 'Sessão'}
+              {session ? `${session.titulo} · ${formatDayShortMonth(session.data)}` : 'Sessão'}
             </h1>
             <span className="truncate text-xs text-white/70">{problem?.titulo || 'Problema'}</span>
           </div>
