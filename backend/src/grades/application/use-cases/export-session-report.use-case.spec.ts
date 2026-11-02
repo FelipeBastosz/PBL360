@@ -223,10 +223,10 @@ describe('ExportSessionReportUseCase', () => {
         { header: 'Matrícula', type: ReportColumnType.TEXT },
         { header: 'Chamada', type: ReportColumnType.TEXT },
         { header: 'Papel', type: ReportColumnType.TEXT },
-        { header: 'Nota adicional de papel', type: ReportColumnType.NUMBER, decimals: 2 },
+        { header: 'Nota adicional de papel', type: ReportColumnType.NUMBER, decimals: 1 },
         { header: 'Marcações', type: ReportColumnType.TEXT },
         { header: 'Situação da nota', type: ReportColumnType.TEXT },
-        { header: 'Nota', type: ReportColumnType.NUMBER, decimals: 2 },
+        { header: 'Nota', type: ReportColumnType.NUMBER, decimals: 1 },
       ]);
       expect(tableSection.rows).toEqual([
         [
@@ -237,7 +237,7 @@ describe('ExportSessionReportUseCase', () => {
           9.0,
           'Participativa, Pontual',
           'Nota enviada',
-          8.72,
+          8.7,
         ],
         [
           'Bruno Lima',
@@ -298,7 +298,7 @@ describe('ExportSessionReportUseCase', () => {
       7.25,
     );
 
-    expect(row.slice(6)).toEqual(['Nota enviada', 7.25]);
+    expect(row.slice(6)).toEqual(['Nota enviada', 7.3]);
   });
 
   it('uses the self-assessment grade as the session grade', async () => {
@@ -308,7 +308,7 @@ describe('ExportSessionReportUseCase', () => {
       9.125,
     );
 
-    expect(row.slice(6)).toEqual(['Nota enviada', 9.13]);
+    expect(row.slice(6)).toEqual(['Nota enviada', 9.1]);
   });
 
   it.each([
@@ -366,7 +366,7 @@ describe('ExportSessionReportUseCase', () => {
     const rows = tableRows();
     expect(rows[0]![0]).toBeNull();
     expect(rows[0]![1]).toBe('2026001');
-    expect(rows[0]![7]).toBe(8.72);
+    expect(rows[0]![7]).toBe(8.7);
     expect(generatedDocument().sections).toHaveLength(1);
   });
 
