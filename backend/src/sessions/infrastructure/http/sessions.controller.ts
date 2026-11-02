@@ -4,6 +4,7 @@ import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.d
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { toIsoDate } from '@/shared/dates/brazilian-date';
 import { CreateSessionDto } from '../../application/dtos/create-session.dto';
 import { UpdateSessionDto } from '../../application/dtos/update-session.dto';
 import { CreateSessionUseCase } from '../../application/use-cases/create-session.use-case';
@@ -57,7 +58,7 @@ export class SessionsController {
       tutorId,
       title: dto.titulo,
       description: dto.descricao,
-      date: dto.data,
+      date: toIsoDate(dto.data),
     });
     return toSessionCreatedResponse(session, problemId);
   }

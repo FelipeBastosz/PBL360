@@ -10,44 +10,13 @@ import { placeholderPhotoBytes } from './placeholder-photo';
 import { seedAllBehaviorTags } from './behavior-tags.seed';
 import { seedAllPerformanceTables } from './performance-tables.seed';
 import { seedReviewData } from './review.seed';
-
-export interface SeedUserData {
-  name: string;
-  email: string;
-  type: UserType;
-  registrationNumber?: string;
-}
+import { SEED_USERS, type SeedUserData } from './seed-users';
 
 export const DEFAULT_PASSWORD = 'senha-secreta';
 
 const DEFAULT_BCRYPT_ROUNDS = 12;
 
 const logger = new Logger('Seed');
-
-export const SEED_USERS: SeedUserData[] = [
-  {
-    name: 'Carlos Mendes',
-    email: 'carlos@uefs.br',
-    type: UserType.TUTOR,
-  },
-  {
-    name: 'Maria Santos',
-    email: 'maria@uefs.br',
-    type: UserType.TUTOR,
-  },
-  {
-    name: 'Ana Souza',
-    email: '20240001@discente.uefs.br',
-    type: UserType.STUDENT,
-    registrationNumber: '20240001',
-  },
-  {
-    name: 'João Silva',
-    email: '20240002@discente.uefs.br',
-    type: UserType.STUDENT,
-    registrationNumber: '20240002',
-  },
-];
 
 function buildSeedUser(data: SeedUserData, pwdHash: string): User {
   const user = User.create({
@@ -119,7 +88,8 @@ async function executeSeeds(ds: DataSource, env: NodeJS.ProcessEnv): Promise<voi
   await seedAllUsers(ds, env);
   await seedAllPerformanceTables(ds);
   await seedAllBehaviorTags(ds);
-  await seedReviewData(ds);
+  const studentEmails = SEED_USERS.filter((u) => u.type === UserType.STUDENT).map((u) => u.email);
+  await seedReviewData(ds, studentEmails);
 }
 
 export async function runSeed(

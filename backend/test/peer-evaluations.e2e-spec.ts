@@ -27,6 +27,7 @@ interface PeerDetailResponse {
 }
 
 describe('Peer evaluations (e2e)', () => {
+  const hookTimeoutMs = 30_000;
   let app: INestApplication;
   let db: DataSource;
   let owner: TestUser,
@@ -46,12 +47,12 @@ describe('Peer evaluations (e2e)', () => {
     const fixture = await createTestApp();
     app = fixture.app;
     db = fixture.moduleRef.get(DataSource);
-  });
+  }, hookTimeoutMs);
 
   afterAll(async () => {
     await cleanDatabase(db);
     await app.close();
-  });
+  }, hookTimeoutMs);
 
   beforeEach(async () => {
     await cleanDatabase(db);
@@ -129,7 +130,7 @@ describe('Peer evaluations (e2e)', () => {
         peerAbsentStudent.id,
       ],
     );
-  });
+  }, hookTimeoutMs);
 
   describe('GET /sessoes/:sessaoId/pares', () => {
     it('returns the list of participating peers with PENDENTE status', async () => {
@@ -229,13 +230,20 @@ describe('Peer evaluations (e2e)', () => {
         .expect(422);
     });
 
-    it('returns 422 when colleague was absent in the session (colega ausente na sessão)', async () => {
-      await api(app, evaluatorStudent)
+    it('returns 400 when colleague was absent in the session (colega ausente na sessão)', async () => {
+      const response = await api(app, evaluatorStudent)
         .put(peerDetailPath(peerAbsentStudent.id), {
           itens: [{ criterioId: crit1Id, nota: 8 }],
           enviar: false,
         })
-        .expect(422);
+        .expect(400);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          statusCode: 400,
+          message: 'Não é possível avaliar um aluno que não esteve presente nesta sessão.',
+        }),
+      );
     });
 
     it('returns 423 when peer evaluation is not released (liberação desligada)', async () => {
@@ -282,6 +290,32 @@ describe('Peer evaluations (e2e)', () => {
       expect((response.body as { message: string }).message).toContain(
         'Apenas alunos que participaram da sessão podem avaliar colegas',
       );
+    });
+
+    it('returns 423 and does not persist submission before roll call is recorded', async () => {
+      await db.query('DELETE FROM attendances WHERE session_id = $1;', [sessionId]);
+
+      const response = await api(app, evaluatorStudent)
+        .put(peerDetailPath(peerPresentStudent.id), {
+          itens: [
+            { criterioId: crit1Id, nota: 8 },
+            { criterioId: crit2Id, nota: 10 },
+          ],
+          enviar: true,
+        })
+        .expect(423);
+
+      expect((response.body as { message: string }).message).toContain(
+        'A chamada da sessão ainda não foi realizada pelo professor',
+      );
+
+      const evaluations = await db.query<Array<{ id: string }>>(
+        `SELECT id FROM evaluations
+         WHERE session_id = $1 AND evaluator_id = $2 AND student_id = $3
+           AND type = 'PEER_ASSESSMENT';`,
+        [sessionId, evaluatorStudent.id, peerPresentStudent.id],
+      );
+      expect(evaluations).toHaveLength(0);
     });
 
     it('returns 422 when criterion is not in performance table', async () => {

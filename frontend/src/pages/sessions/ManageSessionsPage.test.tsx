@@ -5,6 +5,7 @@ import type * as Router from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
+import { ApiError } from '@/services/apiError';
 import type { Problem } from '@/types/problem';
 import type { Session } from '@/types/session';
 import ManageSessionsPage from './ManageSessionsPage';
@@ -144,6 +145,58 @@ describe('ManageSessionsPage', () => {
       expect(mockNotify).toHaveBeenCalledWith({
         tone: 'success',
         message: 'Sessão excluída com sucesso!',
+      });
+    });
+  });
+
+  it('displays contextual conflict message in toast and modal when session deletion returns 409 with detalhes', async () => {
+    const user = userEvent.setup();
+    vi.mocked(sessionService.remove).mockRejectedValue(
+      new ApiError(409, ['Conflict'], {
+        detalhes: { feedbacks: 3, avaliacoes: 5 },
+      }),
+    );
+
+    renderComponent();
+
+    const deleteBtn = await screen.findByRole('button', { name: 'Excluir Sessão 1' });
+    await user.click(deleteBtn);
+
+    await user.click(screen.getByRole('button', { name: 'Sim, excluir sessão' }));
+
+    await waitFor(() => {
+      expect(mockNotify).toHaveBeenCalledWith({
+        tone: 'error',
+        message:
+          'Não é possível excluir: existem 3 feedbacks e 5 avaliações vinculados a esta sessão.',
+      });
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Não é possível excluir: existem 3 feedbacks e 5 avaliações vinculados a esta sessão.',
+      );
+      expect(
+        screen.getByRole('heading', { name: 'Não é possível excluir a sessão' }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Entendi' })).toBeInTheDocument();
+    });
+  });
+
+  it('displays error notification when session deletion fails with 500', async () => {
+    const user = userEvent.setup();
+    vi.mocked(sessionService.remove).mockRejectedValue(
+      new ApiError(500, ['Erro interno ao excluir sessão']),
+    );
+
+    renderComponent();
+
+    const deleteBtn = await screen.findByRole('button', { name: 'Excluir Sessão 1' });
+    await user.click(deleteBtn);
+
+    await user.click(screen.getByRole('button', { name: 'Sim, excluir sessão' }));
+
+    await waitFor(() => {
+      expect(mockNotify).toHaveBeenCalledWith({
+        tone: 'error',
+        message: 'Erro interno ao excluir sessão',
       });
     });
   });

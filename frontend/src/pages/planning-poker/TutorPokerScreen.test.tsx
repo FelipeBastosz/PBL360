@@ -96,7 +96,7 @@ describe('TutorPokerScreen', () => {
   it('shows the average and the cards after the reveal', () => {
     renderTutor(revealed());
 
-    expect(screen.getByText('8,50')).toBeInTheDocument();
+    expect(screen.getByText('8,5')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Lugar 2: 8' })).toBeInTheDocument();
     expect(screen.getByText('Bruno')).toBeInTheDocument();
   });
@@ -118,6 +118,28 @@ describe('TutorPokerScreen', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Salvar nota ajustada' }));
 
     expect(actions.adjust).toHaveBeenCalledWith('rodada-1', 8.6, 'Conduziu a síntese.');
+  });
+
+  it('starts the adjustment from the average rounded to one decimal place', async () => {
+    const state = revealed();
+    const round = state.rodadaAtual!;
+    const actions = anActions();
+    renderTutor(
+      { ...state, rodadaAtual: { ...round, revelacao: { ...round.revelacao!, media: 8.75 } } },
+      actions,
+    );
+
+    expect(screen.getByText('8,8')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Reajustar nota' }));
+    expect(screen.getByRole('textbox', { name: 'Nova nota' })).toHaveValue('8,8');
+    await userEvent.click(screen.getByRole('button', { name: 'Aumentar nota' }));
+    await userEvent.type(
+      screen.getByPlaceholderText('Motivo do ajuste da nota...'),
+      'Conduziu a síntese.',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar nota ajustada' }));
+
+    expect(actions.adjust).toHaveBeenCalledWith('rodada-1', 8.9, 'Conduziu a síntese.');
   });
 
   it('hides who voted in anonymous mode', () => {

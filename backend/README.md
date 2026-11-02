@@ -166,9 +166,13 @@ O comando `npm run seed` (ou `npm run db:seed` na raiz) insere usuários de test
 - **Professores (`TUTOR`)**:
   - `carlos@uefs.br`
   - `maria@uefs.br`
-- **Alunos (`STUDENT`)**:
+  - `roberto@uefs.br`, `fernanda@uefs.br`, `paulo@uefs.br`, `juliana@uefs.br`
+- **Alunos (`STUDENT`)**: 11 alunos, uma turma completa
   - `20240001@discente.uefs.br` (Ana Souza, matrícula `20240001`)
   - `20240002@discente.uefs.br` (João Silva, matrícula `20240002`)
+  - `20240003@discente.uefs.br` a `20240011@discente.uefs.br` (matrícula igual ao prefixo do e-mail)
+
+Todos os alunos ficam na sala `Engenharia de Software - Turma A` (tutores Carlos e Maria). A lista fica em `src/seeds/seed-users.ts`.
 
 O script é idempotente: e-mails já existentes no banco são ignorados sem gerar duplicação ou erro.
 

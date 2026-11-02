@@ -7,7 +7,12 @@ import { useForm } from '@/hooks/useForm';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { sessionService } from '@/services/session.service';
-import { validateSessionForm, type SessionFormValues } from '@/utils/sessionsForm';
+import {
+  validateSessionForm,
+  toInputDate,
+  toApiDate,
+  type SessionFormValues,
+} from '@/utils/sessionsForm';
 import type { Session } from '@/types/session';
 
 type SessionFormModalProps = {
@@ -102,18 +107,17 @@ function syncFormValues(
 ) {
   setValue('titulo', data?.titulo || '');
   setValue('descricao', data?.descricao || '');
-  setValue('data', data?.data || '');
+  setValue('data', toInputDate(data?.data));
 }
 
 function buildSessionPayload(values: SessionFormValues) {
   return {
     titulo: values.titulo.trim(),
     descricao: values.descricao.trim() || null,
-    data: values.data,
+    data: toApiDate(values.data),
   };
 }
 
-// Hook extraído para enxugar a função principal
 function useSessionSubmit(
   roomId: string,
   problemId: string,
@@ -125,7 +129,7 @@ function useSessionSubmit(
     {
       titulo: initialData?.titulo || '',
       descricao: initialData?.descricao || '',
-      data: initialData?.data || '',
+      data: toInputDate(initialData?.data),
     },
     validateSessionForm,
   );

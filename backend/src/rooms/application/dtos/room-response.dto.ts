@@ -1,4 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class ProfessorResponsavelDto {
+  @ApiProperty({ format: 'uuid', example: '123e4567-e89b-42d3-a456-426614174000' })
+  id: string;
+
+  @ApiProperty({ example: 'Carlos Mendes' })
+  nome: string;
+
+  @ApiProperty({ example: 'carlos.tutor@uefs.br' })
+  email: string;
+}
 
 export class RoomResponseDto {
   @ApiProperty({ format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -10,6 +21,12 @@ export class RoomResponseDto {
     example: '123e4567-e89b-42d3-a456-426614174000',
   })
   professorResponsavelId: string;
+
+  @ApiPropertyOptional({
+    description: 'Dados públicos do professor responsável pela sala.',
+    type: () => ProfessorResponsavelDto,
+  })
+  professorResponsavel?: ProfessorResponsavelDto;
 
   @ApiProperty({ example: 'Engenharia de Software' })
   nome: string;

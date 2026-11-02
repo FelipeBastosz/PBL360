@@ -15,6 +15,7 @@ import {
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { ProblemDeletionImpactDto } from '../../application/dtos/problem-deletion-impact.dto';
+import { ProblemDeletionConflictDto } from '../../application/dtos/problem-deletion-conflict.dto';
 import { ProblemResponseDto } from '../../application/dtos/problem-response.dto';
 
 export const CreateProblemSwaggerDocs = applyDecorators(
@@ -94,7 +95,11 @@ export const DeleteProblemSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({ summary: 'Exclui um problema da sala' }),
   ApiNoContentResponse({ description: 'Problema excluído.' }),
-  ApiConflictResponse({ description: 'O problema possui sessões.', type: ErrorResponseDto }),
+  ApiConflictResponse({
+    description:
+      'O problema possui registros vinculados. As quantidades são retornadas em detalhes.',
+    type: ProblemDeletionConflictDto,
+  }),
   ApiUnauthorizedResponse({ description: 'JWT não informado.', type: ErrorResponseDto }),
   ApiForbiddenResponse({ description: 'Acesso negado.', type: ErrorResponseDto }),
   ApiNotFoundResponse({ description: 'Problema não encontrado.', type: ErrorResponseDto }),

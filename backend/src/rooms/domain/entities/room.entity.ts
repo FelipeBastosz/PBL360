@@ -37,7 +37,7 @@ export class Room {
     referencedColumnName: 'id',
     foreignKeyConstraintName: 'fk_rooms_tutor',
   })
-  tutor: User;
+  tutor?: User;
 
   @ManyToMany(() => User)
   @JoinTable({

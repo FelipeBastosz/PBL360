@@ -1,6 +1,13 @@
+export type ProfessorResponsavel = {
+  id: string;
+  nome: string;
+  email: string;
+};
+
 export type Room = {
   id: string;
   professorResponsavelId: string;
+  professorResponsavel?: ProfessorResponsavel;
   nome: string;
   codigoDisciplina: string;
   codigoSala: string;
@@ -46,6 +53,7 @@ export type StudentRoom = {
   semestre: string;
   totalAlunos: number;
   totalProblemas?: number;
+  professorResponsavel?: ProfessorResponsavel;
 };
 
 export type JoinRoomByCodePayload = {

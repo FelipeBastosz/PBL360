@@ -1,14 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsDateString,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Matches,
-  MaxLength,
-} from 'class-validator';
-
-const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBrazilianDate } from '@/shared/dates/brazilian-date';
 
 export class CreateProblemDto {
   @ApiProperty({
@@ -38,22 +30,20 @@ export class CreateProblemDto {
   descricao?: string;
 
   @ApiPropertyOptional({
-    description: 'Data de início do problema (formato AAAA-MM-DD).',
-    example: '2026-03-01',
-    format: 'date',
+    description: 'Data de início do problema (formato DD-MM-AAAA).',
+    example: '01-03-2026',
+    pattern: '^\\d{2}-\\d{2}-\\d{4}$',
   })
   @IsOptional()
-  @Matches(CALENDAR_DATE, { message: 'A data de início deve estar no formato AAAA-MM-DD.' })
-  @IsDateString({ strict: true }, { message: 'A data de início deve ser uma data válida.' })
+  @IsBrazilianDate({ message: 'A data de início deve estar no formato DD-MM-AAAA e ser válida.' })
   dataInicio?: string;
 
   @ApiPropertyOptional({
-    description: 'Data de término do problema (formato AAAA-MM-DD).',
-    example: '2026-03-15',
-    format: 'date',
+    description: 'Data de término do problema (formato DD-MM-AAAA).',
+    example: '15-03-2026',
+    pattern: '^\\d{2}-\\d{2}-\\d{4}$',
   })
   @IsOptional()
-  @Matches(CALENDAR_DATE, { message: 'A data de término deve estar no formato AAAA-MM-DD.' })
-  @IsDateString({ strict: true }, { message: 'A data de término deve ser uma data válida.' })
+  @IsBrazilianDate({ message: 'A data de término deve estar no formato DD-MM-AAAA e ser válida.' })
   dataFim?: string;
 }

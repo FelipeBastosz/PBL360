@@ -2,7 +2,9 @@ import { applyDecorators } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConflictResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -29,4 +31,18 @@ export const ListRoomStudentsSwaggerDocs = applyDecorators(
   ApiUnauthorizedResponse({ description: 'JWT não informado, inválido ou expirado.' }),
   ApiForbiddenResponse({ description: 'O usuário não é membro autorizado da sala.' }),
   ApiNotFoundResponse({ description: 'Sala não encontrada ou excluída.' }),
+);
+
+export const LeaveRoomSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({ summary: 'Permite que aluno ou co-tutor saia da turma voluntariamente' }),
+  ApiNoContentResponse({ description: 'Saída da turma realizada com sucesso.' }),
+  ApiBadRequestResponse({ description: 'Identificador da sala inválido.', type: ErrorResponseDto }),
+  ApiUnauthorizedResponse({ description: 'JWT não informado, inválido ou expirado.' }),
+  ApiForbiddenResponse({ description: 'O usuário não participa desta sala.' }),
+  ApiNotFoundResponse({ description: 'Sala não encontrada ou excluída.' }),
+  ApiConflictResponse({
+    description: 'O professor responsável não pode sair da turma.',
+    type: ErrorResponseDto,
+  }),
 );

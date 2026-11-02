@@ -14,6 +14,21 @@ export async function hasRoomStudent(
   return rows.length > 0;
 }
 
+export async function removeRoomStudent(
+  rooms: Repository<Room>,
+  roomId: string,
+  studentId: string,
+): Promise<boolean> {
+  const [rows] = await rooms.query<[unknown[], number]>(
+    `DELETE FROM room_students
+      WHERE room_id = $1
+        AND student_id = $2
+      RETURNING student_id;`,
+    [roomId, studentId],
+  );
+  return rows.length > 0;
+}
+
 export async function hasRoomTutor(
   rooms: Repository<Room>,
   roomId: string,

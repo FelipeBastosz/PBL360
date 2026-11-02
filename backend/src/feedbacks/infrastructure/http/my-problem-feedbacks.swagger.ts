@@ -17,7 +17,7 @@ export const GetMyProblemFeedbacksSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Consulta os feedbacks do aluno autenticado no problema',
     description:
-      'Individual e geral ficam disponíveis ao serem salvos. Feedbacks de sessão exigem avaliação do tutor enviada para o aluno. Registra a primeira leitura dos feedbacks retornados, inclusive do geral por aluno. novo é verdadeiro no primeiro acesso; edições não reiniciam a leitura. Somente o individual inclui nota. Sessões em ordem cronológica, com feedback null quando indisponível.',
+      'Enviar a avaliação do tutor libera a nota daquela sessão para o aluno. notaFinal e a nota do feedback geral usam o cálculo vigente somente das sessões enviadas; rascunhos ficam fora. A nota própria do feedback individual é liberada após o primeiro envio no problema. Sem liberação, as notas são nulas. Os textos individual e geral ficam disponíveis ao serem salvos; o feedback da sessão exige envio. feedbacks reúne os feedbacks disponíveis por tipo, preservando individual, geral e sessoes. Registra a primeira leitura; novo não reinicia após edições. Sessões em ordem cronológica, com feedback null quando indisponível.',
   }),
   ApiOkResponse({ type: ReceivedProblemFeedbacksResponseDto }),
   ApiBadRequestResponse({ description: 'Identificador inválido.', type: ErrorResponseDto }),

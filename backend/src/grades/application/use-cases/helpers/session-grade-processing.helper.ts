@@ -52,7 +52,7 @@ export function processStudentSession(ctx: SessionProcessingContext) {
   const calculated = calculateSessionForContext(ctx);
   return {
     row: buildSessionRow(ctx, sessionId, calculated),
-    responseSession: buildSessionResponse(sessionId, calculated),
+    responseSession: buildSessionResponse(sessionId, calculated, ctx.modality ?? 'TUTOR'),
   };
 }
 
@@ -86,11 +86,13 @@ function buildSessionRow(
 function buildSessionResponse(
   sessionId: string,
   calculated: ReturnType<typeof calculateSessionGrade>,
+  modality: EvaluationModality,
 ): SessionGradeResponse {
   return {
     sessaoId: sessionId,
     nota: presentGrade(calculated.grade),
     situacao: calculated.situation,
+    modalidade: modality,
   };
 }
 

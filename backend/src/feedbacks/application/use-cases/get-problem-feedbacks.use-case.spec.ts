@@ -38,6 +38,7 @@ describe('GetProblemFeedbacksUseCase', () => {
       save: jest.fn(),
       hasSessions: jest.fn(),
       countSessions: jest.fn(),
+      getDeletionImpact: jest.fn(),
       delete: jest.fn(),
     };
 

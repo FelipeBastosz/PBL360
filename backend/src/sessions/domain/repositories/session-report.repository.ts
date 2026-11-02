@@ -14,9 +14,6 @@ export interface SessionReportStudentData {
   tags: string[];
   evaluationStatus: EvaluationStatus | null;
   appliedBonus: number | null;
-  sessionScore?: number | null;
-  items?: Array<{ criterionId: string; score: number }>;
-  recordedSessionScore?: number | null;
   feedback: { text: string; authorName: string } | null;
 }
 
@@ -37,15 +34,6 @@ export interface SessionReportData {
     title: string;
     orderIndex: number | null;
     date: string | Date;
-  };
-  criteria?: Array<{
-    id: string;
-    name: string;
-    weight: number;
-  }>;
-  formula?: {
-    criteriaWeight: number;
-    roleWeight: number;
   };
   students: SessionReportStudentData[];
   generalFeedback: {

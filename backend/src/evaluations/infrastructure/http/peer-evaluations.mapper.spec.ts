@@ -26,6 +26,7 @@ describe('peer-evaluations.mapper', () => {
     const output = {
       liberada: true,
       prazo: new Date('2026-10-15T23:59:59Z'),
+      chamadaRealizada: true,
       colegas: [
         {
           alunoId: 'peer-1',
@@ -40,6 +41,7 @@ describe('peer-evaluations.mapper', () => {
     expect(response).toEqual({
       liberada: true,
       prazo: output.prazo,
+      chamadaRealizada: true,
       colegas: [
         {
           alunoId: 'peer-1',

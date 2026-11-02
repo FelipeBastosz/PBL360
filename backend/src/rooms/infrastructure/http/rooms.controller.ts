@@ -37,6 +37,7 @@ import { RoomStudentResponseDto } from '../../application/dtos/room-student-resp
 import { StudentRoomResponseDto } from '../../application/dtos/student-room-response.dto';
 import { JoinRoomByCodeDto, JoinRoomByLinkDto } from '../../application/dtos/join-room.dto';
 import { JoinRoomUseCase } from '../../application/use-cases/join-room.use-case';
+import { LeaveRoomUseCase } from '../../application/use-cases/leave-room.use-case';
 import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
 import { RoomEntryThrottlerGuard } from '@/shared/throttling/room-entry-throttler.guard';
 import { AUTH_THROTTLER, ROOM_ENTRY_LIMIT } from '@/shared/throttling/throttlers';
@@ -46,6 +47,7 @@ import {
   toRoomChanges,
   toRoomResponse,
   toRoomSummaryResponse,
+  toStudentRoomResponse,
 } from './room.mapper';
 import {
   CreateRoomSwaggerDocs,
@@ -54,7 +56,11 @@ import {
   GetRoomDetailSwaggerDocs,
   ListRoomsSwaggerDocs,
 } from './room.swagger';
-import { ListRoomStudentsSwaggerDocs, ListStudentRoomsSwaggerDocs } from './room-members.swagger';
+import {
+  LeaveRoomSwaggerDocs,
+  ListRoomStudentsSwaggerDocs,
+  ListStudentRoomsSwaggerDocs,
+} from './room-members.swagger';
 import { JoinRoomByCodeSwaggerDocs, JoinRoomByLinkSwaggerDocs } from './room-entry.swagger';
 
 @ApiTags('Salas')
@@ -70,6 +76,7 @@ export class RoomsController {
     private readonly listStudentRoomsUseCase: ListStudentRoomsUseCase,
     private readonly listRoomStudentsUseCase: ListRoomStudentsUseCase,
     private readonly joinRoomUseCase: JoinRoomUseCase,
+    private readonly leaveRoomUseCase: LeaveRoomUseCase,
   ) {}
 
   @Post('ingressar/codigo')
@@ -114,13 +121,7 @@ export class RoomsController {
   ): Promise<StudentRoomResponseDto[]> {
     const rooms = await this.listStudentRoomsUseCase.execute(studentId);
 
-    return rooms.map((room) => ({
-      salaId: room.roomId,
-      nome: room.name,
-      semestre: room.semester,
-      totalAlunos: room.totalStudents,
-      totalProblemas: room.totalProblems,
-    }));
+    return rooms.map(toStudentRoomResponse);
   }
 
   @Get(':id/alunos')
@@ -191,5 +192,16 @@ export class RoomsController {
   @DeleteRoomSwaggerDocs
   delete(@UuidParam('id') roomId: string, @AuthenticatedUserId() tutorId: string): Promise<void> {
     return this.deleteRoomUseCase.execute({ roomId, tutorId });
+  }
+
+  @Delete(':salaId/membros/me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Roles(UserType.TUTOR, UserType.STUDENT)
+  @LeaveRoomSwaggerDocs
+  leaveRoom(
+    @UuidParam('salaId') roomId: string,
+    @AuthenticatedUserId() userId: string,
+  ): Promise<void> {
+    return this.leaveRoomUseCase.execute({ roomId, userId });
   }
 }

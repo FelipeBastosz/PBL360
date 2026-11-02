@@ -24,6 +24,7 @@ describe('GetMySessionFeedbackUseCase', () => {
       createdAt: new Date(),
       editedAt: null,
       isNew: true,
+      score: 8.5,
     };
     feedbacks.readSession.mockResolvedValue(feedback);
     expect(await useCase.execute('session', 'student')).toBe(feedback);

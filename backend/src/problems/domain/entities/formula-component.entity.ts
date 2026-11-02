@@ -53,7 +53,7 @@ export class FormulaComponent {
     if (this.weight < 0 || this.weight > 100) {
       throw new InvalidProblemError('O peso de um componente deve estar entre 0 e 100.');
     }
-    if (scope === FormulaScope.SESSAO) {
+    if (scope === FormulaScope.SESSAO || scope === FormulaScope.PROFESSOR) {
       this.assertSessionScope();
     } else {
       this.assertProblemScope();

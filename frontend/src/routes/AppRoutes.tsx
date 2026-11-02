@@ -47,7 +47,8 @@ const BehaviorTagsPage = lazy(() => import('@/pages/behavior-tags/BehaviorTagsPa
 const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
 const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
 const SessionHubPage = lazy(() => import('@/pages/sessions/SessionHubPage'));
-const ProblemFormulaPage = lazy(() => import('@/pages/formulas/ProblemFormulaPage'));
+const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'));
+const ProblemFormulaPage = lazy(() => import('@/pages/formulas/SessionFormulasPage'));
 const SessionEvaluationsListPage = lazy(
   () => import('@/pages/evaluations/SessionEvaluationsListPage'),
 );
@@ -55,6 +56,8 @@ const StudentEvaluationPage = lazy(() => import('@/pages/evaluations/StudentEval
 const SessionEvaluationHistoryPage = lazy(
   () => import('@/pages/evaluation-history/SessionEvaluationHistoryPage'),
 );
+const StudentSelfEvaluationPage = lazy(() => import('@/pages/sessions/StudentSelfEvaluationPage'));
+const StudentPeerEvaluationPage = lazy(() => import('@/pages/sessions/StudentPeerEvaluationPage'));
 const StudentObservationTagsPage = lazy(
   () => import('@/pages/evaluations/StudentObservationTagsPage'),
 );
@@ -64,6 +67,9 @@ const SessionFeedbackPage = lazy(() => import('@/pages/feedbacks/SessionFeedback
 const ProblemFeedbacksPage = lazy(() => import('@/pages/feedbacks/ProblemFeedbacksPage'));
 const ClassReportPage = lazy(() => import('@/pages/class-report/ClassReportPage'));
 const SessionReportPage = lazy(() => import('@/pages/sessions/SessionReportPage'));
+const ProblemFinalGradeFormulaPage = lazy(
+  () => import('@/pages/formulas/ProblemFinalGradeFormulaPage'),
+);
 
 const publicRoutes = (
   <Route element={<PublicOnlyRoute />}>
@@ -81,6 +87,7 @@ const publicRoutes = (
 
 const protectedRoutes = (
   <Route element={<ProtectedRoute />}>
+    <Route path={ROUTES.myAccount} element={<ProfilePage />} />
     <Route path={ROUTES.rooms} element={<RoomsPage />} />
     <Route path={ROUTES.createRoom} element={<CreateRoomPage />} />
     <Route path={ROUTES.createRoomSuccess} element={<CreateRoomSuccessPage />} />
@@ -107,6 +114,8 @@ const protectedRoutes = (
     <Route path={ROUTES.sessionEvaluationHistory} element={<SessionEvaluationHistoryPage />} />
     <Route path={ROUTES.studentEvaluation} element={<StudentEvaluationPage />} />
     <Route path={ROUTES.sessionStudentEvaluation} element={<StudentEvaluationPage />} />
+    <Route path={ROUTES.studentSelfEvaluation} element={<StudentSelfEvaluationPage />} />
+    <Route path={ROUTES.studentPeerEvaluation} element={<StudentPeerEvaluationPage />} />
     <Route path={ROUTES.studentObservationTags} element={<StudentObservationTagsPage />} />
     <Route path={ROUTES.sessionStudentObservationTags} element={<StudentObservationTagsPage />} />
     <Route path={ROUTES.evaluationHistory} element={<SessionEvaluationHistoryPage />} />
@@ -115,6 +124,7 @@ const protectedRoutes = (
     <Route path={ROUTES.sessionReport} element={<SessionReportPage />} />
     <Route path={ROUTES.sessionFeedback} element={<SessionFeedbackPage />} />
     <Route path={ROUTES.problemFeedbacks} element={<ProblemFeedbacksPage />} />
+    <Route path={ROUTES.problemFormula} element={<ProblemFinalGradeFormulaPage />} />
   </Route>
 );
 

@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
-import { ConflictError, NotFoundError } from '@/shared/errors/application.error';
+import { NotFoundError } from '@/shared/errors/application.error';
+import { assertProblemCanBeDeleted } from '../../domain/services/problem-deletion-policy';
 
 import {
   PROBLEM_REPOSITORY,
@@ -23,7 +24,7 @@ export class DeleteProblemUseCase {
   ) {}
 
   async execute(input: DeleteProblemInput): Promise<void> {
-    // US08: Apenas o professor responsável pela sala pode excluir
+    // Only the room owner can delete a problem.
     await this.roomAccessService.assertTutorIsRoomOwner(input.roomId, input.tutorId);
 
     const problem = await this.problemRepository.findById(input.problemId);
@@ -32,9 +33,7 @@ export class DeleteProblemUseCase {
       throw new NotFoundError('Problema não encontrado.');
     }
 
-    if (await this.problemRepository.hasSessions(problem.id)) {
-      throw new ConflictError('O problema possui sessões e não pode ser excluído.');
-    }
+    assertProblemCanBeDeleted(await this.problemRepository.getDeletionImpact(problem.id));
 
     await this.problemRepository.delete(problem.id, input.roomId);
   }

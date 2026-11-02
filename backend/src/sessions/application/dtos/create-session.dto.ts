@@ -1,12 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsDateString,
-  IsNotEmpty,
-  IsString,
-  Matches,
-  MaxLength,
-  ValidateIf,
-} from 'class-validator';
+import { IsNotEmpty, IsString, Matches, MaxLength, ValidateIf } from 'class-validator';
+import { IsBrazilianDate } from '@/shared/dates/brazilian-date';
 
 export class CreateSessionDto {
   @ApiProperty({ example: 'Introdução ao problema' })
@@ -22,11 +16,7 @@ export class CreateSessionDto {
   @MaxLength(1000, { message: 'A descrição deve ter no máximo 1000 caracteres.' })
   descricao: string | null;
 
-  @ApiProperty({ example: '2026-10-15', format: 'date' })
-  @IsDateString(
-    { strict: true, strictSeparator: true },
-    { message: 'A data deve estar no formato AAAA-MM-DD.' },
-  )
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'A data deve estar no formato AAAA-MM-DD.' })
+  @ApiProperty({ example: '15-10-2026', pattern: '^\\d{2}-\\d{2}-\\d{4}$' })
+  @IsBrazilianDate({ message: 'A data deve estar no formato DD-MM-AAAA e ser válida.' })
   data: string;
 }

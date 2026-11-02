@@ -5,6 +5,7 @@ import { NotFoundError } from '@/shared/errors/application.error';
 
 import {
   PROBLEM_REPOSITORY,
+  type ProblemDeletionImpact,
   type ProblemRepository,
 } from '../../domain/repositories/problem.repository';
 
@@ -14,12 +15,7 @@ export interface GetProblemDeletionImpactInput {
   tutorId: string;
 }
 
-export interface GetProblemDeletionImpactOutput {
-  sessions: number;
-  grades: number;
-  feedbacks: number;
-  evaluations: number;
-}
+export type GetProblemDeletionImpactOutput = ProblemDeletionImpact;
 
 @Injectable()
 export class GetProblemDeletionImpactUseCase {
@@ -38,11 +34,6 @@ export class GetProblemDeletionImpactUseCase {
       throw new NotFoundError('Problema não encontrado.');
     }
 
-    return {
-      sessions: await this.problemRepository.countSessions(problem.id),
-      grades: 0,
-      feedbacks: 0,
-      evaluations: 0,
-    };
+    return this.problemRepository.getDeletionImpact(problem.id);
   }
 }

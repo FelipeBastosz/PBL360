@@ -23,6 +23,6 @@ export class GetMyProblemFeedbacksUseCase {
     await this.access.assertMemberCanAccessRoom(roomId, { id: studentId, type: UserType.STUDENT });
     const problem = await this.problems.findById(problemId);
     if (!problem || problem.roomId !== roomId) throw new NotFoundError('Problema não encontrado.');
-    return this.feedbacks.readProblem(problemId, studentId);
+    return this.feedbacks.readProblem(problemId, studentId, roomId);
   }
 }

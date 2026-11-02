@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ReceivedFeedbackResponseDto,
   ReceivedIndividualFeedbackResponseDto,
@@ -19,6 +19,17 @@ export class ReceivedSessionFeedbackDto {
 }
 
 export class ReceivedProblemFeedbacksResponseDto {
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'Nota final calculada somente com as sessões já enviadas pelo tutor para o aluno; nula quando nenhuma nota estiver disponível.',
+  })
+  notaFinal!: number | null;
+
+  @ApiProperty({ type: () => [AssociatedFeedbackResponseDto] })
+  feedbacks!: AssociatedFeedbackResponseDto[];
+
   @ApiProperty({ type: ReceivedIndividualFeedbackResponseDto, nullable: true })
   individual!: ReceivedIndividualFeedbackResponseDto | null;
 
@@ -31,4 +42,12 @@ export class ReceivedProblemFeedbacksResponseDto {
       'Sessões em ordem cronológica, inclusive quando o feedback ainda não está disponível.',
   })
   sessoes!: ReceivedSessionFeedbackDto[];
+}
+
+export class AssociatedFeedbackResponseDto extends ReceivedFeedbackResponseDto {
+  @ApiProperty({ enum: ['INDIVIDUAL', 'GERAL', 'SESSAO'] })
+  tipo!: 'INDIVIDUAL' | 'GERAL' | 'SESSAO';
+
+  @ApiPropertyOptional({ format: 'uuid', description: 'Presente apenas em feedback de sessão.' })
+  sessaoId?: string;
 }

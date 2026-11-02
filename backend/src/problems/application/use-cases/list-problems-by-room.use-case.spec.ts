@@ -24,6 +24,7 @@ describe('ListProblemsByRoomUseCase', () => {
       updateDetails: jest.fn(),
       hasSessions: jest.fn(),
       countSessions: jest.fn(),
+      getDeletionImpact: jest.fn(),
       delete: jest.fn(),
       create: jest.fn(),
       findById: jest.fn(),

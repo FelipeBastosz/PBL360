@@ -1,4 +1,5 @@
 import { InvalidRequestError } from '@/shared/errors/application.error';
+import { User } from '@/users/domain/entities/user.entity';
 import { buildRoom } from '../../testing/room-fixtures';
 import { roomCodeFromInviteLink, toRoomSummaryResponse } from './room.mapper';
 
@@ -11,6 +12,29 @@ describe('toRoomSummaryResponse', () => {
         totalProblems: 8,
       }),
     ).toMatchObject({ totalAlunos: 24, totalProblemas: 8, nome: 'Engenharia de Software' });
+  });
+
+  it('maps professorResponsavel when room.tutor is present', () => {
+    const room = buildRoom();
+    room.tutor = Object.assign(new User(), {
+      id: 'tutor-1',
+      name: 'Carlos Mendes',
+      email: 'carlos@uefs.br',
+    });
+
+    expect(
+      toRoomSummaryResponse({
+        room,
+        totalStudents: 10,
+        totalProblems: 2,
+      }),
+    ).toMatchObject({
+      professorResponsavel: {
+        id: 'tutor-1',
+        nome: 'Carlos Mendes',
+        email: 'carlos@uefs.br',
+      },
+    });
   });
 });
 

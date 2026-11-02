@@ -10,15 +10,23 @@ import { GetProblemDeletionImpactUseCase } from './get-problem-deletion-impact.u
 describe('GetProblemDeletionImpactUseCase', () => {
   let useCase: GetProblemDeletionImpactUseCase;
   let findByIdMock: jest.Mock;
+  let getDeletionImpactMock: jest.Mock;
   let assertTutorCanAccessRoomMock: jest.Mock;
 
   beforeEach(() => {
     findByIdMock = jest.fn();
+    getDeletionImpactMock = jest.fn().mockResolvedValue({
+      sessions: 0,
+      grades: 0,
+      feedbacks: 0,
+      evaluations: 0,
+    });
     assertTutorCanAccessRoomMock = jest.fn();
 
     const problemRepository = {
       create: jest.fn(),
       findById: findByIdMock,
+      getDeletionImpact: getDeletionImpactMock,
       findByRoomId: jest.fn(),
       hasSessions: jest.fn().mockResolvedValue(false),
       countSessions: jest.fn().mockResolvedValue(0),
@@ -124,5 +132,50 @@ describe('GetProblemDeletionImpactUseCase', () => {
     });
     expect(assertTutorCanAccessRoomMock).toHaveBeenCalledWith('room-1', 'tutor-1');
     expect(findByIdMock).toHaveBeenCalledWith(problem.id);
+    expect(getDeletionImpactMock).toHaveBeenCalledWith(problem.id);
+  });
+
+  it('returns real counts for all dependent records when dependencies exist', async () => {
+    assertTutorCanAccessRoomMock.mockResolvedValueOnce(new Room());
+
+    const problem = Problem.create({
+      roomId: 'room-1',
+      createdBy: 'tutor-1',
+      title: 'Problema com dependências',
+    });
+    problem.id = 'prob-2';
+    findByIdMock.mockResolvedValueOnce(problem);
+
+    getDeletionImpactMock.mockResolvedValueOnce({
+      sessions: 3,
+      grades: 12,
+      feedbacks: 6,
+      evaluations: 24,
+    });
+
+    const impact = await useCase.execute({
+      roomId: 'room-1',
+      problemId: problem.id,
+      tutorId: 'tutor-1',
+    });
+
+    expect(impact).toEqual({
+      sessions: 3,
+      grades: 12,
+      feedbacks: 6,
+      evaluations: 24,
+    });
+    expect(getDeletionImpactMock).toHaveBeenCalledWith(problem.id);
+  });
+
+  it('returns actual counts from the repository', async () => {
+    const impact = { sessions: 2, grades: 1, feedbacks: 4, evaluations: 3 };
+    findByIdMock.mockResolvedValueOnce({ id: 'prob-1', roomId: 'room-1' });
+    getDeletionImpactMock.mockResolvedValueOnce(impact);
+
+    await expect(
+      useCase.execute({ roomId: 'room-1', problemId: 'prob-1', tutorId: 'tutor-1' }),
+    ).resolves.toEqual(impact);
+    expect(getDeletionImpactMock).toHaveBeenCalledWith('prob-1');
   });
 });

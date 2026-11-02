@@ -1,3 +1,5 @@
+import type { EvaluationModality } from '../../domain/entities/grade-calculator';
+
 export interface EvaluationComponentResponse {
   nota: number | null;
   situacao: string;
@@ -20,6 +22,7 @@ export class GradesResponseDto {
       sessaoId: string;
       nota: number | null;
       situacao: string;
+      modalidade: EvaluationModality;
       autoavaliacao: EvaluationComponentResponse;
       pares: EvaluationComponentResponse;
     }>;

@@ -30,7 +30,7 @@ export function Alert({ tone, children, className }: AlertProps) {
     <div
       role={tone === 'error' ? 'alert' : 'status'}
       className={cn(
-        'flex items-start gap-2 rounded-[10px] border p-3 text-sm',
+        'flex items-start gap-2 rounded-xl border p-3 text-sm',
         toneClassName,
         className,
       )}

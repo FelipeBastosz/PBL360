@@ -140,12 +140,12 @@ function usePageDependencies() {
   return { navigate, user, target: activeTarget, data, deletion, modals, viewModel, sessionId };
 }
 
-export function PerformanceTablesPage() {
+export function PerformanceTablesPage({ showHeader = true }: { showHeader?: boolean } = {}) {
   const deps = usePageDependencies();
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
-      <PerformanceTablesHeader />
+      {showHeader && <PerformanceTablesHeader />}
       <div className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
         <SearchField
           label="Pesquisar fórmula"
