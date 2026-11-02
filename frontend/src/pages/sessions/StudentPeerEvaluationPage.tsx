@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import type { UserResponse } from '@/types/auth';
 import type { SessionRole } from '@/types/session';
 import { cn } from '@/utils/cn';
-import { formatDeadline } from '@/utils/formatDate';
+import { formatDeadline } from '@/utils/date';
 import { roleLabel } from '@/utils/sessionRoles';
 import { CriterionStepper } from './components/CriterionStepper';
 import { EvaluationFinalScore } from './components/EvaluationFinalScore';

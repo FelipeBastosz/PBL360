@@ -3,6 +3,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
 import { useClassReport } from './hooks/useClassReport';
+import { useClassReportExport } from './hooks/useClassReportExport';
 import { ClassReportHeader } from './components/ClassReportHeader';
 import { ClassReportTable } from './components/ClassReportTable';
 import { ClassReportExportActions } from './components/ClassReportExportActions';
@@ -12,6 +13,7 @@ import { ClassReportErrorState } from './components/ClassReportErrorState';
 export function ClassReportPage() {
   const { id: roomId } = useParams<{ id: string }>();
   const { data, isLoading, error, refetch } = useClassReport(roomId);
+  const reportExport = useClassReportExport(roomId, data?.sala?.nome);
 
   return (
     <div className="min-h-dvh bg-surface pb-16">
@@ -36,7 +38,12 @@ export function ClassReportPage() {
             ) : (
               <>
                 <ClassReportTable problemas={data.problemas} alunos={data.alunos} />
-                <ClassReportExportActions />
+                <ClassReportExportActions
+                  isExportingPDF={reportExport.isExportingPDF}
+                  isExportingExcel={reportExport.isExportingExcel}
+                  onExportPdf={() => reportExport.handleExport('PDF')}
+                  onExportExcel={() => reportExport.handleExport('XLSX')}
+                />
               </>
             )}
           </>

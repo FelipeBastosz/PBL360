@@ -24,17 +24,38 @@ describe('ExportProblemReportQueryDto', () => {
     ['false', false],
     [false, false],
     ['0', false],
-  ])('transforms %p to boolean %p', async (input, expected) => {
-    const instance = toQuery({ formato: 'PDF', ocultarNomes: input });
+    ['null', false],
+    [null, false],
+  ])('transforms %p to boolean %p for boolean query flags', async (input, expected) => {
+    const instance = toQuery({
+      formato: 'PDF',
+      ocultarNomes: input,
+      mostrarFeedback: input,
+      mostrarMarcacoes: input,
+    });
     expect(instance.ocultarNomes).toBe(expected);
-    expect(await validateQuery({ formato: 'PDF', ocultarNomes: input })).toEqual([]);
+    expect(instance.mostrarFeedback).toBe(expected);
+    expect(instance.mostrarMarcacoes).toBe(expected);
+    expect(
+      await validateQuery({
+        formato: 'PDF',
+        ocultarNomes: input,
+        mostrarFeedback: input,
+        mostrarMarcacoes: input,
+      }),
+    ).toEqual([]);
   });
 
-  it('rejects invalid non-boolean value for ocultarNomes', async () => {
-    const [error] = await validateQuery({ formato: 'PDF', ocultarNomes: 'invalido' });
-    expect(error?.property).toBe('ocultarNomes');
-    expect(Object.values(error?.constraints ?? {})).toEqual([
-      'O campo ocultarNomes deve ser um booleano.',
-    ]);
+  it('rejects invalid non-boolean value for flags', async () => {
+    const errors = await validateQuery({
+      formato: 'PDF',
+      ocultarNomes: 'invalido',
+      mostrarFeedback: 'invalido',
+      mostrarMarcacoes: 'invalido',
+    });
+    const properties = errors.map((e) => e.property);
+    expect(properties).toContain('ocultarNomes');
+    expect(properties).toContain('mostrarFeedback');
+    expect(properties).toContain('mostrarMarcacoes');
   });
 });

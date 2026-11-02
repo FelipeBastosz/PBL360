@@ -2,7 +2,7 @@ import type { ReportTextEntry } from '@/report-files/domain/report-document';
 import type {
   SessionReportData,
   SessionReportStudentData,
-} from '../../../domain/repositories/session-report.repository';
+} from '@/sessions/domain/repositories/session-report.repository';
 
 export function buildFeedbackEntries(
   data: SessionReportData,

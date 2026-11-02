@@ -246,4 +246,43 @@ test.describe('Problem Deletion Flow (ManageProblemsPage)', () => {
       page.getByRole('heading', { level: 3, name: 'Problema 2 - Arquitetura em Camadas' }),
     ).toBeVisible();
   });
+
+  test('should display contextual message when deletion API returns 409 Conflict with linked details', async ({
+    page,
+  }) => {
+    await page.route('**/api/salas/sala-1/problemas/prob-2', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        await route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            statusCode: 409,
+            message: 'O problema não pode ser excluído pois possui registros vinculados.',
+            error: 'Conflict',
+            detalhes: {
+              sessoes: 2,
+              feedbacks: 1,
+            },
+          }),
+        });
+      }
+    });
+
+    await page.getByRole('button', { name: 'Excluir Problema 2 - Arquitetura em Camadas' }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Sim, excluir problema' }).click();
+
+    const expectedMessage =
+      'Não é possível excluir: existem 2 sessões e 1 feedback vinculados a este problema.';
+
+    await expect(dialog.getByRole('alert')).toHaveTextContent(expectedMessage);
+    await expect(page.getByText(expectedMessage)).toBeVisible();
+    await expect(
+      dialog.getByRole('heading', { name: 'Não é possível excluir o problema' }),
+    ).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Entendi' })).toBeVisible();
+  });
 });

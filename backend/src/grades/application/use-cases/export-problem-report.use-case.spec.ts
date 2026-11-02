@@ -1,6 +1,7 @@
 import type { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import type { ProblemRepository } from '@/problems/domain/repositories/problem.repository';
 import type { FeedbackRepository } from '@/feedbacks/domain/repositories/feedback.repository';
+import type { GradesRepository } from '../../domain/repositories/grades.repository';
 import type { ReportFileGenerator } from '@/report-files/domain/services/report-file-generator';
 import { ReportFileFormat, type ReportFile } from '@/report-files/domain/report-document';
 import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
@@ -16,6 +17,7 @@ describe('ExportProblemReportUseCase', () => {
   let problemRepository: jest.Mocked<Pick<ProblemRepository, 'findById'>>;
   let getProblemGrades: jest.Mocked<Pick<GetProblemGradesUseCase, 'execute'>>;
   let feedbackRepository: jest.Mocked<Pick<FeedbackRepository, 'findProblemFeedbacksWithDetails'>>;
+  let gradesRepository: jest.Mocked<Pick<GradesRepository, 'findProblemObservationTags'>>;
   let reportFiles: jest.Mocked<ReportFileGenerator>;
 
   const input = {
@@ -62,6 +64,9 @@ describe('ExportProblemReportUseCase', () => {
     feedbackRepository = {
       findProblemFeedbacksWithDetails: jest.fn().mockResolvedValue([]),
     };
+    gradesRepository = {
+      findProblemObservationTags: jest.fn().mockResolvedValue([]),
+    };
     reportFiles = {
       generate: jest.fn().mockResolvedValue(mockFile),
     };
@@ -72,6 +77,7 @@ describe('ExportProblemReportUseCase', () => {
       getProblemGrades as unknown as GetProblemGradesUseCase,
       feedbackRepository as unknown as FeedbackRepository,
       reportFiles,
+      gradesRepository as unknown as GradesRepository,
     );
   });
 
@@ -112,6 +118,7 @@ describe('ExportProblemReportUseCase', () => {
     expect(feedbackRepository.findProblemFeedbacksWithDetails).toHaveBeenCalledWith(
       input.problemId,
     );
+    expect(gradesRepository.findProblemObservationTags).toHaveBeenCalledWith(input.problemId);
     expect(reportFiles.generate).toHaveBeenCalledWith(
       expect.objectContaining({
         format: ReportFileFormat.PDF,
@@ -125,6 +132,36 @@ describe('ExportProblemReportUseCase', () => {
           { label: 'Problema', value: 'Problema 1' },
         ],
       }),
+    );
+  });
+
+  it('skips loading feedbacks when mostrarFeedback is false or null', async () => {
+    await useCase.execute({ ...input, mostrarFeedback: false });
+
+    expect(feedbackRepository.findProblemFeedbacksWithDetails).not.toHaveBeenCalled();
+    expect(gradesRepository.findProblemObservationTags).toHaveBeenCalledWith(input.problemId);
+
+    jest.clearAllMocks();
+    await useCase.execute({ ...input, mostrarFeedback: null });
+
+    expect(feedbackRepository.findProblemFeedbacksWithDetails).not.toHaveBeenCalled();
+    expect(gradesRepository.findProblemObservationTags).toHaveBeenCalledWith(input.problemId);
+  });
+
+  it('skips loading marcacoes when mostrarMarcacoes is false or null', async () => {
+    await useCase.execute({ ...input, mostrarMarcacoes: false });
+
+    expect(gradesRepository.findProblemObservationTags).not.toHaveBeenCalled();
+    expect(feedbackRepository.findProblemFeedbacksWithDetails).toHaveBeenCalledWith(
+      input.problemId,
+    );
+
+    jest.clearAllMocks();
+    await useCase.execute({ ...input, mostrarMarcacoes: null });
+
+    expect(gradesRepository.findProblemObservationTags).not.toHaveBeenCalled();
+    expect(feedbackRepository.findProblemFeedbacksWithDetails).toHaveBeenCalledWith(
+      input.problemId,
     );
   });
 

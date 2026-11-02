@@ -36,4 +36,12 @@ export const problemService = {
 
   remove: (roomId: string, problemId: string) =>
     api.delete<void>(`${problemsOf(roomId)}/${problemId}`).then(() => undefined),
+
+  exportReport: (roomId: string, problemId: string, formato: 'PDF' | 'XLSX') =>
+    api
+      .get<Blob>(`/salas/${roomId}/problemas/${problemId}/relatorio/exportacao`, {
+        params: { formato },
+        responseType: 'blob',
+      })
+      .then((r) => r.data),
 };

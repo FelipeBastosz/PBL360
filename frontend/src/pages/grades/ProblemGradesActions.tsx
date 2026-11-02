@@ -2,31 +2,19 @@ import { Button } from '@/components/ui/Button';
 
 type ProblemGradesActionsProps = {
   onOpenGeneralModal: () => void;
+  isExportingPDF?: boolean;
+  isExportingExcel?: boolean;
+  onExport?: (formato: 'PDF' | 'XLSX') => void;
 };
 
-function DisabledExportButton({ label }: { label: string }) {
-  return (
-    <div className="group relative">
-      <button
-        type="button"
-        disabled
-        title="Em breve"
-        aria-label={label}
-        className="flex h-12 w-full cursor-not-allowed items-center justify-center rounded-2xl bg-brand-900 font-semibold text-white opacity-60 shadow-md transition disabled:cursor-not-allowed"
-      >
-        {label}
-      </button>
-      <div
-        role="tooltip"
-        className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2.5 py-1 text-xs text-white opacity-0 shadow transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
-      >
-        Em breve
-      </div>
-    </div>
-  );
-}
+export function ProblemGradesActions({
+  onOpenGeneralModal,
+  isExportingPDF = false,
+  isExportingExcel = false,
+  onExport,
+}: ProblemGradesActionsProps) {
+  const isAnyExporting = isExportingPDF || isExportingExcel;
 
-export function ProblemGradesActions({ onOpenGeneralModal }: ProblemGradesActionsProps) {
   return (
     <div className="flex flex-col gap-3">
       <Button
@@ -39,8 +27,24 @@ export function ProblemGradesActions({ onOpenGeneralModal }: ProblemGradesAction
       </Button>
 
       <div className="flex flex-col gap-2.5 pt-1">
-        <DisabledExportButton label="Exportar em PDF" />
-        <DisabledExportButton label="Exportar em Excel" />
+        <Button
+          type="button"
+          isLoading={isExportingPDF}
+          disabled={isAnyExporting}
+          onClick={() => onExport?.('PDF')}
+          className="h-12 w-full rounded-2xl bg-brand-900 font-semibold text-white shadow-md transition disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Exportar em PDF
+        </Button>
+        <Button
+          type="button"
+          isLoading={isExportingExcel}
+          disabled={isAnyExporting}
+          onClick={() => onExport?.('XLSX')}
+          className="h-12 w-full rounded-2xl bg-brand-900 font-semibold text-white shadow-md transition disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Exportar em Excel
+        </Button>
       </div>
     </div>
   );

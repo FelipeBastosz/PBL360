@@ -9,6 +9,7 @@ export const ROUTES = {
   resetPasswordCode: '/recuperar-senha/codigo',
   resetPassword: '/recuperar-senha/nova-senha',
   resetPasswordSuccess: '/recuperar-senha/concluido',
+  myAccount: '/minha-conta',
   rooms: '/turmas',
   createRoom: '/turmas/nova',
   createRoomSuccess: '/turmas/nova/sucesso',
@@ -49,4 +50,5 @@ export const ROUTES = {
   problemGrades: '/turmas/:roomId/problemas/:problemId/notas',
   sessionFeedback: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/feedback',
   problemFeedbacks: '/turmas/:roomId/problemas/:problemId/feedbacks',
+  problemFormula: '/turmas/:roomId/problemas/:problemId/formula',
 } as const;

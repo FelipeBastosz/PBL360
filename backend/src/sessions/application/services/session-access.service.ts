@@ -33,7 +33,27 @@ export class SessionAccessService {
     await this.assertProblemBelongsToRoom(problemId, roomId);
   }
 
+  async assertTutorCanAccessSession(sessionId: string, tutorId: string): Promise<Session>;
   async assertTutorCanAccessSession(
+    roomId: string,
+    problemId: string,
+    sessionId: string,
+    tutorId: string,
+  ): Promise<Session>;
+  async assertTutorCanAccessSession(
+    first: string,
+    second: string,
+    third?: string,
+    fourth?: string,
+  ): Promise<Session> {
+    if (third === undefined) {
+      const { session } = await this.assertTutorCanAccessSessionById(first, second);
+      return session;
+    }
+    return this.assertSessionInRoom(first, second, third, fourth!);
+  }
+
+  private async assertSessionInRoom(
     roomId: string,
     problemId: string,
     sessionId: string,

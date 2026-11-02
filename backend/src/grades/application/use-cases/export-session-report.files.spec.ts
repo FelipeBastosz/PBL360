@@ -4,12 +4,62 @@ import { ReportFileFormat } from '@/report-files/domain/report-document';
 import { ReportFileService } from '@/report-files/application/services/report-file.service';
 import { PdfmakeReportRenderer } from '@/report-files/infrastructure/pdf/pdfmake-report-renderer';
 import { ExceljsReportRenderer } from '@/report-files/infrastructure/xlsx/exceljs-report-renderer';
-import type { SessionAccessService } from '../services/session-access.service';
+import type { SessionAccessService } from '@/sessions/application/services/session-access.service';
 import type {
   SessionReportData,
   SessionReportRepository,
-} from '../../domain/repositories/session-report.repository';
+} from '@/sessions/domain/repositories/session-report.repository';
+import type { GradesResponseDto } from '../dtos/grades-response.dto';
+import type { GetProblemGradesUseCase } from './get-problem-grades.use-case';
+import type { ProblemGradesWithSessionGrades } from './helpers/get-problem-grades.helper';
 import { ExportSessionReportUseCase } from './export-session-report.use-case';
+
+type SessionGrade = GradesResponseDto['alunos'][number]['sessoes'][number];
+
+const notEvaluated = { nota: null, situacao: 'NAO_LIBERADA' };
+
+const officialGrade = (
+  alunoId: string,
+  grade: Pick<SessionGrade, 'nota' | 'situacao'>,
+): GradesResponseDto['alunos'][number] => ({
+  alunoId,
+  nome: alunoId,
+  matricula: null,
+  sessoes: [
+    {
+      sessaoId: 'sess-301',
+      modalidade: 'TUTOR',
+      autoavaliacao: notEvaluated,
+      pares: notEvaluated,
+      ...grade,
+    },
+  ],
+  notaFinal: grade.nota,
+  autoavaliacao: notEvaluated,
+  pares: notEvaluated,
+});
+
+const officialGrades: ProblemGradesWithSessionGrades = {
+  response: {
+    sessoes: [],
+    alunos: [
+      officialGrade('stud-1', { nota: 9, situacao: 'AVALIADA' }),
+      officialGrade('stud-2', { nota: null, situacao: 'PENDENTE' }),
+      officialGrade('stud-3', { nota: null, situacao: 'JUSTIFICADA' }),
+      officialGrade('stud-4', { nota: 0, situacao: 'AUSENTE' }),
+      officialGrade('stud-5', { nota: null, situacao: 'PENDENTE' }),
+    ],
+    mediaTurma: null,
+    versoesFormula: { sessao: null, problema: null },
+  },
+  sessionGrades: [
+    { session_id: 'sess-301', student_id: 'stud-1', grade: 8.975 },
+    { session_id: 'sess-301', student_id: 'stud-2', grade: null },
+    { session_id: 'sess-301', student_id: 'stud-3', grade: null },
+    { session_id: 'sess-301', student_id: 'stud-4', grade: 0 },
+    { session_id: 'sess-301', student_id: 'stud-5', grade: null },
+  ],
+};
 
 describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', () => {
   let useCase: ExportSessionReportUseCase;
@@ -34,14 +84,6 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
       orderIndex: 3,
       date: '2026-10-20',
     },
-    criteria: [
-      { id: 'crit-1', name: 'Raciocínio clínico', weight: 5 },
-      { id: 'crit-2', name: 'Comunicação', weight: 5 },
-    ],
-    formula: {
-      criteriaWeight: 70,
-      roleWeight: 30,
-    },
     students: [
       {
         studentId: 'stud-1',
@@ -53,11 +95,6 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
         tags: ['Participativo', 'Liderança'],
         evaluationStatus: EvaluationStatus.SUBMITTED,
         appliedBonus: 9.5,
-        items: [
-          { criterionId: 'crit-1', score: 9.0 },
-          { criterionId: 'crit-2', score: 8.5 },
-        ],
-        recordedSessionScore: 8.98,
         feedback: {
           text: 'Excelente condução do grupo e clareza na formulação das hipóteses.',
           authorName: 'Prof. Carlos',
@@ -73,11 +110,6 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
         tags: ['Atraso justificado'],
         evaluationStatus: EvaluationStatus.DRAFT,
         appliedBonus: null,
-        items: [
-          { criterionId: 'crit-1', score: 7.0 },
-          { criterionId: 'crit-2', score: 7.5 },
-        ],
-        recordedSessionScore: null,
         feedback: {
           text: 'Boa síntese no quadro, atentar para pontualidade.',
           authorName: 'Prof. Carlos',
@@ -93,8 +125,6 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
         tags: [],
         evaluationStatus: null,
         appliedBonus: null,
-        items: [],
-        recordedSessionScore: null,
         feedback: null,
       },
       {
@@ -107,11 +137,6 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
         tags: ['Falta'],
         evaluationStatus: EvaluationStatus.SUBMITTED,
         appliedBonus: null,
-        items: [
-          { criterionId: 'crit-1', score: 8.0 }, // Note: criterion score adjusted to 8.0
-          { criterionId: 'crit-2', score: 8.0 },
-        ],
-        recordedSessionScore: 6.0, // old score before adjustment
         feedback: null,
       },
       {
@@ -124,8 +149,6 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
         tags: [],
         evaluationStatus: null, // missing evaluation
         appliedBonus: null,
-        items: [],
-        recordedSessionScore: null,
         feedback: null, // missing feedback
       },
     ],
@@ -151,7 +174,16 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
     const xlsxRenderer = new ExceljsReportRenderer();
     const reportGenerator = new ReportFileService(pdfRenderer, xlsxRenderer);
 
-    useCase = new ExportSessionReportUseCase(sessionAccess, reportRepository, reportGenerator);
+    const getProblemGrades = {
+      executeWithSessionGrades: jest.fn().mockResolvedValue(officialGrades),
+    };
+
+    useCase = new ExportSessionReportUseCase(
+      sessionAccess,
+      reportRepository,
+      reportGenerator,
+      getProblemGrades as unknown as GetProblemGradesUseCase,
+    );
   });
 
   it('generates valid PDF and Excel files and verifies their contents match', async () => {
@@ -229,7 +261,6 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
     expect(anaRow.getCell(5).value).toBe(9.5);
     expect(anaRow.getCell(6).value).toBe('Participativo, Liderança');
     expect(anaRow.getCell(7).value).toBe('Nota enviada');
-    // Numeric cell for final grade: criteria avg = 8.75, role = 9.5 => (8.75*0.7) + (9.5*0.3) = 6.125 + 2.85 = 8.98
     expect(typeof anaRow.getCell(8).value).toBe('number');
     expect(anaRow.getCell(8).value).toBe(8.98);
 
@@ -243,22 +274,21 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
     expect(brunoRow.getCell(7).value).toBe('Rascunho');
     expect(brunoRow.getCell(8).value).toBeNull(); // Draft has null score
 
-    // Verify Row 11 (Carlos Dias - Excused, unrecorded)
+    // Verify Row 11 (Carlos Dias - Excused)
     const carlosRow = sheet1.getRow(11);
     expect(carlosRow.getCell(1).value).toBe('Carlos Dias');
     expect(carlosRow.getCell(3).value).toBe('Justificado');
     expect(carlosRow.getCell(4).value).toBe('Secretário da mesa');
     expect(carlosRow.getCell(5).value).toBeNull();
-    expect(carlosRow.getCell(7).value).toBe('Não registrada');
+    expect(carlosRow.getCell(7).value).toBe('Falta justificada');
     expect(carlosRow.getCell(8).value).toBeNull();
 
-    // Verify Row 12 (Daniela Castro - Grade adjustment reflected)
+    // Verify Row 12 (Daniela Castro - Absent students get zero even with a submitted evaluation)
     const danielaRow = sheet1.getRow(12);
     expect(danielaRow.getCell(1).value).toBe('Daniela Castro');
     expect(danielaRow.getCell(3).value).toBe('Ausente');
-    expect(danielaRow.getCell(7).value).toBe('Nota enviada');
-    // Reflects adjusted criterion scores (8.0, 8.0) without role bonus => 8.0
-    expect(danielaRow.getCell(8).value).toBe(8.0);
+    expect(danielaRow.getCell(7).value).toBe('Ausente');
+    expect(danielaRow.getCell(8).value).toBe(0);
 
     // Verify Row 13 (Eduardo Ramos - All missing data)
     const eduardoRow = sheet1.getRow(13);

@@ -36,7 +36,7 @@ const mockSessionData: MemberSession = {
   id: 'sess-1',
   titulo: 'Sessão 2 - Fechamento',
   descricao: null,
-  data: '2024-10-08',
+  data: '08-10-2024',
   ordem: 2,
   status: 'EM_ANDAMENTO',
   problemaId: 'prob-1',
@@ -46,7 +46,7 @@ const mockSessionData: MemberSession = {
 
 const mockPeersResponse: SessionPeersResponse = {
   liberada: true,
-  prazo: null,
+  prazo: '2026-10-20T23:59:00.000Z',
   colegas: [{ alunoId: 'peer-1', nome: 'Ana Souza', iniciais: 'AS', status: 'PENDENTE' }],
 };
 
@@ -93,6 +93,7 @@ describe('StudentPeerEvaluationPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Sessão 2 - Fechamento')).toBeInTheDocument();
+      expect(screen.getByText(/Prazo: Até 20\/10\/2026 às/)).toBeInTheDocument();
       expect(screen.getByText('Ana Souza')).toBeInTheDocument();
     });
   });

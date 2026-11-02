@@ -1,10 +1,13 @@
 import { Test } from '@nestjs/testing';
 import {
   ConflictError,
+  InvalidRequestError,
   LockedError,
   UnprocessableEntityError,
 } from '@/shared/errors/application.error';
 import { SessionAccessService } from '@/sessions/application/services/session-access.service';
+import { AttendanceStatus } from '@/sessions/domain/enums/attendance-status.enum';
+import { ATTENDANCE_REPOSITORY } from '@/sessions/domain/repositories/attendance.repository';
 import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
 import { EVALUATION_REPOSITORY } from '../../domain/repositories/evaluation.repository';
 import { SavePeerEvaluationUseCase } from './save-peer-evaluation.use-case';
@@ -17,6 +20,9 @@ describe('SavePeerEvaluationUseCase', () => {
   const repository = {
     isStudentParticipating: jest.fn(),
     recordPeerEvaluation: jest.fn(),
+  };
+  const attendances = {
+    findBySession: jest.fn(),
   };
 
   const now = new Date('2026-10-20T15:00:00Z');
@@ -35,10 +41,16 @@ describe('SavePeerEvaluationUseCase', () => {
         SavePeerEvaluationUseCase,
         { provide: SessionAccessService, useValue: sessionAccess },
         { provide: EVALUATION_REPOSITORY, useValue: repository },
+        { provide: ATTENDANCE_REPOSITORY, useValue: attendances },
       ],
     }).compile();
 
     useCase = module.get(SavePeerEvaluationUseCase);
+
+    attendances.findBySession.mockResolvedValue([
+      { studentId: 'student-1', status: AttendanceStatus.PRESENT },
+      { studentId: 'peer-1', status: AttendanceStatus.PRESENT },
+    ]);
   });
 
   it('rejects self-evaluation disguised as peer (autoavaliação disfarçada de par)', async () => {
@@ -63,6 +75,8 @@ describe('SavePeerEvaluationUseCase', () => {
       }),
     ).rejects.toThrow('Um aluno não pode avaliar a si mesmo como par.');
     expect(sessionAccess.assertMemberCanAccessSession).not.toHaveBeenCalled();
+    expect(attendances.findBySession).not.toHaveBeenCalled();
+    expect(repository.recordPeerEvaluation).not.toHaveBeenCalled();
   });
 
   it('rejects when peer evaluation is not released (liberação desligada)', async () => {
@@ -123,10 +137,40 @@ describe('SavePeerEvaluationUseCase', () => {
           now,
         }),
       ).rejects.toThrow('O prazo para avaliação entre pares expirou.');
-      expect(repository.isStudentParticipating).not.toHaveBeenCalled();
+      expect(attendances.findBySession).not.toHaveBeenCalled();
       expect(repository.recordPeerEvaluation).not.toHaveBeenCalled();
     },
   );
+
+  it('rejects when roll call has not been recorded by professor', async () => {
+    sessionAccess.assertMemberCanAccessSession.mockResolvedValue({
+      session: activeSession,
+      problem,
+      roomId: 'room-1',
+    });
+    attendances.findBySession.mockResolvedValue([]);
+
+    await expect(
+      useCase.execute({
+        sessionId: 'sess-1',
+        peerId: 'peer-1',
+        studentId: 'student-1',
+        itens: [],
+        enviar: false,
+        now,
+      }),
+    ).rejects.toThrow(LockedError);
+    await expect(
+      useCase.execute({
+        sessionId: 'sess-1',
+        peerId: 'peer-1',
+        studentId: 'student-1',
+        itens: [],
+        enviar: false,
+        now,
+      }),
+    ).rejects.toThrow('A chamada da sessão ainda não foi realizada pelo professor.');
+  });
 
   it('rejects when evaluating student did not participate (avaliador que não participou)', async () => {
     sessionAccess.assertMemberCanAccessSession.mockResolvedValue({
@@ -134,10 +178,10 @@ describe('SavePeerEvaluationUseCase', () => {
       problem,
       roomId: 'room-1',
     });
-    repository.isStudentParticipating.mockImplementation((_sessId, studentId) => {
-      if (studentId === 'student-absent') return Promise.resolve(false);
-      return Promise.resolve(true);
-    });
+    attendances.findBySession.mockResolvedValue([
+      { studentId: 'student-absent', status: AttendanceStatus.ABSENT },
+      { studentId: 'peer-1', status: AttendanceStatus.PRESENT },
+    ]);
 
     await expect(
       useCase.execute({
@@ -167,10 +211,10 @@ describe('SavePeerEvaluationUseCase', () => {
       problem,
       roomId: 'room-1',
     });
-    repository.isStudentParticipating.mockImplementation((_sessId, studentId) => {
-      if (studentId === 'peer-absent') return Promise.resolve(false);
-      return Promise.resolve(true);
-    });
+    attendances.findBySession.mockResolvedValue([
+      { studentId: 'student-1', status: AttendanceStatus.PRESENT },
+      { studentId: 'peer-absent', status: AttendanceStatus.ABSENT },
+    ]);
 
     await expect(
       useCase.execute({
@@ -181,7 +225,7 @@ describe('SavePeerEvaluationUseCase', () => {
         enviar: false,
         now,
       }),
-    ).rejects.toThrow(UnprocessableEntityError);
+    ).rejects.toThrow(InvalidRequestError);
     await expect(
       useCase.execute({
         sessionId: 'sess-1',
@@ -191,7 +235,7 @@ describe('SavePeerEvaluationUseCase', () => {
         enviar: false,
         now,
       }),
-    ).rejects.toThrow('O colega não participou da sessão.');
+    ).rejects.toThrow('Não é possível avaliar um aluno que não esteve presente nesta sessão.');
   });
 
   it('propagates 409 conflict when evaluation is already submitted', async () => {
@@ -200,7 +244,6 @@ describe('SavePeerEvaluationUseCase', () => {
       problem,
       roomId: 'room-1',
     });
-    repository.isStudentParticipating.mockResolvedValue(true);
     repository.recordPeerEvaluation.mockRejectedValue(
       new ConflictError('A avaliação deste colega já foi enviada e não pode ser alterada.'),
     );
@@ -223,7 +266,6 @@ describe('SavePeerEvaluationUseCase', () => {
       problem,
       roomId: 'room-1',
     });
-    repository.isStudentParticipating.mockResolvedValue(true);
     repository.recordPeerEvaluation.mockRejectedValue(
       new UnprocessableEntityError('A nota do critério deve estar entre 0 e 10.'),
     );
@@ -246,7 +288,6 @@ describe('SavePeerEvaluationUseCase', () => {
       problem,
       roomId: 'room-1',
     });
-    repository.isStudentParticipating.mockResolvedValue(true);
     repository.recordPeerEvaluation.mockResolvedValue({
       peer: { id: 'peer-1', name: 'Lucas' },
       config: {
@@ -288,7 +329,6 @@ describe('SavePeerEvaluationUseCase', () => {
       problem,
       roomId: 'room-1',
     });
-    repository.isStudentParticipating.mockResolvedValue(true);
     repository.recordPeerEvaluation.mockResolvedValue({
       peer: { id: 'peer-1', name: 'Lucas' },
       config: {

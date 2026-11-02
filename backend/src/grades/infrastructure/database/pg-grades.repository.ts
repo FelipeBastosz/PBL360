@@ -2,12 +2,27 @@ import { Injectable } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { readProblemGradeData, readFormulaComponents } from './problem-grade-data.reads';
+import { FIND_PROBLEM_OBSERVATION_TAGS_QUERY } from './problem-observation-tags.queries';
 import type {
   GradePersistenceData,
   GradeRow,
   GradesRepository,
   ProblemGradeData,
+  ProblemObservationTagDetail,
 } from '../../domain/repositories/grades.repository';
+
+const parseTags = (tags: unknown): string[] => {
+  if (Array.isArray(tags)) return tags.filter((t): t is string => typeof t === 'string');
+  if (typeof tags === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(tags);
+      if (Array.isArray(parsed)) return parsed.filter((t): t is string => typeof t === 'string');
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 @Injectable()
 export class PgGradesRepository implements GradesRepository {
@@ -47,5 +62,25 @@ export class PgGradesRepository implements GradesRepository {
         );
       }
     });
+  }
+
+  async findProblemObservationTags(problemId: string): Promise<ProblemObservationTagDetail[]> {
+    const rows = await this.grades.query<
+      Array<{
+        studentId: string;
+        sessionId: string;
+        sessionTitle: string;
+        sessionOrderIndex: number | null;
+        tags: unknown;
+      }>
+    >(FIND_PROBLEM_OBSERVATION_TAGS_QUERY, [problemId]);
+
+    return rows.map((r) => ({
+      studentId: r.studentId,
+      sessionId: r.sessionId,
+      sessionTitle: r.sessionTitle,
+      sessionOrderIndex: r.sessionOrderIndex,
+      tags: parseTags(r.tags),
+    }));
   }
 }

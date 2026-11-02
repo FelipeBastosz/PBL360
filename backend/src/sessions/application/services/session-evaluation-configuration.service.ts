@@ -5,6 +5,7 @@ import { SessionAccessService } from './session-access.service';
 import {
   SessionFormulaComponentType,
   type SessionEvaluationConfigurationDto,
+  type SessionFormulaDto,
   type SessionTableChangeResponse,
   type UpdateSessionFormulaComponentDto,
 } from '../dtos/session-evaluation-configuration.dto';
@@ -28,12 +29,17 @@ export class SessionEvaluationConfigurationService {
   ) {}
 
   async get(sessionId: string, tutorId: string): Promise<SessionEvaluationConfigurationDto> {
-    await this.access.assertTutorCanAccessSessionById(sessionId, tutorId);
+    await this.access.assertTutorCanAccessSession(sessionId, tutorId);
     const table = await readSessionTable(this.dataSource.manager, sessionId);
     const criteria = await readTableCriteria(this.dataSource.manager, table.id);
     const blocked = await isSessionBlocked(this.dataSource, sessionId);
     const formula = toSessionFormula(await readSessionFormula(this.dataSource.manager, sessionId));
     return configurationResponse(table, criteria, formula, blocked);
+  }
+
+  async getFormula(sessionId: string, tutorId: string): Promise<SessionFormulaDto> {
+    await this.access.assertTutorCanAccessSession(sessionId, tutorId);
+    return toSessionFormula(await readSessionFormula(this.dataSource.manager, sessionId));
   }
 
   async setTable(
@@ -130,7 +136,7 @@ function mapCriteria(criteria: Pick<SessionCriterionRow, 'id' | 'name' | 'weight
   }));
 }
 
-function toSessionFormula(
+export function toSessionFormula(
   rows: Array<{
     isDefault: boolean;
     version: number;
