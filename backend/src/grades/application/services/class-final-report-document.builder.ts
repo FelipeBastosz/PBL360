@@ -32,7 +32,7 @@ const studentStatus = (student: ClassReportStudentDto): string => {
 };
 
 const columnsFor = (problems: ClassReportProblemDto[], ocultarNomes = false): ReportColumn[] => [
-  ...(ocultarNomes ? [] : [{ ...textColumn('Aluno'), pdfWidth: '*' }]),
+  ...(ocultarNomes ? [] : [{ ...textColumn('Aluno'), pdfWidth: '*' as const }]),
   textColumn('Matrícula'),
   ...problems.map((problem): ReportColumn => ({
     ...gradeColumn(`P${problem.ordem} — ${problem.titulo}`),
