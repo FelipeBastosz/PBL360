@@ -177,4 +177,12 @@ describe('ExportProblemReportUseCase', () => {
       expect(table.columns[0]).toEqual(expect.objectContaining({ header: 'Matrícula' }));
     }
   });
+
+  it('forwards mostrarPendencias: false to document builder', async () => {
+    await useCase.execute({ ...input, mostrarPendencias: false });
+
+    const [call] = reportFiles.generate.mock.calls;
+    const document = call?.[0];
+    expect(document?.sections.some((s) => s.title === 'Pendências de avaliação')).toBe(false);
+  });
 });

@@ -509,4 +509,37 @@ describe('problem-report-document.helper', () => {
       'Informações do relatório',
     ]);
   });
+
+  it('omits pendencies section when mostrarPendencias is false', () => {
+    const doc = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks,
+      marcacoes,
+      format: ReportFileFormat.PDF,
+      mostrarPendencias: false,
+    });
+
+    expect(doc.sections.some((s) => s.title === 'Pendências de avaliação')).toBe(false);
+  });
+
+  it('omits pendencies, feedbacks and marcacoes when all three flags are false', () => {
+    const doc = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks,
+      marcacoes,
+      format: ReportFileFormat.PDF,
+      mostrarPendencias: false,
+      mostrarFeedback: false,
+      mostrarMarcacoes: false,
+    });
+
+    expect(doc.sections.map((s) => s.title)).toEqual([
+      'Notas por sessão',
+      'Informações do relatório',
+    ]);
+  });
 });
