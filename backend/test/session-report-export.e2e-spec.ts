@@ -388,7 +388,7 @@ describe('Session report export (e2e)', () => {
       if (values.includes('Ana Souza')) anaRow = values;
     });
 
-    expect(anaRow).toContain(7.66);
+    expect(anaRow).toContain(7.7);
   });
 
   it('allows co-tutor to export report and rejects removed co-tutor', async () => {

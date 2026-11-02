@@ -1,3 +1,5 @@
+import { roundGrade } from '@/shared/utils/grade-precision';
+
 export type GradeAttendance = 'PRESENT' | 'LATE' | 'EXCUSED' | 'ABSENT' | null;
 export type GradeSituation = 'AVALIADA' | 'PENDENTE' | 'JUSTIFICADA' | 'AUSENTE';
 
@@ -155,5 +157,4 @@ export const calculateProblemGrade = (
   return { grade };
 };
 
-export const presentGrade = (grade: number | null): number | null =>
-  grade === null ? null : Math.round((grade + Number.EPSILON) * 10) / 10;
+export const presentGrade = (grade: number | null): number | null => roundGrade(grade);
