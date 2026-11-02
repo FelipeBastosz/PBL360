@@ -8,13 +8,14 @@ const mockReleases: SessionReleasesResponse = {
   autoavaliacao: {
     liberada: true,
     prazo: '2026-10-15T17:00:00.000Z',
-    enviadas: 3, 
+    enviadas: 3,
+    esperadas: 5,
   },
   pares: {
     liberada: true,
     prazo: '2026-10-15T17:00:00.000Z',
-    enviadas: 8, 
-    esperadas: 20, 
+    enviadas: 8,
+    esperadas: 20,
   },
   atualizadoEm: '2026-10-01T10:00:00.000Z',
   atualizadoPor: 'tutor-1',
