@@ -133,6 +133,7 @@ export type SessionPeersResponse = {
   prazo: string | null;
   colegas: SessionPeerStudent[];
   participou?: boolean;
+  chamadaRealizada?: boolean;
 };
 
 export type PeerEvaluationResponse = {

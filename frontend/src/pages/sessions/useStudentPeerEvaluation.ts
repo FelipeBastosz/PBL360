@@ -19,6 +19,7 @@ type LoadedPeersResult = {
   peers: PeerEvaluationState[];
   prazo: string | null;
   didNotParticipate: boolean;
+  chamadaRealizada: boolean;
 };
 
 async function fetchPeerCards(
@@ -50,17 +51,26 @@ async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
     evaluationService.getMyEvaluationsSummary(sessionId).catch(() => null),
   ]);
 
-  const didNotParticipate =
-    response.participou === false ||
-    summary?.participou === false ||
-    summary?.autoavaliacao.status === 'NAO_PARTICIPOU';
+  const chamadaRealizada = response.chamadaRealizada ?? true;
+  const isRollCallDone = Boolean(chamadaRealizada);
 
-  if (didNotParticipate || !response.liberada || response.colegas.length === 0) {
-    return { peers: [], prazo: response.prazo, didNotParticipate };
+  const didNotParticipate =
+    isRollCallDone &&
+    (response.participou === false ||
+      summary?.participou === false ||
+      summary?.autoavaliacao.status === 'NAO_PARTICIPOU');
+
+  if (
+    !chamadaRealizada ||
+    didNotParticipate ||
+    !response.liberada ||
+    response.colegas.length === 0
+  ) {
+    return { peers: [], prazo: response.prazo, didNotParticipate, chamadaRealizada };
   }
 
   const peers = await fetchPeerCards(sessionId, response.colegas);
-  return { peers, prazo: response.prazo, didNotParticipate: false };
+  return { peers, prazo: response.prazo, didNotParticipate: false, chamadaRealizada: true };
 }
 
 const toPeerPayload = (scores: Record<string, number>, enviar = true) => ({
@@ -95,6 +105,7 @@ function usePeerEvaluationData(sessionId: string) {
   const [peers, setPeers] = useState<PeerEvaluationState[]>([]);
   const [prazo, setPrazo] = useState<string | null>(null);
   const [didNotParticipate, setDidNotParticipate] = useState(false);
+  const [chamadaRealizada, setChamadaRealizada] = useState(true);
   const [session, setSession] = useState<MemberSession | null>(null);
 
   const { run: loadSession } = useAsyncAction(
@@ -113,25 +124,19 @@ function usePeerEvaluationData(sessionId: string) {
         setPeers(r.data.peers);
         setPrazo(r.data.prazo);
         setDidNotParticipate(r.data.didNotParticipate);
+        setChamadaRealizada(r.data.chamadaRealizada);
       }
     });
   }, [loadSession, loadPeers]);
 
-  return { peers, setPeers, prazo, didNotParticipate, session, isLoading, error };
+  return { peers, setPeers, prazo, didNotParticipate, chamadaRealizada, session, isLoading, error };
 }
 
-export function useStudentPeerEvaluation(sessionId: string) {
-  const navigate = useNavigate();
-  const { notify } = useToast();
-  const { peers, setPeers, prazo, didNotParticipate, session, isLoading, error } =
-    usePeerEvaluationData(sessionId);
+function usePeerDraftScores(
+  sessionId: string,
+  setPeers: React.Dispatch<React.SetStateAction<PeerEvaluationState[]>>,
+) {
   const draftTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  const {
-    run: saveAll,
-    isLoading: isSaving,
-    error: saveError,
-  } = useAsyncAction(useCallback(() => savePendingPeers(sessionId, peers), [sessionId, peers]));
 
   useEffect(() => {
     const timers = draftTimersRef.current;
@@ -150,8 +155,27 @@ export function useStudentPeerEvaluation(sessionId: string) {
     });
   };
 
+  const clearTimers = () => Object.values(draftTimersRef.current).forEach(clearTimeout);
+
+  return { setScore, clearTimers };
+}
+
+export function useStudentPeerEvaluation(sessionId: string) {
+  const navigate = useNavigate();
+  const { notify } = useToast();
+  const data = usePeerEvaluationData(sessionId);
+  const { setScore, clearTimers } = usePeerDraftScores(sessionId, data.setPeers);
+
+  const {
+    run: saveAll,
+    isLoading: isSaving,
+    error: saveError,
+  } = useAsyncAction(
+    useCallback(() => savePendingPeers(sessionId, data.peers), [sessionId, data.peers]),
+  );
+
   const handleSave = async () => {
-    Object.values(draftTimersRef.current).forEach(clearTimeout);
+    clearTimers();
     const res = await saveAll();
     if (res.ok) {
       notify({ tone: 'success', message: 'Avaliações de colegas enviadas com sucesso!' });
@@ -160,18 +184,19 @@ export function useStudentPeerEvaluation(sessionId: string) {
   };
 
   const isNonParticipant =
-    didNotParticipate || Boolean(error && /não participou/i.test(error.message));
+    data.didNotParticipate || Boolean(data.error && /não participou/i.test(data.error.message));
 
   return {
-    peers,
-    prazo,
-    session,
-    isLoading,
+    peers: data.peers,
+    prazo: data.prazo,
+    session: data.session,
+    isLoading: data.isLoading,
     isSaving,
-    error,
+    error: data.error,
     saveError,
     didNotParticipate: isNonParticipant,
-    canSave: !isNonParticipant && peers.some((p) => !p.isSubmitted),
+    chamadaRealizada: data.chamadaRealizada,
+    canSave: data.chamadaRealizada && !isNonParticipant && data.peers.some((p) => !p.isSubmitted),
     handleSave,
     setScore,
   };
