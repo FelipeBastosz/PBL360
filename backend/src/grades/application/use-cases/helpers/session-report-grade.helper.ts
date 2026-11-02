@@ -1,4 +1,5 @@
 import { EvaluationStatus } from '@/evaluations/domain/enums/evaluation-status.enum';
+import { roundGrade } from '@/shared/utils/grade-precision';
 import type { GradesResponseDto } from '../../dtos/grades-response.dto';
 import type { ProblemGradesWithSessionGrades } from './get-problem-grades.helper';
 

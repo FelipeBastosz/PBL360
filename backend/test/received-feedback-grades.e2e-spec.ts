@@ -132,7 +132,7 @@ describe('Associated grades in received feedbacks (e2e)', () => {
       'SELECT grade FROM problem_grades WHERE problem_id = $1 AND student_id = $2',
       [fixture.problemId, fixture.student.id],
     );
-    expect(Number(stored.grade)).toBe(4.25);
+    expect(Number(stored.grade)).toBe(4.3);
   });
 
   it('preserves zero and uses the configured problem weights after both sessions are sent', async () => {

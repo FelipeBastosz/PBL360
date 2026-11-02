@@ -57,7 +57,7 @@ describe('ProblemFeedbacksPage', () => {
         {
           sessaoId: 'sess-1',
           rotulo: 'Sessão 1',
-          data: '2026-04-01',
+          data: '01-04-2026',
           feedback: {
             id: 'fb-s1',
             autor: { id: 'prof-1', nome: 'Prof. Silva' },
@@ -70,7 +70,7 @@ describe('ProblemFeedbacksPage', () => {
         {
           sessaoId: 'sess-2',
           rotulo: 'Sessão 2',
-          data: '2026-04-08',
+          data: '08-04-2026',
           feedback: null,
         },
       ],

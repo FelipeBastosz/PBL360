@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { evaluationService } from '@/services/evaluation.service';
-import type { StudentEvaluationSummaryResponse } from '@/types/evaluation';
+import type { StudentEvaluationSummaryResponse, SessionPeersResponse } from '@/types/evaluation';
 import { StudentEvaluationCenter } from './StudentEvaluationCenter';
 
 vi.mock('@/services/evaluation.service');
@@ -43,9 +43,17 @@ const mockLockedSummary: StudentEvaluationSummaryResponse = {
   },
 };
 
+const mockPeersResponse: SessionPeersResponse = {
+  liberada: true,
+  prazo: null,
+  colegas: [],
+  chamadaRealizada: true,
+};
+
 describe('StudentEvaluationCenter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(evaluationService.listSessionPeers).mockResolvedValue(mockPeersResponse);
   });
 
   const renderComponent = (feedbackHref = '/turmas/r1/problemas/p1/sessoes/sess-1/feedback') => {
@@ -115,12 +123,12 @@ describe('StudentEvaluationCenter', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText(/Prazo: Até 15 de out\./i)).toBeInTheDocument();
-      expect(screen.getByText(/Prazo: Até 20 de out\./i)).toBeInTheDocument();
+      expect(screen.getByText(/Prazo: Até 15\/10\/2026 às/)).toBeInTheDocument();
+      expect(screen.getByText(/Prazo: Até 20\/10\/2026 às/)).toBeInTheDocument();
     });
   });
 
-  it('renders friendly empty state when student did not participate in the session', async () => {
+  it('renders friendly empty state when student did not participate in the session after roll call', async () => {
     vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
       ...mockLockedSummary,
       autoavaliacao: {
@@ -129,6 +137,11 @@ describe('StudentEvaluationCenter', () => {
         status: 'NAO_PARTICIPOU',
       },
     });
+    vi.mocked(evaluationService.listSessionPeers).mockResolvedValue({
+      ...mockPeersResponse,
+      chamadaRealizada: true,
+    });
+
     renderComponent();
 
     await waitFor(() => {
@@ -139,6 +152,32 @@ describe('StudentEvaluationCenter', () => {
       ).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /autoavaliação/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /avaliar colegas/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders locked status and does not show empty state when roll call has not been completed', async () => {
+    vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
+      ...mockLockedSummary,
+      autoavaliacao: {
+        liberada: false,
+        prazo: null,
+        status: 'NAO_PARTICIPOU',
+      },
+    });
+    vi.mocked(evaluationService.listSessionPeers).mockResolvedValue({
+      ...mockPeersResponse,
+      chamadaRealizada: false,
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(
+          'Você não participou desta sessão, portanto não possui avaliações disponíveis.',
+        ),
+      ).not.toBeInTheDocument();
+      expect(screen.getAllByText('Bloqueada')).toHaveLength(2);
     });
   });
 });

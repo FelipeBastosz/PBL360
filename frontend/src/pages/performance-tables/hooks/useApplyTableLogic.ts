@@ -14,11 +14,7 @@ function isAlreadyApplied(
 ): boolean {
   if (!config?.tabela) return false;
   if (config.tabela.id === table.id) return true;
-  const isTableDefault = Boolean(
-    (table as { isDefault?: boolean; padrao?: boolean }).isDefault ??
-    (table as { isDefault?: boolean; padrao?: boolean }).padrao ??
-    table.origem === 'PADRAO',
-  );
+  const isTableDefault = Boolean(table.isDefault ?? table.padrao ?? table.origem === 'PADRAO');
   if (isTableDefault) {
     const sessionName = (config.tabela.nome ?? '').trim().toLowerCase();
     const tableName = (table.nome ?? '').trim().toLowerCase();
