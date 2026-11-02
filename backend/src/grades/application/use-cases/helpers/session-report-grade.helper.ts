@@ -22,8 +22,6 @@ const ABSENCE_LABELS: Record<string, string> = {
   JUSTIFICADA: 'Falta justificada',
 };
 
-const roundGrade = (grade: number): number => Math.round((grade + Number.EPSILON) * 10) / 10;
-
 function exactGradeOf(
   sessionGrades: ProblemGradesWithSessionGrades['sessionGrades'],
   sessionId: string,
