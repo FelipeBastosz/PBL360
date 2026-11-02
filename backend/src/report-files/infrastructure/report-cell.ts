@@ -11,7 +11,7 @@ export const EMPTY_TEXT_SECTION_MESSAGE = 'Nenhum texto registrado.';
 export const EMPTY_DOCUMENT_MESSAGE = 'Nenhum conteúdo para exibir.';
 export const TEXT_SECTION_HEADERS = ['Item', 'Texto'];
 
-const DEFAULT_DECIMALS = 2;
+const DEFAULT_DECIMALS = 1;
 const MAX_DECIMALS = 6;
 
 export const columnDecimals = ({ decimals }: ReportColumn): number => {

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
 import { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import type { PerformanceTable } from '../../domain/entities/performance-table.entity';
@@ -17,7 +17,6 @@ export class GetPerformanceTableUseCase {
   constructor(
     @Inject(PERFORMANCE_TABLE_REPOSITORY)
     private readonly performanceTableRepository: PerformanceTableRepository,
-    @Optional()
     private readonly roomAccessService?: RoomAccessService,
   ) {}
 
@@ -28,23 +27,25 @@ export class GetPerformanceTableUseCase {
       throw new NotFoundError('Tabela de desempenho não encontrada.');
     }
 
-    if (table.tutorId !== input.tutorId) {
-      if (table.isDefault) {
-        return table;
-      }
-
-      if (table.isSessionCopy && table.roomId && this.roomAccessService) {
-        await this.roomAccessService.assertTutorCanAccessRoom(table.roomId, input.tutorId);
-        return table;
-      }
-
-      throw new ForbiddenError('Você não tem permissão para acessar esta tabela de desempenho.');
-    }
+    await this.validateAuthorization(table, input.tutorId);
 
     const usage = await this.performanceTableRepository.findUsageById(table.id);
     table.sessionCount = usage.sessionCount ?? 0;
     table.pastSessionCount = usage.pastSessionCount ?? 0;
 
     return table;
+  }
+
+  private async validateAuthorization(table: PerformanceTable, tutorId: string): Promise<void> {
+    if (table.tutorId === tutorId || table.isDefault) {
+      return;
+    }
+
+    if (table.roomId && this.roomAccessService) {
+      await this.roomAccessService.assertTutorCanAccessRoom(table.roomId, tutorId);
+      return;
+    }
+
+    throw new ForbiddenError('Você não tem permissão para acessar esta tabela de desempenho.');
   }
 }
