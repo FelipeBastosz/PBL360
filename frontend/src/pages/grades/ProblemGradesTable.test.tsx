@@ -6,9 +6,9 @@ import type { ProblemGradesResponse } from '@/types/grades';
 
 const mockGradesData: ProblemGradesResponse = {
   sessoes: [
-    { id: 'sess-1', rotulo: 'S1', data: '2026-10-01' },
-    { id: 'sess-2', rotulo: 'S2', data: '2026-10-05' },
-    { id: 'sess-3', rotulo: 'S3', data: '2026-10-10' },
+    { id: 'sess-1', rotulo: 'S1', data: '01-10-2026' },
+    { id: 'sess-2', rotulo: 'S2', data: '05-10-2026' },
+    { id: 'sess-3', rotulo: 'S3', data: '10-10-2026' },
   ],
   alunos: [
     {

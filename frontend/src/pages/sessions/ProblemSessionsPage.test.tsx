@@ -82,7 +82,7 @@ const mockSessions: Session[] = [
     id: 'sess-1',
     titulo: 'Primeira sessão',
     descricao: 'Discussão do problema',
-    data: '12-08-2026', // Formato DD-MM-AAAA
+    data: '12-08-2026',
     ordem: 1,
     status: 'agendada',
   },
@@ -168,7 +168,7 @@ describe('ProblemSessionsPage', () => {
         {
           id: 'sess-1',
           titulo: 'Primeira sessão',
-          data: '12-08-2026', // Formato DD-MM-AAAA
+          data: '12-08-2026',
           ordem: 1,
           status: 'agendada',
           problemaId: 'prob-1',
@@ -177,7 +177,7 @@ describe('ProblemSessionsPage', () => {
         {
           id: 'sess-9',
           titulo: 'Sessão de outro problema',
-          data: '13-08-2026', // Formato DD-MM-AAAA
+          data: '13-08-2026',
           ordem: 1,
           status: 'agendada',
           problemaId: 'prob-2',
