@@ -13,6 +13,10 @@ import type {
   ClassReportStudentDto,
 } from '../dtos/class-final-report-response.dto';
 
+export interface BuildClassFinalReportOptions {
+  ocultarNomes?: boolean;
+}
+
 export const PDF_PROBLEMS_PER_SECTION = 3;
 
 const textColumn = (header: string): ReportColumn => ({ header, type: ReportColumnType.TEXT });
@@ -27,8 +31,8 @@ const studentStatus = (student: ClassReportStudentDto): string => {
   return student.isParcial ? 'Parcial' : 'Completa';
 };
 
-const columnsFor = (problems: ClassReportProblemDto[]): ReportColumn[] => [
-  { ...textColumn('Aluno'), pdfWidth: '*' },
+const columnsFor = (problems: ClassReportProblemDto[], ocultarNomes = false): ReportColumn[] => [
+  ...(ocultarNomes ? [] : [{ ...textColumn('Aluno'), pdfWidth: '*' }]),
   textColumn('Matrícula'),
   ...problems.map((problem): ReportColumn => ({
     ...gradeColumn(`P${problem.ordem} — ${problem.titulo}`),
@@ -41,10 +45,11 @@ const columnsFor = (problems: ClassReportProblemDto[]): ReportColumn[] => [
 const studentRow = (
   student: ClassReportStudentDto,
   problems: ClassReportProblemDto[],
+  ocultarNomes = false,
 ): ReportCellValue[] => {
   const grades = new Map(student.notasProblemas.map((item) => [item.problemaId, item.notaFinal]));
   return [
-    student.nome,
+    ...(ocultarNomes ? [] : [student.nome]),
     student.matricula,
     ...problems.map((problem) => grades.get(problem.id) ?? null),
     student.mediaGeral,
@@ -56,22 +61,29 @@ const gradesSection = (
   report: ClassFinalReportResponseDto,
   problems: ClassReportProblemDto[],
   title: string,
+  ocultarNomes = false,
 ): ReportTableSection => ({
   kind: 'table',
   title,
-  columns: columnsFor(problems),
-  rows: report.alunos.map((student) => studentRow(student, problems)),
+  columns: columnsFor(problems, ocultarNomes),
+  rows: report.alunos.map((student) => studentRow(student, problems, ocultarNomes)),
   keepRowsTogether: true,
 });
 
-const pdfSections = (report: ClassFinalReportResponseDto): ReportTableSection[] => {
+const pdfSections = (
+  report: ClassFinalReportResponseDto,
+  ocultarNomes = false,
+): ReportTableSection[] => {
   const sections: ReportTableSection[] = [];
   for (let index = 0; index < report.problemas.length; index += PDF_PROBLEMS_PER_SECTION) {
     const problems = report.problemas.slice(index, index + PDF_PROBLEMS_PER_SECTION);
     const first = problems[0]!.ordem;
     const last = problems[problems.length - 1]!.ordem;
     const title = `Notas por problema — P${first}${first === last ? '' : ` a P${last}`}`;
-    sections.push({ ...gradesSection(report, problems, title), startOnNewPage: index > 0 });
+    sections.push({
+      ...gradesSection(report, problems, title, ocultarNomes),
+      startOnNewPage: index > 0,
+    });
   }
   return sections;
 };
@@ -79,12 +91,13 @@ const pdfSections = (report: ClassFinalReportResponseDto): ReportTableSection[] 
 const dataSections = (
   report: ClassFinalReportResponseDto,
   format: ReportFileFormat,
+  ocultarNomes = false,
 ): ReportSection[] => {
   if (report.alunos.length === 0) return [];
   if (format === ReportFileFormat.XLSX || report.problemas.length === 0) {
-    return [gradesSection(report, report.problemas, 'Notas finais')];
+    return [gradesSection(report, report.problemas, 'Notas finais', ocultarNomes)];
   }
-  return pdfSections(report);
+  return pdfSections(report, ocultarNomes);
 };
 
 const notesSection = (report: ClassFinalReportResponseDto): ReportSection => {
@@ -109,6 +122,7 @@ const notesSection = (report: ClassFinalReportResponseDto): ReportSection => {
 export const buildClassFinalReportDocument = (
   report: ClassFinalReportResponseDto,
   format: ReportFileFormat,
+  options: BuildClassFinalReportOptions = {},
 ): ReportDocument => ({
   format,
   title: 'Relatório final da turma',
@@ -119,5 +133,5 @@ export const buildClassFinalReportDocument = (
     { label: 'Disciplina', value: report.sala.codigoDisciplina },
     { label: 'Semestre', value: report.sala.semestre },
   ],
-  sections: [...dataSections(report, format), notesSection(report)],
+  sections: [...dataSections(report, format, options.ocultarNomes ?? false), notesSection(report)],
 });
