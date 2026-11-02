@@ -39,8 +39,8 @@ export const toTutorEvaluationResponse = (
   ajustes: detail.adjustments.map(toAdjustmentResponse),
   notaSessao: detail.evaluation?.sessionScore ?? null,
   configuracaoFixada: detail.config.frozen,
-  adicionalAplicado: detail.evaluation?.appliedBonus ?? null,
-  notaCargo: detail.evaluation?.appliedBonus ?? null,
+  adicionalAplicado: detail.evaluation?.appliedBonus ?? detail.roleScore ?? null,
+  notaCargo: detail.evaluation?.appliedBonus ?? detail.roleScore ?? null,
   papel: detail.papel ?? null,
   formula: detail.config.formula ?? { criteriaWeight: 70, roleWeight: 30 },
 });

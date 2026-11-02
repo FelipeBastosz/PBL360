@@ -49,6 +49,7 @@ export interface TutorScoreRow {
   studentId: string;
   criterionId: string;
   score: string | number;
+  bonusScore?: string | number | null;
 }
 
 export interface SessionTimingRow {

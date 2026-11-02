@@ -17,6 +17,7 @@ export interface EvaluationDetail {
   evaluation: Evaluation | null;
   adjustments: GradeAdjustment[];
   papel?: string | null;
+  roleScore?: number | null;
 }
 export interface EvaluationSummary {
   studentId: string;

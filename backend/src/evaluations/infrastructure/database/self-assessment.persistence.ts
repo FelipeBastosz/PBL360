@@ -1,6 +1,11 @@
 import type { EntityManager } from 'typeorm';
 import { lockSessionPerformanceTable } from '@/sessions/infrastructure/database/session-table-lock.persistence';
-import { ConflictError, LockedError, NotFoundError } from '@/shared/errors/application.error';
+import {
+  ConflictError,
+  LockedError,
+  NotFoundError,
+  UnprocessableEntityError,
+} from '@/shared/errors/application.error';
 import { validateEvaluationRules } from '../../application/services/evaluation-rule-validation';
 import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
 import type {
@@ -149,10 +154,25 @@ async function updateSelfStatus(
 ): Promise<void> {
   const now = new Date();
   if (!input.submit) {
-    await tx.query(UPDATE_SELF_DRAFT, [input.studentId, now, evaluationId]);
+    const notaCargo = input.notaCargo ?? null;
+    await tx.query(UPDATE_SELF_DRAFT, [notaCargo, input.studentId, now, evaluationId]);
     return;
   }
   await submitSelfAssessment(tx, evaluationId, input, now);
+}
+
+function resolveSelfCargoScore(
+  detail: Awaited<ReturnType<typeof readSelfAssessmentDetail>>,
+  input: SelfAssessmentWrite,
+): number | null {
+  const hasRole = Boolean(detail.papel);
+  const roleWeight = detail.config.formula?.roleWeight ?? 30;
+  if (hasRole && roleWeight > 0 && (input.notaCargo === null || input.notaCargo === undefined)) {
+    throw new UnprocessableEntityError(
+      'A nota de cargo é obrigatória para estudantes com papel atribuído.',
+    );
+  }
+  return hasRole ? (input.notaCargo ?? null) : null;
 }
 
 async function submitSelfAssessment(
@@ -162,7 +182,7 @@ async function submitSelfAssessment(
   now: Date,
 ): Promise<void> {
   const detail = await readSelfAssessmentDetail(tx, input.context, input.studentId);
-  const notaCargo = input.notaCargo ?? null;
+  const notaCargo = resolveSelfCargoScore(detail, input);
   const score = calculateSelfScore(input, detail.config, notaCargo);
   await tx.query(UPDATE_SELF_SUBMISSION, [
     now,

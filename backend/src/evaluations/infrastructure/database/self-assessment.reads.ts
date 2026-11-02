@@ -36,16 +36,17 @@ export async function readSelfAssessmentDetail(
 ): Promise<EvaluationDetail> {
   const { sessionId } = context;
   const config = await readConfig(manager, sessionId);
-  const [evaluation, papel] = await Promise.all([
+  const [evaluation, roleInfo] = await Promise.all([
     readSelfEvaluation(manager, sessionId, studentId),
-    readRole(manager, sessionId, studentId),
+    readRoleInfo(manager, sessionId, studentId),
   ]);
   const effective = await readSubmittedConfig(manager, sessionId, evaluation, config);
   return {
     config: effective,
     evaluation: recalculateEvaluation(evaluation, effective, false),
     adjustments: [],
-    papel,
+    papel: roleInfo.papel,
+    roleScore: roleInfo.roleScore,
   };
 }
 
@@ -56,12 +57,15 @@ async function readConfig(manager: EntityManager, sessionId: string) {
   );
 }
 
-async function readRole(manager: EntityManager, sessionId: string, studentId: string) {
-  const [row] = await manager.query<Array<{ role: string }>>(
-    'SELECT role FROM session_roles WHERE session_id = $1 AND student_id = $2;',
+async function readRoleInfo(manager: EntityManager, sessionId: string, studentId: string) {
+  const [row] = await manager.query<Array<{ role: string; role_score: string | null }>>(
+    'SELECT role, role_score FROM session_roles WHERE session_id = $1 AND student_id = $2;',
     [sessionId, studentId],
   );
-  return row?.role ?? null;
+  return {
+    papel: row?.role ?? null,
+    roleScore: row?.role_score != null ? Number(row.role_score) : null,
+  };
 }
 
 async function readSelfEvaluation(manager: EntityManager, sessionId: string, studentId: string) {

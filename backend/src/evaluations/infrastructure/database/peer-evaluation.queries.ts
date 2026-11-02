@@ -70,7 +70,8 @@ export const UPDATE_PEER_SUBMISSION = `
 
 export const UPDATE_PEER_DRAFT = `
   UPDATE evaluations
-     SET updated_by = $1,
-         updated_at = $2
-   WHERE id = $3;
+     SET applied_bonus = $1,
+         updated_by = $2,
+         updated_at = $3
+   WHERE id = $4;
 `;

@@ -36,25 +36,29 @@ export async function readEvaluationDetail(
     (await readSessionTableConfig(manager, context.sessionId));
   const evaluation = await readEvaluation(manager, context.sessionId, studentId);
   const adjustments = await readAdjustments(manager, evaluation?.id);
-  const papel = await readStudentRole(manager, context.sessionId, studentId);
+  const roleInfo = await readStudentRoleInfo(manager, context.sessionId, studentId);
   return {
     config,
     evaluation: recalculateEvaluation(evaluation, config),
     adjustments,
-    papel,
+    papel: roleInfo.papel,
+    roleScore: roleInfo.roleScore,
   };
 }
 
-async function readStudentRole(
+async function readStudentRoleInfo(
   manager: EntityManager,
   sessionId: string,
   studentId: string,
-): Promise<string | null> {
-  const [roleRow] = await manager.query<Array<{ role: string }>>(
-    'SELECT role FROM session_roles WHERE session_id = $1 AND student_id = $2;',
+): Promise<{ papel: string | null; roleScore: number | null }> {
+  const [roleRow] = await manager.query<Array<{ role: string; role_score: string | null }>>(
+    'SELECT role, role_score FROM session_roles WHERE session_id = $1 AND student_id = $2;',
     [sessionId, studentId],
   );
-  return roleRow?.role ?? null;
+  return {
+    papel: roleRow?.role ?? null,
+    roleScore: roleRow?.role_score != null ? Number(roleRow.role_score) : null,
+  };
 }
 
 async function readAdjustments(

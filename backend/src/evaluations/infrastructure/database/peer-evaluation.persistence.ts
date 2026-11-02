@@ -83,7 +83,8 @@ async function updatePeerStatus(
 ): Promise<void> {
   const now = new Date();
   if (!input.submit) {
-    await tx.query(UPDATE_PEER_DRAFT, [input.evaluatorId, now, evaluationId]);
+    const notaCargo = input.notaCargo ?? null;
+    await tx.query(UPDATE_PEER_DRAFT, [notaCargo, input.evaluatorId, now, evaluationId]);
     return;
   }
   await submitPeerEvaluation(tx, input, config, evaluationId, now);

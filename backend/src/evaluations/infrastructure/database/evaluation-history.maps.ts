@@ -1,4 +1,8 @@
-import type { SelfAdjustmentRow, SelfEvaluationRow } from './evaluation-history.types';
+import type {
+  SelfAdjustmentRow,
+  SelfEvaluationRow,
+  TutorScoreRow,
+} from './evaluation-history.types';
 
 export function mapSelf(rows: SelfEvaluationRow[]): Map<string, SelfEvaluationRow> {
   const map = new Map<string, SelfEvaluationRow>();
@@ -24,14 +28,18 @@ export function mapPeers(rows: Array<{ studentId: string; sessionScore: string |
   return map;
 }
 
-export function mapTutors(
-  rows: Array<{ studentId: string; criterionId: string; score: string | number }>,
-) {
-  const map = new Map<string, Array<{ criterionId: string; score: number }>>();
+export function mapTutors(rows: TutorScoreRow[]) {
+  const tutorMap = new Map<string, Array<{ criterionId: string; score: number }>>();
+  const tutorBonusMap = new Map<string, number | null>();
   for (const row of rows) {
-    const list = map.get(row.studentId) ?? [];
+    const list = tutorMap.get(row.studentId) ?? [];
     list.push({ criterionId: row.criterionId, score: Number(row.score) });
-    map.set(row.studentId, list);
+    tutorMap.set(row.studentId, list);
+    if (!tutorBonusMap.has(row.studentId)) {
+      const bonus =
+        row.bonusScore !== null && row.bonusScore !== undefined ? Number(row.bonusScore) : null;
+      tutorBonusMap.set(row.studentId, bonus);
+    }
   }
-  return map;
+  return { tutorMap, tutorBonusMap };
 }

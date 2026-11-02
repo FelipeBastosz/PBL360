@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { evaluationService } from '@/services/evaluation.service';
-import { observationService } from '@/services/observation.service';
+import { useStudentObservationTags } from './useStudentObservationTags';
 import type {
   EvaluationCriterion,
   EvaluationFormula,
@@ -12,7 +12,6 @@ import type {
 } from '@/types/evaluation';
 import type { SessionRole } from '@/types/session';
 import { normalizeSessionRole } from '@/utils/sessionRoles';
-import type { BehaviorTag, ObservationItem } from '@/types/observation';
 
 function draftStorageKey(sessionId: string, studentId: string) {
   return `eval_draft_${sessionId}_${studentId}`;
@@ -79,6 +78,28 @@ async function sendEvaluation(
   }
 }
 
+type FetchedData = Awaited<ReturnType<typeof evaluationService.getEvaluation>>;
+type FetchedFeedback = Awaited<ReturnType<typeof evaluationService.getFeedback>> | null;
+
+function applyFetchedData(
+  evalData: FetchedData,
+  fbData: FetchedFeedback,
+  cached: ReturnType<typeof loadStoredDraft>,
+) {
+  const backendCargo = evalData.notaCargo ?? evalData.adicionalAplicado ?? null;
+  const backendScores = toScoresMap(evalData.itens);
+  const backendFeedback = fbData?.texto || '';
+  return {
+    criteria: evalData.criterios,
+    status: evalData.status,
+    papel: normalizeSessionRole(evalData.papel),
+    formula: evalData.formula,
+    scores: cached?.scores ?? backendScores,
+    feedback: cached?.feedback ?? backendFeedback,
+    notaCargo: cached?.notaCargo !== undefined ? cached.notaCargo : backendCargo,
+  };
+}
+
 function useFetchStudentEvaluation(sessionId: string, studentId: string) {
   const [criteria, setCriteria] = useState<EvaluationCriterion[]>([]);
   const [scores, setScores] = useState<Record<string, number>>({});
@@ -102,16 +123,15 @@ function useFetchStudentEvaluation(sessionId: string, studentId: string) {
     if (sessionId && studentId) {
       run().then((res) => {
         if (res.ok) {
-          setCriteria(res.data.evalData.criterios);
-          setStatus(res.data.evalData.status);
-          setPapel(normalizeSessionRole(res.data.evalData.papel));
-          setFormula(res.data.evalData.formula);
-          setNotaCargo(res.data.evalData.notaCargo ?? res.data.evalData.adicionalAplicado ?? null);
-          const backendScores = toScoresMap(res.data.evalData.itens);
-          const backendFeedback = res.data.fbData?.texto || '';
           const cached = loadStoredDraft(sessionId, studentId);
-          setScores(cached?.scores ?? backendScores);
-          setFeedback(cached?.feedback ?? backendFeedback);
+          const state = applyFetchedData(res.data.evalData, res.data.fbData, cached);
+          setCriteria(state.criteria);
+          setStatus(state.status);
+          setPapel(state.papel);
+          setFormula(state.formula);
+          setScores(state.scores);
+          setFeedback(state.feedback);
+          setNotaCargo(state.notaCargo);
         }
       });
     }
@@ -131,54 +151,6 @@ function useFetchStudentEvaluation(sessionId: string, studentId: string) {
     isLoading,
     error,
   };
-}
-
-function useStudentObservationTagsState(sessionId: string, studentId: string) {
-  const [tags, setTags] = useState<BehaviorTag[]>([]);
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  const [observations, setObservations] = useState<ObservationItem[]>([]);
-
-  const fetchObs = useCallback(async () => {
-    const [tagList, obsData] = await Promise.all([
-      observationService.listTags().catch(() => []),
-      observationService
-        .listStudentObservations(sessionId, studentId)
-        .catch(() => ({ observacoes: [], contagem: {} })),
-    ]);
-    return { tagList, obsData };
-  }, [sessionId, studentId]);
-
-  useEffect(() => {
-    if (sessionId && studentId) {
-      fetchObs().then((res) => {
-        setTags(res.tagList);
-        setCounts(res.obsData.contagem);
-        setObservations(res.obsData.observacoes);
-      });
-    }
-  }, [sessionId, studentId, fetchObs]);
-
-  async function handleTagClick(tagId: string) {
-    setCounts((prev) => ({ ...prev, [tagId]: (prev[tagId] ?? 0) + 1 }));
-    const created = await observationService.registerObservation(sessionId, studentId, {
-      marcacaoIds: [tagId],
-    });
-    setObservations((prev) => [...prev, created]);
-  }
-
-  async function handleTagDecrement(tagId: string) {
-    setCounts((prev) => ({ ...prev, [tagId]: Math.max(0, (prev[tagId] ?? 1) - 1) }));
-    const target = observations
-      .slice()
-      .reverse()
-      .find((o) => o.marcacoes.some((m) => m.id === tagId));
-    if (target) {
-      setObservations((prev) => prev.filter((o) => o.id !== target.id));
-      await observationService.undoObservation(target.id).catch(() => null);
-    }
-  }
-
-  return { tags, counts, handleTagClick, handleTagDecrement };
 }
 
 async function saveDraftAndNavigateHelper(
@@ -229,7 +201,7 @@ export function useStudentEvaluation(sessionId: string, studentId: string) {
   const navigate = useNavigate();
   const { notify } = useToast();
   const evalData = useFetchStudentEvaluation(sessionId, studentId);
-  const tagData = useStudentObservationTagsState(sessionId, studentId);
+  const tagData = useStudentObservationTags(sessionId, studentId);
   const { run: runSave, isLoading: isSaving } = useAsyncAction(evaluationService.saveEvaluation);
 
   const handleScoreChange = (id: string, val: number) =>

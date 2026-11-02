@@ -58,11 +58,12 @@ export function processStudentSession(ctx: SessionProcessingContext) {
 
 function calculateSessionForContext(ctx: SessionProcessingContext) {
   const { criteria, attendance, bonus } = extractSessionInputs(ctx);
+  const isNonTutorModality = Boolean(ctx.modality && ctx.modality !== 'TUTOR');
   return calculateSessionGrade({
     criteria,
     components: ctx.sessionComponents,
     attendance,
-    bonus,
+    bonus: isNonTutorModality ? null : bonus,
     defaultFormula: ctx.defaultSessionFormula,
     modality: ctx.modality,
     modalityScore: ctx.modalityScore,

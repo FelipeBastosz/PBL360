@@ -16,12 +16,15 @@ export class SaveSelfAssessmentDto {
     minimum: 0,
     maximum: 10,
     nullable: true,
-    description: 'Nota do papel desempenhado na sessão.',
+    description: 'Nota do papel desempenhado na sessão, com até uma casa decimal.',
   })
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(10)
+  @IsNumber(
+    { allowNaN: false, allowInfinity: false, maxDecimalPlaces: 1 },
+    { message: 'A nota do cargo deve ser um número entre 0 e 10 com até uma casa decimal.' },
+  )
+  @Min(0, { message: 'A nota do cargo deve ser no mínimo 0.' })
+  @Max(10, { message: 'A nota do cargo deve ser no máximo 10.' })
   notaCargo?: number | null;
 
   @ApiProperty({

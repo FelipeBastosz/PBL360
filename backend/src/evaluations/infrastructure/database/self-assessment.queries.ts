@@ -33,7 +33,7 @@ export const INSERT_SELF_EVALUATION = `
 `;
 
 export const UPDATE_SELF_DRAFT = `
-  UPDATE evaluations SET updated_by = $1, updated_at = $2 WHERE id = $3;
+  UPDATE evaluations SET applied_bonus = $1, updated_by = $2, updated_at = $3 WHERE id = $4;
 `;
 
 export const UPDATE_SELF_SUBMISSION = `

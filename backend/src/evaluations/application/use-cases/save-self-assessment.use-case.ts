@@ -66,6 +66,7 @@ export class SaveSelfAssessmentUseCase {
       input.items,
       input.submit,
       input.now ?? new Date(),
+      input.notaCargo,
     );
   }
 

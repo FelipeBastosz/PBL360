@@ -44,27 +44,30 @@ function EditableScoreInput({
 
   function handleFocus() {
     setIsEditing(true);
-    setRaw(String(value));
+    setRaw(value.toString());
   }
 
   function handleBlur() {
     setIsEditing(false);
     const parsed = parseFloat(raw.replace(',', '.'));
-    if (Number.isNaN(parsed) || parsed < 0) {
-      onChange(0);
-    } else if (parsed > 10) {
-      onChange(10);
-    } else {
-      onChange(Math.round(parsed * 10) / 10);
+    if (!isNaN(parsed)) {
+      const clamped = Math.min(10, Math.max(0, parsed));
+      onChange(Math.round(clamped * 10) / 10);
     }
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const input = e.target.value;
-    setRaw(input);
-    const parsed = parseFloat(input.replace(',', '.'));
-    if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 10) {
+    const text = e.target.value;
+    setRaw(text);
+    const parsed = parseFloat(text.replace(',', '.'));
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 10) {
       onChange(Math.round(parsed * 10) / 10);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
     }
   }
 
@@ -72,12 +75,13 @@ function EditableScoreInput({
     <input
       type="text"
       inputMode="decimal"
+      aria-label={`Nota de ${label}`}
       value={isEditing ? raw : String(value)}
       onFocus={handleFocus}
-      onChange={handleChange}
       onBlur={handleBlur}
-      aria-label={`Nota de ${label}`}
-      className="w-12 rounded-lg border border-transparent bg-transparent py-1 text-center text-base font-bold text-ink transition-colors hover:border-black/10 focus:border-brand-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-900"
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      className="w-14 rounded-xl border border-black/10 bg-surface/50 py-1.5 text-center text-base font-bold text-brand-900 transition focus:border-brand-900 focus:bg-white focus:outline-hidden"
     />
   );
 }

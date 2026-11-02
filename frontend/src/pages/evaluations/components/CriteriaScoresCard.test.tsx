@@ -89,4 +89,28 @@ describe('CriteriaScoresCard', () => {
     await user.click(increaseBtn);
     expect(handleCargoChange).toHaveBeenCalledWith(6);
   });
+
+  it('calls onCargoScoreChange when role score input is typed', async () => {
+    const user = userEvent.setup();
+    const handleCargoChange = vi.fn();
+
+    render(
+      <CriteriaScoresCard
+        studentName="Maria Santos"
+        papel="COORDENADOR"
+        criteria={mockCriteria}
+        scores={{ 'crit-1': 8, 'crit-2': 6 }}
+        notaCargo={5}
+        onScoreChange={vi.fn()}
+        onCargoScoreChange={handleCargoChange}
+      />,
+    );
+
+    const input = screen.getByRole('textbox', {
+      name: 'Nota de Desempenho como Coordenador',
+    });
+    await user.clear(input);
+    await user.type(input, '9');
+    expect(handleCargoChange).toHaveBeenCalledWith(9);
+  });
 });

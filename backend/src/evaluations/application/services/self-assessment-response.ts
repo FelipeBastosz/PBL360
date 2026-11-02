@@ -16,7 +16,7 @@ export function toSelfAssessmentOutput(
     criteria: detail.config.criteria.map(toCriterion),
     items: toItems(evalData),
     papel: detail.papel ?? null,
-    notaCargo: evalData?.appliedBonus ?? null,
+    notaCargo: evalData?.appliedBonus ?? detail.roleScore ?? null,
     formula: detail.config.formula ?? { criteriaWeight: 70, roleWeight: 30 },
     ...toConsolidatedScore(evalData),
   };
