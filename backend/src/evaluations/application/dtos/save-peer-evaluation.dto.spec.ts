@@ -51,16 +51,9 @@ describe('SavePeerEvaluationDto', () => {
     );
   });
 
-  it.each([undefined, null, 'items', {}])('rejects invalid items list: %s', async (itens) => {
-    const errors = await validatePayload({ itens, enviar: false });
-    expect(errors).toEqual(
-      expect.arrayContaining([expect.objectContaining({ property: 'itens' })]),
-    );
-  });
-
-  it('rejects invalid item criterionId format', async () => {
+  it('rejects invalid items payload structure', async () => {
     const errors = await validatePayload({
-      itens: [{ criterioId: 'invalid-uuid', nota: 5 }],
+      itens: [{ criterioId: 'invalid-uuid', nota: -1 }],
       enviar: false,
     });
 

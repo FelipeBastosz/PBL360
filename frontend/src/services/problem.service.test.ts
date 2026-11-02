@@ -123,4 +123,40 @@ describe('problemService', () => {
     });
     expect(JSON.parse(config.data as string)).toEqual({ tabelaId: 'table-1' });
   });
+
+  it('exports problem report in PDF format as blob', async () => {
+    const fakeBlob = new Blob(['pdf-content'], { type: 'application/pdf' });
+    const adapter = respondWith(fakeBlob);
+
+    await expect(problemService.exportReport('room-1', 'problem-1', 'PDF')).resolves.toEqual(
+      fakeBlob,
+    );
+
+    const config = adapter.mock.calls[0]![0];
+    expect(config).toMatchObject({
+      method: 'get',
+      url: '/salas/room-1/problemas/problem-1/relatorio/exportacao',
+      params: { formato: 'PDF' },
+      responseType: 'blob',
+    });
+  });
+
+  it('exports problem report in XLSX format as blob', async () => {
+    const fakeBlob = new Blob(['xlsx-content'], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const adapter = respondWith(fakeBlob);
+
+    await expect(problemService.exportReport('room-1', 'problem-1', 'XLSX')).resolves.toEqual(
+      fakeBlob,
+    );
+
+    const config = adapter.mock.calls[0]![0];
+    expect(config).toMatchObject({
+      method: 'get',
+      url: '/salas/room-1/problemas/problem-1/relatorio/exportacao',
+      params: { formato: 'XLSX' },
+      responseType: 'blob',
+    });
+  });
 });

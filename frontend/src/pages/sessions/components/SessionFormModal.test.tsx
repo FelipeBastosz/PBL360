@@ -54,7 +54,7 @@ describe('SessionFormModal', () => {
     expect(sessionService.create).not.toHaveBeenCalled();
   });
 
-  it('creates session and calls onSuccess on valid submission', async () => {
+  it('creates session and calls onSuccess with converted DD-MM-AAAA date', async () => {
     const user = userEvent.setup();
     const createdSession: Session = {
       id: 'sess-10',
@@ -83,6 +83,7 @@ describe('SessionFormModal', () => {
     await user.click(screen.getByRole('button', { name: 'Criar sessão' }));
 
     await waitFor(() => {
+      // Valida que o payload converteu a data para DD-MM-AAAA no envio:
       expect(sessionService.create).toHaveBeenCalledWith('room-1', 'prob-1', {
         titulo: 'Sessão 2',
         descricao: 'Fechamento',

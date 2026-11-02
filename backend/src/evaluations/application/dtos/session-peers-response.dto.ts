@@ -44,6 +44,12 @@ export class SessionPeersResponseDto {
   prazo!: Date | null;
 
   @ApiProperty({
+    example: true,
+    description: 'Indica se a chamada da sessão já foi realizada pelo professor.',
+  })
+  chamadaRealizada!: boolean;
+
+  @ApiProperty({
     type: SessionPeerStudentDto,
     isArray: true,
     description: 'Lista de colegas que participaram da sessão.',

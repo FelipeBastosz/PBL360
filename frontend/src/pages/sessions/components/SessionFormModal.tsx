@@ -114,7 +114,6 @@ function buildSessionPayload(values: SessionFormValues) {
   };
 }
 
-// Hook extraído para enxugar a função principal
 function useSessionSubmit(
   roomId: string,
   problemId: string,
