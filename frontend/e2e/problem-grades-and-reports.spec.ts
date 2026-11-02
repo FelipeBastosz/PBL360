@@ -82,6 +82,66 @@ const mockFeedbacks = {
   ],
 };
 
+function createMockProblemReportPdf(): Buffer {
+  const content = [
+    'BT',
+    '/F1 16 Tf',
+    '50 750 Td',
+    '(Relatorio de Notas - Problema 1: Dor Toracica) Tj',
+    '0 -30 Td',
+    '/F1 12 Tf',
+    '(Turma: MED101 - Medicina 2026.1 | Professor: Prof. Carlos Santos) Tj',
+    '0 -25 Td',
+    '(Aluno: Ana Silva | Matricula: 20260001 | Nota Final: 8.75) Tj',
+    '0 -20 Td',
+    '(Aluno: Bruno Mendes | Matricula: 20260002 | Nota Final: 7.00) Tj',
+    'ET',
+  ].join('\n');
+
+  const pdfString = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length ${Buffer.byteLength(content)} >>
+stream
+${content}
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000224 00000 n 
+0000000299 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+450
+%%EOF`;
+
+  return Buffer.from(pdfString);
+}
+
+async function readStreamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
 test.describe('Professor Flows - Problem Grades & Reports', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
@@ -263,21 +323,34 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     expect(studentFeedbackPut).toBe(true);
   });
 
-  test('should display active export buttons and trigger report downloads on problem grades page', async ({
+  test('should display active export buttons, validate downloaded PDF content, and preview report', async ({
     page,
-  }) => {
+  }, testInfo) => {
+    const mockPdfBuffer = createMockProblemReportPdf();
     let pdfExportRequested = false;
     let excelExportRequested = false;
 
     await page.route(/\/api\/salas\/sala-1\/problemas\/prob-1\/relatorio/, async (route) => {
       const url = route.request().url();
-      if (url.includes('formato=PDF')) pdfExportRequested = true;
-      if (url.includes('formato=XLSX')) excelExportRequested = true;
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/pdf',
-        body: 'mock-report-binary',
-      });
+      if (url.includes('formato=PDF')) {
+        pdfExportRequested = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/pdf',
+          body: mockPdfBuffer,
+        });
+        return;
+      }
+      if (url.includes('formato=XLSX')) {
+        excelExportRequested = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          body: Buffer.from('mock-excel-binary-report'),
+        });
+        return;
+      }
+      await route.fallback();
     });
 
     await page.goto('/turmas/sala-1/problemas/prob-1/notas');
@@ -290,11 +363,88 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     await expect(excelBtn).toBeVisible();
     await expect(excelBtn).toBeEnabled();
 
-    await pdfBtn.click();
-    await expect.poll(() => pdfExportRequested).toBe(true);
+    // 1. Professor initiates PDF export and browser starts download
+    const [pdfDownload] = await Promise.all([page.waitForEvent('download'), pdfBtn.click()]);
 
-    await excelBtn.click();
-    await expect.poll(() => excelExportRequested).toBe(true);
+    expect(pdfExportRequested).toBe(true);
+    expect(pdfDownload.suggestedFilename()).toBe(
+      'relatorio-problema-problema-1---dor-torácica.pdf',
+    );
+
+    // 2. Validate PDF stream and internal document content
+    const stream = await pdfDownload.createReadStream();
+    expect(stream).not.toBeNull();
+    const downloadedPdf = await readStreamToBuffer(stream!);
+    expect(downloadedPdf.length).toBeGreaterThan(0);
+
+    const pdfText = downloadedPdf.toString('latin1');
+    expect(pdfText).toContain('%PDF-');
+    expect(pdfText).toContain('Relatorio de Notas - Problema 1: Dor Toracica');
+    expect(pdfText).toContain('Turma: MED101 - Medicina 2026.1');
+    expect(pdfText).toContain('Ana Silva');
+    expect(pdfText).toContain('8.75');
+    expect(pdfText).toContain('Bruno Mendes');
+    expect(pdfText).toContain('7.00');
+
+    // 3. Attach PDF to Playwright test report for direct inspection
+    await testInfo.attach('relatorio-problema-dor-toracica.pdf', {
+      body: downloadedPdf,
+      contentType: 'application/pdf',
+    });
+
+    // 4. Professor visualizes the PDF report in a preview viewer
+    const previewPage = await page.context().newPage();
+    await previewPage.setContent(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="utf-8" />
+          <title>Visualização do Relatório - Problema 1</title>
+          <style>
+            body { margin: 0; padding: 24px; font-family: sans-serif; background: #f8fafc; }
+            .header { margin-bottom: 16px; }
+            h1 { font-size: 20px; color: #0f172a; margin: 0 0 8px 0; }
+            p { font-size: 14px; color: #475569; margin: 0; }
+            .viewer-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Relatório do Problema 1 - Dor Torácica</h1>
+            <p>Turma: MED101 - Medicina 2026.1 | Professor: Prof. Carlos Santos</p>
+          </div>
+          <div class="viewer-card">
+            <embed
+              id="report-pdf-viewer"
+              type="application/pdf"
+              width="100%"
+              height="800px"
+              src="data:application/pdf;base64,${downloadedPdf.toString('base64')}"
+            />
+          </div>
+        </body>
+      </html>
+    `);
+    const viewer = previewPage.locator('#report-pdf-viewer');
+    await expect(viewer).toBeVisible();
+    await expect(
+      previewPage.getByRole('heading', { name: /Relatório do Problema 1/i }),
+    ).toBeVisible();
+
+    const previewScreenshot = await previewPage.screenshot();
+    await testInfo.attach('preview-relatorio-pdf.png', {
+      body: previewScreenshot,
+      contentType: 'image/png',
+    });
+    await previewPage.close();
+
+    // 5. Professor also exports report in Excel format
+    const [excelDownload] = await Promise.all([page.waitForEvent('download'), excelBtn.click()]);
+
+    expect(excelExportRequested).toBe(true);
+    expect(excelDownload.suggestedFilename()).toBe(
+      'relatorio-problema-problema-1---dor-torácica.xlsx',
+    );
   });
 
   test('should show error banner when problem grades API fails', async ({ page }) => {
