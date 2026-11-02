@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { CalendarIcon } from '@heroicons/react/24/outline';
-import { formatSessionDisplayDate } from '@/utils/sessionsForm';
 import type { Session } from '@/types/session';
+import { formatDayShortMonth } from '@/utils/date';
 
 type ExtendedSession = Session & {
   avaliacoesLiberadas?: boolean;
@@ -45,7 +45,7 @@ export function SessionCard({ session, roomId, problemId }: SessionCardProps) {
 
         <div className="flex flex-col min-w-0">
           <h3 className="truncate text-base font-bold text-ink">
-            {session.titulo} · {formatSessionDisplayDate(session.data)}
+            {session.titulo} · {formatDayShortMonth(session.data)}
           </h3>
           <p className="truncate text-xs text-muted">{session.descricao || 'Sem descrição'}</p>
         </div>

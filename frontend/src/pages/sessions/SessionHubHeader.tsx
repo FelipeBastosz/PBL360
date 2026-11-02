@@ -5,8 +5,8 @@ import type { UserResponse } from '@/types/auth';
 import type { Problem } from '@/types/problem';
 import type { Session } from '@/types/session';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
-import { formatSessionDisplayDate } from '@/utils/sessionsForm';
 import { cn } from '@/utils/cn';
+import { formatDayShortMonth } from '@/utils/date';
 
 type HeaderProps = {
   session: Session | null;
@@ -30,7 +30,7 @@ export function SessionHubHeader({ session, problem, userNome, user, backUrl }: 
           </Link>
           <div className="flex min-w-0 flex-col">
             <h1 className="truncate text-base font-semibold leading-tight">
-              {session ? `${session.titulo} · ${formatSessionDisplayDate(session.data)}` : 'Sessão'}
+              {session ? `${session.titulo} · ${formatDayShortMonth(session.data)}` : 'Sessão'}
             </h1>
             <span className="truncate text-xs text-white/70">{problem?.titulo || 'Problema'}</span>
           </div>

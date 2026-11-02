@@ -17,7 +17,7 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { ROUTES } from '@/routes/paths';
 import { evaluationService } from '@/services/evaluation.service';
 import type { StudentEvaluationSummaryResponse } from '@/types/evaluation';
-import { formatDeadline } from '@/utils/formatDate';
+import { formatDeadline } from '@/utils/date';
 import { NonParticipantEmptyState } from './components/NonParticipantEmptyState';
 
 type EvaluationCardProps = {

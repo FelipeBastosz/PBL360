@@ -115,8 +115,8 @@ describe('StudentEvaluationCenter', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText(/Prazo: Até 15 de out\./i)).toBeInTheDocument();
-      expect(screen.getByText(/Prazo: Até 20 de out\./i)).toBeInTheDocument();
+      expect(screen.getByText(/Prazo: Até 15\/10\/2026 às/)).toBeInTheDocument();
+      expect(screen.getByText(/Prazo: Até 20\/10\/2026 às/)).toBeInTheDocument();
     });
   });
 

@@ -28,7 +28,7 @@ const mockSession: MemberSession = {
   id: 'sess-1',
   titulo: 'Sessão 2 - Fechamento',
   descricao: null,
-  data: '2024-10-08',
+  data: '08-10-2024',
   ordem: 2,
   status: 'EM_ANDAMENTO',
   problemaId: 'prob-1',
@@ -83,7 +83,7 @@ describe('StudentPeerEvaluationPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Sessão 2 - Fechamento')).toBeInTheDocument();
-      expect(screen.getByText(/Prazo: Até 20 de out\./i)).toBeInTheDocument();
+      expect(screen.getByText(/Prazo: Até 20\/10\/2026 às/)).toBeInTheDocument();
       expect(screen.getByText('Ana Souza')).toBeInTheDocument();
       const segmentoGroup = screen.getByRole('group', { name: 'Segmento' });
       expect(within(segmentoGroup).getByText('8')).toBeInTheDocument();

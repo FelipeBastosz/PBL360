@@ -78,7 +78,7 @@ describe('SessionFormModal', () => {
 
     await user.type(screen.getByLabelText('Título da Sessão'), 'Sessão 2');
     await user.type(screen.getByLabelText('Descrição da Sessão'), 'Fechamento');
-    await user.type(screen.getByLabelText('Data da Sessão'), '2026-10-20');
+    await user.type(screen.getByLabelText('Data da Sessão'), '20102026');
 
     await user.click(screen.getByRole('button', { name: 'Criar sessão' }));
 
@@ -93,29 +93,59 @@ describe('SessionFormModal', () => {
     });
   });
 
-  it('pre-fills input date converting from API DD-MM-AAAA format when editing', () => {
-    const existingSession: Session = {
-      id: 'sess-10',
-      titulo: 'Sessão Existente',
-      descricao: 'Descrição existente',
-      data: '25-12-2026',
-      ordem: 1,
+  it('rejects a date that does not exist', async () => {
+    const user = userEvent.setup();
+    render(
+      <SessionFormModal
+        isOpen={true}
+        roomId="room-1"
+        problemId="prob-1"
+        onClose={mockOnClose}
+        onSuccess={mockOnSuccess}
+      />,
+    );
+
+    await user.type(screen.getByLabelText('Título da Sessão'), 'Sessão 2');
+    await user.type(screen.getByLabelText('Data da Sessão'), '31042026');
+    await user.click(screen.getByRole('button', { name: 'Criar sessão' }));
+
+    expect(screen.getByText('Informe uma data válida no formato DD/MM/AAAA.')).toBeInTheDocument();
+    expect(sessionService.create).not.toHaveBeenCalled();
+  });
+
+  it('shows the API date as DD/MM/AAAA when editing and sends it back as DD-MM-AAAA', async () => {
+    const user = userEvent.setup();
+    const session: Session = {
+      id: 'sess-3',
+      titulo: 'Sessão 3',
+      descricao: null,
+      data: '05-11-2026',
+      ordem: 3,
       status: 'agendada',
     };
+    vi.mocked(sessionService.update).mockResolvedValue(session);
 
     render(
       <SessionFormModal
         isOpen={true}
         roomId="room-1"
         problemId="prob-1"
-        initialData={existingSession}
+        initialData={session}
         onClose={mockOnClose}
         onSuccess={mockOnSuccess}
       />,
     );
 
-    // O input type="date" recebe convertido para AAAA-MM-DD:
-    expect(screen.getByLabelText('Data da Sessão')).toHaveValue('2026-12-25');
+    expect(screen.getByLabelText('Data da Sessão')).toHaveValue('05/11/2026');
+    await user.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+
+    await waitFor(() =>
+      expect(sessionService.update).toHaveBeenCalledWith('room-1', 'prob-1', 'sess-3', {
+        titulo: 'Sessão 3',
+        descricao: null,
+        data: '05-11-2026',
+      }),
+    );
   });
 
   it('closes on Escape', async () => {
