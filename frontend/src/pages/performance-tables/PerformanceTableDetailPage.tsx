@@ -75,12 +75,16 @@ function DetailBanners({ isApplied, isLocked, isShared, authorName }: BannersPro
   return (
     <>
       {isShared && (
-        <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs font-medium text-blue-900">
-          <InformationCircleIcon className="size-4 shrink-0 text-blue-600" />
+        <aside
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs font-medium text-blue-900"
+        >
+          <InformationCircleIcon className="size-4 shrink-0 text-blue-600" aria-hidden="true" />
           <span>
             Fórmula compartilhada da turma{authorName ? ` · Criada por ${authorName}` : ''}.
           </span>
-        </div>
+        </aside>
       )}
       {isApplied && (
         <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
@@ -89,7 +93,7 @@ function DetailBanners({ isApplied, isLocked, isShared, authorName }: BannersPro
       )}
       {isLocked && (
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-          <LockClosedIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <LockClosedIcon className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden="true" />
           <span>Esta sessão já possui avaliações enviadas e a tabela não pode ser alterada.</span>
         </div>
       )}
@@ -104,13 +108,9 @@ type DetailContentProps = {
 };
 
 function checkIsShared(table: PerformanceTable, currentUserId?: string): boolean {
-  const isDefault = Boolean(
-    (table as { isDefault?: boolean; padrao?: boolean }).isDefault ??
-    (table as { isDefault?: boolean; padrao?: boolean }).padrao,
-  );
-  return Boolean(
-    currentUserId && table.professorId && table.professorId !== currentUserId && !isDefault,
-  );
+  if (!currentUserId || !table.professorId) return false;
+  const isDefault = Boolean(table.isDefault ?? table.padrao ?? table.origem === 'PADRAO');
+  return table.professorId !== currentUserId && !isDefault;
 }
 
 function DetailModals({ apply }: { apply: ReturnType<typeof useApplyTableLogic> }) {

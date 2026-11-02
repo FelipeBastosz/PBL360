@@ -146,5 +146,25 @@ describe('PerformanceTableDetailPage', () => {
       ).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Aplicar fórmula' })).toBeInTheDocument();
     });
+
+    it('renders shared banner without author suffix when autor is missing', async () => {
+      const tableWithoutAuthor = { ...mockTable, autor: undefined };
+      vi.mocked(performanceTableService.getById).mockResolvedValueOnce(tableWithoutAuthor);
+
+      renderPage();
+
+      expect(await screen.findByRole('heading', { name: 'Barema PBL' })).toBeInTheDocument();
+      expect(screen.getByText('Fórmula compartilhada da turma.')).toBeInTheDocument();
+    });
+
+    it('does not display shared banner if formula is marked as default', async () => {
+      const defaultTable = { ...mockTable, isDefault: true };
+      vi.mocked(performanceTableService.getById).mockResolvedValueOnce(defaultTable);
+
+      renderPage();
+
+      expect(await screen.findByRole('heading', { name: 'Barema PBL' })).toBeInTheDocument();
+      expect(screen.queryByText(/Fórmula compartilhada da turma/i)).not.toBeInTheDocument();
+    });
   });
 });
