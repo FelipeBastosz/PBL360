@@ -8,9 +8,16 @@ import { StudentFeedbackModal } from './StudentFeedbackModal';
 import { GeneralFeedbackModal } from './GeneralFeedbackModal';
 import { useProblemGradesController } from './hooks/useProblemGradesController';
 import { useProblemReportExport } from './hooks/useProblemReportExport';
+import { ExportConfigModal } from './components/ExportConfigModal';
 import { cn } from '@/utils/cn';
 
-function ProblemGradesModals({ ctrl }: { ctrl: ReturnType<typeof useProblemGradesController> }) {
+function ProblemGradesModals({
+  ctrl,
+  reportExport,
+}: {
+  ctrl: ReturnType<typeof useProblemGradesController>;
+  reportExport: ReturnType<typeof useProblemReportExport>;
+}) {
   return (
     <>
       <StudentFeedbackModal
@@ -32,6 +39,14 @@ function ProblemGradesModals({ ctrl }: { ctrl: ReturnType<typeof useProblemGrade
         roomId={ctrl.roomId}
         problemId={ctrl.problemId}
         onSaved={ctrl.handleGeneralFeedbackSaved}
+      />
+
+      <ExportConfigModal
+        isOpen={reportExport.isModalOpen}
+        format={reportExport.selectedFormat}
+        isLoading={reportExport.isExporting}
+        onClose={reportExport.closeModal}
+        onConfirm={reportExport.confirmExport}
       />
     </>
   );
@@ -72,7 +87,7 @@ export function ProblemGradesPage() {
         ) : null}
       </main>
 
-      <ProblemGradesModals ctrl={ctrl} />
+      <ProblemGradesModals ctrl={ctrl} reportExport={reportExport} />
     </div>
   );
 }

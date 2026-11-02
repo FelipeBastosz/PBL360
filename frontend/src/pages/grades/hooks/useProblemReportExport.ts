@@ -1,41 +1,57 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/useToast';
-import { problemService } from '@/services/problem.service';
-import { parseBlobError, triggerBlobDownload } from '@/utils/download';
+import type { ExportProblemReportOptions } from '@/types/problemReport';
+import {
+  performProblemReportExport,
+  parseBlobError,
+  type ReportFormat,
+} from '../problemReportDownload';
 
-export type ReportFormat = 'PDF' | 'XLSX';
+export type { ReportFormat };
 
 export function useProblemReportExport(roomId: string, problemId: string, problemTitle?: string) {
   const { notify } = useToast();
+  const [selectedFormat, setSelectedFormat] = useState<ReportFormat | null>(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
 
   const isExporting = isExportingPDF || isExportingExcel;
 
-  const handleExport = async (formato: ReportFormat) => {
-    if (!roomId || !problemId || isExporting) return;
+  const handleExport = (formato: ReportFormat) => {
+    setSelectedFormat(formato);
+  };
 
-    if (formato === 'PDF') setIsExportingPDF(true);
-    else setIsExportingExcel(true);
+  const closeModal = () => {
+    if (!isExporting) setSelectedFormat(null);
+  };
+
+  const confirmExport = async (options: ExportProblemReportOptions): Promise<boolean> => {
+    if (!roomId || !problemId || !selectedFormat || isExporting) return false;
+    const format = selectedFormat;
+    const setBusy = format === 'PDF' ? setIsExportingPDF : setIsExportingExcel;
+    setBusy(true);
 
     try {
-      const blob = await problemService.exportReport(roomId, problemId, formato);
-      const cleanTitle = problemTitle ? problemTitle.toLowerCase().replace(/\s+/g, '-') : problemId;
-      const ext = formato === 'PDF' ? 'pdf' : 'xlsx';
-      triggerBlobDownload(blob, `relatorio-problema-${cleanTitle}.${ext}`);
+      await performProblemReportExport(roomId, problemId, problemTitle, format, options);
+      setSelectedFormat(null);
+      return true;
     } catch (error) {
-      const message = await parseBlobError(error);
-      notify({ tone: 'error', message });
+      notify({ tone: 'error', message: await parseBlobError(error) });
+      return false;
     } finally {
-      if (formato === 'PDF') setIsExportingPDF(false);
-      else setIsExportingExcel(false);
+      setBusy(false);
     }
   };
 
   return {
+    selectedFormat,
+    isModalOpen: selectedFormat !== null,
     isExportingPDF,
     isExportingExcel,
     isExporting,
     handleExport,
+    openModal: handleExport,
+    closeModal,
+    confirmExport,
   };
 }
