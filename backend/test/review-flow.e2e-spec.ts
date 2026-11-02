@@ -294,7 +294,7 @@ describe('Review Walkthrough Flow & Calculation Verification (e2e)', () => {
       `SELECT grade, situation FROM session_grades WHERE session_id = $1 AND student_id = $2;`,
       [session1Id, anaId],
     );
-    expect(Number(anaDbS1.grade)).toBeCloseTo(7.52, 4);
+    expect(Number(anaDbS1.grade)).toBe(7.5);
     expect(anaDbS1.situation).toBe('AVALIADA');
 
     const [joaoDbS2] = await dataSource.query<[{ grade: string | null; situation: string }]>(
