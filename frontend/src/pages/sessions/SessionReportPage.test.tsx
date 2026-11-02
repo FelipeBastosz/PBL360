@@ -264,7 +264,7 @@ describe('SessionReportPage', () => {
   });
 
   describe('Exportação de Relatório', () => {
-    it('downloads PDF report when clicking Exportar em PDF button', async () => {
+    it('opens export config modal and downloads PDF report when confirmed', async () => {
       const user = userEvent.setup();
       const mockBlob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
       vi.mocked(sessionService.exportSessionReport).mockResolvedValue(mockBlob);
@@ -275,12 +275,23 @@ describe('SessionReportPage', () => {
       const pdfButton = screen.getByRole('button', { name: /exportar em pdf/i });
       await user.click(pdfButton);
 
-      expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'PDF');
+      expect(
+        screen.getByRole('heading', { level: 2, name: 'Exportar em PDF' }),
+      ).toBeInTheDocument();
+      expect(sessionService.exportSessionReport).not.toHaveBeenCalled();
+
+      await user.click(screen.getByRole('button', { name: 'Confirmar Exportação' }));
+
+      expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'PDF', {
+        ocultarNome: false,
+        mostrarFeedBack: true,
+        mostrarMarcacoes: true,
+      });
       expect(mockCreateObjectURL).toHaveBeenCalledWith(mockBlob);
       expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:http://localhost/test-blob');
     });
 
-    it('downloads Excel report when clicking Exportar em Excel button', async () => {
+    it('downloads Excel report with custom privacy options when configured in modal', async () => {
       const user = userEvent.setup();
       const mockBlob = new Blob(['mock-xlsx-data'], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -293,7 +304,19 @@ describe('SessionReportPage', () => {
       const excelButton = screen.getByRole('button', { name: /exportar em excel/i });
       await user.click(excelButton);
 
-      expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'XLSX');
+      expect(
+        screen.getByRole('heading', { level: 2, name: 'Exportar em XLSX' }),
+      ).toBeInTheDocument();
+
+      await user.click(screen.getByRole('radio', { name: 'Apenas Matrícula' }));
+      await user.click(screen.getByRole('switch', { name: 'Feedbacks individuais' }));
+      await user.click(screen.getByRole('button', { name: 'Confirmar Exportação' }));
+
+      expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'XLSX', {
+        ocultarNome: true,
+        mostrarFeedBack: false,
+        mostrarMarcacoes: true,
+      });
       expect(mockCreateObjectURL).toHaveBeenCalledWith(mockBlob);
       expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:http://localhost/test-blob');
     });
@@ -317,7 +340,13 @@ describe('SessionReportPage', () => {
       const pdfButton = screen.getByRole('button', { name: /exportar em pdf/i });
       await user.click(pdfButton);
 
-      expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'PDF');
+      await user.click(screen.getByRole('button', { name: 'Confirmar Exportação' }));
+
+      expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'PDF', {
+        ocultarNome: false,
+        mostrarFeedBack: true,
+        mostrarMarcacoes: true,
+      });
       expect(mockCreateObjectURL).not.toHaveBeenCalled();
       expect(mockNotify).toHaveBeenCalledWith({
         tone: 'error',

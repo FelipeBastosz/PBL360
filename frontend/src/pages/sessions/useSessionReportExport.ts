@@ -1,33 +1,41 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/useToast';
 import { sessionService } from '@/services/session.service';
+import type { ExportSessionReportOptions } from '@/types/sessionReport';
 import { parseBlobError, triggerBlobDownload } from './sessionReportDownload';
+
+async function performExport(
+  sessionId: string,
+  formato: 'PDF' | 'XLSX',
+  options?: ExportSessionReportOptions,
+): Promise<void> {
+  const blob = await sessionService.exportSessionReport(sessionId, formato, options);
+  triggerBlobDownload(blob, `relatorio-sessao-${sessionId}.${formato.toLowerCase()}`);
+}
 
 export function useSessionReportExport(sessionId: string) {
   const { notify } = useToast();
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
 
-  const handleDownload = async (formato: 'PDF' | 'XLSX') => {
-    if (!sessionId) return;
-    if (formato === 'PDF') setIsExportingPDF(true);
-    else setIsExportingExcel(true);
+  const handleDownload = async (
+    formato: 'PDF' | 'XLSX',
+    options?: ExportSessionReportOptions,
+  ): Promise<boolean> => {
+    if (!sessionId) return false;
+    const setBusy = formato === 'PDF' ? setIsExportingPDF : setIsExportingExcel;
+    setBusy(true);
 
     try {
-      const blob = await sessionService.exportSessionReport(sessionId, formato);
-      triggerBlobDownload(blob, `relatorio-sessao-${sessionId}.${formato.toLowerCase()}`);
+      await performExport(sessionId, formato, options);
+      return true;
     } catch (error) {
-      const message = await parseBlobError(error);
-      notify({ tone: 'error', message });
+      notify({ tone: 'error', message: await parseBlobError(error) });
+      return false;
     } finally {
-      if (formato === 'PDF') setIsExportingPDF(false);
-      else setIsExportingExcel(false);
+      setBusy(false);
     }
   };
 
-  return {
-    isExportingPDF,
-    isExportingExcel,
-    handleDownload,
-  };
+  return { isExportingPDF, isExportingExcel, handleDownload };
 }
