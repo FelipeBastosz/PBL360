@@ -2,18 +2,24 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/useToast';
 import { sessionService } from '@/services/session.service';
 import type { ExportSessionReportOptions } from '@/types/sessionReport';
-import { parseBlobError, triggerBlobDownload } from './sessionReportDownload';
+import {
+  buildSessionReportFileName,
+  parseBlobError,
+  triggerBlobDownload,
+} from './sessionReportDownload';
 
 async function performExport(
   sessionId: string,
+  sessionTitle: string | undefined,
   formato: 'PDF' | 'XLSX',
   options?: ExportSessionReportOptions,
 ): Promise<void> {
   const blob = await sessionService.exportSessionReport(sessionId, formato, options);
-  triggerBlobDownload(blob, `relatorio-sessao-${sessionId}.${formato.toLowerCase()}`);
+  const fileName = buildSessionReportFileName(sessionTitle, sessionId, formato);
+  triggerBlobDownload(blob, fileName);
 }
 
-export function useSessionReportExport(sessionId: string) {
+export function useSessionReportExport(sessionId: string, sessionTitle?: string) {
   const { notify } = useToast();
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
@@ -27,7 +33,7 @@ export function useSessionReportExport(sessionId: string) {
     setBusy(true);
 
     try {
-      await performExport(sessionId, formato, options);
+      await performExport(sessionId, sessionTitle, formato, options);
       return true;
     } catch (error) {
       notify({ tone: 'error', message: await parseBlobError(error) });

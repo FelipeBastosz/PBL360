@@ -110,7 +110,7 @@ function SessionReportContent({
 
 export function SessionReportPage({ students: initialStudents }: SessionReportPageProps = {}) {
   const { roomId, problemId, sessionId, subtitle } = useSessionReportRouteData();
-  const exportCtrl = useSessionReportExport(sessionId);
+  const exportCtrl = useSessionReportExport(sessionId, subtitle);
   const { students, isLoading } = useSessionReportStudents(
     roomId,
     problemId,

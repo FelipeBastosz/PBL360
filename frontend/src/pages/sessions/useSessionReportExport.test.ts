@@ -21,11 +21,11 @@ describe('useSessionReportExport', () => {
     vi.spyOn(downloadModule, 'triggerBlobDownload').mockImplementation(() => {});
   });
 
-  it('downloads PDF report forwarding export options', async () => {
+  it('downloads PDF report forwarding export options and slug filename', async () => {
     const mockBlob = new Blob(['pdf-content'], { type: 'application/pdf' });
     vi.mocked(sessionService.exportSessionReport).mockResolvedValue(mockBlob);
 
-    const { result } = renderHook(() => useSessionReportExport('sess-1'));
+    const { result } = renderHook(() => useSessionReportExport('sess-1', 'Sessão 1 - Abertura'));
     const options = { ocultarNome: true, mostrarFeedBack: false, mostrarMarcacoes: true };
 
     let success = false;
@@ -37,11 +37,11 @@ describe('useSessionReportExport', () => {
     expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'PDF', options);
     expect(downloadModule.triggerBlobDownload).toHaveBeenCalledWith(
       mockBlob,
-      'relatorio-sessao-sess-1.pdf',
+      'relatorio-sessao-sessao-1-abertura.pdf',
     );
   });
 
-  it('downloads Excel report and manages isExportingExcel status', async () => {
+  it('downloads Excel report and manages isExportingExcel status with fallback filename', async () => {
     const mockBlob = new Blob(['xlsx-content']);
     vi.mocked(sessionService.exportSessionReport).mockResolvedValue(mockBlob);
 
@@ -54,6 +54,10 @@ describe('useSessionReportExport', () => {
 
     expect(success).toBe(true);
     expect(sessionService.exportSessionReport).toHaveBeenCalledWith('sess-1', 'XLSX', undefined);
+    expect(downloadModule.triggerBlobDownload).toHaveBeenCalledWith(
+      mockBlob,
+      'relatorio-sessao-sess-1.xlsx',
+    );
     expect(result.current.isExportingExcel).toBe(false);
   });
 
