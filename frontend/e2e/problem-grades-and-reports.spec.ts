@@ -263,20 +263,38 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     expect(studentFeedbackPut).toBe(true);
   });
 
-  test('should display export buttons with "Em breve" tooltip on problem grades page', async ({
+  test('should display active export buttons and trigger report downloads on problem grades page', async ({
     page,
   }) => {
+    let pdfExportRequested = false;
+    let excelExportRequested = false;
+
+    await page.route(/\/api\/salas\/sala-1\/problemas\/prob-1\/relatorio/, async (route) => {
+      const url = route.request().url();
+      if (url.includes('formato=PDF')) pdfExportRequested = true;
+      if (url.includes('formato=XLSX')) excelExportRequested = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/pdf',
+        body: 'mock-report-binary',
+      });
+    });
+
     await page.goto('/turmas/sala-1/problemas/prob-1/notas');
 
     const pdfBtn = page.getByRole('button', { name: 'Exportar em PDF' });
     const excelBtn = page.getByRole('button', { name: 'Exportar em Excel' });
 
     await expect(pdfBtn).toBeVisible();
-    await expect(pdfBtn).toBeDisabled();
+    await expect(pdfBtn).toBeEnabled();
     await expect(excelBtn).toBeVisible();
-    await expect(excelBtn).toBeDisabled();
+    await expect(excelBtn).toBeEnabled();
 
-    await expect(page.getByText('Em breve').first()).toBeAttached();
+    await pdfBtn.click();
+    await expect.poll(() => pdfExportRequested).toBe(true);
+
+    await excelBtn.click();
+    await expect.poll(() => excelExportRequested).toBe(true);
   });
 
   test('should show error banner when problem grades API fails', async ({ page }) => {
