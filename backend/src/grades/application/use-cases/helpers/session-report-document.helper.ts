@@ -38,10 +38,10 @@ export const SESSION_REPORT_COLUMNS: ReportColumn[] = [
   { header: 'Matrícula', type: ReportColumnType.TEXT },
   { header: 'Chamada', type: ReportColumnType.TEXT },
   { header: 'Papel', type: ReportColumnType.TEXT },
-  { header: 'Nota adicional de papel', type: ReportColumnType.NUMBER, decimals: 2 },
+  { header: 'Nota adicional de papel', type: ReportColumnType.NUMBER, decimals: 1 },
   { header: 'Marcações', type: ReportColumnType.TEXT },
   { header: 'Situação da nota', type: ReportColumnType.TEXT },
-  { header: 'Nota', type: ReportColumnType.NUMBER, decimals: 2 },
+  { header: 'Nota', type: ReportColumnType.NUMBER, decimals: 1 },
 ];
 
 export function formatSessionDate(date: string | Date | null | undefined): string {

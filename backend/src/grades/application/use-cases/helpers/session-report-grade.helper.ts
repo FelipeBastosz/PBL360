@@ -21,7 +21,7 @@ const ABSENCE_LABELS: Record<string, string> = {
   JUSTIFICADA: 'Falta justificada',
 };
 
-const toCents = (grade: number): number => Math.round((grade + Number.EPSILON) * 100) / 100;
+const roundGrade = (grade: number): number => Math.round((grade + Number.EPSILON) * 10) / 10;
 
 function exactGradeOf(
   sessionGrades: ProblemGradesWithSessionGrades['sessionGrades'],
@@ -52,7 +52,7 @@ const isPlanningPoker = (session: StudentSessionGrade): boolean =>
 
 function reportedGrade({ session, exactGrade }: SessionReportGradeEntry): number | null {
   if (isPlanningPoker(session) || exactGrade === null) return session.nota;
-  return toCents(exactGrade);
+  return roundGrade(exactGrade);
 }
 
 function pendingLabel(
