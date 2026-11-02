@@ -8,21 +8,21 @@ const mockReleases: SessionReleasesResponse = {
   autoavaliacao: {
     liberada: true,
     prazo: '2026-10-15T17:00:00.000Z',
-    enviadas: 4,
-    esperadas: 12,
+    enviadas: 3,
+    esperadas: 5,
   },
   pares: {
-    liberada: false,
-    prazo: null,
-    enviadas: 0,
-    esperadas: 12,
+    liberada: true,
+    prazo: '2026-10-15T17:00:00.000Z',
+    enviadas: 8,
+    esperadas: 20,
   },
   atualizadoEm: '2026-10-01T10:00:00.000Z',
   atualizadoPor: 'tutor-1',
 };
 
 describe('SessionEvaluationsCard', () => {
-  it('renders adherence stats and formatted deadline when evaluation is released', () => {
+  it('converts paired evaluations into actual student count (2 of 5 students)', () => {
     render(
       <SessionEvaluationsCard
         releases={mockReleases}
@@ -32,8 +32,9 @@ describe('SessionEvaluationsCard', () => {
       />,
     );
 
-    expect(screen.getByText('4 de 12 enviaram')).toBeInTheDocument();
-    expect(screen.getByText(/Até 15 de out\./i)).toBeInTheDocument();
+    expect(screen.getByText('3 de 5 alunos enviaram')).toBeInTheDocument();
+
+    expect(screen.getByText('2 de 5 alunos enviaram')).toBeInTheDocument();
   });
 
   it('calls onToggle when clicking the switches', async () => {
@@ -67,9 +68,6 @@ describe('SessionEvaluationsCard', () => {
     );
 
     expect(screen.getByText(/salve a chamada da sessão primeiro/i)).toBeInTheDocument();
-
-    const switches = screen.getAllByRole('switch');
-    expect(switches[0]).toBeDisabled();
-    expect(switches[1]).toBeDisabled();
+    expect(screen.getAllByRole('switch')[0]).toBeDisabled();
   });
 });

@@ -4,10 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
 import { evaluationService } from '@/services/evaluation.service';
 import { gradesService } from '@/services/grades.service';
+import { sessionService } from '@/services/session.service';
 import { usePokerChannel, type PokerChannelHandlers } from '@/hooks/usePokerChannel';
 import type { ProblemGradesResponse, StudentSessionGrade } from '@/types/grades';
 import type { UserResponse } from '@/types/auth';
 import type { SessionEvaluationSummary, ProblemEvaluationCriteria } from '@/types/evaluation';
+import type { RollCall } from '@/types/session';
 import SessionEvaluationListPage from './SessionEvaluationsListPage';
 
 vi.mock('@/services/evaluation.service', () => ({
@@ -19,6 +21,12 @@ vi.mock('@/services/evaluation.service', () => ({
 
 vi.mock('@/services/grades.service', () => ({
   gradesService: { getProblemGrades: vi.fn() },
+}));
+
+vi.mock('@/services/session.service', () => ({
+  sessionService: {
+    getRollCall: vi.fn(),
+  },
 }));
 
 vi.mock('@/hooks/usePokerChannel', () => ({ usePokerChannel: vi.fn(() => 'live') }));
@@ -60,7 +68,7 @@ const mockStudents: SessionEvaluationSummary[] = [
     alunoId: 'aluno-1',
     nome: 'Ana Souza',
     iniciais: 'AS',
-    presenca: null,
+    presenca: 'presente',
     status: 'PENDENTE',
     notaSessao: null,
   },
@@ -68,7 +76,7 @@ const mockStudents: SessionEvaluationSummary[] = [
     alunoId: 'aluno-2',
     nome: 'João Silva',
     iniciais: 'JS',
-    presenca: null,
+    presenca: 'presente',
     status: 'ENVIADA',
     notaSessao: 8.5,
   },
@@ -77,6 +85,33 @@ const mockStudents: SessionEvaluationSummary[] = [
 const mockCriteria: ProblemEvaluationCriteria = {
   tabela: { id: 'tab-1', nome: 'Critérios Tutoriais' },
   criterios: [{ id: 'crit-1', nome: 'Participação', peso: 1, notaMaxima: 10, ordem: 1 }],
+};
+
+const mockCompletedRollCall: RollCall = {
+  sessaoId: 'sess-1',
+  origem: 'REGISTRADA',
+  sessaoReferencia: null,
+  registradaEm: '2026-10-15T10:00:00Z',
+  lugares: 10,
+  alunos: [
+    {
+      alunoId: 'aluno-1',
+      nome: 'Ana Souza',
+      iniciais: 'AS',
+      lugar: 1,
+      status: 'PRESENTE',
+      justificativa: null,
+    },
+    {
+      alunoId: 'aluno-2',
+      nome: 'João Silva',
+      iniciais: 'JS',
+      lugar: 2,
+      status: 'PRESENTE',
+      justificativa: null,
+    },
+  ],
+  totais: { presentes: 2, atrasados: 0, justificados: 0, ausentes: 0, semRegistro: 0 },
 };
 
 function renderPage() {
@@ -104,6 +139,7 @@ function renderPage() {
 describe('SessionEvaluationListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(sessionService.getRollCall).mockResolvedValue(mockCompletedRollCall);
     vi.mocked(gradesService.getProblemGrades).mockResolvedValue({
       sessoes: [],
       alunos: [],
@@ -112,7 +148,7 @@ describe('SessionEvaluationListPage', () => {
     });
   });
 
-  it('renders student list successfully when problem has evaluation table', async () => {
+  it('renders student list successfully when problem has evaluation table and roll call is registered', async () => {
     vi.mocked(evaluationService.listBySession).mockResolvedValue(mockStudents);
     vi.mocked(evaluationService.getProblemCriteria).mockResolvedValue(mockCriteria);
 
@@ -120,8 +156,8 @@ describe('SessionEvaluationListPage', () => {
 
     expect(await screen.findByText('Ana Souza')).toBeInTheDocument();
     expect(screen.getByText('João Silva')).toBeInTheDocument();
-
     expect(screen.queryByText(/problema sem tabela vinculada/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/chamada pendente/i)).not.toBeInTheDocument();
   });
 
   it('renders missing criteria alert and disables buttons when problem has no table (Decisão 4)', async () => {
@@ -141,6 +177,48 @@ describe('SessionEvaluationListPage', () => {
 
     const buttons = screen.getAllByRole('button', { name: 'Avaliar' });
     expect(buttons[0]).toBeDisabled();
+  });
+
+  it('renders pending roll call alert and disables buttons when roll call has not been saved', async () => {
+    vi.mocked(evaluationService.listBySession).mockResolvedValue(mockStudents);
+    vi.mocked(evaluationService.getProblemCriteria).mockResolvedValue(mockCriteria);
+    vi.mocked(sessionService.getRollCall).mockResolvedValue({
+      ...mockCompletedRollCall,
+      registradaEm: null,
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Chamada pendente')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Realizar Chamada' })).toHaveAttribute(
+      'href',
+      '/turmas/room-1/problemas/prob-1/sessoes/sess-1/chamada',
+    );
+
+    const buttons = screen.getAllByRole('button', { name: 'Avaliar' });
+    expect(buttons[0]).toBeDisabled();
+  });
+
+  it('renders absent badge, disables button with "Ausente" text, and hides "Pendente" for absent student', async () => {
+    const studentsWithAbsent: SessionEvaluationSummary[] = [
+      {
+        alunoId: 'aluno-1',
+        nome: 'Ana Souza',
+        iniciais: 'AS',
+        presenca: 'ausente',
+        status: 'PENDENTE',
+        notaSessao: null,
+      },
+    ];
+    vi.mocked(evaluationService.listBySession).mockResolvedValue(studentsWithAbsent);
+    vi.mocked(evaluationService.getProblemCriteria).mockResolvedValue(mockCriteria);
+
+    renderPage();
+
+    expect(await screen.findByText('Falta')).toBeInTheDocument();
+    expect(screen.queryByText('Pendente')).not.toBeInTheDocument();
+    const absentBtn = screen.getByRole('button', { name: 'Ausente' });
+    expect(absentBtn).toBeDisabled();
   });
 
   it('shows the student decided in the planning poker as evaluated with the grade', async () => {
