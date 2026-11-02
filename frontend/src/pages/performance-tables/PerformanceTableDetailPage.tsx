@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeftIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronLeftIcon,
+  LockClosedIcon,
+  InformationCircleIcon,
+} from '@heroicons/react/24/outline';
 import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
@@ -60,9 +64,24 @@ function CriteriaListCard({ criteria }: { criteria: PerformanceTable['criterios'
   );
 }
 
-function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: boolean }) {
+type BannersProps = {
+  isApplied: boolean;
+  isLocked: boolean;
+  isShared: boolean;
+  authorName?: string;
+};
+
+function DetailBanners({ isApplied, isLocked, isShared, authorName }: BannersProps) {
   return (
     <>
+      {isShared && (
+        <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs font-medium text-blue-900">
+          <InformationCircleIcon className="size-4 shrink-0 text-blue-600" />
+          <span>
+            Fórmula compartilhada da turma{authorName ? ` · Criada por ${authorName}` : ''}.
+          </span>
+        </div>
+      )}
       {isApplied && (
         <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
           Esta fórmula já está aplicada a esta sessão.
@@ -78,16 +97,25 @@ function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: 
   );
 }
 
-function DetailContent({
-  table,
-  apply,
-}: {
+type DetailContentProps = {
   table: PerformanceTable;
   apply: ReturnType<typeof useApplyTableLogic>;
-}) {
+  currentUserId?: string;
+};
+
+function DetailContent({ table, apply, currentUserId }: DetailContentProps) {
+  const isShared = Boolean(
+    currentUserId && table.professorId && table.professorId !== currentUserId && !table.isDefault,
+  );
+
   return (
     <>
-      <DetailBanners isApplied={apply.isAlreadyApplied} isLocked={apply.isSessionLocked} />
+      <DetailBanners
+        isApplied={apply.isAlreadyApplied}
+        isLocked={apply.isSessionLocked}
+        isShared={isShared}
+        authorName={table.autor?.nome}
+      />
       {table.descricao && (
         <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
@@ -126,6 +154,7 @@ function DetailContent({
 
 export function PerformanceTableDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [table, setTable] = useState<PerformanceTable | null>(null);
   const { run, isLoading, error } = useAsyncAction(
     useCallback(() => performanceTableService.getById(id!), [id]),
@@ -146,7 +175,7 @@ export function PerformanceTableDetailPage() {
           </div>
         )}
         {error && <Alert tone="error">{error.message}</Alert>}
-        {table && <DetailContent table={table} apply={apply} />}
+        {table && <DetailContent table={table} apply={apply} currentUserId={user?.id} />}
       </main>
     </div>
   );
