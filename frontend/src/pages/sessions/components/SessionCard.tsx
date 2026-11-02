@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { CalendarIcon } from '@heroicons/react/24/outline';
-import { formatSessionDisplayDate } from '@/utils/sessionsForm';
 import type { Session } from '@/types/session';
 import { formatDayShortMonth } from '@/utils/date';
 
