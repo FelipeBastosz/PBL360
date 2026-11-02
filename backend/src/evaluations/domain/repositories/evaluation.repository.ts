@@ -16,6 +16,7 @@ export interface EvaluationDetail {
   config: SessionEvaluationConfig;
   evaluation: Evaluation | null;
   adjustments: GradeAdjustment[];
+  papel?: string | null;
 }
 export interface EvaluationSummary {
   studentId: string;
@@ -39,9 +40,10 @@ export interface PeerEvaluationSummary {
   papel?: string | null;
 }
 export interface PeerEvaluationDetail {
-  peer: { id: string; name: string };
+  peer: { id: string; name: string; papel?: string | null };
   config: SessionEvaluationConfig;
   evaluation: Evaluation | null;
+  papel?: string | null;
 }
 export interface PeerEvaluationWrite {
   sessionId: string;
@@ -71,6 +73,7 @@ export interface EvaluationRepository {
   get(context: EvaluationContext, studentId: string): Promise<EvaluationDetail>;
   recordEvaluation(input: EvaluationWrite): Promise<EvaluationDetail>;
   isStudentParticipating(sessionId: string, studentId: string): Promise<boolean>;
+  getSessionFormula(sessionId: string): Promise<{ criteriaWeight: number; roleWeight: number }>;
   listSessionPeers(sessionId: string, evaluatorId: string): Promise<PeerEvaluationSummary[]>;
   getPeerEvaluation(
     context: EvaluationContext,

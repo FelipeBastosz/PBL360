@@ -4,7 +4,11 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useToast } from '@/hooks/useToast';
 import { evaluationService } from '@/services/evaluation.service';
 import { sessionService } from '@/services/session.service';
-import type { EvaluationCriterion, SessionPeerStudent } from '@/types/evaluation';
+import type {
+  EvaluationCriterion,
+  EvaluationFormula,
+  SessionPeerStudent,
+} from '@/types/evaluation';
 import type { MemberSession, SessionRole } from '@/types/session';
 import { normalizeSessionRole } from '@/utils/sessionRoles';
 
@@ -22,6 +26,7 @@ type LoadedPeersResult = {
   peers: PeerEvaluationState[];
   prazo: string | null;
   didNotParticipate: boolean;
+  formula?: EvaluationFormula;
 };
 
 async function fetchPeerCards(
@@ -61,11 +66,11 @@ async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
     summary?.autoavaliacao.status === 'NAO_PARTICIPOU';
 
   if (didNotParticipate || !response.liberada || response.colegas.length === 0) {
-    return { peers: [], prazo: response.prazo, didNotParticipate };
+    return { peers: [], prazo: response.prazo, didNotParticipate, formula: response.formula };
   }
 
   const peers = await fetchPeerCards(sessionId, response.colegas);
-  return { peers, prazo: response.prazo, didNotParticipate: false };
+  return { peers, prazo: response.prazo, didNotParticipate: false, formula: response.formula };
 }
 
 const toPeerPayload = (peer: PeerEvaluationState, enviar = true) => ({
@@ -101,6 +106,7 @@ function usePeerEvaluationData(sessionId: string) {
   const [peers, setPeers] = useState<PeerEvaluationState[]>([]);
   const [prazo, setPrazo] = useState<string | null>(null);
   const [didNotParticipate, setDidNotParticipate] = useState(false);
+  const [formula, setFormula] = useState<EvaluationFormula | undefined>(undefined);
   const [session, setSession] = useState<MemberSession | null>(null);
 
   const { run: loadSession } = useAsyncAction(
@@ -119,11 +125,12 @@ function usePeerEvaluationData(sessionId: string) {
         setPeers(r.data.peers);
         setPrazo(r.data.prazo);
         setDidNotParticipate(r.data.didNotParticipate);
+        setFormula(r.data.formula);
       }
     });
   }, [loadSession, loadPeers]);
 
-  return { peers, setPeers, prazo, didNotParticipate, session, isLoading, error };
+  return { peers, setPeers, prazo, didNotParticipate, formula, session, isLoading, error };
 }
 
 function usePeerScoreHandlers(
@@ -159,7 +166,7 @@ function usePeerScoreHandlers(
 export function useStudentPeerEvaluation(sessionId: string) {
   const navigate = useNavigate();
   const { notify } = useToast();
-  const { peers, setPeers, prazo, didNotParticipate, session, isLoading, error } =
+  const { peers, setPeers, prazo, didNotParticipate, formula, session, isLoading, error } =
     usePeerEvaluationData(sessionId);
   const draftTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const { setScore, setCargoScore } = usePeerScoreHandlers(sessionId, setPeers, draftTimersRef);
@@ -190,6 +197,7 @@ export function useStudentPeerEvaluation(sessionId: string) {
   return {
     peers,
     prazo,
+    formula,
     session,
     isLoading,
     isSaving,

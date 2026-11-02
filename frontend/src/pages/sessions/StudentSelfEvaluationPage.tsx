@@ -9,8 +9,12 @@ import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import type { UserResponse } from '@/types/auth';
+import type { EvaluationFormula } from '@/types/evaluation';
+import type { SessionRole } from '@/types/session';
 import { cn } from '@/utils/cn';
 import { formatDeadline } from '@/utils/date';
+import { getRolePercentage } from '@/utils/evaluationScore';
+import { roleLabel } from '@/utils/sessionRoles';
 import { CriterionStepper } from './components/CriterionStepper';
 import { EvaluationFinalScore } from './components/EvaluationFinalScore';
 import { NonParticipantEmptyState } from './components/NonParticipantEmptyState';
@@ -53,7 +57,15 @@ function SelfEvaluationHeader({
   );
 }
 
-function UserSelfCard({ name, isSubmitted }: { name?: string; isSubmitted?: boolean }) {
+function UserSelfCard({
+  name,
+  papel,
+  isSubmitted,
+}: {
+  name?: string;
+  papel?: SessionRole | null;
+  isSubmitted?: boolean;
+}) {
   return (
     <div className={cn(CARD_CLASS, 'flex-row items-center gap-4 p-4')}>
       <span className="flex size-12 items-center justify-center rounded-xl bg-surface">
@@ -61,6 +73,9 @@ function UserSelfCard({ name, isSubmitted }: { name?: string; isSubmitted?: bool
       </span>
       <div className="flex flex-col">
         <span className="text-lg font-semibold text-ink">{name || 'Aluno'}</span>
+        {papel && (
+          <span className="text-xs font-semibold text-warning">Papel: {roleLabel(papel)}</span>
+        )}
         {isSubmitted && (
           <span className="text-xs font-semibold text-success">Avaliação já enviada</span>
         )}
@@ -70,24 +85,31 @@ function UserSelfCard({ name, isSubmitted }: { name?: string; isSubmitted?: bool
 }
 
 function SelfRoleCriterionStepper({
+  papel,
+  formula,
   score,
   disabled,
   onChange,
 }: {
+  papel?: SessionRole | null;
+  formula?: EvaluationFormula;
   score: number;
   disabled: boolean;
   onChange?: (s: number) => void;
 }) {
+  if (!papel) return null;
+  const rolePercentage = getRolePercentage(formula);
   return (
     <div className="pt-2">
       <CriterionStepper
         criterion={{
           id: 'cargo-score',
-          nome: 'Autoavaliação no cargo',
+          nome: `Desempenho como ${roleLabel(papel)}`,
           peso: 3.0,
           ordem: 99,
           notaMaxima: 10,
         }}
+        subtitle={`Peso na fórmula (${rolePercentage}%)`}
         score={score}
         disabled={disabled}
         onChange={(_id, s) => onChange?.(s)}
@@ -119,6 +141,8 @@ function EvaluationCriteriaForm({
             />
           ))}
           <SelfRoleCriterionStepper
+            papel={evalState.papel}
+            formula={evalState.formula}
             score={evalState.notaCargo ?? 0}
             disabled={isSubmitted || evalState.isSaving}
             onChange={evalState.setNotaCargo}
@@ -126,7 +150,9 @@ function EvaluationCriteriaForm({
           <EvaluationFinalScore
             criteria={evalState.data.criterios}
             scores={evalState.scores}
-            bonus={evalState.notaCargo}
+            roleScore={evalState.notaCargo}
+            formula={evalState.formula}
+            hasRole={Boolean(evalState.papel)}
           />
         </div>
       )}
@@ -166,7 +192,7 @@ function EvaluationBody({
     <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-6')}>
       {evalState.error && <Alert tone="error">{evalState.error.message}</Alert>}
       {evalState.saveError && <Alert tone="error">{evalState.saveError.message}</Alert>}
-      <UserSelfCard name={userName} isSubmitted={isSubmitted} />
+      <UserSelfCard name={userName} papel={evalState.papel} isSubmitted={isSubmitted} />
       {evalState.isLoading ? (
         <div className="mt-10 flex justify-center">
           <Spinner className="size-8 text-brand-900" />

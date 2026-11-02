@@ -18,6 +18,7 @@ export interface ListSessionPeersOutput {
   liberada: boolean;
   prazo: Date | null;
   chamadaRealizada: boolean;
+  formula?: { criteriaWeight: number; roleWeight: number };
   colegas: Array<{
     alunoId: string;
     nome: string;
@@ -41,16 +42,20 @@ export class ListSessionPeersUseCase {
       type: UserType.STUDENT,
     });
 
-    const rollCall = await this.attendances.findBySession(sessionId);
+    const [rollCall, formula] = await Promise.all([
+      this.attendances.findBySession(sessionId),
+      this.evaluations.getSessionFormula(sessionId),
+    ]);
+
     if (rollCall.length === 0) {
-      return this.toOutput(session, false, []);
+      return this.toOutput(session, false, [], formula);
     }
     if (!this.isStudentPresent(rollCall, studentId)) {
-      return this.toOutput(session, true, []);
+      return this.toOutput(session, true, [], formula);
     }
 
     const colegas = await this.fetchEligiblePeers(sessionId, roomId, studentId, rollCall);
-    return this.toOutput(session, true, colegas);
+    return this.toOutput(session, true, colegas, formula);
   }
 
   private isStudentPresent(rollCall: RecordedAttendance[], studentId: string): boolean {
@@ -97,11 +102,13 @@ export class ListSessionPeersUseCase {
     session: { peerEvalReleased: boolean; peerEvalDeadline?: Date | null },
     chamadaRealizada: boolean,
     colegas: ListSessionPeersOutput['colegas'],
+    formula?: { criteriaWeight: number; roleWeight: number },
   ): ListSessionPeersOutput {
     return {
       liberada: session.peerEvalReleased,
       prazo: session.peerEvalDeadline ?? null,
       chamadaRealizada,
+      formula,
       colegas,
     };
   }

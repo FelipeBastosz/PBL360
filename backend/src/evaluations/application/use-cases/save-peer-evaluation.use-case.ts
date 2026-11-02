@@ -113,20 +113,15 @@ export class SavePeerEvaluationUseCase {
   }
 
   private toOutput(detail: PeerEvaluationDetail): GetPeerEvaluationOutput {
+    const peer = detail.peer;
     return {
-      colega: { alunoId: detail.peer.id, nome: detail.peer.name },
+      colega: { alunoId: peer.id, nome: peer.name, papel: peer.papel ?? detail.papel ?? null },
       status: this.mapStatus(detail),
       enviadaEm: detail.evaluation?.submittedAt ?? null,
-      criterios: detail.config.criteria.map((c) => ({
-        id: c.id,
-        nome: c.name,
-        peso: c.weight,
-        notaMaxima: 10,
-      })),
-      itens: (detail.evaluation?.items ?? []).map((item) => ({
-        criterioId: item.criterionId,
-        nota: item.score,
-      })),
+      notaCargo: detail.evaluation?.appliedBonus ?? null,
+      formula: detail.config.formula ?? { criteriaWeight: 70, roleWeight: 30 },
+      criterios: mapPeerCriteria(detail.config.criteria),
+      itens: mapPeerItems(detail.evaluation?.items),
     };
   }
 
@@ -136,3 +131,17 @@ export class SavePeerEvaluationUseCase {
       : EvaluationStatusResponse.RASCUNHO;
   }
 }
+
+const mapPeerCriteria = (criteria: PeerEvaluationDetail['config']['criteria']) =>
+  criteria.map((c) => ({
+    id: c.id,
+    nome: c.name,
+    peso: c.weight,
+    notaMaxima: 10,
+  }));
+
+const mapPeerItems = (items?: Array<{ criterionId: string; score: number }>) =>
+  (items ?? []).map((item) => ({
+    criterioId: item.criterionId,
+    nota: item.score,
+  }));

@@ -6,9 +6,12 @@ import { evaluationService } from '@/services/evaluation.service';
 import { observationService } from '@/services/observation.service';
 import type {
   EvaluationCriterion,
+  EvaluationFormula,
   EvaluationStatus,
   SaveTutorEvaluationPayload,
 } from '@/types/evaluation';
+import type { SessionRole } from '@/types/session';
+import { normalizeSessionRole } from '@/utils/sessionRoles';
 import type { BehaviorTag, ObservationItem } from '@/types/observation';
 
 function draftStorageKey(sessionId: string, studentId: string) {
@@ -80,6 +83,8 @@ function useFetchStudentEvaluation(sessionId: string, studentId: string) {
   const [criteria, setCriteria] = useState<EvaluationCriterion[]>([]);
   const [scores, setScores] = useState<Record<string, number>>({});
   const [notaCargo, setNotaCargo] = useState<number | null>(null);
+  const [papel, setPapel] = useState<SessionRole | null>(null);
+  const [formula, setFormula] = useState<EvaluationFormula | undefined>(undefined);
   const [feedback, setFeedback] = useState('');
   const [status, setStatus] = useState<EvaluationStatus>('PENDENTE');
 
@@ -99,6 +104,8 @@ function useFetchStudentEvaluation(sessionId: string, studentId: string) {
         if (res.ok) {
           setCriteria(res.data.evalData.criterios);
           setStatus(res.data.evalData.status);
+          setPapel(normalizeSessionRole(res.data.evalData.papel));
+          setFormula(res.data.evalData.formula);
           setNotaCargo(res.data.evalData.notaCargo ?? res.data.evalData.adicionalAplicado ?? null);
           const backendScores = toScoresMap(res.data.evalData.itens);
           const backendFeedback = res.data.fbData?.texto || '';
@@ -116,6 +123,8 @@ function useFetchStudentEvaluation(sessionId: string, studentId: string) {
     setScores,
     notaCargo,
     setNotaCargo,
+    papel,
+    formula,
     feedback,
     setFeedback,
     status,

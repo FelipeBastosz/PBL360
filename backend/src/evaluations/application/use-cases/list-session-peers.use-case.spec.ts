@@ -16,6 +16,7 @@ describe('ListSessionPeersUseCase', () => {
   };
   const evaluationRepository = {
     listSessionPeers: jest.fn(),
+    getSessionFormula: jest.fn().mockResolvedValue({ criteriaWeight: 70, roleWeight: 30 }),
   };
   const attendanceRepository = {
     findBySession: jest.fn(),
@@ -24,6 +25,10 @@ describe('ListSessionPeersUseCase', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
+    evaluationRepository.getSessionFormula.mockResolvedValue({
+      criteriaWeight: 70,
+      roleWeight: 30,
+    });
 
     const module = await Test.createTestingModule({
       providers: [
@@ -79,6 +84,7 @@ describe('ListSessionPeersUseCase', () => {
       liberada: true,
       prazo: deadline,
       chamadaRealizada: true,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [
         {
           alunoId: 'student-2',
@@ -173,6 +179,7 @@ describe('ListSessionPeersUseCase', () => {
       liberada: true,
       prazo: null,
       chamadaRealizada: false,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [],
     });
     expect(attendanceRepository.findEnrolledStudents).not.toHaveBeenCalled();
@@ -201,6 +208,7 @@ describe('ListSessionPeersUseCase', () => {
       liberada: true,
       prazo: null,
       chamadaRealizada: true,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [],
     });
     expect(attendanceRepository.findEnrolledStudents).not.toHaveBeenCalled();

@@ -6,6 +6,7 @@ import { evaluationService } from '@/services/evaluation.service';
 import { sessionService } from '@/services/session.service';
 import type { SelfAssessmentResponse } from '@/types/evaluation';
 import type { MemberSession } from '@/types/session';
+import { normalizeSessionRole } from '@/utils/sessionRoles';
 
 function buildInitialScores(data: SelfAssessmentResponse): Record<string, number> {
   const scores: Record<string, number> = {};
@@ -167,6 +168,8 @@ export function useStudentSelfEvaluation(sessionId: string) {
     session,
     scores,
     notaCargo,
+    papel: data?.papel ? normalizeSessionRole(data.papel) : null,
+    formula: data?.formula,
     isLoading,
     isSaving,
     error,

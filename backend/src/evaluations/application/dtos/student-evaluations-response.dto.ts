@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { EvaluationFormulaDto } from './evaluation-formula.dto';
 
 const SELF_STATUSES = [
   'INDISPONIVEL',
@@ -53,5 +54,9 @@ export class SelfAssessmentResponseDto {
   @ApiProperty({ type: SelfAssessmentCriterionDto, isArray: true })
   criterios!: SelfAssessmentCriterionDto[];
   @ApiProperty({ type: SelfAssessmentItemDto, isArray: true }) itens!: SelfAssessmentItemDto[];
+  @ApiProperty({ type: String, nullable: true }) papel?: string | null;
+  @ApiProperty({ type: Number, nullable: true }) notaCargo?: number | null;
+  @ApiProperty({ type: EvaluationFormulaDto, required: false })
+  formula?: EvaluationFormulaDto;
   @ApiProperty({ required: false, example: 8.25 }) notaConsolidada?: number | null;
 }

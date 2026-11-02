@@ -21,9 +21,10 @@ export const LIST_SESSION_PEERS = `
 `;
 
 export const FIND_PEER_STUDENT = `
-  SELECT u.id, u.name
+  SELECT u.id, u.name, sr.role AS "papel"
     FROM users u
     JOIN attendances a ON a.student_id = u.id AND a.session_id = $1
+    LEFT JOIN session_roles sr ON sr.session_id = a.session_id AND sr.student_id = a.student_id
    WHERE u.id = $2
      AND u.type = 'STUDENT'
      AND a.status IN ('PRESENT', 'LATE');

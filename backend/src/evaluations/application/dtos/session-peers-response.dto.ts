@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EvaluationStatusResponse } from './session-evaluation-summary-response.dto';
+import { EvaluationFormulaDto } from './evaluation-formula.dto';
 
 export class SessionPeerStudentDto {
   @ApiProperty({
@@ -62,4 +63,7 @@ export class SessionPeersResponseDto {
     description: 'Lista de colegas que participaram da sessão.',
   })
   colegas!: SessionPeerStudentDto[];
+
+  @ApiProperty({ type: EvaluationFormulaDto, required: false })
+  formula?: EvaluationFormulaDto;
 }

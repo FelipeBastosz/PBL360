@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import type { EvaluationCriterion } from '@/types/evaluation';
+import type { EvaluationCriterion, EvaluationFormula } from '@/types/evaluation';
+import type { SessionRole } from '@/types/session';
+import { calculateSessionScore, getRolePercentage } from '@/utils/evaluationScore';
+import { roleLabel } from '@/utils/sessionRoles';
 
 type Props = {
   studentName: string;
+  papel?: SessionRole | string | null;
+  formula?: EvaluationFormula;
   criteria: EvaluationCriterion[];
   scores: Record<string, number>;
   bonus?: number | null;
@@ -10,25 +15,6 @@ type Props = {
   onScoreChange: (criterioId: string, nextScore: number) => void;
   onCargoScoreChange?: (nextScore: number) => void;
 };
-
-function calculateFinalScore(
-  criteria: EvaluationCriterion[],
-  scores: Record<string, number>,
-  cargoScore?: number | null,
-): number {
-  const totalWeight = criteria.reduce((sum, c) => sum + c.peso, 0);
-  if (totalWeight <= 0) return 0;
-  const weightedSum = criteria.reduce((sum, c) => {
-    const score = scores[c.id] ?? 0;
-    return sum + score * c.peso;
-  }, 0);
-  const criteriaAverage = weightedSum / totalWeight;
-
-  if (cargoScore !== undefined && cargoScore !== null) {
-    return Math.round(((criteriaAverage * 7 + cargoScore * 3) / 10 + Number.EPSILON) * 10) / 10;
-  }
-  return Math.round((criteriaAverage + Number.EPSILON) * 10) / 10;
-}
 
 function FinalScoreRow({ score }: { score: number }) {
   return (
@@ -107,15 +93,15 @@ function ScoreRow({
   score: number;
   onChange: (val: number) => void;
 }) {
-  const handleStep = (delta: number) => {
+  function handleStep(delta: number) {
     const next = Math.min(10, Math.max(0, Math.round((score + delta) * 10) / 10));
     onChange(next);
-  };
+  }
 
   return (
     <div className="flex items-center justify-between border-b border-black/5 py-3.5 last:border-b-0">
-      <div className="flex min-w-0 flex-col pr-2">
-        <span className="text-sm font-semibold break-words text-brand-900">{label}</span>
+      <div className="flex flex-col pr-4">
+        <span className="text-sm font-semibold text-ink">{label}</span>
         <span className="text-xs text-muted">{subtitle}</span>
       </div>
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -143,8 +129,31 @@ function ScoreRow({
   );
 }
 
+function CardHeader({
+  studentName,
+  papel,
+}: {
+  studentName: string;
+  papel?: SessionRole | string | null;
+}) {
+  return (
+    <div className="flex flex-col">
+      <h2 className="text-base font-bold break-words text-brand-900">
+        Notas do aluno: {studentName}
+      </h2>
+      {papel && (
+        <span className="text-xs font-semibold text-warning">
+          Papel: {roleLabel(papel as SessionRole)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function CriteriaScoresCard({
   studentName,
+  papel,
+  formula,
   criteria,
   scores,
   bonus,
@@ -153,13 +162,19 @@ export function CriteriaScoresCard({
   onCargoScoreChange,
 }: Props) {
   const effectiveCargoScore = notaCargo ?? bonus;
-  const finalScore = calculateFinalScore(criteria, scores, effectiveCargoScore);
+  const hasRole = Boolean(papel);
+  const rolePercentage = getRolePercentage(formula);
+  const finalScore = calculateSessionScore({
+    criteria,
+    scores,
+    roleScore: effectiveCargoScore,
+    formula,
+    hasRole,
+  });
 
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
-      <h2 className="text-base font-bold break-words text-brand-900">
-        Notas do aluno: {studentName}
-      </h2>
+      <CardHeader studentName={studentName} papel={papel} />
       <div className="mt-3 flex flex-col">
         {criteria.map((criterion) => (
           <ScoreRow
@@ -170,10 +185,10 @@ export function CriteriaScoresCard({
             onChange={(val) => onScoreChange(criterion.id, val)}
           />
         ))}
-        {onCargoScoreChange && (
+        {hasRole && onCargoScoreChange && (
           <ScoreRow
-            label="Desempenho no cargo"
-            subtitle="Peso na fórmula (30%)"
+            label={`Desempenho como ${roleLabel(papel as SessionRole)}`}
+            subtitle={`Peso na fórmula (${rolePercentage}%)`}
             score={effectiveCargoScore ?? 0}
             onChange={onCargoScoreChange}
           />

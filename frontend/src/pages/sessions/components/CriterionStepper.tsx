@@ -5,9 +5,16 @@ type CriterionStepperProps = {
   score: number;
   disabled: boolean;
   onChange: (id: string, newScore: number) => void;
+  subtitle?: string;
 };
 
-export function CriterionStepper({ criterion, score, disabled, onChange }: CriterionStepperProps) {
+export function CriterionStepper({
+  criterion,
+  score,
+  disabled,
+  onChange,
+  subtitle,
+}: CriterionStepperProps) {
   const max = criterion.notaMaxima ?? 10;
   return (
     <div
@@ -18,7 +25,8 @@ export function CriterionStepper({ criterion, score, disabled, onChange }: Crite
       <div className="flex flex-col">
         <span className="font-semibold text-brand-900">{criterion.nome}</span>
         <span className="text-sm text-muted">
-          Peso {criterion.peso.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}
+          {subtitle ??
+            `Peso ${criterion.peso.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}`}
         </span>
       </div>
       <div className="flex items-center gap-4">

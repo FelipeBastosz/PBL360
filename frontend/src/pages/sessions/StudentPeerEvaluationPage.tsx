@@ -9,9 +9,11 @@ import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import type { UserResponse } from '@/types/auth';
+import type { EvaluationFormula } from '@/types/evaluation';
 import type { SessionRole } from '@/types/session';
 import { cn } from '@/utils/cn';
 import { formatDeadline } from '@/utils/date';
+import { getRolePercentage } from '@/utils/evaluationScore';
 import { roleLabel } from '@/utils/sessionRoles';
 import { CriterionStepper } from './components/CriterionStepper';
 import { EvaluationFinalScore } from './components/EvaluationFinalScore';
@@ -49,14 +51,17 @@ function PeerCardHeader({
 
 function PeerRoleCriterionStepper({
   peer,
+  formula,
   isSaving,
   onCargoChange,
 }: {
   peer: PeerEvaluationState;
+  formula?: EvaluationFormula;
   isSaving: boolean;
   onCargoChange: (peerId: string, s: number) => void;
 }) {
   if (!peer.papel) return null;
+  const rolePercentage = getRolePercentage(formula);
   return (
     <div className="pt-2">
       <CriterionStepper
@@ -67,6 +72,7 @@ function PeerRoleCriterionStepper({
           ordem: 99,
           notaMaxima: 10,
         }}
+        subtitle={`Peso na fórmula (${rolePercentage}%)`}
         score={peer.notaCargo ?? 0}
         disabled={peer.isSubmitted || isSaving}
         onChange={(_id, s) => onCargoChange(peer.peerId, s)}
@@ -77,11 +83,13 @@ function PeerRoleCriterionStepper({
 
 function PeerEvaluationCard({
   peer,
+  formula,
   isSaving,
   onCriterionChange,
   onCargoChange,
 }: {
   peer: PeerEvaluationState;
+  formula?: EvaluationFormula;
   isSaving: boolean;
   onCriterionChange: (peerId: string, critId: string, s: number) => void;
   onCargoChange: (peerId: string, s: number) => void;
@@ -100,12 +108,19 @@ function PeerEvaluationCard({
               onChange={(critId, s) => onCriterionChange(peer.peerId, critId, s)}
             />
           ))}
-          <PeerRoleCriterionStepper peer={peer} isSaving={isSaving} onCargoChange={onCargoChange} />
+          <PeerRoleCriterionStepper
+            peer={peer}
+            formula={formula}
+            isSaving={isSaving}
+            onCargoChange={onCargoChange}
+          />
         </div>
         <EvaluationFinalScore
           criteria={peer.criteria}
           scores={peer.scores}
-          bonus={peer.papel ? peer.notaCargo : null}
+          roleScore={peer.notaCargo}
+          formula={formula}
+          hasRole={Boolean(peer.papel)}
         />
       </div>
     </section>
@@ -173,6 +188,7 @@ function PeerListBody({ state }: { state: ReturnType<typeof useStudentPeerEvalua
         <PeerEvaluationCard
           key={peer.peerId}
           peer={peer}
+          formula={state.formula}
           isSaving={state.isSaving}
           onCriterionChange={state.setScore}
           onCargoChange={state.setCargoScore}

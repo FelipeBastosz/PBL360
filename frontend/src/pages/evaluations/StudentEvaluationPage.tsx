@@ -72,11 +72,13 @@ function EvaluationMainContent({
     <>
       <CriteriaScoresCard
         studentName={studentName}
+        papel={state.papel}
+        formula={state.formula}
         criteria={state.criteria}
         scores={state.scores}
         notaCargo={state.notaCargo}
         onScoreChange={state.handleScoreChange}
-        onCargoScoreChange={state.setNotaCargo}
+        onCargoScoreChange={state.papel ? state.setNotaCargo : undefined}
       />
       <QuickObservationsCard
         tags={state.tags}

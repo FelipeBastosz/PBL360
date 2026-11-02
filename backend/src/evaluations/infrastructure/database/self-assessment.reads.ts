@@ -34,17 +34,34 @@ export async function readSelfAssessmentDetail(
   context: EvaluationContext,
   studentId: string,
 ): Promise<EvaluationDetail> {
-  const sessionId = context.sessionId;
-  const config =
-    (await readSessionConfig(manager, sessionId)) ??
-    (await readSessionTableConfig(manager, sessionId));
-  const evaluation = await readSelfEvaluation(manager, sessionId, studentId);
+  const { sessionId } = context;
+  const config = await readConfig(manager, sessionId);
+  const [evaluation, papel] = await Promise.all([
+    readSelfEvaluation(manager, sessionId, studentId),
+    readRole(manager, sessionId, studentId),
+  ]);
   const effective = await readSubmittedConfig(manager, sessionId, evaluation, config);
   return {
     config: effective,
     evaluation: recalculateEvaluation(evaluation, effective, false),
     adjustments: [],
+    papel,
   };
+}
+
+async function readConfig(manager: EntityManager, sessionId: string) {
+  return (
+    (await readSessionConfig(manager, sessionId)) ??
+    (await readSessionTableConfig(manager, sessionId))
+  );
+}
+
+async function readRole(manager: EntityManager, sessionId: string, studentId: string) {
+  const [row] = await manager.query<Array<{ role: string }>>(
+    'SELECT role FROM session_roles WHERE session_id = $1 AND student_id = $2;',
+    [sessionId, studentId],
+  );
+  return row?.role ?? null;
 }
 
 async function readSelfEvaluation(manager: EntityManager, sessionId: string, studentId: string) {

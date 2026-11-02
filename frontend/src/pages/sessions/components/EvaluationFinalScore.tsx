@@ -1,22 +1,34 @@
-import type { EvaluationCriterion } from '@/types/evaluation';
+import type { EvaluationCriterion, EvaluationFormula } from '@/types/evaluation';
+import { calculateSessionScore } from '@/utils/evaluationScore';
 
 type EvaluationFinalScoreProps = {
   criteria: EvaluationCriterion[];
   scores: Record<string, number>;
+  roleScore?: number | null;
+  formula?: EvaluationFormula;
+  hasRole?: boolean;
   bonus?: number | null;
 };
 
-export function EvaluationFinalScore({ criteria, scores, bonus }: EvaluationFinalScoreProps) {
-  const allItems = [
-    ...criteria.map((c) => ({ weight: c.peso, score: scores[c.id] ?? 0 })),
-    ...(bonus !== undefined && bonus !== null ? [{ weight: 3.0, score: bonus }] : []),
-  ];
-
-  const totalWeight = allItems.reduce((sum, item) => sum + item.weight, 0);
+export function EvaluationFinalScore({
+  criteria,
+  scores,
+  roleScore,
+  formula,
+  hasRole = true,
+  bonus,
+}: EvaluationFinalScoreProps) {
+  const totalWeight = criteria.reduce((sum, c) => sum + c.peso, 0);
   if (totalWeight <= 0) return null;
 
-  const weightedSum = allItems.reduce((sum, item) => sum + item.score * item.weight, 0);
-  const finalScore = Math.round((weightedSum / totalWeight + Number.EPSILON) * 10) / 10;
+  const effectiveRoleScore = roleScore !== undefined ? roleScore : (bonus ?? null);
+  const finalScore = calculateSessionScore({
+    criteria,
+    scores,
+    roleScore: effectiveRoleScore,
+    formula,
+    hasRole,
+  });
 
   return (
     <div className="mt-4 flex items-center justify-between border-t border-black/10 pt-4">
