@@ -372,7 +372,7 @@ describe('Session report export (e2e)', () => {
     );
 
     // Ana's new score: crit1=10 (weight 4), crit2=8 (weight 6) -> (10*4 + 8*6)/10 = 8.8
-    // Total = 8.8 * 0.7 + 5.0 * 0.3 = 6.16 + 1.5 = 7.66
+    // Total = 8.8 * 0.7 + 5.0 * 0.3 = 6.16 + 1.5 = 7.66 -> rounded to 7.7
     const res = await api(app, owner)
       .get(exportPath(sessionId, 'XLSX'))
       .buffer(true)
@@ -388,7 +388,7 @@ describe('Session report export (e2e)', () => {
       if (values.includes('Ana Souza')) anaRow = values;
     });
 
-    expect(anaRow).toContain(7.66);
+    expect(anaRow).toContain(7.7);
   });
 
   it('allows co-tutor to export report and rejects removed co-tutor', async () => {
