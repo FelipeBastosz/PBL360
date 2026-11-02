@@ -103,10 +103,38 @@ type DetailContentProps = {
   currentUserId?: string;
 };
 
-function DetailContent({ table, apply, currentUserId }: DetailContentProps) {
-  const isShared = Boolean(
-    currentUserId && table.professorId && table.professorId !== currentUserId && !table.isDefault,
+function checkIsShared(table: PerformanceTable, currentUserId?: string): boolean {
+  const isDefault = Boolean(
+    (table as { isDefault?: boolean; padrao?: boolean }).isDefault ??
+    (table as { isDefault?: boolean; padrao?: boolean }).padrao,
   );
+  return Boolean(
+    currentUserId && table.professorId && table.professorId !== currentUserId && !isDefault,
+  );
+}
+
+function DetailModals({ apply }: { apply: ReturnType<typeof useApplyTableLogic> }) {
+  return (
+    <>
+      <ApplyScopeModal
+        isOpen={apply.isModalOpen}
+        isLoading={apply.isApplying}
+        currentTableName={apply.currentTableName}
+        errorMessage={apply.applyError?.message}
+        onConfirm={apply.handleApply}
+        onClose={apply.closeModal}
+      />
+      <IgnoredSessionsModal
+        isOpen={apply.ignoredList.length > 0}
+        ignored={apply.ignoredList}
+        onClose={apply.closeIgnored}
+      />
+    </>
+  );
+}
+
+function DetailContent({ table, apply, currentUserId }: DetailContentProps) {
+  const isShared = checkIsShared(table, currentUserId);
 
   return (
     <>
@@ -135,19 +163,7 @@ function DetailContent({ table, apply, currentUserId }: DetailContentProps) {
           </button>
         </div>
       )}
-      <ApplyScopeModal
-        isOpen={apply.isModalOpen}
-        isLoading={apply.isApplying}
-        currentTableName={apply.currentTableName}
-        errorMessage={apply.applyError?.message}
-        onConfirm={apply.handleApply}
-        onClose={apply.closeModal}
-      />
-      <IgnoredSessionsModal
-        isOpen={apply.ignoredList.length > 0}
-        ignored={apply.ignoredList}
-        onClose={apply.closeIgnored}
-      />
+      <DetailModals apply={apply} />
     </>
   );
 }
