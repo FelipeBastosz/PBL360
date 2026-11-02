@@ -5,7 +5,6 @@ import type { UserResponse } from '@/types/auth';
 import type { Problem } from '@/types/problem';
 import type { Session } from '@/types/session';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
-import { formatSessionDisplayDate } from '@/utils/sessionsForm';
 import { cn } from '@/utils/cn';
 import { formatDayShortMonth } from '@/utils/date';
 
