@@ -50,7 +50,7 @@ function EditableScoreInput({
 
   function handleFocus() {
     setIsEditing(true);
-    setRaw(String(value));
+    setRaw(formatGrade(value));
   }
 
   function handleBlur() {
@@ -78,7 +78,7 @@ function EditableScoreInput({
     <input
       type="text"
       inputMode="decimal"
-      value={isEditing ? raw : String(value)}
+      value={isEditing ? raw : formatGrade(value)}
       onFocus={handleFocus}
       onChange={handleChange}
       onBlur={handleBlur}
