@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/routes/paths';
 import { EditPerformanceTableModals } from '@/pages/performance-tables/components/EditPerformanceTableModals';
 import { DiscardChangesModal } from '@/pages/performance-tables/components/DiscardChangesModal';
-import { SaveFormulaWarningModal } from '@/pages/performance-tables/components/SaveFormulaWarningModal';
+import { SaveMyFormulaWarningModal } from './SaveMyFormulaWarningModal';
 import type { useEditFormulaData, useFormulaModalStates } from '../hooks/useEditMyFormula';
 
 interface ModalsProps {
@@ -59,7 +59,7 @@ export function MyFormulaEditModals(props: ModalsProps) {
         onConfirm={() => navigate(ROUTES.myFormulas)}
         onCancel={() => modals.setIsDiscardOpen(false)}
       />
-      <SaveFormulaWarningModal
+      <SaveMyFormulaWarningModal
         isOpen={modals.isSaveWarningOpen}
         isLoading={isSaving}
         onConfirm={onSave}

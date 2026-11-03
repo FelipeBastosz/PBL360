@@ -5,14 +5,12 @@ import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
 import type { PerformanceTableSummary } from '@/types/performanceTable';
 import { cn } from '@/utils/cn';
 import { CreateFormulaModal } from '@/pages/performance-tables/components/CreateFormulaModal';
-import { DeletePerformanceTableModal } from '@/pages/performance-tables/components/DeletePerformanceTableModal';
 import { MyFormulasHeader } from './components/MyFormulasHeader';
 import { MyFormulaCard } from './components/MyFormulaCard';
 import { MyFormulasFabMenu } from './components/MyFormulasFabMenu';
@@ -51,19 +49,17 @@ function useMyFormulasData() {
     }));
   }, [tables, userId, userName]);
 
-  return { teacherFormulas, isLoading, error, reload: run };
+  return { teacherFormulas, isLoading, error };
 }
 
 function MyFormulasList({
   isLoading,
   error,
   filtered,
-  onDelete,
 }: {
   isLoading: boolean;
   error: Error | null;
   filtered: PerformanceTableSummary[];
-  onDelete: (table: PerformanceTableSummary) => void;
 }) {
   if (error) return <Alert tone="error">{error.message}</Alert>;
   if (isLoading) {
@@ -83,37 +79,18 @@ function MyFormulasList({
       </h2>
       <div className={CARD_GRID_CLASS}>
         {filtered.map((table) => (
-          <MyFormulaCard key={table.id} table={table} onDelete={() => onDelete(table)} />
+          <MyFormulaCard key={table.id} table={table} />
         ))}
       </div>
     </section>
   );
 }
 
-function useMyFormulasDeletion(onSuccess: () => void) {
-  const { notify } = useToast();
-  const [tableToDelete, setTableToDelete] = useState<PerformanceTableSummary | null>(null);
-  const { run, isLoading } = useAsyncAction(performanceTableService.remove);
-
-  async function handleConfirmDelete() {
-    if (!tableToDelete) return;
-    const res = await run(tableToDelete.id);
-    if (res.ok) {
-      notify({ tone: 'success', message: 'Fórmula excluída com sucesso.' });
-      setTableToDelete(null);
-      onSuccess();
-    }
-  }
-
-  return { tableToDelete, setTableToDelete, isDeleting: isLoading, handleConfirmDelete };
-}
-
 export function MyFormulasPage() {
   const navigate = useNavigate();
-  const { teacherFormulas, isLoading, error, reload } = useMyFormulasData();
+  const { teacherFormulas, isLoading, error } = useMyFormulasData();
   const [query, setQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const deletion = useMyFormulasDeletion(reload);
 
   const filtered = useMemo(
     () => teacherFormulas.filter((t) => t.nome.toLowerCase().includes(query.toLowerCase())),
@@ -128,12 +105,7 @@ export function MyFormulasPage() {
       </div>
 
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
-        <MyFormulasList
-          isLoading={isLoading}
-          error={error}
-          filtered={filtered}
-          onDelete={deletion.setTableToDelete}
-        />
+        <MyFormulasList isLoading={isLoading} error={error} filtered={filtered} />
       </main>
 
       <MyFormulasFabMenu onOpenCreateModal={() => setIsCreateOpen(true)} />
@@ -145,14 +117,6 @@ export function MyFormulasPage() {
           setIsCreateOpen(false);
           navigate(ROUTES.createMyFormula, { state: data });
         }}
-      />
-
-      <DeletePerformanceTableModal
-        isOpen={Boolean(deletion.tableToDelete)}
-        formulaTitle={deletion.tableToDelete?.nome ?? ''}
-        isLoading={deletion.isDeleting}
-        onConfirm={deletion.handleConfirmDelete}
-        onCancel={() => deletion.setTableToDelete(null)}
       />
     </div>
   );

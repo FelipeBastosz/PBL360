@@ -94,7 +94,7 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
   });
 
   describe('MyFormulasPage (Listagem)', () => {
-    it('renders header "Minhas Fórmulas" and exclusively original formulas of the professor', async () => {
+    it('renders header "Minhas Fórmulas" and exclusively original formulas without author name or trash icon', async () => {
       vi.mocked(performanceTableService.list).mockResolvedValue(mockTables);
 
       render(
@@ -111,11 +111,15 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
       expect(screen.getByText('Minha Fórmula de Algoritmos')).toBeInTheDocument();
       expect(screen.getByText('Minha Fórmula Especial de Apresentação')).toBeInTheDocument();
 
+      // Sem nome do professor nos cards
+      expect(screen.queryByText('Professor Carlos')).not.toBeInTheDocument();
+      // Sem ícone de lixeira nos cards
+      expect(screen.queryByRole('button', { name: /excluir fórmula/i })).not.toBeInTheDocument();
+
+      // Exclusão de outras origens
       expect(screen.queryByText('Fórmula Padrão Oficial')).not.toBeInTheDocument();
       expect(screen.queryByText('Fórmula da Turma XYZ')).not.toBeInTheDocument();
       expect(screen.queryByText('Fórmula de Outro Professor')).not.toBeInTheDocument();
-      expect(screen.queryByText(/Padrão do sistema/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/Da turma/i)).not.toBeInTheDocument();
     });
 
     it('filters formulas using the search field with standard container', async () => {
@@ -134,39 +138,16 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
       expect(screen.getByText('Minha Fórmula Especial de Apresentação')).toBeInTheDocument();
       expect(screen.queryByText('Minha Fórmula de Algoritmos')).not.toBeInTheDocument();
     });
-
-    it('allows deleting a formula and updates list', async () => {
-      vi.mocked(performanceTableService.list).mockResolvedValue(mockTables);
-      vi.mocked(performanceTableService.remove).mockResolvedValue(undefined);
-
-      render(
-        <MemoryRouter initialEntries={['/minhas-formulas']}>
-          <MyFormulasPage />
-        </MemoryRouter>,
-      );
-
-      const deleteBtn = await screen.findByRole('button', {
-        name: 'Excluir fórmula Minha Fórmula de Algoritmos',
-      });
-      await userEvent.click(deleteBtn);
-
-      expect(screen.getByText('Excluir fórmula?')).toBeInTheDocument();
-      const confirmBtn = screen.getByRole('button', { name: 'Sim, excluir fórmula' });
-      await userEvent.click(confirmBtn);
-
-      expect(performanceTableService.remove).toHaveBeenCalledWith('f-original-1');
-    });
   });
 
-  describe('MyFormulaDetailPage (Visualização e atalho para edição)', () => {
-    it('renders details and "Editar fórmula" button that navigates to edit page', async () => {
+  describe('MyFormulaDetailPage (Visualização somente leitura)', () => {
+    it('renders details without "Editar fórmula" button', async () => {
       vi.mocked(performanceTableService.getById).mockResolvedValue(mockDetail);
 
       render(
         <MemoryRouter initialEntries={['/minhas-formulas/f-original-1']}>
           <Routes>
             <Route path="/minhas-formulas/:id" element={<MyFormulaDetailPage />} />
-            <Route path="/minhas-formulas/:id/editar" element={<p>Página de Edição</p>} />
           </Routes>
         </MemoryRouter>,
       );
@@ -176,12 +157,10 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
       ).toBeInTheDocument();
       expect(screen.getByText('Lógica')).toBeInTheDocument();
       expect(screen.getByText('Clareza')).toBeInTheDocument();
+
+      // Sem botão de editar na tela de visualização
+      expect(screen.queryByRole('button', { name: /editar fórmula/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Aplicar fórmula' })).not.toBeInTheDocument();
-
-      const editBtn = screen.getByRole('button', { name: 'Editar fórmula' });
-      await userEvent.click(editBtn);
-
-      expect(screen.getByText('Página de Edição')).toBeInTheDocument();
     });
   });
 
@@ -264,8 +243,8 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
     });
   });
 
-  describe('EditMyFormulaPage (Edição de fórmula original)', () => {
-    it('updates teacher original formula and prompts warning modal', async () => {
+  describe('EditMyFormulaPage (Edição e exclusão de fórmula original)', () => {
+    it('updates teacher original formula and prompts warning modal explaining original formula scope', async () => {
       vi.mocked(performanceTableService.getById).mockResolvedValue(mockDetail);
       vi.mocked(performanceTableService.update).mockResolvedValue(mockDetail);
 
@@ -284,8 +263,9 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Concluir edição' }));
 
       expect(screen.getByText('Salvar alterações na fórmula?')).toBeInTheDocument();
+      expect(screen.getByText(/apenas na sua fórmula original/i)).toBeInTheDocument();
       expect(
-        screen.getByText(/sessões que já foram avaliadas com esta fórmula/i),
+        screen.getByText(/Cópias já associadas ou utilizadas em sessões/i),
       ).toBeInTheDocument();
 
       await userEvent.click(screen.getByRole('button', { name: 'Confirmar e salvar' }));
@@ -299,6 +279,29 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
         ],
       });
 
+      expect(await screen.findByText('Lista de Minhas Fórmulas')).toBeInTheDocument();
+    });
+
+    it('allows deleting the formula from the edit page', async () => {
+      vi.mocked(performanceTableService.getById).mockResolvedValue(mockDetail);
+      vi.mocked(performanceTableService.remove).mockResolvedValue(undefined);
+
+      render(
+        <MemoryRouter initialEntries={['/minhas-formulas/f-original-1/editar']}>
+          <Routes>
+            <Route path="/minhas-formulas/:id/editar" element={<EditMyFormulaPage />} />
+            <Route path="/minhas-formulas" element={<p>Lista de Minhas Fórmulas</p>} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await screen.findByText('Lógica');
+      await userEvent.click(screen.getByRole('button', { name: 'Excluir essa fórmula' }));
+
+      expect(screen.getByText('Excluir fórmula?')).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Sim, excluir fórmula' }));
+
+      expect(performanceTableService.remove).toHaveBeenCalledWith('f-original-1');
       expect(await screen.findByText('Lista de Minhas Fórmulas')).toBeInTheDocument();
     });
   });

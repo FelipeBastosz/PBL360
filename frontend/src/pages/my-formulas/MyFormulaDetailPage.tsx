@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
-import { ROUTES } from '@/routes/paths';
 import type { PerformanceTable } from '@/types/performanceTable';
 import { MyFormulasHeader } from './components/MyFormulasHeader';
 
@@ -34,7 +33,6 @@ function CriteriaListCard({ criteria }: { criteria: PerformanceTable['criterios'
 
 export function MyFormulaDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [table, setTable] = useState<PerformanceTable | null>(null);
 
   const fetchTable = useCallback(() => performanceTableService.getById(id!), [id]);
@@ -65,15 +63,6 @@ export function MyFormulaDetailPage() {
               </div>
             )}
             <CriteriaListCard criteria={table.criterios} />
-            <div className="mt-8">
-              <button
-                type="button"
-                onClick={() => navigate(`${ROUTES.myFormulas}/${table.id}/editar`)}
-                className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 active:scale-[0.98]"
-              >
-                Editar fórmula
-              </button>
-            </div>
           </>
         )}
       </main>
