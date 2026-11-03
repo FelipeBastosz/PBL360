@@ -1,41 +1,54 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/useToast';
-import { classReportService } from '@/services/class-report.service';
-import { parseBlobError, triggerBlobDownload } from '@/utils/download';
+import type { ExportClassReportOptions } from '@/types/class-report';
+import { parseBlobError } from '@/utils/download';
+import { performClassReportExport, type ClassReportFormat } from '../classReportDownload';
 
-export type ClassReportFormat = 'PDF' | 'XLSX';
+export type { ClassReportFormat };
 
-export function useClassReportExport(roomId?: string, roomName?: string) {
+export function useClassReportExport(roomId?: string, courseCode?: string, roomName?: string) {
   const { notify } = useToast();
+  const [selectedFormat, setSelectedFormat] = useState<ClassReportFormat | null>(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
 
   const isExporting = isExportingPDF || isExportingExcel;
 
-  const handleExport = async (formato: ClassReportFormat) => {
-    if (!roomId || isExporting) return;
+  const handleExport = (formato: ClassReportFormat) => {
+    setSelectedFormat(formato);
+  };
 
-    if (formato === 'PDF') setIsExportingPDF(true);
-    else setIsExportingExcel(true);
+  const closeModal = () => {
+    if (!isExporting) setSelectedFormat(null);
+  };
+
+  const confirmExport = async (options: ExportClassReportOptions): Promise<boolean> => {
+    if (!roomId || !selectedFormat || isExporting) return false;
+    const format = selectedFormat;
+    const setBusy = format === 'PDF' ? setIsExportingPDF : setIsExportingExcel;
+    setBusy(true);
 
     try {
-      const blob = await classReportService.exportFinalReport(roomId, formato);
-      const cleanName = roomName ? roomName.toLowerCase().replace(/\s+/g, '-') : roomId;
-      const ext = formato === 'PDF' ? 'pdf' : 'xlsx';
-      triggerBlobDownload(blob, `relatorio-final-${cleanName}.${ext}`);
+      await performClassReportExport(roomId, courseCode, roomName, format, options);
+      setSelectedFormat(null);
+      return true;
     } catch (error) {
-      const message = await parseBlobError(error);
-      notify({ tone: 'error', message });
+      notify({ tone: 'error', message: await parseBlobError(error) });
+      return false;
     } finally {
-      if (formato === 'PDF') setIsExportingPDF(false);
-      else setIsExportingExcel(false);
+      setBusy(false);
     }
   };
 
   return {
+    selectedFormat,
+    isModalOpen: selectedFormat !== null,
     isExportingPDF,
     isExportingExcel,
     isExporting,
     handleExport,
+    openModal: handleExport,
+    closeModal,
+    confirmExport,
   };
 }
