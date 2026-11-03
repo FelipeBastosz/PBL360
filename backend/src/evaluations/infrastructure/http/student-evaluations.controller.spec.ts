@@ -22,13 +22,17 @@ describe('StudentEvaluationsController', () => {
     getSummary.execute.mockResolvedValue({
       self: { released: true, deadline: null, status: 'PENDENTE' },
       peers: { released: false, deadline: null, submitted: 1, total: 2 },
-      feedback: { available: true, new: false },
+      feedback: { available: true, new: false, tutorEvaluationSubmitted: true },
     });
 
     await expect(controller.summary('session-1', 'student-1')).resolves.toMatchObject({
       autoavaliacao: { liberada: true, status: 'PENDENTE' },
       pares: { avaliados: 1, total: 2 },
-      feedback: { disponivel: true, novo: false },
+      feedback: {
+        disponivel: true,
+        novo: false,
+        avaliacaoTutorEnviada: true,
+      },
     });
   });
 
