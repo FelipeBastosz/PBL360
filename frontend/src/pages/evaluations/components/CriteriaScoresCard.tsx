@@ -3,6 +3,7 @@ import type { EvaluationCriterion, EvaluationFormula } from '@/types/evaluation'
 import type { SessionRole } from '@/types/session';
 import { calculateSessionScore, getRolePercentage } from '@/utils/evaluationScore';
 import { roleLabel } from '@/utils/sessionRoles';
+import { formatGrade } from '@/utils/formatGrade';
 
 type Props = {
   studentName: string;
@@ -22,7 +23,7 @@ function FinalScoreRow({ score }: { score: number }) {
       <span className="text-sm font-bold text-brand-900">Nota final da sessão</span>
       <div className="flex items-center gap-1.5">
         <span className="rounded-xl bg-brand-900 px-3.5 py-1 text-base font-bold text-white shadow-xs">
-          {score.toFixed(1)}
+          {formatGrade(score)}
         </span>
         <span className="text-xs text-muted">/ 10</span>
       </div>
@@ -44,7 +45,7 @@ function EditableScoreInput({
 
   function handleFocus() {
     setIsEditing(true);
-    setRaw(value.toString());
+    setRaw(formatGrade(value));
   }
 
   function handleBlur() {
@@ -77,6 +78,7 @@ function EditableScoreInput({
       inputMode="decimal"
       aria-label={`Nota de ${label}`}
       value={isEditing ? raw : String(value)}
+      value={isEditing ? raw : formatGrade(value)}
       onFocus={handleFocus}
       onBlur={handleBlur}
       onChange={handleChange}

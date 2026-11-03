@@ -15,6 +15,7 @@ import type { ProblemFeedbackDetail } from '@/feedbacks/domain/repositories/feed
 import type { ProblemObservationTagDetail } from '@/grades/domain/repositories/grades.repository';
 import { buildFeedbackSections } from './problem-report-feedbacks.helper';
 import { buildObservationTagsTableSection } from './problem-report-observation-tags.helper';
+import { buildPendenciesTableSection } from './problem-report-pendencies.helper';
 
 export interface BuildProblemReportParams {
   room: Room;
@@ -24,6 +25,7 @@ export interface BuildProblemReportParams {
   marcacoes?: ProblemObservationTagDetail[] | null;
   format: ReportFileFormat;
   ocultarNomes?: boolean;
+  mostrarPendencias?: boolean | null;
   mostrarFeedback?: boolean | null;
   mostrarMarcacoes?: boolean | null;
 }
@@ -75,8 +77,11 @@ function buildProblemSections(
   const studentMap = new Map(grades.alunos.map((a) => [a.alunoId, a]));
   const studentMatriculaMap = new Map(grades.alunos.map((a) => [a.alunoId, a.matricula]));
   const sections: ReportSection[] = [buildGradesTableSection(grades, ocultarNomes)];
-  const pendencies = buildPendenciesTableSection(grades, ocultarNomes);
-  if (pendencies) sections.push(pendencies);
+
+  if (params.mostrarPendencias !== false) {
+    const pendencies = buildPendenciesTableSection(grades, ocultarNomes);
+    if (pendencies) sections.push(pendencies);
+  }
 
   sections.push(...resolveOptionalSections(studentMap, studentMatriculaMap, params));
   sections.push(buildNotesSection());
@@ -98,54 +103,6 @@ function buildNotesSection(): ReportTextSection {
       },
     ],
   };
-}
-
-const pendencyColumns = (ocultarNomes: boolean): ReportColumn[] =>
-  ocultarNomes
-    ? [
-        { header: 'Matrícula', type: ReportColumnType.TEXT },
-        { header: 'Sessão pendente', type: ReportColumnType.TEXT },
-      ]
-    : [
-        { header: 'Aluno', type: ReportColumnType.TEXT },
-        { header: 'Matrícula', type: ReportColumnType.TEXT },
-        { header: 'Sessão pendente', type: ReportColumnType.TEXT },
-      ];
-
-function buildPendenciesTableSection(
-  grades: GradesResponseDto,
-  ocultarNomes = false,
-): ReportTableSection | null {
-  const sessionMap = new Map(
-    grades.sessoes.map((s) => [s.id, s.title || s.rotulo || s.nome || 'Sessão']),
-  );
-  const rows = grades.alunos.flatMap((student) =>
-    extractStudentPendencies(student, sessionMap, ocultarNomes),
-  );
-  if (rows.length === 0) return null;
-
-  return {
-    kind: 'table',
-    title: 'Pendências de avaliação',
-    columns: pendencyColumns(ocultarNomes),
-    rows,
-  };
-}
-
-function extractStudentPendencies(
-  student: GradesResponseDto['alunos'][number],
-  sessionMap: Map<string, string>,
-  ocultarNomes = false,
-): ReportCellValue[][] {
-  return student.sessoes
-    .filter((session) => session.situacao === 'PENDENTE')
-    .map((session) => {
-      const sessionTitle = sessionMap.get(session.sessaoId) ?? 'Sessão';
-      if (ocultarNomes) {
-        return [student.matricula ?? null, sessionTitle];
-      }
-      return [student.nome, student.matricula ?? null, sessionTitle];
-    });
 }
 
 const gradesColumns = (

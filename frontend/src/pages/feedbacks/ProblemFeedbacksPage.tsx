@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { BackHeader } from '@/components/layout/BackHeader';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
+import { formatGrade } from '@/utils/formatGrade';
 import { FeedbackCard } from './FeedbackCard';
 import { FeedbackEmptyState } from './FeedbackEmptyState';
 import { GeneralFeedbackSection, IndividualFeedbackSection } from './ProblemFeedbackSections';
@@ -41,7 +42,7 @@ function FeedbacksList({ data }: { data: ReceivedProblemFeedbacksResponse }) {
             data-testid="feedback-nota-final"
             className="rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-900"
           >
-            Nota final {data.notaFinal.toFixed(1)}
+            Nota final {formatGrade(data.notaFinal)}
           </span>
         </section>
       )}

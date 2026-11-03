@@ -133,7 +133,15 @@ describe('ProblemGradesPage', () => {
 
     await user.click(pdfBtn);
 
-    expect(problemService.exportReport).toHaveBeenCalledWith('room-1', 'prob-1', 'PDF');
+    const confirmBtn = await screen.findByRole('button', { name: 'Confirmar Exportação' });
+    await user.click(confirmBtn);
+
+    expect(problemService.exportReport).toHaveBeenCalledWith('room-1', 'prob-1', 'PDF', {
+      ocultarNomes: false,
+      mostrarPendencias: true,
+      mostrarMarcacoes: true,
+      mostrarFeedback: true,
+    });
     expect(window.URL.createObjectURL).toHaveBeenCalledWith(fakeBlob);
   });
 
@@ -154,7 +162,15 @@ describe('ProblemGradesPage', () => {
 
     await user.click(excelBtn);
 
-    expect(problemService.exportReport).toHaveBeenCalledWith('room-1', 'prob-1', 'XLSX');
+    const confirmBtn = await screen.findByRole('button', { name: 'Confirmar Exportação' });
+    await user.click(confirmBtn);
+
+    expect(problemService.exportReport).toHaveBeenCalledWith('room-1', 'prob-1', 'XLSX', {
+      ocultarNomes: false,
+      mostrarPendencias: true,
+      mostrarMarcacoes: true,
+      mostrarFeedback: true,
+    });
     expect(window.URL.createObjectURL).toHaveBeenCalledWith(fakeBlob);
   });
 
@@ -166,6 +182,9 @@ describe('ProblemGradesPage', () => {
 
     const pdfBtn = await screen.findByRole('button', { name: 'Exportar em PDF' });
     await user.click(pdfBtn);
+
+    const confirmBtn = await screen.findByRole('button', { name: 'Confirmar Exportação' });
+    await user.click(confirmBtn);
 
     await waitFor(() => {
       expect(mockNotify).toHaveBeenCalledWith({

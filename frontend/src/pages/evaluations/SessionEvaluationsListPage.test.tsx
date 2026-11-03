@@ -221,6 +221,19 @@ describe('SessionEvaluationListPage', () => {
     expect(absentBtn).toBeDisabled();
   });
 
+  it('shows the sent grade with a single decimal place and a comma', async () => {
+    const students = mockStudents.map((student) =>
+      student.status === 'ENVIADA' ? { ...student, notaSessao: 8.46 } : student,
+    );
+    vi.mocked(evaluationService.listBySession).mockResolvedValue(students);
+    vi.mocked(evaluationService.getProblemCriteria).mockResolvedValue(mockCriteria);
+
+    renderPage();
+
+    expect(await screen.findByText('Enviada · 8,5')).toBeInTheDocument();
+    expect(screen.queryByText(/8\.46|8,46/)).not.toBeInTheDocument();
+  });
+
   it('shows the student decided in the planning poker as evaluated with the grade', async () => {
     vi.mocked(evaluationService.listBySession).mockResolvedValue(mockStudents);
     vi.mocked(evaluationService.getProblemCriteria).mockResolvedValue(mockCriteria);

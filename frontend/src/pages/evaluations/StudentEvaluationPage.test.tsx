@@ -75,7 +75,24 @@ describe('StudentEvaluationPage', () => {
     expect(partInput).toHaveValue('6');
 
     expect(screen.getByText('Nota final da sessão')).toBeInTheDocument();
-    expect(screen.getByText('6.9')).toBeInTheDocument();
+    expect(screen.getByText('6,9')).toBeInTheDocument();
+  });
+
+  it('shows the grade typed by the tutor with a comma', async () => {
+    renderPage();
+
+    const input = await screen.findByRole('textbox', { name: 'Nota de Seguimento' });
+    expect(input).toHaveValue('8,0');
+
+    await userEvent.clear(input);
+    await userEvent.type(input, '7,5');
+    await userEvent.tab();
+    expect(input).toHaveValue('7,5');
+
+    await userEvent.clear(input);
+    await userEvent.type(input, '6.25');
+    await userEvent.tab();
+    expect(input).toHaveValue('6,3');
   });
 
   it('increments score, saves draft, and respects boundaries', async () => {

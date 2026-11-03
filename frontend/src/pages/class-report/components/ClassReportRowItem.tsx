@@ -1,5 +1,5 @@
 import type { ClassReportProblem, ClassReportStudent } from '@/types/class-report';
-import { formatGrade } from '@/utils/gradeFormatters';
+import { formatGrade } from '@/utils/formatGrade';
 import { cn } from '@/utils/cn';
 
 type ClassReportRowItemProps = {

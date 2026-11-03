@@ -32,6 +32,7 @@ export interface ExportProblemReportInput {
   tutorId: string;
   format: ReportFileFormat;
   ocultarNomes?: boolean;
+  mostrarPendencias?: boolean | null;
   mostrarFeedback?: boolean | null;
   mostrarMarcacoes?: boolean | null;
 }
@@ -64,6 +65,7 @@ export class ExportProblemReportUseCase {
       marcacoes,
       format: input.format,
       ocultarNomes: input.ocultarNomes,
+      mostrarPendencias: input.mostrarPendencias,
       mostrarFeedback: input.mostrarFeedback,
       mostrarMarcacoes: input.mostrarMarcacoes,
     });
@@ -81,24 +83,29 @@ export class ExportProblemReportUseCase {
     return { room, problem };
   }
 
-  private loadReportData(input: ExportProblemReportInput): Promise<LoadedReportData> {
-    const loadFeedbacks =
-      input.mostrarFeedback !== false && input.mostrarFeedback !== null
-        ? this.feedbackRepository.findProblemFeedbacksWithDetails(input.problemId)
-        : Promise.resolve(null);
-    const loadTags =
-      input.mostrarMarcacoes !== false && input.mostrarMarcacoes !== null
-        ? this.gradesRepository.findProblemObservationTags(input.problemId)
-        : Promise.resolve(null);
+  private loadFeedbacks(input: ExportProblemReportInput) {
+    if (input.mostrarFeedback === false || input.mostrarFeedback === null) {
+      return Promise.resolve(null);
+    }
+    return this.feedbackRepository.findProblemFeedbacksWithDetails(input.problemId);
+  }
 
+  private loadTags(input: ExportProblemReportInput) {
+    if (input.mostrarMarcacoes === false || input.mostrarMarcacoes === null) {
+      return Promise.resolve(null);
+    }
+    return this.gradesRepository.findProblemObservationTags(input.problemId);
+  }
+
+  private loadReportData(input: ExportProblemReportInput): Promise<LoadedReportData> {
     return Promise.all([
       this.getProblemGrades.execute({
         roomId: input.roomId,
         problemId: input.problemId,
         tutorId: input.tutorId,
       }),
-      loadFeedbacks,
-      loadTags,
+      this.loadFeedbacks(input),
+      this.loadTags(input),
     ]);
   }
 }

@@ -31,6 +31,28 @@ export class ExportProblemReportQueryDto extends ReportExportQueryDto {
   ocultarNomes?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Alias para ocultarNomes.',
+    default: false,
+    example: false,
+    type: Boolean,
+  })
+  @IsOptional()
+  @Transform(toBoolean)
+  @IsBoolean({ message: 'O campo ocultarNome deve ser um booleano.' })
+  ocultarNome?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Se falso ou null, omite a seção de pendências de avaliação do relatório.',
+    default: true,
+    example: true,
+    type: Boolean,
+  })
+  @IsOptional()
+  @Transform(toBoolean)
+  @IsBoolean({ message: 'O campo mostrarPendencias deve ser um booleano.' })
+  mostrarPendencias?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Se falso ou null, omite a seção de feedbacks do relatório.',
     default: true,
     example: true,
