@@ -11,11 +11,10 @@ describe('EvaluationFinalScore', () => {
   it('calculates weighted mean when no role score is provided', () => {
     render(<EvaluationFinalScore criteria={mockCriteria} scores={{ '1': 8, '2': 6 }} />);
 
-    expect(screen.getByText('7.0')).toBeInTheDocument();
+    expect(screen.getByText('7,0')).toBeInTheDocument();
   });
 
   it('calculates final score applying role formula (70/30 by default)', () => {
-    // criteria average = 8.0, role = 10 -> (8.0 * 70 + 10 * 30) / 100 = 8.6
     render(
       <EvaluationFinalScore
         criteria={mockCriteria}
@@ -25,11 +24,10 @@ describe('EvaluationFinalScore', () => {
       />,
     );
 
-    expect(screen.getByText('8.6')).toBeInTheDocument();
+    expect(screen.getByText('8,6')).toBeInTheDocument();
   });
 
   it('respects custom session formula', () => {
-    // criteria average = 8.0, role = 10, formula = 60/40 -> (8.0 * 60 + 10 * 40) / 100 = 8.8
     render(
       <EvaluationFinalScore
         criteria={mockCriteria}
@@ -40,7 +38,7 @@ describe('EvaluationFinalScore', () => {
       />,
     );
 
-    expect(screen.getByText('8.8')).toBeInTheDocument();
+    expect(screen.getByText('8,8')).toBeInTheDocument();
   });
 
   it('ignores role score when student has no role', () => {
@@ -53,15 +51,14 @@ describe('EvaluationFinalScore', () => {
       />,
     );
 
-    expect(screen.getByText('8.0')).toBeInTheDocument();
+    expect(screen.getByText('8,0')).toBeInTheDocument();
   });
 
   it('applies role formula defaulting role score to 0 when student has role but roleScore is omitted', () => {
-    // criteria average = 10.0, role = 0 -> (10.0 * 70 + 0 * 30) / 100 = 7.0
     render(
       <EvaluationFinalScore criteria={mockCriteria} scores={{ '1': 10, '2': 10 }} hasRole={true} />,
     );
 
-    expect(screen.getByText('7.0')).toBeInTheDocument();
+    expect(screen.getByText('7,0')).toBeInTheDocument();
   });
 });

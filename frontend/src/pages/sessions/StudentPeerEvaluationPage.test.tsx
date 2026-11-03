@@ -111,7 +111,7 @@ describe('StudentPeerEvaluationPage', () => {
 
     await userEvent.click(plusButton);
 
-    expect(within(segmentoGroup).getByText('9')).toBeInTheDocument();
+    expect(within(segmentoGroup).getByRole('textbox')).toHaveValue('9,0');
   });
 
   it('navigates back when clicking the back button', async () => {

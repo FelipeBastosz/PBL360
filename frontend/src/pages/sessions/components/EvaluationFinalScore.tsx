@@ -1,5 +1,6 @@
 import type { EvaluationCriterion, EvaluationFormula } from '@/types/evaluation';
 import { calculateSessionScore } from '@/utils/evaluationScore';
+import { formatGrade } from '@/utils/formatGrade';
 
 type EvaluationFinalScoreProps = {
   criteria: EvaluationCriterion[];
@@ -35,7 +36,7 @@ export function EvaluationFinalScore({
       <span className="text-sm font-bold text-brand-900">Nota final da sessão</span>
       <div className="flex items-center gap-1.5">
         <span className="rounded-xl bg-brand-900 px-3.5 py-1 text-base font-bold text-white shadow-xs">
-          {finalScore.toFixed(1)}
+          {formatGrade(finalScore)}
         </span>
         <span className="text-xs text-muted">/ 10</span>
       </div>
