@@ -1,0 +1,305 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { performanceTableService } from '@/services/performance-table.service';
+import { useAuth } from '@/hooks/useAuth';
+import type { PerformanceTable, PerformanceTableSummary } from '@/types/performanceTable';
+import { MyFormulasPage } from './MyFormulasPage';
+import { MyFormulaDetailPage } from './MyFormulaDetailPage';
+import { ManageMyFormulasPage } from './ManageMyFormulasPage';
+import { CreateMyFormulaPage } from './CreateMyFormulaPage';
+import { EditMyFormulaPage } from './EditMyFormulaPage';
+
+vi.mock('@/services/performance-table.service');
+vi.mock('@/hooks/useAuth');
+vi.mock('@/hooks/useToast', () => ({
+  useToast: () => ({ notify: vi.fn() }),
+}));
+
+const mockTeacher = { id: 'prof-123', nome: 'Professor Carlos', name: 'Professor Carlos' };
+
+const mockTables: PerformanceTableSummary[] = [
+  {
+    id: 'f-padrao-1',
+    nome: 'Fórmula Padrão Oficial',
+    descricao: 'Padrão do sistema',
+    quantidadeCriterios: 3,
+    isDefault: true,
+    origem: 'PADRAO',
+  },
+  {
+    id: 'f-turma-1',
+    nome: 'Fórmula da Turma XYZ',
+    descricao: 'Criada para a turma',
+    quantidadeCriterios: 4,
+    origem: 'TURMA',
+    professorId: 'prof-123',
+  },
+  {
+    id: 'f-outro-prof',
+    nome: 'Fórmula de Outro Professor',
+    descricao: 'Pertence a outro',
+    quantidadeCriterios: 2,
+    professorId: 'outro-prof-id',
+    isDefault: false,
+  },
+  {
+    id: 'f-original-1',
+    nome: 'Minha Fórmula de Algoritmos',
+    descricao: 'Fórmula pessoal para módulo de algoritmos',
+    quantidadeCriterios: 2,
+    professorId: 'prof-123',
+    isDefault: false,
+  },
+  {
+    id: 'f-original-2',
+    nome: 'Minha Fórmula Especial de Apresentação',
+    descricao: 'Fórmula pessoal para seminários',
+    quantidadeCriterios: 3,
+    professorId: 'prof-123',
+    isDefault: false,
+  },
+];
+
+const mockDetail: PerformanceTable = {
+  id: 'f-original-1',
+  professorId: 'prof-123',
+  nome: 'Minha Fórmula de Algoritmos',
+  descricao: 'Fórmula pessoal para módulo de algoritmos',
+  criterios: [
+    { id: 'crit-1', nome: 'Lógica', descricao: 'Avalia raciocínio', peso: 6, ordem: 1 },
+    { id: 'crit-2', nome: 'Clareza', descricao: 'Avalia código limpo', peso: 4, ordem: 2 },
+  ],
+  criadoEm: '2026-03-01T10:00:00Z',
+  atualizadoEm: '2026-03-01T10:00:00Z',
+};
+
+describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useAuth).mockReturnValue({
+      user: mockTeacher,
+      isAuthenticated: true,
+      token: 'fake-jwt',
+      login: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
+      verifyAccount: vi.fn(),
+      resendVerification: vi.fn(),
+      forgotPassword: vi.fn(),
+      resetPassword: vi.fn(),
+      updateProfile: vi.fn(),
+    } as unknown as ReturnType<typeof useAuth>);
+  });
+
+  describe('MyFormulasPage (Listagem)', () => {
+    it('renders header "Minhas Fórmulas" and exclusively original formulas of the professor', async () => {
+      vi.mocked(performanceTableService.list).mockResolvedValue(mockTables);
+
+      render(
+        <MemoryRouter initialEntries={['/minhas-formulas']}>
+          <MyFormulasPage />
+        </MemoryRouter>,
+      );
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Minhas Fórmulas' }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/Minhas fórmulas · 2/i)).toBeInTheDocument();
+
+      expect(screen.getByText('Minha Fórmula de Algoritmos')).toBeInTheDocument();
+      expect(screen.getByText('Minha Fórmula Especial de Apresentação')).toBeInTheDocument();
+
+      expect(screen.queryByText('Fórmula Padrão Oficial')).not.toBeInTheDocument();
+      expect(screen.queryByText('Fórmula da Turma XYZ')).not.toBeInTheDocument();
+      expect(screen.queryByText('Fórmula de Outro Professor')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Padrão do sistema/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Da turma/i)).not.toBeInTheDocument();
+    });
+
+    it('filters formulas using the search field with standard container', async () => {
+      vi.mocked(performanceTableService.list).mockResolvedValue(mockTables);
+
+      render(
+        <MemoryRouter initialEntries={['/minhas-formulas']}>
+          <MyFormulasPage />
+        </MemoryRouter>,
+      );
+
+      await screen.findByText('Minha Fórmula de Algoritmos');
+      const searchInput = screen.getByLabelText('Pesquisar fórmula');
+      await userEvent.type(searchInput, 'Especial');
+
+      expect(screen.getByText('Minha Fórmula Especial de Apresentação')).toBeInTheDocument();
+      expect(screen.queryByText('Minha Fórmula de Algoritmos')).not.toBeInTheDocument();
+    });
+
+    it('allows deleting a formula and updates list', async () => {
+      vi.mocked(performanceTableService.list).mockResolvedValue(mockTables);
+      vi.mocked(performanceTableService.remove).mockResolvedValue(undefined);
+
+      render(
+        <MemoryRouter initialEntries={['/minhas-formulas']}>
+          <MyFormulasPage />
+        </MemoryRouter>,
+      );
+
+      const deleteBtn = await screen.findByRole('button', {
+        name: 'Excluir fórmula Minha Fórmula de Algoritmos',
+      });
+      await userEvent.click(deleteBtn);
+
+      expect(screen.getByText('Excluir fórmula?')).toBeInTheDocument();
+      const confirmBtn = screen.getByRole('button', { name: 'Sim, excluir fórmula' });
+      await userEvent.click(confirmBtn);
+
+      expect(performanceTableService.remove).toHaveBeenCalledWith('f-original-1');
+    });
+  });
+
+  describe('MyFormulaDetailPage (Visualização e atalho para edição)', () => {
+    it('renders details and "Editar fórmula" button that navigates to edit page', async () => {
+      vi.mocked(performanceTableService.getById).mockResolvedValue(mockDetail);
+
+      render(
+        <MemoryRouter initialEntries={['/minhas-formulas/f-original-1']}>
+          <Routes>
+            <Route path="/minhas-formulas/:id" element={<MyFormulaDetailPage />} />
+            <Route path="/minhas-formulas/:id/editar" element={<p>Página de Edição</p>} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Minha Fórmula de Algoritmos' }),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Lógica')).toBeInTheDocument();
+      expect(screen.getByText('Clareza')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Aplicar fórmula' })).not.toBeInTheDocument();
+
+      const editBtn = screen.getByRole('button', { name: 'Editar fórmula' });
+      await userEvent.click(editBtn);
+
+      expect(screen.getByText('Página de Edição')).toBeInTheDocument();
+    });
+  });
+
+  describe('ManageMyFormulasPage (Seleção para edição via FAB)', () => {
+    it('lists exclusively teacher original formulas and allows selection to edit', async () => {
+      vi.mocked(performanceTableService.list).mockResolvedValue(mockTables);
+
+      render(
+        <MemoryRouter initialEntries={['/minhas-formulas/gerenciar']}>
+          <Routes>
+            <Route path="/minhas-formulas/gerenciar" element={<ManageMyFormulasPage />} />
+            <Route path="/minhas-formulas/:id/editar" element={<p>Página de Edição</p>} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      expect(await screen.findByText('Minha Fórmula de Algoritmos')).toBeInTheDocument();
+      expect(screen.getByText('Minha Fórmula Especial de Apresentação')).toBeInTheDocument();
+      expect(screen.queryByText('Fórmula Padrão Oficial')).not.toBeInTheDocument();
+      expect(screen.queryByText('Fórmula de Outro Professor')).not.toBeInTheDocument();
+
+      const submitBtn = screen.getByRole('button', { name: 'Selecionar fórmula' });
+      expect(submitBtn).toBeDisabled();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Minha Fórmula de Algoritmos' }));
+      expect(submitBtn).toBeEnabled();
+
+      await userEvent.click(submitBtn);
+      expect(screen.getByText('Página de Edição')).toBeInTheDocument();
+    });
+  });
+
+  describe('CreateMyFormulaPage (Criação de nova fórmula pessoal)', () => {
+    it('creates a new formula without roomId and navigates back to /minhas-formulas', async () => {
+      vi.mocked(performanceTableService.create).mockResolvedValue({
+        ...mockDetail,
+        id: 'new-id',
+        nome: 'Fórmula Inédita',
+      });
+
+      render(
+        <MemoryRouter
+          initialEntries={[
+            { pathname: '/minhas-formulas/nova', state: { nome: 'Fórmula Inédita' } },
+          ]}
+        >
+          <Routes>
+            <Route path="/minhas-formulas/nova" element={<CreateMyFormulaPage />} />
+            <Route path="/minhas-formulas" element={<p>Lista de Minhas Fórmulas</p>} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      expect(await screen.findByDisplayValue('Fórmula Inédita')).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: '+Adicionar critério' }));
+      await userEvent.type(screen.getByLabelText('Nome do critério'), 'Pontualidade');
+      const weightInput = screen.getByLabelText('Peso (1 a 10)');
+      await userEvent.clear(weightInput);
+      await userEvent.type(weightInput, '10');
+      await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+      await userEvent.click(screen.getByRole('button', { name: /salvar fórmula/i }));
+
+      expect(performanceTableService.create).toHaveBeenCalledWith({
+        nome: 'Fórmula Inédita',
+        descricao: undefined,
+        criterios: [
+          {
+            nome: 'Pontualidade',
+            descricao: undefined,
+            peso: 10,
+            ordem: 1,
+          },
+        ],
+        roomId: undefined,
+      });
+
+      expect(await screen.findByText('Lista de Minhas Fórmulas')).toBeInTheDocument();
+    });
+  });
+
+  describe('EditMyFormulaPage (Edição de fórmula original)', () => {
+    it('updates teacher original formula and prompts warning modal', async () => {
+      vi.mocked(performanceTableService.getById).mockResolvedValue(mockDetail);
+      vi.mocked(performanceTableService.update).mockResolvedValue(mockDetail);
+
+      render(
+        <MemoryRouter initialEntries={['/minhas-formulas/f-original-1/editar']}>
+          <Routes>
+            <Route path="/minhas-formulas/:id/editar" element={<EditMyFormulaPage />} />
+            <Route path="/minhas-formulas" element={<p>Lista de Minhas Fórmulas</p>} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      expect(await screen.findByText('Lógica')).toBeInTheDocument();
+      expect(screen.getByText('Clareza')).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Concluir edição' }));
+
+      expect(screen.getByText('Salvar alterações na fórmula?')).toBeInTheDocument();
+      expect(
+        screen.getByText(/sessões que já foram avaliadas com esta fórmula/i),
+      ).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Confirmar e salvar' }));
+
+      expect(performanceTableService.update).toHaveBeenCalledWith('f-original-1', {
+        nome: 'Minha Fórmula de Algoritmos',
+        descricao: 'Fórmula pessoal para módulo de algoritmos',
+        criterios: [
+          { id: 'crit-1', nome: 'Lógica', descricao: 'Avalia raciocínio', ordem: 1, peso: 6 },
+          { id: 'crit-2', nome: 'Clareza', descricao: 'Avalia código limpo', ordem: 2, peso: 4 },
+        ],
+      });
+
+      expect(await screen.findByText('Lista de Minhas Fórmulas')).toBeInTheDocument();
+    });
+  });
+});

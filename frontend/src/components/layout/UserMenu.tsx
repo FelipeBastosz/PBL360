@@ -44,7 +44,7 @@ function menuItems(isProfessor: boolean): MenuItem[] {
           {
             label: 'Minhas Fórmulas',
             Icon: AdjustmentsHorizontalIcon,
-            to: ROUTES.performanceTables,
+            to: ROUTES.myFormulas,
           },
           {
             label: 'Minhas Marcações',

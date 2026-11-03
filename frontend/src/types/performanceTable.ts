@@ -23,6 +23,8 @@ export type CriterionInput = {
 
 export type PerformanceTableSummary = {
   id: string;
+  professorId?: string | null;
+  isDefault?: boolean;
   nome: string;
   descricao: string | null;
   quantidadeCriterios: number;
