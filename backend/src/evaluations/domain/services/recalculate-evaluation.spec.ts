@@ -43,6 +43,12 @@ describe('recalculateEvaluation', () => {
     expect(recalculateEvaluation(current, config)?.sessionScore).toBe(7.72);
   });
 
+  it('applies the cargo formula for non-tutor modalities when role score is present', () => {
+    const current = evaluation();
+    current.appliedBonus = 8;
+    expect(recalculateEvaluation(current, config, false)?.sessionScore).toBe(7.72);
+  });
+
   it('does not calculate drafts or missing evaluations', () => {
     const draft = evaluation();
     draft.status = EvaluationStatus.DRAFT;

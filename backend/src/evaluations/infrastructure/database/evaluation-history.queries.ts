@@ -35,13 +35,17 @@ export const FIND_SESSION_PEER_EVALUATIONS_QUERY = `
 `;
 
 export const FIND_SESSION_TUTOR_SCORES_QUERY = `
-  SELECT e.student_id AS "studentId", ei.criterion_id AS "criterionId", ei.score
+  SELECT e.student_id AS "studentId", ei.criterion_id AS "criterionId", ei.score,
+         COALESCE(e.applied_bonus, sr.role_score) AS "bonusScore"
     FROM evaluations e
     JOIN evaluation_items ei ON ei.evaluation_id = e.id
+    LEFT JOIN session_roles sr ON sr.session_id = e.session_id AND sr.student_id = e.student_id
    WHERE e.session_id = $1 AND e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED'
   UNION ALL
-  SELECT cg.student_id AS "studentId", cg.criterion_id AS "criterionId", cg.score
+  SELECT cg.student_id AS "studentId", cg.criterion_id AS "criterionId", cg.score,
+         sr.role_score AS "bonusScore"
     FROM criterion_grades cg
+    LEFT JOIN session_roles sr ON sr.session_id = cg.session_id AND sr.student_id = cg.student_id
    WHERE cg.session_id = $1
      AND NOT EXISTS (
        SELECT 1 FROM evaluations e

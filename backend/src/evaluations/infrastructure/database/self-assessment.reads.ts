@@ -35,16 +35,37 @@ export async function readSelfAssessmentDetail(
   context: EvaluationContext,
   studentId: string,
 ): Promise<EvaluationDetail> {
-  const sessionId = context.sessionId;
-  const config =
-    (await readSessionConfig(manager, sessionId)) ??
-    (await readSessionTableConfig(manager, sessionId));
-  const evaluation = await readSelfEvaluation(manager, sessionId, studentId);
+  const { sessionId } = context;
+  const config = await readConfig(manager, sessionId);
+  const [evaluation, roleInfo] = await Promise.all([
+    readSelfEvaluation(manager, sessionId, studentId),
+    readRoleInfo(manager, sessionId, studentId),
+  ]);
   const effective = await readSubmittedConfig(manager, sessionId, evaluation, config);
   return {
     config: effective,
     evaluation: recalculateEvaluation(evaluation, effective, false),
     adjustments: [],
+    papel: roleInfo.papel,
+    roleScore: roleInfo.roleScore,
+  };
+}
+
+async function readConfig(manager: EntityManager, sessionId: string) {
+  return (
+    (await readSessionConfig(manager, sessionId)) ??
+    (await readSessionTableConfig(manager, sessionId))
+  );
+}
+
+async function readRoleInfo(manager: EntityManager, sessionId: string, studentId: string) {
+  const [row] = await manager.query<Array<{ role: string; role_score: string | null }>>(
+    'SELECT role, role_score FROM session_roles WHERE session_id = $1 AND student_id = $2;',
+    [sessionId, studentId],
+  );
+  return {
+    papel: row?.role ?? null,
+    roleScore: row?.role_score != null ? Number(row.role_score) : null,
   };
 }
 

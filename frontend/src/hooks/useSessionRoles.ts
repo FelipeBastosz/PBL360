@@ -6,7 +6,6 @@ import type { RoleConflictResponse, SessionRole, SessionRoleAssignment } from '@
 export type RoleAssignment = {
   studentId: string;
   role: SessionRole | null;
-  score: number | null;
   transfer: boolean;
 };
 
@@ -32,11 +31,10 @@ export function useSessionRoles(sessionId: string) {
   }, [sessionId]);
 
   const assign = useCallback(
-    async ({ studentId, role, score, transfer }: RoleAssignment): Promise<RoleAssignResult> => {
+    async ({ studentId, role, transfer }: RoleAssignment): Promise<RoleAssignResult> => {
       try {
         await sessionService.assignRole(sessionId, studentId, {
           papel: role,
-          notaAdicional: role ? score : null,
           transferir: transfer,
         });
         await reload();

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { EvaluationStatusResponse } from './session-evaluation-summary-response.dto';
+import { EvaluationFormulaDto } from './evaluation-formula.dto';
 
 export class PeerStudentInfo {
   @ApiProperty({
@@ -14,6 +15,13 @@ export class PeerStudentInfo {
     description: 'Nome do colega.',
   })
   nome!: string;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Papel exercido pelo colega na sessão.',
+  })
+  papel?: string | null;
 }
 
 export class PeerEvaluationCriterionResponseDto {
@@ -93,4 +101,8 @@ export class PeerEvaluationResponseDto {
     description: 'Itens com as notas atribuídas aos critérios.',
   })
   itens!: PeerEvaluationItemDto[];
+
+  @ApiProperty({ type: Number, nullable: true }) notaCargo?: number | null;
+  @ApiProperty({ type: EvaluationFormulaDto, required: false })
+  formula?: EvaluationFormulaDto;
 }

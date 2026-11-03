@@ -1,9 +1,35 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsString, Length, ValidateIf, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Length,
+  Max,
+  Min,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
 import { EvaluationItemDto } from './evaluation-item.dto';
 
 export class SaveTutorEvaluationDto {
+  @ApiPropertyOptional({
+    minimum: 0,
+    maximum: 10,
+    nullable: true,
+    description: 'Nota do papel desempenhado na sessão, com até uma casa decimal.',
+  })
+  @IsOptional()
+  @IsNumber(
+    { allowNaN: false, allowInfinity: false, maxDecimalPlaces: 1 },
+    { message: 'A nota do cargo deve ser um número entre 0 e 10 com até uma casa decimal.' },
+  )
+  @Min(0, { message: 'A nota do cargo deve ser no mínimo 0.' })
+  @Max(10, { message: 'A nota do cargo deve ser no máximo 10.' })
+  notaCargo?: number | null;
+
   @ApiProperty({
     type: EvaluationItemDto,
     isArray: true,

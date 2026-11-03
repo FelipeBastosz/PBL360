@@ -1,4 +1,8 @@
-import { ConflictError, LockedError } from '@/shared/errors/application.error';
+import {
+  ConflictError,
+  LockedError,
+  UnprocessableEntityError,
+} from '@/shared/errors/application.error';
 import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
 import type { Session } from '@/sessions/domain/entities/session.entity';
 import type { EvaluationDetail } from '../../domain/repositories/evaluation.repository';
@@ -12,11 +16,13 @@ export function assertSelfAssessmentCanBeSaved(
   items: Array<{ criterionId: string; score: number }>,
   submit: boolean,
   now: Date,
+  notaCargo?: number | null,
 ): void {
   assertParticipation(participating);
   assertReleaseOpen(session, now);
   assertNotSubmitted(detail);
   assertValidItems(detail, items, submit);
+  assertRoleScore(detail, notaCargo, submit);
 }
 
 function assertParticipation(participating: boolean): void {
@@ -46,4 +52,19 @@ function assertValidItems(
   validateEvaluationRules(() =>
     EvaluationRules.assertValidItems(items, detail.config.criteria, submit),
   );
+}
+
+function assertRoleScore(
+  detail: EvaluationDetail,
+  notaCargo: number | null | undefined,
+  submit: boolean,
+): void {
+  if (!submit) return;
+  const hasRole = Boolean(detail.papel);
+  const roleWeight = detail.config.formula?.roleWeight ?? 30;
+  if (hasRole && roleWeight > 0 && (notaCargo === null || notaCargo === undefined)) {
+    throw new UnprocessableEntityError(
+      'A nota de cargo é obrigatória para estudantes com papel atribuído.',
+    );
+  }
 }

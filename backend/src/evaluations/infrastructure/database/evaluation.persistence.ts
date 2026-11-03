@@ -2,6 +2,7 @@ import type { EntityManager } from 'typeorm';
 import { lockSessionPerformanceTable } from '@/sessions/infrastructure/database/session-table-lock.persistence';
 import { NotFoundError, UnprocessableEntityError } from '@/shared/errors/application.error';
 import { validateEvaluationRules } from '../../application/services/evaluation-rule-validation';
+import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
 import type {
   EvaluationWrite,
   EvaluationDetail,
@@ -33,7 +34,8 @@ async function reviseEvaluation(
   evaluation: Evaluation,
   config: SessionEvaluationConfig,
 ): Promise<void> {
-  const revision = { ...input, bonus: await readBonus(manager, input), now: new Date() };
+  const bonus = resolveBonus(input, evaluation, await readBonus(manager, input));
+  const revision = { ...input, bonus, now: new Date() };
   const changes = validateEvaluationRules(() => evaluation.revise(revision, config));
   await persistAdjustments(
     manager,
@@ -44,6 +46,25 @@ async function reviseEvaluation(
   );
   await persistEvaluationItems(manager, evaluation.id, input.items);
   await updateEvaluation(manager, evaluation);
+  await persistRoleScore(manager, input);
+}
+
+function resolveBonus(
+  input: EvaluationWrite,
+  evaluation: Evaluation,
+  roleBonus: number | null,
+): number | null {
+  if (input.notaCargo !== undefined) return input.notaCargo;
+  if (evaluation.status === EvaluationStatus.SUBMITTED) return evaluation.appliedBonus;
+  return roleBonus;
+}
+
+async function persistRoleScore(manager: EntityManager, input: EvaluationWrite): Promise<void> {
+  if (input.notaCargo === undefined) return;
+  await manager.query(
+    'UPDATE session_roles SET role_score = $1 WHERE session_id = $2 AND student_id = $3;',
+    [input.notaCargo, input.context.sessionId, input.studentId],
+  );
 }
 
 async function lockEvaluationContext(

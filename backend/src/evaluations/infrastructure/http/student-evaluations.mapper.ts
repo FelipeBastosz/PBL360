@@ -16,6 +16,7 @@ export function toSaveSelfAssessmentInput(
     studentId,
     items: dto.itens.map((item) => ({ criterionId: item.criterioId, score: item.nota })),
     submit: dto.enviar,
+    notaCargo: dto.notaCargo,
   };
 }
 
@@ -68,15 +69,24 @@ export function toSelfAssessmentResponse(
     status: output.status,
     prazo: output.deadline,
     enviadaEm: output.submittedAt,
-    criterios: output.criteria.map((item) => ({
-      id: item.id,
-      nome: item.name,
-      peso: item.weight,
-      notaMaxima: item.maxScore,
-    })),
-    itens: output.items.map((item) => ({ criterioId: item.criterionId, nota: item.score })),
+    criterios: toCriteriaDto(output.criteria),
+    itens: toItemsDto(output.items),
+    papel: output.papel ?? null,
+    notaCargo: output.notaCargo ?? null,
+    formula: output.formula ?? { criteriaWeight: 70, roleWeight: 30 },
     ...(output.consolidatedScore === undefined
       ? {}
       : { notaConsolidada: output.consolidatedScore }),
   };
 }
+
+const toCriteriaDto = (criteria: GetSelfAssessmentOutput['criteria']) =>
+  criteria.map((item) => ({
+    id: item.id,
+    nome: item.name,
+    peso: item.weight,
+    notaMaxima: item.maxScore,
+  }));
+
+const toItemsDto = (items: GetSelfAssessmentOutput['items']) =>
+  items.map((item) => ({ criterioId: item.criterionId, nota: item.score }));

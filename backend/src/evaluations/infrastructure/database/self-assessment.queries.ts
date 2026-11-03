@@ -37,11 +37,11 @@ export const INSERT_SELF_EVALUATION = `
 `;
 
 export const UPDATE_SELF_DRAFT = `
-  UPDATE evaluations SET updated_by = $1, updated_at = $2 WHERE id = $3;
+  UPDATE evaluations SET applied_bonus = $1, updated_by = $2, updated_at = $3 WHERE id = $4;
 `;
 
 export const UPDATE_SELF_SUBMISSION = `
   UPDATE evaluations SET status = 'SUBMITTED', submitted_at = $1,
-    session_score = $2, applied_bonus = NULL, calculation_version = $3,
-    updated_by = $4, updated_at = $1 WHERE id = $5;
+    session_score = $2, applied_bonus = $3, calculation_version = $4,
+    updated_by = $5, updated_at = $1 WHERE id = $6;
 `;
