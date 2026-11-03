@@ -15,6 +15,7 @@ export interface FeedbackRevisionItem {
   text: string;
   editedBy: string;
   editedAt: Date;
+  justification?: string | null;
 }
 
 export interface ProblemFeedbackDetail {

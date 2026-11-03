@@ -58,12 +58,18 @@ export class Feedback {
     return feedback;
   }
 
-  update(newScore: number | null, newText: string, editorId: string): FeedbackRevision {
+  update(
+    newScore: number | null,
+    newText: string,
+    editorId: string,
+    justification?: string | null,
+  ): FeedbackRevision {
     const revision = FeedbackRevision.create({
       feedbackId: this.id,
       previousScore: this.score,
       previousText: this.text,
       editedBy: editorId,
+      justification,
     });
 
     this.score = newScore;

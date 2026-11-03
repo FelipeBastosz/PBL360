@@ -103,7 +103,13 @@ export class PgFeedbackRepository implements FeedbackRepository {
 
   async findRevisionsByFeedbackId(feedbackId: string): Promise<FeedbackRevisionItem[]> {
     const rows = await this.dataSource.query<
-      { score: string | number | null; text: string; editedBy: string; editedAt: Date }[]
+      {
+        score: string | number | null;
+        text: string;
+        editedBy: string;
+        editedAt: Date;
+        justification?: string | null;
+      }[]
     >(FIND_REVISIONS_QUERY, [feedbackId]);
 
     return rows.map((row) => ({
@@ -111,6 +117,7 @@ export class PgFeedbackRepository implements FeedbackRepository {
       text: row.text,
       editedBy: row.editedBy,
       editedAt: row.editedAt,
+      justification: row.justification ?? null,
     }));
   }
 

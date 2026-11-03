@@ -5,6 +5,7 @@ export interface CreateFeedbackRevisionProps {
   previousScore: number | null;
   previousText: string;
   editedBy: string;
+  justification?: string | null;
 }
 
 @Entity('feedback_revisions')
@@ -30,6 +31,9 @@ export class FeedbackRevision {
   @Column({ name: 'edited_by', type: 'uuid' })
   editedBy: string;
 
+  @Column({ name: 'justificativa', type: 'varchar', length: 500, nullable: true })
+  justification?: string | null;
+
   @CreateDateColumn({ name: 'edited_at', type: 'timestamptz' })
   editedAt: Date;
 
@@ -39,6 +43,7 @@ export class FeedbackRevision {
     revision.previousScore = props.previousScore;
     revision.previousText = props.previousText;
     revision.editedBy = props.editedBy;
+    revision.justification = props.justification ?? null;
     revision.editedAt = new Date();
     return revision;
   }

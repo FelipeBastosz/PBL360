@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsNotEmpty,
   IsNumber,
@@ -39,6 +40,19 @@ export class SaveStudentProblemFeedbackDto {
   @IsOptional()
   @IsString()
   destinatarioId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Justificativa do ajuste de nota (entre 10 e 500 caracteres).',
+    example: 'Nota ajustada após revisão dos critérios e esclarecimentos.',
+    minLength: 10,
+    maxLength: 500,
+  })
+  @IsOptional()
+  @ValidateIf((_, val) => val !== null && val !== undefined && val !== '')
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString({ message: 'A justificativa deve ser uma cadeia de caracteres.' })
+  @Length(10, 500, { message: 'A justificativa deve ter entre 10 e 500 caracteres.' })
+  justificativa?: string;
 
   @ApiProperty({
     description: 'Texto do feedback direcionado ao aluno no problema (1 a 2000 caracteres).',

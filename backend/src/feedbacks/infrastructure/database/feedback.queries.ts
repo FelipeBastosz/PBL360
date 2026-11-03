@@ -66,7 +66,8 @@ export const FIND_REVISIONS_QUERY = `
     r.conteudo_anterior_nota AS "score",
     r.conteudo_anterior_texto AS "text",
     COALESCE(u.name, r.edited_by::text) AS "editedBy",
-    r.edited_at AS "editedAt"
+    r.edited_at AS "editedAt",
+    r.justificativa AS "justification"
   FROM feedback_revisions r
   LEFT JOIN users u ON u.id = r.edited_by
   WHERE r.feedback_id = $1
@@ -115,9 +116,9 @@ export const INSERT_FEEDBACK_QUERY = `
 
 export const INSERT_FEEDBACK_REVISION_QUERY = `
   INSERT INTO feedback_revisions (
-    id, feedback_id, conteudo_anterior_nota, conteudo_anterior_texto, edited_by, edited_at
+    id, feedback_id, conteudo_anterior_nota, conteudo_anterior_texto, edited_by, edited_at, justificativa
   ) VALUES (
-    gen_random_uuid(), $1, $2, $3, $4, $5
+    gen_random_uuid(), $1, $2, $3, $4, $5, $6
   );
 `;
 
@@ -145,6 +146,7 @@ export const toRevisionParams = (revision: FeedbackRevision): unknown[] => [
   revision.previousText,
   revision.editedBy,
   revision.editedAt,
+  revision.justification ?? null,
 ];
 
 export const FIND_PROBLEM_FEEDBACKS_WITH_DETAILS_QUERY = `

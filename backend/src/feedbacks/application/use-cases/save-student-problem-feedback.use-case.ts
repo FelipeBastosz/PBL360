@@ -19,6 +19,7 @@ export interface SaveStudentProblemFeedbackInput {
   tutorId: string;
   score: number | null;
   text: string;
+  justification?: string | null;
 }
 
 @Injectable()
@@ -40,10 +41,15 @@ export class SaveStudentProblemFeedbackUseCase {
     );
 
     if (existing) {
-      const revision = existing.update(input.score, input.text, input.tutorId);
+      this.validateGradeAdjustment(existing, input);
+      const revision = existing.update(input.score, input.text, input.tutorId, input.justification);
       return this.feedbackRepository.saveWithRevision(existing, revision);
     }
 
+    return this.createAndSave(input);
+  }
+
+  private createAndSave(input: SaveStudentProblemFeedbackInput): Promise<Feedback> {
     const feedback = Feedback.create({
       authorId: input.tutorId,
       problemId: input.problemId,
@@ -52,8 +58,25 @@ export class SaveStudentProblemFeedbackUseCase {
       score: input.score,
       text: input.text,
     });
-
     return this.feedbackRepository.saveWithRevision(feedback, null);
+  }
+
+  private validateGradeAdjustment(
+    existing: Feedback,
+    input: SaveStudentProblemFeedbackInput,
+  ): void {
+    if (existing.score === null || input.score === null) return;
+    if (Math.abs(Number(existing.score) - Number(input.score)) < 0.005) return;
+
+    const trimmed = input.justification?.trim() ?? '';
+    if (trimmed.length < 10) {
+      throw new UnprocessableEntityError(
+        'A justificativa do ajuste é obrigatória quando a nota é alterada (mínimo de 10 caracteres).',
+      );
+    }
+    if (trimmed.length > 500) {
+      throw new UnprocessableEntityError('A justificativa deve ter no máximo 500 caracteres.');
+    }
   }
 
   private async validateAccessAndEnrollment(input: SaveStudentProblemFeedbackInput): Promise<void> {
