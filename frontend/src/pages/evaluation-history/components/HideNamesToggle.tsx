@@ -17,7 +17,7 @@ export function HideNamesToggle({ hideNames, onChange }: HideNamesToggleProps) {
           aria-label="Ocultar nomes"
           onClick={() => onChange(!hideNames)}
           className={cn(
-            'relative h-6 w-11 shrink-0 rounded-full shadow-[inset_0_2px_4px_rgb(0_0_0/0.05)] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900',
+            'relative h-6 w-11 shrink-0 after:absolute after:inset-x-0 after:-inset-y-2.5 rounded-full shadow-[inset_0_2px_4px_rgb(0_0_0/0.05)] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900',
             hideNames ? 'bg-brand-900' : 'bg-[#D1D5DB]',
           )}
         >
