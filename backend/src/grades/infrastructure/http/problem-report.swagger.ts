@@ -34,6 +34,13 @@ export const ExportProblemReportSwaggerDocs = applyDecorators(
     example: false,
   }),
   ApiQuery({
+    name: 'mostrarPendencias',
+    required: false,
+    type: Boolean,
+    description: 'Se falso ou null, omite a seção de pendências de avaliação do relatório.',
+    example: true,
+  }),
+  ApiQuery({
     name: 'mostrarFeedback',
     required: false,
     type: Boolean,

@@ -5,6 +5,7 @@ import type {
   ProblemDeletionImpact,
   ProblemPerformanceTable,
 } from '@/types/problem';
+import type { ExportProblemReportOptions } from '@/types/problemReport';
 import { api } from './api';
 
 const problemsOf = (roomId: string) => `/salas/${roomId}/problemas`;
@@ -37,10 +38,21 @@ export const problemService = {
   remove: (roomId: string, problemId: string) =>
     api.delete<void>(`${problemsOf(roomId)}/${problemId}`).then(() => undefined),
 
-  exportReport: (roomId: string, problemId: string, formato: 'PDF' | 'XLSX') =>
+  exportReport: (
+    roomId: string,
+    problemId: string,
+    formato: 'PDF' | 'XLSX',
+    options?: ExportProblemReportOptions,
+  ) =>
     api
       .get<Blob>(`/salas/${roomId}/problemas/${problemId}/relatorio/exportacao`, {
-        params: { formato },
+        params: {
+          formato,
+          ocultarNomes: options?.ocultarNomes,
+          mostrarPendencias: options?.mostrarPendencias,
+          mostrarMarcacoes: options?.mostrarMarcacoes,
+          mostrarFeedback: options?.mostrarFeedback,
+        },
         responseType: 'blob',
       })
       .then((r) => r.data),

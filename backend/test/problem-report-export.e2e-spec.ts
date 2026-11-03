@@ -440,6 +440,53 @@ describe('Problem Report Export (e2e)', () => {
       expect(body.message).toContain('O campo ocultarNomes deve ser um booleano.');
     });
 
+    it('returns 400 when mostrarPendencias is not a valid boolean', async () => {
+      const res = await server()
+        .get(`${exportPath(roomId, problem1Id, 'PDF')}&mostrarPendencias=invalido`)
+        .set('Authorization', `Bearer ${tutorToken}`)
+        .expect(400);
+
+      const body = res.body as { message: string[] };
+      expect(body.message).toContain('O campo mostrarPendencias deve ser um booleano.');
+    });
+
+    it('exports Problem 1 in XLSX omitting pendencies worksheet when mostrarPendencias=false', async () => {
+      const res = await server()
+        .get(`${exportPath(roomId, problem1Id, 'XLSX')}&mostrarPendencias=false`)
+        .set('Authorization', `Bearer ${tutorToken}`)
+        .buffer(true)
+        .parse(binaryParser)
+        .expect(200);
+
+      const workbook = new Workbook();
+      await workbook.xlsx.load(res.body as Buffer);
+
+      const gradesSheet = workbook.getWorksheet('Notas por sessão');
+      expect(gradesSheet).toBeDefined();
+
+      const pendenciesSheet = workbook.getWorksheet('Pendências de avaliação');
+      expect(pendenciesSheet).toBeUndefined();
+    });
+
+    it('exports Problem 1 in XLSX omitting tags and feedbacks when flags are false', async () => {
+      const res = await server()
+        .get(
+          `${exportPath(roomId, problem1Id, 'XLSX')}&mostrarMarcacoes=false&mostrarFeedback=false`,
+        )
+        .set('Authorization', `Bearer ${tutorToken}`)
+        .buffer(true)
+        .parse(binaryParser)
+        .expect(200);
+
+      const workbook = new Workbook();
+      await workbook.xlsx.load(res.body as Buffer);
+
+      expect(workbook.getWorksheet('Marcações das sessões')).toBeUndefined();
+      expect(workbook.getWorksheet('Feedback geral do problema')).toBeUndefined();
+      expect(workbook.getWorksheet('Feedbacks das sessões')).toBeUndefined();
+      expect(workbook.getWorksheet('Feedbacks individuais')).toBeUndefined();
+    });
+
     it('exports Problem 1 in XLSX without student names when ocultarNomes=true', async () => {
       const res = await server()
         .get(`${exportPath(roomId, problem1Id, 'XLSX')}&ocultarNomes=true`)

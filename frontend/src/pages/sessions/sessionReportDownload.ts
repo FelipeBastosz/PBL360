@@ -1,4 +1,5 @@
 import { toApiError } from '@/services/apiError';
+import { toSlug } from '@/utils/slug';
 
 async function readBlobAsText(blob: Blob): Promise<string> {
   if (typeof blob.text === 'function') {
@@ -44,15 +45,6 @@ export function triggerBlobDownload(blob: Blob, filename: string) {
   link.click();
   document.body.removeChild(link);
   window.URL.revokeObjectURL(url);
-}
-
-export function toSlug(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 }
 
 export function buildSessionReportFileName(
