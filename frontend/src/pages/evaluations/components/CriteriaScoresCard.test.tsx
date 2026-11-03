@@ -22,8 +22,7 @@ describe('CriteriaScoresCard', () => {
     expect(screen.getByText('Notas do aluno: João Silva')).toBeInTheDocument();
     expect(screen.queryByText(/Papel:/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Desempenho como/)).not.toBeInTheDocument();
-    // (8*2 + 6*3) / 5 = 6.8
-    expect(screen.getByText('6.8')).toBeInTheDocument();
+    expect(screen.getByText('6,8')).toBeInTheDocument();
   });
 
   it('displays role badge and role score row when student has a role', () => {
@@ -42,8 +41,7 @@ describe('CriteriaScoresCard', () => {
     expect(screen.getByText('Papel: Coordenador')).toBeInTheDocument();
     expect(screen.getByText('Desempenho como Coordenador')).toBeInTheDocument();
     expect(screen.getByText('Peso na fórmula (30%)')).toBeInTheDocument();
-    // Criteria avg: 6.8. Cargo: 10. Formula 70/30: (6.8*70 + 10*30) / 100 = 7.76 -> 7.8
-    expect(screen.getByText('7.8')).toBeInTheDocument();
+    expect(screen.getByText('7,8')).toBeInTheDocument();
   });
 
   it('applies role formula defaulting role score to 0 when student has role and notaCargo is not set', () => {
@@ -57,9 +55,7 @@ describe('CriteriaScoresCard', () => {
         onCargoScoreChange={vi.fn()}
       />,
     );
-
-    // Criteria = 10 (70%), Cargo = 0 (30%) -> (10 * 70 + 0 * 30) / 100 = 7.0
-    expect(screen.getByText('7.0')).toBeInTheDocument();
+    expect(screen.getByText('7,0')).toBeInTheDocument();
   });
 
   it('displays custom formula percentage and computes score with custom weights', () => {
@@ -79,8 +75,7 @@ describe('CriteriaScoresCard', () => {
     expect(screen.getByText('Papel: Secretário de Quadro')).toBeInTheDocument();
     expect(screen.getByText('Desempenho como Secretário de Quadro')).toBeInTheDocument();
     expect(screen.getByText('Peso na fórmula (40%)')).toBeInTheDocument();
-    // Criteria avg: 6.8. Cargo: 10. Formula 60/40: (6.8*60 + 10*40) / 100 = 8.08 -> 8.1
-    expect(screen.getByText('8.1')).toBeInTheDocument();
+    expect(screen.getByText('8,1')).toBeInTheDocument();
   });
 
   it('calls onCargoScoreChange when role score buttons are clicked', async () => {

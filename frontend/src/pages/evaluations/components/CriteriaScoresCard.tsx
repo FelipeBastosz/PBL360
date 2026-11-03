@@ -31,15 +31,7 @@ function FinalScoreRow({ score }: { score: number }) {
   );
 }
 
-function EditableScoreInput({
-  value,
-  onChange,
-  label,
-}: {
-  value: number;
-  onChange: (val: number) => void;
-  label: string;
-}) {
+function useEditableScore(value: number, onChange: (val: number) => void) {
   const [isEditing, setIsEditing] = useState(false);
   const [raw, setRaw] = useState('');
 
@@ -66,23 +58,35 @@ function EditableScoreInput({
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur();
-    }
-  }
+  return { isEditing, raw, handleFocus, handleBlur, handleChange };
+}
+
+function EditableScoreInput({
+  value,
+  onChange,
+  label,
+}: {
+  value: number;
+  onChange: (val: number) => void;
+  label: string;
+}) {
+  const { isEditing, raw, handleFocus, handleBlur, handleChange } = useEditableScore(
+    value,
+    onChange,
+  );
 
   return (
     <input
       type="text"
       inputMode="decimal"
       aria-label={`Nota de ${label}`}
-      value={isEditing ? raw : String(value)}
       value={isEditing ? raw : formatGrade(value)}
       onFocus={handleFocus}
       onBlur={handleBlur}
       onChange={handleChange}
-      onKeyDown={handleKeyDown}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+      }}
       className="w-14 rounded-xl border border-black/10 bg-surface/50 py-1.5 text-center text-base font-bold text-brand-900 transition focus:border-brand-900 focus:bg-white focus:outline-hidden"
     />
   );

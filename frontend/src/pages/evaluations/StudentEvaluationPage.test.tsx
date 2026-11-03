@@ -69,10 +69,10 @@ describe('StudentEvaluationPage', () => {
     expect(screen.getByText('Peso 3,0')).toBeInTheDocument();
 
     const segInput = screen.getByLabelText('Nota de Seguimento');
-    expect(segInput).toHaveValue('8');
+    expect(segInput).toHaveValue('8,0');
 
     const partInput = screen.getByLabelText('Nota de Participação');
-    expect(partInput).toHaveValue('6');
+    expect(partInput).toHaveValue('6,0');
 
     expect(screen.getByText('Nota final da sessão')).toBeInTheDocument();
     expect(screen.getByText('6,9')).toBeInTheDocument();
@@ -106,7 +106,7 @@ describe('StudentEvaluationPage', () => {
     const incBtn = screen.getByRole('button', { name: 'Aumentar nota de Seguimento' });
     await userEvent.click(incBtn);
 
-    expect(screen.getByLabelText('Nota de Seguimento')).toHaveValue('9');
+    expect(screen.getByLabelText('Nota de Seguimento')).toHaveValue('9,0');
 
     await userEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
 
