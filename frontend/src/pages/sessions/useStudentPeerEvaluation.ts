@@ -26,6 +26,7 @@ type LoadedPeersResult = {
   peers: PeerEvaluationState[];
   prazo: string | null;
   didNotParticipate: boolean;
+  chamadaRealizada: boolean;
   formula?: EvaluationFormula;
 };
 
@@ -63,12 +64,35 @@ async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
   const chamadaRealizada = response.chamadaRealizada ?? true;
   const isRollCallDone = Boolean(chamadaRealizada);
 
-  if (didNotParticipate || !response.liberada || response.colegas.length === 0) {
-    return { peers: [], prazo: response.prazo, didNotParticipate, formula: response.formula };
+  const didNotParticipate =
+    isRollCallDone &&
+    (response.participou === false ||
+      summary?.participou === false ||
+      summary?.autoavaliacao.status === 'NAO_PARTICIPOU');
+
+  if (
+    !chamadaRealizada ||
+    didNotParticipate ||
+    !response.liberada ||
+    response.colegas.length === 0
+  ) {
+    return {
+      peers: [],
+      prazo: response.prazo,
+      didNotParticipate,
+      chamadaRealizada,
+      formula: response.formula,
+    };
   }
 
   const peers = await fetchPeerCards(sessionId, response.colegas);
-  return { peers, prazo: response.prazo, didNotParticipate: false, formula: response.formula };
+  return {
+    peers,
+    prazo: response.prazo,
+    didNotParticipate: false,
+    chamadaRealizada: true,
+    formula: response.formula,
+  };
 }
 
 const toPeerPayload = (peer: PeerEvaluationState, enviar = true) => ({
@@ -104,6 +128,7 @@ function usePeerEvaluationData(sessionId: string) {
   const [peers, setPeers] = useState<PeerEvaluationState[]>([]);
   const [prazo, setPrazo] = useState<string | null>(null);
   const [didNotParticipate, setDidNotParticipate] = useState(false);
+  const [chamadaRealizada, setChamadaRealizada] = useState(true);
   const [formula, setFormula] = useState<EvaluationFormula | undefined>(undefined);
   const [session, setSession] = useState<MemberSession | null>(null);
 
@@ -123,19 +148,36 @@ function usePeerEvaluationData(sessionId: string) {
         setPeers(r.data.peers);
         setPrazo(r.data.prazo);
         setDidNotParticipate(r.data.didNotParticipate);
+        setChamadaRealizada(r.data.chamadaRealizada);
         setFormula(r.data.formula);
       }
     });
   }, [loadSession, loadPeers]);
 
-  return { peers, setPeers, prazo, didNotParticipate, formula, session, isLoading, error };
+  return {
+    peers,
+    setPeers,
+    prazo,
+    didNotParticipate,
+    chamadaRealizada,
+    formula,
+    session,
+    isLoading,
+    error,
+  };
 }
 
 function usePeerScoreHandlers(
   sessionId: string,
   setPeers: React.Dispatch<React.SetStateAction<PeerEvaluationState[]>>,
-  draftTimersRef: React.RefObject<Record<string, ReturnType<typeof setTimeout>>>,
 ) {
+  const draftTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => {
+    const timers = draftTimersRef.current;
+    return () => Object.values(timers).forEach(clearTimeout);
+  }, []);
+
   const setScore = (peerId: string, critId: string, s: number) => {
     setPeers((prev) => {
       const next = prev.map((p) =>
@@ -158,21 +200,26 @@ function usePeerScoreHandlers(
     });
   };
 
-  return { setScore, setCargoScore };
+  const clearTimers = useCallback(() => {
+    Object.values(draftTimersRef.current).forEach(clearTimeout);
+  }, []);
+
+  return { setScore, setCargoScore, clearTimers };
 }
 
 export function useStudentPeerEvaluation(sessionId: string) {
   const navigate = useNavigate();
   const { notify } = useToast();
-  const { peers, setPeers, prazo, didNotParticipate, formula, session, isLoading, error } =
-    usePeerEvaluationData(sessionId);
-  const draftTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  const { setScore, setCargoScore } = usePeerScoreHandlers(sessionId, setPeers, draftTimersRef);
+  const data = usePeerEvaluationData(sessionId);
+  const { setScore, setCargoScore, clearTimers } = usePeerScoreHandlers(sessionId, data.setPeers);
 
-  useEffect(() => {
-    const timers = draftTimersRef.current;
-    return () => Object.values(timers).forEach(clearTimeout);
-  }, []);
+  const {
+    run: saveAll,
+    isLoading: isSaving,
+    error: saveError,
+  } = useAsyncAction(
+    useCallback(() => savePendingPeers(sessionId, data.peers), [sessionId, data.peers]),
+  );
 
   const handleSave = async () => {
     clearTimers();
@@ -187,11 +234,11 @@ export function useStudentPeerEvaluation(sessionId: string) {
     data.didNotParticipate || Boolean(data.error && /não participou/i.test(data.error.message));
 
   return {
-    peers,
-    prazo,
-    formula,
-    session,
-    isLoading,
+    peers: data.peers,
+    prazo: data.prazo,
+    formula: data.formula,
+    session: data.session,
+    isLoading: data.isLoading,
     isSaving,
     error: data.error,
     saveError,
