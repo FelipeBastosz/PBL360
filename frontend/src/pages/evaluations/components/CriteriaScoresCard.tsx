@@ -77,7 +77,6 @@ function EditableScoreInput({
       type="text"
       inputMode="decimal"
       aria-label={`Nota de ${label}`}
-      value={isEditing ? raw : String(value)}
       value={isEditing ? raw : formatGrade(value)}
       onFocus={handleFocus}
       onBlur={handleBlur}
