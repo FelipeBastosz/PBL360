@@ -45,3 +45,22 @@ export function triggerBlobDownload(blob: Blob, filename: string) {
   document.body.removeChild(link);
   window.URL.revokeObjectURL(url);
 }
+
+export function toSlug(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+export function buildSessionReportFileName(
+  sessionTitle: string | undefined,
+  sessionId: string,
+  formato: 'PDF' | 'XLSX',
+): string {
+  const cleanTitle = sessionTitle ? toSlug(sessionTitle) : '';
+  const identifier = cleanTitle || sessionId;
+  return `relatorio-sessao-${identifier}.${formato.toLowerCase()}`;
+}
