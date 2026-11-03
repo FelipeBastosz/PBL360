@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildSessionReportFileName, toSlug } from './sessionReportDownload';
+import { buildSessionReportFileName } from './sessionReportDownload';
+import { toSlug } from '@/utils/slug';
 
 describe('sessionReportDownload', () => {
   describe('toSlug', () => {
