@@ -67,7 +67,7 @@ describe('SessionFeedbackPage', () => {
     renderPage();
 
     expect(await screen.findByTestId('badge-novo')).toBeInTheDocument();
-    expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 8.5');
+    expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 8,5');
   });
 
   it('renders empty state when tutor has not sent feedback yet', async () => {

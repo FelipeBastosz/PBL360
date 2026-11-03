@@ -47,7 +47,7 @@ test.describe('Problem feedback scores', () => {
   test('shows the individual score with one decimal place', async ({ page }) => {
     await openProblemFeedbacks(page, 9.54);
 
-    await expect(page.getByTestId('feedback-nota')).toHaveText('Nota 9.5');
+    await expect(page.getByTestId('feedback-nota')).toHaveText('Nota 9,5');
     await expect(page.getByText('Seu feedback individual está disponível.')).toBeVisible();
   });
 
@@ -106,7 +106,7 @@ test.describe('Problem feedback scores', () => {
 
     await page.goto('/turmas/sala-1/problemas/prob-1/feedbacks');
 
-    await expect(page.getByTestId('feedback-nota-final')).toHaveText('Nota final 8.8');
-    await expect(page.getByTestId('feedback-nota')).toHaveText('Nota 9.3');
+    await expect(page.getByTestId('feedback-nota-final')).toHaveText('Nota final 8,8');
+    await expect(page.getByTestId('feedback-nota')).toHaveText('Nota 9,3');
   });
 });

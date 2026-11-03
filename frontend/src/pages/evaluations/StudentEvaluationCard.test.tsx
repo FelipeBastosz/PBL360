@@ -52,7 +52,7 @@ describe('StudentEvaluationCard', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Enviada · 9.5')).toBeInTheDocument();
+    expect(screen.getByText('Enviada · 9,5')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Editar' })).toHaveAttribute('href', '/avaliar/1');
   });
 

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import type { SessionEvaluationSummary } from '@/types/evaluation';
 import type { StudentSessionGrade } from '@/types/grades';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { formatGrade } from '@/utils/gradeFormatters';
+import { formatGrade } from '@/utils/formatGrade';
 
 type StudentCardProps = {
   student: SessionEvaluationSummary;
@@ -60,7 +60,7 @@ function EvaluationBadges({
       )}
       {student.status === 'ENVIADA' && (
         <span className="inline-flex items-center rounded-md border border-success/30 bg-success-soft px-2 py-0.5 text-xs font-semibold text-success">
-          Enviada {student.notaSessao !== null && `· ${student.notaSessao.toFixed(1)}`}
+          Enviada {student.notaSessao !== null && `· ${formatGrade(student.notaSessao)}`}
         </span>
       )}
     </div>

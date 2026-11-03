@@ -84,8 +84,8 @@ describe('ProblemFeedbacksPage', () => {
     // Verify sections and ordering
     expect(await screen.findByRole('heading', { name: 'Feedback Individual' })).toBeInTheDocument();
     expect(screen.getByText('Desempenho individual excelente.')).toBeInTheDocument();
-    expect(screen.getByText('Nota 9.0')).toBeInTheDocument();
-    expect(screen.getByTestId('feedback-nota-final')).toHaveTextContent('Nota final 8.7');
+    expect(screen.getByText('Nota 9,0')).toBeInTheDocument();
+    expect(screen.getByTestId('feedback-nota-final')).toHaveTextContent('Nota final 8,7');
     expect(screen.getByTestId('badge-novo')).toBeInTheDocument();
 
     expect(screen.getByRole('heading', { name: 'Geral da Turma' })).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe('ProblemFeedbacksPage', () => {
 
     expect(screen.getByRole('heading', { name: 'Por Sessão' })).toBeInTheDocument();
     expect(screen.getByText('Bom início de abertura.')).toBeInTheDocument();
-    expect(screen.getByText('Nota 8.5')).toBeInTheDocument();
+    expect(screen.getByText('Nota 8,5')).toBeInTheDocument();
     expect(screen.getByText('Feedback ainda não disponível para esta sessão.')).toBeInTheDocument();
   });
 
@@ -122,7 +122,7 @@ describe('ProblemFeedbacksPage', () => {
 
     renderPage();
 
-    expect(await screen.findByTestId('feedback-nota-final')).toHaveTextContent('Nota final 8.8');
+    expect(await screen.findByTestId('feedback-nota-final')).toHaveTextContent('Nota final 8,8');
     expect(
       screen.queryByText('Nenhum feedback disponível para este problema ainda.'),
     ).not.toBeInTheDocument();

@@ -1,5 +1,5 @@
 import type { SessionColumn } from '@/types/grades';
-import { formatGrade } from '@/utils/gradeFormatters';
+import { formatGrade } from '@/utils/formatGrade';
 
 type ProblemGradesTableFooterProps = {
   sessoes: SessionColumn[];

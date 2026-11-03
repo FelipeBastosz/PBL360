@@ -85,7 +85,24 @@ describe('StudentEvaluationPage', () => {
       await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Nota final da sessão')).toBeInTheDocument();
-    expect(screen.getByText('6.9')).toBeInTheDocument();
+    expect(screen.getByText('6,9')).toBeInTheDocument();
+  });
+
+  it('shows the grade typed by the tutor with a comma', async () => {
+    renderPage();
+
+    const input = await screen.findByRole('textbox', { name: 'Nota de Seguimento' });
+    expect(input).toHaveValue('8,0');
+
+    await userEvent.clear(input);
+    await userEvent.type(input, '7,5');
+    await userEvent.tab();
+    expect(input).toHaveValue('7,5');
+
+    await userEvent.clear(input);
+    await userEvent.type(input, '6.25');
+    await userEvent.tab();
+    expect(input).toHaveValue('6,3');
   });
 
   it('saves empty feedback when cleared by user', async () => {

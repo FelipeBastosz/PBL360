@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatGrade } from '@/utils/formatGrade';
 
 type Props = {
   value: number;
@@ -9,10 +10,6 @@ type Props = {
   step?: number;
   disabled?: boolean;
 };
-
-function formatWithComma(val: number): string {
-  return val.toFixed(1).replace('.', ',');
-}
 
 function clampScore(raw: string, min: number, max: number): number {
   const parsed = parseFloat(raw.replace(',', '.'));
@@ -51,7 +48,7 @@ function EditableScoreInput({
 
   function handleFocus() {
     setIsEditing(true);
-    setRaw(formatWithComma(value));
+    setRaw(formatGrade(value));
   }
 
   function handleBlur() {
@@ -71,7 +68,7 @@ function EditableScoreInput({
       type="text"
       inputMode="decimal"
       disabled={disabled}
-      value={isEditing ? raw : formatWithComma(value)}
+      value={isEditing ? raw : formatGrade(value)}
       onFocus={handleFocus}
       onChange={handleChange}
       onBlur={handleBlur}
