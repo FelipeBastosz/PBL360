@@ -130,23 +130,25 @@ function EvaluationCriteriaForm({
   return (
     <>
       {evalState.data && (
-        <div className={cn(CARD_CLASS, 'px-4')}>
-          {evalState.data.criterios.map((c) => (
-            <CriterionStepper
-              key={c.id}
-              criterion={c}
-              score={evalState.scores[c.id] ?? 0}
+        <div className={cn(CARD_CLASS, 'p-4')}>
+          <div className="divide-y divide-black/5">
+            {evalState.data.criterios.map((c) => (
+              <CriterionStepper
+                key={c.id}
+                criterion={c}
+                score={evalState.scores[c.id] ?? 0}
+                disabled={isSubmitted || evalState.isSaving}
+                onChange={evalState.setScore}
+              />
+            ))}
+            <SelfRoleCriterionStepper
+              papel={evalState.papel}
+              formula={evalState.formula}
+              score={evalState.notaCargo ?? 0}
               disabled={isSubmitted || evalState.isSaving}
-              onChange={evalState.setScore}
+              onChange={evalState.setNotaCargo}
             />
-          ))}
-          <SelfRoleCriterionStepper
-            papel={evalState.papel}
-            formula={evalState.formula}
-            score={evalState.notaCargo ?? 0}
-            disabled={isSubmitted || evalState.isSaving}
-            onChange={evalState.setNotaCargo}
-          />
+          </div>
           <EvaluationFinalScore
             criteria={evalState.data.criterios}
             scores={evalState.scores}
