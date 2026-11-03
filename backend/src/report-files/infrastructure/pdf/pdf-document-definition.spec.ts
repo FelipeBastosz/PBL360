@@ -92,17 +92,17 @@ describe('buildPdfDefinition', () => {
             [
               { text: 'Ana Souza' },
               { text: '00123' },
-              { text: '8,50' },
-              { text: '9,00' },
-              { text: '8,75' },
-              { text: '8,62' },
+              { text: '8,5' },
+              { text: '9,0' },
+              { text: '8,8' },
+              { text: '8,6' },
             ],
             [
               { text: LONG_STUDENT_NAME },
               { text: '04567' },
-              { text: '7,00' },
+              { text: '7,0' },
               { text: MISSING_VALUE_LABEL, style: 'missing' },
-              { text: '6,50' },
+              { text: '6,5' },
               { text: MISSING_VALUE_LABEL, style: 'missing' },
             ],
             [{ text: '=SOMA(1;1)' }, {}, {}, {}, {}, {}],
@@ -195,7 +195,7 @@ describe('buildPdfDefinition', () => {
 
     const table = content[3] as { table: { body: Array<Array<{ text: string }>> } };
 
-    expect(table.table.body[1]?.[3]?.text).toBe('7,50');
+    expect(table.table.body[1]?.[3]?.text).toBe('7,5');
     expect(table.table.body[1]?.[5]?.text).toBe('0');
   });
 

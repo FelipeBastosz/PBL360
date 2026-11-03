@@ -24,6 +24,7 @@ export async function getStudentEvaluationSummary(
   const [row] = await manager.query<CountRow[]>(STUDENT_EVALUATION_COUNTS, [sessionId, studentId]);
   return {
     participating: row?.participating ?? false,
+    tutorEvaluationSubmitted: row?.tutorEvaluationSubmitted ?? false,
     peerSubmitted: Number(row?.peerSubmitted ?? 0),
     peerTotal: Number(row?.peerTotal ?? 0),
   };

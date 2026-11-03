@@ -60,10 +60,8 @@ async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
     Promise.resolve(evaluationService.getMyEvaluationsSummary(sessionId)).catch(() => null),
   ]);
 
-  const didNotParticipate =
-    response.participou === false ||
-    summary?.participou === false ||
-    summary?.autoavaliacao.status === 'NAO_PARTICIPOU';
+  const chamadaRealizada = response.chamadaRealizada ?? true;
+  const isRollCallDone = Boolean(chamadaRealizada);
 
   if (didNotParticipate || !response.liberada || response.colegas.length === 0) {
     return { peers: [], prazo: response.prazo, didNotParticipate, formula: response.formula };
@@ -171,19 +169,13 @@ export function useStudentPeerEvaluation(sessionId: string) {
   const draftTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const { setScore, setCargoScore } = usePeerScoreHandlers(sessionId, setPeers, draftTimersRef);
 
-  const {
-    run: saveAll,
-    isLoading: isSaving,
-    error: saveError,
-  } = useAsyncAction(useCallback(() => savePendingPeers(sessionId, peers), [sessionId, peers]));
-
   useEffect(() => {
     const timers = draftTimersRef.current;
     return () => Object.values(timers).forEach(clearTimeout);
   }, []);
 
   const handleSave = async () => {
-    Object.values(draftTimersRef.current).forEach(clearTimeout);
+    clearTimers();
     const res = await saveAll();
     if (res.ok) {
       notify({ tone: 'success', message: 'Avaliações de colegas enviadas com sucesso!' });
@@ -192,7 +184,7 @@ export function useStudentPeerEvaluation(sessionId: string) {
   };
 
   const isNonParticipant =
-    didNotParticipate || Boolean(error && /não participou/i.test(error.message));
+    data.didNotParticipate || Boolean(data.error && /não participou/i.test(data.error.message));
 
   return {
     peers,
@@ -201,10 +193,11 @@ export function useStudentPeerEvaluation(sessionId: string) {
     session,
     isLoading,
     isSaving,
-    error,
+    error: data.error,
     saveError,
     didNotParticipate: isNonParticipant,
-    canSave: !isNonParticipant && peers.some((p) => !p.isSubmitted),
+    chamadaRealizada: data.chamadaRealizada,
+    canSave: data.chamadaRealizada && !isNonParticipant && data.peers.some((p) => !p.isSubmitted),
     handleSave,
     setScore,
     setCargoScore,

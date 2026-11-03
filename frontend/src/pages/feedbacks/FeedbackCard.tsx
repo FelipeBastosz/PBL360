@@ -44,7 +44,7 @@ export function FeedbackCard({
               {tag}
             </span>
           )}
-          {typeof nota === 'number' && (
+          {typeof nota === 'number' && Number.isFinite(nota) && (
             <span
               data-testid="feedback-nota"
               className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-900 border border-brand-200"

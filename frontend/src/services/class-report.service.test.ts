@@ -82,4 +82,20 @@ describe('classReportService', () => {
       responseType: 'blob',
     });
   });
+
+  it('exports class final report forwarding optional query parameters', async () => {
+    const fakeBlob = new Blob(['pdf-content'], { type: 'application/pdf' });
+    const adapter = respondWith(fakeBlob);
+
+    await expect(
+      classReportService.exportFinalReport('room-1', 'PDF', { ocultarNomes: true }),
+    ).resolves.toEqual(fakeBlob);
+
+    expect(sentRequest(adapter)).toMatchObject({
+      method: 'get',
+      url: '/salas/room-1/relatorio-final/exportacao',
+      params: { formato: 'PDF', ocultarNomes: true },
+      responseType: 'blob',
+    });
+  });
 });

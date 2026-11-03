@@ -60,16 +60,32 @@ describe('FeedbackCard', () => {
     expect(screen.getByText(/editado em/i)).toBeInTheDocument();
   });
 
-  it('renders score when provided', () => {
+  it('renders score rounded to one decimal place', () => {
     render(
       <FeedbackCard
         autor={baseAuthor}
         texto="Feedback individual com nota"
         criadoEm="2026-04-10T14:30:00Z"
-        nota={9.5}
+        nota={9.54}
       />,
     );
 
     expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 9.5');
+  });
+
+  it('hides an unreleased score without hiding the feedback', () => {
+    render(
+      <FeedbackCard
+        autor={baseAuthor}
+        texto="Feedback individual aguardando liberação da nota."
+        criadoEm="2026-04-10T14:30:00Z"
+        nota={null}
+      />,
+    );
+
+    expect(screen.queryByTestId('feedback-nota')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Feedback individual aguardando liberação da nota.'),
+    ).toBeInTheDocument();
   });
 });

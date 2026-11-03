@@ -175,6 +175,27 @@ describe('sessionService', () => {
     });
   });
 
+  it('exports session report forwarding privacy and section options', async () => {
+    const download = respondWith(new Blob(['%PDF']));
+    const options = {
+      ocultarNome: true,
+      mostrarFeedBack: false,
+      mostrarMarcacoes: true,
+    };
+    await sessionService.exportSessionReport('s1', 'XLSX', options);
+    expect(sent(download)).toMatchObject({
+      method: 'get',
+      url: '/sessoes/s1/relatorio/exportacao',
+      params: {
+        formato: 'XLSX',
+        ocultarNome: true,
+        mostrarFeedBack: false,
+        mostrarMarcacoes: true,
+      },
+      responseType: 'blob',
+    });
+  });
+
   it('fetches release status for a session', async () => {
     const mockReleases = {
       autoavaliacao: { liberada: true, prazo: null, enviadas: 4, esperadas: 12 },
