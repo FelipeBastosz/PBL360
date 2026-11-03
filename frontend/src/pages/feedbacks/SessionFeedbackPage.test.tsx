@@ -42,6 +42,7 @@ describe('SessionFeedbackPage', () => {
       criadoEm: '2026-04-12T10:00:00Z',
       editadoEm: null,
       novo: false,
+      nota: null,
     });
 
     renderPage();
@@ -60,11 +61,13 @@ describe('SessionFeedbackPage', () => {
       criadoEm: '2026-04-12T10:00:00Z',
       editadoEm: null,
       novo: true,
+      nota: 8.5,
     });
 
     renderPage();
 
     expect(await screen.findByTestId('badge-novo')).toBeInTheDocument();
+    expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 8.5');
   });
 
   it('renders empty state when tutor has not sent feedback yet', async () => {

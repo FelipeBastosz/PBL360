@@ -59,7 +59,7 @@ describe('StudentPeerEvaluationPage', () => {
     vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
       autoavaliacao: { liberada: true, prazo: null, status: 'PENDENTE' },
       pares: { liberada: true, prazo: null, avaliados: 0, total: 1 },
-      feedback: { disponivel: false, novo: false },
+      feedback: { disponivel: false, novo: false, avaliacaoTutorEnviada: false },
     });
   });
 

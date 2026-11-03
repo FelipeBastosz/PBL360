@@ -27,6 +27,7 @@ describe('GetStudentEvaluationSummaryUseCase', () => {
     });
     evaluations.getStudentEvaluationSummary.mockResolvedValue({
       participating: true,
+      tutorEvaluationSubmitted: true,
       peerSubmitted: 1,
       peerTotal: 2,
     });
@@ -40,10 +41,29 @@ describe('GetStudentEvaluationSummaryUseCase', () => {
   });
 
   it('returns unavailable feedback when none is registered', async () => {
+    evaluations.getStudentEvaluationSummary.mockResolvedValue({
+      participating: true,
+      tutorEvaluationSubmitted: false,
+      peerSubmitted: 1,
+      peerTotal: 2,
+    });
     await expect(useCase.execute('session-1', 'student-1')).resolves.toMatchObject({
-      feedback: { available: false, new: false },
+      feedback: { available: false, new: false, tutorEvaluationSubmitted: false },
     });
     expect(feedbacks.findStudentSessionFeedbackReadAt).not.toHaveBeenCalled();
+  });
+
+  it('reports when the tutor evaluation is submitted before feedback is available', async () => {
+    evaluations.getStudentEvaluationSummary.mockResolvedValue({
+      participating: true,
+      tutorEvaluationSubmitted: true,
+      peerSubmitted: 1,
+      peerTotal: 2,
+    });
+
+    await expect(useCase.execute('session-1', 'student-1')).resolves.toMatchObject({
+      feedback: { available: false, tutorEvaluationSubmitted: true },
+    });
   });
 
   it('marks feedback new until the current version has been read', async () => {
@@ -56,14 +76,22 @@ describe('GetStudentEvaluationSummaryUseCase', () => {
     feedbacks.findStudentSessionFeedbackReadAt.mockResolvedValue(null);
 
     await expect(useCase.execute('session-1', 'student-1')).resolves.toMatchObject({
-      feedback: { available: true, new: true },
+      feedback: {
+        available: true,
+        new: true,
+        tutorEvaluationSubmitted: true,
+      },
     });
 
     feedbacks.findStudentSessionFeedbackReadAt.mockResolvedValue(
       new Date('2026-10-10T12:00:00.000Z'),
     );
     await expect(useCase.execute('session-1', 'student-1')).resolves.toMatchObject({
-      feedback: { available: true, new: false },
+      feedback: {
+        available: true,
+        new: false,
+        tutorEvaluationSubmitted: true,
+      },
     });
   });
 
@@ -78,7 +106,11 @@ describe('GetStudentEvaluationSummaryUseCase', () => {
     );
 
     await expect(useCase.execute('session-1', 'student-1')).resolves.toMatchObject({
-      feedback: { available: true, new: true },
+      feedback: {
+        available: true,
+        new: true,
+        tutorEvaluationSubmitted: true,
+      },
     });
   });
 });
