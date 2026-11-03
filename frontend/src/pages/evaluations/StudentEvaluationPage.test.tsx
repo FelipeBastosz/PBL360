@@ -85,7 +85,7 @@ describe('StudentEvaluationPage', () => {
       await screen.findByRole('heading', { name: 'Notas do aluno: Ana Souza' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Nota final da sessão')).toBeInTheDocument();
-    expect(screen.getByText('6.9')).toBeInTheDocument();
+    expect(screen.getByText('6,9')).toBeInTheDocument();
   });
 
   it('saves empty feedback when cleared by user', async () => {

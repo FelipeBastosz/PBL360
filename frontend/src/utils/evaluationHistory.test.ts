@@ -31,9 +31,9 @@ const adjustedItem: StudentEvaluationHistoryItem = {
 const notSubmittedItem: StudentEvaluationHistoryItem = { ...baseItem, notaAluno: null };
 
 describe('formatScore', () => {
-  it('formats with comma and up to two decimals', () => {
+  it('formats with comma and a single decimal place', () => {
     expect(formatScore(9)).toBe('9,0');
-    expect(formatScore(8.25)).toBe('8,25');
+    expect(formatScore(8.25)).toBe('8,3');
   });
 
   it('returns a dash when there is no score', () => {

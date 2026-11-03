@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { EvaluationCriterion } from '@/types/evaluation';
+import { formatGrade } from '@/utils/formatGrade';
 
 type Props = {
   studentName: string;
@@ -27,7 +28,7 @@ function FinalScoreRow({ score }: { score: number }) {
       <span className="text-sm font-bold text-brand-900">Nota final da sessão</span>
       <div className="flex items-center gap-1.5">
         <span className="rounded-xl bg-brand-900 px-3.5 py-1 text-base font-bold text-white shadow-xs">
-          {score.toFixed(1)}
+          {formatGrade(score)}
         </span>
         <span className="text-xs text-muted">/ 10</span>
       </div>

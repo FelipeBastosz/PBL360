@@ -81,7 +81,7 @@ describe('ProblemFeedbacksPage', () => {
     // Verify sections and ordering
     expect(await screen.findByRole('heading', { name: 'Feedback Individual' })).toBeInTheDocument();
     expect(screen.getByText('Desempenho individual excelente.')).toBeInTheDocument();
-    expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 9.0');
+    expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 9,0');
     expect(screen.getByTestId('badge-novo')).toBeInTheDocument();
 
     expect(screen.getByRole('heading', { name: 'Geral da Turma' })).toBeInTheDocument();

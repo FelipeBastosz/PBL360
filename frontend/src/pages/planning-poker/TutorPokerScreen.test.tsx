@@ -97,7 +97,7 @@ describe('TutorPokerScreen', () => {
     renderTutor(revealed());
 
     expect(screen.getByText('8,5')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Lugar 2: 8' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Lugar 2: 8,0' })).toBeInTheDocument();
     expect(screen.getByText('Bruno')).toBeInTheDocument();
   });
 

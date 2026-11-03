@@ -97,6 +97,19 @@ describe('SessionEvaluationHistoryPage', () => {
     vi.mocked(evaluationHistoryService.list).mockResolvedValue({ alunos: students });
   });
 
+  it('shows every score with a single decimal place and a comma', async () => {
+    vi.mocked(evaluationHistoryService.list).mockResolvedValue({
+      alunos: [{ ...students[0], notaAluno: 8.25, notaTutor: 7.333 }],
+    });
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Elisa Nunes' });
+    const elisa = cardOf('Elisa Nunes');
+    expect(within(elisa).getByText('8,3')).toBeInTheDocument();
+    expect(within(elisa).getByText('7,3')).toBeInTheDocument();
+    expect(elisa).not.toHaveTextContent(/\d[.,]\d{2}/);
+  });
+
   it('compares the student score with the tutor adjustment', async () => {
     renderPage();
 
