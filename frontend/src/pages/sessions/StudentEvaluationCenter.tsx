@@ -74,21 +74,30 @@ function EvaluationCard({ title, badge, deadline, Icon, path }: EvaluationCardPr
   );
 }
 
-function resolveSelfBadge(summary?: StudentEvaluationSummaryResponse) {
-  if (summary?.autoavaliacao.status === 'NAO_PARTICIPOU') return 'Não participou';
-  if (!summary?.autoavaliacao.liberada) return 'Bloqueada';
+function resolveSelfBadge(summary?: StudentEvaluationSummaryResponse, isRollCallDone = false) {
+  // Se a chamada não foi feita, ou se não foi liberada:
+  if (!isRollCallDone || !summary?.autoavaliacao.liberada) {
+    // Se a chamada já foi feita e o aluno tomou falta, mostra que não participou:
+    if (isRollCallDone && summary?.autoavaliacao.status === 'NAO_PARTICIPOU') {
+      return 'Não participou';
+    }
+    return 'Bloqueada';
+  }
+
+  if (summary.autoavaliacao.status === 'NAO_PARTICIPOU') return 'Não participou';
   if (summary.autoavaliacao.status === 'ENVIADA') return 'Enviada';
   if (summary.autoavaliacao.status === 'RASCUNHO') return 'Rascunho';
   return 'Pendente';
 }
 
-function resolvePeerBadge(summary?: StudentEvaluationSummaryResponse) {
-  if (!summary?.pares.liberada) return 'Bloqueada';
+function resolvePeerBadge(summary?: StudentEvaluationSummaryResponse, isRollCallDone = false) {
+  if (!isRollCallDone || !summary?.pares.liberada) return 'Bloqueada';
   return `${summary.pares.avaliados}/${summary.pares.total} avaliados`;
 }
 
 type EvaluationCardsListProps = {
   summary: StudentEvaluationSummaryResponse | null;
+  isRollCallDone: boolean;
   selfPath?: string;
   peerPath?: string;
   feedbackPath?: string;
@@ -96,6 +105,7 @@ type EvaluationCardsListProps = {
 
 function EvaluationCardsList({
   summary,
+  isRollCallDone,
   selfPath,
   peerPath,
   feedbackPath,
@@ -104,14 +114,14 @@ function EvaluationCardsList({
     <ul className="flex flex-col gap-3">
       <EvaluationCard
         title="Autoavaliação"
-        badge={resolveSelfBadge(summary ?? undefined)}
+        badge={resolveSelfBadge(summary ?? undefined, isRollCallDone)}
         deadline={summary?.autoavaliacao.prazo}
         Icon={UserCircleIcon}
         path={selfPath}
       />
       <EvaluationCard
         title="Avaliar Colegas"
-        badge={resolvePeerBadge(summary ?? undefined)}
+        badge={resolvePeerBadge(summary ?? undefined, isRollCallDone)}
         deadline={summary?.pares.prazo}
         Icon={UsersIcon}
         path={peerPath}
@@ -126,26 +136,38 @@ function EvaluationCardsList({
   );
 }
 
-type StudentEvaluationCenterProps = {
-  children?: ReactNode;
-  feedbackHref?: string;
-};
-
-export function StudentEvaluationCenter({ children, feedbackHref }: StudentEvaluationCenterProps) {
-  const { sessionId = '' } = useParams<{ sessionId: string }>();
+function useStudentEvaluationCenterData(sessionId: string) {
   const [summary, setSummary] = useState<StudentEvaluationSummaryResponse | null>(null);
+  const [isRollCallDone, setIsRollCallDone] = useState(false);
 
-  const { run: loadSummary } = useAsyncAction(
-    useCallback(() => evaluationService.getMyEvaluationsSummary(sessionId), [sessionId]),
-  );
+  const fetchCenterData = useCallback(async () => {
+    const [summaryRes, peersRes] = await Promise.all([
+      evaluationService.getMyEvaluationsSummary(sessionId).catch(() => null),
+      evaluationService.listSessionPeers(sessionId).catch(() => null),
+    ]);
+    return { summary: summaryRes, chamadaRealizada: Boolean(peersRes?.chamadaRealizada) };
+  }, [sessionId]);
+
+  const { run: loadData } = useAsyncAction(fetchCenterData);
 
   useEffect(() => {
-    if (sessionId) loadSummary().then((r) => r.ok && setSummary(r.data));
-  }, [sessionId, loadSummary]);
+    if (!sessionId) return;
+    loadData().then((r) => {
+      if (r.ok && r.data) {
+        setSummary(r.data.summary);
+        setIsRollCallDone(r.data.chamadaRealizada);
+      }
+    });
+  }, [sessionId, loadData]);
 
-  const didNotParticipate =
-    summary?.participou === false || summary?.autoavaliacao.status === 'NAO_PARTICIPOU';
+  return { summary, isRollCallDone };
+}
 
+function getEvaluationPaths(
+  sessionId: string,
+  summary: StudentEvaluationSummaryResponse | null,
+  didNotParticipate: boolean,
+) {
   const selfPath =
     !didNotParticipate && summary?.autoavaliacao.liberada && sessionId
       ? ROUTES.studentSelfEvaluation.replace(':sessionId', sessionId)
@@ -155,6 +177,24 @@ export function StudentEvaluationCenter({ children, feedbackHref }: StudentEvalu
     !didNotParticipate && summary?.pares.liberada && sessionId
       ? ROUTES.studentPeerEvaluation.replace(':sessionId', sessionId)
       : undefined;
+
+  return { selfPath, peerPath };
+}
+
+type StudentEvaluationCenterProps = {
+  children?: ReactNode;
+  feedbackHref?: string;
+};
+
+export function StudentEvaluationCenter({ children, feedbackHref }: StudentEvaluationCenterProps) {
+  const { sessionId = '' } = useParams<{ sessionId: string }>();
+  const { summary, isRollCallDone } = useStudentEvaluationCenterData(sessionId);
+
+  const didNotParticipate =
+    isRollCallDone &&
+    (summary?.participou === false || summary?.autoavaliacao.status === 'NAO_PARTICIPOU');
+
+  const { selfPath, peerPath } = getEvaluationPaths(sessionId, summary, didNotParticipate);
 
   return (
     <section aria-labelledby="student-evaluations-title" className="flex flex-col gap-3">
@@ -167,6 +207,7 @@ export function StudentEvaluationCenter({ children, feedbackHref }: StudentEvalu
       ) : (
         <EvaluationCardsList
           summary={summary}
+          isRollCallDone={isRollCallDone}
           selfPath={selfPath}
           peerPath={peerPath}
           feedbackPath={summary?.feedback.disponivel ? feedbackHref : undefined}

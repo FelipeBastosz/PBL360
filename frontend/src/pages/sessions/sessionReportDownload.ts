@@ -47,8 +47,6 @@ export function triggerBlobDownload(blob: Blob, filename: string) {
   window.URL.revokeObjectURL(url);
 }
 
-export { toSlug };
-
 export function buildSessionReportFileName(
   sessionTitle: string | undefined,
   sessionId: string,

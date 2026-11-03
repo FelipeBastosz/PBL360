@@ -1,4 +1,5 @@
 import { EvaluationStatus } from '@/evaluations/domain/enums/evaluation-status.enum';
+import { roundGrade } from '@/shared/utils/grade-precision';
 import type { GradesResponseDto } from '../../dtos/grades-response.dto';
 import type { ProblemGradesWithSessionGrades } from './get-problem-grades.helper';
 
@@ -20,8 +21,6 @@ const ABSENCE_LABELS: Record<string, string> = {
   AUSENTE: 'Ausente',
   JUSTIFICADA: 'Falta justificada',
 };
-
-const roundGrade = (grade: number): number => Math.round((grade + Number.EPSILON) * 10) / 10;
 
 function exactGradeOf(
   sessionGrades: ProblemGradesWithSessionGrades['sessionGrades'],
