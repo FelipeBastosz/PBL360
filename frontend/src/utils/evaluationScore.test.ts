@@ -75,6 +75,27 @@ describe('evaluationScore', () => {
       ).toBe(6.8);
     });
 
+    it('applies formula with default 0 role score when student has role but roleScore is null or omitted', () => {
+      // 1 criterion with 10. Default formula 70/30.
+      // Criteria avg = 10, Role = 0 -> (10 * 70 + 0 * 30) / 100 = 7.0
+      expect(
+        calculateSessionScore({
+          criteria: [{ id: 'c1', nome: 'Critério 1', peso: 1, ordem: 1 }],
+          scores: { c1: 10 },
+          roleScore: null,
+          hasRole: true,
+        }),
+      ).toBe(7);
+
+      expect(
+        calculateSessionScore({
+          criteria: [{ id: 'c1', nome: 'Critério 1', peso: 1, ordem: 1 }],
+          scores: { c1: 10 },
+          hasRole: true,
+        }),
+      ).toBe(7);
+    });
+
     it('returns 0 if criteria weights sum to 0', () => {
       expect(
         calculateSessionScore({

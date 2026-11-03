@@ -21,7 +21,7 @@ export function calculateSessionScore({
   scores,
   roleScore,
   formula,
-  hasRole = true,
+  hasRole,
 }: CalculateSessionScoreParams): number {
   const totalWeight = criteria.reduce((sum, c) => sum + c.peso, 0);
   if (totalWeight <= 0) return 0;
@@ -32,11 +32,12 @@ export function calculateSessionScore({
   }, 0);
   const criteriaAverage = weightedSum / totalWeight;
 
-  const effectiveHasRole = hasRole && roleScore !== undefined && roleScore !== null;
+  const effectiveHasRole = hasRole ?? (roleScore !== undefined && roleScore !== null);
   if (!effectiveHasRole) {
     return Math.round((criteriaAverage + Number.EPSILON) * 10) / 10;
   }
 
+  const effectiveRoleScore = roleScore ?? 0;
   const criteriaWeight = formula?.criteriaWeight ?? 70;
   const roleWeight = formula?.roleWeight ?? 30;
   const totalFormulaWeight = criteriaWeight + roleWeight;
@@ -46,6 +47,6 @@ export function calculateSessionScore({
   }
 
   const finalScore =
-    (criteriaAverage * criteriaWeight + roleScore * roleWeight) / totalFormulaWeight;
+    (criteriaAverage * criteriaWeight + effectiveRoleScore * roleWeight) / totalFormulaWeight;
   return Math.round((finalScore + Number.EPSILON) * 10) / 10;
 }

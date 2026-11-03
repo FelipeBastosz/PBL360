@@ -86,7 +86,8 @@ function applyFetchedData(
   fbData: FetchedFeedback,
   cached: ReturnType<typeof loadStoredDraft>,
 ) {
-  const backendCargo = evalData.notaCargo ?? evalData.adicionalAplicado ?? null;
+  const hasPapel = Boolean(evalData.papel);
+  const backendCargo = evalData.notaCargo ?? evalData.adicionalAplicado ?? (hasPapel ? 0 : null);
   const backendScores = toScoresMap(evalData.itens);
   const backendFeedback = fbData?.texto || '';
   return {

@@ -55,4 +55,13 @@ describe('EvaluationFinalScore', () => {
 
     expect(screen.getByText('8.0')).toBeInTheDocument();
   });
+
+  it('applies role formula defaulting role score to 0 when student has role but roleScore is omitted', () => {
+    // criteria average = 10.0, role = 0 -> (10.0 * 70 + 0 * 30) / 100 = 7.0
+    render(
+      <EvaluationFinalScore criteria={mockCriteria} scores={{ '1': 10, '2': 10 }} hasRole={true} />,
+    );
+
+    expect(screen.getByText('7.0')).toBeInTheDocument();
+  });
 });

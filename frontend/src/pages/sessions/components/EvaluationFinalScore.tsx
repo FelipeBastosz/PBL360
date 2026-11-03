@@ -15,7 +15,7 @@ export function EvaluationFinalScore({
   scores,
   roleScore,
   formula,
-  hasRole = true,
+  hasRole,
   bonus,
 }: EvaluationFinalScoreProps) {
   const totalWeight = criteria.reduce((sum, c) => sum + c.peso, 0);

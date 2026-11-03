@@ -49,7 +49,7 @@ async function fetchPeerCards(
         criteria: evalData.criterios,
         scores,
         papel: normalizeSessionRole(c.papel),
-        notaCargo: evalData.notaCargo ?? null,
+        notaCargo: evalData.notaCargo ?? (c.papel ? 0 : null),
       };
     }),
   );
@@ -97,7 +97,7 @@ async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
 
 const toPeerPayload = (peer: PeerEvaluationState, enviar = true) => ({
   itens: Object.entries(peer.scores).map(([criterioId, nota]) => ({ criterioId, nota })),
-  notaCargo: peer.papel ? peer.notaCargo : null,
+  notaCargo: peer.papel ? (peer.notaCargo ?? 0) : null,
   enviar,
 });
 

@@ -46,6 +46,22 @@ describe('CriteriaScoresCard', () => {
     expect(screen.getByText('7.8')).toBeInTheDocument();
   });
 
+  it('applies role formula defaulting role score to 0 when student has role and notaCargo is not set', () => {
+    render(
+      <CriteriaScoresCard
+        studentName="Maria Santos"
+        papel="COORDENADOR"
+        criteria={[{ id: 'crit-1', nome: 'Comunicação', peso: 1, ordem: 1, notaMaxima: 10 }]}
+        scores={{ 'crit-1': 10 }}
+        onScoreChange={vi.fn()}
+        onCargoScoreChange={vi.fn()}
+      />,
+    );
+
+    // Criteria = 10 (70%), Cargo = 0 (30%) -> (10 * 70 + 0 * 30) / 100 = 7.0
+    expect(screen.getByText('7.0')).toBeInTheDocument();
+  });
+
   it('displays custom formula percentage and computes score with custom weights', () => {
     render(
       <CriteriaScoresCard

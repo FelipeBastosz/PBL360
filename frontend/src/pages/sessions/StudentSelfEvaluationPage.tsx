@@ -118,6 +118,46 @@ function SelfRoleCriterionStepper({
   );
 }
 
+function SelfEvaluationCriteriaCard({
+  evalState,
+  isSubmitted,
+}: {
+  evalState: ReturnType<typeof useStudentSelfEvaluation>;
+  isSubmitted: boolean;
+}) {
+  if (!evalState.data) return null;
+
+  return (
+    <div className={cn(CARD_CLASS, 'p-4')}>
+      <div className="divide-y divide-black/5">
+        {evalState.data.criterios.map((c) => (
+          <CriterionStepper
+            key={c.id}
+            criterion={c}
+            score={evalState.scores[c.id] ?? 0}
+            disabled={isSubmitted || evalState.isSaving}
+            onChange={evalState.setScore}
+          />
+        ))}
+        <SelfRoleCriterionStepper
+          papel={evalState.papel}
+          formula={evalState.formula}
+          score={evalState.notaCargo ?? 0}
+          disabled={isSubmitted || evalState.isSaving}
+          onChange={evalState.setNotaCargo}
+        />
+      </div>
+      <EvaluationFinalScore
+        criteria={evalState.data.criterios}
+        scores={evalState.scores}
+        roleScore={evalState.notaCargo}
+        formula={evalState.formula}
+        hasRole={Boolean(evalState.papel)}
+      />
+    </div>
+  );
+}
+
 function EvaluationCriteriaForm({
   evalState,
   isSubmitted,
@@ -129,35 +169,7 @@ function EvaluationCriteriaForm({
 }) {
   return (
     <>
-      {evalState.data && (
-        <div className={cn(CARD_CLASS, 'p-4')}>
-          <div className="divide-y divide-black/5">
-            {evalState.data.criterios.map((c) => (
-              <CriterionStepper
-                key={c.id}
-                criterion={c}
-                score={evalState.scores[c.id] ?? 0}
-                disabled={isSubmitted || evalState.isSaving}
-                onChange={evalState.setScore}
-              />
-            ))}
-            <SelfRoleCriterionStepper
-              papel={evalState.papel}
-              formula={evalState.formula}
-              score={evalState.notaCargo ?? 0}
-              disabled={isSubmitted || evalState.isSaving}
-              onChange={evalState.setNotaCargo}
-            />
-          </div>
-          <EvaluationFinalScore
-            criteria={evalState.data.criterios}
-            scores={evalState.scores}
-            roleScore={evalState.notaCargo}
-            formula={evalState.formula}
-            hasRole={Boolean(evalState.papel)}
-          />
-        </div>
-      )}
+      <SelfEvaluationCriteriaCard evalState={evalState} isSubmitted={isSubmitted} />
       {!isSubmitted && (
         <Button
           onClick={onOpenConfirm}

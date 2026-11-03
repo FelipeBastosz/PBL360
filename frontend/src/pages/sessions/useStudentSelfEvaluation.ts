@@ -43,7 +43,7 @@ function useSelfEvaluationData(sessionId: string) {
       if (r.ok) {
         setData(r.data);
         setScores(buildInitialScores(r.data));
-        setNotaCargo(r.data.notaCargo ?? null);
+        setNotaCargo(r.data.notaCargo ?? (r.data.papel ? 0 : null));
       }
     });
   }, [loadSession, loadEval]);
