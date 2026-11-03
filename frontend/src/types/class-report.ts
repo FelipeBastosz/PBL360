@@ -30,3 +30,7 @@ export interface ClassFinalReportResponse {
   problemas: ClassReportProblem[];
   alunos: ClassReportStudent[];
 }
+
+export type ExportClassReportOptions = {
+  ocultarNomes?: boolean;
+};

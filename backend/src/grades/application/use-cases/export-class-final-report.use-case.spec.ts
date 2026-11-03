@@ -1,4 +1,8 @@
-import { ReportFileFormat, type ReportFile } from '@/report-files/domain/report-document';
+import {
+  ReportFileFormat,
+  type ReportFile,
+  type ReportTableSection,
+} from '@/report-files/domain/report-document';
 import type { ReportFileGenerator } from '@/report-files/domain/services/report-file-generator';
 import { ReportGenerationError } from '@/report-files/application/errors/report-generation.error';
 import { ForbiddenError, NotFoundError } from '@/shared/errors/application.error';
@@ -38,6 +42,14 @@ describe('ExportClassFinalReportUseCase', () => {
       expect(result).toBe(file);
     },
   );
+
+  it('forwards ocultarNomes to document builder', async () => {
+    await useCase.execute({ ...input, ocultarNomes: true });
+    expect(generator.generate).toHaveBeenCalledTimes(1);
+    const [callArg] = generator.generate.mock.calls[0] ?? [];
+    const table = callArg?.sections[0] as ReportTableSection | undefined;
+    expect(table?.columns.map((col) => col.header)).not.toContain('Aluno');
+  });
 
   it.each([new ForbiddenError('Sem acesso.'), new NotFoundError('Sala não encontrada.')])(
     'does not render files when consolidation denies access: %s',
