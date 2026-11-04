@@ -168,7 +168,7 @@ describe('Received feedbacks (e2e)', () => {
       autor: { id: tutor.id, nome: 'Usuário de Teste' },
       novo: true,
       editadoEm: null,
-      nota: 8,
+      nota: 9,
     });
     expect(Object.keys(first.body as FeedbackBody).sort()).toEqual([
       'autor',
