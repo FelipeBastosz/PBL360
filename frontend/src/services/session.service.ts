@@ -22,6 +22,7 @@ import type {
   EditSessionTablePayload,
   EditSessionTableResponse,
 } from '@/types/session';
+import type { ExportSessionReportOptions } from '@/types/sessionReport';
 import { api } from './api';
 
 const BASE = '/sessoes';
@@ -88,10 +89,19 @@ export const sessionService = {
       .get<Blob>(`${BASE}/${sessionId}/anexos/${attachmentId}`, { responseType: 'blob' })
       .then((r) => r.data),
 
-  exportSessionReport: (sessaoId: string, formato: 'PDF' | 'XLSX') =>
+  exportSessionReport: (
+    sessaoId: string,
+    formato: 'PDF' | 'XLSX',
+    options?: ExportSessionReportOptions,
+  ) =>
     api
       .get<Blob>(`${BASE}/${sessaoId}/relatorio/exportacao`, {
-        params: { formato },
+        params: {
+          formato,
+          ocultarNome: options?.ocultarNome,
+          mostrarFeedBack: options?.mostrarFeedBack,
+          mostrarMarcacoes: options?.mostrarMarcacoes,
+        },
         responseType: 'blob',
       })
       .then((r) => r.data),

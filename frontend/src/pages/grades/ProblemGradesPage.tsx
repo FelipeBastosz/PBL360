@@ -7,10 +7,54 @@ import { ProblemGradesActions } from './ProblemGradesActions';
 import { StudentFeedbackModal } from './StudentFeedbackModal';
 import { GeneralFeedbackModal } from './GeneralFeedbackModal';
 import { useProblemGradesController } from './hooks/useProblemGradesController';
+import { useProblemReportExport } from './hooks/useProblemReportExport';
+import { ExportConfigModal } from './components/ExportConfigModal';
 import { cn } from '@/utils/cn';
+
+function ProblemGradesModals({
+  ctrl,
+  reportExport,
+}: {
+  ctrl: ReturnType<typeof useProblemGradesController>;
+  reportExport: ReturnType<typeof useProblemReportExport>;
+}) {
+  return (
+    <>
+      <StudentFeedbackModal
+        isOpen={ctrl.selectedEvaluation !== null || ctrl.selectedStudent !== null}
+        onClose={ctrl.handleClose}
+        student={ctrl.selectedStudent}
+        evaluation={ctrl.selectedEvaluation}
+        existingFeedback={ctrl.currentStudentFeedback}
+        hideNames={ctrl.hideNames}
+        roomId={ctrl.roomId}
+        problemId={ctrl.problemId}
+        onSaved={ctrl.handleStudentFeedbackSaved}
+      />
+
+      <GeneralFeedbackModal
+        isOpen={ctrl.isGeneralModalOpen}
+        onClose={() => ctrl.setIsGeneralModalOpen(false)}
+        existingFeedback={ctrl.feedbacks?.geral ?? null}
+        roomId={ctrl.roomId}
+        problemId={ctrl.problemId}
+        onSaved={ctrl.handleGeneralFeedbackSaved}
+      />
+
+      <ExportConfigModal
+        isOpen={reportExport.isModalOpen}
+        format={reportExport.selectedFormat}
+        isLoading={reportExport.isExporting}
+        onClose={reportExport.closeModal}
+        onConfirm={reportExport.confirmExport}
+      />
+    </>
+  );
+}
 
 export function ProblemGradesPage() {
   const ctrl = useProblemGradesController();
+  const reportExport = useProblemReportExport(ctrl.roomId, ctrl.problemId, ctrl.problem?.titulo);
 
   return (
     <div className="min-h-dvh bg-surface pb-16">
@@ -33,31 +77,17 @@ export function ProblemGradesPage() {
               onSelectEvaluation={ctrl.setSelectedEvaluation}
               feedbacks={ctrl.feedbacks}
             />
-            <ProblemGradesActions onOpenGeneralModal={() => ctrl.setIsGeneralModalOpen(true)} />
+            <ProblemGradesActions
+              onOpenGeneralModal={() => ctrl.setIsGeneralModalOpen(true)}
+              isExportingPDF={reportExport.isExportingPDF}
+              isExportingExcel={reportExport.isExportingExcel}
+              onExport={reportExport.handleExport}
+            />
           </>
         ) : null}
       </main>
 
-      <StudentFeedbackModal
-        isOpen={ctrl.selectedEvaluation !== null || ctrl.selectedStudent !== null}
-        onClose={ctrl.handleClose}
-        student={ctrl.selectedStudent}
-        evaluation={ctrl.selectedEvaluation}
-        existingFeedback={ctrl.currentStudentFeedback}
-        hideNames={ctrl.hideNames}
-        roomId={ctrl.roomId}
-        problemId={ctrl.problemId}
-        onSaved={ctrl.handleStudentFeedbackSaved}
-      />
-
-      <GeneralFeedbackModal
-        isOpen={ctrl.isGeneralModalOpen}
-        onClose={() => ctrl.setIsGeneralModalOpen(false)}
-        existingFeedback={ctrl.feedbacks?.geral ?? null}
-        roomId={ctrl.roomId}
-        problemId={ctrl.problemId}
-        onSaved={ctrl.handleGeneralFeedbackSaved}
-      />
+      <ProblemGradesModals ctrl={ctrl} reportExport={reportExport} />
     </div>
   );
 }

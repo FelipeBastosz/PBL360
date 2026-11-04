@@ -1,0 +1,69 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
+import type { ExportClassReportOptions } from '@/types/class-report';
+import { StudentIdentificationRadio, type StudentIdOption } from './ExportConfigFields';
+
+export type ExportConfigModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (options: ExportClassReportOptions) => void;
+  format?: 'PDF' | 'XLSX' | null;
+  isLoading?: boolean;
+};
+
+type ExportActionsProps = {
+  isLoading?: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
+
+function ExportActions({ isLoading, onCancel, onConfirm }: ExportActionsProps) {
+  return (
+    <div className="mt-4 grid grid-cols-2 gap-3 pt-2">
+      <Button
+        type="button"
+        variant="outline"
+        disabled={isLoading}
+        onClick={onCancel}
+        className="h-11 w-full text-sm font-semibold"
+      >
+        Cancelar
+      </Button>
+      <Button
+        type="button"
+        variant="primary"
+        isLoading={isLoading}
+        disabled={isLoading}
+        onClick={onConfirm}
+        className="h-11 w-full text-sm font-semibold"
+      >
+        Confirmar Exportação
+      </Button>
+    </div>
+  );
+}
+
+export function ExportConfigModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  format,
+  isLoading = false,
+}: ExportConfigModalProps) {
+  const [studentId, setStudentId] = useState<StudentIdOption>('NAME_AND_REGISTRATION');
+  const title = format ? `Exportar em ${format}` : 'Configurar Exportação';
+
+  const handleConfirm = () => {
+    onConfirm({ ocultarNomes: studentId === 'REGISTRATION_ONLY' });
+  };
+
+  return (
+    <Sheet isOpen={isOpen} onClose={onClose} placement="center" title={title}>
+      <div className="flex flex-col gap-4 py-2">
+        <StudentIdentificationRadio value={studentId} onChange={setStudentId} />
+        <ExportActions isLoading={isLoading} onCancel={onClose} onConfirm={handleConfirm} />
+      </div>
+    </Sheet>
+  );
+}

@@ -6,9 +6,10 @@ export const IS_STUDENT_PARTICIPATING = `
 `;
 
 export const LIST_SESSION_PEERS = `
-  SELECT u.id AS "alunoId", u.name AS "nome", e.status AS "status"
+  SELECT u.id AS "alunoId", u.name AS "nome", e.status AS "status", sr.role AS "papel"
     FROM attendances a
     JOIN users u ON u.id = a.student_id AND u.type = 'STUDENT'
+    LEFT JOIN session_roles sr ON sr.session_id = a.session_id AND sr.student_id = a.student_id
     LEFT JOIN evaluations e ON e.session_id = a.session_id
       AND e.evaluator_id = $2
       AND e.student_id = a.student_id
@@ -20,9 +21,10 @@ export const LIST_SESSION_PEERS = `
 `;
 
 export const FIND_PEER_STUDENT = `
-  SELECT u.id, u.name
+  SELECT u.id, u.name, sr.role AS "papel"
     FROM users u
     JOIN attendances a ON a.student_id = u.id AND a.session_id = $1
+    LEFT JOIN session_roles sr ON sr.session_id = a.session_id AND sr.student_id = a.student_id
    WHERE u.id = $2
      AND u.type = 'STUDENT'
      AND a.status IN ('PRESENT', 'LATE');
@@ -59,16 +61,17 @@ export const UPDATE_PEER_SUBMISSION = `
      SET status = 'SUBMITTED',
          submitted_at = $2,
          session_score = $3,
-         applied_bonus = NULL,
-         calculation_version = $4,
+         applied_bonus = $4,
+         calculation_version = $5,
          updated_by = $1,
          updated_at = $2
-   WHERE id = $5;
+   WHERE id = $6;
 `;
 
 export const UPDATE_PEER_DRAFT = `
   UPDATE evaluations
-     SET updated_by = $1,
-         updated_at = $2
-   WHERE id = $3;
+     SET applied_bonus = $1,
+         updated_by = $2,
+         updated_at = $3
+   WHERE id = $4;
 `;

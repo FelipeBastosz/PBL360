@@ -6,7 +6,7 @@ import { firstName, formatPokerGrade, formatPokerVote } from '@/utils/pokerForma
 import { StudentAvatar } from '../roll-call/StudentAvatar';
 
 const QUICK_CENTS = [0, 500, 600, 700, 750, 800, 850, 900, 950, 1000];
-const FINE_STEP = 1;
+const FINE_STEP = 10;
 const STEPPER =
   'size-11 rounded-xl border border-black/10 bg-white text-lg font-bold disabled:opacity-30';
 
@@ -53,7 +53,7 @@ function FineAdjust({ value, onChange }: { value: number; onChange: (cents: numb
     <div className="flex items-center justify-between gap-2 border-t border-black/5 pt-3.5">
       <div className="flex min-w-0 flex-col">
         <span className="text-sm font-semibold text-brand-900">Ajuste fino</span>
-        <span className="text-xs text-muted">Centésimos, de 0,01 em 0,01</span>
+        <span className="text-xs text-muted">Décimos, de 0,1 em 0,1</span>
       </div>
       <div className="flex items-center gap-2">
         <button
@@ -83,7 +83,7 @@ function FineAdjust({ value, onChange }: { value: number; onChange: (cents: numb
 }
 
 export function VoteScreen({ student, initial, isBusy, onVote }: VoteScreenProps) {
-  const [cents, setCents] = useState(Math.round((initial ?? 8.5) * 100));
+  const [cents, setCents] = useState(Math.round((initial ?? 8.5) * 10) * 10);
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-6">

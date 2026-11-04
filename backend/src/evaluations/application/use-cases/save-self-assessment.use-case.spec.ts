@@ -95,6 +95,71 @@ describe('SaveSelfAssessmentUseCase', () => {
     );
   });
 
+  it('submits evaluation with cargo score when student has a role', async () => {
+    const detailWithRole = {
+      ...detail,
+      papel: 'COORDINATOR',
+      config: {
+        ...detail.config,
+        formula: { criteriaWeight: 70, roleWeight: 30 },
+      },
+    };
+    evaluations.getSelfAssessment.mockResolvedValue(detailWithRole);
+    evaluations.recordSelfAssessment.mockResolvedValue({
+      ...detailWithRole,
+      evaluation: {
+        status: EvaluationStatus.SUBMITTED,
+        submittedAt: now,
+        sessionScore: 7.45,
+        appliedBonus: 5,
+        items: [{ criterionId: 'criterion-1', score: 8.5 }],
+      },
+    });
+
+    const result = await useCase.execute({
+      sessionId: 'session-1',
+      studentId: 'student-1',
+      items: [{ criterionId: 'criterion-1', score: 8.5 }],
+      submit: true,
+      notaCargo: 5,
+      now,
+    });
+
+    expect(result).toMatchObject({
+      status: 'ENVIADA',
+      consolidatedScore: 7.45,
+      notaCargo: 5,
+      papel: 'COORDINATOR',
+    });
+    expect(evaluations.recordSelfAssessment).toHaveBeenCalledWith(
+      expect.objectContaining({ submit: true, notaCargo: 5 }),
+    );
+  });
+
+  it('rejects submission without cargo score when student has a role', async () => {
+    const detailWithRole = {
+      ...detail,
+      papel: 'COORDINATOR',
+      config: {
+        ...detail.config,
+        formula: { criteriaWeight: 70, roleWeight: 30 },
+      },
+    };
+    evaluations.getSelfAssessment.mockResolvedValue(detailWithRole);
+
+    await expect(
+      useCase.execute({
+        sessionId: 'session-1',
+        studentId: 'student-1',
+        items: [{ criterionId: 'criterion-1', score: 8.5 }],
+        submit: true,
+        now,
+      }),
+    ).rejects.toThrow(UnprocessableEntityError);
+
+    expect(evaluations.recordSelfAssessment).not.toHaveBeenCalled();
+  });
+
   it.each([
     [
       'student without attendance',

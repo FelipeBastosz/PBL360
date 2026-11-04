@@ -37,18 +37,28 @@ export type EvaluationCriterion = {
   descricao?: string | null;
 };
 
+export type EvaluationFormula = {
+  criteriaWeight: number;
+  roleWeight: number;
+};
+
 export type TutorEvaluationData = {
   status: EvaluationStatus;
   enviadaEm: string | null;
   itens: CriterionScore[];
   criterios: EvaluationCriterion[];
   notaSessao: number | null;
+  notaCargo?: number | null;
+  adicionalAplicado?: number | null;
+  papel?: string | null;
+  formula?: EvaluationFormula;
 };
 
 export type SaveTutorEvaluationPayload = {
   itens: CriterionScore[];
   enviar: boolean;
   justificativa?: string;
+  notaCargo?: number | null;
 };
 
 export type SessionFeedbackResponse = {
@@ -112,13 +122,18 @@ export type SelfAssessmentResponse = {
   enviadaEm: string | null;
   itens: CriterionScore[];
   criterios: EvaluationCriterion[];
-  notaSessao: number | null;
+  notaSessao?: number | null;
+  notaConsolidada?: number | null;
+  notaCargo?: number | null;
   participou?: boolean;
+  papel?: string | null;
+  formula?: EvaluationFormula;
 };
 
 export type SaveSelfAssessmentPayload = {
   itens: CriterionScore[];
   enviar: boolean;
+  notaCargo?: number | null;
 };
 
 export type SessionPeerStudent = {
@@ -126,26 +141,32 @@ export type SessionPeerStudent = {
   nome: string;
   iniciais: string;
   status: EvaluationStatus;
+  papel?: string | null;
 };
 
 export type SessionPeersResponse = {
   liberada: boolean;
   prazo: string | null;
+  chamadaRealizada?: boolean;
   colegas: SessionPeerStudent[];
   participou?: boolean;
+  formula?: EvaluationFormula;
 };
 
 export type PeerEvaluationResponse = {
-  colegaId: string;
+  colega: { alunoId: string; nome: string; papel?: string | null };
   status: EvaluationStatus;
   enviadaEm: string | null;
   itens: CriterionScore[];
   criterios: EvaluationCriterion[];
+  notaCargo?: number | null;
+  formula?: EvaluationFormula;
 };
 
 export type SavePeerEvaluationPayload = {
   itens: CriterionScore[];
   enviar: boolean;
+  notaCargo?: number | null;
 };
 
 export type StudentSelfAssessmentSummary = {
@@ -164,6 +185,7 @@ export type StudentPeerAssessmentSummary = {
 export type StudentFeedbackSummary = {
   disponivel: boolean;
   novo: boolean;
+  avaliacaoTutorEnviada: boolean;
 };
 
 export type StudentEvaluationSummaryResponse = {

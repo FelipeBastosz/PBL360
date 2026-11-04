@@ -53,4 +53,28 @@ describe('SessionAccessService', () => {
     ).rejects.toThrow(NotFoundError);
     expect(assertRoomAccess).not.toHaveBeenCalled();
   });
+
+  it('allows access via sessionId and tutorId when tutor has room access', async () => {
+    findSession.mockResolvedValue(session);
+    findProblem.mockResolvedValue({ id: 'problem-1', roomId: 'room-1' });
+    assertRoomAccess.mockResolvedValue(undefined);
+
+    await expect(service.assertTutorCanAccessSession('session-1', 'co-tutor-1')).resolves.toBe(
+      session,
+    );
+
+    expect(findSession).toHaveBeenCalledWith('session-1');
+    expect(findProblem).toHaveBeenCalledWith('problem-1');
+    expect(assertRoomAccess).toHaveBeenCalledWith('room-1', 'co-tutor-1');
+  });
+
+  it('rejects access via sessionId when tutor is not authorized in room', async () => {
+    findSession.mockResolvedValue(session);
+    findProblem.mockResolvedValue({ id: 'problem-1', roomId: 'room-1' });
+    assertRoomAccess.mockRejectedValue(new Error('Forbidden'));
+
+    await expect(service.assertTutorCanAccessSession('session-1', 'other-tutor')).rejects.toThrow(
+      'Forbidden',
+    );
+  });
 });

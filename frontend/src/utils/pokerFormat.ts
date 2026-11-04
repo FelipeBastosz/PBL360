@@ -1,18 +1,17 @@
-export const roundToCents = (value: number): number => Math.round(value * 100) / 100;
+import { formatGrade, roundGrade } from './formatGrade';
 
-export function formatPokerGrade(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return value.toFixed(2).replace('.', ',');
-}
+export const roundToTenths = roundGrade;
+
+export const formatPokerGrade = formatGrade;
 
 export function formatPokerVote(value: number): string {
-  return String(roundToCents(value)).replace('.', ',');
+  return formatGrade(value);
 }
 
 export function parsePokerGrade(raw: string): number | null {
   const value = Number.parseFloat(raw.replace(',', '.'));
   if (Number.isNaN(value)) return null;
-  return roundToCents(Math.min(10, Math.max(0, value)));
+  return roundToTenths(Math.min(10, Math.max(0, value)));
 }
 
 export function firstName(name: string): string {

@@ -7,6 +7,10 @@ import {
 } from '../../domain/repositories/grades.repository';
 import type { GradesResponseDto } from '../dtos/grades-response.dto';
 import { calculateProblemGrades } from '../services/problem-grade-calculation';
+import type {
+  ProblemGradesInput,
+  ProblemGradesWithSessionGrades,
+} from './helpers/get-problem-grades.helper';
 
 @Injectable()
 export class GetProblemGradesUseCase {
@@ -15,10 +19,19 @@ export class GetProblemGradesUseCase {
     private readonly roomAccess: RoomAccessService,
   ) {}
 
-  async execute(
-    input: { roomId: string; problemId: string; tutorId: string },
+  async execute(input: ProblemGradesInput, now = new Date()): Promise<GradesResponseDto> {
+    return (await this.calculateAndSave(input, now)).response;
+  }
+
+  async executeWithSessionGrades(
+    input: ProblemGradesInput,
     now = new Date(),
-  ): Promise<GradesResponseDto> {
+  ): Promise<ProblemGradesWithSessionGrades> {
+    const result = await this.calculateAndSave(input, now);
+    return { response: result.response, sessionGrades: result.sessionRows };
+  }
+
+  private async calculateAndSave(input: ProblemGradesInput, now: Date) {
     await this.roomAccess.assertTutorCanAccessRoom(input.roomId, input.tutorId);
     const problem = await this.gradesRepository.findProblem(input.problemId, input.roomId);
     if (!problem) throw new NotFoundError('Problema não encontrado na sala informada.');
@@ -26,8 +39,11 @@ export class GetProblemGradesUseCase {
     const data = await this.gradesRepository.findProblemData(input.roomId, input.problemId);
     const ids = data.formulas.map((formula) => formula.id).filter(Boolean);
     const components = await this.gradesRepository.findFormulaComponents(ids);
-    const { response, sessionRows, problemRows } = calculateProblemGrades(data, components, now);
-    await this.gradesRepository.saveGrades(input.problemId, { sessionRows, problemRows });
-    return response;
+    const result = calculateProblemGrades(data, components, now);
+    await this.gradesRepository.saveGrades(input.problemId, {
+      sessionRows: result.sessionRows,
+      problemRows: result.problemRows,
+    });
+    return result;
   }
 }

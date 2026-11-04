@@ -1,6 +1,6 @@
 import type { SessionColumn, StudentGradeRow } from '@/types/grades';
 import type { ProblemFeedbacksResponse } from '@/types/feedback';
-import { formatGrade } from '@/utils/gradeFormatters';
+import { formatGrade } from '@/utils/formatGrade';
 import { cn } from '@/utils/cn';
 import { StudentGradeField, type EvaluationContext } from './StudentGradeField';
 

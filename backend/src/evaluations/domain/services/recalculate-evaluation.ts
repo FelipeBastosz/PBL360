@@ -10,11 +10,12 @@ export function recalculateEvaluation(
 ): Evaluation | null {
   if (evaluation?.status !== EvaluationStatus.SUBMITTED) return evaluation;
   if (!tutor && config.criteria.every((criterion) => criterion.weight === 0)) return evaluation;
+  const applyCargoFormula = evaluation.appliedBonus !== null;
   evaluation.sessionScore = SessionGradeCalculator.calculate(
     evaluation.items,
     config.criteria,
     evaluation.appliedBonus,
-    tutor,
+    applyCargoFormula,
     config.formula,
   );
   return evaluation;

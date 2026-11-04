@@ -6,8 +6,27 @@ import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { ExportProblemReportQueryDto } from '../../application/dtos/export-problem-report-query.dto';
 import { toReportFileResponse } from '@/report-files/infrastructure/http/report-file-response';
-import { ExportProblemReportUseCase } from '../../application/use-cases/export-problem-report.use-case';
+import {
+  ExportProblemReportUseCase,
+  type ExportProblemReportInput,
+} from '../../application/use-cases/export-problem-report.use-case';
 import { ExportProblemReportSwaggerDocs } from './problem-report.swagger';
+
+const toExportInput = (
+  roomId: string,
+  problemId: string,
+  tutorId: string,
+  query: ExportProblemReportQueryDto,
+): ExportProblemReportInput => ({
+  roomId,
+  problemId,
+  tutorId,
+  format: query.formato,
+  ocultarNomes: query.ocultarNomes ?? query.ocultarNome,
+  mostrarPendencias: query.mostrarPendencias,
+  mostrarFeedback: query.mostrarFeedback,
+  mostrarMarcacoes: query.mostrarMarcacoes,
+});
 
 @ApiTags('Problemas')
 @Controller('salas/:salaId/problemas/:problemaId/relatorio')
@@ -24,13 +43,9 @@ export class ProblemReportController {
     @Query() query: ExportProblemReportQueryDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<StreamableFile> {
-    const file = await this.exportProblemReport.execute({
-      roomId,
-      problemId,
-      tutorId,
-      format: query.formato,
-      ocultarNomes: query.ocultarNomes,
-    });
+    const file = await this.exportProblemReport.execute(
+      toExportInput(roomId, problemId, tutorId, query),
+    );
     return toReportFileResponse(file);
   }
 }

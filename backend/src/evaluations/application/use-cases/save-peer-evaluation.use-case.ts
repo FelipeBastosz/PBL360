@@ -1,7 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { SessionAccessService } from '@/sessions/application/services/session-access.service';
 import { UserType } from '@/users/domain/enums/user-type.enum';
-import { LockedError, UnprocessableEntityError } from '@/shared/errors/application.error';
+import {
+  InvalidRequestError,
+  LockedError,
+  UnprocessableEntityError,
+} from '@/shared/errors/application.error';
+import { AttendanceStatus } from '@/sessions/domain/enums/attendance-status.enum';
+import type { RecordedAttendance } from '@/sessions/domain/roll-call/roll-call';
+import {
+  ATTENDANCE_REPOSITORY,
+  type AttendanceRepository,
+} from '@/sessions/domain/repositories/attendance.repository';
 import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
 import {
   EVALUATION_REPOSITORY,
@@ -18,6 +28,7 @@ export interface SavePeerEvaluationInput {
   studentId: string;
   itens: CriterionScore[];
   enviar: boolean;
+  notaCargo?: number | null;
   now?: Date;
 }
 
@@ -26,6 +37,7 @@ export class SavePeerEvaluationUseCase {
   constructor(
     private readonly sessionAccess: SessionAccessService,
     @Inject(EVALUATION_REPOSITORY) private readonly evaluations: EvaluationRepository,
+    @Inject(ATTENDANCE_REPOSITORY) private readonly attendances: AttendanceRepository,
   ) {}
 
   async execute(input: SavePeerEvaluationInput): Promise<GetPeerEvaluationOutput> {
@@ -37,6 +49,7 @@ export class SavePeerEvaluationUseCase {
       peerId: input.peerId,
       items: input.itens,
       submit: input.enviar,
+      notaCargo: input.notaCargo,
     });
     return this.toOutput(detail);
   }
@@ -72,31 +85,43 @@ export class SavePeerEvaluationUseCase {
     studentId: string,
     peerId: string,
   ): Promise<void> {
-    const evaluatorOk = await this.evaluations.isStudentParticipating(sessionId, studentId);
-    if (!evaluatorOk) {
-      throw new LockedError('Apenas alunos que participaram da sessão podem avaliar colegas.');
+    const records = await this.attendances.findBySession(sessionId);
+    if (records.length === 0) {
+      throw new LockedError('A chamada da sessão ainda não foi realizada pelo professor.');
     }
-    const peerOk = await this.evaluations.isStudentParticipating(sessionId, peerId);
-    if (!peerOk) {
-      throw new UnprocessableEntityError('O colega não participou da sessão.');
+    this.assertEvaluatorPresent(records, studentId);
+    this.assertPeerPresent(records, peerId);
+  }
+
+  private assertEvaluatorPresent(records: RecordedAttendance[], studentId: string): void {
+    if (!this.isPresent(records, studentId)) {
+      throw new LockedError('Apenas alunos que participaram da sessão podem avaliar colegas.');
     }
   }
 
+  private assertPeerPresent(records: RecordedAttendance[], peerId: string): void {
+    if (!this.isPresent(records, peerId)) {
+      throw new InvalidRequestError(
+        'Não é possível avaliar um aluno que não esteve presente nesta sessão.',
+      );
+    }
+  }
+
+  private isPresent(records: RecordedAttendance[], studentId: string): boolean {
+    const record = records.find((r) => r.studentId === studentId);
+    return record?.status === AttendanceStatus.PRESENT || record?.status === AttendanceStatus.LATE;
+  }
+
   private toOutput(detail: PeerEvaluationDetail): GetPeerEvaluationOutput {
+    const peer = detail.peer;
     return {
-      colega: { alunoId: detail.peer.id, nome: detail.peer.name },
+      colega: { alunoId: peer.id, nome: peer.name, papel: peer.papel ?? detail.papel ?? null },
       status: this.mapStatus(detail),
       enviadaEm: detail.evaluation?.submittedAt ?? null,
-      criterios: detail.config.criteria.map((c) => ({
-        id: c.id,
-        nome: c.name,
-        peso: c.weight,
-        notaMaxima: 10,
-      })),
-      itens: (detail.evaluation?.items ?? []).map((item) => ({
-        criterioId: item.criterionId,
-        nota: item.score,
-      })),
+      notaCargo: detail.evaluation?.appliedBonus ?? null,
+      formula: detail.config.formula ?? { criteriaWeight: 70, roleWeight: 30 },
+      criterios: mapPeerCriteria(detail.config.criteria),
+      itens: mapPeerItems(detail.evaluation?.items),
     };
   }
 
@@ -106,3 +131,17 @@ export class SavePeerEvaluationUseCase {
       : EvaluationStatusResponse.RASCUNHO;
   }
 }
+
+const mapPeerCriteria = (criteria: PeerEvaluationDetail['config']['criteria']) =>
+  criteria.map((c) => ({
+    id: c.id,
+    nome: c.name,
+    peso: c.weight,
+    notaMaxima: 10,
+  }));
+
+const mapPeerItems = (items?: Array<{ criterionId: string; score: number }>) =>
+  (items ?? []).map((item) => ({
+    criterioId: item.criterionId,
+    nota: item.score,
+  }));

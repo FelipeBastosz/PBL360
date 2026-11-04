@@ -11,6 +11,7 @@ export interface ExportClassFinalReportInput {
   roomId: string;
   tutorId: string;
   format: ReportFileFormat;
+  ocultarNomes?: boolean;
 }
 
 @Injectable()
@@ -25,6 +26,8 @@ export class ExportClassFinalReportUseCase {
       roomId: input.roomId,
       tutorId: input.tutorId,
     });
-    return this.reportFiles.generate(buildClassFinalReportDocument(report, input.format));
+    return this.reportFiles.generate(
+      buildClassFinalReportDocument(report, input.format, { ocultarNomes: input.ocultarNomes }),
+    );
   }
 }

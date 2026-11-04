@@ -18,7 +18,7 @@ import type {
   StudentEvaluationSummary,
 } from '../../domain/repositories/evaluation.repository';
 import { readEvaluationSummaries } from './evaluation-summary.reads';
-import { readProblemConfig } from './session-evaluation-config.persistence';
+import { readProblemConfig, readFormula } from './session-evaluation-config.persistence';
 import { readEvaluationDetail } from './evaluation.reads';
 import { recordEvaluation } from './evaluation.persistence';
 import { getStudentEvaluationSummary } from './self-assessment.reads';
@@ -61,6 +61,10 @@ export class PgEvaluationRepository implements EvaluationRepository {
 
   isStudentParticipating(sessionId: string, studentId: string): Promise<boolean> {
     return isStudentParticipating(this.dataSource.manager, sessionId, studentId);
+  }
+
+  getSessionFormula(sessionId: string): Promise<{ criteriaWeight: number; roleWeight: number }> {
+    return readFormula(this.dataSource.manager, sessionId);
   }
 
   listSessionPeers(sessionId: string, evaluatorId: string): Promise<PeerEvaluationSummary[]> {

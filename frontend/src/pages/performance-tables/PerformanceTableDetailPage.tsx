@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeftIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronLeftIcon,
+  LockClosedIcon,
+  InformationCircleIcon,
+} from '@heroicons/react/24/outline';
 import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
@@ -64,9 +68,28 @@ function CriteriaListCard({ criteria }: { criteria: CriterionInput[] }) {
   );
 }
 
-function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: boolean }) {
+type BannersProps = {
+  isApplied: boolean;
+  isLocked: boolean;
+  isShared: boolean;
+  authorName?: string;
+};
+
+function DetailBanners({ isApplied, isLocked, isShared, authorName }: BannersProps) {
   return (
     <>
+      {isShared && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs font-medium text-blue-900"
+        >
+          <InformationCircleIcon className="size-4 shrink-0 text-blue-600" aria-hidden="true" />
+          <span>
+            Fórmula compartilhada da turma{authorName ? ` · Criada por ${authorName}` : ''}.
+          </span>
+        </aside>
+      )}
       {isApplied && (
         <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
           Esta fórmula já está aplicada a esta sessão.
@@ -74,7 +97,7 @@ function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: 
       )}
       {isLocked && (
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-          <LockClosedIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <LockClosedIcon className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden="true" />
           <span>Esta sessão já possui avaliações enviadas e a tabela não pode ser alterada.</span>
         </div>
       )}
@@ -111,26 +134,21 @@ function DetailActionButtons({ apply }: { apply: ReturnType<typeof useApplyTable
   );
 }
 
-function DetailContent({
-  table,
-  apply,
-}: {
+type DetailContentProps = {
   table: PerformanceTable;
   apply: ReturnType<typeof useApplyTableLogic>;
-}) {
-  const displayedCriteria = reconcileSessionCriteria(table.criterios, apply.sessionCriteria);
+  currentUserId?: string;
+};
 
+function checkIsShared(table: PerformanceTable, currentUserId?: string): boolean {
+  if (!currentUserId || !table.professorId) return false;
+  const isDefault = Boolean(table.isDefault ?? table.padrao ?? table.origem === 'PADRAO');
+  return table.professorId !== currentUserId && !isDefault;
+}
+
+function DetailModals({ apply }: { apply: ReturnType<typeof useApplyTableLogic> }) {
   return (
     <>
-      <DetailBanners isApplied={apply.isAlreadyApplied} isLocked={apply.isSessionLocked} />
-      {table.descricao && (
-        <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
-          <p className="mt-1 text-sm text-muted">{table.descricao}</p>
-        </div>
-      )}
-      <CriteriaListCard criteria={displayedCriteria} />
-      <DetailActionButtons apply={apply} />
       <ApplyScopeModal
         isOpen={apply.isModalOpen}
         isLoading={apply.isApplying}
@@ -148,8 +166,34 @@ function DetailContent({
   );
 }
 
+function DetailContent({ table, apply, currentUserId }: DetailContentProps) {
+  const isShared = checkIsShared(table, currentUserId);
+  const displayedCriteria = reconcileSessionCriteria(table.criterios, apply.sessionCriteria);
+
+  return (
+    <>
+      <DetailBanners
+        isApplied={apply.isAlreadyApplied}
+        isLocked={apply.isSessionLocked}
+        isShared={isShared}
+        authorName={table.autor?.nome}
+      />
+      {table.descricao && (
+        <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
+          <p className="mt-1 text-sm text-muted">{table.descricao}</p>
+        </div>
+      )}
+      <CriteriaListCard criteria={displayedCriteria} />
+      <DetailActionButtons apply={apply} />
+      <DetailModals apply={apply} />
+    </>
+  );
+}
+
 export function PerformanceTableDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [table, setTable] = useState<PerformanceTable | null>(null);
   const { run, isLoading, error } = useAsyncAction(
     useCallback(() => performanceTableService.getById(id!), [id]),
@@ -170,7 +214,7 @@ export function PerformanceTableDetailPage() {
           </div>
         )}
         {error && <Alert tone="error">{error.message}</Alert>}
-        {table && <DetailContent table={table} apply={apply} />}
+        {table && <DetailContent table={table} apply={apply} currentUserId={user?.id} />}
       </main>
     </div>
   );

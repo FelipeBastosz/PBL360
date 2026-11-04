@@ -1,4 +1,4 @@
-import { formatGrade } from '@/utils/gradeFormatters';
+import { formatGrade } from '@/utils/formatGrade';
 import { cn } from '@/utils/cn';
 
 type GradeInputsProps = {

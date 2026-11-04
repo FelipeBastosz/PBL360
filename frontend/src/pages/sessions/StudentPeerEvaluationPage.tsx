@@ -9,44 +9,119 @@ import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import type { UserResponse } from '@/types/auth';
+import type { EvaluationFormula } from '@/types/evaluation';
+import type { SessionRole } from '@/types/session';
 import { cn } from '@/utils/cn';
-import { formatDeadline } from '@/utils/formatDate';
+import { formatDeadline } from '@/utils/date';
+import { getRolePercentage } from '@/utils/evaluationScore';
+import { roleLabel } from '@/utils/sessionRoles';
 import { CriterionStepper } from './components/CriterionStepper';
+import { EvaluationFinalScore } from './components/EvaluationFinalScore';
 import { NonParticipantEmptyState } from './components/NonParticipantEmptyState';
 import { useStudentPeerEvaluation, type PeerEvaluationState } from './useStudentPeerEvaluation';
 
-function PeerEvaluationCard({
+function PeerCardHeader({
+  name,
+  papel,
+  isSubmitted,
+}: {
+  name: string;
+  papel?: SessionRole | null;
+  isSubmitted: boolean;
+}) {
+  return (
+    <div className="mb-2 flex items-center justify-between border-b border-black/5 pb-4">
+      <div className="flex items-center gap-4">
+        <span className="flex size-12 items-center justify-center rounded-xl bg-surface">
+          <UserCircleIcon className="size-7 text-ink" />
+        </span>
+        <div className="flex flex-col">
+          <span className="text-lg font-semibold text-ink">{name}</span>
+          {papel && (
+            <span className="text-xs font-semibold text-warning">Papel: {roleLabel(papel)}</span>
+          )}
+        </div>
+      </div>
+      {isSubmitted && (
+        <span className="text-xs font-semibold text-success">Avaliação já enviada</span>
+      )}
+    </div>
+  );
+}
+
+function PeerRoleCriterionStepper({
   peer,
+  formula,
   isSaving,
-  onCriterionChange,
+  onCargoChange,
 }: {
   peer: PeerEvaluationState;
+  formula?: EvaluationFormula;
+  isSaving: boolean;
+  onCargoChange: (peerId: string, s: number) => void;
+}) {
+  if (!peer.papel) return null;
+  const rolePercentage = getRolePercentage(formula);
+  return (
+    <div className="pt-2">
+      <CriterionStepper
+        criterion={{
+          id: 'cargo-score',
+          nome: `Desempenho como ${roleLabel(peer.papel)}`,
+          peso: 3.0,
+          ordem: 99,
+          notaMaxima: 10,
+        }}
+        subtitle={`Peso na fórmula (${rolePercentage}%)`}
+        score={peer.notaCargo ?? 0}
+        disabled={peer.isSubmitted || isSaving}
+        onChange={(_id, s) => onCargoChange(peer.peerId, s)}
+      />
+    </div>
+  );
+}
+
+function PeerEvaluationCard({
+  peer,
+  formula,
+  isSaving,
+  onCriterionChange,
+  onCargoChange,
+}: {
+  peer: PeerEvaluationState;
+  formula?: EvaluationFormula;
   isSaving: boolean;
   onCriterionChange: (peerId: string, critId: string, s: number) => void;
+  onCargoChange: (peerId: string, s: number) => void;
 }) {
   return (
     <section aria-label={`Avaliação de ${peer.name}`} className={cn(CARD_CLASS, 'p-4')}>
-      <div className="mb-2 flex items-center justify-between border-b border-black/5 pb-4">
-        <div className="flex items-center gap-4">
-          <span className="flex size-12 items-center justify-center rounded-xl bg-surface">
-            <UserCircleIcon className="size-7 text-ink" />
-          </span>
-          <span className="text-lg font-semibold text-ink">{peer.name}</span>
-        </div>
-        {peer.isSubmitted && (
-          <span className="text-xs font-semibold text-success">Avaliação já enviada</span>
-        )}
-      </div>
+      <PeerCardHeader name={peer.name} papel={peer.papel} isSubmitted={peer.isSubmitted} />
       <div>
-        {peer.criteria.map((c) => (
-          <CriterionStepper
-            key={c.id}
-            criterion={c}
-            score={peer.scores[c.id] ?? 0}
-            disabled={peer.isSubmitted || isSaving}
-            onChange={(critId, s) => onCriterionChange(peer.peerId, critId, s)}
+        <div className="divide-y divide-black/5">
+          {peer.criteria.map((c) => (
+            <CriterionStepper
+              key={c.id}
+              criterion={c}
+              score={peer.scores[c.id] ?? 0}
+              disabled={peer.isSubmitted || isSaving}
+              onChange={(critId, s) => onCriterionChange(peer.peerId, critId, s)}
+            />
+          ))}
+          <PeerRoleCriterionStepper
+            peer={peer}
+            formula={formula}
+            isSaving={isSaving}
+            onCargoChange={onCargoChange}
           />
-        ))}
+        </div>
+        <EvaluationFinalScore
+          criteria={peer.criteria}
+          scores={peer.scores}
+          roleScore={peer.notaCargo}
+          formula={formula}
+          hasRole={Boolean(peer.papel)}
+        />
       </div>
     </section>
   );
@@ -113,8 +188,10 @@ function PeerListBody({ state }: { state: ReturnType<typeof useStudentPeerEvalua
         <PeerEvaluationCard
           key={peer.peerId}
           peer={peer}
+          formula={state.formula}
           isSaving={state.isSaving}
           onCriterionChange={state.setScore}
+          onCargoChange={state.setCargoScore}
         />
       ))}
     </>

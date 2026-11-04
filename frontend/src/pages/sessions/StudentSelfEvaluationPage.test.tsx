@@ -43,7 +43,7 @@ const mockSessionData: MemberSession = {
   id: 'sess-123',
   titulo: 'Sessão 2 - Fechamento',
   descricao: null,
-  data: '2024-10-08',
+  data: '08-10-2024',
   ordem: 2,
   status: 'EM_ANDAMENTO',
   problemaId: 'prob-1',
@@ -76,9 +76,9 @@ describe('StudentSelfEvaluationPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Sessão 2 - Fechamento')).toBeInTheDocument();
-      expect(screen.getByText(/Prazo: Até 15 de out\./i)).toBeInTheDocument();
+      expect(screen.getByText(/Prazo: Até 15\/10\/2026 às/)).toBeInTheDocument();
       const segmentoGroup = screen.getByRole('group', { name: 'Segmento' });
-      expect(within(segmentoGroup).getByText('8')).toBeInTheDocument();
+      expect(within(segmentoGroup).getByRole('textbox')).toHaveValue('8,0');
     });
   });
 
@@ -99,7 +99,7 @@ describe('StudentSelfEvaluationPage', () => {
     const plusButton = within(segmentoGroup).getByRole('button', { name: '+' });
     await userEvent.click(plusButton);
 
-    expect(within(segmentoGroup).getByText('9')).toBeInTheDocument();
+    expect(within(segmentoGroup).getByRole('textbox')).toHaveValue('9,0');
 
     await waitFor(
       () => {
@@ -108,6 +108,7 @@ describe('StudentSelfEvaluationPage', () => {
             { criterioId: 'crit-1', nota: 9 },
             { criterioId: 'crit-2', nota: 6 },
           ],
+          notaCargo: null,
           enviar: false,
         });
       },
@@ -137,7 +138,6 @@ describe('StudentSelfEvaluationPage', () => {
       screen.getByText('Após o envio definitivo, não será possível alterar as notas.'),
     ).toBeInTheDocument();
 
-    // Not yet called with enviar: true
     expect(evaluationService.saveSelfAssessment).not.toHaveBeenCalledWith('sess-123', {
       itens: expect.any(Array),
       enviar: true,
@@ -151,6 +151,7 @@ describe('StudentSelfEvaluationPage', () => {
         { criterioId: 'crit-1', nota: 8 },
         { criterioId: 'crit-2', nota: 6 },
       ],
+      notaCargo: null,
       enviar: true,
     });
     expect(mockNotify).toHaveBeenCalledWith({

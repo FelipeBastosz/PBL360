@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeftIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
+import { SearchField } from '@/components/ui/SearchField';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
@@ -38,17 +39,8 @@ function ManageHeader() {
 
 function ManageSearch({ query, setQuery }: { query: string; setQuery: (q: string) => void }) {
   return (
-    <div className="relative mt-4 px-4">
-      <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center pl-3">
-        <MagnifyingGlassIcon className="size-5 text-placeholder" aria-hidden />
-      </div>
-      <input
-        type="text"
-        placeholder="Pesquisar fórmula"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="h-12 w-full rounded-[10px] border border-black/10 bg-white pl-10 pr-4 text-ink placeholder:text-placeholder focus:border-brand-900 focus:outline-none focus:ring-1 focus:ring-brand-900"
-      />
+    <div className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
+      <SearchField label="Pesquisar fórmula" value={query} onChange={setQuery} />
     </div>
   );
 }

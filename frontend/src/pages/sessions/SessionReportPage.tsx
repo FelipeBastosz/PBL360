@@ -6,8 +6,9 @@ import { Spinner } from '@/components/ui/Spinner';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { sessionService } from '@/services/session.service';
 import type { Session } from '@/types/session';
-import type { SessionReportStudent } from '@/types/sessionReport';
+import type { ExportSessionReportOptions, SessionReportStudent } from '@/types/sessionReport';
 import { cn } from '@/utils/cn';
+import { ExportConfigModal } from './components/ExportConfigModal';
 import { SessionReportEmptyState } from './components/SessionReportEmptyState';
 import { SessionReportTable } from './components/SessionReportTable';
 import { useSessionReportExport } from './useSessionReportExport';
@@ -26,23 +27,13 @@ export type SessionReportPageProps = {
   students?: SessionReportStudent[];
 };
 
-type ReportExportActionsProps = {
-  isExportingPDF: boolean;
-  isExportingExcel: boolean;
-  onExport: (formato: 'PDF' | 'XLSX') => void;
-};
-
-function ReportExportActions({
-  isExportingPDF,
-  isExportingExcel,
-  onExport,
-}: ReportExportActionsProps) {
+function ReportExportActions({ onExport }: { onExport: (formato: 'PDF' | 'XLSX') => void }) {
   return (
     <div className="mt-6 flex flex-col gap-3">
-      <Button variant="primary" isLoading={isExportingPDF} onClick={() => onExport('PDF')}>
+      <Button variant="primary" onClick={() => onExport('PDF')}>
         Exportar em PDF
       </Button>
-      <Button variant="primary" isLoading={isExportingExcel} onClick={() => onExport('XLSX')}>
+      <Button variant="primary" onClick={() => onExport('XLSX')}>
         Exportar em Excel
       </Button>
     </div>
@@ -76,55 +67,78 @@ function useSessionHeading(
   return session?.titulo ?? fallback ?? '';
 }
 
-export function SessionReportPage({ students: initialStudents }: SessionReportPageProps = {}) {
+function useSessionReportRouteData() {
   const params = useParams<SessionReportParams>();
   const roomId = params.roomId ?? params.turmaId ?? '';
   const problemId = params.problemId ?? params.problemaId ?? '';
   const sessionId = params.sessionId ?? params.sessaoId ?? '';
-
   const location = useLocation();
   const state = location.state as { sessionTitle?: string; sessionTitulo?: string } | null;
-  const sessionSubtitle = useSessionHeading(
+  const subtitle = useSessionHeading(
     roomId,
     problemId,
     sessionId,
     state?.sessionTitle ?? state?.sessionTitulo,
   );
+  return { roomId, problemId, sessionId, subtitle };
+}
 
-  const { isExportingPDF, isExportingExcel, handleDownload } = useSessionReportExport(sessionId);
+function SessionReportContent({
+  isLoading,
+  students,
+  onExport,
+}: {
+  isLoading: boolean;
+  students: SessionReportStudent[];
+  onExport: (format: 'PDF' | 'XLSX') => void;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Spinner className="size-8 text-brand-900" />
+      </div>
+    );
+  }
+  if (students.length === 0) return <SessionReportEmptyState />;
+  return (
+    <>
+      <SessionReportTable students={students} />
+      <ReportExportActions onExport={onExport} />
+    </>
+  );
+}
+
+export function SessionReportPage({ students: initialStudents }: SessionReportPageProps = {}) {
+  const { roomId, problemId, sessionId, subtitle } = useSessionReportRouteData();
+  const exportCtrl = useSessionReportExport(sessionId, subtitle);
   const { students, isLoading } = useSessionReportStudents(
     roomId,
     problemId,
     sessionId,
     initialStudents,
   );
+  const [format, setFormat] = useState<'PDF' | 'XLSX' | null>(null);
 
-  const backUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}`;
+  const onConfirm = async (options: ExportSessionReportOptions) => {
+    if (format && (await exportCtrl.handleDownload(format, options))) setFormat(null);
+  };
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <AppHeader
-        backUrl={backUrl}
+        backUrl={`/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}`}
         title="Relatório da Sessão"
-        subtitle={sessionSubtitle || undefined}
+        subtitle={subtitle || undefined}
       />
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6')}>
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Spinner className="size-8 text-brand-900" />
-          </div>
-        ) : students.length === 0 ? (
-          <SessionReportEmptyState />
-        ) : (
-          <>
-            <SessionReportTable students={students} />
-            <ReportExportActions
-              isExportingPDF={isExportingPDF}
-              isExportingExcel={isExportingExcel}
-              onExport={(formato) => void handleDownload(formato)}
-            />
-          </>
-        )}
+        <SessionReportContent isLoading={isLoading} students={students} onExport={setFormat} />
+        <ExportConfigModal
+          isOpen={format !== null}
+          format={format}
+          isLoading={exportCtrl.isExportingPDF || exportCtrl.isExportingExcel}
+          onClose={() => setFormat(null)}
+          onConfirm={onConfirm}
+        />
       </main>
     </div>
   );

@@ -4,7 +4,7 @@ import type { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Workbook, type Worksheet } from 'exceljs';
 import type { ClassFinalReportResponseDto } from '@/grades/application/dtos/class-final-report-response.dto';
-import type { ReportTableSection } from '@/report-files/domain/report-document';
+import { ReportColumnType, type ReportTableSection } from '@/report-files/domain/report-document';
 import {
   PDF_REPORT_RENDERER,
   XLSX_REPORT_RENDERER,
@@ -265,6 +265,59 @@ describe('Class final report export (e2e)', () => {
     expect(response.text).not.toContain('Internal renderer details');
   });
 
+  it('exports classroom report in XLSX without student names when ocultarNomes=true', async () => {
+    const response = await api(app, fixture.owner)
+      .get(`${exportPath('XLSX')}&ocultarNomes=true`)
+      .buffer(true)
+      .parse(binaryParser)
+      .expect(200);
+    const workbook = new Workbook();
+    await workbook.xlsx.load(Uint8Array.from(response.body as Buffer).buffer);
+    const sheet = workbook.getWorksheet('Notas finais')!;
+
+    let headerValues: unknown[] = [];
+    const rowValues: unknown[][] = [];
+    sheet.eachRow((row) => {
+      const firstCell = row.getCell(1).text;
+      if (firstCell === 'Matrícula') {
+        headerValues = (row.values as unknown[]).slice(1);
+      } else if (firstCell === '00000001' || firstCell === '00000003') {
+        rowValues.push((row.values as unknown[]).slice(1));
+      }
+    });
+
+    expect(headerValues).not.toContain('Aluno');
+    expect(headerValues[0]).toBe('Matrícula');
+    const allRowTexts = rowValues.map((r) => r.join(' ')).join(' ');
+    expect(allRowTexts).not.toContain('Ana Souza');
+    expect(allRowTexts).not.toContain('Bruno Lima');
+    expect(allRowTexts).not.toContain('Carla Santos');
+  }, 30000);
+
+  it('renders classroom report in PDF without student names when ocultarNomes=true', async () => {
+    const render = jest.spyOn(app.get<ReportRenderer>(PDF_REPORT_RENDERER), 'render');
+    await api(app, fixture.owner)
+      .get(`${exportPath('PDF')}&ocultarNomes=true`)
+      .buffer(true)
+      .parse(binaryParser)
+      .expect(200);
+
+    const document = render.mock.calls[0]![0];
+    const table = document.sections[0] as ReportTableSection;
+    expect(table.columns.map((c) => c.header)).not.toContain('Aluno');
+    expect(table.columns[0]).toEqual({ header: 'Matrícula', type: ReportColumnType.TEXT });
+    expect(table.rows[0]?.[0]).toBe('00000001');
+    expect(table.rows.flat()).not.toContain('Ana Souza');
+  }, 30000);
+
+  it('rejects invalid non-boolean ocultarNomes with 400', async () => {
+    const response = await api(app, fixture.owner)
+      .get(`${exportPath('PDF')}&ocultarNomes=invalido`)
+      .expect(400);
+    const body = response.body as { message: string[] };
+    expect(body.message).toContain('O campo ocultarNomes deve ser um booleano.');
+  });
+
   it('documents both formats, errors and the textual registration', async () => {
     const response = await api(app).get('/docs/json').expect(200);
     const document = response.body as {
@@ -288,6 +341,7 @@ describe('Class final report export (e2e)', () => {
     expect(route.parameters.find((parameter) => parameter.name === 'formato')?.schema.enum).toEqual(
       ['PDF', 'XLSX'],
     );
+    expect(route.parameters.find((parameter) => parameter.name === 'ocultarNomes')).toBeDefined();
     expect(Object.keys(route.responses)).toEqual(
       expect.arrayContaining(['200', '400', '401', '403', '404', '500']),
     );

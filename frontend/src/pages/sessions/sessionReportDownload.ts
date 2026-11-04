@@ -1,4 +1,5 @@
 import { toApiError } from '@/services/apiError';
+import { toSlug } from '@/utils/slug';
 
 async function readBlobAsText(blob: Blob): Promise<string> {
   if (typeof blob.text === 'function') {
@@ -44,4 +45,14 @@ export function triggerBlobDownload(blob: Blob, filename: string) {
   link.click();
   document.body.removeChild(link);
   window.URL.revokeObjectURL(url);
+}
+
+export function buildSessionReportFileName(
+  sessionTitle: string | undefined,
+  sessionId: string,
+  formato: 'PDF' | 'XLSX',
+): string {
+  const cleanTitle = sessionTitle ? toSlug(sessionTitle) : '';
+  const identifier = cleanTitle || sessionId;
+  return `relatorio-sessao-${identifier}.${formato.toLowerCase()}`;
 }

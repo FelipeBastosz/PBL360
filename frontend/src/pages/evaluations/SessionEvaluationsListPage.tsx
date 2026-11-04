@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeftIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronLeftIcon,
+  ExclamationTriangleIcon,
+  ClipboardDocumentCheckIcon,
+} from '@heroicons/react/24/outline';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { evaluationService } from '@/services/evaluation.service';
+import { sessionService } from '@/services/session.service';
 import type { SessionEvaluationSummary, ProblemEvaluationCriteria } from '@/types/evaluation';
+import type { RollCall } from '@/types/session';
 import { StudentEvaluationCard } from './components/StudentEvaluationCard';
+import { useSessionGrades } from './hooks/useSessionGrades';
 import { UserMenuButton } from '@/components/layout/UserMenu';
 import type { UserResponse } from '@/types/auth';
 import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
@@ -59,9 +66,33 @@ function MissingCriteriaAlert({ formulasUrl }: { formulasUrl: string }) {
   );
 }
 
+function PendingRollCallAlert({ rollCallUrl }: { rollCallUrl: string }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border-2 border-blue-300 bg-blue-50 p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <ClipboardDocumentCheckIcon className="mt-0.5 size-6 shrink-0 text-brand-900" />
+        <div>
+          <h3 className="text-sm font-bold text-brand-900">Chamada pendente</h3>
+          <p className="mt-0.5 text-xs leading-relaxed text-ink/70">
+            A chamada desta sessão ainda não foi salva. Registre a presença dos alunos para liberar
+            as avaliações individuais.
+          </p>
+        </div>
+      </div>
+      <Link
+        to={rollCallUrl}
+        className="w-full rounded-xl bg-brand-900 py-2 text-center text-xs font-semibold text-white transition hover:bg-brand-800"
+      >
+        Realizar Chamada
+      </Link>
+    </div>
+  );
+}
+
 function useSessionEvaluationsData(sessionId?: string, roomId?: string, problemId?: string) {
   const [students, setStudents] = useState<SessionEvaluationSummary[]>([]);
   const [criteria, setCriteria] = useState<ProblemEvaluationCriteria | null>(null);
+  const [rollCall, setRollCall] = useState<RollCall | null>(null);
   const [hasCheckedCriteria, setHasCheckedCriteria] = useState(false);
 
   const {
@@ -76,6 +107,10 @@ function useSessionEvaluationsData(sessionId?: string, roomId?: string, problemI
   useEffect(() => {
     if (sessionId) {
       fetchStudents(sessionId).then((r) => r.ok && setStudents(r.data));
+      sessionService
+        .getRollCall(sessionId)
+        .then(setRollCall)
+        .catch(() => setRollCall(null));
     }
     if (roomId && problemId) {
       fetchCriteria(roomId, problemId)
@@ -89,7 +124,22 @@ function useSessionEvaluationsData(sessionId?: string, roomId?: string, problemI
   const isLoading = isLoadingStudents || isLoadingCriteria;
   const hasMissingTable = hasCheckedCriteria && (!criteria || !criteria.tabela);
 
-  return { students, isLoading, error, hasMissingTable };
+  const hasPendingRollCall = Boolean(rollCall && rollCall.registradaEm === null);
+
+  const mergedStudents = students.map((s) => {
+    if (s.presenca) return s;
+    const studentCall = rollCall?.alunos.find((a) => a.alunoId === s.alunoId);
+    if (!studentCall?.status) return s;
+    const statusMap: Record<string, SessionEvaluationSummary['presenca']> = {
+      PRESENTE: 'presente',
+      ATRASADO: 'presente',
+      AUSENTE: 'ausente',
+      JUSTIFICADO: 'justificado',
+    };
+    return { ...s, presenca: statusMap[studentCall.status] ?? s.presenca };
+  });
+
+  return { students: mergedStudents, isLoading, error, hasMissingTable, hasPendingRollCall };
 }
 
 export default function SessionEvaluationsListPage() {
@@ -99,14 +149,13 @@ export default function SessionEvaluationsListPage() {
     sessionId: string;
   }>();
   const { user } = useAuth();
-  const { students, isLoading, error, hasMissingTable } = useSessionEvaluationsData(
-    sessionId,
-    roomId,
-    problemId,
-  );
+  const { students, isLoading, error, hasMissingTable, hasPendingRollCall } =
+    useSessionEvaluationsData(sessionId, roomId, problemId);
+  const sessionGrades = useSessionGrades(roomId, problemId, sessionId);
 
   const backUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}`;
   const formulasUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}/formulas`;
+  const rollCallUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}/chamada`;
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
@@ -114,6 +163,10 @@ export default function SessionEvaluationsListPage() {
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
         {error && <Alert tone="error">{error.message}</Alert>}
         {hasMissingTable && <MissingCriteriaAlert formulasUrl={formulasUrl} />}
+        {!hasMissingTable && hasPendingRollCall && (
+          <PendingRollCallAlert rollCallUrl={rollCallUrl} />
+        )}
+
         {isLoading ? (
           <div className="mt-10 flex justify-center">
             <Spinner className="size-8 text-brand-900" />
@@ -124,7 +177,8 @@ export default function SessionEvaluationsListPage() {
               <StudentEvaluationCard
                 key={student.alunoId}
                 student={student}
-                disabled={hasMissingTable}
+                sessionGrade={sessionGrades.get(student.alunoId)}
+                disabled={hasMissingTable || hasPendingRollCall}
                 evaluationUrl={`/sessoes/${sessionId}/avaliacao/${student.alunoId}`}
               />
             ))}

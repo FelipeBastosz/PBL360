@@ -27,13 +27,13 @@ const mockSession: Session = {
   id: 'sess-1',
   titulo: 'Sessão 1',
   descricao: 'Primeiro encontro tutorial',
-  data: '2026-08-12',
+  data: '12-08-2026',
   ordem: 1,
   status: 'agendada',
 };
 
 describe('SessionHubHeader', () => {
-  it('renders session title with formatted date, problem subtitle and initials', () => {
+  it('renders session title with formatted date from DD-MM-AAAA, problem subtitle and initials', () => {
     render(
       <MemoryRouter>
         <SessionHubHeader
@@ -52,6 +52,22 @@ describe('SessionHubHeader', () => {
       'href',
       '/turmas/room-1/problemas/prob-1',
     );
+  });
+
+  it('renders session title with formatted date when given ISO AAAA-MM-DD', () => {
+    const isoSession = { ...mockSession, data: '2026-08-12' };
+    render(
+      <MemoryRouter>
+        <SessionHubHeader
+          session={isoSession}
+          problem={mockProblem}
+          userNome="Professor Silva"
+          backUrl="/turmas/room-1/problemas/prob-1"
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/Sessão 1 · 12 ago/i)).toBeInTheDocument();
   });
 
   it('renders fallback title when session is null', () => {

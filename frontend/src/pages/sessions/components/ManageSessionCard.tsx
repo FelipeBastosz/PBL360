@@ -1,5 +1,6 @@
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { Session } from '@/types/session';
+import { formatDate } from '@/utils/date';
 
 type CardProps = {
   session: Session;
@@ -12,7 +13,7 @@ export function ManageSessionCard({ session, onEdit, onDelete }: CardProps) {
     <div className="flex items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
       <div className="flex min-w-0 flex-col">
         <h3 className="font-bold break-words text-ink">{session.titulo}</h3>
-        <p className="text-xs text-muted">{session.data}</p>
+        <p className="text-xs text-muted">{formatDate(session.data)}</p>
       </div>
       <div className="-mr-2 flex shrink-0 items-center">
         <button

@@ -4,13 +4,11 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { performanceTableService } from '@/services/performance-table.service';
 import { sessionService } from '@/services/session.service';
+import { useAuth } from '@/hooks/useAuth';
 import type { PerformanceTable } from '@/types/performanceTable';
 import PerformanceTableDetailPage from './PerformanceTableDetailPage';
 
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({ user: { nome: 'Professor Fulano', tipo: 'TUTOR' } }),
-}));
-
+vi.mock('@/hooks/useAuth');
 vi.mock('@/services/performance-table.service');
 vi.mock('@/services/session.service', () => ({
   sessionService: {
@@ -32,6 +30,7 @@ const mockTable: PerformanceTable = {
   nome: 'Barema PBL',
   descricao: 'Descrição do barema',
   quantidadeProblemas: 0,
+  autor: { id: 'tutor-1', nome: 'Professor Titular' },
   criterios: [
     { id: 'c1', nome: 'Comportamento', descricao: '', peso: 5, ordem: 1 },
     { id: 'c2', nome: 'Domínio', descricao: '', peso: 5, ordem: 2 },
@@ -44,6 +43,9 @@ describe('PerformanceTableDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
+    vi.mocked(useAuth).mockReturnValue({
+      user: { id: 'tutor-1', nome: 'Professor Titular', tipo: 'TUTOR' },
+    } as unknown as ReturnType<typeof useAuth>);
     vi.mocked(performanceTableService.getById).mockResolvedValue(mockTable);
     vi.mocked(sessionService.getEvaluationConfig).mockResolvedValue({
       tabela: { id: 'other', nome: 'Outra Tabela', padrao: false, criterios: [] },
@@ -125,5 +127,46 @@ describe('PerformanceTableDetailPage', () => {
       await screen.findByText(/esta sessão já possui avaliações enviadas/i),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Aplicar fórmula' })).toBeDisabled();
+  });
+
+  describe('when accessed by a co-tutor', () => {
+    beforeEach(() => {
+      // Simula perfil de co-tutor (ID diferente do criador da tabela tutor-1)
+      vi.mocked(useAuth).mockReturnValue({
+        user: { id: 'co-tutor-99', nome: 'Professora Co-tutora', tipo: 'TUTOR' },
+      } as unknown as ReturnType<typeof useAuth>);
+    });
+
+    it('loads shared formula with criteria and displays shared informative banner', async () => {
+      renderPage();
+
+      expect(await screen.findByRole('heading', { name: 'Barema PBL' })).toBeInTheDocument();
+      expect(screen.getByText('Comportamento')).toBeInTheDocument();
+      expect(screen.getByText('Domínio')).toBeInTheDocument();
+      expect(
+        screen.getByText(/Fórmula compartilhada da turma · Criada por Professor Titular/i),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Aplicar fórmula' })).toBeInTheDocument();
+    });
+
+    it('renders shared banner without author suffix when autor is missing', async () => {
+      const tableWithoutAuthor = { ...mockTable, autor: undefined };
+      vi.mocked(performanceTableService.getById).mockResolvedValueOnce(tableWithoutAuthor);
+
+      renderPage();
+
+      expect(await screen.findByRole('heading', { name: 'Barema PBL' })).toBeInTheDocument();
+      expect(screen.getByText('Fórmula compartilhada da turma.')).toBeInTheDocument();
+    });
+
+    it('does not display shared banner if formula is marked as default', async () => {
+      const defaultTable = { ...mockTable, isDefault: true };
+      vi.mocked(performanceTableService.getById).mockResolvedValueOnce(defaultTable);
+
+      renderPage();
+
+      expect(await screen.findByRole('heading', { name: 'Barema PBL' })).toBeInTheDocument();
+      expect(screen.queryByText(/Fórmula compartilhada da turma/i)).not.toBeInTheDocument();
+    });
   });
 });

@@ -20,6 +20,9 @@ export interface GetSelfAssessmentOutput {
   criteria: Array<{ id: string; name: string; weight: number; maxScore: number }>;
   items: Array<{ criterionId: string; score: number }>;
   consolidatedScore?: number;
+  papel?: string | null;
+  notaCargo?: number | null;
+  formula?: { criteriaWeight: number; roleWeight: number };
 }
 
 @Injectable()

@@ -16,4 +16,5 @@ export const toSaveTutorEvaluationInput = (
   })),
   submit: dto.enviar,
   justification: dto.justificativa,
+  notaCargo: dto.notaCargo,
 });

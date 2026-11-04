@@ -52,17 +52,18 @@ export function processStudentSession(ctx: SessionProcessingContext) {
   const calculated = calculateSessionForContext(ctx);
   return {
     row: buildSessionRow(ctx, sessionId, calculated),
-    responseSession: buildSessionResponse(sessionId, calculated),
+    responseSession: buildSessionResponse(sessionId, calculated, ctx.modality ?? 'TUTOR'),
   };
 }
 
 function calculateSessionForContext(ctx: SessionProcessingContext) {
   const { criteria, attendance, bonus } = extractSessionInputs(ctx);
+  const isNonTutorModality = Boolean(ctx.modality && ctx.modality !== 'TUTOR');
   return calculateSessionGrade({
     criteria,
     components: ctx.sessionComponents,
     attendance,
-    bonus,
+    bonus: isNonTutorModality ? null : bonus,
     defaultFormula: ctx.defaultSessionFormula,
     modality: ctx.modality,
     modalityScore: ctx.modalityScore,
@@ -86,11 +87,13 @@ function buildSessionRow(
 function buildSessionResponse(
   sessionId: string,
   calculated: ReturnType<typeof calculateSessionGrade>,
+  modality: EvaluationModality,
 ): SessionGradeResponse {
   return {
     sessaoId: sessionId,
     nota: presentGrade(calculated.grade),
     situacao: calculated.situation,
+    modalidade: modality,
   };
 }
 

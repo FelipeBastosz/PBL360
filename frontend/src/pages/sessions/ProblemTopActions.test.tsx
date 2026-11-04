@@ -1,32 +1,74 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { ProblemTopActions } from './ProblemTopActions';
 
-function renderActions(isProfessor: boolean) {
-  return render(
-    <MemoryRouter>
-      <ProblemTopActions isProfessor={isProfessor} roomId="room-1" problemId="problem-1" />
-    </MemoryRouter>,
-  );
-}
-
 describe('ProblemTopActions', () => {
-  it('renders Relatório Final button when user is a professor', () => {
-    renderActions(true);
+  it('renders both Relatório Final and Fórmulas when user is professor', () => {
+    render(
+      <MemoryRouter>
+        <ProblemTopActions isProfessor={true} roomId="room-123" problemId="prob-1" />
+      </MemoryRouter>,
+    );
+
     expect(screen.getByRole('button', { name: /relatório final/i })).toBeInTheDocument();
-    expect(screen.getByText('Nota final do problema')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /fórmulas/i })).toBeInTheDocument();
   });
 
-  it('renders disabled Formulas button with Em breve description', () => {
-    renderActions(true);
-    const button = screen.getByRole('button', { name: /fórmulas/i });
-    expect(button).toBeDisabled();
-    expect(screen.getByText('Em breve')).toBeInTheDocument();
+  it('renders nothing when user is not professor', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <ProblemTopActions isProfessor={false} roomId="room-123" problemId="prob-1" />
+      </MemoryRouter>,
+    );
+
+    expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders nothing when user is not a professor', () => {
-    const { container } = renderActions(false);
-    expect(container.firstChild).toBeNull();
+  it('navigates to problem formula when clicking Fórmulas', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/turmas/room-123/problemas/prob-1']}>
+        <Routes>
+          <Route
+            path="/turmas/:roomId/problemas/:problemId"
+            element={<ProblemTopActions isProfessor={true} roomId="room-123" problemId="prob-1" />}
+          />
+          <Route
+            path="/turmas/:roomId/problemas/:problemId/formula"
+            element={<p>Tela da Fórmula</p>}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const formulaBtn = screen.getByRole('button', { name: /fórmulas/i });
+    await user.click(formulaBtn);
+
+    expect(await screen.findByText('Tela da Fórmula')).toBeInTheDocument();
+  });
+
+  it('navigates to final report when clicking Relatório Final', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/turmas/room-123/problemas/prob-1']}>
+        <Routes>
+          <Route
+            path="/turmas/:roomId/problemas/:problemId"
+            element={<ProblemTopActions isProfessor={true} roomId="room-123" problemId="prob-1" />}
+          />
+          <Route
+            path="/turmas/:roomId/problemas/:problemId/notas"
+            element={<p>Tela do Relatório</p>}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const reportBtn = screen.getByRole('button', { name: /relatório final/i });
+    await user.click(reportBtn);
+
+    expect(await screen.findByText('Tela do Relatório')).toBeInTheDocument();
   });
 });

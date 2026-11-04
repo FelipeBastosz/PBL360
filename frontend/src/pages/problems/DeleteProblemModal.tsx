@@ -8,6 +8,7 @@ type DeleteModalProps = {
   impact: ProblemDeletionImpact | null;
   isOpen: boolean;
   isLoading: boolean;
+  errorMessage?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -62,17 +63,17 @@ function ImpactDescription({ impact }: { impact: ProblemDeletionImpact | null })
 }
 
 function ModalActions({
-  hasSessions,
+  isBlocked,
   isLoading,
   onConfirm,
   onCancel,
 }: {
-  hasSessions: boolean;
+  isBlocked: boolean;
   isLoading: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  if (hasSessions) {
+  if (isBlocked) {
     return (
       <div className="mt-2 flex w-full flex-col gap-2">
         <Button
@@ -109,19 +110,49 @@ function ModalActions({
   );
 }
 
+function ProblemModalContent({
+  problemTitle,
+  impact,
+  errorMessage,
+}: {
+  problemTitle: string;
+  impact: ProblemDeletionImpact | null;
+  errorMessage?: string | null;
+}) {
+  const hasSessions = (impact?.sessoes ?? 0) > 0;
+  const isBlocked = hasSessions || Boolean(errorMessage);
+  const title = isBlocked ? 'Não é possível excluir o problema' : 'Excluir problema?';
+
+  return (
+    <div className="flex flex-col gap-2">
+      <h2 id="delete-problem-title" className="text-xl font-bold text-ink">
+        {title}
+      </h2>
+      <p className="text-base font-semibold break-words text-brand-900">{problemTitle}</p>
+      {errorMessage ? (
+        <div role="alert" className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
+          <p className="text-sm font-medium text-danger leading-relaxed">{errorMessage}</p>
+        </div>
+      ) : (
+        <ImpactDescription impact={impact} />
+      )}
+    </div>
+  );
+}
+
 export function DeleteProblemModal({
   problemTitle,
   impact,
   isOpen,
   isLoading,
+  errorMessage,
   onConfirm,
   onCancel,
 }: DeleteModalProps) {
   useEscapeKey(isOpen, onCancel, isLoading);
   if (!isOpen) return null;
 
-  const hasSessions = (impact?.sessoes ?? 0) > 0;
-  const title = hasSessions ? 'Não é possível excluir o problema' : 'Excluir problema?';
+  const isBlocked = (impact?.sessoes ?? 0) > 0 || Boolean(errorMessage);
 
   return (
     <div
@@ -143,15 +174,13 @@ export function DeleteProblemModal({
 
         <div className="flex flex-col items-center gap-4 text-center">
           <DeleteIcon />
-          <div className="flex flex-col gap-2">
-            <h2 id="delete-problem-title" className="text-xl font-bold text-ink">
-              {title}
-            </h2>
-            <p className="text-base font-semibold break-words text-brand-900">{problemTitle}</p>
-            <ImpactDescription impact={impact} />
-          </div>
+          <ProblemModalContent
+            problemTitle={problemTitle}
+            impact={impact}
+            errorMessage={errorMessage}
+          />
           <ModalActions
-            hasSessions={hasSessions}
+            isBlocked={isBlocked}
             isLoading={isLoading}
             onConfirm={onConfirm}
             onCancel={onCancel}

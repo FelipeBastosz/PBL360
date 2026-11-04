@@ -3,6 +3,10 @@ export const STUDENT_EVALUATION_COUNTS = `
     EXISTS (SELECT 1 FROM attendances
              WHERE session_id = $1 AND student_id = $2 AND status IN ('PRESENT', 'LATE'))
       AS participating,
+    EXISTS (SELECT 1 FROM evaluations
+             WHERE session_id = $1 AND student_id = $2
+               AND type = 'TUTOR_SESSION' AND status = 'SUBMITTED')
+      AS "tutorEvaluationSubmitted",
     (SELECT COUNT(*)::int FROM evaluations
       WHERE session_id = $1 AND evaluator_id = $2
         AND type = 'PEER_ASSESSMENT' AND status = 'SUBMITTED') AS "peerSubmitted",
@@ -33,11 +37,11 @@ export const INSERT_SELF_EVALUATION = `
 `;
 
 export const UPDATE_SELF_DRAFT = `
-  UPDATE evaluations SET updated_by = $1, updated_at = $2 WHERE id = $3;
+  UPDATE evaluations SET applied_bonus = $1, updated_by = $2, updated_at = $3 WHERE id = $4;
 `;
 
 export const UPDATE_SELF_SUBMISSION = `
   UPDATE evaluations SET status = 'SUBMITTED', submitted_at = $1,
-    session_score = $2, applied_bonus = NULL, calculation_version = $3,
-    updated_by = $4, updated_at = $1 WHERE id = $5;
+    session_score = $2, applied_bonus = $3, calculation_version = $4,
+    updated_by = $5, updated_at = $1 WHERE id = $6;
 `;

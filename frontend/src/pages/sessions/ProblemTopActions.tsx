@@ -16,12 +16,12 @@ type ActionContentProps = {
 function ActionContent({ Icon, title, description }: ActionContentProps) {
   return (
     <>
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-900 transition-[scale] duration-200 group-hover:scale-105">
+      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-900 transition-transform duration-200 group-hover:scale-105">
         <Icon className="size-6" />
       </div>
       <div>
         <h3 className="text-base font-bold text-ink">{title}</h3>
-        <p className="text-xs text-muted">{description}</p>
+        <p className="mt-1 text-xs text-muted">{description}</p>
       </div>
     </>
   );
@@ -37,6 +37,10 @@ export function ProblemTopActions({ isProfessor, roomId, problemId }: ProblemTop
     .replace(':roomId', roomId)
     .replace(':problemId', problemId);
 
+  const formulaPath = ROUTES.problemFormula
+    .replace(':roomId', roomId)
+    .replace(':problemId', problemId);
+
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <button type="button" onClick={() => navigate(gradesPath)} className={ACTION_CLASS}>
@@ -47,8 +51,12 @@ export function ProblemTopActions({ isProfessor, roomId, problemId }: ProblemTop
         />
       </button>
 
-      <button type="button" disabled className={`${ACTION_CLASS} cursor-not-allowed opacity-60`}>
-        <ActionContent Icon={AdjustmentsHorizontalIcon} title="Fórmulas" description="Em breve" />
+      <button type="button" onClick={() => navigate(formulaPath)} className={ACTION_CLASS}>
+        <ActionContent
+          Icon={AdjustmentsHorizontalIcon}
+          title="Fórmulas"
+          description="Pesos da nota final"
+        />
       </button>
     </div>
   );

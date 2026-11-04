@@ -26,6 +26,11 @@ export const ROUTES = {
   performanceTableDetail: '/formulas/:id',
   managePerformanceTables: '/formulas/gerenciar',
   editPerformanceTable: '/formulas/:id/editar',
+  myFormulas: '/minhas-formulas',
+  createMyFormula: '/minhas-formulas/nova',
+  myFormulaDetail: '/minhas-formulas/:id',
+  manageMyFormulas: '/minhas-formulas/gerenciar',
+  editMyFormula: '/minhas-formulas/:id/editar',
   behaviorTags: '/marcacoes',
   problemSessions: '/turmas/:roomId/problemas/:problemId',
   manageSessions: '/turmas/:roomId/problemas/:problemId/sessoes/gerenciar',
@@ -50,4 +55,5 @@ export const ROUTES = {
   problemGrades: '/turmas/:roomId/problemas/:problemId/notas',
   sessionFeedback: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/feedback',
   problemFeedbacks: '/turmas/:roomId/problemas/:problemId/feedbacks',
+  problemFormula: '/turmas/:roomId/problemas/:problemId/formula',
 } as const;

@@ -9,8 +9,7 @@ import type { SessionTableIgnored, SessionEvaluationConfig } from '@/types/sessi
 import { readApplyTarget } from '@/utils/navigationState';
 
 function isDefaultTable(table: PerformanceTable): boolean {
-  const flags = table as { isDefault?: boolean; padrao?: boolean };
-  return Boolean(flags.isDefault ?? flags.padrao ?? table.origem === 'PADRAO');
+  return Boolean(table.isDefault ?? table.padrao ?? table.origem === 'PADRAO');
 }
 
 function isAlreadyApplied(
