@@ -427,32 +427,43 @@ describe('GetProblemGradesUseCase', () => {
   });
 
   describe('feedback grade overrides', () => {
-    it('overrides calculated session grade and problem grade when feedback notes exist', async () => {
+    it('overrides session grade and recalculates problem average without assigning session score to final grade', async () => {
       gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
       gradesRepository.findProblemData.mockResolvedValue({
         ...emptyData,
-        sessions: [{ id: 'session-1', date: '2026-10-02' }],
+        sessions: [
+          { id: 'session-1', date: '2026-10-02' },
+          { id: 'session-2', date: '2026-10-09' },
+        ],
         students: [{ id: 'student-1', name: 'Ana Souza', matricula: '20260001' }],
         scores: [
           { session_id: 'session-1', student_id: 'student-1', criterion_id: 'c1', score: 6.0 },
+          { session_id: 'session-2', student_id: 'student-1', criterion_id: 'c2', score: 8.2 },
         ],
-        criteria: [{ id: 'c1', session_id: 'session-1', weight: 1 }],
-        attendances: [{ session_id: 'session-1', student_id: 'student-1', status: 'PRESENT' }],
+        criteria: [
+          { id: 'c1', session_id: 'session-1', weight: 1 },
+          { id: 'c2', session_id: 'session-2', weight: 1 },
+        ],
+        attendances: [
+          { session_id: 'session-1', student_id: 'student-1', status: 'PRESENT' },
+          { session_id: 'session-2', student_id: 'student-1', status: 'PRESENT' },
+        ],
         feedbacks: [
           {
             student_id: 'student-1',
             session_id: 'session-1',
             scope: 'ALUNO',
-            grade: 8.5,
+            grade: 10.0,
           },
         ],
       });
 
       const result = await useCase.execute(input, new Date('2026-10-12T12:00:00.000Z'));
 
-      expect(result.alunos[0]?.sessoes[0]?.nota).toBe(8.5);
+      expect(result.alunos[0]?.sessoes[0]?.nota).toBe(10.0);
       expect(result.alunos[0]?.sessoes[0]?.situacao).toBe('AVALIADA');
-      expect(result.alunos[0]?.notaFinal).toBe(8.5);
+      expect(result.alunos[0]?.sessoes[1]?.nota).toBe(8.2);
+      expect(result.alunos[0]?.notaFinal).toBe(9.1);
     });
   });
 });
