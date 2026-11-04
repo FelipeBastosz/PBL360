@@ -39,6 +39,7 @@ export class SaveStudentProblemFeedbackUseCase {
     const existing = await this.feedbackRepository.findStudentProblemFeedback(
       input.problemId,
       input.studentId,
+      input.sessionId,
     );
 
     if (existing) {

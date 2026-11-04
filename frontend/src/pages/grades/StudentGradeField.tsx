@@ -53,6 +53,20 @@ function buildEvaluationContext(
   };
 }
 
+function isGradeCellEditable(
+  gradeItem?: StudentSessionGrade,
+  feedback?: StudentProblemFeedbackResponse | null,
+): boolean {
+  if (gradeItem?.situacao === 'JUSTIFICADA') return false;
+  const grade = feedback?.nota ?? gradeItem?.nota ?? null;
+  return grade !== null && grade !== undefined && !Number.isNaN(Number(grade));
+}
+
+function resolveTargetStudentName(student?: StudentGradeRow, hideNames?: boolean): string {
+  if (!student) return 'Aluno';
+  return hideNames ? student.matricula || student.nome : student.nome;
+}
+
 export function StudentGradeField(props: StudentGradeFieldProps) {
   if (props.onChange && props.value !== undefined) {
     return (
@@ -63,20 +77,22 @@ export function StudentGradeField(props: StudentGradeFieldProps) {
     );
   }
 
+  const cellText = formatSessionCell(props.gradeItem?.nota, props.gradeItem?.situacao);
+  if (!isGradeCellEditable(props.gradeItem, props.existingFeedback)) {
+    return <td className="px-3 py-3.5 text-center text-muted">{cellText}</td>;
+  }
+
   const student = props.aluno ?? props.student;
   const session = props.sessao ?? props.session;
   const sessionName = resolveSessionName(session);
+  const studentName = resolveTargetStudentName(student, props.hideNames);
 
   const handleClick = () => {
     props.onClick?.();
     if (student && session) {
-      const context = buildEvaluationContext(
-        student,
-        session,
-        props.gradeItem,
-        props.existingFeedback,
+      props.onSelectEvaluation?.(
+        buildEvaluationContext(student, session, props.gradeItem, props.existingFeedback),
       );
-      props.onSelectEvaluation?.(context);
       props.onSelectStudent?.(student);
     }
   };
@@ -87,13 +103,6 @@ export function StudentGradeField(props: StudentGradeFieldProps) {
       handleClick();
     }
   };
-
-  const cellText = formatSessionCell(props.gradeItem?.nota, props.gradeItem?.situacao);
-  const studentName = student
-    ? props.hideNames
-      ? student.matricula || student.nome
-      : student.nome
-    : 'Aluno';
 
   return (
     <td

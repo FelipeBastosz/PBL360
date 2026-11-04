@@ -45,6 +45,10 @@ export const FIND_STUDENT_PROBLEM_FEEDBACK_QUERY = `
   WHERE f.problema_id = $1
     AND f.destinatario_id = $2
     AND f.escopo = 'ALUNO'
+    AND (
+      ($3::uuid IS NULL AND f.sessao_id IS NULL)
+      OR f.sessao_id = $3::uuid
+    )
   LIMIT 1;
 `;
 

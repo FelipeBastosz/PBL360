@@ -24,14 +24,24 @@ type FormErrors = {
   justificativa?: string;
 };
 
-function resolveExistingGrade(
-  current?: number | string | null,
+function getSessionFeedback(
   feedback?: StudentProblemFeedbackResponse | null,
+  sessionId?: string,
+): StudentProblemFeedbackResponse | null {
+  if (!feedback) return null;
+  if (!sessionId) return feedback;
+  const fbSession = feedback.sessaoId ?? feedback.sessionId;
+  if (fbSession && fbSession !== sessionId) return null;
+  return feedback;
+}
+
+function resolveExistingGrade(
+  feedback?: StudentProblemFeedbackResponse | null,
+  sessionId?: string,
 ): number | null {
-  if (feedback?.nota !== undefined && feedback?.nota !== null) return Number(feedback.nota);
-  if (current !== undefined && current !== null && current !== '') {
-    const num = Number(String(current).replace(',', '.'));
-    return Number.isNaN(num) ? null : num;
+  const sessionFb = getSessionFeedback(feedback, sessionId);
+  if (sessionFb?.nota !== undefined && sessionFb?.nota !== null) {
+    return Number(sessionFb.nota);
   }
   return null;
 }
@@ -233,17 +243,12 @@ function createSubmitHandler(
 
 export function useStudentFeedbackForm(params: UseStudentFeedbackFormParams) {
   const { notify } = useToast();
-  const existingGrade = resolveExistingGrade(params.currentGrade, params.existingFeedback);
-  const form = useFeedbackFormState(
-    params.currentGrade,
-    params.currentFeedback,
-    params.existingFeedback,
-  );
+  const sessionFb = getSessionFeedback(params.existingFeedback, params.sessionId);
+  const existingGrade = resolveExistingGrade(sessionFb, params.sessionId);
+  const form = useFeedbackFormState(params.currentGrade, params.currentFeedback, sessionFb);
   const isGradeChanged = checkGradeChanged(form.nota, existingGrade);
   const handleSubmit = createSubmitHandler(params, form, isGradeChanged, notify);
-  const lastEditedText = formatLastEdited(
-    resolveEffectiveDate(params.updatedAt, params.existingFeedback),
-  );
+  const lastEditedText = formatLastEdited(resolveEffectiveDate(params.updatedAt, sessionFb));
 
   return {
     ...form,

@@ -35,7 +35,11 @@ export interface ProblemFeedbackDetail {
 
 export interface FeedbackRepository {
   findById(id: string): Promise<Feedback | null>;
-  findStudentProblemFeedback(problemId: string, studentId: string): Promise<Feedback | null>;
+  findStudentProblemFeedback(
+    problemId: string,
+    studentId: string,
+    sessionId?: string | null,
+  ): Promise<Feedback | null>;
   findGeneralProblemFeedback(problemId: string): Promise<Feedback | null>;
   findStudentSessionFeedback(sessionId: string, studentId: string): Promise<Feedback | null>;
   findStudentSessionFeedbackReadAt(feedbackId: string, studentId: string): Promise<Date | null>;

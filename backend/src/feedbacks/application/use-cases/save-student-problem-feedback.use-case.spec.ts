@@ -238,4 +238,42 @@ describe('SaveStudentProblemFeedbackUseCase', () => {
       }),
     ).rejects.toThrow(NotFoundError);
   });
+
+  it('isolates feedback validation by sessionId without leaking existing score from another session', async () => {
+    // When queried for session-2, return null (session 2 has no previous feedback)
+    feedbackRepository.findStudentProblemFeedback.mockImplementation(
+      (_probId, _studentId, sessionId) => {
+        if (sessionId === 'session-2') return Promise.resolve(null);
+        const s1Feedback = Feedback.create({
+          authorId: 'tutor-1',
+          problemId: 'problem-1',
+          sessionId: 'session-1',
+          recipientId: 'student-1',
+          scope: FeedbackScope.STUDENT,
+          score: 10.0,
+          text: 'Feedback da Sessão 1.',
+        });
+        return Promise.resolve(s1Feedback);
+      },
+    );
+
+    // Save for session-2 with score 9.0 (different from session-1's 10.0) without justification
+    const result = await useCase.execute({
+      roomId: 'room-1',
+      problemId: 'problem-1',
+      studentId: 'student-1',
+      sessionId: 'session-2',
+      tutorId: 'tutor-1',
+      score: 9.0,
+      text: 'Primeiro feedback da Sessão 2.',
+    });
+
+    expect(result.sessionId).toBe('session-2');
+    expect(result.score).toBe(9.0);
+    expect(result.text).toBe('Primeiro feedback da Sessão 2.');
+    expect(feedbackRepository.saveWithRevision).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: 'session-2', score: 9.0 }),
+      null,
+    );
+  });
 });

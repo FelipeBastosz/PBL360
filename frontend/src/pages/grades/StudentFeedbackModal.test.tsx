@@ -236,12 +236,23 @@ describe('StudentFeedbackModal', () => {
   });
 
   it('pre-fills modal inputs with currentGrade and currentFeedback from evaluation context', () => {
+    const existingFeedback: StudentProblemFeedbackResponse = {
+      id: 'fb-sess-1',
+      escopo: 'ALUNO',
+      destinatarioId: 'aluno-1',
+      sessaoId: 'sess-1',
+      nota: 9.2,
+      texto: 'Participação ativa nas etapas.',
+      criadoEm: '2026-10-10T10:00:00Z',
+      editadoEm: '2026-10-12T15:30:00Z',
+    };
+
     render(
       <StudentFeedbackModal
         isOpen={true}
         onClose={vi.fn()}
         student={mockStudent}
-        existingFeedback={null}
+        existingFeedback={existingFeedback}
         hideNames={false}
         roomId="room-1"
         problemId="prob-1"
@@ -253,6 +264,7 @@ describe('StudentFeedbackModal', () => {
           currentGrade: 9.2,
           currentFeedback: 'Participação ativa nas etapas.',
           updatedAt: '2026-10-12T15:30:00Z',
+          existingFeedback,
         }}
       />,
     );
@@ -264,6 +276,46 @@ describe('StudentFeedbackModal', () => {
       'Participação ativa nas etapas.',
     );
     expect(screen.getByText(/Última edição/i)).toBeInTheDocument();
+  });
+
+  it('does not render adjustment layout when evaluation has calculated grade but no existing feedback on this session', () => {
+    const s1Feedback: StudentProblemFeedbackResponse = {
+      id: 'fb-sess-1',
+      escopo: 'ALUNO',
+      destinatarioId: 'aluno-1',
+      sessaoId: 'sess-1',
+      nota: 10.0,
+      texto: 'Feedback da Sessão 1',
+      criadoEm: '2026-10-10T10:00:00Z',
+      editadoEm: null,
+    };
+
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={vi.fn()}
+        student={mockStudent}
+        existingFeedback={s1Feedback} // Belongs to sess-1, but modal is opening for sess-2
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+        evaluation={{
+          studentId: 'aluno-1',
+          sessionId: 'sess-2',
+          sessionName: 'Sessão 02',
+          currentGrade: 8.2,
+          currentFeedback: null,
+          updatedAt: null,
+          existingFeedback: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Feedback - Sessão 02' })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/justificativa do ajuste/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/nota do aluno/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/nota/i)).toHaveValue(8.2);
   });
 
   it('does not render justification field when registering feedback for the first time', () => {

@@ -66,7 +66,7 @@ describe('ProblemGradesTable', () => {
     expect(screen.getByText('7,3')).toBeInTheDocument();
   });
 
-  it('renders pending (—), excused (J), and absent (0,0) states correctly', () => {
+  it('renders pending (—), excused (J), and absent (0,0) states correctly, blocking interaction on — and J', () => {
     render(
       <ProblemGradesTable
         data={mockGradesData}
@@ -77,11 +77,17 @@ describe('ProblemGradesTable', () => {
     );
 
     // Bruno's sessions: S1 is pending (—), S2 is excused (J), S3 is absent (0,0)
-    expect(screen.getByText('J')).toBeInTheDocument();
-    expect(screen.getByText('0,0')).toBeInTheDocument();
-    // Pending cell renders '—'
+    const excusedCell = screen.getByText('J');
+    expect(excusedCell).toBeInTheDocument();
+    expect(excusedCell.closest('td')).not.toHaveAttribute('role', 'button');
+
     const dashes = screen.getAllByText('—');
     expect(dashes.length).toBeGreaterThan(0);
+    expect(dashes[0]?.closest('td')).not.toHaveAttribute('role', 'button');
+
+    // S3 absent has score 0.0 and remains interactive as a calculable grade
+    const absentCell = screen.getByRole('button', { name: /Bruno Mendes.*S3.*0,0/i });
+    expect(absentCell).toBeInTheDocument();
   });
 
   it('toggles column header from ALUNO to MATRÍCULA and displays matricula when hideNames is true', async () => {
@@ -164,6 +170,7 @@ describe('ProblemGradesTable', () => {
       alunos: [
         {
           alunoId: 'aluno-1',
+          nome: 'Ana Silva',
           sessaoId: 'sess-1',
           feedback: {
             id: 'fb-s1',
