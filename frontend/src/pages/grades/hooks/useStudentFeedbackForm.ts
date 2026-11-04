@@ -17,24 +17,65 @@ export type UseStudentFeedbackFormParams = {
   updatedAt?: string | null;
 };
 
-type FormErrors = { nota?: string; texto?: string };
+type FormErrors = {
+  nota?: string;
+  texto?: string;
+  justificativa?: string;
+};
 
-function validateStudentFeedback(nota: string, texto: string): FormErrors {
+function resolveExistingGrade(
+  currentGrade: number | string | null | undefined,
+  feedback: StudentProblemFeedbackResponse | null,
+): number | null {
+  if (currentGrade !== undefined && currentGrade !== null && currentGrade !== '') {
+    const num = Number(String(currentGrade).replace(',', '.'));
+    return Number.isNaN(num) ? null : num;
+  }
+  if (feedback?.nota !== undefined && feedback?.nota !== null) {
+    return Number(feedback.nota);
+  }
+  return null;
+}
+
+function checkGradeChanged(newNota: string, existingGrade: number | null): boolean {
+  if (existingGrade === null) return false;
+  const parsed = Number(newNota.replace(',', '.'));
+  if (Number.isNaN(parsed)) return false;
+  return Math.abs(parsed - existingGrade) >= 0.005;
+}
+
+function validateGrade(nota: string): string | undefined {
+  if (!nota.trim()) return 'A nota é obrigatória.';
+  const parsed = Number(nota.replace(',', '.'));
+  if (Number.isNaN(parsed) || parsed < 0 || parsed > 10) {
+    return Number.isNaN(parsed)
+      ? 'A nota deve ser um número válido.'
+      : 'A nota deve estar entre 0 e 10.';
+  }
+  return undefined;
+}
+
+function validateJustification(isGradeChanged: boolean, justificativa: string): string | undefined {
+  if (!isGradeChanged) return undefined;
+  const trimmed = justificativa.trim();
+  if (!trimmed) return 'A justificativa do ajuste é obrigatória.';
+  if (trimmed.length < 10) return 'A justificativa deve ter no mínimo 10 caracteres.';
+  if (trimmed.length > 500) return 'A justificativa deve ter no máximo 500 caracteres.';
+  return undefined;
+}
+
+function validateStudentFeedback(
+  nota: string,
+  texto: string,
+  isGradeChanged: boolean,
+  justificativa: string,
+): FormErrors {
   const errors: FormErrors = {};
-  if (!nota.trim()) {
-    errors.nota = 'A nota é obrigatória.';
-  } else {
-    const parsed = Number(nota.replace(',', '.'));
-    if (Number.isNaN(parsed) || parsed < 0 || parsed > 10) {
-      errors.nota = Number.isNaN(parsed)
-        ? 'A nota deve ser um número válido.'
-        : 'A nota deve estar entre 0 e 10.';
-    }
-  }
-
-  if (!texto.trim()) {
-    errors.texto = 'O comentário de feedback é obrigatório.';
-  }
+  const gradeError = validateGrade(nota);
+  if (gradeError) errors.nota = gradeError;
+  if (!texto.trim()) errors.texto = 'O comentário de feedback é obrigatório.';
+  const justError = validateJustification(isGradeChanged, justificativa);
+  if (justError) errors.justificativa = justError;
   return errors;
 }
 
@@ -58,18 +99,22 @@ function getInitialTexto(
   return feedback?.texto ?? '';
 }
 
-async function submitStudent(
-  roomId: string,
-  problemId: string,
-  studentId: string,
-  nota: string,
-  texto: string,
-) {
-  return feedbackService.saveStudentFeedback(roomId, problemId, studentId, {
+type SubmitParams = {
+  roomId: string;
+  problemId: string;
+  studentId: string;
+  nota: string;
+  texto: string;
+  justificativa?: string;
+};
+
+async function submitStudent(params: SubmitParams) {
+  return feedbackService.saveStudentFeedback(params.roomId, params.problemId, params.studentId, {
     escopo: 'ALUNO',
-    destinatario_id: studentId,
-    nota: Number(nota.replace(',', '.')),
-    texto: texto.trim(),
+    destinatario_id: params.studentId,
+    nota: Number(params.nota.replace(',', '.')),
+    texto: params.texto.trim(),
+    justificativa: params.justificativa?.trim() || undefined,
   });
 }
 
@@ -77,26 +122,19 @@ function getStudentError(err: unknown) {
   return (err as { message?: string })?.message || 'Não foi possível salvar o feedback do aluno.';
 }
 
-async function executeSubmitStudent(
-  params: { roomId: string; problemId: string; studentId: string; nota: string; texto: string },
-  callbacks: {
-    notify: (t: { tone: 'success' | 'error'; message: string }) => void;
-    onSaved: (feedback: StudentProblemFeedbackResponse) => void;
-    onClose: () => void;
-    setApiError: (err: string | null) => void;
-    setIsSubmitting: (sub: boolean) => void;
-  },
-) {
+type SubmitCallbacks = {
+  notify: (t: { tone: 'success' | 'error'; message: string }) => void;
+  onSaved: (feedback: StudentProblemFeedbackResponse) => void;
+  onClose: () => void;
+  setApiError: (err: string | null) => void;
+  setIsSubmitting: (sub: boolean) => void;
+};
+
+async function executeSubmitStudent(params: SubmitParams, callbacks: SubmitCallbacks) {
   callbacks.setIsSubmitting(true);
   callbacks.setApiError(null);
   try {
-    const saved = await submitStudent(
-      params.roomId,
-      params.problemId,
-      params.studentId,
-      params.nota,
-      params.texto,
-    );
+    const saved = await submitStudent(params);
     callbacks.notify({ tone: 'success', message: 'Feedback salvo com sucesso!' });
     callbacks.onSaved(saved);
     callbacks.onClose();
@@ -109,53 +147,115 @@ async function executeSubmitStudent(
   }
 }
 
-export function useStudentFeedbackForm({
-  student,
-  existingFeedback,
-  roomId,
-  problemId,
-  onSaved,
-  onClose,
-  currentGrade,
-  currentFeedback,
-  updatedAt,
-}: UseStudentFeedbackFormParams) {
-  const { notify } = useToast();
+function useFeedbackFormState(
+  currentGrade?: number | string | null,
+  currentFeedback?: string | null,
+  existingFeedback?: StudentProblemFeedbackResponse | null,
+) {
   const [nota, setNota] = useState(() => getInitialNota(currentGrade, existingFeedback));
   const [texto, setTexto] = useState(() => getInitialTexto(currentFeedback, existingFeedback));
+  const [justificativa, setJustificativa] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const valErrors = validateStudentFeedback(nota, texto);
-    if (Object.keys(valErrors).length > 0) {
-      setErrors(valErrors);
-      return;
-    }
-    executeSubmitStudent(
-      { roomId, problemId, studentId: student.alunoId, nota, texto },
-      { notify, onSaved, onClose, setApiError, setIsSubmitting },
-    );
-  };
-
-  const effectiveDate =
-    updatedAt ||
-    (existingFeedback as { updatedAt?: string | null })?.updatedAt ||
-    existingFeedback?.editadoEm ||
-    existingFeedback?.criadoEm;
+  const clearErr = (k: keyof FormErrors) => setErrors((p) => (p[k] ? { ...p, [k]: undefined } : p));
 
   return {
     nota,
     setNota,
     texto,
     setTexto,
+    justificativa,
+    setJustificativa,
     errors,
     setErrors,
     apiError,
+    setApiError,
     isSubmitting,
+    setIsSubmitting,
+    handleNotaChange: (v: string) => {
+      setNota(v);
+      clearErr('nota');
+    },
+    handleTextoChange: (v: string) => {
+      setTexto(v);
+      clearErr('texto');
+    },
+    handleJustificativaChange: (v: string) => {
+      setJustificativa(v);
+      clearErr('justificativa');
+    },
+  };
+}
+
+function resolveEffectiveDate(
+  updatedAt?: string | null,
+  existingFeedback?: StudentProblemFeedbackResponse | null,
+) {
+  return (
+    updatedAt ||
+    (existingFeedback as { updatedAt?: string | null })?.updatedAt ||
+    existingFeedback?.editadoEm ||
+    existingFeedback?.criadoEm
+  );
+}
+
+function createSubmitHandler(
+  params: UseStudentFeedbackFormParams,
+  form: ReturnType<typeof useFeedbackFormState>,
+  isGradeChanged: boolean,
+  notify: (t: { tone: 'success' | 'error'; message: string }) => void,
+) {
+  return (e: FormEvent) => {
+    e.preventDefault();
+    const valErrors = validateStudentFeedback(
+      form.nota,
+      form.texto,
+      isGradeChanged,
+      form.justificativa,
+    );
+    if (Object.keys(valErrors).length > 0) return form.setErrors(valErrors);
+    executeSubmitStudent(
+      {
+        roomId: params.roomId,
+        problemId: params.problemId,
+        studentId: params.student.alunoId,
+        nota: form.nota,
+        texto: form.texto,
+        justificativa: isGradeChanged ? form.justificativa : undefined,
+      },
+      {
+        notify,
+        onSaved: params.onSaved,
+        onClose: params.onClose,
+        setApiError: form.setApiError,
+        setIsSubmitting: form.setIsSubmitting,
+      },
+    );
+  };
+}
+
+export function useStudentFeedbackForm(params: UseStudentFeedbackFormParams) {
+  const { notify } = useToast();
+  const existingGrade = resolveExistingGrade(params.currentGrade, params.existingFeedback);
+  const form = useFeedbackFormState(
+    params.currentGrade,
+    params.currentFeedback,
+    params.existingFeedback,
+  );
+  const isGradeChanged = checkGradeChanged(form.nota, existingGrade);
+  const handleSubmit = createSubmitHandler(params, form, isGradeChanged, notify);
+  const lastEditedText = formatLastEdited(
+    resolveEffectiveDate(params.updatedAt, params.existingFeedback),
+  );
+
+  return {
+    ...form,
+    existingGrade,
+    isEditingExistingGrade: existingGrade !== null,
+    isGradeChanged,
     handleSubmit,
-    lastEditedText: formatLastEdited(effectiveDate),
+    lastEditedText,
   };
 }

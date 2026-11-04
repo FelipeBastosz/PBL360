@@ -211,7 +211,9 @@ describe('StudentFeedbackModal', () => {
     );
 
     expect(screen.getByText(/Última edição/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/nota/i)).toHaveValue(7.5);
+    expect(screen.getByLabelText(/nota do aluno/i)).toHaveValue('7,5');
+    expect(screen.getByLabelText(/nova nota/i)).toHaveValue(7.5);
+    expect(screen.getByLabelText(/justificativa do ajuste/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/comentário de feedback/i)).toHaveValue('Feedback anterior.');
   });
 
@@ -256,10 +258,195 @@ describe('StudentFeedbackModal', () => {
     );
 
     expect(screen.getByRole('dialog', { name: 'Feedback - Sessão 01' })).toBeInTheDocument();
-    expect(screen.getByLabelText(/nota/i)).toHaveValue(9.2);
+    expect(screen.getByLabelText(/nota do aluno/i)).toHaveValue('9,2');
+    expect(screen.getByLabelText(/nova nota/i)).toHaveValue(9.2);
     expect(screen.getByLabelText(/comentário de feedback/i)).toHaveValue(
       'Participação ativa nas etapas.',
     );
     expect(screen.getByText(/Última edição/i)).toBeInTheDocument();
+  });
+
+  it('does not render justification field when registering feedback for the first time', () => {
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={vi.fn()}
+        student={mockStudent}
+        existingFeedback={null}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText(/justificativa do ajuste/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/nota do aluno/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/nota/i)).toBeInTheDocument();
+  });
+
+  it('requires justification with at least 10 characters when altering an existing grade', async () => {
+    const user = userEvent.setup();
+    const existingFeedback: StudentProblemFeedbackResponse = {
+      id: 'fb-1',
+      escopo: 'ALUNO',
+      destinatarioId: 'aluno-1',
+      nota: 7.5,
+      texto: 'Feedback anterior.',
+      criadoEm: '2026-10-01T10:00:00Z',
+      editadoEm: null,
+    };
+
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={vi.fn()}
+        student={mockStudent}
+        existingFeedback={existingFeedback}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+      />,
+    );
+
+    const newGradeInput = screen.getByLabelText(/nova nota/i);
+    const saveButton = screen.getByRole('button', { name: 'Salvar' });
+
+    await user.clear(newGradeInput);
+    await user.type(newGradeInput, '8.5');
+    await user.click(saveButton);
+
+    expect(screen.getByText('A justificativa do ajuste é obrigatória.')).toBeInTheDocument();
+    expect(feedbackService.saveStudentFeedback).not.toHaveBeenCalled();
+
+    const justificationInput = screen.getByLabelText(/justificativa do ajuste/i);
+    await user.type(justificationInput, 'Curto');
+    await user.click(saveButton);
+
+    expect(
+      screen.getByText('A justificativa deve ter no mínimo 10 caracteres.'),
+    ).toBeInTheDocument();
+    expect(feedbackService.saveStudentFeedback).not.toHaveBeenCalled();
+  });
+
+  it('submits payload with justificativa when modifying grade with valid justification', async () => {
+    const user = userEvent.setup();
+    const handleSaved = vi.fn();
+    const handleClose = vi.fn();
+    const existingFeedback: StudentProblemFeedbackResponse = {
+      id: 'fb-1',
+      escopo: 'ALUNO',
+      destinatarioId: 'aluno-1',
+      nota: 7.5,
+      texto: 'Feedback anterior.',
+      criadoEm: '2026-10-01T10:00:00Z',
+      editadoEm: null,
+    };
+
+    const mockSavedResponse: StudentProblemFeedbackResponse = {
+      ...existingFeedback,
+      nota: 9.0,
+      editadoEm: '2026-10-15T12:00:00Z',
+    };
+
+    vi.mocked(feedbackService.saveStudentFeedback).mockResolvedValue(mockSavedResponse);
+
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={handleClose}
+        student={mockStudent}
+        existingFeedback={existingFeedback}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={handleSaved}
+      />,
+    );
+
+    const newGradeInput = screen.getByLabelText(/nova nota/i);
+    const justificationInput = screen.getByLabelText(/justificativa do ajuste/i);
+    const saveButton = screen.getByRole('button', { name: 'Salvar' });
+
+    await user.clear(newGradeInput);
+    await user.type(newGradeInput, '9.0');
+    await user.type(
+      justificationInput,
+      'Ajuste de nota após revisão do relatório da sessão de tutoria.',
+    );
+    await user.click(saveButton);
+
+    expect(feedbackService.saveStudentFeedback).toHaveBeenCalledWith(
+      'room-1',
+      'prob-1',
+      'aluno-1',
+      {
+        escopo: 'ALUNO',
+        destinatario_id: 'aluno-1',
+        nota: 9.0,
+        texto: 'Feedback anterior.',
+        justificativa: 'Ajuste de nota após revisão do relatório da sessão de tutoria.',
+      },
+    );
+    expect(handleSaved).toHaveBeenCalledWith(mockSavedResponse);
+    expect(handleClose).toHaveBeenCalled();
+  });
+
+  it('does not require justification when only modifying feedback comment on existing grade', async () => {
+    const user = userEvent.setup();
+    const handleSaved = vi.fn();
+    const handleClose = vi.fn();
+    const existingFeedback: StudentProblemFeedbackResponse = {
+      id: 'fb-1',
+      escopo: 'ALUNO',
+      destinatarioId: 'aluno-1',
+      nota: 7.5,
+      texto: 'Feedback anterior.',
+      criadoEm: '2026-10-01T10:00:00Z',
+      editadoEm: null,
+    };
+
+    const mockSavedResponse: StudentProblemFeedbackResponse = {
+      ...existingFeedback,
+      texto: 'Feedback atualizado com mais detalhes pertinentes.',
+      editadoEm: '2026-10-15T12:00:00Z',
+    };
+
+    vi.mocked(feedbackService.saveStudentFeedback).mockResolvedValue(mockSavedResponse);
+
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={handleClose}
+        student={mockStudent}
+        existingFeedback={existingFeedback}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={handleSaved}
+      />,
+    );
+
+    const commentInput = screen.getByLabelText(/comentário de feedback/i);
+    const saveButton = screen.getByRole('button', { name: 'Salvar' });
+
+    await user.clear(commentInput);
+    await user.type(commentInput, 'Feedback atualizado com mais detalhes pertinentes.');
+    await user.click(saveButton);
+
+    expect(feedbackService.saveStudentFeedback).toHaveBeenCalledWith(
+      'room-1',
+      'prob-1',
+      'aluno-1',
+      {
+        escopo: 'ALUNO',
+        destinatario_id: 'aluno-1',
+        nota: 7.5,
+        texto: 'Feedback atualizado com mais detalhes pertinentes.',
+      },
+    );
+    expect(handleSaved).toHaveBeenCalledWith(mockSavedResponse);
+    expect(handleClose).toHaveBeenCalled();
   });
 });

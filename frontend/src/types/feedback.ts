@@ -34,6 +34,7 @@ export interface SaveStudentFeedbackPayload {
   destinatario_id: string;
   nota: number;
   texto: string;
+  justificativa?: string;
 }
 
 export interface SaveGeneralFeedbackPayload {
