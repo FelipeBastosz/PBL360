@@ -82,7 +82,14 @@ const mockFeedbacks = {
   ],
 };
 
-function createMockProblemReportPdf(): Buffer {
+function createMockProblemReportPdf(options?: { ocultarNomes?: boolean }): Buffer {
+  const student1Line = options?.ocultarNomes
+    ? '(Matricula: 20260001 | Nota Final: 8.75) Tj'
+    : '(Aluno: Ana Silva | Matricula: 20260001 | Nota Final: 8.75) Tj';
+  const student2Line = options?.ocultarNomes
+    ? '(Matricula: 20260002 | Nota Final: 7.00) Tj'
+    : '(Aluno: Bruno Mendes | Matricula: 20260002 | Nota Final: 7.00) Tj';
+
   const content = [
     'BT',
     '/F1 16 Tf',
@@ -92,9 +99,9 @@ function createMockProblemReportPdf(): Buffer {
     '/F1 12 Tf',
     '(Turma: MED101 - Medicina 2026.1 | Professor: Prof. Carlos Santos) Tj',
     '0 -25 Td',
-    '(Aluno: Ana Silva | Matricula: 20260001 | Nota Final: 8.75) Tj',
+    student1Line,
     '0 -20 Td',
-    '(Aluno: Bruno Mendes | Matricula: 20260002 | Nota Final: 7.00) Tj',
+    student2Line,
     'ET',
   ].join('\n');
 
@@ -329,11 +336,13 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     const mockPdfBuffer = createMockProblemReportPdf();
     let pdfExportRequested = false;
     let excelExportRequested = false;
+    let capturedPdfParams: Record<string, string> = {};
 
     await page.route(/\/api\/salas\/sala-1\/problemas\/prob-1\/relatorio/, async (route) => {
-      const url = route.request().url();
-      if (url.includes('formato=PDF')) {
+      const url = new URL(route.request().url());
+      if (url.searchParams.get('formato') === 'PDF') {
         pdfExportRequested = true;
+        capturedPdfParams = Object.fromEntries(url.searchParams.entries());
         await route.fulfill({
           status: 200,
           contentType: 'application/pdf',
@@ -341,7 +350,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         });
         return;
       }
-      if (url.includes('formato=XLSX')) {
+      if (url.searchParams.get('formato') === 'XLSX') {
         excelExportRequested = true;
         await route.fulfill({
           status: 200,
@@ -363,15 +372,42 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     await expect(excelBtn).toBeVisible();
     await expect(excelBtn).toBeEnabled();
 
-    // 1. Professor initiates PDF export, opens configuration modal and confirms download
+    // 1. Professor initiates PDF export, opens configuration modal and verifies default options
     await pdfBtn.click();
     const pdfModal = page.getByRole('dialog', { name: /Exportar em PDF/i });
     await expect(pdfModal).toBeVisible();
+
+    // Default configuration: "Nome e Matrícula" and all sections active
+    await expect(pdfModal.getByRole('radio', { name: 'Nome e Matrícula' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await expect(pdfModal.getByRole('radio', { name: 'Apenas Matrícula' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+    await expect(pdfModal.getByRole('switch', { name: 'Pendências de avaliação' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await expect(pdfModal.getByRole('switch', { name: 'Marcações das sessões' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await expect(pdfModal.getByRole('switch', { name: 'Feedbacks' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
 
     const pdfConfirmBtn = pdfModal.getByRole('button', { name: 'Confirmar Exportação' });
     const [pdfDownload] = await Promise.all([page.waitForEvent('download'), pdfConfirmBtn.click()]);
 
     expect(pdfExportRequested).toBe(true);
+    expect(capturedPdfParams.formato).toBe('PDF');
+    expect(capturedPdfParams.ocultarNomes).toBe('false');
+    expect(capturedPdfParams.mostrarFeedback).toBe('true');
+    expect(capturedPdfParams.mostrarPendencias).toBe('true');
+    expect(capturedPdfParams.mostrarMarcacoes).toBe('true');
     expect(pdfDownload.suggestedFilename()).toBe('relatorio-problema-problema-1-dor-toracica.pdf');
 
     // 2. Validate PDF stream and internal document content
@@ -456,6 +492,235 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     expect(excelDownload.suggestedFilename()).toBe(
       'relatorio-problema-problema-1-dor-toracica.xlsx',
     );
+  });
+
+  test('should export anonymized PDF report with only registration numbers and disabled sections', async ({
+    page,
+  }, testInfo) => {
+    let capturedPdfParams: Record<string, string> = {};
+
+    await page.route(/\/api\/salas\/sala-1\/problemas\/prob-1\/relatorio/, async (route) => {
+      const url = new URL(route.request().url());
+      const formato = url.searchParams.get('formato');
+      const params = Object.fromEntries(url.searchParams.entries());
+
+      if (formato === 'PDF') {
+        capturedPdfParams = params;
+        const isAnonymized = params.ocultarNomes === 'true';
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/pdf',
+          body: createMockProblemReportPdf({ ocultarNomes: isAnonymized }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/turmas/sala-1/problemas/prob-1/notas');
+
+    const pdfBtn = page.getByRole('button', { name: 'Exportar em PDF' });
+    await pdfBtn.click();
+
+    const pdfModal = page.getByRole('dialog', { name: /Exportar em PDF/i });
+    await expect(pdfModal).toBeVisible();
+
+    const apenasMatriculaRadio = pdfModal.getByRole('radio', { name: 'Apenas Matrícula' });
+    await apenasMatriculaRadio.click();
+    await expect(apenasMatriculaRadio).toHaveAttribute('aria-checked', 'true');
+    await expect(pdfModal.getByRole('radio', { name: 'Nome e Matrícula' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+
+    const feedbacksSwitch = pdfModal.getByRole('switch', { name: 'Feedbacks' });
+    await feedbacksSwitch.click();
+    await expect(feedbacksSwitch).toHaveAttribute('aria-checked', 'false');
+
+    const pendenciasSwitch = pdfModal.getByRole('switch', { name: 'Pendências de avaliação' });
+    await pendenciasSwitch.click();
+    await expect(pendenciasSwitch).toHaveAttribute('aria-checked', 'false');
+
+    const marcacoesSwitch = pdfModal.getByRole('switch', { name: 'Marcações das sessões' });
+    await marcacoesSwitch.click();
+    await expect(marcacoesSwitch).toHaveAttribute('aria-checked', 'false');
+
+    const pdfConfirmBtn = pdfModal.getByRole('button', { name: 'Confirmar Exportação' });
+    const [pdfDownload] = await Promise.all([page.waitForEvent('download'), pdfConfirmBtn.click()]);
+
+    await expect(pdfModal).not.toBeVisible();
+
+    // Verify query parameters sent to the backend API
+    expect(capturedPdfParams.formato).toBe('PDF');
+    expect(capturedPdfParams.ocultarNomes).toBe('true');
+    expect(capturedPdfParams.mostrarFeedback).toBe('false');
+    expect(capturedPdfParams.mostrarPendencias).toBe('false');
+    expect(capturedPdfParams.mostrarMarcacoes).toBe('false');
+    expect(pdfDownload.suggestedFilename()).toBe('relatorio-problema-problema-1-dor-toracica.pdf');
+
+    // Verify PDF stream: names are omitted while registration numbers and scores are preserved
+    const stream = await pdfDownload.createReadStream();
+    expect(stream).not.toBeNull();
+    const downloadedPdf = await readStreamToBuffer(stream!);
+    const pdfText = downloadedPdf.toString('latin1');
+
+    expect(pdfText).toContain('%PDF-');
+    expect(pdfText).toContain('Matricula: 20260001');
+    expect(pdfText).toContain('Matricula: 20260002');
+    expect(pdfText).toContain('8.75');
+    expect(pdfText).toContain('7.00');
+    expect(pdfText).not.toContain('Ana Silva');
+    expect(pdfText).not.toContain('Bruno Mendes');
+
+    await testInfo.attach('relatorio-problema-anonimizado.pdf', {
+      body: downloadedPdf,
+      contentType: 'application/pdf',
+    });
+  });
+
+  test('should export customized Excel report with only registration numbers and disabled feedbacks', async ({
+    page,
+  }) => {
+    let capturedExcelParams: Record<string, string> = {};
+
+    await page.route(/\/api\/salas\/sala-1\/problemas\/prob-1\/relatorio/, async (route) => {
+      const url = new URL(route.request().url());
+      const formato = url.searchParams.get('formato');
+      const params = Object.fromEntries(url.searchParams.entries());
+
+      if (formato === 'XLSX') {
+        capturedExcelParams = params;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          body: Buffer.from('mock-excel-anonymized-report'),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/turmas/sala-1/problemas/prob-1/notas');
+
+    const excelBtn = page.getByRole('button', { name: 'Exportar em Excel' });
+    await excelBtn.click();
+
+    const excelModal = page.getByRole('dialog', { name: /Exportar em XLSX/i });
+    await expect(excelModal).toBeVisible();
+
+    const excelApenasMatricula = excelModal.getByRole('radio', { name: 'Apenas Matrícula' });
+    await excelApenasMatricula.click();
+    await expect(excelApenasMatricula).toHaveAttribute('aria-checked', 'true');
+
+    const excelFeedbacksSwitch = excelModal.getByRole('switch', { name: 'Feedbacks' });
+    await excelFeedbacksSwitch.click();
+    await expect(excelFeedbacksSwitch).toHaveAttribute('aria-checked', 'false');
+
+    const excelConfirmBtn = excelModal.getByRole('button', { name: 'Confirmar Exportação' });
+    const [excelDownload] = await Promise.all([
+      page.waitForEvent('download'),
+      excelConfirmBtn.click(),
+    ]);
+
+    await expect(excelModal).not.toBeVisible();
+
+    expect(capturedExcelParams.formato).toBe('XLSX');
+    expect(capturedExcelParams.ocultarNomes).toBe('true');
+    expect(capturedExcelParams.mostrarFeedback).toBe('false');
+    expect(capturedExcelParams.mostrarPendencias).toBe('true');
+    expect(capturedExcelParams.mostrarMarcacoes).toBe('true');
+    expect(excelDownload.suggestedFilename()).toBe(
+      'relatorio-problema-problema-1-dor-toracica.xlsx',
+    );
+  });
+
+  test('should allow canceling export modal without triggering download or API requests', async ({
+    page,
+  }) => {
+    let exportRequested = false;
+
+    await page.route(/\/api\/salas\/sala-1\/problemas\/prob-1\/relatorio/, async (route) => {
+      exportRequested = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/pdf',
+        body: createMockProblemReportPdf(),
+      });
+    });
+
+    await page.goto('/turmas/sala-1/problemas/prob-1/notas');
+
+    // 1. Cancel via "Cancelar" button
+    const pdfBtn = page.getByRole('button', { name: 'Exportar em PDF' });
+    await pdfBtn.click();
+
+    const pdfModal = page.getByRole('dialog', { name: /Exportar em PDF/i });
+    await expect(pdfModal).toBeVisible();
+
+    const cancelBtn = pdfModal.getByRole('button', { name: 'Cancelar' });
+    await cancelBtn.click();
+    await expect(pdfModal).not.toBeVisible();
+    expect(exportRequested).toBe(false);
+
+    // 2. Dismiss via Escape key
+    const excelBtn = page.getByRole('button', { name: 'Exportar em Excel' });
+    await excelBtn.click();
+
+    const excelModal = page.getByRole('dialog', { name: /Exportar em XLSX/i });
+    await expect(excelModal).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(excelModal).not.toBeVisible();
+    expect(exportRequested).toBe(false);
+  });
+
+  test('should allow switching student identification back to full name and re-enabling sections', async ({
+    page,
+  }) => {
+    let capturedParams: Record<string, string> = {};
+
+    await page.route(/\/api\/salas\/sala-1\/problemas\/prob-1\/relatorio/, async (route) => {
+      const url = new URL(route.request().url());
+      capturedParams = Object.fromEntries(url.searchParams.entries());
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/pdf',
+        body: createMockProblemReportPdf(),
+      });
+    });
+
+    await page.goto('/turmas/sala-1/problemas/prob-1/notas');
+
+    const pdfBtn = page.getByRole('button', { name: 'Exportar em PDF' });
+    await pdfBtn.click();
+
+    const pdfModal = page.getByRole('dialog', { name: /Exportar em PDF/i });
+    await expect(pdfModal).toBeVisible();
+
+    const apenasMatricula = pdfModal.getByRole('radio', { name: 'Apenas Matrícula' });
+    const nomeEMatricula = pdfModal.getByRole('radio', { name: 'Nome e Matrícula' });
+    const feedbacksSwitch = pdfModal.getByRole('switch', { name: 'Feedbacks' });
+
+    // Switch to "Apenas Matrícula", then switch back to "Nome e Matrícula"
+    await apenasMatricula.click();
+    await expect(apenasMatricula).toHaveAttribute('aria-checked', 'true');
+
+    await nomeEMatricula.click();
+    await expect(nomeEMatricula).toHaveAttribute('aria-checked', 'true');
+    await expect(apenasMatricula).toHaveAttribute('aria-checked', 'false');
+
+    // Toggle Feedbacks off and then back on
+    await feedbacksSwitch.click();
+    await expect(feedbacksSwitch).toHaveAttribute('aria-checked', 'false');
+
+    await feedbacksSwitch.click();
+    await expect(feedbacksSwitch).toHaveAttribute('aria-checked', 'true');
+
+    const confirmBtn = pdfModal.getByRole('button', { name: 'Confirmar Exportação' });
+    await Promise.all([page.waitForEvent('download'), confirmBtn.click()]);
+
+    expect(capturedParams.ocultarNomes).toBe('false');
+    expect(capturedParams.mostrarFeedback).toBe('true');
   });
 
   test('should show error banner when problem grades API fails', async ({ page }) => {
