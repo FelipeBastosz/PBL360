@@ -143,7 +143,7 @@ interface SessionLockRow {
 }
 
 const LOCK_SESSION_QUERY = `SELECT id, self_eval_released AS "selfEvalReleased", peer_eval_released AS "peerEvalReleased",
-  EXISTS (SELECT 1 FROM poker_sessions WHERE session_id = sessions.id) AS "hasPoker"
+  EXISTS (SELECT 1 FROM poker_sessions WHERE session_id = sessions.id AND status = 'OPEN') AS "hasPoker"
  FROM sessions WHERE id = $1 AND problem_id = $2 FOR UPDATE;`;
 
 export async function assertSessionExists(

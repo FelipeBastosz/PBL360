@@ -4,6 +4,7 @@ import { SessionActionGrid } from './SessionActionGrid';
 import { SessionEvaluationsCard } from './SessionEvaluationsCard';
 import { SessionAttachments } from './SessionAttachments';
 import { PlanningPokerHubCard } from './PlanningPokerHubCard';
+import { usePlanningPokerEntry } from './usePlanningPokerEntry';
 import { StudentEvaluationCenter } from './StudentEvaluationCenter';
 import { StudentPokerNotice } from './StudentPokerNotice';
 
@@ -31,6 +32,48 @@ function StudentHubContent({ sessionId, basePath, pokerPath }: StudentHubContent
   );
 }
 
+type ProfessorHubContentProps = {
+  sessionId: string;
+  basePath: string;
+  pokerPath: string;
+  releases: SessionReleasesResponse | null;
+  onToggle: (type: 'autoavaliacao' | 'pares') => void;
+  isAttendancePending: boolean;
+  isUpdating: boolean;
+};
+
+function ProfessorHubContent(props: ProfessorHubContentProps) {
+  const pokerEntry = usePlanningPokerEntry(props.sessionId, props.pokerPath, props.releases);
+  const isStudentEvalActive = Boolean(
+    props.releases?.autoavaliacao.liberada || props.releases?.pares.liberada,
+  );
+  const isPokerActive = Boolean(pokerEntry.availability?.pokerAbertoId);
+
+  return (
+    <>
+      <SessionActionGrid
+        basePath={props.basePath}
+        isStudentEvalActive={isStudentEvalActive}
+        isPokerActive={isPokerActive}
+      >
+        <PlanningPokerHubCard
+          sessionId={props.sessionId}
+          pokerPath={props.pokerPath}
+          refreshKey={props.releases}
+          entry={pokerEntry}
+        />
+      </SessionActionGrid>
+      <SessionEvaluationsCard
+        releases={props.releases}
+        onToggle={props.onToggle}
+        isAttendancePending={props.isAttendancePending}
+        isLoading={props.isUpdating}
+      />
+      <SessionAttachments sessionId={props.sessionId} canUpload />
+    </>
+  );
+}
+
 export function SessionHubContent(props: SessionHubContentProps) {
   if (props.isLoading) {
     return (
@@ -39,9 +82,7 @@ export function SessionHubContent(props: SessionHubContentProps) {
       </div>
     );
   }
-  const isStudentEvalActive = Boolean(
-    props.releases?.autoavaliacao.liberada || props.releases?.pares.liberada,
-  );
+
   const pokerPath = `${props.basePath}/planning-poker`;
 
   if (!props.isProfessor) {
@@ -55,21 +96,14 @@ export function SessionHubContent(props: SessionHubContentProps) {
   }
 
   return (
-    <>
-      <SessionActionGrid basePath={props.basePath} isStudentEvalActive={isStudentEvalActive}>
-        <PlanningPokerHubCard
-          sessionId={props.sessionId}
-          pokerPath={pokerPath}
-          refreshKey={props.releases}
-        />
-      </SessionActionGrid>
-      <SessionEvaluationsCard
-        releases={props.releases}
-        onToggle={props.onToggle}
-        isAttendancePending={props.isAttendancePending}
-        isLoading={props.isUpdating}
-      />
-      <SessionAttachments sessionId={props.sessionId} canUpload />
-    </>
+    <ProfessorHubContent
+      sessionId={props.sessionId}
+      basePath={props.basePath}
+      pokerPath={pokerPath}
+      releases={props.releases}
+      onToggle={props.onToggle}
+      isAttendancePending={props.isAttendancePending}
+      isUpdating={props.isUpdating}
+    />
   );
 }

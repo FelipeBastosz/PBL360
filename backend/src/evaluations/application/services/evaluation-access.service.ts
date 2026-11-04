@@ -18,12 +18,14 @@ export class EvaluationAccessService {
       sessionId,
       authorId,
     );
+    const hasPoker = await this.evaluations.hasActivePoker(sessionId);
     return {
       sessionId: session.id,
       problemId: session.problemId,
       roomId,
       selfEvalReleased: session.selfEvalReleased,
       peerEvalReleased: session.peerEvalReleased,
+      hasPoker,
     };
   }
 

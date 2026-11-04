@@ -4,11 +4,22 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { evaluationService } from '@/services/evaluation.service';
 import { observationService } from '@/services/observation.service';
+import { planningPokerService } from '@/services/planningPoker.service';
 import type { TutorEvaluationData } from '@/types/evaluation';
 import { StudentEvaluationPage } from './StudentEvaluationPage';
 
 vi.mock('@/services/evaluation.service');
 vi.mock('@/services/observation.service');
+vi.mock('@/services/planningPoker.service', () => ({
+  planningPokerService: {
+    getAvailability: vi.fn().mockResolvedValue({
+      disponivel: true,
+      motivo: null,
+      presentes: 2,
+      pokerAbertoId: null,
+    }),
+  },
+}));
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { nome: 'Professor Silva', tipo: 'PROFESSOR' } }),
 }));
@@ -35,6 +46,12 @@ const mockEvalData: TutorEvaluationData = {
 describe('StudentEvaluationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(planningPokerService.getAvailability).mockResolvedValue({
+      disponivel: true,
+      motivo: null,
+      presentes: 2,
+      pokerAbertoId: null,
+    });
     vi.mocked(evaluationService.getEvaluation).mockResolvedValue(mockEvalData);
     vi.mocked(evaluationService.getFeedback).mockResolvedValue(null);
     vi.mocked(observationService.listTags).mockResolvedValue([]);
@@ -158,5 +175,25 @@ describe('StudentEvaluationPage', () => {
       justificativa: 'Justificativa de teste válida',
       notaCargo: null,
     });
+  });
+
+  it('blocks actions and shows alert when planning poker is active', async () => {
+    vi.mocked(planningPokerService.getAvailability).mockResolvedValue({
+      disponivel: true,
+      motivo: null,
+      presentes: 2,
+      pokerAbertoId: 'poker-1',
+    });
+
+    renderPage();
+
+    expect(
+      await screen.findByText(
+        /a avaliação direta do tutor está bloqueada enquanto o planning poker estiver ativo/i,
+      ),
+    ).toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: 'Enviar avaliação e feedback' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Salvar rascunho' })).toBeDisabled();
   });
 });

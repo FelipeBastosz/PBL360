@@ -11,6 +11,7 @@ export interface EvaluationContext {
   roomId: string;
   selfEvalReleased?: boolean;
   peerEvalReleased?: boolean;
+  hasPoker?: boolean;
 }
 export interface EvaluationDetail {
   config: SessionEvaluationConfig;
@@ -89,4 +90,5 @@ export interface EvaluationRepository {
     studentId: string,
   ): Promise<StudentEvaluationSummary>;
   recordSelfAssessment(input: SelfAssessmentWrite): Promise<EvaluationDetail>;
+  hasActivePoker(sessionId: string): Promise<boolean>;
 }

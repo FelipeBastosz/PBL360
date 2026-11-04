@@ -5,6 +5,7 @@ import { AuthContext } from '@/contexts/authContext';
 import { evaluationService } from '@/services/evaluation.service';
 import { gradesService } from '@/services/grades.service';
 import { sessionService } from '@/services/session.service';
+import { planningPokerService } from '@/services/planningPoker.service';
 import { usePokerChannel, type PokerChannelHandlers } from '@/hooks/usePokerChannel';
 import type { ProblemGradesResponse, StudentSessionGrade } from '@/types/grades';
 import type { UserResponse } from '@/types/auth';
@@ -26,6 +27,12 @@ vi.mock('@/services/grades.service', () => ({
 vi.mock('@/services/session.service', () => ({
   sessionService: {
     getRollCall: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/planningPoker.service', () => ({
+  planningPokerService: {
+    getAvailability: vi.fn(),
   },
 }));
 
@@ -140,6 +147,12 @@ describe('SessionEvaluationListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(sessionService.getRollCall).mockResolvedValue(mockCompletedRollCall);
+    vi.mocked(planningPokerService.getAvailability).mockResolvedValue({
+      disponivel: true,
+      motivo: null,
+      presentes: 2,
+      pokerAbertoId: null,
+    });
     vi.mocked(gradesService.getProblemGrades).mockResolvedValue({
       sessoes: [],
       alunos: [],
@@ -261,5 +274,25 @@ describe('SessionEvaluationListPage', () => {
     act(() => handlers.onEvent('poker.decidida', {}));
 
     expect(await screen.findByText('Avaliada · 7,5')).toBeInTheDocument();
+  });
+
+  it('renders active poker alert and disables student evaluation buttons when poker is active', async () => {
+    vi.mocked(evaluationService.listBySession).mockResolvedValue(mockStudents);
+    vi.mocked(evaluationService.getProblemCriteria).mockResolvedValue(mockCriteria);
+    vi.mocked(planningPokerService.getAvailability).mockResolvedValue({
+      disponivel: true,
+      motivo: null,
+      presentes: 2,
+      pokerAbertoId: 'poker-1',
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Planning poker em andamento')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ir para o planning poker/i })).toHaveAttribute(
+      'href',
+      '/turmas/room-1/problemas/prob-1/sessoes/sess-1/planning-poker',
+    );
+    expect(screen.queryByRole('link', { name: 'Avaliar' })).not.toBeInTheDocument();
   });
 });

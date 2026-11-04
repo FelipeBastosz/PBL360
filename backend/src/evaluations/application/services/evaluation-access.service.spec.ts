@@ -6,10 +6,11 @@ import { EvaluationAccessService } from './evaluation-access.service';
 
 describe('EvaluationAccessService', () => {
   const sessions = { assertTutorCanAccessSessionById: jest.fn() };
-  const evaluations = { isEnrolled: jest.fn() };
+  const evaluations = { isEnrolled: jest.fn(), hasActivePoker: jest.fn() };
   let service: EvaluationAccessService;
   beforeEach(async () => {
     jest.resetAllMocks();
+    evaluations.hasActivePoker.mockResolvedValue(false);
     sessions.assertTutorCanAccessSessionById.mockResolvedValue({
       session: {
         id: 'session',
@@ -36,9 +37,16 @@ describe('EvaluationAccessService', () => {
       roomId: 'room',
       selfEvalReleased: false,
       peerEvalReleased: false,
+      hasPoker: false,
     });
     expect(sessions.assertTutorCanAccessSessionById).toHaveBeenCalledWith('session', 'co-tutor');
     expect(evaluations.isEnrolled).toHaveBeenCalledWith('room', 'student');
+  });
+  it('reports active poker in the evaluation context', async () => {
+    evaluations.hasActivePoker.mockResolvedValue(true);
+    await expect(service.forSession('session', 'co-tutor')).resolves.toMatchObject({
+      hasPoker: true,
+    });
   });
   it('rejects an unenrolled student', async () => {
     evaluations.isEnrolled.mockResolvedValue(false);
