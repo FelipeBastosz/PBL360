@@ -96,11 +96,11 @@ describe('Received feedbacks (e2e)', () => {
     const fixture = await createTestApp();
     app = fixture.app;
     db = fixture.moduleRef.get(DataSource);
-  });
+  }, 30000);
   afterAll(async () => {
-    await cleanDatabase(db);
-    await app.close();
-  });
+    if (db) await cleanDatabase(db);
+    if (app) await app.close();
+  }, 30000);
   beforeEach(async () => {
     await cleanDatabase(db);
     tutor = await insertUser(app, db, 'tutor@uefs.br');
@@ -301,6 +301,7 @@ describe('Received feedbacks (e2e)', () => {
       .put(`/salas/${roomId}/problemas/${problemId}/feedbacks/alunos/${student.id}`, {
         texto: 'Texto atualizado pelo professor.',
         nota: 9,
+        justificativa: 'Correção da nota do aluno pelo professor editor.',
       })
       .expect(200);
     const response = await api(app, student).get(problemPath()).expect(200);
