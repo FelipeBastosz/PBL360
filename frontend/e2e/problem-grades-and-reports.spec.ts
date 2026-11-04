@@ -363,13 +363,16 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     await expect(excelBtn).toBeVisible();
     await expect(excelBtn).toBeEnabled();
 
-    // 1. Professor initiates PDF export and browser starts download
-    const [pdfDownload] = await Promise.all([page.waitForEvent('download'), pdfBtn.click()]);
+    // 1. Professor initiates PDF export, opens configuration modal and confirms download
+    await pdfBtn.click();
+    const pdfModal = page.getByRole('dialog', { name: /Exportar em PDF/i });
+    await expect(pdfModal).toBeVisible();
+
+    const pdfConfirmBtn = pdfModal.getByRole('button', { name: 'Confirmar Exportação' });
+    const [pdfDownload] = await Promise.all([page.waitForEvent('download'), pdfConfirmBtn.click()]);
 
     expect(pdfExportRequested).toBe(true);
-    expect(pdfDownload.suggestedFilename()).toBe(
-      'relatorio-problema-problema-1---dor-torácica.pdf',
-    );
+    expect(pdfDownload.suggestedFilename()).toBe('relatorio-problema-problema-1-dor-toracica.pdf');
 
     // 2. Validate PDF stream and internal document content
     const stream = await pdfDownload.createReadStream();
@@ -438,12 +441,20 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     });
     await previewPage.close();
 
-    // 5. Professor also exports report in Excel format
-    const [excelDownload] = await Promise.all([page.waitForEvent('download'), excelBtn.click()]);
+    // 5. Professor also exports report in Excel format with configuration modal
+    await excelBtn.click();
+    const excelModal = page.getByRole('dialog', { name: /Exportar em XLSX/i });
+    await expect(excelModal).toBeVisible();
+
+    const excelConfirmBtn = excelModal.getByRole('button', { name: 'Confirmar Exportação' });
+    const [excelDownload] = await Promise.all([
+      page.waitForEvent('download'),
+      excelConfirmBtn.click(),
+    ]);
 
     expect(excelExportRequested).toBe(true);
     expect(excelDownload.suggestedFilename()).toBe(
-      'relatorio-problema-problema-1---dor-torácica.xlsx',
+      'relatorio-problema-problema-1-dor-toracica.xlsx',
     );
   });
 
