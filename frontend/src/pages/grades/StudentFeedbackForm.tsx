@@ -27,7 +27,9 @@ export function StudentFeedbackForm(props: StudentFeedbackFormProps) {
     <form noValidate onSubmit={form.handleSubmit} className="flex flex-col gap-4 py-2">
       {form.apiError && <Alert tone="error">{form.apiError}</Alert>}
 
-      {form.isEditingExistingGrade && form.existingGrade !== null ? (
+      {form.isEditingExistingGrade &&
+      form.existingGrade !== null &&
+      form.existingGrade !== undefined ? (
         <StudentGradeAdjustmentFields
           existingGrade={form.existingGrade}
           newGrade={form.nota}

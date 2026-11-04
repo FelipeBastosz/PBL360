@@ -89,8 +89,14 @@ export function StudentFeedbackModal(props: StudentFeedbackModalProps) {
           onSaved={props.onSaved}
           onClose={onClose}
           sessionId={evaluation?.sessionId}
-          currentGrade={evaluation?.currentGrade ?? props.currentGrade}
-          currentFeedback={evaluation?.currentFeedback ?? props.currentFeedback}
+          currentGrade={
+            evaluation?.currentGrade !== undefined ? evaluation.currentGrade : props.currentGrade
+          }
+          currentFeedback={
+            evaluation?.currentFeedback !== undefined
+              ? evaluation.currentFeedback
+              : props.currentFeedback
+          }
           updatedAt={evaluation?.updatedAt ?? props.updatedAt}
         />
       )}

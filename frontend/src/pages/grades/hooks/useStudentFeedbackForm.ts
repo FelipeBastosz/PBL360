@@ -18,11 +18,7 @@ export type UseStudentFeedbackFormParams = {
   updatedAt?: string | null;
 };
 
-type FormErrors = {
-  nota?: string;
-  texto?: string;
-  justificativa?: string;
-};
+type FormErrors = { nota?: string; texto?: string; justificativa?: string };
 
 function getSessionFeedback(
   feedback?: StudentProblemFeedbackResponse | null,
@@ -36,18 +32,24 @@ function getSessionFeedback(
 }
 
 function resolveExistingGrade(
+  current?: number | string | null,
   feedback?: StudentProblemFeedbackResponse | null,
   sessionId?: string,
 ): number | null {
   const sessionFb = getSessionFeedback(feedback, sessionId);
   if (sessionFb?.nota !== undefined && sessionFb?.nota !== null) {
-    return Number(sessionFb.nota);
+    const num = Number(sessionFb.nota);
+    return Number.isNaN(num) ? null : num;
+  }
+  if (current !== undefined && current !== null && current !== '') {
+    const num = Number(String(current).replace(',', '.'));
+    return Number.isNaN(num) ? null : num;
   }
   return null;
 }
 
-function checkGradeChanged(newNota: string, existingGrade: number | null): boolean {
-  if (existingGrade === null) return false;
+function checkGradeChanged(newNota: string, existingGrade: number | null | undefined): boolean {
+  if (existingGrade === null || existingGrade === undefined) return false;
   const parsed = Number(newNota.replace(',', '.'));
   if (Number.isNaN(parsed)) return false;
   return Math.abs(parsed - existingGrade) >= 0.005;
@@ -100,10 +102,9 @@ function getInitialTexto(
   current?: string | null,
   feedback?: StudentProblemFeedbackResponse | null,
 ): string {
-  if (feedback?.texto !== undefined && feedback?.texto !== null) {
-    return feedback.texto;
-  }
-  return current ?? '';
+  return feedback?.texto !== undefined && feedback?.texto !== null
+    ? feedback.texto
+    : (current ?? '');
 }
 
 type SubmitParams = {
@@ -127,10 +128,6 @@ async function submitStudent(params: SubmitParams) {
   });
 }
 
-function getStudentError(err: unknown) {
-  return (err as { message?: string })?.message || 'Não foi possível salvar o feedback do aluno.';
-}
-
 type SubmitCallbacks = {
   notify: (t: { tone: 'success' | 'error'; message: string }) => void;
   onSaved: (feedback: StudentProblemFeedbackResponse) => void;
@@ -148,7 +145,8 @@ async function executeSubmitStudent(params: SubmitParams, callbacks: SubmitCallb
     callbacks.onSaved(saved);
     callbacks.onClose();
   } catch (err: unknown) {
-    const msg = getStudentError(err);
+    const msg =
+      (err as { message?: string })?.message || 'Não foi possível salvar o feedback do aluno.';
     callbacks.setApiError(msg);
     callbacks.notify({ tone: 'error', message: msg });
   } finally {
@@ -167,22 +165,16 @@ function useFeedbackFormState(
   const [errors, setErrors] = useState<FormErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const clearErr = (k: keyof FormErrors) => setErrors((p) => (p[k] ? { ...p, [k]: undefined } : p));
 
   return {
     nota,
-    setNota,
     texto,
-    setTexto,
     justificativa,
-    setJustificativa,
     errors,
-    setErrors,
     apiError,
-    setApiError,
     isSubmitting,
-    setIsSubmitting,
+    setErrors,
     handleNotaChange: (v: string) => {
       setNota(v);
       clearErr('nota');
@@ -195,14 +187,9 @@ function useFeedbackFormState(
       setJustificativa(v);
       clearErr('justificativa');
     },
+    setApiError,
+    setIsSubmitting,
   };
-}
-
-function resolveEffectiveDate(
-  updatedAt?: string | null,
-  fb?: StudentProblemFeedbackResponse | null,
-) {
-  return updatedAt || fb?.updatedAt || fb?.editadoEm || fb?.criadoEm;
 }
 
 function createSubmitHandler(
@@ -244,16 +231,18 @@ function createSubmitHandler(
 export function useStudentFeedbackForm(params: UseStudentFeedbackFormParams) {
   const { notify } = useToast();
   const sessionFb = getSessionFeedback(params.existingFeedback, params.sessionId);
-  const existingGrade = resolveExistingGrade(sessionFb, params.sessionId);
+  const existingGrade = resolveExistingGrade(params.currentGrade, sessionFb, params.sessionId);
   const form = useFeedbackFormState(params.currentGrade, params.currentFeedback, sessionFb);
   const isGradeChanged = checkGradeChanged(form.nota, existingGrade);
   const handleSubmit = createSubmitHandler(params, form, isGradeChanged, notify);
-  const lastEditedText = formatLastEdited(resolveEffectiveDate(params.updatedAt, sessionFb));
+  const effectiveDate =
+    params.updatedAt || sessionFb?.updatedAt || sessionFb?.editadoEm || sessionFb?.criadoEm;
+  const lastEditedText = formatLastEdited(effectiveDate);
 
   return {
     ...form,
     existingGrade,
-    isEditingExistingGrade: existingGrade !== null,
+    isEditingExistingGrade: existingGrade !== null && existingGrade !== undefined,
     isGradeChanged,
     handleSubmit,
     lastEditedText,

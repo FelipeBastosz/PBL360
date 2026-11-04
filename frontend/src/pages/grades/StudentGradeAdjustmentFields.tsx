@@ -9,7 +9,12 @@ type GradeInputsProps = {
   disabled?: boolean;
 };
 
-function CurrentGradeCard({ value }: { value: number }) {
+function CurrentGradeCard({ value }: { value?: number | string | null }) {
+  const displayValue =
+    value !== null && value !== undefined && value !== ''
+      ? formatGrade(Number(String(value).replace(',', '.')))
+      : '—';
+
   return (
     <div className="flex flex-col justify-between rounded-2xl border border-black/5 bg-gray-50/70 p-3.5 shadow-2xs">
       <label htmlFor="student-current-grade" className="text-xs font-medium text-muted">
@@ -20,7 +25,7 @@ function CurrentGradeCard({ value }: { value: number }) {
         type="text"
         readOnly
         aria-readonly="true"
-        value={formatGrade(value)}
+        value={displayValue}
         className="w-full bg-transparent text-xl font-bold text-ink outline-none cursor-default"
       />
     </div>

@@ -278,7 +278,7 @@ describe('StudentFeedbackModal', () => {
     expect(screen.getByText(/Última edição/i)).toBeInTheDocument();
   });
 
-  it('does not render adjustment layout when evaluation has calculated grade but no existing feedback on this session', () => {
+  it('does not render adjustment layout when evaluation has no grade on this session and does not leak feedback from other session', () => {
     const s1Feedback: StudentProblemFeedbackResponse = {
       id: 'fb-sess-1',
       escopo: 'ALUNO',
@@ -304,7 +304,7 @@ describe('StudentFeedbackModal', () => {
           studentId: 'aluno-1',
           sessionId: 'sess-2',
           sessionName: 'Sessão 02',
-          currentGrade: 8.2,
+          currentGrade: null,
           currentFeedback: null,
           updatedAt: null,
           existingFeedback: null,
@@ -315,7 +315,74 @@ describe('StudentFeedbackModal', () => {
     expect(screen.getByRole('dialog', { name: 'Feedback - Sessão 02' })).toBeInTheDocument();
     expect(screen.queryByLabelText(/justificativa do ajuste/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/nota do aluno/i)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/nota/i)).toHaveValue(8.2);
+    expect(screen.getByLabelText(/nota/i)).toHaveValue(null);
+  });
+
+  it('renders adjustment layout when session cell has grade 0 without prior feedback record', () => {
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={vi.fn()}
+        student={mockStudent}
+        existingFeedback={null}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+        evaluation={{
+          studentId: 'aluno-1',
+          sessionId: 'sess-zero',
+          sessionName: 'Sessão Zero',
+          currentGrade: 0,
+          currentFeedback: null,
+          updatedAt: null,
+          existingFeedback: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Feedback - Sessão Zero' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/nota do aluno/i)).toHaveValue('0,0');
+    expect(screen.getByLabelText(/nova nota/i)).toHaveValue(0);
+    expect(screen.getByLabelText(/justificativa do ajuste/i)).toBeInTheDocument();
+  });
+
+  it('requires justification when altering grade from 0 to another value', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={vi.fn()}
+        student={mockStudent}
+        existingFeedback={null}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+        evaluation={{
+          studentId: 'aluno-1',
+          sessionId: 'sess-zero',
+          sessionName: 'Sessão Zero',
+          currentGrade: 0,
+          currentFeedback: null,
+          updatedAt: null,
+          existingFeedback: null,
+        }}
+      />,
+    );
+
+    const newGradeInput = screen.getByLabelText(/nova nota/i);
+    const commentInput = screen.getByLabelText(/comentário de feedback/i);
+    const saveButton = screen.getByRole('button', { name: 'Salvar' });
+
+    await user.clear(newGradeInput);
+    await user.type(newGradeInput, '7.5');
+    await user.type(commentInput, 'Comentário da avaliação.');
+    await user.click(saveButton);
+
+    expect(screen.getByText('A justificativa do ajuste é obrigatória.')).toBeInTheDocument();
+    expect(feedbackService.saveStudentFeedback).not.toHaveBeenCalled();
   });
 
   it('does not render justification field when registering feedback for the first time', () => {

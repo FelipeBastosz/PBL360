@@ -31,6 +31,22 @@ export type StudentGradeFieldProps = {
   hideNames?: boolean;
 };
 
+function resolveCellGrade(
+  gradeItem?: StudentSessionGrade,
+  feedback?: StudentProblemFeedbackResponse | null,
+): number | null {
+  if (feedback?.nota !== undefined && feedback?.nota !== null) {
+    const num = Number(feedback.nota);
+    return Number.isNaN(num) ? null : num;
+  }
+  if (gradeItem?.nota !== undefined && gradeItem?.nota !== null) {
+    const num = Number(gradeItem.nota);
+    return Number.isNaN(num) ? null : num;
+  }
+  if (gradeItem?.situacao === 'AUSENTE') return 0;
+  return null;
+}
+
 function buildEvaluationContext(
   student: StudentGradeRow,
   session: SessionColumn,
@@ -38,7 +54,7 @@ function buildEvaluationContext(
   feedback?: StudentProblemFeedbackResponse | null,
 ): EvaluationContext {
   const sessionName = resolveSessionName(session);
-  const currentGrade = feedback?.nota ?? gradeItem?.nota ?? null;
+  const currentGrade = resolveCellGrade(gradeItem, feedback);
   const currentFeedback = feedback?.texto ?? '';
   const updatedAt = feedback?.updatedAt ?? feedback?.editadoEm ?? feedback?.criadoEm ?? null;
 
@@ -58,8 +74,8 @@ function isGradeCellEditable(
   feedback?: StudentProblemFeedbackResponse | null,
 ): boolean {
   if (gradeItem?.situacao === 'JUSTIFICADA') return false;
-  const grade = feedback?.nota ?? gradeItem?.nota ?? null;
-  return grade !== null && grade !== undefined && !Number.isNaN(Number(grade));
+  const grade = resolveCellGrade(gradeItem, feedback);
+  return grade !== null && !Number.isNaN(grade);
 }
 
 function resolveTargetStudentName(student?: StudentGradeRow, hideNames?: boolean): string {
