@@ -155,6 +155,70 @@ describe('ProblemGradesTable', () => {
     expect(handleSelectStudent).toHaveBeenCalledWith(mockGradesData.alunos[0]);
   });
 
+  it('matches feedback scoped by session id and preserves grade 0 without treating as falsy', async () => {
+    const user = userEvent.setup();
+    const handleSelectEvaluation = vi.fn();
+
+    const feedbacks = {
+      geral: null,
+      alunos: [
+        {
+          alunoId: 'aluno-1',
+          sessaoId: 'sess-1',
+          feedback: {
+            id: 'fb-s1',
+            escopo: 'ALUNO' as const,
+            destinatarioId: 'aluno-1',
+            sessaoId: 'sess-1',
+            nota: 0,
+            texto: 'Feedback específico da S1',
+            criadoEm: '2026-10-01T10:00:00Z',
+            editadoEm: null,
+            justificativa: 'Nota zerada por critério específico',
+          },
+        },
+      ],
+    };
+
+    render(
+      <ProblemGradesTable
+        data={mockGradesData}
+        hideNames={false}
+        onToggleHideNames={vi.fn()}
+        onSelectEvaluation={handleSelectEvaluation}
+        feedbacks={feedbacks}
+      />,
+    );
+
+    // Click S1 which has session feedback with grade 0
+    const cellS1 = screen.getByRole('button', { name: /Ana Silva.*S1/i });
+    await user.click(cellS1);
+
+    expect(handleSelectEvaluation).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        studentId: 'aluno-1',
+        sessionId: 'sess-1',
+        currentGrade: 0,
+        currentFeedback: 'Feedback específico da S1',
+        existingFeedback: expect.objectContaining({ id: 'fb-s1', nota: 0 }),
+      }),
+    );
+
+    // Click S2 which has NO session feedback -> should not inherit S1 feedback
+    const cellS2 = screen.getByRole('button', { name: /Ana Silva.*S2/i });
+    await user.click(cellS2);
+
+    expect(handleSelectEvaluation).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        studentId: 'aluno-1',
+        sessionId: 'sess-2',
+        currentGrade: 9.0,
+        currentFeedback: '',
+        existingFeedback: null,
+      }),
+    );
+  });
+
   it('applies defensive session name fallback hierarchy and tooltip in header', () => {
     const customData: ProblemGradesResponse = {
       ...mockGradesData,

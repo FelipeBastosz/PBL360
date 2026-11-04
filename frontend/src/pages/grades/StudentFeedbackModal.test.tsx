@@ -540,4 +540,50 @@ describe('StudentFeedbackModal', () => {
     );
     expect(handleClose).toHaveBeenCalled();
   });
+
+  it('correctly handles grade 0 as existing grade without treating it as falsy', () => {
+    const existingFeedback: StudentProblemFeedbackResponse = {
+      id: 'fb-0',
+      escopo: 'ALUNO',
+      destinatarioId: 'aluno-1',
+      sessaoId: 'session-zero',
+      nota: 0,
+      texto: 'Aluno não pontuou nesta sessão.',
+      criadoEm: '2026-10-11T12:00:00Z',
+      editadoEm: null,
+      justificativa: 'Ausência não justificada na atividade.',
+    };
+
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={vi.fn()}
+        student={mockStudent}
+        existingFeedback={existingFeedback}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+        evaluation={{
+          studentId: 'aluno-1',
+          sessionId: 'session-zero',
+          sessionName: 'Sessão 0',
+          currentGrade: 0,
+          currentFeedback: 'Aluno não pontuou nesta sessão.',
+          updatedAt: null,
+          existingFeedback,
+        }}
+      />,
+    );
+
+    // Should render the adjustment layout with current grade "0,0" and new grade 0
+    expect(screen.getByLabelText(/nota do aluno/i)).toHaveValue('0,0');
+    expect(screen.getByLabelText(/nova nota/i)).toHaveValue(0);
+    expect(screen.getByLabelText(/comentário de feedback/i)).toHaveValue(
+      'Aluno não pontuou nesta sessão.',
+    );
+    expect(screen.getByLabelText(/justificativa do ajuste/i)).toHaveValue(
+      'Ausência não justificada na atividade.',
+    );
+  });
 });

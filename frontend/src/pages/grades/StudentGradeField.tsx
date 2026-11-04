@@ -11,6 +11,7 @@ export type EvaluationContext = {
   currentGrade: number | string | null;
   currentFeedback: string | null;
   updatedAt: string | null;
+  existingFeedback?: StudentProblemFeedbackResponse | null;
 };
 
 export type StudentGradeFieldProps = {
@@ -37,18 +38,9 @@ function buildEvaluationContext(
   feedback?: StudentProblemFeedbackResponse | null,
 ): EvaluationContext {
   const sessionName = resolveSessionName(session);
-  const currentGrade =
-    gradeItem?.nota !== null && gradeItem?.nota !== undefined
-      ? gradeItem.nota
-      : (feedback?.nota ?? null);
-  const currentFeedback =
-    feedback?.texto ?? (gradeItem as { feedback?: string | null })?.feedback ?? '';
-  const updatedAt =
-    (feedback as { updatedAt?: string | null })?.updatedAt ??
-    feedback?.editadoEm ??
-    feedback?.criadoEm ??
-    (gradeItem as { updatedAt?: string | null })?.updatedAt ??
-    null;
+  const currentGrade = feedback?.nota ?? gradeItem?.nota ?? null;
+  const currentFeedback = feedback?.texto ?? '';
+  const updatedAt = feedback?.updatedAt ?? feedback?.editadoEm ?? feedback?.criadoEm ?? null;
 
   return {
     studentId: student.alunoId,
@@ -57,6 +49,7 @@ function buildEvaluationContext(
     currentGrade,
     currentFeedback,
     updatedAt,
+    existingFeedback: feedback ?? null,
   };
 }
 

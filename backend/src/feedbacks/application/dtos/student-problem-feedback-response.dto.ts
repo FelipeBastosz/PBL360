@@ -10,6 +10,13 @@ export class StudentProblemFeedbackResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174001' })
   destinatarioId: string;
 
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174002',
+    nullable: true,
+    required: false,
+  })
+  sessaoId?: string | null;
+
   @ApiProperty({ example: 8.5, nullable: true })
   nota: number | null;
 

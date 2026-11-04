@@ -18,6 +18,7 @@ export const toStudentProblemFeedbackResponse = (
   id: feedback.id,
   escopo: 'ALUNO',
   destinatarioId: feedback.recipientId as string,
+  sessaoId: feedback.sessionId ?? null,
   nota: feedback.score !== null && feedback.score !== undefined ? Number(feedback.score) : null,
   texto: feedback.text,
   criadoEm: feedback.createdAt,
@@ -54,6 +55,7 @@ export const toProblemFeedbacksResponse = (
 const toStudentWithFeedback = (student: FeedbackWithStudent): StudentWithFeedbackDto => ({
   alunoId: student.studentId,
   nome: student.studentName,
+  sessaoId: student.feedback?.sessionId ?? null,
   feedback: student.feedback ? toStudentProblemFeedbackResponse(student.feedback) : null,
 });
 

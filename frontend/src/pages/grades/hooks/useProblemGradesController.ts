@@ -16,13 +16,43 @@ function updateStudentFeedbacks(
   fallbackName = '',
 ): ProblemFeedbacksResponse | null {
   if (!prev) return prev;
+  const savedSessionId = saved.sessaoId ?? saved.sessionId;
+  const matches = (item: (typeof prev.alunos)[number]) => {
+    const itemSessionId = item.sessaoId ?? item.feedback?.sessaoId ?? item.feedback?.sessionId;
+    const sameStudent = item.alunoId === saved.destinatarioId;
+    return savedSessionId ? sameStudent && itemSessionId === savedSessionId : sameStudent;
+  };
   const updatedAlunos = prev.alunos.map((item) =>
-    item.alunoId === saved.destinatarioId ? { ...item, feedback: saved } : item,
+    matches(item) ? { ...item, feedback: saved, sessaoId: savedSessionId } : item,
   );
-  if (!updatedAlunos.some((item) => item.alunoId === saved.destinatarioId)) {
-    updatedAlunos.push({ alunoId: saved.destinatarioId, nome: fallbackName, feedback: saved });
+  if (!updatedAlunos.some(matches)) {
+    updatedAlunos.push({
+      alunoId: saved.destinatarioId,
+      nome: fallbackName,
+      sessaoId: savedSessionId,
+      feedback: saved,
+    });
   }
   return { ...prev, alunos: updatedAlunos };
+}
+
+function findStudentFeedback(
+  feedbacks: ProblemFeedbacksResponse | null,
+  studentId: string,
+  sessionId?: string,
+): StudentProblemFeedbackResponse | null {
+  if (!feedbacks?.alunos) return null;
+  if (sessionId) {
+    const match = feedbacks.alunos.find(
+      (a) =>
+        a.alunoId === studentId &&
+        (a.sessaoId === sessionId ||
+          a.feedback?.sessaoId === sessionId ||
+          a.feedback?.sessionId === sessionId),
+    );
+    return match?.feedback ?? null;
+  }
+  return feedbacks.alunos.find((a) => a.alunoId === studentId)?.feedback ?? null;
 }
 
 function updateStudentGradeOptimistic(
@@ -91,9 +121,16 @@ export function useProblemGradesController() {
     applyFeedbackSaved(data, saved, selectedStudent?.nome, selectedEvaluation?.sessionId);
   };
 
-  const currentStudentFeedback = selectedStudent
-    ? (data.feedbacks?.alunos.find((a) => a.alunoId === selectedStudent.alunoId)?.feedback ?? null)
-    : null;
+  const currentStudentFeedback =
+    selectedEvaluation?.existingFeedback !== undefined
+      ? selectedEvaluation.existingFeedback
+      : selectedStudent
+        ? findStudentFeedback(
+            data.feedbacks,
+            selectedStudent.alunoId,
+            selectedEvaluation?.sessionId,
+          )
+        : null;
 
   return {
     roomId,

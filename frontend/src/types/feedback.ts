@@ -2,6 +2,8 @@ export interface StudentProblemFeedbackResponse {
   id: string;
   escopo: 'ALUNO';
   destinatarioId: string;
+  sessaoId?: string | null;
+  sessionId?: string | null;
   nota: number | null;
   texto: string;
   criadoEm: string;
@@ -21,6 +23,8 @@ export interface GeneralFeedbackResponse {
 
 export interface StudentWithFeedback {
   alunoId: string;
+  sessaoId?: string | null;
+  sessionId?: string | null;
   nome: string;
   feedback: StudentProblemFeedbackResponse | null;
 }

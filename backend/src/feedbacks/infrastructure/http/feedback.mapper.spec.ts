@@ -26,6 +26,7 @@ describe('Feedback Mapper', () => {
       id: 'feedback-uuid',
       escopo: 'ALUNO',
       destinatarioId: 'student-1',
+      sessaoId: null,
       nota: 9.5,
       texto: 'Parabéns.',
       criadoEm: feedback.createdAt,

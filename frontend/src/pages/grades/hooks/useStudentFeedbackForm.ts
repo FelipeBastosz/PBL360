@@ -25,8 +25,8 @@ type FormErrors = {
 };
 
 function resolveExistingGrade(
-  current: number | string | null | undefined,
-  feedback: StudentProblemFeedbackResponse | null,
+  current?: number | string | null,
+  feedback?: StudentProblemFeedbackResponse | null,
 ): number | null {
   if (feedback?.nota !== undefined && feedback?.nota !== null) return Number(feedback.nota);
   if (current !== undefined && current !== null && current !== '') {
@@ -79,18 +79,21 @@ function validateStudentFeedback(
 }
 
 function getInitialNota(
-  current: number | string | null | undefined,
-  feedback: StudentProblemFeedbackResponse | null,
+  current?: number | string | null,
+  feedback?: StudentProblemFeedbackResponse | null,
 ): string {
   if (feedback?.nota !== null && feedback?.nota !== undefined) return String(feedback.nota);
-  return current !== undefined && current !== null ? String(current) : '';
+  return current !== undefined && current !== null && current !== '' ? String(current) : '';
 }
 
 function getInitialTexto(
-  current: string | null | undefined,
-  feedback: StudentProblemFeedbackResponse | null,
+  current?: string | null,
+  feedback?: StudentProblemFeedbackResponse | null,
 ): string {
-  return feedback?.texto || current || '';
+  if (feedback?.texto !== undefined && feedback?.texto !== null) {
+    return feedback.texto;
+  }
+  return current ?? '';
 }
 
 type SubmitParams = {
