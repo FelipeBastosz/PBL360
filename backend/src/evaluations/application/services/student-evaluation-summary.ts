@@ -18,7 +18,7 @@ export function toStudentEvaluationSummary(
     self: toSelfSummary(session, counts, detail, now),
     peers: toPeerSummary(session, counts),
     feedback: {
-      available: feedback !== null,
+      available: feedback !== null || counts.gradeAvailable === true,
       new: feedbackIsNew,
       tutorEvaluationSubmitted: counts.tutorEvaluationSubmitted,
     },

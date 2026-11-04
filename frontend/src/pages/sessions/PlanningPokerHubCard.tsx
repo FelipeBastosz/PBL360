@@ -8,6 +8,7 @@ type PlanningPokerHubCardProps = {
   sessionId: string;
   pokerPath: string;
   refreshKey?: unknown;
+  entry?: ReturnType<typeof usePlanningPokerEntry>;
 };
 
 function DisabledPokerCard({ reason }: { reason: string }) {
@@ -34,8 +35,10 @@ export function PlanningPokerHubCard({
   sessionId,
   pokerPath,
   refreshKey,
+  entry: passedEntry,
 }: PlanningPokerHubCardProps) {
-  const entry = usePlanningPokerEntry(sessionId, pokerPath, refreshKey);
+  const hookEntry = usePlanningPokerEntry(passedEntry ? '' : sessionId, pokerPath, refreshKey);
+  const entry = passedEntry ?? hookEntry;
   const availability = entry.availability;
   if (!availability) return null;
   if (!availability.disponivel && !availability.pokerAbertoId) {

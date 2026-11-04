@@ -43,6 +43,14 @@ export class PgEvaluationRepository implements EvaluationRepository {
     return row?.exists ?? false;
   }
 
+  async hasActivePoker(sessionId: string): Promise<boolean> {
+    const [row] = await this.dataSource.query<{ exists: boolean }[]>(
+      "SELECT EXISTS (SELECT 1 FROM poker_sessions WHERE session_id = $1 AND status = 'OPEN') AS exists;",
+      [sessionId],
+    );
+    return row?.exists ?? false;
+  }
+
   list(context: EvaluationContext): Promise<EvaluationSummary[]> {
     return this.dataSource.transaction('REPEATABLE READ', (manager) =>
       readEvaluationSummaries(manager, context),

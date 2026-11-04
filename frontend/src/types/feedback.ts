@@ -55,6 +55,18 @@ export interface FeedbackAuthor {
   nome: string;
 }
 
+export interface ReceivedComponentGrade {
+  nota: number | null;
+  situacao: string;
+  origem?: 'FORMULARIO' | 'PLANNING_POKER';
+}
+
+export interface ReceivedSessionComponents {
+  modalidade: 'AUTOAVALIACAO' | 'PARES';
+  autoavaliacao: ReceivedComponentGrade | null;
+  pares: ReceivedComponentGrade | null;
+}
+
 export interface ReceivedFeedbackResponse {
   id: string;
   autor: FeedbackAuthor;
@@ -63,6 +75,7 @@ export interface ReceivedFeedbackResponse {
   editadoEm: string | null;
   novo: boolean;
   nota: number | null;
+  avaliacoes?: ReceivedSessionComponents;
 }
 
 export type ReceivedIndividualFeedbackResponse = ReceivedFeedbackResponse;
@@ -72,6 +85,8 @@ export interface ReceivedSessionFeedback {
   rotulo: string;
   data: string;
   feedback: ReceivedFeedbackResponse | null;
+  nota?: number | null;
+  avaliacoes?: ReceivedSessionComponents;
 }
 
 export interface ReceivedProblemFeedbacksResponse {

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
+import { planningPokerService } from '@/services/planningPoker.service';
 import { EvaluationHeader } from './components/EvaluationHeader';
 import { CriteriaScoresCard } from './components/CriteriaScoresCard';
 import { QuickObservationsCard } from './components/QuickObservationsCard';
@@ -14,26 +15,28 @@ function EvaluationActionButtons({
   onDraft,
   isSaving,
   isEnviada,
+  isBlocked,
 }: {
   onSend: () => void;
   onDraft: () => void;
   isSaving: boolean;
   isEnviada: boolean;
+  isBlocked?: boolean;
 }) {
   return (
     <div className="mt-2 flex flex-col gap-2.5">
       <button
         type="button"
         onClick={onSend}
-        disabled={isSaving}
-        className="w-full rounded-2xl bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-brand-800 active:scale-[0.98] disabled:opacity-50"
+        disabled={isSaving || isBlocked}
+        className="w-full rounded-2xl bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-brand-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       >
         Enviar avaliação e feedback
       </button>
       <button
         type="button"
         onClick={onDraft}
-        disabled={isSaving || isEnviada}
+        disabled={isSaving || isEnviada || isBlocked}
         className="w-full rounded-2xl border border-brand-900 bg-white py-3 text-sm font-bold text-brand-900 transition hover:bg-brand-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
       >
         Salvar rascunho
@@ -50,6 +53,7 @@ function EvaluationActionButtons({
 type MainContentProps = {
   studentName: string;
   state: ReturnType<typeof useStudentEvaluation>;
+  isPokerActive: boolean;
   onSend: () => void;
   onNavigateMoreTags: () => void;
 };
@@ -57,6 +61,7 @@ type MainContentProps = {
 function EvaluationMainContent({
   studentName,
   state,
+  isPokerActive,
   onSend,
   onNavigateMoreTags,
 }: MainContentProps) {
@@ -93,9 +98,22 @@ function EvaluationMainContent({
         onDraft={() => state.submitEvaluation(false)}
         isSaving={state.isSaving}
         isEnviada={state.status === 'ENVIADA'}
+        isBlocked={isPokerActive}
       />
     </>
   );
+}
+
+function useActivePokerStatus(sessionId: string) {
+  const [isPokerActive, setIsPokerActive] = useState(false);
+  useEffect(() => {
+    if (!sessionId) return;
+    planningPokerService
+      .getAvailability(sessionId)
+      .then((res) => setIsPokerActive(Boolean(res.pokerAbertoId)))
+      .catch(() => setIsPokerActive(false));
+  }, [sessionId]);
+  return isPokerActive;
 }
 
 export function StudentEvaluationPage() {
@@ -105,9 +123,12 @@ export function StudentEvaluationPage() {
   const [isJustifyOpen, setIsJustifyOpen] = useState(false);
 
   const state = useStudentEvaluation(sessionId, studentId);
+  const isPokerActive = useActivePokerStatus(sessionId);
 
-  const handleSend = () =>
-    state.status === 'ENVIADA' ? setIsJustifyOpen(true) : state.submitEvaluation(true);
+  const handleSend = () => {
+    if (isPokerActive) return;
+    return state.status === 'ENVIADA' ? setIsJustifyOpen(true) : state.submitEvaluation(true);
+  };
 
   const handleJustifyConfirm = (just: string) => {
     setIsJustifyOpen(false);
@@ -124,9 +145,16 @@ export function StudentEvaluationPage() {
       <EvaluationHeader />
       <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4 sm:max-w-2xl">
         {state.error && <Alert tone="error">{state.error.message}</Alert>}
+        {isPokerActive && (
+          <Alert tone="info">
+            A avaliação direta do tutor está bloqueada enquanto o planning poker estiver ativo nesta
+            sessão.
+          </Alert>
+        )}
         <EvaluationMainContent
           studentName={studentName}
           state={state}
+          isPokerActive={isPokerActive}
           onSend={handleSend}
           onNavigateMoreTags={handleOpenMoreTags}
         />

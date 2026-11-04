@@ -1,4 +1,5 @@
 import type { EntityManager } from 'typeorm';
+import { readReceivedFeedbackGrades } from '@/feedbacks/infrastructure/database/received-feedback-grades.reads';
 import { recalculateEvaluation } from '../../domain/services/recalculate-evaluation';
 import { readSubmittedConfig } from './submitted-student-config.reads';
 import type {
@@ -11,7 +12,10 @@ import { FIND_ITEMS, FIND_SELF_EVALUATION } from './evaluation.queries';
 import { STUDENT_EVALUATION_COUNTS } from './self-assessment.queries';
 import { readSessionTableConfig, readSessionConfig } from './session-evaluation-config.persistence';
 
-interface CountRow extends Omit<StudentEvaluationSummary, 'peerSubmitted' | 'peerTotal'> {
+interface CountRow extends Omit<
+  StudentEvaluationSummary,
+  'peerSubmitted' | 'peerTotal' | 'gradeAvailable'
+> {
   peerSubmitted: number | string;
   peerTotal: number | string;
 }
@@ -27,7 +31,23 @@ export async function getStudentEvaluationSummary(
     tutorEvaluationSubmitted: row?.tutorEvaluationSubmitted ?? false,
     peerSubmitted: Number(row?.peerSubmitted ?? 0),
     peerTotal: Number(row?.peerTotal ?? 0),
+    gradeAvailable: await hasReleasedSessionGrade(manager, sessionId, studentId),
   };
+}
+
+async function hasReleasedSessionGrade(
+  manager: EntityManager,
+  sessionId: string,
+  studentId: string,
+): Promise<boolean> {
+  const [ids] = await manager.query<{ roomId: string; problemId: string }[]>(
+    `SELECT p.room_id AS "roomId", s.problem_id AS "problemId"
+       FROM sessions s JOIN problems p ON p.id = s.problem_id WHERE s.id = $1`,
+    [sessionId],
+  );
+  if (!ids) return false;
+  const grades = await readReceivedFeedbackGrades(manager, ids.roomId, ids.problemId, studentId);
+  return grades.sessions.get(sessionId) != null;
 }
 
 export async function readSelfAssessmentDetail(
