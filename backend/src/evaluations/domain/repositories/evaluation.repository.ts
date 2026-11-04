@@ -61,6 +61,7 @@ export interface StudentEvaluationSummary {
   tutorEvaluationSubmitted: boolean;
   peerSubmitted: number;
   peerTotal: number;
+  gradeAvailable?: boolean;
 }
 export interface SelfAssessmentWrite {
   context: EvaluationContext;
