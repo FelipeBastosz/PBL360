@@ -5,6 +5,12 @@ import {
   type ComparisonPeerEvaluation,
   type SessionEvaluationHistoryItem,
 } from '../../domain/entities/evaluation-history.entity';
+import type { SessionEvaluationConfig } from '../../domain/entities/session-evaluation-config.entity';
+import {
+  calculateCriteriaScore,
+  calculatePeerAverage,
+  calculateTutorScore,
+} from './evaluation-history-scores';
 import type {
   ComparisonPeerItemRow,
   ComparisonPeerRow,
@@ -14,35 +20,20 @@ import type {
   StudentRow,
 } from './evaluation-history.types';
 
+export { calculateCriteriaScore, calculatePeerAverage, calculateTutorScore };
+
 export interface HistoryMaps {
   selfMap: Map<string, SelfEvaluationRow>;
   adjustmentMap: Map<string, SelfAdjustmentRow>;
   peerMap: Map<string, number[]>;
   tutorMap: Map<string, Array<{ criterionId: string; score: number }>>;
+  tutorBonusMap?: Map<string, number | null>;
 }
 
 export function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   const first = parts[0]?.[0] ?? '';
   return (first + (parts.length > 1 ? (parts.at(-1)?.[0] ?? '') : '')).toUpperCase();
-}
-
-export function calculateCriteriaScore(
-  items: Array<{ criterionId: string; score: number }>,
-  criteria: Array<{ id: string; weight: number }>,
-): number | null {
-  if (items.length === 0) return null;
-  const scoreMap = new Map(items.map((i) => [i.criterionId, i.score]));
-  let weightedSum = 0;
-  let totalWeight = 0;
-  for (const c of criteria) {
-    const sc = scoreMap.get(c.id);
-    if (sc !== undefined) {
-      weightedSum += sc * c.weight;
-      totalWeight += c.weight;
-    }
-  }
-  return totalWeight > 0 ? Number((weightedSum / totalWeight).toFixed(2)) : null;
 }
 
 function emptySelfGrades() {
@@ -71,21 +62,19 @@ function resolveSelfGrades(
   };
 }
 
-function calculatePeerAverage(scores: number[]): number | null {
-  if (scores.length === 0) return null;
-  const avg = scores.reduce((sum, val) => sum + val, 0) / scores.length;
-  return Number(avg.toFixed(2));
-}
-
 function extractStudentScores(
   studentId: string,
-  criteria: Array<{ id: string; weight: number }>,
+  config: {
+    criteria: Array<{ id: string; weight: number }>;
+    formula: { criteriaWeight: number; roleWeight: number };
+  },
   maps: HistoryMaps,
 ) {
   const peers = maps.peerMap.get(studentId) ?? [];
   const tutor = maps.tutorMap.get(studentId) ?? [];
+  const bonus = maps.tutorBonusMap?.get(studentId) ?? null;
   return {
-    notaTutor: calculateCriteriaScore(tutor, criteria),
+    notaTutor: calculateTutorScore(tutor, config, bonus),
     notaPares: calculatePeerAverage(peers),
     avaliacoesPares: peers.length,
   };
@@ -103,17 +92,45 @@ function resolveStudentSelfGrades(studentId: string, maps: HistoryMaps) {
   );
 }
 
+function resolveHistoryConfig(
+  config:
+    | SessionEvaluationConfig
+    | {
+        criteria: Array<{ id: string; weight: number }>;
+        formula?: { criteriaWeight: number; roleWeight: number };
+      }
+    | Array<{ id: string; weight: number }>,
+) {
+  if (Array.isArray(config)) {
+    return {
+      criteria: config,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
+    };
+  }
+  return {
+    criteria: config.criteria,
+    formula: config.formula ?? { criteriaWeight: 70, roleWeight: 30 },
+  };
+}
+
 export function buildHistoryStudentItem(
   student: StudentRow,
-  criteria: Array<{ id: string; weight: number }>,
+  config:
+    | SessionEvaluationConfig
+    | {
+        criteria: Array<{ id: string; weight: number }>;
+        formula?: { criteriaWeight: number; roleWeight: number };
+      }
+    | Array<{ id: string; weight: number }>,
   maps: HistoryMaps,
 ): SessionEvaluationHistoryItem {
+  const resolvedConfig = resolveHistoryConfig(config);
   return {
     alunoId: student.alunoId,
     nome: student.nome,
     matricula: student.matricula ?? null,
     ...resolveStudentSelfGrades(student.alunoId, maps),
-    ...extractStudentScores(student.alunoId, criteria, maps),
+    ...extractStudentScores(student.alunoId, resolvedConfig, maps),
   };
 }
 

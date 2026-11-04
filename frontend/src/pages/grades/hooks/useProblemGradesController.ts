@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import type { StudentGradeRow } from '@/types/grades';
+import type { ProblemGradesResponse, StudentGradeRow } from '@/types/grades';
 import type {
   ProblemFeedbacksResponse,
   StudentProblemFeedbackResponse,
@@ -16,48 +16,121 @@ function updateStudentFeedbacks(
   fallbackName = '',
 ): ProblemFeedbacksResponse | null {
   if (!prev) return prev;
+  const savedSessionId = saved.sessaoId ?? saved.sessionId;
+  const matches = (item: (typeof prev.alunos)[number]) => {
+    const itemSessionId = item.sessaoId ?? item.feedback?.sessaoId ?? item.feedback?.sessionId;
+    const sameStudent = item.alunoId === saved.destinatarioId;
+    return savedSessionId ? sameStudent && itemSessionId === savedSessionId : sameStudent;
+  };
   const updatedAlunos = prev.alunos.map((item) =>
-    item.alunoId === saved.destinatarioId ? { ...item, feedback: saved } : item,
+    matches(item) ? { ...item, feedback: saved, sessaoId: savedSessionId } : item,
   );
-  if (!updatedAlunos.some((item) => item.alunoId === saved.destinatarioId)) {
-    updatedAlunos.push({ alunoId: saved.destinatarioId, nome: fallbackName, feedback: saved });
+  if (!updatedAlunos.some(matches)) {
+    updatedAlunos.push({
+      alunoId: saved.destinatarioId,
+      nome: fallbackName,
+      sessaoId: savedSessionId,
+      feedback: saved,
+    });
   }
   return { ...prev, alunos: updatedAlunos };
+}
+
+function findStudentFeedback(
+  feedbacks: ProblemFeedbacksResponse | null,
+  studentId: string,
+  sessionId?: string,
+): StudentProblemFeedbackResponse | null {
+  if (!feedbacks?.alunos) return null;
+  if (sessionId) {
+    const match = feedbacks.alunos.find(
+      (a) =>
+        a.alunoId === studentId &&
+        (a.sessaoId === sessionId ||
+          a.feedback?.sessaoId === sessionId ||
+          a.feedback?.sessionId === sessionId),
+    );
+    return match?.feedback ?? null;
+  }
+  return feedbacks.alunos.find((a) => a.alunoId === studentId)?.feedback ?? null;
+}
+
+function updateStudentGradeOptimistic(
+  prev: ProblemGradesResponse | null,
+  studentId: string,
+  sessionId?: string,
+  newGrade?: number | null,
+): ProblemGradesResponse | null {
+  if (!prev || !sessionId || newGrade === undefined) return prev;
+  const updatedAlunos = prev.alunos.map((aluno) => {
+    if (aluno.alunoId !== studentId) return aluno;
+    const updatedSessoes = aluno.sessoes.map((s) =>
+      s.sessaoId === sessionId ? { ...s, nota: newGrade } : s,
+    );
+    return { ...aluno, sessoes: updatedSessoes };
+  });
+  return { ...prev, alunos: updatedAlunos };
+}
+
+function applyFeedbackSaved(
+  data: ReturnType<typeof useProblemGradesData>,
+  saved: StudentProblemFeedbackResponse,
+  studentName?: string,
+  sessionId?: string,
+) {
+  data.setFeedbacks((prev) => updateStudentFeedbacks(prev, saved, studentName));
+  if (sessionId) {
+    data.setGrades((prev) =>
+      updateStudentGradeOptimistic(prev, saved.destinatarioId, sessionId, saved.nota),
+    );
+  }
+  data.refetch();
+}
+
+function resolveSelectedStudent(
+  state: StudentGradeRow | null,
+  evalCtx: EvaluationContext | null,
+  grades: ProblemGradesResponse | null,
+): StudentGradeRow | null {
+  if (state) return state;
+  if (!evalCtx || !grades) return null;
+  return grades.alunos.find((a) => a.alunoId === evalCtx.studentId) ?? null;
 }
 
 export function useProblemGradesController() {
   const { roomId = '', problemId = '' } = useParams<{ roomId: string; problemId: string }>();
   const { user } = useAuth();
-  const isProfessor = user?.tipo === 'PROFESSOR';
-
-  const data = useProblemGradesData(roomId, problemId, isProfessor);
+  const data = useProblemGradesData(roomId, problemId, user?.tipo === 'PROFESSOR');
   const [hideNames, setHideNames] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationContext | null>(null);
   const [selectedStudentState, setSelectedStudentState] = useState<StudentGradeRow | null>(null);
   const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
+
+  const selectedStudent = resolveSelectedStudent(
+    selectedStudentState,
+    selectedEvaluation,
+    data.grades,
+  );
 
   const handleClose = () => {
     setSelectedEvaluation(null);
     setSelectedStudentState(null);
   };
 
-  const selectedStudent =
-    selectedStudentState ??
-    (selectedEvaluation
-      ? (data.grades?.alunos.find((a) => a.alunoId === selectedEvaluation.studentId) ?? null)
-      : null);
-
   const handleStudentFeedbackSaved = (saved: StudentProblemFeedbackResponse) => {
-    data.setFeedbacks((prev) => updateStudentFeedbacks(prev, saved, selectedStudent?.nome));
+    applyFeedbackSaved(data, saved, selectedStudent?.nome, selectedEvaluation?.sessionId);
   };
 
-  const handleGeneralFeedbackSaved = (saved: GeneralFeedbackResponse) => {
-    data.setFeedbacks((prev) => (prev ? { ...prev, geral: saved } : prev));
-  };
-
-  const currentStudentFeedback = selectedStudent
-    ? (data.feedbacks?.alunos.find((a) => a.alunoId === selectedStudent.alunoId)?.feedback ?? null)
-    : null;
+  const currentStudentFeedback =
+    selectedEvaluation?.existingFeedback !== undefined
+      ? selectedEvaluation.existingFeedback
+      : selectedStudent
+        ? findStudentFeedback(
+            data.feedbacks,
+            selectedStudent.alunoId,
+            selectedEvaluation?.sessionId,
+          )
+        : null;
 
   return {
     roomId,
@@ -74,6 +147,7 @@ export function useProblemGradesController() {
     setIsGeneralModalOpen,
     currentStudentFeedback,
     handleStudentFeedbackSaved,
-    handleGeneralFeedbackSaved,
+    handleGeneralFeedbackSaved: (saved: GeneralFeedbackResponse) =>
+      data.setFeedbacks((prev) => (prev ? { ...prev, geral: saved } : prev)),
   };
 }

@@ -35,13 +35,41 @@ export async function readEvaluationDetail(
     (await readSessionConfig(manager, context.sessionId)) ??
     (await readSessionTableConfig(manager, context.sessionId));
   const evaluation = await readEvaluation(manager, context.sessionId, studentId);
-  const rows = evaluation
-    ? await manager.query<AdjustmentRow[]>(FIND_ADJUSTMENTS, [evaluation.id])
-    : [];
-  const adjustments = rows.map((row) => ({
+  const adjustments = await readAdjustments(manager, evaluation?.id);
+  const roleInfo = await readStudentRoleInfo(manager, context.sessionId, studentId);
+  return {
+    config,
+    evaluation: recalculateEvaluation(evaluation, config),
+    adjustments,
+    papel: roleInfo.papel,
+    roleScore: roleInfo.roleScore,
+  };
+}
+
+async function readStudentRoleInfo(
+  manager: EntityManager,
+  sessionId: string,
+  studentId: string,
+): Promise<{ papel: string | null; roleScore: number | null }> {
+  const [roleRow] = await manager.query<Array<{ role: string; role_score: string | null }>>(
+    'SELECT role, role_score FROM session_roles WHERE session_id = $1 AND student_id = $2;',
+    [sessionId, studentId],
+  );
+  return {
+    papel: roleRow?.role ?? null,
+    roleScore: roleRow?.role_score != null ? Number(roleRow.role_score) : null,
+  };
+}
+
+async function readAdjustments(
+  manager: EntityManager,
+  evaluationId?: string,
+): Promise<GradeAdjustment[]> {
+  if (!evaluationId) return [];
+  const rows = await manager.query<AdjustmentRow[]>(FIND_ADJUSTMENTS, [evaluationId]);
+  return rows.map((row) => ({
     ...row,
     previousValue: Number(row.previousValue),
     newValue: Number(row.newValue),
   }));
-  return { config, evaluation: recalculateEvaluation(evaluation, config), adjustments };
 }

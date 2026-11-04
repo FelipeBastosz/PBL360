@@ -6,6 +6,7 @@ import { AttendanceStatus } from '@/sessions/domain/enums/attendance-status.enum
 import { ATTENDANCE_REPOSITORY } from '@/sessions/domain/repositories/attendance.repository';
 import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
 import { EVALUATION_REPOSITORY } from '../../domain/repositories/evaluation.repository';
+import { EvaluationStatusResponse } from '../dtos/session-evaluation-summary-response.dto';
 import { ListSessionPeersUseCase } from './list-session-peers.use-case';
 
 describe('ListSessionPeersUseCase', () => {
@@ -15,6 +16,7 @@ describe('ListSessionPeersUseCase', () => {
   };
   const evaluationRepository = {
     listSessionPeers: jest.fn(),
+    getSessionFormula: jest.fn().mockResolvedValue({ criteriaWeight: 70, roleWeight: 30 }),
   };
   const attendanceRepository = {
     findBySession: jest.fn(),
@@ -23,6 +25,11 @@ describe('ListSessionPeersUseCase', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
+    evaluationRepository.getSessionFormula.mockResolvedValue({
+      criteriaWeight: 70,
+      roleWeight: 30,
+    });
+
     const module = await Test.createTestingModule({
       providers: [
         ListSessionPeersUseCase,
@@ -35,7 +42,7 @@ describe('ListSessionPeersUseCase', () => {
     useCase = module.get(ListSessionPeersUseCase);
   });
 
-  it('returns present peers with initials and status when session is released', async () => {
+  it('returns present peers with initials, status, and role when session is released', async () => {
     const deadline = new Date('2026-10-15T23:59:59Z');
     sessionAccess.assertMemberCanAccessSession.mockResolvedValue({
       session: {
@@ -62,9 +69,9 @@ describe('ListSessionPeersUseCase', () => {
     ]);
 
     evaluationRepository.listSessionPeers.mockResolvedValue([
-      { alunoId: 'student-2', nome: 'Ana Beatriz Souza', status: null },
-      { alunoId: 'student-3', nome: 'Carlos Eduardo', status: EvaluationStatus.DRAFT },
-      { alunoId: 'student-4', nome: 'Daniel', status: EvaluationStatus.SUBMITTED },
+      { alunoId: 'student-2', nome: 'Ana Beatriz Souza', status: null, papel: 'COORDENADOR' },
+      { alunoId: 'student-3', nome: 'Carlos Eduardo', status: EvaluationStatus.DRAFT, papel: null },
+      { alunoId: 'student-4', nome: 'Daniel', status: EvaluationStatus.SUBMITTED, papel: null },
     ]);
 
     const result = await useCase.execute('sess-1', 'student-1');
@@ -77,10 +84,29 @@ describe('ListSessionPeersUseCase', () => {
       liberada: true,
       prazo: deadline,
       chamadaRealizada: true,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [
-        { alunoId: 'student-2', nome: 'Ana Beatriz Souza', iniciais: 'AS', status: 'PENDENTE' },
-        { alunoId: 'student-3', nome: 'Carlos Eduardo', iniciais: 'CE', status: 'RASCUNHO' },
-        { alunoId: 'student-4', nome: 'Daniel', iniciais: 'D', status: 'ENVIADA' },
+        {
+          alunoId: 'student-2',
+          nome: 'Ana Beatriz Souza',
+          iniciais: 'AS',
+          status: EvaluationStatusResponse.PENDENTE,
+          papel: 'COORDENADOR',
+        },
+        {
+          alunoId: 'student-3',
+          nome: 'Carlos Eduardo',
+          iniciais: 'CE',
+          status: EvaluationStatusResponse.RASCUNHO,
+          papel: null,
+        },
+        {
+          alunoId: 'student-4',
+          nome: 'Daniel',
+          iniciais: 'D',
+          status: EvaluationStatusResponse.ENVIADA,
+          papel: null,
+        },
       ],
     });
   });
@@ -122,7 +148,8 @@ describe('ListSessionPeersUseCase', () => {
       alunoId: 'student-2',
       nome: 'Presente Aluno',
       iniciais: 'PA',
-      status: 'PENDENTE',
+      status: EvaluationStatusResponse.PENDENTE,
+      papel: null,
     });
 
     // Ensure absent, excused, unrecorded, and self are strictly omitted
@@ -152,6 +179,7 @@ describe('ListSessionPeersUseCase', () => {
       liberada: true,
       prazo: null,
       chamadaRealizada: false,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [],
     });
     expect(attendanceRepository.findEnrolledStudents).not.toHaveBeenCalled();
@@ -180,6 +208,7 @@ describe('ListSessionPeersUseCase', () => {
       liberada: true,
       prazo: null,
       chamadaRealizada: true,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [],
     });
     expect(attendanceRepository.findEnrolledStudents).not.toHaveBeenCalled();

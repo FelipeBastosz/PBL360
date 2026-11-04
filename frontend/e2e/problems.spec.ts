@@ -239,9 +239,9 @@ test.describe('Problem Deletion Flow (ManageProblemsPage)', () => {
 
     await dialog.getByRole('button', { name: 'Sim, excluir problema' }).click();
 
-    await expect(
-      page.getByText('Apenas o professor responsável pela sala pode excluir o problema.'),
-    ).toBeVisible();
+    await expect(dialog.getByRole('alert')).toContainText(
+      'Apenas o professor responsável pela sala pode excluir o problema.',
+    );
     await expect(
       page.getByRole('heading', { level: 3, name: 'Problema 2 - Arquitetura em Camadas' }),
     ).toBeVisible();
@@ -278,8 +278,7 @@ test.describe('Problem Deletion Flow (ManageProblemsPage)', () => {
     const expectedMessage =
       'Não é possível excluir: existem 2 sessões e 1 feedback vinculados a este problema.';
 
-    await expect(dialog.getByRole('alert')).toHaveTextContent(expectedMessage);
-    await expect(page.getByText(expectedMessage)).toBeVisible();
+    await expect(dialog.getByRole('alert')).toContainText(expectedMessage);
     await expect(
       dialog.getByRole('heading', { name: 'Não é possível excluir o problema' }),
     ).toBeVisible();

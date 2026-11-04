@@ -13,6 +13,7 @@ export interface ProblemGradeData {
   pokerScores: GradeRow[];
   peerAdjustments?: GradeRow[];
   tutorAdjustments?: GradeRow[];
+  feedbacks?: GradeRow[];
 }
 
 export interface GradePersistenceData {

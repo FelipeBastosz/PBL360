@@ -18,11 +18,13 @@ export interface ListSessionPeersOutput {
   liberada: boolean;
   prazo: Date | null;
   chamadaRealizada: boolean;
+  formula?: { criteriaWeight: number; roleWeight: number };
   colegas: Array<{
     alunoId: string;
     nome: string;
     iniciais: string;
     status: EvaluationStatusResponse;
+    papel: string | null;
   }>;
 }
 
@@ -40,16 +42,20 @@ export class ListSessionPeersUseCase {
       type: UserType.STUDENT,
     });
 
-    const rollCall = await this.attendances.findBySession(sessionId);
+    const [rollCall, formula] = await Promise.all([
+      this.attendances.findBySession(sessionId),
+      this.evaluations.getSessionFormula(sessionId),
+    ]);
+
     if (rollCall.length === 0) {
-      return this.toOutput(session, false, []);
+      return this.toOutput(session, false, [], formula);
     }
     if (!this.isStudentPresent(rollCall, studentId)) {
-      return this.toOutput(session, true, []);
+      return this.toOutput(session, true, [], formula);
     }
 
     const colegas = await this.fetchEligiblePeers(sessionId, roomId, studentId, rollCall);
-    return this.toOutput(session, true, colegas);
+    return this.toOutput(session, true, colegas, formula);
   }
 
   private isStudentPresent(rollCall: RecordedAttendance[], studentId: string): boolean {
@@ -71,13 +77,15 @@ export class ListSessionPeersUseCase {
       rollCall.filter((r) => this.isStudentPresent(rollCall, r.studentId)).map((r) => r.studentId),
     );
     const statusMap = new Map(existingEvaluations.map((p) => [p.alunoId, p.status]));
+    const roleMap = new Map(existingEvaluations.map((p) => [p.alunoId, p.papel ?? null]));
     const peers = enrolled.filter((s) => s.id !== studentId && presentIds.has(s.id));
-    return this.mapColegas(peers, statusMap);
+    return this.mapColegas(peers, statusMap, roleMap);
   }
 
   private mapColegas(
     peers: EnrolledStudent[],
     statusMap: Map<string, EvaluationStatus | null>,
+    roleMap: Map<string, string | null>,
   ): ListSessionPeersOutput['colegas'] {
     return peers
       .map((p) => ({
@@ -85,6 +93,7 @@ export class ListSessionPeersUseCase {
         nome: p.name,
         iniciais: this.getInitials(p.name),
         status: this.mapStatus(statusMap.get(p.id) ?? null),
+        papel: roleMap.get(p.id) ?? null,
       }))
       .sort((a, b) => a.nome.localeCompare(b.nome));
   }
@@ -93,11 +102,13 @@ export class ListSessionPeersUseCase {
     session: { peerEvalReleased: boolean; peerEvalDeadline?: Date | null },
     chamadaRealizada: boolean,
     colegas: ListSessionPeersOutput['colegas'],
+    formula?: { criteriaWeight: number; roleWeight: number },
   ): ListSessionPeersOutput {
     return {
       liberada: session.peerEvalReleased,
       prazo: session.peerEvalDeadline ?? null,
       chamadaRealizada,
+      formula,
       colegas,
     };
   }

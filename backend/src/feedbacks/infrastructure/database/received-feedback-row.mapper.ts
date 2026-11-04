@@ -2,6 +2,7 @@ import type {
   ReceivedFeedback,
   ReceivedIndividualFeedback,
   ReceivedProblemFeedbacks,
+  ReceivedSessionComponents,
 } from '../../domain/repositories/received-feedback.repository';
 import type { ReceivedFeedbackGrades } from './received-feedback-grades.reads';
 
@@ -29,6 +30,7 @@ export function toReceivedFeedback(
   row: ReceivedFeedbackRow,
   newlyRead: Set<string>,
   score: number | null,
+  components?: ReceivedSessionComponents,
 ): ReceivedFeedback {
   return {
     id: row.id,
@@ -38,6 +40,7 @@ export function toReceivedFeedback(
     editedAt: row.editedAt,
     isNew: newlyRead.has(row.id),
     score,
+    ...(components ? { components } : {}),
   };
 }
 
@@ -74,5 +77,10 @@ function toSessionFeedback(
 ) {
   const row = rows.find((item) => item.scope === 'SESSAO' && item.sessionId === session.sessionId);
   const score = grades.sessions.get(session.sessionId) ?? null;
-  return { ...session, feedback: row ? toReceivedFeedback(row, newlyRead, score) : null };
+  const components = grades.components?.get(session.sessionId);
+  return {
+    ...session,
+    feedback: row ? toReceivedFeedback(row, newlyRead, score, components) : null,
+    ...(components ? { score, components } : {}),
+  };
 }

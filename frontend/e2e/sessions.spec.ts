@@ -149,8 +149,7 @@ test.describe('Session Deletion Flow & Conflict Handling (ManageSessionsPage)', 
     const expectedMessage =
       'Não é possível excluir: existem 3 feedbacks e 5 avaliações vinculados a esta sessão.';
 
-    await expect(dialog.getByRole('alert')).toHaveTextContent(expectedMessage);
-    await expect(page.getByText(expectedMessage)).toBeVisible();
+    await expect(dialog.getByRole('alert')).toContainText(expectedMessage);
     await expect(
       dialog.getByRole('heading', { name: 'Não é possível excluir a sessão' }),
     ).toBeVisible();

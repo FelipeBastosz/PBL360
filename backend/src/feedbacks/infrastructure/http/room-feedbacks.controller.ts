@@ -9,7 +9,10 @@ import { SaveGeneralFeedbackDto } from '../../application/dtos/save-general-feed
 import type { StudentProblemFeedbackResponseDto } from '../../application/dtos/student-problem-feedback-response.dto';
 import type { GeneralFeedbackResponseDto } from '../../application/dtos/general-feedback-response.dto';
 import type { ProblemFeedbacksResponseDto } from '../../application/dtos/problem-feedbacks-response.dto';
-import { SaveStudentProblemFeedbackUseCase } from '../../application/use-cases/save-student-problem-feedback.use-case';
+import {
+  SaveStudentProblemFeedbackUseCase,
+  type SaveStudentProblemFeedbackInput,
+} from '../../application/use-cases/save-student-problem-feedback.use-case';
 import { SaveGeneralProblemFeedbackUseCase } from '../../application/use-cases/save-general-problem-feedback.use-case';
 import { GetProblemFeedbacksUseCase } from '../../application/use-cases/get-problem-feedbacks.use-case';
 import {
@@ -22,6 +25,23 @@ import {
   SaveGeneralProblemFeedbackSwaggerDocs,
   SaveStudentProblemFeedbackSwaggerDocs,
 } from './feedbacks.swagger';
+
+const toSaveInput = (
+  roomId: string,
+  problemId: string,
+  studentId: string,
+  tutorId: string,
+  dto: SaveStudentProblemFeedbackDto,
+): SaveStudentProblemFeedbackInput => ({
+  roomId,
+  problemId,
+  studentId,
+  tutorId,
+  sessionId: dto.sessao_id ?? dto.sessaoId ?? null,
+  score: dto.nota ?? null,
+  text: dto.texto,
+  justification: dto.justificativa,
+});
 
 @ApiTags('Feedbacks')
 @Controller('salas/:salaId/problemas/:problemaId/feedbacks')
@@ -43,14 +63,9 @@ export class RoomFeedbacksController {
     @Body() dto: SaveStudentProblemFeedbackDto,
     @AuthenticatedUserId() tutorId: string,
   ): Promise<StudentProblemFeedbackResponseDto> {
-    const feedback = await this.saveStudentFeedback.execute({
-      roomId,
-      problemId,
-      studentId,
-      tutorId,
-      score: dto.nota ?? null,
-      text: dto.texto,
-    });
+    const feedback = await this.saveStudentFeedback.execute(
+      toSaveInput(roomId, problemId, studentId, tutorId, dto),
+    );
     return toStudentProblemFeedbackResponse(feedback);
   }
 

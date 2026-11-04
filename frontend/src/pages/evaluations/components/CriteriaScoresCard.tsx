@@ -1,26 +1,21 @@
 import { useState } from 'react';
-import type { EvaluationCriterion } from '@/types/evaluation';
+import type { EvaluationCriterion, EvaluationFormula } from '@/types/evaluation';
+import type { SessionRole } from '@/types/session';
+import { calculateSessionScore, getRolePercentage } from '@/utils/evaluationScore';
+import { roleLabel } from '@/utils/sessionRoles';
 import { formatGrade } from '@/utils/formatGrade';
 
 type Props = {
   studentName: string;
+  papel?: SessionRole | string | null;
+  formula?: EvaluationFormula;
   criteria: EvaluationCriterion[];
   scores: Record<string, number>;
+  bonus?: number | null;
+  notaCargo?: number | null;
   onScoreChange: (criterioId: string, nextScore: number) => void;
+  onCargoScoreChange?: (nextScore: number) => void;
 };
-
-function calculateFinalScore(
-  criteria: EvaluationCriterion[],
-  scores: Record<string, number>,
-): number {
-  const totalWeight = criteria.reduce((sum, c) => sum + c.peso, 0);
-  if (totalWeight <= 0) return 0;
-  const weightedSum = criteria.reduce((sum, c) => {
-    const score = scores[c.id] ?? 0;
-    return sum + score * c.peso;
-  }, 0);
-  return Math.round((weightedSum / totalWeight) * 10) / 10;
-}
 
 function FinalScoreRow({ score }: { score: number }) {
   return (
@@ -36,15 +31,7 @@ function FinalScoreRow({ score }: { score: number }) {
   );
 }
 
-function EditableScoreInput({
-  value,
-  onChange,
-  label,
-}: {
-  value: number;
-  onChange: (val: number) => void;
-  label: string;
-}) {
+function useEditableScore(value: number, onChange: (val: number) => void) {
   const [isEditing, setIsEditing] = useState(false);
   const [raw, setRaw] = useState('');
 
@@ -56,74 +43,91 @@ function EditableScoreInput({
   function handleBlur() {
     setIsEditing(false);
     const parsed = parseFloat(raw.replace(',', '.'));
-    if (Number.isNaN(parsed) || parsed < 0) {
-      onChange(0);
-    } else if (parsed > 10) {
-      onChange(10);
-    } else {
-      onChange(Math.round(parsed * 10) / 10);
+    if (!isNaN(parsed)) {
+      const clamped = Math.min(10, Math.max(0, parsed));
+      onChange(Math.round(clamped * 10) / 10);
     }
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const input = e.target.value;
-    setRaw(input);
-    const parsed = parseFloat(input.replace(',', '.'));
-    if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 10) {
+    const text = e.target.value;
+    setRaw(text);
+    const parsed = parseFloat(text.replace(',', '.'));
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 10) {
       onChange(Math.round(parsed * 10) / 10);
     }
   }
+
+  return { isEditing, raw, handleFocus, handleBlur, handleChange };
+}
+
+function EditableScoreInput({
+  value,
+  onChange,
+  label,
+}: {
+  value: number;
+  onChange: (val: number) => void;
+  label: string;
+}) {
+  const { isEditing, raw, handleFocus, handleBlur, handleChange } = useEditableScore(
+    value,
+    onChange,
+  );
 
   return (
     <input
       type="text"
       inputMode="decimal"
+      aria-label={`Nota de ${label}`}
       value={isEditing ? raw : formatGrade(value)}
       onFocus={handleFocus}
-      onChange={handleChange}
       onBlur={handleBlur}
-      aria-label={`Nota de ${label}`}
-      className="w-12 rounded-lg border border-transparent bg-transparent py-1 text-center text-base font-bold text-ink transition-colors hover:border-black/10 focus:border-brand-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-900"
+      onChange={handleChange}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+      }}
+      className="w-14 rounded-xl border border-black/10 bg-surface/50 py-1.5 text-center text-base font-bold text-brand-900 transition focus:border-brand-900 focus:bg-white focus:outline-hidden"
     />
   );
 }
 
-function CriterionRow({
-  criterion,
+function ScoreRow({
+  label,
+  subtitle,
   score,
   onChange,
 }: {
-  criterion: EvaluationCriterion;
+  label: string;
+  subtitle: string;
   score: number;
   onChange: (val: number) => void;
 }) {
-  const handleStep = (delta: number) => {
+  function handleStep(delta: number) {
     const next = Math.min(10, Math.max(0, Math.round((score + delta) * 10) / 10));
     onChange(next);
-  };
+  }
 
   return (
     <div className="flex items-center justify-between border-b border-black/5 py-3.5 last:border-b-0">
-      <div className="flex min-w-0 flex-col pr-2">
-        <span className="text-sm font-semibold break-words text-brand-900">{criterion.nome}</span>
-        <span className="text-xs text-muted">
-          Peso {criterion.peso.toFixed(1).replace('.', ',')}
-        </span>
+      <div className="flex flex-col pr-4">
+        <span className="text-sm font-semibold text-ink">{label}</span>
+        <span className="text-xs text-muted">{subtitle}</span>
       </div>
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <button
           type="button"
-          aria-label={`Diminuir nota de ${criterion.nome}`}
+          aria-label={`Diminuir nota de ${label}`}
           disabled={score <= 0}
           onClick={() => handleStep(-1)}
           className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-ink transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
         >
           −
         </button>
-        <EditableScoreInput value={score} onChange={onChange} label={criterion.nome} />
+        <EditableScoreInput value={score} onChange={onChange} label={label} />
         <button
           type="button"
-          aria-label={`Aumentar nota de ${criterion.nome}`}
+          aria-label={`Aumentar nota de ${label}`}
           disabled={score >= 10}
           onClick={() => handleStep(1)}
           className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-brand-900 transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
@@ -135,23 +139,70 @@ function CriterionRow({
   );
 }
 
-export function CriteriaScoresCard({ studentName, criteria, scores, onScoreChange }: Props) {
-  const finalScore = calculateFinalScore(criteria, scores);
-
+function CardHeader({
+  studentName,
+  papel,
+}: {
+  studentName: string;
+  papel?: SessionRole | string | null;
+}) {
   return (
-    <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+    <div className="flex flex-col">
       <h2 className="text-base font-bold break-words text-brand-900">
         Notas do aluno: {studentName}
       </h2>
+      {papel && (
+        <span className="text-xs font-semibold text-warning">
+          Papel: {roleLabel(papel as SessionRole)}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function CriteriaScoresCard({
+  studentName,
+  papel,
+  formula,
+  criteria,
+  scores,
+  bonus,
+  notaCargo,
+  onScoreChange,
+  onCargoScoreChange,
+}: Props) {
+  const effectiveCargoScore = notaCargo ?? bonus;
+  const hasRole = Boolean(papel);
+  const rolePercentage = getRolePercentage(formula);
+  const finalScore = calculateSessionScore({
+    criteria,
+    scores,
+    roleScore: effectiveCargoScore,
+    formula,
+    hasRole,
+  });
+
+  return (
+    <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+      <CardHeader studentName={studentName} papel={papel} />
       <div className="mt-3 flex flex-col">
         {criteria.map((criterion) => (
-          <CriterionRow
+          <ScoreRow
             key={criterion.id}
-            criterion={criterion}
+            label={criterion.nome}
+            subtitle={`Peso ${criterion.peso.toFixed(1).replace('.', ',')}`}
             score={scores[criterion.id] ?? 0}
             onChange={(val) => onScoreChange(criterion.id, val)}
           />
         ))}
+        {hasRole && onCargoScoreChange && (
+          <ScoreRow
+            label={`Desempenho como ${roleLabel(papel as SessionRole)}`}
+            subtitle={`Peso na fórmula (${rolePercentage}%)`}
+            score={effectiveCargoScore ?? 0}
+            onChange={onCargoScoreChange}
+          />
+        )}
       </div>
       <FinalScoreRow score={finalScore} />
     </div>

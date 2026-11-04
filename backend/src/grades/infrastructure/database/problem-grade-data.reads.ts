@@ -42,5 +42,6 @@ function toProblemGradeData(results: GradeRow[][]): ProblemGradeData {
     pokerScores: at(9),
     peerAdjustments: at(10),
     tutorAdjustments: at(11),
+    feedbacks: at(12),
   };
 }

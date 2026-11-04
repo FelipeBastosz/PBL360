@@ -66,16 +66,19 @@ function ActionCard({ to, state, title, desc, color, Icon, disabled, badge }: Ac
 function PrimaryActions({
   basePath,
   isStudentEvalActive,
+  isPokerActive,
 }: {
   basePath: string;
   isStudentEvalActive: boolean;
+  isPokerActive?: boolean;
 }) {
-  const evalDesc = isStudentEvalActive
-    ? 'Avaliações ativas. Consulte e ajuste no Histórico de avaliações.'
-    : 'Critérios, marcações e feedback';
-  const evalColor = isStudentEvalActive
-    ? 'bg-gray-100 text-gray-400'
-    : 'bg-emerald-50 text-emerald-600';
+  const isBlocked = isStudentEvalActive || Boolean(isPokerActive);
+  const evalDesc = isPokerActive
+    ? 'Planning poker em andamento na mesa.'
+    : isStudentEvalActive
+      ? 'Avaliações ativas. Consulte e ajuste no Histórico de avaliações.'
+      : 'Critérios, marcações e feedback';
+  const evalColor = isBlocked ? 'bg-gray-100 text-gray-400' : 'bg-emerald-50 text-emerald-600';
 
   return (
     <>
@@ -92,8 +95,8 @@ function PrimaryActions({
         desc={evalDesc}
         color={evalColor}
         Icon={StarIcon}
-        disabled={isStudentEvalActive}
-        badge={isStudentEvalActive ? 'Bloqueado' : undefined}
+        disabled={isBlocked}
+        badge={isBlocked ? 'Bloqueado' : undefined}
       />
     </>
   );
@@ -102,10 +105,12 @@ function PrimaryActions({
 export function SessionActionGrid({
   basePath,
   isStudentEvalActive,
+  isPokerActive,
   children,
 }: {
   basePath: string;
   isStudentEvalActive: boolean;
+  isPokerActive?: boolean;
   children?: ReactNode;
 }) {
   const {
@@ -116,7 +121,11 @@ export function SessionActionGrid({
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:row-span-2 [&>*]:min-w-0">
-      <PrimaryActions basePath={basePath} isStudentEvalActive={isStudentEvalActive} />
+      <PrimaryActions
+        basePath={basePath}
+        isStudentEvalActive={isStudentEvalActive}
+        isPokerActive={isPokerActive}
+      />
       <ActionCard
         to={`${basePath}/formulas`}
         state={{ roomId, problemId, sessionId }}

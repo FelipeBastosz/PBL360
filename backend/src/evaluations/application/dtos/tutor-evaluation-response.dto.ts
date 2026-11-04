@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { EvaluationStatusResponse } from './session-evaluation-summary-response.dto';
 import { ProblemEvaluationCriteriaResponseDto } from './problem-evaluation-criteria-response.dto';
+import { EvaluationFormulaDto } from './evaluation-formula.dto';
 
 export class EvaluationScoreResponseDto {
   @ApiProperty({ format: 'uuid' }) criterioId!: string;
@@ -34,4 +35,8 @@ export class TutorEvaluationResponseDto extends ProblemEvaluationCriteriaRespons
     description: 'Adicional preservado no primeiro envio.',
   })
   adicionalAplicado!: number | null;
+  @ApiProperty({ type: String, nullable: true }) papel?: string | null;
+  @ApiProperty({ type: Number, nullable: true }) notaCargo?: number | null;
+  @ApiProperty({ type: EvaluationFormulaDto, required: false })
+  formula?: EvaluationFormulaDto;
 }

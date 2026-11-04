@@ -40,4 +40,16 @@ describe('SessionActionGrid', () => {
       screen.getByText(/avaliações ativas. consulte e ajuste no histórico de avaliações/i),
     ).toBeInTheDocument();
   });
+
+  it('disables "Avaliar alunos" card with explanation when planning poker is active', () => {
+    render(
+      <MemoryRouter>
+        <SessionActionGrid basePath={basePath} isStudentEvalActive={false} isPokerActive={true} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('link', { name: /avaliar alunos/i })).not.toBeInTheDocument();
+    expect(screen.getByText('Bloqueado')).toBeInTheDocument();
+    expect(screen.getByText(/planning poker em andamento na mesa/i)).toBeInTheDocument();
+  });
 });

@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ReceivedFeedbackResponseDto,
   ReceivedIndividualFeedbackResponseDto,
+  ReceivedSessionComponentsDto,
 } from './received-feedback-response.dto';
 
 export class ReceivedSessionFeedbackDto {
@@ -16,6 +17,16 @@ export class ReceivedSessionFeedbackDto {
 
   @ApiProperty({ type: ReceivedFeedbackResponseDto, nullable: true })
   feedback!: ReceivedFeedbackResponseDto | null;
+
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    description: 'Nota da sessão quando a modalidade ativa é autoavaliação ou pares.',
+  })
+  nota?: number | null;
+
+  @ApiPropertyOptional({ type: ReceivedSessionComponentsDto })
+  avaliacoes?: ReceivedSessionComponentsDto;
 }
 
 export class ReceivedProblemFeedbacksResponseDto {

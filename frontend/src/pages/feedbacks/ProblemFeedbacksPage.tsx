@@ -3,6 +3,7 @@ import { BackHeader } from '@/components/layout/BackHeader';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
 import { formatGrade } from '@/utils/formatGrade';
+import { EvaluationComponentGrades } from './EvaluationComponentGrades';
 import { FeedbackCard } from './FeedbackCard';
 import { FeedbackEmptyState } from './FeedbackEmptyState';
 import { GeneralFeedbackSection, IndividualFeedbackSection } from './ProblemFeedbackSections';
@@ -10,6 +11,16 @@ import { useProblemFeedbacks } from './useProblemFeedbacks';
 import type { ReceivedProblemFeedbacksResponse, ReceivedSessionFeedback } from '@/types/feedback';
 
 function SessionItem({ item }: { item: ReceivedSessionFeedback }) {
+  if (!item.feedback && item.avaliacoes) {
+    return (
+      <div className="flex flex-col gap-2 rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
+        <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+          {item.rotulo}
+        </span>
+        <EvaluationComponentGrades avaliacoes={item.avaliacoes} />
+      </div>
+    );
+  }
   if (!item.feedback) {
     return (
       <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-black/10 bg-white p-4">
@@ -29,6 +40,7 @@ function SessionItem({ item }: { item: ReceivedSessionFeedback }) {
       novo={item.feedback.novo}
       nota={item.feedback.nota}
       tag={item.rotulo}
+      avaliacoes={item.feedback.avaliacoes}
     />
   );
 }

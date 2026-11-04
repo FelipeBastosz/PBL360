@@ -27,6 +27,7 @@ type Props = {
   isDeletingFormula: boolean;
   onCloseDeleteFormula: () => void;
   onConfirmDeleteFormula: () => void;
+  canEditCriteria?: boolean;
 };
 
 function ConfigModals(props: Props) {
@@ -52,6 +53,7 @@ function ConfigModals(props: Props) {
         criterion={props.editingCriterion}
         onSave={props.onSaveCriterion}
         otherWeightsSum={props.otherWeightsSum}
+        canEditFields={props.canEditCriteria}
       />
     </>
   );

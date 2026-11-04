@@ -83,4 +83,97 @@ describe('SessionGradeCalculator', () => {
       calculateWithCargo(items, [criterion('a', 1), criterion('b', 1)], roleScore),
     ).toThrow(InvalidEvaluationItemsError);
   });
+
+  describe('custom formulas and boundary values across modalities', () => {
+    const criteria = [criterion('a', 1), criterion('b', 1)];
+
+    it('calculates with custom 80/20 formula weights', () => {
+      const scores = [
+        { criterionId: 'a', score: 10 },
+        { criterionId: 'b', score: 5 },
+      ];
+      // Criteria average = 7.5; roleScore = 10. 80% criteria + 20% role = 6 + 2 = 8
+      expect(
+        SessionGradeCalculator.calculate(scores, criteria, 10, true, {
+          criteriaWeight: 80,
+          roleWeight: 20,
+        }),
+      ).toBe(8);
+    });
+
+    it('handles boundary role score 0 and 10 correctly', () => {
+      const allTen = [
+        { criterionId: 'a', score: 10 },
+        { criterionId: 'b', score: 10 },
+      ];
+      const allZero = [
+        { criterionId: 'a', score: 0 },
+        { criterionId: 'b', score: 0 },
+      ];
+
+      // Criteria 10, Role 0: (10 * 70 + 0 * 30) / 100 = 7.0
+      expect(SessionGradeCalculator.calculate(allTen, criteria, 0, true)).toBe(7);
+
+      // Criteria 0, Role 10: (0 * 70 + 10 * 30) / 100 = 3.0
+      expect(SessionGradeCalculator.calculate(allZero, criteria, 10, true)).toBe(3);
+
+      // Criteria 0, Role 0: 0.0
+      expect(SessionGradeCalculator.calculate(allZero, criteria, 0, true)).toBe(0);
+    });
+
+    it('redistributes 100% of weight to criteria when student has no cargo (roleScore is null)', () => {
+      const scores = [
+        { criterionId: 'a', score: 8 },
+        { criterionId: 'b', score: 6 },
+      ];
+      // When roleScore is null, even with applyCargoFormula = true, criteria mean is 7.0
+      expect(
+        SessionGradeCalculator.calculate(scores, criteria, null, true, {
+          criteriaWeight: 80,
+          roleWeight: 20,
+        }),
+      ).toBe(7);
+      expect(
+        SessionGradeCalculator.calculate(scores, criteria, null, false, {
+          criteriaWeight: 80,
+          roleWeight: 20,
+        }),
+      ).toBe(7);
+    });
+
+    it('produces identical results across modalities (TUTOR, AUTOAVALIACAO, PARES)', () => {
+      const scores = [
+        { criterionId: 'a', score: 8.5 },
+        { criterionId: 'b', score: 6.5 },
+      ];
+      const roleScore = 9;
+      const formula = { criteriaWeight: 70, roleWeight: 30 };
+
+      const tutorResult = SessionGradeCalculator.calculate(
+        scores,
+        criteria,
+        roleScore,
+        true,
+        formula,
+      );
+      const selfResult = SessionGradeCalculator.calculate(
+        scores,
+        criteria,
+        roleScore,
+        true,
+        formula,
+      );
+      const peerResult = SessionGradeCalculator.calculate(
+        scores,
+        criteria,
+        roleScore,
+        true,
+        formula,
+      );
+
+      expect(tutorResult).toBe(selfResult);
+      expect(selfResult).toBe(peerResult);
+      expect(tutorResult).toBe(7.95);
+    });
+  });
 });

@@ -43,6 +43,11 @@ const ManagePerformanceTablesPage = lazy(
 const EditPerformanceTablePage = lazy(
   () => import('@/pages/performance-tables/EditPerformanceTablePage'),
 );
+const MyFormulasPage = lazy(() => import('@/pages/my-formulas/MyFormulasPage'));
+const CreateMyFormulaPage = lazy(() => import('@/pages/my-formulas/CreateMyFormulaPage'));
+const MyFormulaDetailPage = lazy(() => import('@/pages/my-formulas/MyFormulaDetailPage'));
+const ManageMyFormulasPage = lazy(() => import('@/pages/my-formulas/ManageMyFormulasPage'));
+const EditMyFormulaPage = lazy(() => import('@/pages/my-formulas/EditMyFormulaPage'));
 const BehaviorTagsPage = lazy(() => import('@/pages/behavior-tags/BehaviorTagsPage'));
 const ProblemSessionsPage = lazy(() => import('@/pages/sessions/ProblemSessionsPage'));
 const ManageSessionsPage = lazy(() => import('@/pages/sessions/ManageSessionsPage'));
@@ -102,6 +107,11 @@ const protectedRoutes = (
     <Route path={ROUTES.performanceTableDetail} element={<PerformanceTableDetailPage />} />
     <Route path={ROUTES.managePerformanceTables} element={<ManagePerformanceTablesPage />} />
     <Route path={ROUTES.editPerformanceTable} element={<EditPerformanceTablePage />} />
+    <Route path={ROUTES.myFormulas} element={<MyFormulasPage />} />
+    <Route path={ROUTES.createMyFormula} element={<CreateMyFormulaPage />} />
+    <Route path={ROUTES.myFormulaDetail} element={<MyFormulaDetailPage />} />
+    <Route path={ROUTES.manageMyFormulas} element={<ManageMyFormulasPage />} />
+    <Route path={ROUTES.editMyFormula} element={<EditMyFormulaPage />} />
     <Route path={ROUTES.behaviorTags} element={<BehaviorTagsPage />} />
     <Route path={ROUTES.problemSessions} element={<ProblemSessionsPage />} />
     <Route path={ROUTES.manageSessions} element={<ManageSessionsPage />} />

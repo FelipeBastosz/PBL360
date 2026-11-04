@@ -18,7 +18,7 @@ import type {
   StudentEvaluationSummary,
 } from '../../domain/repositories/evaluation.repository';
 import { readEvaluationSummaries } from './evaluation-summary.reads';
-import { readProblemConfig } from './session-evaluation-config.persistence';
+import { readProblemConfig, readFormula } from './session-evaluation-config.persistence';
 import { readEvaluationDetail } from './evaluation.reads';
 import { recordEvaluation } from './evaluation.persistence';
 import { getStudentEvaluationSummary } from './self-assessment.reads';
@@ -43,6 +43,14 @@ export class PgEvaluationRepository implements EvaluationRepository {
     return row?.exists ?? false;
   }
 
+  async hasActivePoker(sessionId: string): Promise<boolean> {
+    const [row] = await this.dataSource.query<{ exists: boolean }[]>(
+      "SELECT EXISTS (SELECT 1 FROM poker_sessions WHERE session_id = $1 AND status = 'OPEN') AS exists;",
+      [sessionId],
+    );
+    return row?.exists ?? false;
+  }
+
   list(context: EvaluationContext): Promise<EvaluationSummary[]> {
     return this.dataSource.transaction('REPEATABLE READ', (manager) =>
       readEvaluationSummaries(manager, context),
@@ -61,6 +69,10 @@ export class PgEvaluationRepository implements EvaluationRepository {
 
   isStudentParticipating(sessionId: string, studentId: string): Promise<boolean> {
     return isStudentParticipating(this.dataSource.manager, sessionId, studentId);
+  }
+
+  getSessionFormula(sessionId: string): Promise<{ criteriaWeight: number; roleWeight: number }> {
+    return readFormula(this.dataSource.manager, sessionId);
   }
 
   listSessionPeers(sessionId: string, evaluatorId: string): Promise<PeerEvaluationSummary[]> {

@@ -8,21 +8,30 @@ export function toSelfAssessmentOutput(
   deadline: Date | null,
   detail: EvaluationDetail,
 ): GetSelfAssessmentOutput {
-  const evaluation = detail.evaluation;
+  const evalData = detail.evaluation;
   return {
     status,
     deadline,
-    submittedAt: evaluation?.submittedAt ?? null,
+    submittedAt: evalData?.submittedAt ?? null,
     criteria: detail.config.criteria.map(toCriterion),
-    items: (evaluation?.items ?? []).map((item) => ({
-      criterionId: item.criterionId,
-      score: item.score,
-    })),
-    ...(evaluation?.status === EvaluationStatus.SUBMITTED && evaluation.sessionScore !== null
-      ? { consolidatedScore: evaluation.sessionScore }
-      : {}),
+    items: toItems(evalData),
+    papel: detail.papel ?? null,
+    notaCargo: evalData?.appliedBonus ?? detail.roleScore ?? null,
+    formula: detail.config.formula ?? { criteriaWeight: 70, roleWeight: 30 },
+    ...toConsolidatedScore(evalData),
   };
 }
+
+const toItems = (evaluation: EvaluationDetail['evaluation']) =>
+  (evaluation?.items ?? []).map((item) => ({
+    criterionId: item.criterionId,
+    score: item.score,
+  }));
+
+const toConsolidatedScore = (evaluation: EvaluationDetail['evaluation']) =>
+  evaluation?.status === EvaluationStatus.SUBMITTED && evaluation.sessionScore !== null
+    ? { consolidatedScore: evaluation.sessionScore }
+    : {};
 
 function toCriterion(criterion: EvaluationDetail['config']['criteria'][number]) {
   return {

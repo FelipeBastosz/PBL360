@@ -151,6 +151,104 @@ describe('PgEvaluationHistoryRepository', () => {
         situacaoAjuste: EvaluationAdjustmentSituation.SEM_AJUSTE,
       });
     });
+
+    it('calculates notaTutor applying session formula when student has role and cargo score', async () => {
+      manager.query.mockImplementation((sql: string) => {
+        if (sql.includes('SELECT u.id AS "alunoId"')) {
+          return Promise.resolve([
+            { alunoId: 'student-1', nome: 'Ana Beatriz Souza', matricula: '20240001' },
+          ]);
+        }
+        if (sql.includes('FROM session_evaluation_configs')) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes('FROM sessions s') && sql.includes('JOIN performance_tables pt')) {
+          return Promise.resolve([{ id: 'table-1', name: 'Barema PBL' }]);
+        }
+        if (sql.includes('FROM performance_criteria')) {
+          return Promise.resolve([
+            { id: 'crit-1', name: 'Critério 1', weight: 6, orderIndex: 1 },
+            { id: 'crit-2', name: 'Critério 2', weight: 4, orderIndex: 2 },
+          ]);
+        }
+        if (sql.includes('FROM formulas f')) {
+          return Promise.resolve([
+            { type: 'CRITERIOS', weight: 70 },
+            { type: 'PAPEL', weight: 30 },
+          ]);
+        }
+        if (sql.includes("type = 'SELF_ASSESSMENT'")) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes('FROM grade_adjustments ga')) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes("type = 'PEER_ASSESSMENT'")) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes("type = 'TUTOR_SESSION'") || sql.includes('FROM criterion_grades')) {
+          return Promise.resolve([
+            { studentId: 'student-1', criterionId: 'crit-1', score: '10.00', bonusScore: '10.00' },
+            { studentId: 'student-1', criterionId: 'crit-2', score: '8.00', bonusScore: '10.00' },
+          ]);
+        }
+        return Promise.resolve([]);
+      });
+
+      const result = await repository.getHistory(sessionId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].notaTutor).toBe(9.44);
+    });
+
+    it('calculates notaTutor with 0 cargo score applying session formula', async () => {
+      manager.query.mockImplementation((sql: string) => {
+        if (sql.includes('SELECT u.id AS "alunoId"')) {
+          return Promise.resolve([
+            { alunoId: 'student-1', nome: 'Ana Beatriz Souza', matricula: '20240001' },
+          ]);
+        }
+        if (sql.includes('FROM session_evaluation_configs')) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes('FROM sessions s') && sql.includes('JOIN performance_tables pt')) {
+          return Promise.resolve([{ id: 'table-1', name: 'Barema PBL' }]);
+        }
+        if (sql.includes('FROM performance_criteria')) {
+          return Promise.resolve([
+            { id: 'crit-1', name: 'Critério 1', weight: 6, orderIndex: 1 },
+            { id: 'crit-2', name: 'Critério 2', weight: 4, orderIndex: 2 },
+          ]);
+        }
+        if (sql.includes('FROM formulas f')) {
+          return Promise.resolve([
+            { type: 'CRITERIOS', weight: 70 },
+            { type: 'PAPEL', weight: 30 },
+          ]);
+        }
+        if (sql.includes("type = 'SELF_ASSESSMENT'")) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes('FROM grade_adjustments ga')) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes("type = 'PEER_ASSESSMENT'")) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes("type = 'TUTOR_SESSION'") || sql.includes('FROM criterion_grades')) {
+          return Promise.resolve([
+            { studentId: 'student-1', criterionId: 'crit-1', score: '10.00', bonusScore: '0.00' },
+            { studentId: 'student-1', criterionId: 'crit-2', score: '8.00', bonusScore: '0.00' },
+          ]);
+        }
+        return Promise.resolve([]);
+      });
+
+      const result = await repository.getHistory(sessionId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].notaTutor).toBe(6.44);
+    });
   });
 
   describe('getStudentComparison', () => {

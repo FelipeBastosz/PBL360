@@ -2,6 +2,8 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { formatDayShortMonth, formatDate } from '@/utils/date';
 import { formatGrade } from '@/utils/formatGrade';
 import type { FeedbackAuthor } from '@/types/feedback';
+import type { ReceivedSessionComponents } from '@/types/feedback';
+import { EvaluationComponentGrades } from './EvaluationComponentGrades';
 import { FeedbackBadge } from './FeedbackBadge';
 
 export type FeedbackCardProps = {
@@ -12,6 +14,7 @@ export type FeedbackCardProps = {
   novo?: boolean;
   nota?: number | null;
   tag?: string;
+  avaliacoes?: ReceivedSessionComponents;
 };
 
 export function FeedbackCard({
@@ -22,6 +25,7 @@ export function FeedbackCard({
   novo,
   nota,
   tag,
+  avaliacoes,
 }: FeedbackCardProps) {
   const displayDate = formatDayShortMonth(criadoEm);
   const formattedFullDate = formatDate(criadoEm);
@@ -56,6 +60,8 @@ export function FeedbackCard({
           <FeedbackBadge isNew={novo} />
         </div>
       </header>
+
+      <EvaluationComponentGrades avaliacoes={avaliacoes} />
 
       <p className="whitespace-pre-line text-sm leading-relaxed text-ink/90">{texto}</p>
 
