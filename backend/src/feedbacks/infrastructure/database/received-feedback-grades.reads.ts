@@ -13,53 +13,95 @@ export interface ReceivedFeedbackGrades {
   components?: Map<string, ReceivedSessionComponents>;
 }
 
+type StudentGrades = ReturnType<typeof calculateProblemGrades>['response']['alunos'][number];
+type SessionGrades = StudentGrades['sessoes'][number];
+type GradeContext = { roomId: string; problemId: string; studentId: string };
+
+const NOT_RELEASED: ReceivedFeedbackGrades = {
+  released: false,
+  finalScore: null,
+  sessions: new Map(),
+  components: new Map(),
+};
+
 export async function readReceivedFeedbackGrades(
   manager: EntityManager,
   roomId: string,
   problemId: string,
   studentId: string,
 ): Promise<ReceivedFeedbackGrades> {
-  const released = await manager.query<{ sessionId: string }[]>(
+  const context = { roomId, problemId, studentId };
+  const tutorReleased = await readTutorReleasedSessions(manager, problemId, studentId);
+  const everything = await calculateStudentGrades(manager, context, null);
+  const activeIds = (everything?.sessoes ?? []).filter(isActiveNonTutor).map(toSessionId);
+  const ids = new Set([...tutorReleased, ...activeIds]);
+  if (ids.size === 0) return NOT_RELEASED;
+  return toReceivedGrades(await calculateStudentGrades(manager, context, ids));
+}
+
+async function readTutorReleasedSessions(
+  manager: EntityManager,
+  problemId: string,
+  studentId: string,
+): Promise<string[]> {
+  const rows = await manager.query<{ sessionId: string }[]>(
     `SELECT e.session_id AS "sessionId" FROM evaluations e
        JOIN sessions s ON s.id = e.session_id AND s.problem_id = e.problem_id
       WHERE e.problem_id = $1 AND e.student_id = $2
         AND e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED'`,
     [problemId, studentId],
   );
-  if (!released.length)
-    return { released: false, finalScore: null, sessions: new Map(), components: new Map() };
-  return calculateReceivedGrades(manager, { roomId, problemId, studentId }, released);
+  return rows.map((row) => row.sessionId);
 }
 
-async function calculateReceivedGrades(
+async function calculateStudentGrades(
   manager: EntityManager,
-  context: { roomId: string; problemId: string; studentId: string },
-  released: { sessionId: string }[],
-): Promise<ReceivedFeedbackGrades> {
+  context: GradeContext,
+  releasedIds: Set<string> | null,
+): Promise<StudentGrades | undefined> {
   const data = await readProblemGradeData(manager, context.roomId, context.problemId);
-  const ids = new Set(released.map((row) => row.sessionId));
-  data.sessions = data.sessions.filter((session) => ids.has(String(session.id)));
+  if (releasedIds) {
+    data.sessions = data.sessions.filter((session) => releasedIds.has(String(session.id)));
+  }
   data.students = data.students.filter((student) => student.id === context.studentId);
   const components = await readFormulaComponents(
     manager,
     data.formulas.map((formula) => formula.id),
   );
-  const { response } = calculateProblemGrades(data, components);
-  return toReceivedGrades(response.alunos[0]);
+  return calculateProblemGrades(data, components).response.alunos[0];
 }
 
-function toReceivedGrades(
-  student: ReturnType<typeof calculateProblemGrades>['response']['alunos'][number] | undefined,
-): ReceivedFeedbackGrades {
+const toSessionId = (session: SessionGrades) => session.sessaoId;
+
+const isActiveNonTutor = (session: SessionGrades): boolean =>
+  (session.modalidade === 'AUTOAVALIACAO' || session.modalidade === 'PARES') &&
+  session.nota !== null;
+
+function toActiveComponents(session: SessionGrades): ReceivedSessionComponents | null {
+  if (session.modalidade === 'AUTOAVALIACAO') {
+    return {
+      modalidade: 'AUTOAVALIACAO',
+      autoavaliacao: session.autoavaliacao ?? null,
+      pares: null,
+    };
+  }
+  if (session.modalidade === 'PARES') {
+    return { modalidade: 'PARES', autoavaliacao: null, pares: session.pares ?? null };
+  }
+  return null;
+}
+
+function toReceivedGrades(student: StudentGrades | undefined): ReceivedFeedbackGrades {
+  const sessions = student?.sessoes ?? [];
+  const components = new Map<string, ReceivedSessionComponents>();
+  for (const session of sessions) {
+    const active = toActiveComponents(session);
+    if (active) components.set(session.sessaoId, active);
+  }
   return {
     released: true,
     finalScore: student?.notaFinal ?? null,
-    sessions: new Map(student?.sessoes.map((session) => [session.sessaoId, session.nota])),
-    components: new Map(
-      student?.sessoes.map((session) => [
-        session.sessaoId,
-        { autoavaliacao: session.autoavaliacao ?? null, pares: session.pares ?? null },
-      ]),
-    ),
+    sessions: new Map(sessions.map((session) => [session.sessaoId, session.nota])),
+    components,
   };
 }

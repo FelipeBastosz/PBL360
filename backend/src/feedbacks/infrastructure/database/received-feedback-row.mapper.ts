@@ -77,10 +77,10 @@ function toSessionFeedback(
 ) {
   const row = rows.find((item) => item.scope === 'SESSAO' && item.sessionId === session.sessionId);
   const score = grades.sessions.get(session.sessionId) ?? null;
+  const components = grades.components?.get(session.sessionId);
   return {
     ...session,
-    feedback: row
-      ? toReceivedFeedback(row, newlyRead, score, grades.components?.get(session.sessionId))
-      : null,
+    feedback: row ? toReceivedFeedback(row, newlyRead, score, components) : null,
+    ...(components ? { score, components } : {}),
   };
 }

@@ -1,14 +1,12 @@
 import { formatGrade } from '@/utils/formatGrade';
-import type { ReceivedComponentGrade, ReceivedSessionComponents } from '@/types/feedback';
+import type { ReceivedSessionComponents } from '@/types/feedback';
 
-function hasGrade(
-  grade: ReceivedComponentGrade | null | undefined,
-): grade is ReceivedComponentGrade {
-  return Boolean(grade) && typeof grade?.nota === 'number' && Number.isFinite(grade.nota);
-}
-
-function peerLabel(grade: ReceivedComponentGrade) {
-  return grade.origem === 'PLANNING_POKER' ? 'Planning Poker' : 'Avaliação de pares';
+function resolveActive(avaliacoes: ReceivedSessionComponents) {
+  if (avaliacoes.modalidade === 'AUTOAVALIACAO') {
+    return { label: 'Autoavaliação', grade: avaliacoes.autoavaliacao };
+  }
+  const isPoker = avaliacoes.pares?.origem === 'PLANNING_POKER';
+  return { label: isPoker ? 'Planning Poker' : 'Avaliação de pares', grade: avaliacoes.pares };
 }
 
 export function EvaluationComponentGrades({
@@ -16,28 +14,16 @@ export function EvaluationComponentGrades({
 }: {
   avaliacoes?: ReceivedSessionComponents;
 }) {
-  const items = [
-    hasGrade(avaliacoes?.autoavaliacao)
-      ? { key: 'self', label: 'Autoavaliação', nota: avaliacoes.autoavaliacao.nota }
-      : null,
-    hasGrade(avaliacoes?.pares)
-      ? { key: 'peer', label: peerLabel(avaliacoes.pares), nota: avaliacoes.pares.nota }
-      : null,
-  ].filter((item) => item !== null);
-
-  if (items.length === 0) return null;
+  if (!avaliacoes) return null;
+  const { label, grade } = resolveActive(avaliacoes);
+  if (typeof grade?.nota !== 'number' || !Number.isFinite(grade.nota)) return null;
 
   return (
-    <ul className="flex flex-wrap gap-2" aria-label="Notas da sessão">
-      {items.map((item) => (
-        <li
-          key={item.key}
-          data-testid={`feedback-nota-${item.key}`}
-          className="rounded-lg border border-black/5 bg-surface px-2.5 py-1 text-xs font-medium text-ink"
-        >
-          {item.label}: <strong>{formatGrade(item.nota as number)}</strong>
-        </li>
-      ))}
-    </ul>
+    <p
+      data-testid="feedback-modalidade"
+      className="w-fit rounded-lg border border-black/5 bg-surface px-2.5 py-1 text-xs font-medium text-ink"
+    >
+      {label}: <strong>{formatGrade(grade.nota)}</strong>
+    </p>
   );
 }

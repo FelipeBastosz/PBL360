@@ -7,6 +7,7 @@ export interface ReceivedComponentGrade {
 }
 
 export interface ReceivedSessionComponents {
+  modalidade: 'AUTOAVALIACAO' | 'PARES';
   autoavaliacao: ReceivedComponentGrade | null;
   pares: ReceivedComponentGrade | null;
 }
@@ -33,6 +34,8 @@ export interface ReceivedProblemFeedbacks {
     label: string;
     date: string;
     feedback: ReceivedFeedback | null;
+    score?: number | null;
+    components?: ReceivedSessionComponents;
   }[];
 }
 

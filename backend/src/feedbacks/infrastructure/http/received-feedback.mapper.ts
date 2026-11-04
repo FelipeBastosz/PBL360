@@ -34,12 +34,7 @@ export function toReceivedProblemResponse(
       ? { ...toReceivedFeedbackResponse(result.individual), nota: result.individual.score }
       : null,
     geral: result.general ? toReceivedFeedbackResponse(result.general) : null,
-    sessoes: result.sessions.map((session) => ({
-      sessaoId: session.sessionId,
-      rotulo: session.label,
-      data: toBrazilianDate(session.date)!,
-      feedback: session.feedback ? toReceivedFeedbackResponse(session.feedback) : null,
-    })),
+    sessoes: result.sessions.map(toSessionResponse),
   };
 }
 
@@ -58,4 +53,14 @@ function toAssociatedFeedbacks(result: ReceivedProblemFeedbacks): AssociatedFeed
       });
   }
   return feedbacks;
+}
+
+function toSessionResponse(session: ReceivedProblemFeedbacks['sessions'][number]) {
+  return {
+    sessaoId: session.sessionId,
+    rotulo: session.label,
+    data: toBrazilianDate(session.date)!,
+    feedback: session.feedback ? toReceivedFeedbackResponse(session.feedback) : null,
+    ...(session.components ? { nota: session.score ?? null, avaliacoes: session.components } : {}),
+  };
 }

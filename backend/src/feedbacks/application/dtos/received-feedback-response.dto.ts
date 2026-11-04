@@ -20,6 +20,9 @@ export class ReceivedComponentGradeDto {
 }
 
 export class ReceivedSessionComponentsDto {
+  @ApiProperty({ enum: ['AUTOAVALIACAO', 'PARES'] })
+  modalidade!: 'AUTOAVALIACAO' | 'PARES';
+
   @ApiProperty({ type: ReceivedComponentGradeDto, nullable: true })
   autoavaliacao!: ReceivedComponentGradeDto | null;
 
