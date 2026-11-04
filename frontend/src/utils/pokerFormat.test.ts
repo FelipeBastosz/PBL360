@@ -16,8 +16,8 @@ describe('pokerFormat', () => {
     expect(formatPokerGrade(undefined)).toBe('—');
   });
 
-  it('formats a vote without trailing zeros', () => {
-    expect(formatPokerVote(7)).toBe('7');
+  it('formats a vote like any other grade', () => {
+    expect(formatPokerVote(7)).toBe('7,0');
     expect(formatPokerVote(7.55)).toBe('7,6');
   });
 

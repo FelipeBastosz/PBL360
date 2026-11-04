@@ -1,21 +1,15 @@
 import { formatDateTime } from './date';
-
-export function formatGrade(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return '—';
-  }
-  return value.toFixed(1).replace('.', ',');
-}
+import { formatGrade } from './formatGrade';
 
 export function formatSessionCell(nota: number | null | undefined, situacao?: string): string {
   if (nota !== null && nota !== undefined && !Number.isNaN(nota)) {
-    return nota.toFixed(1).replace('.', ',');
+    return formatGrade(nota);
   }
   if (situacao === 'JUSTIFICADA') {
     return 'J';
   }
   if (situacao === 'AUSENTE') {
-    return '0,0';
+    return formatGrade(0);
   }
   return '—';
 }

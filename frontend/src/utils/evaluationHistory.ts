@@ -1,10 +1,8 @@
 import type { SelfAssessmentAdjustmentResponse } from '@/types/evaluation';
 import type { StudentEvaluationHistoryItem } from '@/types/evaluationHistory';
+import { formatGrade } from './formatGrade';
 
-export function formatScore(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
-}
+export const formatScore = formatGrade;
 
 // The API returns the current (possibly adjusted) score in notaAluno and keeps the
 // student's original submission in notaAlunoOriginal only after an adjustment.

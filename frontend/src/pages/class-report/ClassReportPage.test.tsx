@@ -86,7 +86,7 @@ describe('ClassReportPage', () => {
     expect(await screen.findByText('Ana Souza')).toBeInTheDocument();
   });
 
-  it('downloads PDF report when clicking "Exportar em PDF"', async () => {
+  it('opens modal and downloads PDF report on confirmation', async () => {
     const user = userEvent.setup();
     const fakeBlob = new Blob(['pdf-content'], { type: 'application/pdf' });
     exportFinalReportSpy.mockResolvedValueOnce(fakeBlob);
@@ -97,11 +97,19 @@ describe('ClassReportPage', () => {
     const pdfBtn = await screen.findByRole('button', { name: 'Exportar em PDF' });
     await user.click(pdfBtn);
 
-    expect(exportFinalReportSpy).toHaveBeenCalledWith('room-1', 'PDF');
+    expect(await screen.findByRole('heading', { name: 'Exportar em PDF' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Nome e Matrícula' })).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole('button', { name: 'Confirmar Exportação' });
+    await user.click(confirmBtn);
+
+    expect(exportFinalReportSpy).toHaveBeenCalledWith('room-1', 'PDF', {
+      ocultarNomes: false,
+    });
     expect(window.URL.createObjectURL).toHaveBeenCalledWith(fakeBlob);
   });
 
-  it('downloads Excel report when clicking "Exportar em Excel"', async () => {
+  it('downloads Excel with ocultarNomes: true when "Apenas Matrícula" is selected in modal', async () => {
     const user = userEvent.setup();
     const fakeBlob = new Blob(['xlsx-content'], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -114,8 +122,36 @@ describe('ClassReportPage', () => {
     const excelBtn = await screen.findByRole('button', { name: 'Exportar em Excel' });
     await user.click(excelBtn);
 
-    expect(exportFinalReportSpy).toHaveBeenCalledWith('room-1', 'XLSX');
+    expect(await screen.findByRole('heading', { name: 'Exportar em XLSX' })).toBeInTheDocument();
+
+    const radioOnlyMatricula = screen.getByRole('radio', { name: 'Apenas Matrícula' });
+    await user.click(radioOnlyMatricula);
+
+    const confirmBtn = screen.getByRole('button', { name: 'Confirmar Exportação' });
+    await user.click(confirmBtn);
+
+    expect(exportFinalReportSpy).toHaveBeenCalledWith('room-1', 'XLSX', {
+      ocultarNomes: true,
+    });
     expect(window.URL.createObjectURL).toHaveBeenCalledWith(fakeBlob);
+  });
+
+  it('closes export modal when clicking "Cancelar"', async () => {
+    const user = userEvent.setup();
+    getFinalReportSpy.mockResolvedValue(mockReport);
+
+    renderPage('room-1');
+
+    const pdfBtn = await screen.findByRole('button', { name: 'Exportar em PDF' });
+    await user.click(pdfBtn);
+
+    expect(await screen.findByRole('heading', { name: 'Exportar em PDF' })).toBeInTheDocument();
+
+    const cancelBtn = screen.getByRole('button', { name: 'Cancelar' });
+    await user.click(cancelBtn);
+
+    expect(screen.queryByText('Confirmar Exportação')).not.toBeInTheDocument();
+    expect(exportFinalReportSpy).not.toHaveBeenCalled();
   });
 
   it('shows error toast when export fails', async () => {
@@ -128,6 +164,9 @@ describe('ClassReportPage', () => {
     const pdfBtn = await screen.findByRole('button', { name: 'Exportar em PDF' });
     await user.click(pdfBtn);
 
+    const confirmBtn = await screen.findByRole('button', { name: 'Confirmar Exportação' });
+    await user.click(confirmBtn);
+
     await waitFor(() => {
       expect(mockNotify).toHaveBeenCalledWith({
         tone: 'error',
@@ -136,7 +175,7 @@ describe('ClassReportPage', () => {
     });
   });
 
-  it('toggles name privacy between student name and registration number', async () => {
+  it('toggles name privacy between student name and registration number in table', async () => {
     const user = userEvent.setup();
     getFinalReportSpy.mockResolvedValue(mockReport);
 

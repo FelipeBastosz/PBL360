@@ -48,7 +48,7 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
       if (students.length === 0) return [];
       const config = await readHistoryConfig(manager, sessionId);
       const maps = await this.loadHistoryMaps(manager, sessionId);
-      return students.map((student) => buildHistoryStudentItem(student, config.criteria, maps));
+      return students.map((student) => buildHistoryStudentItem(student, config, maps));
     });
   }
 
@@ -156,11 +156,13 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
       readSessionPeerEvaluations(manager, sessionId),
       readSessionTutorScores(manager, sessionId),
     ]);
+    const { tutorMap, tutorBonusMap } = mapTutors(tutorScores);
     return {
       selfMap: mapSelf(selfEvals),
       adjustmentMap: mapAdjustments(adjustments),
       peerMap: mapPeers(peers),
-      tutorMap: mapTutors(tutorScores),
+      tutorMap,
+      tutorBonusMap,
     };
   }
 

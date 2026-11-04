@@ -1,13 +1,11 @@
-export const roundToTenths = (value: number): number =>
-  Math.round((value + Number.EPSILON) * 10) / 10;
+import { formatGrade, roundGrade } from './formatGrade';
 
-export function formatPokerGrade(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return roundToTenths(value).toFixed(1).replace('.', ',');
-}
+export const roundToTenths = roundGrade;
+
+export const formatPokerGrade = formatGrade;
 
 export function formatPokerVote(value: number): string {
-  return String(roundToTenths(value)).replace('.', ',');
+  return formatGrade(value);
 }
 
 export function parsePokerGrade(raw: string): number | null {

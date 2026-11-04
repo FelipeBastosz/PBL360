@@ -314,9 +314,11 @@ describe('SavePeerEvaluationUseCase', () => {
     });
 
     expect(result).toEqual({
-      colega: { alunoId: 'peer-1', nome: 'Lucas' },
+      colega: { alunoId: 'peer-1', nome: 'Lucas', papel: null },
       status: 'RASCUNHO',
       enviadaEm: null,
+      notaCargo: null,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       criterios: [{ id: 'crit-1', nome: 'Critério 1', peso: 1, notaMaxima: 10 }],
       itens: [{ criterioId: 'crit-1', nota: 7 }],
     });
@@ -355,9 +357,11 @@ describe('SavePeerEvaluationUseCase', () => {
     });
 
     expect(result).toEqual({
-      colega: { alunoId: 'peer-1', nome: 'Lucas' },
+      colega: { alunoId: 'peer-1', nome: 'Lucas', papel: null },
       status: 'ENVIADA',
       enviadaEm: submittedAt,
+      notaCargo: null,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       criterios: [{ id: 'crit-1', nome: 'Critério 1', peso: 1, notaMaxima: 10 }],
       itens: [{ criterioId: 'crit-1', nota: 9.5 }],
     });

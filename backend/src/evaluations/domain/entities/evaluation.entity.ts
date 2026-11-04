@@ -39,7 +39,10 @@ export class Evaluation implements Auditable {
     EvaluationRules.assertValidItems(input.items, config.criteria, input.submit || submitted);
     const changes = submitted ? this.findChanges(input.items) : [];
     if (changes.length > 0) EvaluationRules.assertAdjustmentJustification(input.justification);
-    if (input.submit) this.applyGrade(input, config, submitted);
+    if (!input.submit) {
+      this.appliedBonus = null;
+    }
+    if (input.submit) this.applyGrade(input, config);
     this.updatedBy = input.authorId;
     this.updatedAt = input.now;
     return changes;
@@ -54,17 +57,13 @@ export class Evaluation implements Auditable {
     });
   }
 
-  private applyGrade(
-    input: EvaluationRevision,
-    config: SessionEvaluationConfig,
-    submitted: boolean,
-  ): void {
-    const bonus = submitted ? this.appliedBonus! : input.bonus;
+  private applyGrade(input: EvaluationRevision, config: SessionEvaluationConfig): void {
+    const bonus = input.bonus !== undefined ? input.bonus : this.appliedBonus;
     this.sessionScore = SessionGradeCalculator.calculate(
       input.items,
       config.criteria,
       bonus,
-      true,
+      bonus !== null,
       config.formula,
     );
     this.appliedBonus = bonus;

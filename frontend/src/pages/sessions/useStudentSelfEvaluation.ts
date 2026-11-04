@@ -6,6 +6,7 @@ import { evaluationService } from '@/services/evaluation.service';
 import { sessionService } from '@/services/session.service';
 import type { SelfAssessmentResponse } from '@/types/evaluation';
 import type { MemberSession } from '@/types/session';
+import { normalizeSessionRole } from '@/utils/sessionRoles';
 
 function buildInitialScores(data: SelfAssessmentResponse): Record<string, number> {
   const scores: Record<string, number> = {};
@@ -23,6 +24,7 @@ function useSelfEvaluationData(sessionId: string) {
   const [data, setData] = useState<SelfAssessmentResponse | null>(null);
   const [session, setSession] = useState<MemberSession | null>(null);
   const [scores, setScores] = useState<Record<string, number>>({});
+  const [notaCargo, setNotaCargo] = useState<number | null>(null);
 
   const { run: loadSession } = useAsyncAction(
     useCallback(() => sessionService.getForMember(sessionId), [sessionId]),
@@ -41,27 +43,37 @@ function useSelfEvaluationData(sessionId: string) {
       if (r.ok) {
         setData(r.data);
         setScores(buildInitialScores(r.data));
+        setNotaCargo(r.data.notaCargo ?? (r.data.papel ? 0 : null));
       }
     });
   }, [loadSession, loadEval]);
 
-  return { data, session, scores, setScores, isLoading, error };
+  return { data, session, scores, setScores, notaCargo, setNotaCargo, isLoading, error };
 }
 
 function scheduleDraftSave(
   timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
   sessionId: string,
   updated: Record<string, number>,
+  cargo: number | null,
 ) {
   if (timerRef.current) clearTimeout(timerRef.current);
   timerRef.current = setTimeout(() => {
     evaluationService
-      .saveSelfAssessment(sessionId, { itens: toScoreItems(updated), enviar: false })
+      .saveSelfAssessment(sessionId, {
+        itens: toScoreItems(updated),
+        notaCargo: cargo,
+        enviar: false,
+      })
       .catch(() => {});
   }, 500);
 }
 
-function useSubmitSelfAssessment(sessionId: string, scores: Record<string, number>) {
+function useSubmitSelfAssessment(
+  sessionId: string,
+  scores: Record<string, number>,
+  notaCargo: number | null,
+) {
   const navigate = useNavigate();
   const { notify } = useToast();
   const {
@@ -73,9 +85,10 @@ function useSubmitSelfAssessment(sessionId: string, scores: Record<string, numbe
       () =>
         evaluationService.saveSelfAssessment(sessionId, {
           itens: toScoreItems(scores),
+          notaCargo,
           enviar: true,
         }),
-      [sessionId, scores],
+      [sessionId, scores, notaCargo],
     ),
   );
 
@@ -91,13 +104,41 @@ function useSubmitSelfAssessment(sessionId: string, scores: Record<string, numbe
   return { isSaving, saveError, handleSave };
 }
 
+function useSelfScoreHandlers(
+  sessionId: string,
+  dataStatus: string | undefined,
+  setScores: React.Dispatch<React.SetStateAction<Record<string, number>>>,
+  notaCargo: number | null,
+  setNotaCargo: React.Dispatch<React.SetStateAction<number | null>>,
+  scores: Record<string, number>,
+  draftTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
+) {
+  const isEditable = dataStatus !== 'ENVIADA' && dataStatus !== 'NAO_PARTICIPOU';
+
+  const setScore = (id: string, s: number) => {
+    setScores((prev) => {
+      const updated = { ...prev, [id]: s };
+      if (isEditable) scheduleDraftSave(draftTimerRef, sessionId, updated, notaCargo);
+      return updated;
+    });
+  };
+
+  const handleCargoChange = (s: number) => {
+    setNotaCargo(s);
+    if (isEditable) scheduleDraftSave(draftTimerRef, sessionId, scores, s);
+  };
+
+  return { setScore, handleCargoChange };
+}
+
 export function useStudentSelfEvaluation(sessionId: string) {
-  const { data, session, scores, setScores, isLoading, error } = useSelfEvaluationData(sessionId);
+  const { data, session, scores, setScores, notaCargo, setNotaCargo, isLoading, error } =
+    useSelfEvaluationData(sessionId);
   const {
     isSaving,
     saveError,
     handleSave: submitAssessment,
-  } = useSubmitSelfAssessment(sessionId, scores);
+  } = useSubmitSelfAssessment(sessionId, scores, notaCargo);
   const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -107,15 +148,15 @@ export function useStudentSelfEvaluation(sessionId: string) {
     };
   }, []);
 
-  const setScore = (id: string, s: number) => {
-    setScores((prev) => {
-      const updated = { ...prev, [id]: s };
-      if (data?.status !== 'ENVIADA' && data?.status !== 'NAO_PARTICIPOU') {
-        scheduleDraftSave(draftTimerRef, sessionId, updated);
-      }
-      return updated;
-    });
-  };
+  const { setScore, handleCargoChange } = useSelfScoreHandlers(
+    sessionId,
+    data?.status,
+    setScores,
+    notaCargo,
+    setNotaCargo,
+    scores,
+    draftTimerRef,
+  );
 
   const didNotParticipate =
     data?.participou === false ||
@@ -126,6 +167,9 @@ export function useStudentSelfEvaluation(sessionId: string) {
     data,
     session,
     scores,
+    notaCargo,
+    papel: data?.papel ? normalizeSessionRole(data.papel) : null,
+    formula: data?.formula,
     isLoading,
     isSaving,
     error,
@@ -136,5 +180,6 @@ export function useStudentSelfEvaluation(sessionId: string) {
         if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
       }),
     setScore,
+    setNotaCargo: handleCargoChange,
   };
 }

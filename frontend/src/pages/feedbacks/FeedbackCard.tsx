@@ -1,5 +1,6 @@
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { formatDayShortMonth, formatDate } from '@/utils/date';
+import { formatGrade } from '@/utils/formatGrade';
 import type { FeedbackAuthor } from '@/types/feedback';
 import { FeedbackBadge } from './FeedbackBadge';
 
@@ -44,12 +45,12 @@ export function FeedbackCard({
               {tag}
             </span>
           )}
-          {typeof nota === 'number' && (
+          {typeof nota === 'number' && Number.isFinite(nota) && (
             <span
               data-testid="feedback-nota"
               className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-900 border border-brand-200"
             >
-              Nota {nota.toFixed(1)}
+              Nota {formatGrade(nota)}
             </span>
           )}
           <FeedbackBadge isNew={novo} />

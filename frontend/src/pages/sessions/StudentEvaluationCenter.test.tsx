@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { evaluationService } from '@/services/evaluation.service';
-import type { StudentEvaluationSummaryResponse } from '@/types/evaluation';
+import type { StudentEvaluationSummaryResponse, SessionPeersResponse } from '@/types/evaluation';
 import { StudentEvaluationCenter } from './StudentEvaluationCenter';
 
 vi.mock('@/services/evaluation.service');
@@ -22,6 +22,7 @@ const mockReleasedSummary: StudentEvaluationSummaryResponse = {
   feedback: {
     disponivel: true,
     novo: false,
+    avaliacaoTutorEnviada: true,
   },
 };
 
@@ -40,12 +41,21 @@ const mockLockedSummary: StudentEvaluationSummaryResponse = {
   feedback: {
     disponivel: false,
     novo: false,
+    avaliacaoTutorEnviada: false,
   },
+};
+
+const mockPeersResponse: SessionPeersResponse = {
+  liberada: true,
+  prazo: null,
+  colegas: [],
+  chamadaRealizada: true,
 };
 
 describe('StudentEvaluationCenter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(evaluationService.listSessionPeers).mockResolvedValue(mockPeersResponse);
   });
 
   const renderComponent = (feedbackHref = '/turmas/r1/problemas/p1/sessoes/sess-1/feedback') => {
@@ -97,6 +107,27 @@ describe('StudentEvaluationCenter', () => {
       expect(screen.queryByRole('link')).not.toBeInTheDocument();
       expect(screen.getAllByText('Bloqueada')).toHaveLength(2);
       expect(screen.getByText('Indisponível')).toBeInTheDocument();
+      expect(
+        screen.getByText('Você ainda não foi avaliado pelo tutor nesta sessão.'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('does not show the unevaluated reason after the tutor has submitted an evaluation', async () => {
+    vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
+      ...mockLockedSummary,
+      feedback: {
+        ...mockLockedSummary.feedback,
+        avaliacaoTutorEnviada: true,
+      },
+    });
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Indisponível')).toBeInTheDocument();
+      expect(
+        screen.queryByText('Você ainda não foi avaliado pelo tutor nesta sessão.'),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -120,7 +151,7 @@ describe('StudentEvaluationCenter', () => {
     });
   });
 
-  it('renders friendly empty state when student did not participate in the session', async () => {
+  it('renders friendly empty state when student did not participate in the session after roll call', async () => {
     vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
       ...mockLockedSummary,
       autoavaliacao: {
@@ -129,6 +160,11 @@ describe('StudentEvaluationCenter', () => {
         status: 'NAO_PARTICIPOU',
       },
     });
+    vi.mocked(evaluationService.listSessionPeers).mockResolvedValue({
+      ...mockPeersResponse,
+      chamadaRealizada: true,
+    });
+
     renderComponent();
 
     await waitFor(() => {
@@ -139,6 +175,32 @@ describe('StudentEvaluationCenter', () => {
       ).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /autoavaliação/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /avaliar colegas/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders locked status and does not show empty state when roll call has not been completed', async () => {
+    vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
+      ...mockLockedSummary,
+      autoavaliacao: {
+        liberada: false,
+        prazo: null,
+        status: 'NAO_PARTICIPOU',
+      },
+    });
+    vi.mocked(evaluationService.listSessionPeers).mockResolvedValue({
+      ...mockPeersResponse,
+      chamadaRealizada: false,
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(
+          'Você não participou desta sessão, portanto não possui avaliações disponíveis.',
+        ),
+      ).not.toBeInTheDocument();
+      expect(screen.getAllByText('Bloqueada')).toHaveLength(2);
     });
   });
 });

@@ -69,7 +69,7 @@ async function readSnapshotCriteria(
   );
 }
 
-async function readFormula(
+export async function readFormula(
   manager: EntityManager,
   sessionId: string,
 ): Promise<{ criteriaWeight: number; roleWeight: number }> {

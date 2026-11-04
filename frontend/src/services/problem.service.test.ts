@@ -159,4 +159,32 @@ describe('problemService', () => {
       responseType: 'blob',
     });
   });
+
+  it('exports problem report forwarding export options query params', async () => {
+    const fakeBlob = new Blob(['pdf-content'], { type: 'application/pdf' });
+    const adapter = respondWith(fakeBlob);
+
+    await expect(
+      problemService.exportReport('room-1', 'problem-1', 'PDF', {
+        ocultarNomes: true,
+        mostrarPendencias: false,
+        mostrarMarcacoes: false,
+        mostrarFeedback: false,
+      }),
+    ).resolves.toEqual(fakeBlob);
+
+    const config = adapter.mock.calls[0]![0];
+    expect(config).toMatchObject({
+      method: 'get',
+      url: '/salas/room-1/problemas/problem-1/relatorio/exportacao',
+      params: {
+        formato: 'PDF',
+        ocultarNomes: true,
+        mostrarPendencias: false,
+        mostrarMarcacoes: false,
+        mostrarFeedback: false,
+      },
+      responseType: 'blob',
+    });
+  });
 });

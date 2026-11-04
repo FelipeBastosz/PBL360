@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { evaluationService } from '@/services/evaluation.service';
-import { observationService } from '@/services/observation.service';
+import { useStudentObservationTags } from './useStudentObservationTags';
 import type {
   EvaluationCriterion,
+  EvaluationFormula,
   EvaluationStatus,
   SaveTutorEvaluationPayload,
 } from '@/types/evaluation';
-import type { BehaviorTag, ObservationItem } from '@/types/observation';
+import type { SessionRole } from '@/types/session';
+import { normalizeSessionRole } from '@/utils/sessionRoles';
 
 function draftStorageKey(sessionId: string, studentId: string) {
   return `eval_draft_${sessionId}_${studentId}`;
@@ -18,7 +20,13 @@ function draftStorageKey(sessionId: string, studentId: string) {
 function loadStoredDraft(sessionId: string, studentId: string) {
   try {
     const raw = sessionStorage.getItem(draftStorageKey(sessionId, studentId));
-    return raw ? (JSON.parse(raw) as { scores: Record<string, number>; feedback: string }) : null;
+    return raw
+      ? (JSON.parse(raw) as {
+          scores: Record<string, number>;
+          feedback: string;
+          notaCargo?: number;
+        })
+      : null;
   } catch {
     return null;
   }
@@ -45,6 +53,7 @@ async function sendEvaluation(
   studentId: string,
   criteria: EvaluationCriterion[],
   scores: Record<string, number>,
+  notaCargo: number | null,
   feedback: string,
   enviar: boolean,
   justificativa: string | undefined,
@@ -57,7 +66,7 @@ async function sendEvaluation(
   navigate: (to: number) => void,
 ) {
   const itens = criteria.map((c) => ({ criterioId: c.id, nota: scores[c.id] ?? 0 }));
-  const result = await runSave(sessionId, studentId, { itens, enviar, justificativa });
+  const result = await runSave(sessionId, studentId, { itens, enviar, justificativa, notaCargo });
   if (result.ok) {
     await evaluationService.saveFeedback(sessionId, studentId, feedback.trim());
     clearStoredDraft(sessionId, studentId);
@@ -69,9 +78,35 @@ async function sendEvaluation(
   }
 }
 
+type FetchedData = Awaited<ReturnType<typeof evaluationService.getEvaluation>>;
+type FetchedFeedback = Awaited<ReturnType<typeof evaluationService.getFeedback>> | null;
+
+function applyFetchedData(
+  evalData: FetchedData,
+  fbData: FetchedFeedback,
+  cached: ReturnType<typeof loadStoredDraft>,
+) {
+  const hasPapel = Boolean(evalData.papel);
+  const backendCargo = evalData.notaCargo ?? evalData.adicionalAplicado ?? (hasPapel ? 0 : null);
+  const backendScores = toScoresMap(evalData.itens);
+  const backendFeedback = fbData?.texto || '';
+  return {
+    criteria: evalData.criterios,
+    status: evalData.status,
+    papel: normalizeSessionRole(evalData.papel),
+    formula: evalData.formula,
+    scores: cached?.scores ?? backendScores,
+    feedback: cached?.feedback ?? backendFeedback,
+    notaCargo: cached?.notaCargo !== undefined ? cached.notaCargo : backendCargo,
+  };
+}
+
 function useFetchStudentEvaluation(sessionId: string, studentId: string) {
   const [criteria, setCriteria] = useState<EvaluationCriterion[]>([]);
   const [scores, setScores] = useState<Record<string, number>>({});
+  const [notaCargo, setNotaCargo] = useState<number | null>(null);
+  const [papel, setPapel] = useState<SessionRole | null>(null);
+  const [formula, setFormula] = useState<EvaluationFormula | undefined>(undefined);
   const [feedback, setFeedback] = useState('');
   const [status, setStatus] = useState<EvaluationStatus>('PENDENTE');
 
@@ -89,74 +124,85 @@ function useFetchStudentEvaluation(sessionId: string, studentId: string) {
     if (sessionId && studentId) {
       run().then((res) => {
         if (res.ok) {
-          setCriteria(res.data.evalData.criterios);
-          setStatus(res.data.evalData.status);
-          const backendScores = toScoresMap(res.data.evalData.itens);
-          const backendFeedback = res.data.fbData?.texto || '';
           const cached = loadStoredDraft(sessionId, studentId);
-          setScores(cached?.scores ?? backendScores);
-          setFeedback(cached?.feedback ?? backendFeedback);
+          const state = applyFetchedData(res.data.evalData, res.data.fbData, cached);
+          setCriteria(state.criteria);
+          setStatus(state.status);
+          setPapel(state.papel);
+          setFormula(state.formula);
+          setScores(state.scores);
+          setFeedback(state.feedback);
+          setNotaCargo(state.notaCargo);
         }
       });
     }
   }, [sessionId, studentId, run]);
 
-  return { criteria, scores, setScores, feedback, setFeedback, status, isLoading, error };
+  return {
+    criteria,
+    scores,
+    setScores,
+    notaCargo,
+    setNotaCargo,
+    papel,
+    formula,
+    feedback,
+    setFeedback,
+    status,
+    isLoading,
+    error,
+  };
 }
 
-function useStudentObservationTagsState(sessionId: string, studentId: string) {
-  const [tags, setTags] = useState<BehaviorTag[]>([]);
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  const [observations, setObservations] = useState<ObservationItem[]>([]);
-
-  const fetchObs = useCallback(async () => {
-    const [tagList, obsData] = await Promise.all([
-      observationService.listTags().catch(() => []),
-      observationService
-        .listStudentObservations(sessionId, studentId)
-        .catch(() => ({ observacoes: [], contagem: {} })),
-    ]);
-    return { tagList, obsData };
-  }, [sessionId, studentId]);
-
-  useEffect(() => {
-    if (sessionId && studentId) {
-      fetchObs().then((res) => {
-        setTags(res.tagList);
-        setCounts(res.obsData.contagem);
-        setObservations(res.obsData.observacoes);
-      });
-    }
-  }, [sessionId, studentId, fetchObs]);
-
-  async function handleTagClick(tagId: string) {
-    setCounts((prev) => ({ ...prev, [tagId]: (prev[tagId] ?? 0) + 1 }));
-    const created = await observationService.registerObservation(sessionId, studentId, {
-      marcacaoIds: [tagId],
-    });
-    setObservations((prev) => [...prev, created]);
+async function saveDraftAndNavigateHelper(
+  sessionId: string,
+  studentId: string,
+  evalData: ReturnType<typeof useFetchStudentEvaluation>,
+  runSave: (
+    sId: string,
+    stId: string,
+    payload: SaveTutorEvaluationPayload,
+  ) => Promise<{ ok: boolean }>,
+  navigate: ReturnType<typeof useNavigate>,
+  targetUrl: string,
+  stateData: unknown,
+) {
+  try {
+    sessionStorage.setItem(
+      draftStorageKey(sessionId, studentId),
+      JSON.stringify({
+        scores: evalData.scores,
+        feedback: evalData.feedback,
+        notaCargo: evalData.notaCargo,
+      }),
+    );
+  } catch {
+    // ignore
   }
 
-  async function handleTagDecrement(tagId: string) {
-    setCounts((prev) => ({ ...prev, [tagId]: Math.max(0, (prev[tagId] ?? 1) - 1) }));
-    const target = observations
-      .slice()
-      .reverse()
-      .find((o) => o.marcacoes.some((m) => m.id === tagId));
-    if (target) {
-      setObservations((prev) => prev.filter((o) => o.id !== target.id));
-      await observationService.undoObservation(target.id).catch(() => null);
-    }
+  if (evalData.status !== 'ENVIADA') {
+    const itens = evalData.criteria.map((c) => ({
+      criterioId: c.id,
+      nota: evalData.scores[c.id] ?? 0,
+    }));
+    await runSave(sessionId, studentId, {
+      itens,
+      enviar: false,
+      notaCargo: evalData.notaCargo,
+    }).catch(() => null);
+    await evaluationService
+      .saveFeedback(sessionId, studentId, evalData.feedback.trim())
+      .catch(() => null);
   }
 
-  return { tags, counts, handleTagClick, handleTagDecrement };
+  navigate(targetUrl, { state: stateData });
 }
 
 export function useStudentEvaluation(sessionId: string, studentId: string) {
   const navigate = useNavigate();
   const { notify } = useToast();
   const evalData = useFetchStudentEvaluation(sessionId, studentId);
-  const tagData = useStudentObservationTagsState(sessionId, studentId);
+  const tagData = useStudentObservationTags(sessionId, studentId);
   const { run: runSave, isLoading: isSaving } = useAsyncAction(evaluationService.saveEvaluation);
 
   const handleScoreChange = (id: string, val: number) =>
@@ -168,6 +214,7 @@ export function useStudentEvaluation(sessionId: string, studentId: string) {
       studentId,
       evalData.criteria,
       evalData.scores,
+      evalData.notaCargo,
       evalData.feedback,
       enviar,
       justificativa,
@@ -176,29 +223,16 @@ export function useStudentEvaluation(sessionId: string, studentId: string) {
       navigate,
     );
 
-  async function saveDraftAndNavigate(targetUrl: string, stateData: unknown) {
-    try {
-      sessionStorage.setItem(
-        draftStorageKey(sessionId, studentId),
-        JSON.stringify({ scores: evalData.scores, feedback: evalData.feedback }),
-      );
-    } catch {
-      // ignore
-    }
-
-    if (evalData.status !== 'ENVIADA') {
-      const itens = evalData.criteria.map((c) => ({
-        criterioId: c.id,
-        nota: evalData.scores[c.id] ?? 0,
-      }));
-      await runSave(sessionId, studentId, { itens, enviar: false }).catch(() => null);
-      await evaluationService
-        .saveFeedback(sessionId, studentId, evalData.feedback.trim())
-        .catch(() => null);
-    }
-
-    navigate(targetUrl, { state: stateData });
-  }
+  const saveDraftAndNavigate = (targetUrl: string, stateData: unknown) =>
+    saveDraftAndNavigateHelper(
+      sessionId,
+      studentId,
+      evalData,
+      runSave,
+      navigate,
+      targetUrl,
+      stateData,
+    );
 
   return {
     ...evalData,
