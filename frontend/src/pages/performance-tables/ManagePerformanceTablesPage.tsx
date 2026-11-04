@@ -135,13 +135,14 @@ export function ManagePerformanceTablesPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const target = readApplyTarget(location.state);
+  const roomId = target?.roomId;
   const [tables, setTables] = useState<PerformanceTableSummary[]>([]);
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const fetchTables = useCallback(async (): Promise<PerformanceTableSummary[]> => {
-    return performanceTableService.list();
-  }, []);
+    return roomId ? performanceTableService.listByRoom(roomId) : performanceTableService.list();
+  }, [roomId]);
 
   const { run, isLoading, error } = useAsyncAction(fetchTables);
 
