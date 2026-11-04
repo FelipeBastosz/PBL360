@@ -1,14 +1,12 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/useToast';
-import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
+import { sessionService } from '@/services/session.service';
 import { ROUTES } from '@/routes/paths';
 import { readApplyTarget } from '@/utils/navigationState';
 import type { CriterionInput } from '@/types/performanceTable';
-
-import { sessionService } from '@/services/session.service';
-import type { SessionTableEditPermissions } from '@/types/session';
+import { useFetchTableInitialData, type InitialFormulaData } from './useFetchEditTableData';
 
 function validateEditFormula(nome: string, count: number, totalWeight: number) {
   if (!nome.trim()) return 'O título da fórmula é obrigatório.';
@@ -17,10 +15,7 @@ function validateEditFormula(nome: string, count: number, totalWeight: number) {
   return null;
 }
 
-function checkIsDirty(
-  current: { nome: string; descricao: string; criterios: CriterionInput[] },
-  initial: { nome: string; descricao: string; criterios: CriterionInput[] } | null,
-) {
+function checkIsDirty(current: InitialFormulaData, initial: InitialFormulaData | null) {
   if (!initial) return false;
   return (
     current.nome !== initial.nome ||
@@ -46,11 +41,9 @@ async function submitUpdate(
       peso: c.peso,
     })),
   };
-
   await performanceTableService.update(id, cleanPayload);
   notify({ tone: 'success', message: 'Fórmula atualizada com sucesso.' });
-  const target = readApplyTarget(null);
-  navigate(ROUTES.performanceTables, { replace: true, state: target });
+  navigate(ROUTES.performanceTables, { replace: true, state: readApplyTarget(null) });
 }
 
 async function submitSessionUpdate(
@@ -67,65 +60,14 @@ async function submitSessionUpdate(
     ...(canEditCriteria ? { nome: c.nome } : {}),
     peso: c.peso,
   }));
-
   const res = await sessionService.editSessionTable(sessionId, {
     escopo: scope,
     ...(canEditCriteria ? { nome: payload.nome } : {}),
     criterios: criteriaPayload,
   });
-
   notify({ tone: 'success', message: 'Fórmula da sessão atualizada com sucesso.' });
   navigate(ROUTES.performanceTables, { replace: true, state: targetState });
   return res;
-}
-
-function useFetchTableInitialData(id: string, sessionId?: string) {
-  const [nome, setNome] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [criterios, setCriterios] = useState<CriterionInput[]>([]);
-  const [permissions, setPermissions] = useState<SessionTableEditPermissions | null>(null);
-  const [initialData, setInitialData] = useState<{
-    nome: string;
-    descricao: string;
-    criterios: CriterionInput[];
-  } | null>(null);
-
-  const fetchTable = useCallback(() => performanceTableService.getById(id), [id]);
-  const { run, isLoading, error } = useAsyncAction(fetchTable);
-
-  useEffect(() => {
-    run().then((res) => {
-      if (res.ok) {
-        setNome(res.data.nome);
-        setDescricao(res.data.descricao || '');
-        setCriterios(res.data.criterios);
-        setInitialData({
-          nome: res.data.nome,
-          descricao: res.data.descricao || '',
-          criterios: res.data.criterios,
-        });
-      }
-    });
-    if (sessionId) {
-      sessionService
-        .getTableEditPermissions(sessionId)
-        .then(setPermissions)
-        .catch(() => undefined);
-    }
-  }, [run, sessionId]);
-
-  return {
-    nome,
-    setNome,
-    descricao,
-    setDescricao,
-    criterios,
-    setCriterios,
-    initialData,
-    permissions,
-    isLoading,
-    error,
-  };
 }
 
 async function performSave(
@@ -169,7 +111,6 @@ async function performSessionSave(
 function useSaveExecution(
   id: string,
   data: ReturnType<typeof useFetchTableInitialData>,
-  sessionId?: string,
   targetState?: unknown,
 ) {
   const navigate = useNavigate();
@@ -177,16 +118,13 @@ function useSaveExecution(
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  function prepareSave(): boolean {
+  const prepareSave = (): boolean => {
     setErrorMessage(null);
     const totalWeight = data.criterios.reduce((sum, c) => sum + c.peso, 0);
     const err = validateEditFormula(data.nome, data.criterios.length, totalWeight);
-    if (err) {
-      setErrorMessage(err);
-      return false;
-    }
-    return true;
-  }
+    if (err) setErrorMessage(err);
+    return !err;
+  };
 
   const runWithSaving = async (action: () => Promise<void>) => {
     setIsSaving(true);
@@ -204,9 +142,9 @@ function useSaveExecution(
     prepareSave,
     executeSave: () => runWithSaving(() => performSave(id, data, notify, navigate)),
     executeSessionSave: (scope: 'SESSAO' | 'TODAS') =>
-      sessionId &&
+      data.activeSessionId &&
       runWithSaving(() =>
-        performSessionSave(sessionId, scope, data, notify, navigate, targetState),
+        performSessionSave(data.activeSessionId!, scope, data, notify, navigate, targetState),
       ),
     errorMessage,
     setErrorMessage,
@@ -216,7 +154,7 @@ function useSaveExecution(
 
 export function useEditPerformanceTableForm(id: string, sessionId?: string, targetState?: unknown) {
   const data = useFetchTableInitialData(id, sessionId);
-  const save = useSaveExecution(id, data, sessionId, targetState);
+  const save = useSaveExecution(id, data, targetState);
   const isDirty = useMemo(
     () =>
       checkIsDirty(

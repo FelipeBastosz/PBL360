@@ -55,6 +55,8 @@ export type PerformanceTable = {
   nome: string;
   descricao: string | null;
   quantidadeProblemas?: number;
+  quantidadeSessoes?: number;
+  quantidadeSessoesPassadas?: number;
   criterios: Criterion[];
   origem?: PerformanceTableOrigin;
   autor?: PerformanceTableAuthor;

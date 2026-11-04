@@ -19,6 +19,7 @@ vi.mock('@/hooks/useAuth', () => ({
 vi.mock('@/services/performance-table.service');
 vi.mock('@/services/session.service', () => ({
   sessionService: {
+    getEvaluationConfig: vi.fn(),
     getTableEditPermissions: vi.fn(),
     editSessionTable: vi.fn(),
   },
@@ -41,6 +42,7 @@ const mockTable: PerformanceTable = {
 describe('EditPerformanceTablePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     vi.mocked(performanceTableService.getById).mockResolvedValue(mockTable);
   });
 
@@ -234,6 +236,54 @@ describe('EditPerformanceTablePage', () => {
       expect(mockNotify).toHaveBeenCalledWith({
         tone: 'success',
         message: 'Fórmula da sessão atualizada com sucesso.',
+      });
+    });
+
+    it('reconciles criterion IDs with session copy when opened via catalog table ID', async () => {
+      vi.mocked(sessionService.getEvaluationConfig).mockResolvedValue({
+        tabela: {
+          id: 'session-copy-id',
+          nome: 'Sessão de apresentação',
+          padrao: false,
+          criterios: [
+            { id: 'sc-1', nome: 'Comportamento', peso: 5 },
+            { id: 'sc-2', nome: 'Domínio', peso: 5 },
+          ],
+        },
+        formula: { padrao: true, versao: null, componentes: [] },
+        bloqueada: false,
+      });
+      vi.mocked(sessionService.getTableEditPermissions).mockResolvedValue({
+        podeEditarCriterios: false,
+        motivo: 'A tabela possui sessão de hoje, anterior ou com avaliação do tutor enviada.',
+        sessoesQueUsam: [{ sessaoId: 'sess-1', rotulo: 'P1S1', jaAconteceu: true }],
+      });
+      vi.mocked(sessionService.editSessionTable).mockResolvedValue({
+        tabela: { id: 'copy-2', nome: 'Sessão de apresentação — P1S1' },
+        sessoesAtualizadas: [{ sessaoId: 'sess-1', rotulo: 'P1S1' }],
+      });
+
+      render(
+        <MemoryRouter
+          initialEntries={[{ pathname: '/formulas/table-1/editar', state: sessionTarget }]}
+        >
+          <Routes>
+            <Route path="/formulas/:id/editar" element={<EditPerformanceTablePage />} />
+            <Route path="/formulas" element={<div>Lista de Fórmulas</div>} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await screen.findByRole('heading', { name: 'Sessão de apresentação' });
+      await userEvent.click(screen.getByRole('button', { name: 'Concluir edição' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Confirmar e salvar' }));
+
+      expect(sessionService.editSessionTable).toHaveBeenCalledWith('sess-1', {
+        escopo: 'SESSAO',
+        criterios: [
+          { id: 'sc-1', peso: 5 },
+          { id: 'sc-2', peso: 5 },
+        ],
       });
     });
 

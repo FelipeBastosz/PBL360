@@ -36,6 +36,23 @@ function Header({ title, onBack }: { title: string; onBack: () => void }) {
   );
 }
 
+function removeCriterionFromForm(
+  form: ReturnType<typeof useEditPerformanceTableForm>,
+  modals: ReturnType<typeof useEditModals>,
+) {
+  const target = modals.criterionToDelete;
+  if (!target) return;
+  if (form.criterios.length <= 1) {
+    form.setErrorMessage('A fórmula deve possuir ao menos um critério.');
+    modals.setCriterionToDelete(null);
+    return;
+  }
+  form.setCriterios((prev) =>
+    prev.filter((c) => (c.id ? c.id !== target.id : c.ordem !== target.ordem)),
+  );
+  modals.setCriterionToDelete(null);
+}
+
 function useEditPageDeletion(
   id: string,
   form: ReturnType<typeof useEditPerformanceTableForm>,
@@ -43,21 +60,6 @@ function useEditPageDeletion(
   notify: (t: { tone: 'success'; message: string }) => void,
 ) {
   const [isDeletingFormula, setIsDeletingFormula] = useState(false);
-
-  function handleConfirmDeleteCriterion() {
-    if (!modals.criterionToDelete) return;
-    if (form.criterios.length <= 1) {
-      form.setErrorMessage('A fórmula deve possuir ao menos um critério.');
-      modals.setCriterionToDelete(null);
-      return;
-    }
-    form.setCriterios((prev) =>
-      prev.filter((c) =>
-        c.id ? c.id !== modals.criterionToDelete!.id : c.ordem !== modals.criterionToDelete!.ordem,
-      ),
-    );
-    modals.setCriterionToDelete(null);
-  }
 
   async function handleConfirmDeleteFormula() {
     setIsDeletingFormula(true);
@@ -73,7 +75,11 @@ function useEditPageDeletion(
     }
   }
 
-  return { isDeletingFormula, handleConfirmDeleteCriterion, handleConfirmDeleteFormula };
+  return {
+    isDeletingFormula,
+    handleConfirmDeleteCriterion: () => removeCriterionFromForm(form, modals),
+    handleConfirmDeleteFormula,
+  };
 }
 
 function usePageSessionState() {
@@ -88,6 +94,18 @@ function usePageSessionState() {
   return { id: id!, sessionId, target, locationState };
 }
 
+function computeDialogMetrics(
+  form: ReturnType<typeof useEditPerformanceTableForm>,
+  modals: ReturnType<typeof useEditModals>,
+) {
+  const canEditCriteria = form.permissions ? form.permissions.podeEditarCriterios : true;
+  const totalWeight = form.criterios.reduce((sum, c) => sum + c.peso, 0);
+  const otherWeightsSum = modals.editingCriterion
+    ? totalWeight - modals.editingCriterion.peso
+    : totalWeight;
+  return { canEditCriteria, totalWeight, otherWeightsSum };
+}
+
 function useEditPageDialogs(
   form: ReturnType<typeof useEditPerformanceTableForm>,
   modals: ReturnType<typeof useEditModals>,
@@ -96,12 +114,7 @@ function useEditPageDialogs(
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
   const [isSaveWarningOpen, setIsSaveWarningOpen] = useState(false);
   const [isScopeModalOpen, setIsScopeModalOpen] = useState(false);
-
-  const canEditCriteria = form.permissions ? form.permissions.podeEditarCriterios : true;
-  const totalWeight = form.criterios.reduce((sum, c) => sum + c.peso, 0);
-  const otherWeightsSum = modals.editingCriterion
-    ? totalWeight - modals.editingCriterion.peso
-    : totalWeight;
+  const metrics = computeDialogMetrics(form, modals);
 
   const handleRequestSave = () => {
     if (!form.prepareSave()) return;
@@ -121,9 +134,7 @@ function useEditPageDialogs(
     setIsSaveWarningOpen,
     isScopeModalOpen,
     setIsScopeModalOpen,
-    canEditCriteria,
-    totalWeight,
-    otherWeightsSum,
+    ...metrics,
     handleRequestSave,
     handleScopeSave,
   };
@@ -135,7 +146,7 @@ export function EditPerformanceTablePage() {
   const modals = useEditModals(form.setCriterios);
   const { notify } = useToast();
   const deletion = useEditPageDeletion(id, form, modals, notify);
-  const dialogs = useEditPageDialogs(form, modals, sessionId);
+  const dialogs = useEditPageDialogs(form, modals, form.activeSessionId);
 
   const onExit = () => (form.isDirty ? dialogs.setIsDiscardOpen(true) : form.navigate(-1));
 
@@ -146,7 +157,7 @@ export function EditPerformanceTablePage() {
         form={form}
         modals={modals}
         canEditCriteria={dialogs.canEditCriteria}
-        isSessionContext={Boolean(sessionId)}
+        isSessionContext={Boolean(form.activeSessionId)}
         onRequestSave={dialogs.handleRequestSave}
         onExit={onExit}
       />

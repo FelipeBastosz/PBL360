@@ -7,11 +7,12 @@ import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
-import type { PerformanceTable } from '@/types/performanceTable';
+import type { CriterionInput, PerformanceTable } from '@/types/performanceTable';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
 import { ApplyScopeModal, IgnoredSessionsModal } from './components/ApplyScopeModal';
 import { useApplyTableLogic } from './hooks/useApplyTableLogic';
+import { reconcileSessionCriteria } from './utils/reconcileSessionCriteria';
 
 function DetailHeader({ title }: { title: string }) {
   const { user } = useAuth();
@@ -36,7 +37,7 @@ function DetailHeader({ title }: { title: string }) {
   );
 }
 
-function CriteriaListCard({ criteria }: { criteria: PerformanceTable['criterios'] }) {
+function CriteriaListCard({ criteria }: { criteria: CriterionInput[] }) {
   return (
     <div className="overflow-hidden rounded-[14px] border border-black/5 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-sm font-semibold text-brand-900">
@@ -44,8 +45,11 @@ function CriteriaListCard({ criteria }: { criteria: PerformanceTable['criterios'
         <span>Peso</span>
       </div>
       <div>
-        {criteria.map((item) => (
-          <div key={item.id} className="border-b border-black/5 px-4 py-3 last:border-b-0">
+        {criteria.map((item, idx) => (
+          <div
+            key={item.id ?? `${item.nome}-${idx}`}
+            className="border-b border-black/5 px-4 py-3 last:border-b-0"
+          >
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-brand-900">{item.nome}</span>
               <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-ink">
@@ -78,6 +82,35 @@ function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: 
   );
 }
 
+function DetailActionButtons({ apply }: { apply: ReturnType<typeof useApplyTableLogic> }) {
+  if (!apply.canApply) return null;
+  if (apply.isAlreadyApplied) {
+    return (
+      <div className="mt-8">
+        <button
+          type="button"
+          onClick={apply.editAppliedTable}
+          className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800"
+        >
+          Editar fórmula
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-8">
+      <button
+        type="button"
+        onClick={apply.openModal}
+        disabled={apply.isApplying || apply.isSessionLocked}
+        className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Aplicar fórmula
+      </button>
+    </div>
+  );
+}
+
 function DetailContent({
   table,
   apply,
@@ -85,6 +118,8 @@ function DetailContent({
   table: PerformanceTable;
   apply: ReturnType<typeof useApplyTableLogic>;
 }) {
+  const displayedCriteria = reconcileSessionCriteria(table.criterios, apply.sessionCriteria);
+
   return (
     <>
       <DetailBanners isApplied={apply.isAlreadyApplied} isLocked={apply.isSessionLocked} />
@@ -94,19 +129,8 @@ function DetailContent({
           <p className="mt-1 text-sm text-muted">{table.descricao}</p>
         </div>
       )}
-      <CriteriaListCard criteria={table.criterios} />
-      {apply.canApply && !apply.isAlreadyApplied && (
-        <div className="mt-8">
-          <button
-            type="button"
-            onClick={apply.openModal}
-            disabled={apply.isApplying || apply.isSessionLocked}
-            className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Aplicar fórmula
-          </button>
-        </div>
-      )}
+      <CriteriaListCard criteria={displayedCriteria} />
+      <DetailActionButtons apply={apply} />
       <ApplyScopeModal
         isOpen={apply.isModalOpen}
         isLoading={apply.isApplying}

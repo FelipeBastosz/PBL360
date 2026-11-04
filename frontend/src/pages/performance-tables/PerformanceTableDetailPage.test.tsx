@@ -61,6 +61,7 @@ describe('PerformanceTableDetailPage', () => {
       <MemoryRouter initialEntries={[{ pathname: `/formulas/${id}`, state }]}>
         <Routes>
           <Route path="/formulas/:id" element={<PerformanceTableDetailPage />} />
+          <Route path="/formulas/:id/editar" element={<p>Editar Fórmula</p>} />
           <Route
             path="/turmas/:roomId/problemas/:problemId/sessoes/:sessionId"
             element={<p>Hub da Sessão</p>}
@@ -97,7 +98,7 @@ describe('PerformanceTableDetailPage', () => {
     });
   });
 
-  it('disables apply button and shows message when table is already applied', async () => {
+  it('disables apply button, shows message and allows editing when table is already applied', async () => {
     vi.mocked(sessionService.getEvaluationConfig).mockResolvedValue({
       tabela: { id: 'table-1', nome: 'Barema PBL', padrao: false, criterios: [] },
       formula: { padrao: true, versao: null, componentes: [] },
@@ -109,6 +110,7 @@ describe('PerformanceTableDetailPage', () => {
       await screen.findByText('Esta fórmula já está aplicada a esta sessão.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Aplicar fórmula' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar fórmula' })).toBeInTheDocument();
   });
 
   it('shows lock message and disables apply button when session has submitted evaluations', async () => {
