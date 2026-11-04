@@ -37,6 +37,7 @@ export interface StudentGradeContext {
   peerScores: Row[];
   pokerScores: Row[];
   peerAdjustments?: Row[];
+  tutorAdjustments?: Row[];
   now: Date;
 }
 

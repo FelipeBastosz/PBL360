@@ -25,9 +25,19 @@ export const FIND_ADJUSTMENTS = `
    WHERE ei.evaluation_id = $1 ORDER BY ga.created_at, ga.id;
 `;
 export const LIST_EVALUATIONS = `
-  SELECT u.id AS "studentId", u.name, e.status, e.id AS "evaluationId", e.applied_bonus AS "appliedBonus"
+  SELECT u.id AS "studentId", u.name,
+         COALESCE(e.status, se.status) AS status,
+         e.id AS "evaluationId",
+         e.applied_bonus AS "appliedBonus",
+         ga.new_value AS "adjustedScore"
     FROM room_students rs JOIN users u ON u.id = rs.student_id
     LEFT JOIN evaluations e ON e.student_id = u.id AND e.session_id = $2 AND e.type = 'TUTOR_SESSION'
+    LEFT JOIN evaluations se ON se.student_id = u.id AND se.session_id = $2 AND se.type = 'SELF_ASSESSMENT'
+    LEFT JOIN LATERAL (
+      SELECT ga.new_value FROM grade_adjustments ga
+       WHERE (ga.evaluation_id = e.id OR ga.evaluation_id = se.id OR (ga.session_id = $2 AND ga.student_id = u.id))
+       ORDER BY ga.created_at DESC, ga.id DESC LIMIT 1
+    ) ga ON TRUE
    WHERE rs.room_id = $1 ORDER BY u.name, u.id;
 `;
 export const UPDATE_EVALUATION = `

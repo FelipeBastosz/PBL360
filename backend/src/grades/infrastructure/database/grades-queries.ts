@@ -5,6 +5,7 @@ import {
   SELF_ASSESSMENT_SCORES_QUERY,
   SESSION_BONUSES_QUERY,
   SESSION_SCORES_QUERY,
+  TUTOR_SESSION_ADJUSTMENTS_QUERY,
 } from './evaluation-grade.queries';
 
 export interface GradeQuery {
@@ -22,6 +23,7 @@ export function buildProblemQueries(roomId: string, problemId: string): GradeQue
     { sql: PEER_RECEIVED_SCORES_QUERY, params: [problemId] },
     { sql: POKER_PEER_SCORES_QUERY, params: [problemId] },
     { sql: PEER_ADJUSTMENTS_QUERY, params: [problemId] },
+    { sql: TUTOR_SESSION_ADJUSTMENTS_QUERY, params: [problemId] },
   ];
 }
 

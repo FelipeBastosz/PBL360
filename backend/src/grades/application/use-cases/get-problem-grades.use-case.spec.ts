@@ -424,5 +424,44 @@ describe('GetProblemGradesUseCase', () => {
       });
       expect(result.alunos[0]?.notaFinal).toBe(9.5);
     });
+
+    it('gives precedence to tutor adjustment over student original grade (notaFinal = notaAjustadaTutor ?? notaOriginalAluno)', async () => {
+      gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
+      gradesRepository.findProblemData.mockResolvedValue({
+        ...emptyData,
+        sessions: [{ id: 'session-1', date: '2026-10-02', self_eval_released: true }],
+        students: [
+          { id: 'student-1', name: 'Ana Souza', matricula: '20260001' },
+          { id: 'student-2', name: 'João Silva', matricula: '20260002' },
+        ],
+        scores: [],
+        attendances: [
+          { session_id: 'session-1', student_id: 'student-1', status: 'PRESENT' },
+          { session_id: 'session-1', student_id: 'student-2', status: 'PRESENT' },
+        ],
+        criteria: [{ id: 'c1', session_id: 'session-1', weight: 1 }],
+        selfScores: [
+          { session_id: 'session-1', student_id: 'student-1', score: '8.50' },
+          { session_id: 'session-1', student_id: 'student-2', score: '8.00' },
+        ],
+        tutorAdjustments: [{ session_id: 'session-1', student_id: 'student-1', score: '10.00' }],
+      });
+
+      const result = await useCase.execute(input, new Date('2026-10-12T12:00:00.000Z'));
+
+      expect(result.alunos[0]?.sessoes[0]).toMatchObject({
+        sessaoId: 'session-1',
+        nota: 10.0,
+        situacao: 'AVALIADA',
+      });
+      expect(result.alunos[0]?.notaFinal).toBe(10.0);
+
+      expect(result.alunos[1]?.sessoes[0]).toMatchObject({
+        sessaoId: 'session-1',
+        nota: 8.0,
+        situacao: 'AVALIADA',
+      });
+      expect(result.alunos[1]?.notaFinal).toBe(8.0);
+    });
   });
 });

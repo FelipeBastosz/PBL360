@@ -15,6 +15,7 @@ interface SummaryRow {
   status: EvaluationStatus | null;
   evaluationId: string | null;
   appliedBonus: string | null;
+  adjustedScore?: string | number | null;
 }
 
 interface SummaryItemRow {
@@ -22,6 +23,10 @@ interface SummaryItemRow {
   criterionId: string;
   score: string;
 }
+
+const hasSubmittedOrAdjusted = (row: SummaryRow) =>
+  row.status === EvaluationStatus.SUBMITTED ||
+  (row.adjustedScore !== null && row.adjustedScore !== undefined);
 
 export async function readEvaluationSummaries(
   manager: EntityManager,
@@ -31,7 +36,7 @@ export async function readEvaluationSummaries(
     context.roomId,
     context.sessionId,
   ]);
-  if (!rows.some((row) => row.status === EvaluationStatus.SUBMITTED)) return rows.map(emptySummary);
+  if (!rows.some(hasSubmittedOrAdjusted)) return rows.map(emptySummary);
   const config =
     (await readSessionConfig(manager, context.sessionId)) ??
     (await readSessionTableConfig(manager, context.sessionId));
@@ -48,20 +53,36 @@ function emptySummary(row: SummaryRow): EvaluationSummary {
   return { studentId: row.studentId, name: row.name, status: row.status, sessionScore: null };
 }
 
+function calculateScores(items: SummaryItemRow[], evaluationId: string | null) {
+  return items
+    .filter((item) => item.evaluationId === evaluationId)
+    .map((item) => ({ criterionId: item.criterionId, score: Number(item.score) }));
+}
+
+function adjustedSummary(row: SummaryRow, summary: EvaluationSummary): EvaluationSummary | null {
+  if (row.adjustedScore === null || row.adjustedScore === undefined) return null;
+  return {
+    ...summary,
+    sessionScore: Number(row.adjustedScore),
+    status: EvaluationStatus.SUBMITTED,
+  };
+}
+
 function calculatedSummary(
   row: SummaryRow,
   items: SummaryItemRow[],
   config: SessionEvaluationConfig,
 ): EvaluationSummary {
   const summary = emptySummary(row);
+  const adjusted = adjustedSummary(row, summary);
+  if (adjusted) return adjusted;
   if (row.status !== EvaluationStatus.SUBMITTED) return summary;
-  const scores = items
-    .filter((item) => item.evaluationId === row.evaluationId)
-    .map((item) => ({ criterionId: item.criterionId, score: Number(item.score) }));
+  const scores = calculateScores(items, row.evaluationId);
+  const bonus = row.appliedBonus === null ? null : Number(row.appliedBonus);
   summary.sessionScore = SessionGradeCalculator.calculate(
     scores,
     config.criteria,
-    row.appliedBonus === null ? null : Number(row.appliedBonus),
+    bonus,
     true,
     config.formula,
   );
