@@ -68,6 +68,8 @@ export function StudentFeedbackModal(props: StudentFeedbackModalProps) {
     hideNames,
   );
   const targetStudent = resolveTargetStudent(student, evaluation);
+  const effectiveFeedback =
+    evaluation?.existingFeedback !== undefined ? evaluation.existingFeedback : existingFeedback;
 
   return (
     <Sheet
@@ -79,15 +81,22 @@ export function StudentFeedbackModal(props: StudentFeedbackModalProps) {
     >
       {isOpen && (
         <StudentFeedbackForm
-          key={`${targetStudent.alunoId}-${evaluation?.sessionId ?? 'sess'}-${existingFeedback?.id ?? 'new'}`}
+          key={`${targetStudent.alunoId}-${evaluation?.sessionId ?? 'sess'}-${effectiveFeedback?.id ?? 'new'}`}
           student={targetStudent}
-          existingFeedback={existingFeedback}
+          existingFeedback={effectiveFeedback}
           roomId={props.roomId}
           problemId={props.problemId}
           onSaved={props.onSaved}
           onClose={onClose}
-          currentGrade={evaluation?.currentGrade ?? props.currentGrade}
-          currentFeedback={evaluation?.currentFeedback ?? props.currentFeedback}
+          sessionId={evaluation?.sessionId}
+          currentGrade={
+            evaluation?.currentGrade !== undefined ? evaluation.currentGrade : props.currentGrade
+          }
+          currentFeedback={
+            evaluation?.currentFeedback !== undefined
+              ? evaluation.currentFeedback
+              : props.currentFeedback
+          }
           updatedAt={evaluation?.updatedAt ?? props.updatedAt}
         />
       )}

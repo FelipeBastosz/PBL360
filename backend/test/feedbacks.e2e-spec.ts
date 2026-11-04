@@ -58,12 +58,12 @@ describe('Feedbacks (e2e)', () => {
   beforeAll(async () => {
     ({ app, moduleRef } = await createTestApp());
     dataSource = moduleRef.get(DataSource);
-  });
+  }, 30000);
 
   afterAll(async () => {
-    await cleanDatabase(dataSource);
-    await app.close();
-  });
+    if (dataSource) await cleanDatabase(dataSource);
+    if (app) await app.close();
+  }, 30000);
 
   beforeEach(async () => {
     await cleanDatabase(dataSource);
@@ -180,7 +180,11 @@ describe('Feedbacks (e2e)', () => {
       const initial = await server()
         .put(`/api/salas/${roomId}/problemas/${problemId}/feedbacks/alunos/${student1Id}`)
         .set('Authorization', `Bearer ${ownerToken}`)
-        .send({ nota: 8.0, texto: 'Feedback inicial do tutor responsável.' })
+        .send({
+          nota: 8.0,
+          texto: 'Feedback inicial do tutor responsável.',
+          justificativa: 'Ajuste de nota após reavaliação pelo tutor responsável.',
+        })
         .expect(200);
 
       const initialBody = initial.body as StudentFeedbackResponse;
@@ -188,7 +192,11 @@ describe('Feedbacks (e2e)', () => {
       const updated = await server()
         .put(`/api/salas/${roomId}/problemas/${problemId}/feedbacks/alunos/${student1Id}`)
         .set('Authorization', `Bearer ${coTutorToken}`)
-        .send({ nota: 9.5, texto: 'Revisão e melhoria do feedback pela co-tutora.' })
+        .send({
+          nota: 9.5,
+          texto: 'Revisão e melhoria do feedback pela co-tutora.',
+          justificativa: 'Revisão e melhoria da nota pela co-tutora responsável.',
+        })
         .expect(200);
 
       const updatedBody = updated.body as StudentFeedbackResponse;
@@ -212,7 +220,11 @@ describe('Feedbacks (e2e)', () => {
       await server()
         .put(`/api/salas/${roomId}/problemas/${problemId}/feedbacks/alunos/${student1Id}`)
         .set('Authorization', `Bearer ${otherTutorToken}`)
-        .send({ nota: 7.0, texto: 'Tentativa de outro tutor.' })
+        .send({
+          nota: 7.0,
+          texto: 'Tentativa de outro tutor.',
+          justificativa: 'Tentativa de alteração de nota sem autorização.',
+        })
         .expect(403);
 
       await server()
@@ -231,7 +243,11 @@ describe('Feedbacks (e2e)', () => {
       await server()
         .put(`/api/salas/${roomId}/problemas/${problemId}/feedbacks/alunos/${student1Id}`)
         .set('Authorization', `Bearer ${student1Token}`)
-        .send({ nota: 10, texto: 'Aluno tentando avaliar.' })
+        .send({
+          nota: 10,
+          texto: 'Aluno tentando avaliar.',
+          justificativa: 'Tentativa de alteração de nota por aluno.',
+        })
         .expect(403);
 
       await server()

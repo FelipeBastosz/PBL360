@@ -45,11 +45,11 @@ describe('Associated grades in received feedbacks (e2e)', () => {
     const created = await createTestApp();
     app = created.app;
     db = created.moduleRef.get(DataSource);
-  });
+  }, 30000);
   afterAll(async () => {
-    await cleanDatabase(db);
-    await app.close();
-  });
+    if (db) await cleanDatabase(db);
+    if (app) await app.close();
+  }, 30000);
   beforeEach(async () => {
     await cleanDatabase(db);
     fixture = await createFeedbackGradeFixture(app, db);

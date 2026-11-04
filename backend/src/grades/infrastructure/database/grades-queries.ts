@@ -12,6 +12,13 @@ export interface GradeQuery {
   params: unknown[];
 }
 
+export const PROBLEM_FEEDBACKS_QUERY = `
+  SELECT id, destinatario_id AS student_id, sessao_id AS session_id,
+         escopo AS scope, nota AS grade
+    FROM feedback
+   WHERE problema_id = $1 AND nota IS NOT NULL;
+`;
+
 export function buildProblemQueries(roomId: string, problemId: string): GradeQuery[] {
   const subQuery = 'SELECT id FROM sessions WHERE problem_id = $1';
   return [
@@ -22,6 +29,7 @@ export function buildProblemQueries(roomId: string, problemId: string): GradeQue
     { sql: PEER_RECEIVED_SCORES_QUERY, params: [problemId] },
     { sql: POKER_PEER_SCORES_QUERY, params: [problemId] },
     { sql: PEER_ADJUSTMENTS_QUERY, params: [problemId] },
+    { sql: PROBLEM_FEEDBACKS_QUERY, params: [problemId] },
   ];
 }
 

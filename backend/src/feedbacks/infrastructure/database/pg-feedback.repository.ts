@@ -44,10 +44,15 @@ export class PgFeedbackRepository implements FeedbackRepository {
     return row ? this.toEntity(row) : null;
   }
 
-  async findStudentProblemFeedback(problemId: string, studentId: string): Promise<Feedback | null> {
+  async findStudentProblemFeedback(
+    problemId: string,
+    studentId: string,
+    sessionId?: string | null,
+  ): Promise<Feedback | null> {
     const rows = await this.dataSource.query<FeedbackRow[]>(FIND_STUDENT_PROBLEM_FEEDBACK_QUERY, [
       problemId,
       studentId,
+      sessionId ?? null,
     ]);
     const row = firstRowOrNull(rows);
     return row ? this.toEntity(row) : null;
@@ -103,7 +108,13 @@ export class PgFeedbackRepository implements FeedbackRepository {
 
   async findRevisionsByFeedbackId(feedbackId: string): Promise<FeedbackRevisionItem[]> {
     const rows = await this.dataSource.query<
-      { score: string | number | null; text: string; editedBy: string; editedAt: Date }[]
+      {
+        score: string | number | null;
+        text: string;
+        editedBy: string;
+        editedAt: Date;
+        justification?: string | null;
+      }[]
     >(FIND_REVISIONS_QUERY, [feedbackId]);
 
     return rows.map((row) => ({
@@ -111,6 +122,7 @@ export class PgFeedbackRepository implements FeedbackRepository {
       text: row.text,
       editedBy: row.editedBy,
       editedAt: row.editedAt,
+      justification: row.justification ?? null,
     }));
   }
 
@@ -158,6 +170,7 @@ export class PgFeedbackRepository implements FeedbackRepository {
         feedback.score,
         feedback.text,
         feedback.editedAt,
+        feedback.sessionId ?? null,
       ]);
     });
   }
