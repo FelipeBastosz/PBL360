@@ -22,6 +22,7 @@ export const toStudentProblemFeedbackResponse = (
   texto: feedback.text,
   criadoEm: feedback.createdAt,
   editadoEm: feedback.editedAt ?? null,
+  justificativa: feedback.justification ?? null,
 });
 
 export const toGeneralFeedbackResponse = (feedback: Feedback): GeneralFeedbackResponseDto => ({

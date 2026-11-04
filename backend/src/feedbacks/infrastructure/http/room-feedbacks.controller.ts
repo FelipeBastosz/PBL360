@@ -37,6 +37,7 @@ const toSaveInput = (
   problemId,
   studentId,
   tutorId,
+  sessionId: dto.sessao_id ?? dto.sessaoId ?? null,
   score: dto.nota ?? null,
   text: dto.texto,
   justification: dto.justificativa,

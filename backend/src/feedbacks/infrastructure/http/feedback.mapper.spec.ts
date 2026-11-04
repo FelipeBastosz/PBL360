@@ -30,6 +30,7 @@ describe('Feedback Mapper', () => {
       texto: 'Parabéns.',
       criadoEm: feedback.createdAt,
       editadoEm: null,
+      justificativa: null,
     });
   });
 

@@ -449,4 +449,95 @@ describe('StudentFeedbackModal', () => {
     expect(handleSaved).toHaveBeenCalledWith(mockSavedResponse);
     expect(handleClose).toHaveBeenCalled();
   });
+
+  it('pre-populates existing justification and note when reopening feedback with justification', () => {
+    const existingFeedback: StudentProblemFeedbackResponse = {
+      id: 'fb-1',
+      escopo: 'ALUNO',
+      destinatarioId: 'aluno-1',
+      nota: 8.8,
+      texto: 'Feedback com justificativa prévia.',
+      criadoEm: '2026-10-01T10:00:00Z',
+      editadoEm: '2026-10-05T14:30:00Z',
+      justificativa: 'Justificativa anterior gravada no banco.',
+    };
+
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={vi.fn()}
+        student={mockStudent}
+        existingFeedback={existingFeedback}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/nota do aluno/i)).toHaveValue('8,8');
+    expect(screen.getByLabelText(/nova nota/i)).toHaveValue(8.8);
+    expect(screen.getByLabelText(/justificativa do ajuste/i)).toHaveValue(
+      'Justificativa anterior gravada no banco.',
+    );
+  });
+
+  it('includes sessao_id when saving feedback opened from a session evaluation cell', async () => {
+    const user = userEvent.setup();
+    const handleClose = vi.fn();
+    const mockSavedResponse: StudentProblemFeedbackResponse = {
+      id: 'fb-1',
+      escopo: 'ALUNO',
+      destinatarioId: 'aluno-1',
+      nota: 8.0,
+      texto: 'Comentário da sessão.',
+      criadoEm: '2026-10-11T12:00:00Z',
+      editadoEm: null,
+    };
+
+    vi.mocked(feedbackService.saveStudentFeedback).mockResolvedValue(mockSavedResponse);
+
+    render(
+      <StudentFeedbackModal
+        isOpen={true}
+        onClose={handleClose}
+        student={mockStudent}
+        existingFeedback={null}
+        hideNames={false}
+        roomId="room-1"
+        problemId="prob-1"
+        onSaved={vi.fn()}
+        evaluation={{
+          studentId: 'aluno-1',
+          sessionId: 'session-42',
+          sessionName: 'Sessão 01',
+          currentGrade: null,
+          currentFeedback: null,
+          updatedAt: null,
+        }}
+      />,
+    );
+
+    const gradeInput = screen.getByLabelText(/nota/i);
+    const commentInput = screen.getByLabelText(/comentário de feedback/i);
+    const saveButton = screen.getByRole('button', { name: 'Salvar' });
+
+    await user.type(gradeInput, '8.0');
+    await user.type(commentInput, 'Comentário da sessão.');
+    await user.click(saveButton);
+
+    expect(feedbackService.saveStudentFeedback).toHaveBeenCalledWith(
+      'room-1',
+      'prob-1',
+      'aluno-1',
+      {
+        escopo: 'ALUNO',
+        destinatario_id: 'aluno-1',
+        sessao_id: 'session-42',
+        nota: 8.0,
+        texto: 'Comentário da sessão.',
+      },
+    );
+    expect(handleClose).toHaveBeenCalled();
+  });
 });

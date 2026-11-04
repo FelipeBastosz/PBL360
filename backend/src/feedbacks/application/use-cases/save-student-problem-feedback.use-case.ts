@@ -17,6 +17,7 @@ export interface SaveStudentProblemFeedbackInput {
   problemId: string;
   studentId: string;
   tutorId: string;
+  sessionId?: string | null;
   score: number | null;
   text: string;
   justification?: string | null;
@@ -42,7 +43,9 @@ export class SaveStudentProblemFeedbackUseCase {
 
     if (existing) {
       this.validateGradeAdjustment(existing, input);
+      if (input.sessionId) existing.sessionId = input.sessionId;
       const revision = existing.update(input.score, input.text, input.tutorId, input.justification);
+      existing.justification = input.justification ?? null;
       return this.feedbackRepository.saveWithRevision(existing, revision);
     }
 
@@ -53,11 +56,13 @@ export class SaveStudentProblemFeedbackUseCase {
     const feedback = Feedback.create({
       authorId: input.tutorId,
       problemId: input.problemId,
+      sessionId: input.sessionId ?? null,
       recipientId: input.studentId,
       scope: FeedbackScope.STUDENT,
       score: input.score,
       text: input.text,
     });
+    feedback.justification = null;
     return this.feedbackRepository.saveWithRevision(feedback, null);
   }
 

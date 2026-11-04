@@ -59,8 +59,10 @@ describe('RoomFeedbacksController', () => {
       problemId: 'problem-1',
       studentId: 'student-1',
       tutorId: 'tutor-1',
+      sessionId: null,
       score: 9.0,
       text: 'Muito bom.',
+      justification: undefined,
     });
   });
 

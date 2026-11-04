@@ -7,6 +7,7 @@ export interface StudentProblemFeedbackResponse {
   criadoEm: string;
   editadoEm: string | null;
   updatedAt?: string | null;
+  justificativa?: string | null;
 }
 
 export interface GeneralFeedbackResponse {
@@ -32,6 +33,7 @@ export interface ProblemFeedbacksResponse {
 export interface SaveStudentFeedbackPayload {
   escopo: 'ALUNO';
   destinatario_id: string;
+  sessao_id?: string;
   nota: number;
   texto: string;
   justificativa?: string;

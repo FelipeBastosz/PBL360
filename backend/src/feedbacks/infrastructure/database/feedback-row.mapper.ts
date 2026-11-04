@@ -13,6 +13,7 @@ export interface FeedbackRow {
   text: string;
   createdAt: Date;
   editedAt: Date | null;
+  justification?: string | null;
 }
 
 export interface StudentFeedbackRow extends FeedbackRow {
@@ -48,6 +49,7 @@ export const toFeedbackEntity = (row: FeedbackRow): Feedback => {
   entity.text = row.text;
   entity.createdAt = row.createdAt;
   entity.editedAt = row.editedAt;
+  entity.justification = row.justification ?? null;
   return entity;
 };
 

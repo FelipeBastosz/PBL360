@@ -41,6 +41,16 @@ export class SaveStudentProblemFeedbackDto {
   @IsString()
   destinatarioId?: string | null;
 
+  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174002' })
+  @IsOptional()
+  @IsString()
+  sessao_id?: string | null;
+
+  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174002' })
+  @IsOptional()
+  @IsString()
+  sessaoId?: string | null;
+
   @ApiPropertyOptional({
     description: 'Justificativa do ajuste de nota (entre 10 e 500 caracteres).',
     example: 'Nota ajustada após revisão dos critérios e esclarecimentos.',

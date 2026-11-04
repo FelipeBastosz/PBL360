@@ -44,6 +44,8 @@ export class Feedback {
   @Column({ name: 'editado_em', type: 'timestamptz', nullable: true })
   editedAt: Date | null;
 
+  justification?: string | null;
+
   static create(props: CreateFeedbackProps): Feedback {
     const feedback = new Feedback();
     feedback.authorId = props.authorId;
@@ -76,6 +78,7 @@ export class Feedback {
     this.text = newText.trim();
     this.authorId = editorId;
     this.editedAt = new Date();
+    this.justification = justification ?? null;
 
     return revision;
   }

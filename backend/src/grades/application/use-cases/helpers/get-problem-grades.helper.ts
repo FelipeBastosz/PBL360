@@ -37,6 +37,7 @@ export interface StudentGradeContext {
   peerScores: Row[];
   pokerScores: Row[];
   peerAdjustments?: Row[];
+  feedbacks?: Row[];
   now: Date;
 }
 
@@ -88,23 +89,78 @@ function mapCriterionScore(criterion: Row, scores: Row[], sessionId: string, stu
   };
 }
 
-export function processStudentGrades(ctx: StudentGradeContext) {
-  const results = ctx.sessions.map((session) => {
+function findSessionFeedback(
+  feedbacks: Row[] | undefined,
+  studentId: unknown,
+  sessionId: string,
+): Row | undefined {
+  if (!feedbacks) return undefined;
+  return feedbacks.find(
+    (f) =>
+      String(f.student_id) === String(studentId) &&
+      String(f.session_id) === String(sessionId) &&
+      f.grade !== null &&
+      f.grade !== undefined,
+  );
+}
+
+function findProblemFeedback(feedbacks: Row[] | undefined, studentId: unknown): Row | undefined {
+  if (!feedbacks) return undefined;
+  return feedbacks.find(
+    (f) =>
+      String(f.student_id) === String(studentId) &&
+      (!f.session_id || f.scope === 'ALUNO') &&
+      f.grade !== null &&
+      f.grade !== undefined,
+  );
+}
+
+function applySessionFeedbackOverride(
+  sessionResult: ReturnType<typeof processStudentSessionForGrade>,
+  sessionFb?: Row,
+) {
+  if (!sessionFb || sessionFb.grade === null || sessionFb.grade === undefined) return;
+  const grade = Number(sessionFb.grade);
+  sessionResult.row.grade = grade;
+  sessionResult.responseSession.nota = grade;
+  sessionResult.responseSession.situacao = 'AVALIADA';
+}
+
+function resolveFinalGrade(
+  components: GradeComponent[],
+  sessionRows: Row[],
+  feedbacks?: Row[],
+  studentId?: unknown,
+): number | null {
+  const calculated = calculateProblemGrade(components, sessionGrades(sessionRows));
+  const problemFb = findProblemFeedback(feedbacks, studentId);
+  return problemFb && problemFb.grade !== null ? Number(problemFb.grade) : calculated.grade;
+}
+
+function processSessionResults(ctx: StudentGradeContext) {
+  return ctx.sessions.map((session) => {
     const evaluations = calculateSessionComponents(ctx, session);
     const sessionResult = processStudentSessionForGrade(ctx, session, evaluations);
-    return {
-      ...sessionResult,
-      evaluations,
-    };
+    const sessionFb = findSessionFeedback(ctx.feedbacks, ctx.student.id, String(session.id));
+    applySessionFeedbackOverride(sessionResult, sessionFb);
+    return { ...sessionResult, evaluations };
   });
+}
+
+export function processStudentGrades(ctx: StudentGradeContext) {
+  const results = processSessionResults(ctx);
   const sessionRows = results.map((result) => result.row);
   const evaluations = summarizeEvaluationComponents(results.map((result) => result.evaluations));
   const grades = results.map((result) =>
     withSessionEvaluations(result.responseSession, result.evaluations),
   );
-  const finalGrade = calculateProblemGrade(ctx.problemComponents, sessionGrades(sessionRows));
-
-  return buildStudentResult(ctx, grades, finalGrade.grade, sessionRows, evaluations);
+  const finalGrade = resolveFinalGrade(
+    ctx.problemComponents,
+    sessionRows,
+    ctx.feedbacks,
+    ctx.student.id,
+  );
+  return buildStudentResult(ctx, grades, finalGrade, sessionRows, evaluations);
 }
 
 function sessionGrades(rows: Row[]): Array<{ sessionId: string; grade: number | null }> {

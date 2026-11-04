@@ -110,7 +110,7 @@ export function GradeJustificationField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor="justification-input" className="text-xs font-semibold text-ink">
+      <label htmlFor="justification-input" className="text-sm font-semibold text-ink">
         Justificativa do ajuste <span className="text-danger">*</span>
       </label>
       <textarea

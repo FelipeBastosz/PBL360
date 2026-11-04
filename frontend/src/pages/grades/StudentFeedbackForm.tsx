@@ -14,6 +14,7 @@ export type StudentFeedbackFormProps = {
   problemId: string;
   onSaved: (feedback: StudentProblemFeedbackResponse) => void;
   onClose: () => void;
+  sessionId?: string;
   currentGrade?: number | string | null;
   currentFeedback?: string | null;
   updatedAt?: string | null;

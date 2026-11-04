@@ -86,6 +86,7 @@ export function StudentFeedbackModal(props: StudentFeedbackModalProps) {
           problemId={props.problemId}
           onSaved={props.onSaved}
           onClose={onClose}
+          sessionId={evaluation?.sessionId}
           currentGrade={evaluation?.currentGrade ?? props.currentGrade}
           currentFeedback={evaluation?.currentFeedback ?? props.currentFeedback}
           updatedAt={evaluation?.updatedAt ?? props.updatedAt}

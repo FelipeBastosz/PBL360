@@ -425,4 +425,34 @@ describe('GetProblemGradesUseCase', () => {
       expect(result.alunos[0]?.notaFinal).toBe(9.5);
     });
   });
+
+  describe('feedback grade overrides', () => {
+    it('overrides calculated session grade and problem grade when feedback notes exist', async () => {
+      gradesRepository.findProblem.mockResolvedValue({ id: input.problemId });
+      gradesRepository.findProblemData.mockResolvedValue({
+        ...emptyData,
+        sessions: [{ id: 'session-1', date: '2026-10-02' }],
+        students: [{ id: 'student-1', name: 'Ana Souza', matricula: '20260001' }],
+        scores: [
+          { session_id: 'session-1', student_id: 'student-1', criterion_id: 'c1', score: 6.0 },
+        ],
+        criteria: [{ id: 'c1', session_id: 'session-1', weight: 1 }],
+        attendances: [{ session_id: 'session-1', student_id: 'student-1', status: 'PRESENT' }],
+        feedbacks: [
+          {
+            student_id: 'student-1',
+            session_id: 'session-1',
+            scope: 'ALUNO',
+            grade: 8.5,
+          },
+        ],
+      });
+
+      const result = await useCase.execute(input, new Date('2026-10-12T12:00:00.000Z'));
+
+      expect(result.alunos[0]?.sessoes[0]?.nota).toBe(8.5);
+      expect(result.alunos[0]?.sessoes[0]?.situacao).toBe('AVALIADA');
+      expect(result.alunos[0]?.notaFinal).toBe(8.5);
+    });
+  });
 });

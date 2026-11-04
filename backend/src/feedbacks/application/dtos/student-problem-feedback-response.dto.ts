@@ -21,4 +21,11 @@ export class StudentProblemFeedbackResponseDto {
 
   @ApiProperty({ example: null, nullable: true })
   editadoEm: Date | null;
+
+  @ApiProperty({
+    example: 'Nota ajustada após revisão dos critérios.',
+    nullable: true,
+    required: false,
+  })
+  justificativa?: string | null;
 }

@@ -165,6 +165,7 @@ export class PgFeedbackRepository implements FeedbackRepository {
         feedback.score,
         feedback.text,
         feedback.editedAt,
+        feedback.sessionId ?? null,
       ]);
     });
   }
