@@ -20,6 +20,7 @@ export function toReceivedFeedbackResponse(
     editadoEm: feedback.editedAt,
     novo: feedback.isNew,
     nota: feedback.score,
+    ...(feedback.components ? { avaliacoes: feedback.components } : {}),
   };
 }
 

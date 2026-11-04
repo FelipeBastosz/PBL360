@@ -29,6 +29,7 @@ function SessionItem({ item }: { item: ReceivedSessionFeedback }) {
       novo={item.feedback.novo}
       nota={item.feedback.nota}
       tag={item.rotulo}
+      avaliacoes={item.feedback.avaliacoes}
     />
   );
 }

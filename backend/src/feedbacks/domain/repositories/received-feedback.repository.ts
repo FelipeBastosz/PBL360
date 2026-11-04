@@ -1,5 +1,16 @@
 export const RECEIVED_FEEDBACK_REPOSITORY = Symbol('RECEIVED_FEEDBACK_REPOSITORY');
 
+export interface ReceivedComponentGrade {
+  nota: number | null;
+  situacao: string;
+  origem?: 'FORMULARIO' | 'PLANNING_POKER';
+}
+
+export interface ReceivedSessionComponents {
+  autoavaliacao: ReceivedComponentGrade | null;
+  pares: ReceivedComponentGrade | null;
+}
+
 export interface ReceivedFeedback {
   id: string;
   author: { id: string; name: string };
@@ -8,6 +19,7 @@ export interface ReceivedFeedback {
   editedAt: Date | null;
   isNew: boolean;
   score: number | null;
+  components?: ReceivedSessionComponents;
 }
 
 export type ReceivedIndividualFeedback = ReceivedFeedback;

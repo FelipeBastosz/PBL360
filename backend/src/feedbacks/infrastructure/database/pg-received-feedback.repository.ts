@@ -25,20 +25,16 @@ export class PgReceivedFeedbackRepository implements ReceivedFeedbackRepository 
 
   readSession(sessionId: string, studentId: string) {
     return this.dataSource.transaction(async (manager) => {
-      const rows = await manager.query<ReceivedFeedbackRow[]>(READ_SESSION_FEEDBACK, [
+      const [row] = await manager.query<ReceivedFeedbackRow[]>(READ_SESSION_FEEDBACK, [
         sessionId,
         studentId,
       ]);
-      const row = rows[0];
       if (!row) return null;
-      const grades = await readReceivedFeedbackGrades(
-        manager,
-        row.roomId,
-        row.problemId,
-        studentId,
-      );
+      const { roomId, problemId } = row;
+      const grades = await readReceivedFeedbackGrades(manager, roomId, problemId, studentId);
       const newlyRead = await this.recordViews(manager, [row.id], studentId);
-      return toReceivedFeedback(row, newlyRead, grades.sessions.get(sessionId) ?? null);
+      const score = grades.sessions.get(sessionId) ?? null;
+      return toReceivedFeedback(row, newlyRead, score, grades.components?.get(sessionId));
     });
   }
 

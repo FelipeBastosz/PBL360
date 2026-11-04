@@ -1,4 +1,5 @@
 import type { EntityManager } from 'typeorm';
+import type { ReceivedSessionComponents } from '../../domain/repositories/received-feedback.repository';
 import { calculateProblemGrades } from '@/grades/application/services/problem-grade-calculation';
 import {
   readFormulaComponents,
@@ -9,6 +10,7 @@ export interface ReceivedFeedbackGrades {
   released: boolean;
   finalScore: number | null;
   sessions: Map<string, number | null>;
+  components?: Map<string, ReceivedSessionComponents>;
 }
 
 export async function readReceivedFeedbackGrades(
@@ -24,7 +26,8 @@ export async function readReceivedFeedbackGrades(
         AND e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED'`,
     [problemId, studentId],
   );
-  if (!released.length) return { released: false, finalScore: null, sessions: new Map() };
+  if (!released.length)
+    return { released: false, finalScore: null, sessions: new Map(), components: new Map() };
   return calculateReceivedGrades(manager, { roomId, problemId, studentId }, released);
 }
 
@@ -52,5 +55,11 @@ function toReceivedGrades(
     released: true,
     finalScore: student?.notaFinal ?? null,
     sessions: new Map(student?.sessoes.map((session) => [session.sessaoId, session.nota])),
+    components: new Map(
+      student?.sessoes.map((session) => [
+        session.sessaoId,
+        { autoavaliacao: session.autoavaliacao ?? null, pares: session.pares ?? null },
+      ]),
+    ),
   };
 }
