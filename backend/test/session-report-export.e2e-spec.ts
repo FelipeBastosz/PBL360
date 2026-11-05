@@ -11,6 +11,7 @@ import {
   XLSX_REPORT_RENDERER,
   type ReportRenderer,
 } from '@/report-files/domain/services/report-renderer';
+import type { GradesResponseDto } from '@/grades/application/dtos/grades-response.dto';
 import { createTestApp } from './helpers/create-test-app';
 import { api, cleanDatabase, insertUser, type TestUser } from './helpers/fixtures';
 
@@ -389,6 +390,58 @@ describe('Session report export (e2e)', () => {
     });
 
     expect(anaRow).toContain(7.7);
+  });
+
+  it('exports report reflecting tutor adjustment precedence over student original submission', async () => {
+    // 1. Submit self-assessment evaluation for Ana
+    await db.query(
+      `INSERT INTO evaluations (evaluator_id, student_id, problem_id, session_id, config_session_id, performance_table_id, type, status, submitted_at, session_score, calculation_version, created_by)
+       VALUES ($1, $1, $2, $3, $3, $4, 'SELF_ASSESSMENT', 'SUBMITTED', NOW(), 8.5, 'WEIGHTED_SESSION_FORMULA_V3', $1);`,
+      [studentAna.id, problemId, sessionId, tableId],
+    );
+
+    // 2. Tutor adjusts Ana's grade to 10.0 via POST /sessoes/:sessionId/autoavaliacoes/:studentId/ajustes
+    await api(app, owner)
+      .post(`/sessoes/${sessionId}/autoavaliacoes/${studentAna.id}/ajustes`)
+      .send({
+        novaNota: 10.0,
+        justificativa: 'MERECEU 10 por liderança destacada.',
+        tipo: 'AUTOAVALIACAO',
+      })
+      .expect(200);
+
+    // 3. Validate that GET /salas/:roomId/problemas/:problemId/notas reflects the override (Ana=10, Joao=8.0)
+    const gradesRes = await api(app, owner)
+      .get(`/salas/${roomId}/problemas/${problemId}/notas`)
+      .expect(200);
+
+    const gradesBody = gradesRes.body as GradesResponseDto;
+    const anaGrade = gradesBody.alunos.find((a) => a.alunoId === studentAna.id);
+    const joaoGrade = gradesBody.alunos.find((a) => a.alunoId === studentJoao.id);
+
+    expect(anaGrade?.sessoes[0]?.nota).toBe(10.0);
+    expect(joaoGrade?.sessoes[0]?.nota).toBe(8.0);
+
+    // 4. Validate that the exported session report (XLSX) reflects 10.0 for Ana and 8.0 for João
+    const exportRes = await api(app, owner)
+      .get(exportPath(sessionId, 'XLSX'))
+      .buffer(true)
+      .parse(binaryParser)
+      .expect(200);
+
+    const workbook = await loadWorkbook(exportRes.body);
+    const sheet = workbook.getWorksheet('Dados da sessão')!;
+
+    let anaRow: unknown[] | null = null;
+    let joaoRow: unknown[] | null = null;
+    sheet.eachRow((row) => {
+      const values = row.values as unknown[];
+      if (values.includes('Ana Souza')) anaRow = values;
+      if (values.includes('João Silva')) joaoRow = values;
+    });
+
+    expect(anaRow).toContain(10.0);
+    expect(joaoRow).toContain(8.0);
   });
 
   it('allows co-tutor to export report and rejects removed co-tutor', async () => {

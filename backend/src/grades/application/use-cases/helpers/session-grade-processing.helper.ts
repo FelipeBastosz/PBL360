@@ -27,6 +27,7 @@ export interface SessionProcessingContext {
   defaultSessionFormula: boolean;
   modality?: EvaluationModality;
   modalityScore?: number | null;
+  tutorAdjustments?: Row[];
 }
 
 function extractSessionInputs(ctx: {
@@ -47,12 +48,38 @@ function extractSessionInputs(ctx: {
   return { criteria, attendance, bonus };
 }
 
+function resolveTutorAdjustment(
+  adjustments: Row[] | undefined,
+  sessionId: string,
+  studentId: unknown,
+): number | null {
+  const row = adjustments?.find(
+    (item) => item.session_id === sessionId && item.student_id === studentId,
+  );
+  return row?.score !== null && row?.score !== undefined ? Number(row.score) : null;
+}
+
+function resolveFinalSessionGrade(
+  ctx: SessionProcessingContext,
+  sessionId: string,
+  calculated: ReturnType<typeof calculateSessionGrade>,
+) {
+  if (calculated.situation === 'AUSENTE' || calculated.situation === 'JUSTIFICADA') {
+    return calculated;
+  }
+  const tutorAdjusted = resolveTutorAdjustment(ctx.tutorAdjustments, sessionId, ctx.student.id);
+  const grade = tutorAdjusted ?? calculated.grade;
+  const situation = grade !== null ? 'AVALIADA' : calculated.situation;
+  return { grade, situation };
+}
+
 export function processStudentSession(ctx: SessionProcessingContext) {
   const sessionId = String(ctx.session.id);
   const calculated = calculateSessionForContext(ctx);
+  const finalResult = resolveFinalSessionGrade(ctx, sessionId, calculated);
   return {
-    row: buildSessionRow(ctx, sessionId, calculated),
-    responseSession: buildSessionResponse(sessionId, calculated, ctx.modality ?? 'TUTOR'),
+    row: buildSessionRow(ctx, sessionId, finalResult),
+    responseSession: buildSessionResponse(sessionId, finalResult, ctx.modality ?? 'TUTOR'),
   };
 }
 

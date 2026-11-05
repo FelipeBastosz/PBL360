@@ -12,6 +12,7 @@ export interface ProblemGradeData {
   peerScores: GradeRow[];
   pokerScores: GradeRow[];
   peerAdjustments?: GradeRow[];
+  tutorAdjustments?: GradeRow[];
   feedbacks?: GradeRow[];
 }
 

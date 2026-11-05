@@ -71,3 +71,29 @@ export const PEER_ADJUSTMENTS_QUERY = `
    WHERE s.problem_id = $1 AND ga.type = 'PEER_ASSESSMENT'
    ORDER BY ga.session_id, ga.student_id, ga.created_at DESC, ga.id DESC;
 `;
+
+// Latest tutor adjustment per session and student, covering self, peer, and poker overrides.
+export const TUTOR_SESSION_ADJUSTMENTS_QUERY = `
+  SELECT DISTINCT ON (adj.session_id, adj.student_id)
+         adj.session_id, adj.student_id, adj.new_value AS score
+    FROM (
+      SELECT e.session_id, e.student_id, ga.new_value, ga.created_at, ga.id
+        FROM grade_adjustments ga
+        JOIN evaluations e ON e.id = ga.evaluation_id
+        JOIN sessions s ON s.id = e.session_id
+       WHERE s.problem_id = $1
+      UNION ALL
+      SELECT ga.session_id, ga.student_id, ga.new_value, ga.created_at, ga.id
+        FROM grade_adjustments ga
+        JOIN sessions s ON s.id = ga.session_id
+       WHERE s.problem_id = $1 AND ga.session_id IS NOT NULL AND ga.student_id IS NOT NULL
+      UNION ALL
+      SELECT ps.session_id, pr.student_id, ga.new_value, ga.created_at, ga.id
+        FROM grade_adjustments ga
+        JOIN poker_rounds pr ON pr.id = ga.poker_round_id
+        JOIN poker_sessions ps ON ps.id = pr.poker_id
+        JOIN sessions s ON s.id = ps.session_id
+       WHERE s.problem_id = $1
+    ) adj
+   ORDER BY adj.session_id, adj.student_id, adj.created_at DESC, adj.id DESC;
+`;
