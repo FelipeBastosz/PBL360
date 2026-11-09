@@ -12,6 +12,7 @@ export type AdjustStudentInfo = {
   notaAluno?: number | null;
   notaVigente?: number | null;
   notaAlunoOriginal?: number | null;
+  notaPares?: number | null;
 };
 
 export type AdjustEvaluationGradeModalProps = {
@@ -93,7 +94,7 @@ function AdjustEvaluationGradeForm({
   onSubmit,
   isLoading,
 }: FormProps) {
-  const currentGrade = student.notaVigente ?? student.notaAluno ?? 0;
+  const currentGrade = student.notaVigente ?? student.notaAluno ?? student.notaPares ?? 0;
   const [newGrade, setNewGrade] = useState(String(currentGrade));
   const [justification, setJustification] = useState('');
 

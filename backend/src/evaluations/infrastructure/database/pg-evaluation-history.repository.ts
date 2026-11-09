@@ -48,7 +48,10 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
       if (students.length === 0) return [];
       const config = await readHistoryConfig(manager, sessionId);
       const maps = await this.loadHistoryMaps(manager, sessionId);
-      return students.map((student) => buildHistoryStudentItem(student, config, maps));
+      const expectedPeerCount = Math.max(0, students.length - 1);
+      return students.map((student) =>
+        buildHistoryStudentItem(student, config, maps, expectedPeerCount),
+      );
     });
   }
 

@@ -69,13 +69,15 @@ function extractStudentScores(
     formula: { criteriaWeight: number; roleWeight: number };
   },
   maps: HistoryMaps,
+  expectedPeerCount = 0,
 ) {
   const peers = maps.peerMap.get(studentId) ?? [];
   const tutor = maps.tutorMap.get(studentId) ?? [];
   const bonus = maps.tutorBonusMap?.get(studentId) ?? null;
+  const allPeersSubmitted = expectedPeerCount > 0 && peers.length >= expectedPeerCount;
   return {
     notaTutor: calculateTutorScore(tutor, config, bonus),
-    notaPares: calculatePeerAverage(peers),
+    notaPares: allPeersSubmitted ? calculatePeerAverage(peers) : null,
     avaliacoesPares: peers.length,
   };
 }
@@ -92,15 +94,15 @@ function resolveStudentSelfGrades(studentId: string, maps: HistoryMaps) {
   );
 }
 
-function resolveHistoryConfig(
-  config:
-    | SessionEvaluationConfig
-    | {
-        criteria: Array<{ id: string; weight: number }>;
-        formula?: { criteriaWeight: number; roleWeight: number };
-      }
-    | Array<{ id: string; weight: number }>,
-) {
+export type HistoryConfigInput =
+  | SessionEvaluationConfig
+  | {
+      criteria: Array<{ id: string; weight: number }>;
+      formula?: { criteriaWeight: number; roleWeight: number };
+    }
+  | Array<{ id: string; weight: number }>;
+
+function resolveHistoryConfig(config: HistoryConfigInput) {
   if (Array.isArray(config)) {
     return {
       criteria: config,
@@ -115,14 +117,9 @@ function resolveHistoryConfig(
 
 export function buildHistoryStudentItem(
   student: StudentRow,
-  config:
-    | SessionEvaluationConfig
-    | {
-        criteria: Array<{ id: string; weight: number }>;
-        formula?: { criteriaWeight: number; roleWeight: number };
-      }
-    | Array<{ id: string; weight: number }>,
+  config: HistoryConfigInput,
   maps: HistoryMaps,
+  expectedPeerCount = 0,
 ): SessionEvaluationHistoryItem {
   const resolvedConfig = resolveHistoryConfig(config);
   return {
@@ -130,7 +127,7 @@ export function buildHistoryStudentItem(
     nome: student.nome,
     matricula: student.matricula ?? null,
     ...resolveStudentSelfGrades(student.alunoId, maps),
-    ...extractStudentScores(student.alunoId, resolvedConfig, maps),
+    ...extractStudentScores(student.alunoId, resolvedConfig, maps, expectedPeerCount),
   };
 }
 

@@ -124,7 +124,32 @@ describe('SessionEvaluationHistoryPage', () => {
     expect(within(carla).getByText('8,5')).toBeInTheDocument();
 
     expect(within(cardOf('Bruno Mendes')).getByText('Avaliação pendente')).toBeInTheDocument();
+    expect(within(cardOf('Bruno Mendes')).getByText('Aluno')).toBeInTheDocument();
     expect(evaluationHistoryService.list).toHaveBeenCalledWith('sess-1');
+  });
+
+  it('displays "Pares" when peer evaluation is submitted without self-assessment', async () => {
+    vi.mocked(evaluationHistoryService.list).mockResolvedValue({
+      alunos: [
+        {
+          alunoId: 'aluno-4',
+          nome: 'Diego Alves',
+          matricula: '26121199',
+          notaAluno: null,
+          notaAlunoOriginal: null,
+          notaTutor: null,
+          notaPares: 8.5,
+          avaliacoesPares: 3,
+          situacaoAjuste: 'SEM_AJUSTE',
+        },
+      ],
+    });
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Diego Alves' });
+    const diego = cardOf('Diego Alves');
+    expect(within(diego).getByText('Pares')).toBeInTheDocument();
+    expect(within(diego).getByText('8,5')).toBeInTheDocument();
   });
 
   it('opens the adjustment sheet when clicking the student card of a submitted evaluation', async () => {

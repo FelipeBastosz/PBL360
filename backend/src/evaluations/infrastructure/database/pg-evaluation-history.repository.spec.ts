@@ -198,7 +198,7 @@ describe('PgEvaluationHistoryRepository', () => {
       const result = await repository.getHistory(sessionId);
 
       expect(result).toHaveLength(1);
-      expect(result[0].notaTutor).toBe(9.44);
+      expect(result[0]?.notaTutor).toBe(9.44);
     });
 
     it('calculates notaTutor with 0 cargo score applying session formula', async () => {
@@ -247,7 +247,54 @@ describe('PgEvaluationHistoryRepository', () => {
       const result = await repository.getHistory(sessionId);
 
       expect(result).toHaveLength(1);
-      expect(result[0].notaTutor).toBe(6.44);
+      expect(result[0]?.notaTutor).toBe(6.44);
+    });
+
+    it('does not present notaPares when not all participating classmates have submitted peer evaluations', async () => {
+      manager.query.mockImplementation((sql: string) => {
+        if (sql.includes('SELECT u.id AS "alunoId"')) {
+          return Promise.resolve([
+            { alunoId: 'student-1', nome: 'Ana Beatriz Souza', matricula: '20240001' },
+            { alunoId: 'student-2', nome: 'João Silva', matricula: '20240002' },
+            { alunoId: 'student-3', nome: 'Carlos', matricula: null },
+          ]);
+        }
+        if (sql.includes('FROM session_evaluation_configs')) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes('FROM sessions s') && sql.includes('JOIN performance_tables pt')) {
+          return Promise.resolve([{ id: 'table-1', name: 'Barema PBL' }]);
+        }
+        if (sql.includes('FROM performance_criteria')) {
+          return Promise.resolve([
+            { id: 'crit-1', name: 'Critério 1', weight: 6, orderIndex: 1 },
+            { id: 'crit-2', name: 'Critério 2', weight: 4, orderIndex: 2 },
+          ]);
+        }
+        if (sql.includes('FROM formulas f')) {
+          return Promise.resolve([
+            { type: 'CRITERIOS', weight: 70 },
+            { type: 'PAPEL', weight: 30 },
+          ]);
+        }
+        if (sql.includes("type = 'SELF_ASSESSMENT'")) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes('FROM grade_adjustments ga')) {
+          return Promise.resolve([]);
+        }
+        // Only 1 peer submitted out of 2 expected (student-2 and student-3)
+        if (sql.includes("type = 'PEER_ASSESSMENT'")) {
+          return Promise.resolve([{ studentId: 'student-1', sessionScore: '8.00' }]);
+        }
+        return Promise.resolve([]);
+      });
+
+      const result = await repository.getHistory(sessionId);
+
+      expect(result).toHaveLength(3);
+      expect(result[0]?.avaliacoesPares).toBe(1);
+      expect(result[0]?.notaPares).toBeNull();
     });
   });
 
