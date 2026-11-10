@@ -18,9 +18,7 @@ export const createTestApp = async (customize: Customize = (b) => b): Promise<Te
 
   configureApp(app);
   await app.init();
-  const dataSource = moduleRef.get(DataSource);
-  await dataSource.runMigrations();
-  await insertSystemPerformanceTables(dataSource);
+  await insertSystemPerformanceTables(moduleRef.get(DataSource));
 
   return { app, moduleRef };
 };
