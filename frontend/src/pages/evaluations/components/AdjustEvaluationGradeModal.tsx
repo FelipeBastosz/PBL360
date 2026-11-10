@@ -89,6 +89,28 @@ type FormProps = {
   isLoading: boolean;
 };
 
+function isPeerAssessmentUnderway(student: AdjustStudentInfo): boolean {
+  return (
+    student.notaAluno === null &&
+    (student.notaPares !== null ||
+      student.avaliacoesPares !== undefined ||
+      student.notaAlunoOriginal !== null)
+  );
+}
+
+function FormSubmitButton({ disabled, isLoading }: { disabled: boolean; isLoading: boolean }) {
+  return (
+    <Button
+      type="submit"
+      disabled={disabled}
+      isLoading={isLoading}
+      className="mt-1 w-full rounded-2xl py-3.5 text-sm font-semibold"
+    >
+      Salvar ajuste
+    </Button>
+  );
+}
+
 function AdjustEvaluationGradeForm({
   student,
   hideNames,
@@ -109,12 +131,6 @@ function AdjustEvaluationGradeForm({
     onSubmit({ novaNota: parsedGrade, justificativa: justification.trim() });
   };
 
-  const isPeerAssessment =
-    student.notaAluno === null &&
-    (student.notaPares !== null ||
-      student.avaliacoesPares !== undefined ||
-      student.notaAlunoOriginal !== null);
-
   return (
     <form
       onSubmit={handleSubmit}
@@ -126,7 +142,7 @@ function AdjustEvaluationGradeForm({
         onClose={onClose}
         isLoading={isLoading}
       />
-      {isPeerAssessment && (
+      {isPeerAssessmentUnderway(student) && (
         <Alert tone="info">
           A avaliação por pares está em andamento. Inserir uma nota sobrescreverá a média dos pares.
         </Alert>
@@ -138,14 +154,7 @@ function AdjustEvaluationGradeForm({
         isLoading={isLoading}
       />
       <JustificationField value={justification} onChange={setJustification} isLoading={isLoading} />
-      <Button
-        type="submit"
-        disabled={!canSubmit || isLoading}
-        isLoading={isLoading}
-        className="mt-1 w-full rounded-2xl py-3.5 text-sm font-semibold"
-      >
-        Salvar ajuste
-      </Button>
+      <FormSubmitButton disabled={!canSubmit || isLoading} isLoading={isLoading} />
     </form>
   );
 }
