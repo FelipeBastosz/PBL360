@@ -18,12 +18,13 @@ describe('DeleteRoomModal', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('renders title, room name and explicit impact warning message when open', () => {
+  it('renders title, room name and explicit impact warning message when open for owner', () => {
     render(
       <DeleteRoomModal
         roomName="MI - Engenharia de Software · TP01"
         isOpen={true}
         isLoading={false}
+        isOwner={true}
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />,
@@ -36,6 +37,68 @@ describe('DeleteRoomModal', () => {
       screen.getByText(/esta ação excluirá permanentemente a turma e todos os/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/dados de alunos, notas, problemas e avaliações/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sim, excluir turma' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+  });
+
+  it('renders blocked warning and Entendi button when user is not owner', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+
+    render(
+      <DeleteRoomModal
+        roomName="MI - Engenharia de Software · TP01"
+        isOpen={true}
+        isLoading={false}
+        isOwner={false}
+        onConfirm={vi.fn()}
+        onCancel={onCancel}
+      />,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Não é possível excluir a turma' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Você não possui permissão para excluir esta turma. Apenas o professor responsável pode realizar a exclusão.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sim, excluir turma' })).not.toBeInTheDocument();
+
+    const understandBtn = screen.getByRole('button', { name: 'Entendi' });
+    expect(understandBtn).toBeInTheDocument();
+
+    await user.click(understandBtn);
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it('renders error message in alert and Entendi button when errorMessage is provided', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+
+    render(
+      <DeleteRoomModal
+        roomName="MI - Engenharia de Software · TP01"
+        isOpen={true}
+        isLoading={false}
+        isOwner={true}
+        errorMessage="Apenas o professor responsável pode realizar esta ação."
+        onConfirm={vi.fn()}
+        onCancel={onCancel}
+      />,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Não é possível excluir a turma' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Apenas o professor responsável pode realizar esta ação.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sim, excluir turma' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Entendi' }));
+    expect(onCancel).toHaveBeenCalledOnce();
   });
 
   it('calls onConfirm when clicking confirm button', async () => {

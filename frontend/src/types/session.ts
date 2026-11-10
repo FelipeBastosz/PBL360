@@ -72,19 +72,18 @@ export type SessionRoleAssignment = {
   alunoId: string;
   nome: string;
   papel: SessionRole;
-  notaAdicional: number | null;
+  notaPapel?: number | null;
 };
 
 export type AssignSessionRolePayload = {
   papel: SessionRole | null;
-  notaAdicional: number | null;
-  transferir: boolean;
+  transferir?: boolean;
 };
 
 export type AssignedSessionRole = {
   alunoId: string;
   papel: SessionRole | null;
-  notaAdicional: number | null;
+  notaPapel?: number | null;
 };
 
 export type RoleConflictResponse = {
@@ -187,6 +186,35 @@ export type SessionTableUpdated = {
 export type SessionTableUpdateResult = {
   sessoesAtualizadas: SessionTableUpdated[];
   sessoesIgnoradas: SessionTableIgnored[];
+};
+
+export type TableSessionUsage = {
+  sessaoId: string;
+  rotulo: string;
+  jaAconteceu: boolean;
+};
+
+export type SessionTableEditPermissions = {
+  podeEditarCriterios: boolean;
+  motivo: string | null;
+  sessoesQueUsam: TableSessionUsage[];
+};
+
+export type EditSessionCriterionPayload = {
+  id?: string;
+  nome?: string;
+  peso: number;
+};
+
+export type EditSessionTablePayload = {
+  escopo: 'SESSAO' | 'TODAS';
+  nome?: string;
+  criterios: EditSessionCriterionPayload[];
+};
+
+export type EditSessionTableResponse = {
+  tabela: { id: string; nome: string };
+  sessoesAtualizadas: Array<{ sessaoId: string; rotulo: string }>;
 };
 
 export type UpdateSessionFormulaPayload = {

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { CalendarIcon } from '@heroicons/react/24/outline';
 import type { Session } from '@/types/session';
+import { formatDayShortMonth } from '@/utils/date';
 
 type ExtendedSession = Session & {
   avaliacoesLiberadas?: boolean;
@@ -11,6 +12,8 @@ type ExtendedSession = Session & {
   avaliacaoEntreParesLiberada?: boolean;
   self_eval_released?: boolean;
   peer_eval_released?: boolean;
+  tabelaNome?: string | null;
+  tabela?: { nome?: string };
 };
 
 type SessionCardProps = {
@@ -18,15 +21,6 @@ type SessionCardProps = {
   roomId: string;
   problemId: string;
 };
-
-function formatSessionDate(dateString: string) {
-  if (!dateString) return '';
-  const [year, month, day] = dateString.split('-');
-  const date = new Date(Number(year), Number(month) - 1, Number(day));
-  const dayStr = date.toLocaleDateString('pt-BR', { day: '2-digit' });
-  const monthStr = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-  return `${dayStr} ${monthStr}`;
-}
 
 export function SessionCard({ session, roomId, problemId }: SessionCardProps) {
   const isReleased = Boolean(
@@ -53,9 +47,14 @@ export function SessionCard({ session, roomId, problemId }: SessionCardProps) {
 
         <div className="flex flex-col min-w-0">
           <h3 className="truncate text-base font-bold text-ink">
-            {session.titulo} · {formatSessionDate(session.data)}
+            {session.titulo} · {formatDayShortMonth(session.data)}
           </h3>
           <p className="truncate text-xs text-muted">{session.descricao || 'Sem descrição'}</p>
+          {(session.tabelaNome || session.tabela?.nome) && (
+            <span className="mt-0.5 truncate text-[11px] font-medium text-brand-900">
+              Fórmula: {session.tabelaNome || session.tabela?.nome}
+            </span>
+          )}
         </div>
       </div>
 

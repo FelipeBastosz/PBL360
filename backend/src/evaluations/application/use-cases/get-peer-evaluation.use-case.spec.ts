@@ -96,9 +96,11 @@ describe('GetPeerEvaluationUseCase', () => {
     const result = await useCase.execute('sess-1', 'peer-1', 'student-1');
 
     expect(result).toEqual({
-      colega: { alunoId: 'peer-1', nome: 'Maria Santos' },
+      colega: { alunoId: 'peer-1', nome: 'Maria Santos', papel: null },
       status: 'PENDENTE',
       enviadaEm: null,
+      notaCargo: null,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       criterios: [
         { id: 'crit-1', nome: 'Comunicação', peso: 2, notaMaxima: 10 },
         { id: 'crit-2', nome: 'Pontualidade', peso: 1, notaMaxima: 10 },
@@ -133,9 +135,11 @@ describe('GetPeerEvaluationUseCase', () => {
     const result = await useCase.execute('sess-1', 'peer-1', 'student-1');
 
     expect(result).toEqual({
-      colega: { alunoId: 'peer-1', nome: 'Maria Santos' },
+      colega: { alunoId: 'peer-1', nome: 'Maria Santos', papel: null },
       status: 'RASCUNHO',
       enviadaEm: null,
+      notaCargo: null,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       criterios: [{ id: 'crit-1', nome: 'Comunicação', peso: 2, notaMaxima: 10 }],
       itens: [{ criterioId: 'crit-1', nota: 8.5 }],
     });
@@ -168,9 +172,11 @@ describe('GetPeerEvaluationUseCase', () => {
     const result = await useCase.execute('sess-1', 'peer-1', 'student-1');
 
     expect(result).toEqual({
-      colega: { alunoId: 'peer-1', nome: 'Maria Santos' },
+      colega: { alunoId: 'peer-1', nome: 'Maria Santos', papel: null },
       status: 'ENVIADA',
       enviadaEm: submittedAt,
+      notaCargo: null,
+      formula: { criteriaWeight: 70, roleWeight: 30 },
       criterios: [{ id: 'crit-1', nome: 'Comunicação', peso: 2, notaMaxima: 10 }],
       itens: [{ criterioId: 'crit-1', nota: 9 }],
     });

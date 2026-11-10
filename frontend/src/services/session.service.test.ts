@@ -24,7 +24,7 @@ const mockSession = {
   id: 'sess-1',
   titulo: 'Sessão 1',
   descricao: 'Primeira sessão',
-  data: '2026-10-15',
+  data: '15-10-2026',
   ordem: 1,
   status: 'agendada',
 };
@@ -51,7 +51,7 @@ describe('sessionService', () => {
 
   it('creates a session', async () => {
     const adapter = respondWith(mockSession, 201);
-    const payload = { titulo: 'Sessão 1', descricao: null, data: '2026-10-15' };
+    const payload = { titulo: 'Sessão 1', descricao: null, data: '15-10-2026' };
 
     await expect(sessionService.create('room-1', 'prob-1', payload)).resolves.toEqual(mockSession);
     expect(adapter.mock.calls[0][0]).toMatchObject({
@@ -63,7 +63,7 @@ describe('sessionService', () => {
   it('updates a session', async () => {
     const updated = { ...mockSession, titulo: 'Sessão Atualizada' };
     const adapter = respondWith(updated);
-    const payload = { titulo: 'Sessão Atualizada', descricao: null, data: '2026-10-15' };
+    const payload = { titulo: 'Sessão Atualizada', descricao: null, data: '15-10-2026' };
 
     await expect(sessionService.update('room-1', 'prob-1', 'sess-1', payload)).resolves.toEqual(
       updated,
@@ -175,6 +175,27 @@ describe('sessionService', () => {
     });
   });
 
+  it('exports session report forwarding privacy and section options', async () => {
+    const download = respondWith(new Blob(['%PDF']));
+    const options = {
+      ocultarNome: true,
+      mostrarFeedBack: false,
+      mostrarMarcacoes: true,
+    };
+    await sessionService.exportSessionReport('s1', 'XLSX', options);
+    expect(sent(download)).toMatchObject({
+      method: 'get',
+      url: '/sessoes/s1/relatorio/exportacao',
+      params: {
+        formato: 'XLSX',
+        ocultarNome: true,
+        mostrarFeedBack: false,
+        mostrarMarcacoes: true,
+      },
+      responseType: 'blob',
+    });
+  });
+
   it('fetches release status for a session', async () => {
     const mockReleases = {
       autoavaliacao: { liberada: true, prazo: null, enviadas: 4, esperadas: 12 },
@@ -270,6 +291,45 @@ describe('sessionService', () => {
     expect(adapter.mock.calls[0][0]).toMatchObject({
       method: 'post',
       url: '/sessoes/sess-1/formula/restaurar-padrao',
+    });
+  });
+
+  it('fetches session table editing permissions', async () => {
+    const mockPermissions = {
+      podeEditarCriterios: false,
+      motivo: 'Esta tabela já foi usada em sessões que aconteceram',
+      sessoesQueUsam: [{ sessaoId: 's1', rotulo: 'S1', jaAconteceu: true }],
+    };
+    const adapter = respondWith(mockPermissions);
+
+    await expect(sessionService.getTableEditPermissions('sess-1')).resolves.toEqual(
+      mockPermissions,
+    );
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'get',
+      url: '/sessoes/sess-1/tabela/permissoes-edicao',
+    });
+  });
+
+  it('edits session table with scope and criteria', async () => {
+    const mockResponse = {
+      tabela: { id: 'copy-1', nome: 'Barema — P1S1' },
+      sessoesAtualizadas: [{ sessaoId: 'sess-1', rotulo: 'P1S1' }],
+    };
+    const adapter = respondWith(mockResponse);
+    const payload = {
+      escopo: 'SESSAO' as const,
+      nome: 'Barema',
+      criterios: [
+        { id: 'c1', peso: 5 },
+        { id: 'c2', peso: 5 },
+      ],
+    };
+
+    await expect(sessionService.editSessionTable('sess-1', payload)).resolves.toEqual(mockResponse);
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'put',
+      url: '/sessoes/sess-1/tabela/edicao',
     });
   });
 });

@@ -10,7 +10,7 @@ export class SessionListResponseDto {
   @ApiProperty({ example: 'Material de preparação.', nullable: true })
   descricao: string | null;
 
-  @ApiProperty({ example: '2026-10-15', format: 'date' })
+  @ApiProperty({ example: '15-10-2026', pattern: '^\\d{2}-\\d{2}-\\d{4}$' })
   data: string;
 
   @ApiProperty({ example: 1 })

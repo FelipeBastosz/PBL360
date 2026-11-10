@@ -8,13 +8,13 @@ const mockSession: Session = {
   id: 'sess-1',
   titulo: 'Sessão de Abertura',
   descricao: 'Primeira discussão do caso',
-  data: '2026-10-15',
+  data: '15-10-2026',
   ordem: 1,
   status: 'agendada',
 };
 
 describe('SessionCard', () => {
-  it('renders formatted title with date and description', () => {
+  it('renders formatted title with date DD-MM-AAAA and description', () => {
     render(
       <MemoryRouter>
         <SessionCard session={mockSession} roomId="room-1" problemId="prob-1" />
@@ -29,6 +29,17 @@ describe('SessionCard', () => {
     );
   });
 
+  it('formats correctly even when given ISO AAAA-MM-DD format', () => {
+    const isoSession = { ...mockSession, data: '2026-10-15' };
+    render(
+      <MemoryRouter>
+        <SessionCard session={isoSession} roomId="room-1" problemId="prob-1" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/Sessão de Abertura · 15 out/i)).toBeInTheDocument();
+  });
+
   it('renders fallback text when description is missing', () => {
     const sessionWithoutDesc = { ...mockSession, descricao: null };
 
@@ -39,5 +50,20 @@ describe('SessionCard', () => {
     );
 
     expect(screen.getByText('Sem descrição')).toBeInTheDocument();
+  });
+
+  it('renders formula name tag when session has an attached table', () => {
+    const sessionWithTable = {
+      ...mockSession,
+      tabelaNome: 'Barema PBL — P1S1',
+    };
+
+    render(
+      <MemoryRouter>
+        <SessionCard session={sessionWithTable} roomId="room-1" problemId="prob-1" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Fórmula: Barema PBL — P1S1')).toBeInTheDocument();
   });
 });

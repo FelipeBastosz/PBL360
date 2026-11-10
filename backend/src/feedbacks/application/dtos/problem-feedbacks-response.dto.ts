@@ -9,6 +9,13 @@ export class StudentWithFeedbackDto {
   @ApiProperty({ example: 'João Discente' })
   nome: string;
 
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174002',
+    nullable: true,
+    required: false,
+  })
+  sessaoId?: string | null;
+
   @ApiProperty({ type: StudentProblemFeedbackResponseDto, nullable: true })
   feedback: StudentProblemFeedbackResponseDto | null;
 }

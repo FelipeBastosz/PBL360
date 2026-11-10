@@ -58,6 +58,8 @@ function seedTables(): PerformanceTable[] {
 function toSummary(table: PerformanceTable): PerformanceTableSummary {
   return {
     id: table.id,
+    professorId: table.professorId,
+    isDefault: table.isDefault,
     nome: table.nome,
     descricao: table.descricao,
     quantidadeCriterios: table.criterios.length,

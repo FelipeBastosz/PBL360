@@ -104,14 +104,12 @@ describe('PgSessionReportRepository', () => {
             id: 'eval-1',
             studentId: 'stud-1',
             status: EvaluationStatus.SUBMITTED,
-            sessionScore: '8.70',
             appliedBonus: '9.00',
           },
           {
             id: 'eval-2',
             studentId: 'stud-2',
             status: EvaluationStatus.DRAFT,
-            sessionScore: null,
             appliedBonus: null,
           },
         ];
@@ -161,7 +159,6 @@ describe('PgSessionReportRepository', () => {
     expect(stud1.tags).toEqual(['Pontual', 'Participativo']);
     expect(stud1.evaluationStatus).toBe(EvaluationStatus.SUBMITTED);
     expect(stud1.appliedBonus).toBe(9.0);
-    expect(stud1.sessionScore).toBe(8.7);
     expect(stud1.feedback).toEqual({
       text: 'Excelente participação.',
       authorName: 'Prof. Carlos',
@@ -174,7 +171,6 @@ describe('PgSessionReportRepository', () => {
     expect(stud2.roleScore).toBeNull();
     expect(stud2.tags).toEqual([]);
     expect(stud2.evaluationStatus).toBe(EvaluationStatus.DRAFT);
-    expect(stud2.sessionScore).toBeNull();
     expect(stud2.feedback).toBeNull();
   });
 

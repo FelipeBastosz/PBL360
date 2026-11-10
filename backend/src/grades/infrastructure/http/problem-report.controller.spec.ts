@@ -34,15 +34,24 @@ describe('ProblemReportController', () => {
       tutorId: 'tutor-1',
       format: ReportFileFormat.PDF,
       ocultarNomes: undefined,
+      mostrarPendencias: undefined,
+      mostrarFeedback: undefined,
+      mostrarMarcacoes: undefined,
     });
     expect(response).toBeInstanceOf(StreamableFile);
   });
 
-  it('delegates report export with ocultarNomes: true', async () => {
+  it('delegates report export with all optional flags including mostrarPendencias', async () => {
     const response = await controller.export(
       'room-1',
       'problem-1',
-      { formato: ReportFileFormat.PDF, ocultarNomes: true },
+      {
+        formato: ReportFileFormat.PDF,
+        ocultarNomes: true,
+        mostrarPendencias: false,
+        mostrarFeedback: false,
+        mostrarMarcacoes: false,
+      },
       'tutor-1',
     );
 
@@ -52,6 +61,33 @@ describe('ProblemReportController', () => {
       tutorId: 'tutor-1',
       format: ReportFileFormat.PDF,
       ocultarNomes: true,
+      mostrarPendencias: false,
+      mostrarFeedback: false,
+      mostrarMarcacoes: false,
+    });
+    expect(response).toBeInstanceOf(StreamableFile);
+  });
+
+  it('delegates report export using ocultarNome fallback alias', async () => {
+    const response = await controller.export(
+      'room-1',
+      'problem-1',
+      {
+        formato: ReportFileFormat.PDF,
+        ocultarNome: true,
+      },
+      'tutor-1',
+    );
+
+    expect(useCase.execute).toHaveBeenCalledWith({
+      roomId: 'room-1',
+      problemId: 'problem-1',
+      tutorId: 'tutor-1',
+      format: ReportFileFormat.PDF,
+      ocultarNomes: true,
+      mostrarPendencias: undefined,
+      mostrarFeedback: undefined,
+      mostrarMarcacoes: undefined,
     });
     expect(response).toBeInstanceOf(StreamableFile);
   });

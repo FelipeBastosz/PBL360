@@ -7,6 +7,7 @@ import {
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { toBrazilianDate } from '@/shared/dates/brazilian-date';
 import type {
   MemberSessionResponseDto,
   RoomSessionResponseDto,
@@ -38,7 +39,7 @@ export class MemberSessionsController {
     return sessions.map((session) => ({
       id: session.id,
       titulo: session.title,
-      data: session.date,
+      data: toBrazilianDate(session.date)!,
       ordem: session.orderIndex,
       status: session.status,
       problemaId: session.problemId,

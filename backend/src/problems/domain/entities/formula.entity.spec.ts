@@ -96,4 +96,74 @@ describe('Formula', () => {
       ).toThrow(InvalidProblemError);
     },
   );
+
+  describe('PROFESSOR scope', () => {
+    const validProfessorProps = {
+      scope: FormulaScope.PROFESSOR,
+      createdBy: 'tutor-1',
+      components: [
+        { type: FormulaComponentType.CRITERIOS, weight: 60 },
+        { type: FormulaComponentType.PAPEL, weight: 40 },
+      ],
+    };
+
+    it('creates a valid professor formula with CRITERIOS and PAPEL summing to 100', () => {
+      const formula = Formula.create(validProfessorProps);
+      expect(formula).toBeDefined();
+      expect(formula.scope).toBe(FormulaScope.PROFESSOR);
+      expect(formula.problemId).toBeNull();
+      expect(formula.sessionId).toBeNull();
+      expect(formula.createdBy).toBe('tutor-1');
+      expect(formula.components).toHaveLength(2);
+    });
+
+    it('rejects professor formula if problemId or sessionId is informed', () => {
+      expect(() =>
+        Formula.create({
+          ...validProfessorProps,
+          problemId: 'problem-1',
+        }),
+      ).toThrow('A fórmula do professor não deve estar vinculada a problema ou sessão.');
+
+      expect(() =>
+        Formula.create({
+          ...validProfessorProps,
+          sessionId: 'session-1',
+        }),
+      ).toThrow('A fórmula do professor não deve estar vinculada a problema ou sessão.');
+    });
+
+    it('rejects professor formula without createdBy', () => {
+      expect(() =>
+        Formula.create({
+          ...validProfessorProps,
+          createdBy: '',
+        }),
+      ).toThrow('O autor da fórmula é obrigatório.');
+    });
+
+    it('rejects professor formula if weights do not sum to 100', () => {
+      expect(() =>
+        Formula.create({
+          ...validProfessorProps,
+          components: [
+            { type: FormulaComponentType.CRITERIOS, weight: 50 },
+            { type: FormulaComponentType.PAPEL, weight: 40 },
+          ],
+        }),
+      ).toThrow('A soma dos pesos dos componentes deve ser exatamente 100%.');
+    });
+
+    it('rejects professor formula with invalid components', () => {
+      expect(() =>
+        Formula.create({
+          ...validProfessorProps,
+          components: [
+            { type: FormulaComponentType.CRITERIOS, weight: 50 },
+            { type: FormulaComponentType.MEDIA_SESSOES, weight: 50 },
+          ],
+        }),
+      ).toThrow('A fórmula da sessão deve conter exatamente um componente CRITERIOS e um PAPEL.');
+    });
+  });
 });

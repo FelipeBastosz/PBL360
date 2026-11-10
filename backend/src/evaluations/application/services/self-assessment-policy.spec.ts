@@ -76,6 +76,32 @@ describe('self-assessment policy', () => {
     ).toThrow(UnprocessableEntityError);
   });
 
+  it('requires role score when student has a role and submits', () => {
+    const detailWithRole = {
+      ...detail,
+      papel: 'COORDINATOR',
+      config: { ...detail.config, formula: { criteriaWeight: 70, roleWeight: 30 } },
+    } as unknown as EvaluationDetail;
+
+    expect(() =>
+      assertSelfAssessmentCanBeSaved(session, true, detailWithRole, items, true, now, null),
+    ).toThrow(UnprocessableEntityError);
+
+    expect(() =>
+      assertSelfAssessmentCanBeSaved(session, true, detailWithRole, items, false, now, null),
+    ).not.toThrow();
+
+    expect(() =>
+      assertSelfAssessmentCanBeSaved(session, true, detailWithRole, items, true, now, 8),
+    ).not.toThrow();
+  });
+
+  it('allows submission without role score when student has no role', () => {
+    expect(() =>
+      assertSelfAssessmentCanBeSaved(session, true, detail, items, true, now, null),
+    ).not.toThrow();
+  });
+
   it('reports a disabled release as unavailable even when its deadline has passed', () => {
     expect(
       studentSelfAssessmentStatus(

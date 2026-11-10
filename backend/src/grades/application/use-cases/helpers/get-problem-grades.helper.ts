@@ -2,6 +2,7 @@ import {
   calculateProblemGrade,
   type GradeComponent,
 } from '../../../domain/entities/grade-calculator';
+import { roundGrade } from '@/shared/utils/grade-precision';
 import type { GradeRow } from '../../../domain/repositories/grades.repository';
 import type { GradesResponseDto } from '../../dtos/grades-response.dto';
 import { buildStudentResponse } from './grade-response.helper';
@@ -36,12 +37,25 @@ export interface StudentGradeContext {
   peerScores: Row[];
   pokerScores: Row[];
   peerAdjustments?: Row[];
+  tutorAdjustments?: Row[];
+  feedbacks?: Row[];
   now: Date;
 }
 
 export type StudentSessionResponse = GradesResponseDto['alunos'][number]['sessoes'][number];
 export type SessionGradeResponse = Omit<StudentSessionResponse, 'autoavaliacao' | 'pares'>;
 export type StudentResponse = GradesResponseDto['alunos'][number];
+
+export interface ProblemGradesInput {
+  roomId: string;
+  problemId: string;
+  tutorId: string;
+}
+
+export interface ProblemGradesWithSessionGrades {
+  response: GradesResponseDto;
+  sessionGrades: Row[];
+}
 
 export function filterByStudentAndSession(
   rows: Row[],
@@ -76,22 +90,50 @@ function mapCriterionScore(criterion: Row, scores: Row[], sessionId: string, stu
   };
 }
 
-export function processStudentGrades(ctx: StudentGradeContext) {
-  const results = ctx.sessions.map((session) => {
+function findSessionFeedback(
+  feedbacks: Row[] | undefined,
+  studentId: unknown,
+  sessionId: string,
+): Row | undefined {
+  if (!feedbacks) return undefined;
+  return feedbacks.find(
+    (f) =>
+      String(f.student_id) === String(studentId) &&
+      String(f.session_id) === String(sessionId) &&
+      f.grade !== null &&
+      f.grade !== undefined,
+  );
+}
+
+function applySessionFeedbackOverride(
+  sessionResult: ReturnType<typeof processStudentSessionForGrade>,
+  sessionFb?: Row,
+) {
+  if (!sessionFb || sessionFb.grade === null || sessionFb.grade === undefined) return;
+  const grade = Number(sessionFb.grade);
+  sessionResult.row.grade = grade;
+  sessionResult.responseSession.nota = grade;
+  sessionResult.responseSession.situacao = 'AVALIADA';
+}
+
+function processSessionResults(ctx: StudentGradeContext) {
+  return ctx.sessions.map((session) => {
     const evaluations = calculateSessionComponents(ctx, session);
     const sessionResult = processStudentSessionForGrade(ctx, session, evaluations);
-    return {
-      ...sessionResult,
-      evaluations,
-    };
+    const sessionFb = findSessionFeedback(ctx.feedbacks, ctx.student.id, String(session.id));
+    applySessionFeedbackOverride(sessionResult, sessionFb);
+    return { ...sessionResult, evaluations };
   });
+}
+
+export function processStudentGrades(ctx: StudentGradeContext) {
+  const results = processSessionResults(ctx);
   const sessionRows = results.map((result) => result.row);
   const evaluations = summarizeEvaluationComponents(results.map((result) => result.evaluations));
   const grades = results.map((result) =>
     withSessionEvaluations(result.responseSession, result.evaluations),
   );
   const finalGrade = calculateProblemGrade(ctx.problemComponents, sessionGrades(sessionRows));
-
   return buildStudentResult(ctx, grades, finalGrade.grade, sessionRows, evaluations);
 }
 
@@ -99,6 +141,13 @@ function sessionGrades(rows: Row[]): Array<{ sessionId: string; grade: number | 
   return rows.map((row) => ({
     sessionId: String(row.session_id),
     grade: row.grade as number | null,
+  }));
+}
+
+function toPersistedSessionRows(rows: Row[]): Row[] {
+  return rows.map((row) => ({
+    ...row,
+    grade: roundGrade(row.grade as number | null),
   }));
 }
 
@@ -111,10 +160,10 @@ function buildStudentResult(
 ) {
   return {
     responseStudent: buildStudentResponse(ctx.student, grades, finalGrade, evaluations),
-    sessionRows,
+    sessionRows: toPersistedSessionRows(sessionRows),
     problemRow: {
       student_id: ctx.student.id,
-      grade: finalGrade,
+      grade: roundGrade(finalGrade),
       formula_version: ctx.problemFormulaVersion,
     },
   };

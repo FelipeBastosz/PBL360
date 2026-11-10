@@ -181,8 +181,8 @@ describe('Problems (e2e)', () => {
       {
         titulo: 'Problema 1 - Primeiros Socorros',
         descricao: 'Descrição detalhada do caso clínico.',
-        dataInicio: '2026-03-01',
-        dataFim: '2026-03-15',
+        dataInicio: '01-03-2026',
+        dataFim: '15-03-2026',
       },
       tutor1Token,
     ).expect(201);
@@ -194,27 +194,29 @@ describe('Problems (e2e)', () => {
     expect(body.descricao).toBe('Descrição detalhada do caso clínico.');
     expect(body.ordem).toBe(1);
     expect(body.criadoPor).toBe(tutor1Id);
-    expect(body.dataInicio).toBe('2026-03-01');
-    expect(body.dataFim).toBe('2026-03-15');
+    expect(body.dataInicio).toBe('01-03-2026');
+    expect(body.dataFim).toBe('15-03-2026');
   });
 
   it('rejects dates with a time component', async () => {
     const body = (
       await postProblem(
         roomId,
-        { titulo: 'P', dataInicio: '2026-03-01T00:00:00.000Z' },
+        { titulo: 'P', dataInicio: '01-03-2026T00:00:00.000Z' },
         tutor1Token,
       ).expect(400)
     ).body as ErrorResponseBody;
 
-    expect(body.message).toContain('A data de início deve estar no formato AAAA-MM-DD.');
+    expect(body.message).toContain(
+      'A data de início deve estar no formato DD-MM-AAAA e ser válida.',
+    );
   });
 
   it('rejects an end date before the start date', async () => {
     const body = (
       await postProblem(
         roomId,
-        { titulo: 'P', dataInicio: '2026-03-15', dataFim: '2026-03-01' },
+        { titulo: 'P', dataInicio: '15-03-2026', dataFim: '01-03-2026' },
         tutor1Token,
       ).expect(400)
     ).body as ErrorResponseBody;
@@ -439,8 +441,8 @@ describe('Problems (e2e)', () => {
         {
           titulo: 'Problema Específico',
           descricao: 'Descrição detalhada do caso clínico.',
-          dataInicio: '2026-03-01',
-          dataFim: '2026-03-15',
+          dataInicio: '01-03-2026',
+          dataFim: '15-03-2026',
         },
         tutor1Token,
       ).expect(201);
@@ -703,12 +705,17 @@ describe('Problems (e2e)', () => {
 
       const response = await deleteProblem(roomId, created.id, tutor1Token).expect(409);
       const body = response.body as ErrorResponseBody;
-      expect(body.message).toBe('O problema possui sessões e não pode ser excluído.');
+      expect(body.message).toBe(
+        'O problema não pode ser excluído pois possui registros vinculados.',
+      );
+      expect(response.body).toMatchObject({
+        detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0 },
+      });
 
       await getProblemById(roomId, created.id, tutor1Token).expect(200);
     });
 
-    it('cleans up problem-level feedbacks when problem without sessions is deleted', async () => {
+    it('preserves problem-level feedbacks and returns their count when deletion is blocked', async () => {
       const res = await postProblem(
         roomId,
         { titulo: 'Problema com Feedback Sem Sessão' },
@@ -722,13 +729,17 @@ describe('Problems (e2e)', () => {
         [tutor1Id, created.id, studentId],
       );
 
-      await deleteProblem(roomId, created.id, tutor1Token).expect(204);
+      const response = await deleteProblem(roomId, created.id, tutor1Token).expect(409);
+      expect(response.body).toMatchObject({
+        detalhes: { sessoes: 0, notas: 0, feedbacks: 1, avaliacoes: 0 },
+      });
+      await getProblemById(roomId, created.id, tutor1Token).expect(200);
 
       const [countRow] = await dataSource.query<[{ count: string }]>(
         `SELECT COUNT(*)::int AS count FROM feedback WHERE problema_id = $1;`,
         [created.id],
       );
-      expect(Number(countRow.count)).toBe(0);
+      expect(Number(countRow.count)).toBe(1);
     });
 
     it('returns 204 No Content and reorders subsequent problems properly', async () => {

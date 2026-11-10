@@ -27,6 +27,7 @@ export interface SessionProcessingContext {
   defaultSessionFormula: boolean;
   modality?: EvaluationModality;
   modalityScore?: number | null;
+  tutorAdjustments?: Row[];
 }
 
 function extractSessionInputs(ctx: {
@@ -47,22 +48,49 @@ function extractSessionInputs(ctx: {
   return { criteria, attendance, bonus };
 }
 
+function resolveTutorAdjustment(
+  adjustments: Row[] | undefined,
+  sessionId: string,
+  studentId: unknown,
+): number | null {
+  const row = adjustments?.find(
+    (item) => item.session_id === sessionId && item.student_id === studentId,
+  );
+  return row?.score !== null && row?.score !== undefined ? Number(row.score) : null;
+}
+
+function resolveFinalSessionGrade(
+  ctx: SessionProcessingContext,
+  sessionId: string,
+  calculated: ReturnType<typeof calculateSessionGrade>,
+) {
+  if (calculated.situation === 'AUSENTE' || calculated.situation === 'JUSTIFICADA') {
+    return calculated;
+  }
+  const tutorAdjusted = resolveTutorAdjustment(ctx.tutorAdjustments, sessionId, ctx.student.id);
+  const grade = tutorAdjusted ?? calculated.grade;
+  const situation = grade !== null ? 'AVALIADA' : calculated.situation;
+  return { grade, situation };
+}
+
 export function processStudentSession(ctx: SessionProcessingContext) {
   const sessionId = String(ctx.session.id);
   const calculated = calculateSessionForContext(ctx);
+  const finalResult = resolveFinalSessionGrade(ctx, sessionId, calculated);
   return {
-    row: buildSessionRow(ctx, sessionId, calculated),
-    responseSession: buildSessionResponse(sessionId, calculated),
+    row: buildSessionRow(ctx, sessionId, finalResult),
+    responseSession: buildSessionResponse(sessionId, finalResult, ctx.modality ?? 'TUTOR'),
   };
 }
 
 function calculateSessionForContext(ctx: SessionProcessingContext) {
   const { criteria, attendance, bonus } = extractSessionInputs(ctx);
+  const isNonTutorModality = Boolean(ctx.modality && ctx.modality !== 'TUTOR');
   return calculateSessionGrade({
     criteria,
     components: ctx.sessionComponents,
     attendance,
-    bonus,
+    bonus: isNonTutorModality ? null : bonus,
     defaultFormula: ctx.defaultSessionFormula,
     modality: ctx.modality,
     modalityScore: ctx.modalityScore,
@@ -86,11 +114,13 @@ function buildSessionRow(
 function buildSessionResponse(
   sessionId: string,
   calculated: ReturnType<typeof calculateSessionGrade>,
+  modality: EvaluationModality,
 ): SessionGradeResponse {
   return {
     sessaoId: sessionId,
     nota: presentGrade(calculated.grade),
     situacao: calculated.situation,
+    modalidade: modality,
   };
 }
 

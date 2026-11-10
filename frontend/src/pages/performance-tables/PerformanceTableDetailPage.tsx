@@ -1,17 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeftIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronLeftIcon,
+  LockClosedIcon,
+  InformationCircleIcon,
+} from '@heroicons/react/24/outline';
 import { UserMenuButton } from '@/components/layout/UserMenu';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
-import type { PerformanceTable } from '@/types/performanceTable';
+import type { CriterionInput, PerformanceTable } from '@/types/performanceTable';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
 import { ApplyScopeModal, IgnoredSessionsModal } from './components/ApplyScopeModal';
 import { useApplyTableLogic } from './hooks/useApplyTableLogic';
+import { reconcileSessionCriteria } from './utils/reconcileSessionCriteria';
 
 function DetailHeader({ title }: { title: string }) {
   const { user } = useAuth();
@@ -36,7 +41,7 @@ function DetailHeader({ title }: { title: string }) {
   );
 }
 
-function CriteriaListCard({ criteria }: { criteria: PerformanceTable['criterios'] }) {
+function CriteriaListCard({ criteria }: { criteria: CriterionInput[] }) {
   return (
     <div className="overflow-hidden rounded-[14px] border border-black/5 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-sm font-semibold text-brand-900">
@@ -44,8 +49,11 @@ function CriteriaListCard({ criteria }: { criteria: PerformanceTable['criterios'
         <span>Peso</span>
       </div>
       <div>
-        {criteria.map((item) => (
-          <div key={item.id} className="border-b border-black/5 px-4 py-3 last:border-b-0">
+        {criteria.map((item, idx) => (
+          <div
+            key={item.id ?? `${item.nome}-${idx}`}
+            className="border-b border-black/5 px-4 py-3 last:border-b-0"
+          >
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-brand-900">{item.nome}</span>
               <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-ink">
@@ -60,9 +68,28 @@ function CriteriaListCard({ criteria }: { criteria: PerformanceTable['criterios'
   );
 }
 
-function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: boolean }) {
+type BannersProps = {
+  isApplied: boolean;
+  isLocked: boolean;
+  isShared: boolean;
+  authorName?: string;
+};
+
+function DetailBanners({ isApplied, isLocked, isShared, authorName }: BannersProps) {
   return (
     <>
+      {isShared && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs font-medium text-blue-900"
+        >
+          <InformationCircleIcon className="size-4 shrink-0 text-blue-600" aria-hidden="true" />
+          <span>
+            Fórmula compartilhada da turma{authorName ? ` · Criada por ${authorName}` : ''}.
+          </span>
+        </aside>
+      )}
       {isApplied && (
         <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
           Esta fórmula já está aplicada a esta sessão.
@@ -70,7 +97,7 @@ function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: 
       )}
       {isLocked && (
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-          <LockClosedIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <LockClosedIcon className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden="true" />
           <span>Esta sessão já possui avaliações enviadas e a tabela não pode ser alterada.</span>
         </div>
       )}
@@ -78,35 +105,50 @@ function DetailBanners({ isApplied, isLocked }: { isApplied: boolean; isLocked: 
   );
 }
 
-function DetailContent({
-  table,
-  apply,
-}: {
+function DetailActionButtons({ apply }: { apply: ReturnType<typeof useApplyTableLogic> }) {
+  if (!apply.canApply) return null;
+  if (apply.isAlreadyApplied) {
+    return (
+      <div className="mt-8">
+        <button
+          type="button"
+          onClick={apply.editAppliedTable}
+          className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800"
+        >
+          Editar fórmula
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-8">
+      <button
+        type="button"
+        onClick={apply.openModal}
+        disabled={apply.isApplying || apply.isSessionLocked}
+        className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Aplicar fórmula
+      </button>
+    </div>
+  );
+}
+
+type DetailContentProps = {
   table: PerformanceTable;
   apply: ReturnType<typeof useApplyTableLogic>;
-}) {
+  currentUserId?: string;
+};
+
+function checkIsShared(table: PerformanceTable, currentUserId?: string): boolean {
+  if (!currentUserId || !table.professorId) return false;
+  const isDefault = Boolean(table.isDefault ?? table.padrao ?? table.origem === 'PADRAO');
+  return table.professorId !== currentUserId && !isDefault;
+}
+
+function DetailModals({ apply }: { apply: ReturnType<typeof useApplyTableLogic> }) {
   return (
     <>
-      <DetailBanners isApplied={apply.isAlreadyApplied} isLocked={apply.isSessionLocked} />
-      {table.descricao && (
-        <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
-          <p className="mt-1 text-sm text-muted">{table.descricao}</p>
-        </div>
-      )}
-      <CriteriaListCard criteria={table.criterios} />
-      {apply.canApply && !apply.isAlreadyApplied && (
-        <div className="mt-8">
-          <button
-            type="button"
-            onClick={apply.openModal}
-            disabled={apply.isApplying || apply.isSessionLocked}
-            className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Aplicar fórmula
-          </button>
-        </div>
-      )}
       <ApplyScopeModal
         isOpen={apply.isModalOpen}
         isLoading={apply.isApplying}
@@ -124,8 +166,34 @@ function DetailContent({
   );
 }
 
+function DetailContent({ table, apply, currentUserId }: DetailContentProps) {
+  const isShared = checkIsShared(table, currentUserId);
+  const displayedCriteria = reconcileSessionCriteria(table.criterios, apply.sessionCriteria);
+
+  return (
+    <>
+      <DetailBanners
+        isApplied={apply.isAlreadyApplied}
+        isLocked={apply.isSessionLocked}
+        isShared={isShared}
+        authorName={table.autor?.nome}
+      />
+      {table.descricao && (
+        <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
+          <p className="mt-1 text-sm text-muted">{table.descricao}</p>
+        </div>
+      )}
+      <CriteriaListCard criteria={displayedCriteria} />
+      <DetailActionButtons apply={apply} />
+      <DetailModals apply={apply} />
+    </>
+  );
+}
+
 export function PerformanceTableDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [table, setTable] = useState<PerformanceTable | null>(null);
   const { run, isLoading, error } = useAsyncAction(
     useCallback(() => performanceTableService.getById(id!), [id]),
@@ -146,7 +214,7 @@ export function PerformanceTableDetailPage() {
           </div>
         )}
         {error && <Alert tone="error">{error.message}</Alert>}
-        {table && <DetailContent table={table} apply={apply} />}
+        {table && <DetailContent table={table} apply={apply} currentUserId={user?.id} />}
       </main>
     </div>
   );

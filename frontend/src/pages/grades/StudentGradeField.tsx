@@ -11,6 +11,7 @@ export type EvaluationContext = {
   currentGrade: number | string | null;
   currentFeedback: string | null;
   updatedAt: string | null;
+  existingFeedback?: StudentProblemFeedbackResponse | null;
 };
 
 export type StudentGradeFieldProps = {
@@ -30,6 +31,22 @@ export type StudentGradeFieldProps = {
   hideNames?: boolean;
 };
 
+function resolveCellGrade(
+  gradeItem?: StudentSessionGrade,
+  feedback?: StudentProblemFeedbackResponse | null,
+): number | null {
+  if (feedback?.nota !== undefined && feedback?.nota !== null) {
+    const num = Number(feedback.nota);
+    return Number.isNaN(num) ? null : num;
+  }
+  if (gradeItem?.nota !== undefined && gradeItem?.nota !== null) {
+    const num = Number(gradeItem.nota);
+    return Number.isNaN(num) ? null : num;
+  }
+  if (gradeItem?.situacao === 'AUSENTE') return 0;
+  return null;
+}
+
 function buildEvaluationContext(
   student: StudentGradeRow,
   session: SessionColumn,
@@ -37,18 +54,9 @@ function buildEvaluationContext(
   feedback?: StudentProblemFeedbackResponse | null,
 ): EvaluationContext {
   const sessionName = resolveSessionName(session);
-  const currentGrade =
-    gradeItem?.nota !== null && gradeItem?.nota !== undefined
-      ? gradeItem.nota
-      : (feedback?.nota ?? null);
-  const currentFeedback =
-    feedback?.texto ?? (gradeItem as { feedback?: string | null })?.feedback ?? '';
-  const updatedAt =
-    (feedback as { updatedAt?: string | null })?.updatedAt ??
-    feedback?.editadoEm ??
-    feedback?.criadoEm ??
-    (gradeItem as { updatedAt?: string | null })?.updatedAt ??
-    null;
+  const currentGrade = resolveCellGrade(gradeItem, feedback);
+  const currentFeedback = feedback?.texto ?? '';
+  const updatedAt = feedback?.updatedAt ?? feedback?.editadoEm ?? feedback?.criadoEm ?? null;
 
   return {
     studentId: student.alunoId,
@@ -57,7 +65,22 @@ function buildEvaluationContext(
     currentGrade,
     currentFeedback,
     updatedAt,
+    existingFeedback: feedback ?? null,
   };
+}
+
+function isGradeCellEditable(
+  gradeItem?: StudentSessionGrade,
+  feedback?: StudentProblemFeedbackResponse | null,
+): boolean {
+  if (gradeItem?.situacao === 'JUSTIFICADA') return false;
+  const grade = resolveCellGrade(gradeItem, feedback);
+  return grade !== null && !Number.isNaN(grade);
+}
+
+function resolveTargetStudentName(student?: StudentGradeRow, hideNames?: boolean): string {
+  if (!student) return 'Aluno';
+  return hideNames ? student.matricula || student.nome : student.nome;
 }
 
 export function StudentGradeField(props: StudentGradeFieldProps) {
@@ -70,20 +93,22 @@ export function StudentGradeField(props: StudentGradeFieldProps) {
     );
   }
 
+  const cellText = formatSessionCell(props.gradeItem?.nota, props.gradeItem?.situacao);
+  if (!isGradeCellEditable(props.gradeItem, props.existingFeedback)) {
+    return <td className="px-3 py-3.5 text-center text-muted">{cellText}</td>;
+  }
+
   const student = props.aluno ?? props.student;
   const session = props.sessao ?? props.session;
   const sessionName = resolveSessionName(session);
+  const studentName = resolveTargetStudentName(student, props.hideNames);
 
   const handleClick = () => {
     props.onClick?.();
     if (student && session) {
-      const context = buildEvaluationContext(
-        student,
-        session,
-        props.gradeItem,
-        props.existingFeedback,
+      props.onSelectEvaluation?.(
+        buildEvaluationContext(student, session, props.gradeItem, props.existingFeedback),
       );
-      props.onSelectEvaluation?.(context);
       props.onSelectStudent?.(student);
     }
   };
@@ -94,13 +119,6 @@ export function StudentGradeField(props: StudentGradeFieldProps) {
       handleClick();
     }
   };
-
-  const cellText = formatSessionCell(props.gradeItem?.nota, props.gradeItem?.situacao);
-  const studentName = student
-    ? props.hideNames
-      ? student.matricula || student.nome
-      : student.nome
-    : 'Aluno';
 
   return (
     <td

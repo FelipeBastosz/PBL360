@@ -6,9 +6,9 @@ import type { ProblemGradesResponse } from '@/types/grades';
 
 const mockGradesData: ProblemGradesResponse = {
   sessoes: [
-    { id: 'sess-1', rotulo: 'S1', data: '2026-10-01' },
-    { id: 'sess-2', rotulo: 'S2', data: '2026-10-05' },
-    { id: 'sess-3', rotulo: 'S3', data: '2026-10-10' },
+    { id: 'sess-1', rotulo: 'S1', data: '01-10-2026' },
+    { id: 'sess-2', rotulo: 'S2', data: '05-10-2026' },
+    { id: 'sess-3', rotulo: 'S3', data: '10-10-2026' },
   ],
   alunos: [
     {
@@ -66,7 +66,7 @@ describe('ProblemGradesTable', () => {
     expect(screen.getByText('7,3')).toBeInTheDocument();
   });
 
-  it('renders pending (—), excused (J), and absent (0,0) states correctly', () => {
+  it('renders pending (—), excused (J), and absent (0,0) states correctly, blocking interaction on — and J', () => {
     render(
       <ProblemGradesTable
         data={mockGradesData}
@@ -77,11 +77,17 @@ describe('ProblemGradesTable', () => {
     );
 
     // Bruno's sessions: S1 is pending (—), S2 is excused (J), S3 is absent (0,0)
-    expect(screen.getByText('J')).toBeInTheDocument();
-    expect(screen.getByText('0,0')).toBeInTheDocument();
-    // Pending cell renders '—'
+    const excusedCell = screen.getByText('J');
+    expect(excusedCell).toBeInTheDocument();
+    expect(excusedCell.closest('td')).not.toHaveAttribute('role', 'button');
+
     const dashes = screen.getAllByText('—');
     expect(dashes.length).toBeGreaterThan(0);
+    expect(dashes[0]?.closest('td')).not.toHaveAttribute('role', 'button');
+
+    // S3 absent has score 0.0 and remains interactive as a calculable grade
+    const absentCell = screen.getByRole('button', { name: /Bruno Mendes.*S3.*0,0/i });
+    expect(absentCell).toBeInTheDocument();
   });
 
   it('toggles column header from ALUNO to MATRÍCULA and displays matricula when hideNames is true', async () => {
@@ -153,6 +159,71 @@ describe('ProblemGradesTable', () => {
       }),
     );
     expect(handleSelectStudent).toHaveBeenCalledWith(mockGradesData.alunos[0]);
+  });
+
+  it('matches feedback scoped by session id and preserves grade 0 without treating as falsy', async () => {
+    const user = userEvent.setup();
+    const handleSelectEvaluation = vi.fn();
+
+    const feedbacks = {
+      geral: null,
+      alunos: [
+        {
+          alunoId: 'aluno-1',
+          nome: 'Ana Silva',
+          sessaoId: 'sess-1',
+          feedback: {
+            id: 'fb-s1',
+            escopo: 'ALUNO' as const,
+            destinatarioId: 'aluno-1',
+            sessaoId: 'sess-1',
+            nota: 0,
+            texto: 'Feedback específico da S1',
+            criadoEm: '2026-10-01T10:00:00Z',
+            editadoEm: null,
+            justificativa: 'Nota zerada por critério específico',
+          },
+        },
+      ],
+    };
+
+    render(
+      <ProblemGradesTable
+        data={mockGradesData}
+        hideNames={false}
+        onToggleHideNames={vi.fn()}
+        onSelectEvaluation={handleSelectEvaluation}
+        feedbacks={feedbacks}
+      />,
+    );
+
+    // Click S1 which has session feedback with grade 0
+    const cellS1 = screen.getByRole('button', { name: /Ana Silva.*S1/i });
+    await user.click(cellS1);
+
+    expect(handleSelectEvaluation).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        studentId: 'aluno-1',
+        sessionId: 'sess-1',
+        currentGrade: 0,
+        currentFeedback: 'Feedback específico da S1',
+        existingFeedback: expect.objectContaining({ id: 'fb-s1', nota: 0 }),
+      }),
+    );
+
+    // Click S2 which has NO session feedback -> should not inherit S1 feedback
+    const cellS2 = screen.getByRole('button', { name: /Ana Silva.*S2/i });
+    await user.click(cellS2);
+
+    expect(handleSelectEvaluation).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        studentId: 'aluno-1',
+        sessionId: 'sess-2',
+        currentGrade: 9.0,
+        currentFeedback: '',
+        existingFeedback: null,
+      }),
+    );
   });
 
   it('applies defensive session name fallback hierarchy and tooltip in header', () => {

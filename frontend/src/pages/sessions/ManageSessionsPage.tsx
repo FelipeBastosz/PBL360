@@ -11,6 +11,7 @@ import { sessionService } from '@/services/session.service';
 import { cn } from '@/utils/cn';
 import type { Problem } from '@/types/problem';
 import type { Session, SessionDeletionImpact } from '@/types/session';
+import { formatSessionDeletionConflict } from '@/utils/deletionConflict';
 import { DeleteSessionModal } from './components/DeleteSessionModal';
 import { SessionFormModal } from './components/SessionFormModal';
 import { ManageSessionsHeader } from './components/ManageSessionsHeader';
@@ -70,6 +71,7 @@ type ConfirmParams = {
   ) => Promise<{ ok: true; data: void } | { ok: false; error: unknown }>;
   setSessions: React.Dispatch<React.SetStateAction<Session[]>>;
   setSessionToDelete: (s: Session | null) => void;
+  setDeleteErrorMessage: (msg: string | null) => void;
   notify: (toast: { tone: 'success' | 'error' | 'info'; message: string }) => void;
 };
 
@@ -100,28 +102,30 @@ async function executeConfirmDelete({
   deleteSession,
   setSessions,
   setSessionToDelete,
+  setDeleteErrorMessage,
   notify,
 }: ConfirmParams) {
   if (!roomId || !problemId || !sessionToDelete) return;
+  setDeleteErrorMessage(null);
   const res = await deleteSession(roomId, problemId, sessionToDelete.id);
   if (res.ok) {
     setSessions((curr) => curr.filter((item) => item.id !== sessionToDelete.id));
     setSessionToDelete(null);
     notify({ tone: 'success', message: 'Sessão excluída com sucesso!' });
+  } else {
+    const message =
+      formatSessionDeletionConflict(res.error) ??
+      (res.error instanceof Error ? res.error.message : 'Erro ao excluir sessão.');
+    setDeleteErrorMessage(message);
+    notify({ tone: 'error', message });
   }
 }
 
-function useManageSessions(roomId?: string, problemId?: string) {
-  const { notify } = useToast();
+function useSessionFetchData(roomId?: string, problemId?: string) {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [sessionToEdit, setSessionToEdit] = useState<Session | null>(null);
-  const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null);
-  const [impact, setImpact] = useState<SessionDeletionImpact | null>(null);
-
   const { run: fetchProblem } = useAsyncAction(problemService.getById);
   const { run: fetchSessions, isLoading } = useAsyncAction(sessionService.list);
-  const { run: deleteSession, isLoading: isDeleting } = useAsyncAction(sessionService.remove);
 
   useEffect(() => {
     if (roomId && problemId) {
@@ -129,6 +133,19 @@ function useManageSessions(roomId?: string, problemId?: string) {
       fetchSessions(roomId, problemId).then((r) => r.ok && setSessions(r.data as Session[]));
     }
   }, [roomId, problemId, fetchProblem, fetchSessions]);
+
+  return { problem, sessions, setSessions, isLoading };
+}
+
+function useManageSessions(roomId?: string, problemId?: string) {
+  const { notify } = useToast();
+  const { problem, sessions, setSessions, isLoading } = useSessionFetchData(roomId, problemId);
+  const [sessionToEdit, setSessionToEdit] = useState<Session | null>(null);
+  const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null);
+  const [impact, setImpact] = useState<SessionDeletionImpact | null>(null);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
+
+  const { run: deleteSession, isLoading: isDeleting } = useAsyncAction(sessionService.remove);
 
   return {
     problem,
@@ -142,8 +159,16 @@ function useManageSessions(roomId?: string, problemId?: string) {
     setSessionToDelete,
     impact,
     notify,
-    handleOpenDelete: (s: Session) =>
-      executeOpenDelete({ roomId, problemId, s, setSessionToDelete, setImpact }),
+    deleteErrorMessage,
+    handleOpenDelete: (s: Session) => {
+      setDeleteErrorMessage(null);
+      executeOpenDelete({ roomId, problemId, s, setSessionToDelete, setImpact });
+    },
+    handleCancelDelete: () => {
+      setDeleteErrorMessage(null);
+      setSessionToDelete(null);
+      setImpact(null);
+    },
     handleConfirmDelete: () =>
       executeConfirmDelete({
         roomId,
@@ -152,6 +177,7 @@ function useManageSessions(roomId?: string, problemId?: string) {
         deleteSession,
         setSessions,
         setSessionToDelete,
+        setDeleteErrorMessage,
         notify,
       }),
   };
@@ -187,8 +213,9 @@ export default function ManageSessionsPage() {
         impact={state.impact}
         isOpen={Boolean(state.sessionToDelete)}
         isLoading={state.isDeleting}
+        errorMessage={state.deleteErrorMessage}
         onConfirm={state.handleConfirmDelete}
-        onCancel={() => state.setSessionToDelete(null)}
+        onCancel={state.handleCancelDelete}
       />
       <SessionFormModal
         isOpen={Boolean(state.sessionToEdit)}

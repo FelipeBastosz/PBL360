@@ -56,17 +56,17 @@ Se algo não subir, o passo a passo detalhado — com verificação e problemas 
 
 ## Scripts da raiz
 
-| Script                 | O que faz                                              |
-| ---------------------- | ------------------------------------------------------ |
-| `npm run install:all`  | Instala dependências da raiz, do backend e do frontend |
-| `npm run db:up`        | Sobe o PostgreSQL via Docker Compose                   |
-| `npm run db:down`      | Derruba os containers                                  |
-| `npm run db:reset`     | Derruba os containers **e apaga o volume** de dados    |
-| `npm run dev:backend`  | API em modo watch                                      |
-| `npm run dev:frontend` | Vite dev server                                        |
-| `npm run lint`         | ESLint no backend e no frontend                        |
-| `npm run format`       | Prettier no backend e no frontend                      |
-| `npm run test`         | Testes do backend e do frontend                        |
+| Script                         | O que faz                                              |
+| ------------------------------ | ------------------------------------------------------ |
+| `npm run install:all`          | Instala dependências da raiz, do backend e do frontend |
+| `npm run db:up`                | Sobe o PostgreSQL via Docker Compose                   |
+| `npm run db:down`              | Derruba os containers                                  |
+| `npm run db:reset`             | Derruba os containers **e apaga o volume** de dados    |
+| `npm run dev:backend`          | API em modo watch                                      |
+| `npm run dev:frontend`         | Vite dev server                                        |
+| `npm run lint`                 | ESLint no backend e no frontend                        |
+| `npm run format`               | Prettier no backend e no frontend                      |
+| `npm run test`                 | Testes do backend e do frontend                        |
 | `npm run test:e2e:backend`     | Testes E2E do backend (NestJS contra PostgreSQL real)  |
 | `npm run test:e2e:frontend`    | Testes E2E do frontend com Playwright (headless)       |
 | `npm run test:e2e:frontend:ui` | Interface interativa visual do Playwright (UI Mode)    |

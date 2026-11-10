@@ -23,6 +23,8 @@ export type CriterionInput = {
 
 export type PerformanceTableSummary = {
   id: string;
+  professorId?: string | null;
+  isDefault?: boolean;
   nome: string;
   descricao: string | null;
   quantidadeCriterios: number;
@@ -53,8 +55,12 @@ export type PerformanceTable = {
   id: string;
   professorId?: string;
   nome: string;
+  isDefault?: boolean;
+  padrao?: boolean;
   descricao: string | null;
   quantidadeProblemas?: number;
+  quantidadeSessoes?: number;
+  quantidadeSessoesPassadas?: number;
   criterios: Criterion[];
   origem?: PerformanceTableOrigin;
   autor?: PerformanceTableAuthor;

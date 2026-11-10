@@ -223,4 +223,55 @@ describe('buildClassFinalReportDocument', () => {
     expect(section.rows).toHaveLength(3);
     expect(section.rows[0]).toEqual(['Ana Souza', '00000001', null, 'Pendente']);
   });
+
+  it.each([ReportFileFormat.PDF, ReportFileFormat.XLSX])(
+    'omits student names when ocultarNomes is true in %s',
+    (format) => {
+      const report = buildClassFinalReportFixture();
+      const document = buildClassFinalReportDocument(report, format, { ocultarNomes: true });
+      const table = document.sections[0] as ReportTableSection;
+
+      expect(table.columns.map((c) => c.header)).not.toContain('Aluno');
+      expect(table.columns[0]).toEqual({ header: 'Matrícula', type: ReportColumnType.TEXT });
+      expect(table.rows).toEqual([
+        ['00000001', 8, 0, null, 4, 'Parcial'],
+        [null, null, null, null, null, 'Pendente'],
+        ['00000003', 8.3, 6.8, 8, 7.7, 'Completa'],
+      ]);
+    },
+  );
+
+  it('renders Excel without student names when ocultarNomes is true', async () => {
+    const document = buildClassFinalReportDocument(
+      buildClassFinalReportFixture(),
+      ReportFileFormat.XLSX,
+      { ocultarNomes: true },
+    );
+    const workbook = new Workbook();
+    const content = await new ExceljsReportRenderer().render(document);
+    await workbook.xlsx.load(Uint8Array.from(content).buffer);
+    const sheet = workbook.getWorksheet('Notas finais')!;
+
+    let matriculaRow = 0;
+    sheet.eachRow((row, index) => {
+      if (row.getCell(1).value === '00000001') matriculaRow = index;
+    });
+    expect(matriculaRow).toBeGreaterThan(0);
+    const row = sheet.getRow(matriculaRow);
+    expect(row.getCell(1).value).toBe('00000001');
+    expect(row.getCell(1).numFmt).toBe('@');
+    expect(row.getCell(2).value).toBe(8);
+    expect(row.getCell(5).value).toBe(4);
+    expect(row.getCell(5).numFmt).toBe('0.0');
+    expect(row.getCell(6).value).toBe('Parcial');
+
+    sheet.eachRow((r) => {
+      for (let col = 1; col <= r.cellCount; col++) {
+        const text = r.getCell(col).text;
+        expect(text).not.toContain('Ana Souza');
+        expect(text).not.toContain('Bruno Lima');
+        expect(text).not.toContain('Carla Santos');
+      }
+    });
+  });
 });

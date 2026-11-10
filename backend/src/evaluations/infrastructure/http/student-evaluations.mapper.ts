@@ -16,27 +16,49 @@ export function toSaveSelfAssessmentInput(
     studentId,
     items: dto.itens.map((item) => ({ criterionId: item.criterioId, score: item.nota })),
     submit: dto.enviar,
+    notaCargo: dto.notaCargo,
   };
 }
 
 export function toStudentEvaluationSummaryResponse(output: {
   self: { released: boolean; deadline: Date | null; status: string };
   peers: { released: boolean; deadline: Date | null; submitted: number; total: number };
-  feedback: { available: boolean; new: boolean };
+  feedback: { available: boolean; new: boolean; tutorEvaluationSubmitted: boolean };
 }): StudentEvaluationSummaryResponseDto {
   return {
-    autoavaliacao: {
-      liberada: output.self.released,
-      prazo: output.self.deadline,
-      status: output.self.status,
-    },
-    pares: {
-      liberada: output.peers.released,
-      prazo: output.peers.deadline,
-      avaliados: output.peers.submitted,
-      total: output.peers.total,
-    },
-    feedback: { disponivel: output.feedback.available, novo: output.feedback.new },
+    autoavaliacao: toSelfSummaryResponse(output.self),
+    pares: toPeerSummaryResponse(output.peers),
+    feedback: toFeedbackSummaryResponse(output.feedback),
+  };
+}
+
+function toSelfSummaryResponse(self: { released: boolean; deadline: Date | null; status: string }) {
+  return { liberada: self.released, prazo: self.deadline, status: self.status };
+}
+
+function toPeerSummaryResponse(peers: {
+  released: boolean;
+  deadline: Date | null;
+  submitted: number;
+  total: number;
+}) {
+  return {
+    liberada: peers.released,
+    prazo: peers.deadline,
+    avaliados: peers.submitted,
+    total: peers.total,
+  };
+}
+
+function toFeedbackSummaryResponse(feedback: {
+  available: boolean;
+  new: boolean;
+  tutorEvaluationSubmitted: boolean;
+}) {
+  return {
+    disponivel: feedback.available,
+    novo: feedback.new,
+    avaliacaoTutorEnviada: feedback.tutorEvaluationSubmitted,
   };
 }
 
@@ -47,15 +69,24 @@ export function toSelfAssessmentResponse(
     status: output.status,
     prazo: output.deadline,
     enviadaEm: output.submittedAt,
-    criterios: output.criteria.map((item) => ({
-      id: item.id,
-      nome: item.name,
-      peso: item.weight,
-      notaMaxima: item.maxScore,
-    })),
-    itens: output.items.map((item) => ({ criterioId: item.criterionId, nota: item.score })),
+    criterios: toCriteriaDto(output.criteria),
+    itens: toItemsDto(output.items),
+    papel: output.papel ?? null,
+    notaCargo: output.notaCargo ?? null,
+    formula: output.formula ?? { criteriaWeight: 70, roleWeight: 30 },
     ...(output.consolidatedScore === undefined
       ? {}
       : { notaConsolidada: output.consolidatedScore }),
   };
 }
+
+const toCriteriaDto = (criteria: GetSelfAssessmentOutput['criteria']) =>
+  criteria.map((item) => ({
+    id: item.id,
+    nome: item.name,
+    peso: item.weight,
+    notaMaxima: item.maxScore,
+  }));
+
+const toItemsDto = (items: GetSelfAssessmentOutput['items']) =>
+  items.map((item) => ({ criterioId: item.criterionId, nota: item.score }));

@@ -22,11 +22,33 @@ export const FIND_FEEDBACK_BY_ID_QUERY = `
 `;
 
 export const FIND_STUDENT_PROBLEM_FEEDBACK_QUERY = `
-  SELECT ${FEEDBACK_COLUMNS}
-  FROM feedback
-  WHERE problema_id = $1
-    AND destinatario_id = $2
-    AND escopo = 'ALUNO'
+  SELECT
+    f.id,
+    f.autor_id AS "authorId",
+    f.problema_id AS "problemId",
+    f.destinatario_id AS "recipientId",
+    f.sessao_id AS "sessionId",
+    f.escopo AS "scope",
+    f.nota AS "score",
+    f.texto AS "text",
+    f.criado_em AS "createdAt",
+    f.editado_em AS "editedAt",
+    latest_rev.justificativa AS "justification"
+  FROM feedback f
+  LEFT JOIN LATERAL (
+    SELECT r.justificativa
+      FROM feedback_revisions r
+     WHERE r.feedback_id = f.id
+     ORDER BY r.edited_at DESC
+     LIMIT 1
+  ) latest_rev ON TRUE
+  WHERE f.problema_id = $1
+    AND f.destinatario_id = $2
+    AND f.escopo = 'ALUNO'
+    AND (
+      ($3::uuid IS NULL AND f.sessao_id IS NULL)
+      OR f.sessao_id = $3::uuid
+    )
   LIMIT 1;
 `;
 
@@ -66,7 +88,8 @@ export const FIND_REVISIONS_QUERY = `
     r.conteudo_anterior_nota AS "score",
     r.conteudo_anterior_texto AS "text",
     COALESCE(u.name, r.edited_by::text) AS "editedBy",
-    r.edited_at AS "editedAt"
+    r.edited_at AS "editedAt",
+    r.justificativa AS "justification"
   FROM feedback_revisions r
   LEFT JOIN users u ON u.id = r.edited_by
   WHERE r.feedback_id = $1
@@ -94,13 +117,21 @@ export const LIST_STUDENTS_FEEDBACK_QUERY = `
     f.nota AS "score",
     f.texto AS "text",
     f.criado_em AS "createdAt",
-    f.editado_em AS "editedAt"
+    f.editado_em AS "editedAt",
+    latest_rev.justificativa AS "justification"
   FROM room_students rs
   JOIN users u ON u.id = rs.student_id
   LEFT JOIN feedback f
     ON f.problema_id = $2
    AND f.destinatario_id = u.id
    AND f.escopo = 'ALUNO'
+  LEFT JOIN LATERAL (
+    SELECT r.justificativa
+      FROM feedback_revisions r
+     WHERE r.feedback_id = f.id
+     ORDER BY r.edited_at DESC
+     LIMIT 1
+  ) latest_rev ON f.id IS NOT NULL
   WHERE rs.room_id = $1
   ORDER BY u.name ASC;
 `;
@@ -115,15 +146,15 @@ export const INSERT_FEEDBACK_QUERY = `
 
 export const INSERT_FEEDBACK_REVISION_QUERY = `
   INSERT INTO feedback_revisions (
-    id, feedback_id, conteudo_anterior_nota, conteudo_anterior_texto, edited_by, edited_at
+    id, feedback_id, conteudo_anterior_nota, conteudo_anterior_texto, edited_by, edited_at, justificativa
   ) VALUES (
-    gen_random_uuid(), $1, $2, $3, $4, $5
+    gen_random_uuid(), $1, $2, $3, $4, $5, $6
   );
 `;
 
 export const UPDATE_FEEDBACK_QUERY = `
   UPDATE feedback
-  SET autor_id = $2, nota = $3, texto = $4, editado_em = $5
+  SET autor_id = $2, nota = $3, texto = $4, editado_em = $5, sessao_id = COALESCE($6, sessao_id)
   WHERE id = $1;
 `;
 
@@ -145,6 +176,7 @@ export const toRevisionParams = (revision: FeedbackRevision): unknown[] => [
   revision.previousText,
   revision.editedBy,
   revision.editedAt,
+  revision.justification ?? null,
 ];
 
 export const FIND_PROBLEM_FEEDBACKS_WITH_DETAILS_QUERY = `

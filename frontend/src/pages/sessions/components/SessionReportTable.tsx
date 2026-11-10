@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { SessionReportStudent } from '@/types/sessionReport';
-import { formatGrade } from '@/utils/gradeFormatters';
+import { formatGrade } from '@/utils/formatGrade';
 import { cn } from '@/utils/cn';
 
 type SessionReportTableProps = {

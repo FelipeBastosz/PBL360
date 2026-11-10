@@ -67,7 +67,7 @@ describe('Evaluation', () => {
       submitted().revise(revision({ items: [{ criterionId: 'a', score: 9 }] }), config),
     ).toThrow(InvalidEvaluationJustificationError);
   });
-  it('records old and new scores while preserving the original bonus and date', () => {
+  it('records old and new scores and updates the bonus while preserving the submission date', () => {
     const evaluation = submitted();
     const changes = evaluation.revise(
       revision({
@@ -81,16 +81,17 @@ describe('Evaluation', () => {
     );
     expect(changes).toEqual([{ itemId: 'item', previousValue: 8, newValue: 9 }]);
     expect(evaluation).toMatchObject({
-      sessionScore: 7.8,
-      appliedBonus: 5,
+      sessionScore: 9.3,
+      appliedBonus: 10,
       submittedAt: now,
       updatedBy: 'other-tutor',
     });
   });
   it('does not require justification or create adjustments for an unchanged submission', () => {
     const evaluation = submitted();
-    expect(evaluation.revise(revision({ bonus: 10 }), config)).toEqual([]);
+    expect(evaluation.revise(revision({ bonus: 5 }), config)).toEqual([]);
     expect(evaluation.sessionScore).toBe(7.1);
+    expect(evaluation.appliedBonus).toBe(5);
   });
   it('rejects returning a submitted evaluation to draft', () => {
     expect(() => submitted().revise(revision({ submit: false }), config)).toThrow(

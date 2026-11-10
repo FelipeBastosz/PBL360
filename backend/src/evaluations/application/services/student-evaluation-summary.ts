@@ -17,7 +17,11 @@ export function toStudentEvaluationSummary(
   return {
     self: toSelfSummary(session, counts, detail, now),
     peers: toPeerSummary(session, counts),
-    feedback: { available: feedback !== null, new: feedbackIsNew },
+    feedback: {
+      available: feedback !== null || counts.gradeAvailable === true,
+      new: feedbackIsNew,
+      tutorEvaluationSubmitted: counts.tutorEvaluationSubmitted,
+    },
   };
 }
 

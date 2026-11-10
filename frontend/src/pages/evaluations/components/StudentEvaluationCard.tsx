@@ -1,14 +1,38 @@
 import { Link } from 'react-router-dom';
 import type { SessionEvaluationSummary } from '@/types/evaluation';
+import type { StudentSessionGrade } from '@/types/grades';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { formatGrade } from '@/utils/formatGrade';
 
 type StudentCardProps = {
   student: SessionEvaluationSummary;
+  sessionGrade?: StudentSessionGrade;
   evaluationUrl: string;
   disabled?: boolean;
 };
 
-function EvaluationBadges({ student }: { student: SessionEvaluationSummary }) {
+const isEvaluatedByStudents = (grade?: StudentSessionGrade): grade is StudentSessionGrade =>
+  grade?.situacao === 'AVALIADA' &&
+  (grade.modalidade === 'AUTOAVALIACAO' || grade.modalidade === 'PARES');
+
+function EvaluatedBadge({ grade }: { grade: StudentSessionGrade }) {
+  return (
+    <span className="inline-flex items-center rounded-md border border-success/30 bg-success-soft px-2 py-0.5 text-xs font-semibold text-success">
+      Avaliada · {formatGrade(grade.nota)}
+    </span>
+  );
+}
+
+function EvaluationBadges({
+  student,
+  sessionGrade,
+}: {
+  student: SessionEvaluationSummary;
+  sessionGrade?: StudentSessionGrade;
+}) {
+  const isAusente = student.presenca === 'ausente' || student.presenca === 'justificado';
+  const evaluated = student.status === 'PENDENTE' && isEvaluatedByStudents(sessionGrade);
+
   return (
     <div className="mt-1 flex flex-wrap items-center gap-1.5">
       {student.presenca === 'ausente' && (
@@ -21,11 +45,14 @@ function EvaluationBadges({ student }: { student: SessionEvaluationSummary }) {
           Falta justificada
         </span>
       )}
-      {student.status === 'PENDENTE' && (
+      {evaluated && sessionGrade && <EvaluatedBadge grade={sessionGrade} />}
+
+      {!isAusente && student.status === 'PENDENTE' && !evaluated && (
         <span className="inline-flex items-center rounded-md bg-black/5 px-2 py-0.5 text-xs font-medium text-muted">
           Pendente
         </span>
       )}
+
       {student.status === 'RASCUNHO' && (
         <span className="inline-flex items-center rounded-md border border-brand-200 bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-900">
           Rascunho
@@ -33,54 +60,73 @@ function EvaluationBadges({ student }: { student: SessionEvaluationSummary }) {
       )}
       {student.status === 'ENVIADA' && (
         <span className="inline-flex items-center rounded-md border border-success/30 bg-success-soft px-2 py-0.5 text-xs font-semibold text-success">
-          Enviada {student.notaSessao !== null && `· ${student.notaSessao.toFixed(1)}`}
+          Enviada {student.notaSessao !== null && `· ${formatGrade(student.notaSessao)}`}
         </span>
       )}
     </div>
   );
 }
 
+function DisabledActionButton({ label, className }: { label: string; className: string }) {
+  return (
+    <button
+      type="button"
+      disabled
+      className={`w-24 shrink-0 cursor-not-allowed rounded-[10px] py-2 text-center text-sm font-semibold ${className}`}
+    >
+      {label}
+    </button>
+  );
+}
+
 function ActionButton({
   disabled,
+  isAusente,
   isEnviada,
   isRascunho,
   url,
   studentName,
 }: {
   disabled?: boolean;
+  isAusente: boolean;
   isEnviada: boolean;
   isRascunho: boolean;
   url: string;
   studentName: string;
 }) {
-  if (disabled) {
-    return (
-      <button
-        type="button"
-        disabled
-        className="w-24 shrink-0 cursor-not-allowed rounded-[10px] bg-brand-900/40 py-2 text-center text-sm font-semibold text-white"
-      >
-        Avaliar
-      </button>
-    );
+  if (isAusente) {
+    return <DisabledActionButton label="Ausente" className="bg-black/10 text-muted" />;
   }
+
+  if (disabled) {
+    return <DisabledActionButton label="Avaliar" className="bg-brand-900/40 text-white" />;
+  }
+
+  const linkStyle = isEnviada
+    ? 'border border-brand-900 bg-white text-brand-900 hover:bg-brand-50'
+    : 'bg-brand-900 text-white hover:bg-brand-800';
+
+  const label = isEnviada ? 'Editar' : isRascunho ? 'Continuar' : 'Avaliar';
 
   return (
     <Link
       to={url}
       state={{ studentName }}
-      className={`w-24 shrink-0 rounded-[10px] py-2 text-center text-sm font-semibold transition ${
-        isEnviada
-          ? 'border border-brand-900 bg-white text-brand-900 hover:bg-brand-50'
-          : 'bg-brand-900 text-white hover:bg-brand-800'
-      }`}
+      className={`w-24 shrink-0 rounded-[10px] py-2 text-center text-sm font-semibold transition ${linkStyle}`}
     >
-      {isEnviada ? 'Editar' : isRascunho ? 'Continuar' : 'Avaliar'}
+      {label}
     </Link>
   );
 }
 
-export function StudentEvaluationCard({ student, evaluationUrl, disabled }: StudentCardProps) {
+export function StudentEvaluationCard({
+  student,
+  sessionGrade,
+  evaluationUrl,
+  disabled,
+}: StudentCardProps) {
+  const isAusente = student.presenca === 'ausente' || student.presenca === 'justificado';
+
   return (
     <div className="flex items-center justify-between gap-3 rounded-[20px] border border-black/5 bg-white p-4 shadow-sm">
       <div className="flex min-w-0 items-center gap-3">
@@ -90,11 +136,12 @@ export function StudentEvaluationCard({ student, evaluationUrl, disabled }: Stud
         />
         <div className="flex min-w-0 flex-col">
           <h3 className="line-clamp-2 text-base font-bold break-words text-ink">{student.nome}</h3>
-          <EvaluationBadges student={student} />
+          <EvaluationBadges student={student} sessionGrade={sessionGrade} />
         </div>
       </div>
       <ActionButton
         disabled={disabled}
+        isAusente={isAusente}
         isEnviada={student.status === 'ENVIADA'}
         isRascunho={student.status === 'RASCUNHO'}
         url={evaluationUrl}

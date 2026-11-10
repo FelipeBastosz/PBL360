@@ -20,6 +20,7 @@ export function toSavePeerEvaluationInput(
       score: item.nota,
     })),
     enviar: dto.enviar,
+    notaCargo: dto.notaCargo,
   };
 }
 
@@ -27,11 +28,14 @@ export function toSessionPeersResponse(output: ListSessionPeersOutput): SessionP
   return {
     liberada: output.liberada,
     prazo: output.prazo,
+    chamadaRealizada: output.chamadaRealizada ?? true,
+    formula: output.formula ?? { criteriaWeight: 70, roleWeight: 30 },
     colegas: output.colegas.map((c) => ({
       alunoId: c.alunoId,
       nome: c.nome,
       iniciais: c.iniciais,
       status: c.status,
+      papel: c.papel,
     })),
   };
 }
@@ -52,9 +56,15 @@ export function toPeerEvaluationResponse(
   output: GetPeerEvaluationOutput,
 ): PeerEvaluationResponseDto {
   return {
-    colega: { alunoId: output.colega.alunoId, nome: output.colega.nome },
+    colega: {
+      alunoId: output.colega.alunoId,
+      nome: output.colega.nome,
+      papel: output.colega.papel ?? null,
+    },
     status: output.status,
     enviadaEm: output.enviadaEm,
+    notaCargo: output.notaCargo ?? null,
+    formula: output.formula ?? { criteriaWeight: 70, roleWeight: 30 },
     criterios: output.criterios.map(mapCriterion),
     itens: output.itens.map(mapItem),
   };

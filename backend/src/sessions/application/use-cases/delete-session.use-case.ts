@@ -1,4 +1,4 @@
-import { ConflictError } from '@/shared/errors/application.error';
+import { assertSessionCanBeDeleted } from '../../domain/services/session-deletion-policy';
 import { Inject, Injectable } from '@nestjs/common';
 import { SessionAccessService } from '../services/session-access.service';
 import {
@@ -28,9 +28,7 @@ export class DeleteSessionUseCase {
       input.tutorId,
     );
     const impact = await this.sessions.getDeletionImpact(session.id);
-    if (Object.values(impact).some((count) => count > 0)) {
-      throw new ConflictError(`A sessão não pode ser excluída. Impacto: ${JSON.stringify(impact)}`);
-    }
+    assertSessionCanBeDeleted(impact);
     await this.sessions.delete(session.id, input.problemId);
   }
 }

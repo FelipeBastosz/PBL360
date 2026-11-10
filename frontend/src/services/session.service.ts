@@ -18,7 +18,11 @@ import type {
   SessionEvaluationConfig,
   UpdateSessionFormulaPayload,
   SessionFormulaConfig,
+  SessionTableEditPermissions,
+  EditSessionTablePayload,
+  EditSessionTableResponse,
 } from '@/types/session';
+import type { ExportSessionReportOptions } from '@/types/sessionReport';
 import { api } from './api';
 
 const BASE = '/sessoes';
@@ -85,10 +89,19 @@ export const sessionService = {
       .get<Blob>(`${BASE}/${sessionId}/anexos/${attachmentId}`, { responseType: 'blob' })
       .then((r) => r.data),
 
-  exportSessionReport: (sessaoId: string, formato: 'PDF' | 'XLSX') =>
+  exportSessionReport: (
+    sessaoId: string,
+    formato: 'PDF' | 'XLSX',
+    options?: ExportSessionReportOptions,
+  ) =>
     api
       .get<Blob>(`${BASE}/${sessaoId}/relatorio/exportacao`, {
-        params: { formato },
+        params: {
+          formato,
+          ocultarNome: options?.ocultarNome,
+          mostrarFeedBack: options?.mostrarFeedBack,
+          mostrarMarcacoes: options?.mostrarMarcacoes,
+        },
         responseType: 'blob',
       })
       .then((r) => r.data),
@@ -118,5 +131,15 @@ export const sessionService = {
   restoreDefaultFormula: (sessionId: string) =>
     api
       .post<SessionFormulaConfig>(`${BASE}/${sessionId}/formula/restaurar-padrao`)
+      .then((r) => r.data),
+
+  getTableEditPermissions: (sessionId: string) =>
+    api
+      .get<SessionTableEditPermissions>(`${BASE}/${sessionId}/tabela/permissoes-edicao`)
+      .then((r) => r.data),
+
+  editSessionTable: (sessionId: string, payload: EditSessionTablePayload) =>
+    api
+      .put<EditSessionTableResponse>(`${BASE}/${sessionId}/tabela/edicao`, payload)
       .then((r) => r.data),
 };

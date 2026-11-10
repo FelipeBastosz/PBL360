@@ -59,7 +59,7 @@ function BatchActions({
           'border-brand-900 text-brand-900 hover:bg-brand-50 focus-visible:outline-brand-900',
         )}
       >
-        Sentar todos
+        Todos presentes
       </button>
       <button
         type="button"

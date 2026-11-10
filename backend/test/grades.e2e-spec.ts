@@ -165,6 +165,7 @@ describe('Grades (e2e)', () => {
             sessaoId: sessionId,
             nota: 8.5,
             situacao: 'AVALIADA',
+            modalidade: 'TUTOR',
             autoavaliacao: { nota: null, situacao: 'NAO_LIBERADA' },
             pares: { nota: null, situacao: 'NAO_LIBERADA', origem: 'FORMULARIO' },
           },
@@ -265,12 +266,12 @@ describe('Grades (e2e)', () => {
     const bruno = grades.alunos.find((student) => student.alunoId === brunoId);
 
     expect(ana).toMatchObject({
-      notaFinal: 8.5,
+      notaFinal: 9,
       autoavaliacao: { nota: 9, situacao: 'AVALIADA' },
       pares: { nota: 7, situacao: 'AVALIADA' },
       sessoes: [
         {
-          nota: 8.5,
+          nota: 9,
           autoavaliacao: { nota: 9, situacao: 'AVALIADA' },
           pares: { nota: 7, situacao: 'AVALIADA' },
         },

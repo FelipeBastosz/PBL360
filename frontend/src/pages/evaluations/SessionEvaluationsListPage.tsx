@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeftIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronLeftIcon,
+  ExclamationTriangleIcon,
+  ClipboardDocumentCheckIcon,
+} from '@heroicons/react/24/outline';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
-import { useAsyncAction } from '@/hooks/useAsyncAction';
-import { evaluationService } from '@/services/evaluation.service';
-import type { SessionEvaluationSummary, ProblemEvaluationCriteria } from '@/types/evaluation';
+import { CardsIcon } from '../planning-poker/CardsIcon';
 import { StudentEvaluationCard } from './components/StudentEvaluationCard';
+import { useSessionGrades } from './hooks/useSessionGrades';
+import { useSessionEvaluationsData } from './hooks/useSessionEvaluationsData';
 import { UserMenuButton } from '@/components/layout/UserMenu';
 import type { UserResponse } from '@/types/auth';
 import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
@@ -59,37 +62,50 @@ function MissingCriteriaAlert({ formulasUrl }: { formulasUrl: string }) {
   );
 }
 
-function useSessionEvaluationsData(sessionId?: string, roomId?: string, problemId?: string) {
-  const [students, setStudents] = useState<SessionEvaluationSummary[]>([]);
-  const [criteria, setCriteria] = useState<ProblemEvaluationCriteria | null>(null);
-  const [hasCheckedCriteria, setHasCheckedCriteria] = useState(false);
-
-  const {
-    run: fetchStudents,
-    isLoading: isLoadingStudents,
-    error,
-  } = useAsyncAction(evaluationService.listBySession);
-  const { run: fetchCriteria, isLoading: isLoadingCriteria } = useAsyncAction(
-    evaluationService.getProblemCriteria,
+function PendingRollCallAlert({ rollCallUrl }: { rollCallUrl: string }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border-2 border-blue-300 bg-blue-50 p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <ClipboardDocumentCheckIcon className="mt-0.5 size-6 shrink-0 text-brand-900" />
+        <div>
+          <h3 className="text-sm font-bold text-brand-900">Chamada pendente</h3>
+          <p className="mt-0.5 text-xs leading-relaxed text-ink/70">
+            A chamada desta sessão ainda não foi salva. Registre a presença dos alunos para liberar
+            as avaliações individuais.
+          </p>
+        </div>
+      </div>
+      <Link
+        to={rollCallUrl}
+        className="w-full rounded-xl bg-brand-900 py-2 text-center text-xs font-semibold text-white transition hover:bg-brand-800"
+      >
+        Realizar Chamada
+      </Link>
+    </div>
   );
+}
 
-  useEffect(() => {
-    if (sessionId) {
-      fetchStudents(sessionId).then((r) => r.ok && setStudents(r.data));
-    }
-    if (roomId && problemId) {
-      fetchCriteria(roomId, problemId)
-        .then((r) => {
-          if (r.ok) setCriteria(r.data);
-        })
-        .finally(() => setHasCheckedCriteria(true));
-    }
-  }, [sessionId, roomId, problemId, fetchStudents, fetchCriteria]);
-
-  const isLoading = isLoadingStudents || isLoadingCriteria;
-  const hasMissingTable = hasCheckedCriteria && (!criteria || !criteria.tabela);
-
-  return { students, isLoading, error, hasMissingTable };
+function ActivePokerAlert({ pokerUrl }: { pokerUrl: string }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-300 bg-brand-50 p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <CardsIcon className="mt-0.5 size-6 shrink-0 text-brand-900" />
+        <div>
+          <h3 className="text-sm font-bold text-brand-900">Planning poker em andamento</h3>
+          <p className="mt-0.5 text-xs leading-relaxed text-ink/70">
+            A avaliação direta do tutor está bloqueada enquanto o planning poker estiver ativo nesta
+            sessão.
+          </p>
+        </div>
+      </div>
+      <Link
+        to={pokerUrl}
+        className="w-full rounded-xl bg-brand-900 py-2 text-center text-xs font-semibold text-white transition hover:bg-brand-800"
+      >
+        Ir para o Planning Poker
+      </Link>
+    </div>
+  );
 }
 
 export default function SessionEvaluationsListPage() {
@@ -99,21 +115,26 @@ export default function SessionEvaluationsListPage() {
     sessionId: string;
   }>();
   const { user } = useAuth();
-  const { students, isLoading, error, hasMissingTable } = useSessionEvaluationsData(
-    sessionId,
-    roomId,
-    problemId,
-  );
+  const { students, isLoading, error, hasMissingTable, hasPendingRollCall, hasOpenPoker } =
+    useSessionEvaluationsData(sessionId, roomId, problemId);
+  const sessionGrades = useSessionGrades(roomId, problemId, sessionId);
 
   const backUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}`;
   const formulasUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}/formulas`;
+  const rollCallUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}/chamada`;
+  const pokerUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}/planning-poker`;
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <EvaluationsHeader user={user} backUrl={backUrl} />
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
         {error && <Alert tone="error">{error.message}</Alert>}
-        {hasMissingTable && <MissingCriteriaAlert formulasUrl={formulasUrl} />}
+        {hasOpenPoker && <ActivePokerAlert pokerUrl={pokerUrl} />}
+        {!hasOpenPoker && hasMissingTable && <MissingCriteriaAlert formulasUrl={formulasUrl} />}
+        {!hasOpenPoker && !hasMissingTable && hasPendingRollCall && (
+          <PendingRollCallAlert rollCallUrl={rollCallUrl} />
+        )}
+
         {isLoading ? (
           <div className="mt-10 flex justify-center">
             <Spinner className="size-8 text-brand-900" />
@@ -124,7 +145,8 @@ export default function SessionEvaluationsListPage() {
               <StudentEvaluationCard
                 key={student.alunoId}
                 student={student}
-                disabled={hasMissingTable}
+                sessionGrade={sessionGrades.get(student.alunoId)}
+                disabled={hasMissingTable || hasPendingRollCall || hasOpenPoker}
                 evaluationUrl={`/sessoes/${sessionId}/avaliacao/${student.alunoId}`}
               />
             ))}

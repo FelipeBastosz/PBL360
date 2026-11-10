@@ -11,6 +11,7 @@ import {
   XLSX_REPORT_RENDERER,
   type ReportRenderer,
 } from '@/report-files/domain/services/report-renderer';
+import type { GradesResponseDto } from '@/grades/application/dtos/grades-response.dto';
 import { createTestApp } from './helpers/create-test-app';
 import { api, cleanDatabase, insertUser, type TestUser } from './helpers/fixtures';
 
@@ -289,6 +290,28 @@ describe('Session report export (e2e)', () => {
     expect(foundGeneralFeedback).toBe(true);
   });
 
+  it('hides student names and excludes feedback when requested', async () => {
+    const res = await api(app, owner)
+      .get(`${exportPath(sessionId, 'XLSX')}&ocultarNome=true&mostrarFeedBack=false`)
+      .buffer(true)
+      .parse(binaryParser)
+      .expect(200);
+
+    const workbook = await loadWorkbook(res.body);
+    expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual(['Dados da sessão']);
+
+    const sheet = workbook.getWorksheet('Dados da sessão')!;
+    const exportedValues: unknown[] = [];
+    sheet.eachRow((row) => exportedValues.push(...(row.values as unknown[])));
+
+    expect(exportedValues).not.toContain('Ana Souza');
+    expect(exportedValues).not.toContain('João Silva');
+    expect(exportedValues).toContain('20260001');
+    expect(exportedValues).toContain('20260002');
+    expect(exportedValues).toContain(7.1);
+    expect(exportedValues).toContain(8);
+  });
+
   it('prevents role score divergence when role is modified or added after submission', async () => {
     // 1. Tutor modifies Ana's role score to 10 in session_roles
     await db.query(
@@ -350,7 +373,7 @@ describe('Session report export (e2e)', () => {
     );
 
     // Ana's new score: crit1=10 (weight 4), crit2=8 (weight 6) -> (10*4 + 8*6)/10 = 8.8
-    // Total = 8.8 * 0.7 + 5.0 * 0.3 = 6.16 + 1.5 = 7.66
+    // Total = 8.8 * 0.7 + 5.0 * 0.3 = 6.16 + 1.5 = 7.66 -> rounded to 7.7
     const res = await api(app, owner)
       .get(exportPath(sessionId, 'XLSX'))
       .buffer(true)
@@ -366,7 +389,59 @@ describe('Session report export (e2e)', () => {
       if (values.includes('Ana Souza')) anaRow = values;
     });
 
-    expect(anaRow).toContain(7.66);
+    expect(anaRow).toContain(7.7);
+  });
+
+  it('exports report reflecting tutor adjustment precedence over student original submission', async () => {
+    // 1. Submit self-assessment evaluation for Ana
+    await db.query(
+      `INSERT INTO evaluations (evaluator_id, student_id, problem_id, session_id, config_session_id, performance_table_id, type, status, submitted_at, session_score, calculation_version, created_by)
+       VALUES ($1, $1, $2, $3, $3, $4, 'SELF_ASSESSMENT', 'SUBMITTED', NOW(), 8.5, 'WEIGHTED_SESSION_FORMULA_V3', $1);`,
+      [studentAna.id, problemId, sessionId, tableId],
+    );
+
+    // 2. Tutor adjusts Ana's grade to 10.0 via POST /sessoes/:sessionId/autoavaliacoes/:studentId/ajustes
+    await api(app, owner)
+      .post(`/sessoes/${sessionId}/autoavaliacoes/${studentAna.id}/ajustes`)
+      .send({
+        novaNota: 10.0,
+        justificativa: 'MERECEU 10 por liderança destacada.',
+        tipo: 'AUTOAVALIACAO',
+      })
+      .expect(200);
+
+    // 3. Validate that GET /salas/:roomId/problemas/:problemId/notas reflects the override (Ana=10, Joao=8.0)
+    const gradesRes = await api(app, owner)
+      .get(`/salas/${roomId}/problemas/${problemId}/notas`)
+      .expect(200);
+
+    const gradesBody = gradesRes.body as GradesResponseDto;
+    const anaGrade = gradesBody.alunos.find((a) => a.alunoId === studentAna.id);
+    const joaoGrade = gradesBody.alunos.find((a) => a.alunoId === studentJoao.id);
+
+    expect(anaGrade?.sessoes[0]?.nota).toBe(10.0);
+    expect(joaoGrade?.sessoes[0]?.nota).toBe(8.0);
+
+    // 4. Validate that the exported session report (XLSX) reflects 10.0 for Ana and 8.0 for João
+    const exportRes = await api(app, owner)
+      .get(exportPath(sessionId, 'XLSX'))
+      .buffer(true)
+      .parse(binaryParser)
+      .expect(200);
+
+    const workbook = await loadWorkbook(exportRes.body);
+    const sheet = workbook.getWorksheet('Dados da sessão')!;
+
+    let anaRow: unknown[] | null = null;
+    let joaoRow: unknown[] | null = null;
+    sheet.eachRow((row) => {
+      const values = row.values as unknown[];
+      if (values.includes('Ana Souza')) anaRow = values;
+      if (values.includes('João Silva')) joaoRow = values;
+    });
+
+    expect(anaRow).toContain(10.0);
+    expect(joaoRow).toContain(8.0);
   });
 
   it('allows co-tutor to export report and rejects removed co-tutor', async () => {
@@ -390,6 +465,15 @@ describe('Session report export (e2e)', () => {
   it('rejects invalid inputs (missing format, invalid format, invalid uuid, nonexistent session)', async () => {
     await api(app, owner).get(`/sessoes/${sessionId}/relatorio/exportacao`).expect(400);
     await api(app, owner).get(exportPath(sessionId, 'CSV')).expect(400);
+    await api(app, owner)
+      .get(`${exportPath(sessionId, 'PDF')}&ocultarNome=invalido`)
+      .expect(400);
+    await api(app, owner)
+      .get(`${exportPath(sessionId, 'PDF')}&mostrarFeedBack=invalido`)
+      .expect(400);
+    await api(app, owner)
+      .get(`${exportPath(sessionId, 'PDF')}&mostrarMarcacoes=invalido`)
+      .expect(400);
     await api(app, owner).get('/sessoes/not-a-uuid/relatorio/exportacao?formato=PDF').expect(400);
     await api(app, owner).get(exportPath(randomUUID(), 'PDF')).expect(404);
   });

@@ -93,8 +93,20 @@ function cardOf(name: string) {
 describe('SessionEvaluationHistoryPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.localStorage.clear();
     vi.mocked(evaluationHistoryService.list).mockResolvedValue({ alunos: students });
+  });
+
+  it('shows every score with a single decimal place and a comma', async () => {
+    vi.mocked(evaluationHistoryService.list).mockResolvedValue({
+      alunos: [{ ...students[0], notaAluno: 8.25, notaTutor: 7.333 }],
+    });
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Elisa Nunes' });
+    const elisa = cardOf('Elisa Nunes');
+    expect(within(elisa).getByText('8,3')).toBeInTheDocument();
+    expect(within(elisa).getByText('7,3')).toBeInTheDocument();
+    expect(elisa).not.toHaveTextContent(/\d[.,]\d{2}/);
   });
 
   it('compares the student score with the tutor adjustment', async () => {
@@ -115,11 +127,12 @@ describe('SessionEvaluationHistoryPage', () => {
     expect(evaluationHistoryService.list).toHaveBeenCalledWith('sess-1');
   });
 
-  it('opens the adjustment sheet only from the photo of a submitted evaluation', async () => {
+  it('opens the adjustment sheet when clicking the student card of a submitted evaluation', async () => {
     renderPage();
     await screen.findByRole('heading', { name: 'Elisa Nunes' });
 
     expect(within(cardOf('Bruno Mendes')).queryByRole('button')).not.toBeInTheDocument();
+
     await userEvent.click(screen.getByRole('button', { name: 'Ajustar nota de Elisa Nunes' }));
 
     expect(screen.getByRole('dialog', { name: 'Elisa Nunes' })).toBeInTheDocument();
@@ -160,17 +173,6 @@ describe('SessionEvaluationHistoryPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('shows the registration number instead of the name when names are hidden', async () => {
-    renderPage();
-    await screen.findByText('Elisa Nunes');
-
-    await userEvent.click(screen.getByRole('switch', { name: 'Ocultar nomes' }));
-
-    expect(screen.getByText('26121194')).toBeInTheDocument();
-    expect(screen.queryByText('Elisa Nunes')).not.toBeInTheDocument();
-    expect(window.localStorage.getItem('pbl360:evaluation-history:hide-names')).toBe('true');
-  });
-
   it('shows an error when the history cannot be loaded', async () => {
     vi.mocked(evaluationHistoryService.list).mockRejectedValue(
       new ApiError(403, ['Você não tem acesso a esta sessão.']),
@@ -187,14 +189,5 @@ describe('SessionEvaluationHistoryPage', () => {
     expect(
       await screen.findByText('Nenhum aluno com presença registrada nesta sessão.'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /exportar em pdf/i })).toBeDisabled();
-  });
-
-  it('keeps the export buttons disabled until the report download is available', async () => {
-    renderPage();
-    await screen.findByText('Elisa Nunes');
-
-    expect(screen.getByRole('button', { name: /exportar em pdf/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /exportar em excel/i })).toBeDisabled();
   });
 });

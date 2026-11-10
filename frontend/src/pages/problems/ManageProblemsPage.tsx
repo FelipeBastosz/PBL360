@@ -89,6 +89,7 @@ type ModalsProps = {
   problemToDelete: Problem | null;
   impact: ProblemDeletionImpact | null;
   isDeleting: boolean;
+  errorMessage?: string | null;
   problemToEdit: Problem | null;
   onConfirmDelete: () => void;
   onCancelDelete: () => void;
@@ -101,6 +102,7 @@ function ManageProblemModals({
   problemToDelete,
   impact,
   isDeleting,
+  errorMessage,
   problemToEdit,
   onConfirmDelete,
   onCancelDelete,
@@ -114,6 +116,7 @@ function ManageProblemModals({
         impact={impact}
         isOpen={Boolean(problemToDelete)}
         isLoading={isDeleting}
+        errorMessage={errorMessage}
         onConfirm={onConfirmDelete}
         onCancel={onCancelDelete}
       />
@@ -149,6 +152,7 @@ export default function ManageProblemsPage() {
         problemToDelete={state.problemToDelete}
         impact={state.impact}
         isDeleting={state.isDeleting}
+        errorMessage={state.errorMessage}
         problemToEdit={state.problemToEdit}
         onConfirmDelete={state.onConfirmDelete}
         onCancelDelete={state.onCancelDelete}

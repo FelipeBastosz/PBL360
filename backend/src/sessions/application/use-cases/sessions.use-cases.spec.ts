@@ -1,4 +1,3 @@
-import { ConflictError } from '@/shared/errors/application.error';
 import { Session } from '../../domain/entities/session.entity';
 import type { SessionRepository } from '../../domain/repositories/session.repository';
 import type { SessionAccessService } from '../services/session-access.service';
@@ -93,24 +92,58 @@ describe('Session use cases', () => {
     });
   });
 
-  it('blocks deletion when linked records exist', async () => {
+  it.each(['chamada', 'papeis', 'observacoes', 'avaliacoes', 'feedbacks'])(
+    'blocks deletion and returns structured details when %s records exist',
+    async (field) => {
+      const impact = {
+        chamada: 0,
+        papeis: 0,
+        observacoes: 0,
+        avaliacoes: 0,
+        feedbacks: 0,
+        [field]: 3,
+      };
+      repository.getDeletionImpact.mockResolvedValueOnce(impact);
+      const useCase = new DeleteSessionUseCase(repository, access);
+      await expect(
+        useCase.execute({
+          roomId: 'room-1',
+          problemId: 'problem-1',
+          sessionId: 'session-1',
+          tutorId: 'tutor-1',
+        }),
+      ).rejects.toMatchObject({
+        name: 'ConflictError',
+        message: 'A sessão não pode ser excluída pois possui registros vinculados.',
+        details: { detalhes: impact },
+      });
+      expect(repository.delete).not.toHaveBeenCalled();
+    },
+  );
+
+  it('reports feedback-only sessions as unavailable for deletion', async () => {
     repository.getDeletionImpact.mockResolvedValueOnce({
       chamada: 0,
       papeis: 0,
       observacoes: 0,
-      avaliacoes: 1,
-      feedbacks: 0,
+      avaliacoes: 0,
+      feedbacks: 2,
     });
-    const useCase = new DeleteSessionUseCase(repository, access);
     await expect(
-      useCase.execute({
+      new GetSessionDeletionImpactUseCase(repository, access).execute({
         roomId: 'room-1',
         problemId: 'problem-1',
         sessionId: 'session-1',
         tutorId: 'tutor-1',
       }),
-    ).rejects.toThrow(ConflictError);
-    expect(repository.delete).not.toHaveBeenCalled();
+    ).resolves.toEqual({
+      canDelete: false,
+      rollCall: 0,
+      roles: 0,
+      observations: 0,
+      evaluations: 0,
+      feedbacks: 2,
+    });
   });
 
   it('deletes an empty session', async () => {

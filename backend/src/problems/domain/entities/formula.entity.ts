@@ -18,6 +18,7 @@ import { InvalidProblemError } from '../errors/invalid-problem.error';
 export enum FormulaScope {
   SESSAO = 'SESSAO',
   PROBLEMA = 'PROBLEMA',
+  PROFESSOR = 'PROFESSOR',
 }
 
 export type NewFormula = {
@@ -39,13 +40,19 @@ export type NewFormula = {
 @Check(
   'ck_formulas_owner_scope',
   `("scope" = 'PROBLEMA' AND "problem_id" IS NOT NULL AND "session_id" IS NULL)
-   OR ("scope" = 'SESSAO' AND "problem_id" IS NULL AND "session_id" IS NOT NULL)`,
+   OR ("scope" = 'SESSAO' AND "problem_id" IS NULL AND "session_id" IS NOT NULL)
+   OR ("scope" = 'PROFESSOR' AND "problem_id" IS NULL AND "session_id" IS NULL)`,
 )
 @Index('idx_formulas_problem_scope', ['problemId', 'scope'])
 @Index('idx_formulas_session_scope', ['sessionId', 'scope'])
+@Index('idx_formulas_professor_scope', ['createdBy', 'scope'])
 @Index('uq_formulas_active_session', ['sessionId'], {
   unique: true,
   where: `"scope" = 'SESSAO' AND "active" = TRUE`,
+})
+@Index('uq_formulas_active_professor', ['createdBy'], {
+  unique: true,
+  where: `"scope" = 'PROFESSOR' AND "active" = TRUE`,
 })
 export class Formula {
   @PrimaryGeneratedColumn('uuid')
@@ -141,6 +148,11 @@ export class Formula {
     if (this.scope === FormulaScope.SESSAO && !this.sessionId) {
       throw new InvalidProblemError('A fórmula precisa estar vinculada a uma sessão.');
     }
+    if (this.scope === FormulaScope.PROFESSOR && (this.problemId || this.sessionId)) {
+      throw new InvalidProblemError(
+        'A fórmula do professor não deve estar vinculada a problema ou sessão.',
+      );
+    }
     if (!this.createdBy) {
       throw new InvalidProblemError('O autor da fórmula é obrigatório.');
     }
@@ -150,7 +162,9 @@ export class Formula {
     if (!this.components || this.components.length === 0) {
       throw new InvalidProblemError('A fórmula precisa ter ao menos um componente.');
     }
-    if (this.scope === FormulaScope.SESSAO) return this.assertSessionComponents();
+    if (this.scope === FormulaScope.SESSAO || this.scope === FormulaScope.PROFESSOR) {
+      return this.assertSessionComponents();
+    }
     this.assertProblemComponents();
   }
 

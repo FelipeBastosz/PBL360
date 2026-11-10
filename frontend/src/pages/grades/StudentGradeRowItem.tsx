@@ -1,6 +1,6 @@
 import type { SessionColumn, StudentGradeRow } from '@/types/grades';
-import type { ProblemFeedbacksResponse } from '@/types/feedback';
-import { formatGrade } from '@/utils/gradeFormatters';
+import type { ProblemFeedbacksResponse, StudentProblemFeedbackResponse } from '@/types/feedback';
+import { formatGrade } from '@/utils/formatGrade';
 import { cn } from '@/utils/cn';
 import { StudentGradeField, type EvaluationContext } from './StudentGradeField';
 
@@ -31,6 +31,22 @@ function FinalGradeCell({ notaFinal }: { notaFinal: number | null }) {
   );
 }
 
+function findSessionFeedback(
+  feedbacks: ProblemFeedbacksResponse | null | undefined,
+  alunoId: string,
+  sessaoId: string,
+): StudentProblemFeedbackResponse | null {
+  if (!feedbacks?.alunos) return null;
+  const item = feedbacks.alunos.find(
+    (a) =>
+      a.alunoId === alunoId &&
+      (a.sessaoId === sessaoId ||
+        a.feedback?.sessaoId === sessaoId ||
+        a.feedback?.sessionId === sessaoId),
+  );
+  return item?.feedback ?? null;
+}
+
 export function StudentGradeRowItem({
   aluno,
   sessoes,
@@ -40,20 +56,20 @@ export function StudentGradeRowItem({
   feedbacks,
 }: StudentGradeRowItemProps) {
   const displayName = hideNames ? aluno.matricula || '—' : aluno.nome;
-  const studentFeedback = feedbacks?.alunos.find((a) => a.alunoId === aluno.alunoId)?.feedback;
 
   return (
     <tr className="group transition-colors duration-150">
       <td className="py-3.5 pr-4 pl-4 font-medium text-ink">{displayName}</td>
       {sessoes.map((sessao) => {
         const gradeItem = aluno.sessoes.find((s) => s.sessaoId === sessao.id);
+        const sessionFeedback = findSessionFeedback(feedbacks, aluno.alunoId, sessao.id);
         return (
           <StudentGradeField
             key={sessao.id}
             aluno={aluno}
             sessao={sessao}
             gradeItem={gradeItem}
-            existingFeedback={studentFeedback}
+            existingFeedback={sessionFeedback}
             onSelectEvaluation={onSelectEvaluation}
             onSelectStudent={onSelectStudent}
             hideNames={hideNames}

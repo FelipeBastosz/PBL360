@@ -12,11 +12,21 @@ export interface ProblemGradeData {
   peerScores: GradeRow[];
   pokerScores: GradeRow[];
   peerAdjustments?: GradeRow[];
+  tutorAdjustments?: GradeRow[];
+  feedbacks?: GradeRow[];
 }
 
 export interface GradePersistenceData {
   sessionRows: GradeRow[];
   problemRows: GradeRow[];
+}
+
+export interface ProblemObservationTagDetail {
+  studentId: string;
+  sessionId: string;
+  sessionTitle: string;
+  sessionOrderIndex?: number | null;
+  tags: string[];
 }
 
 export interface GradesRepository {
@@ -27,6 +37,8 @@ export interface GradesRepository {
   findFormulaComponents(formulaIds: unknown[]): Promise<GradeRow[]>;
 
   saveGrades(problemId: string, result: GradePersistenceData): Promise<void>;
+
+  findProblemObservationTags(problemId: string): Promise<ProblemObservationTagDetail[]>;
 }
 
 export const GRADES_REPOSITORY = Symbol('GradesRepository');

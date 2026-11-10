@@ -1,7 +1,9 @@
+import { Link } from 'react-router-dom';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
+import { ROUTES } from '@/routes/paths';
 import type { PerformanceTableSummary } from '@/types/performanceTable';
 import type { SessionEvaluationConfig } from '@/types/session';
 import type { ApplyTarget } from '@/utils/navigationState';
@@ -26,19 +28,34 @@ type Props = {
   onDeleteTable: (table: PerformanceTableSummary) => void;
 };
 
-function ActiveSessionFormulaBanner({ config }: { config: SessionEvaluationConfig | null }) {
+function ActiveSessionFormulaBanner({
+  config,
+  target,
+}: {
+  config: SessionEvaluationConfig | null;
+  target: ApplyTarget | null;
+}) {
   if (!config?.tabela) return null;
   return (
-    <div className="mb-4 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-900 shadow-xs">
+    <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-900 shadow-xs">
       <div className="flex items-center gap-2">
         <CheckCircleIcon className="size-5 shrink-0 text-emerald-600" />
         <span>
           Fórmula em uso nesta sessão: <strong>{config.tabela.nome}</strong>
         </span>
       </div>
-      <span className="shrink-0 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-bold text-white">
-        Aplicada
-      </span>
+      <div className="flex shrink-0 items-center gap-2">
+        <Link
+          to={`${ROUTES.performanceTables}/${config.tabela.id}/editar`}
+          state={target}
+          className="rounded-full border border-emerald-700 bg-white px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100"
+        >
+          Editar
+        </Link>
+        <span className="shrink-0 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-bold text-white">
+          Aplicada
+        </span>
+      </div>
     </div>
   );
 }
@@ -78,7 +95,9 @@ function SectionsRenderer(props: Props) {
 export function PerformanceTablesContent(props: Props) {
   return (
     <main className={`${PAGE_CONTAINER_CLASS} mt-4`}>
-      {props.hasTargetSession && <ActiveSessionFormulaBanner config={props.sessionConfig} />}
+      {props.hasTargetSession && (
+        <ActiveSessionFormulaBanner config={props.sessionConfig} target={props.target} />
+      )}
       {props.error && <Alert tone="error">{props.error.message}</Alert>}
       {props.isLoading && (
         <div className="mt-10 flex justify-center">

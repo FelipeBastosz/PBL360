@@ -36,13 +36,14 @@ export async function listSessionPeers(
   if (!participating) return [];
 
   const rows = await manager.query<
-    Array<{ alunoId: string; nome: string; status: EvaluationStatus | null }>
+    Array<{ alunoId: string; nome: string; status: EvaluationStatus | null; papel: string | null }>
   >(LIST_SESSION_PEERS, [sessionId, evaluatorId]);
 
   return rows.map((row) => ({
     alunoId: row.alunoId,
     nome: row.nome,
     status: row.status,
+    papel: row.papel ?? null,
   }));
 }
 
@@ -51,18 +52,16 @@ export async function findPeerOrThrow(
   sessionId: string,
   evaluatorId: string,
   peerId: string,
-): Promise<{ id: string; name: string }> {
+): Promise<{ id: string; name: string; papel: string | null }> {
   if (evaluatorId === peerId) {
     throw new UnprocessableEntityError('Um aluno não pode avaliar a si mesmo como par.');
   }
-  const [peer] = await manager.query<Array<{ id: string; name: string }>>(FIND_PEER_STUDENT, [
-    sessionId,
-    peerId,
-  ]);
-  if (!peer) {
-    throw new UnprocessableEntityError('O colega não participou da sessão.');
-  }
-  return peer;
+  const [peer] = await manager.query<Array<{ id: string; name: string; papel: string | null }>>(
+    FIND_PEER_STUDENT,
+    [sessionId, peerId],
+  );
+  if (!peer) throw new UnprocessableEntityError('O colega não participou da sessão.');
+  return { ...peer, papel: peer.papel ?? null };
 }
 
 export async function getPeerEvaluation(

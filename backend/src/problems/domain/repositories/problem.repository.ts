@@ -2,7 +2,15 @@ import type { Problem } from '../entities/problem.entity';
 
 export const PROBLEM_REPOSITORY = Symbol('PROBLEM_REPOSITORY');
 
+export interface ProblemDeletionImpact {
+  sessions: number;
+  grades: number;
+  feedbacks: number;
+  evaluations: number;
+}
+
 export interface ProblemRepository {
+  getDeletionImpact(problemId: string): Promise<ProblemDeletionImpact>;
   listSessions(problemId: string): Promise<Array<{ id: string; title: string }>>;
   updateDetails(input: UpdateProblemDetails): Promise<Problem>;
   create(problem: Problem): Promise<Problem>;
@@ -10,15 +18,7 @@ export interface ProblemRepository {
   findByRoomId(roomId: string): Promise<Problem[]>;
   hasSessions(problemId: string): Promise<boolean>;
   countSessions(problemId: string): Promise<number>;
-  getDeletionImpact(problemId: string): Promise<ProblemDeletionImpactCounts>;
   delete(id: string, roomId: string): Promise<void>;
-}
-
-export interface ProblemDeletionImpactCounts {
-  sessions: number;
-  grades: number;
-  feedbacks: number;
-  evaluations: number;
 }
 
 export interface UpdateProblemDetails {

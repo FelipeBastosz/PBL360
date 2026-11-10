@@ -47,30 +47,35 @@ function buildAppliedTable(
   };
 }
 
+function isRoomTableAlreadyPresent(
+  tables: PerformanceTableSummary[],
+  activeTable: SessionEvaluationConfig['tabela'],
+): boolean {
+  const activeName = (activeTable.nome ?? '').trim().toLowerCase();
+  return tables.some(
+    (t) =>
+      t.id === activeTable.id ||
+      (t.origem === 'TURMA' && t.nome.trim().toLowerCase() === activeName),
+  );
+}
+
 function injectAppliedTable(input: ViewModelInput, sys: boolean, match?: PerformanceTableSummary) {
   const tables = input.tables ?? [];
-  if (!input.sessionConfig?.tabela || sys) return tables;
+  const activeTable = input.sessionConfig?.tabela;
+  if (!activeTable || sys || isRoomTableAlreadyPresent(tables, activeTable)) return tables;
+
   const authorId = input.externalAppliedTable?.autor?.id;
-
-  const alreadyInRoom = tables.some(
-    (t) =>
-      (t.origem === 'TURMA' || t.id === input.sessionConfig?.tabela.id) &&
-      isTableApplied(t, input.sessionConfig, authorId),
-  );
-  if (alreadyInRoom) return tables;
-
   const authorName = resolveAuthor(sys, input.externalAppliedTable, match, authorId, {
     id: input.currentUserId,
     name: input.userName,
   });
   const appliedRoomTable = buildAppliedTable(
-    input.sessionConfig.tabela,
+    activeTable,
     authorId,
     authorName,
     match,
     input.externalAppliedTable,
   );
-
   return [appliedRoomTable, ...tables];
 }
 
@@ -89,41 +94,58 @@ function groupSections(
   };
 }
 
+function matchesExactActiveTable(
+  table: PerformanceTableSummary,
+  active?: SessionEvaluationConfig['tabela'],
+): boolean {
+  if (!active || table.origem === 'PESSOAL') return false;
+  const activeName = (active.nome ?? '').trim().toLowerCase();
+  return table.id === active.id || table.nome.trim().toLowerCase() === activeName;
+}
+
+function useCheckAppliedCallback(
+  allTables: PerformanceTableSummary[],
+  sessionConfig: SessionEvaluationConfig | null,
+  appliedAuthorId?: string | null,
+) {
+  const active = sessionConfig?.tabela;
+  const hasExactMatch = useMemo(
+    () => allTables.some((t) => matchesExactActiveTable(t, active)),
+    [allTables, active],
+  );
+  return useCallback(
+    (table: PerformanceTableSummary) => {
+      if (table.origem === 'PESSOAL') return false;
+      if (hasExactMatch && active) return matchesExactActiveTable(table, active);
+      return isTableApplied(table, sessionConfig, appliedAuthorId);
+    },
+    [hasExactMatch, active, sessionConfig, appliedAuthorId],
+  );
+}
+
 export function usePerformanceTablesViewModel(input: ViewModelInput) {
   const appliedAuthorId = input.externalAppliedTable?.autor?.id;
-
   const catalogMatch = useMemo(
     () => (input.tables ?? []).find((t) => isTableApplied(t, input.sessionConfig, appliedAuthorId)),
     [input.tables, input.sessionConfig, appliedAuthorId],
   );
-
   const isSystemApplied = Boolean(
     input.sessionConfig?.tabela.padrao || catalogMatch?.origem === 'PADRAO',
   );
-
   const allTables = useMemo(
     () => injectAppliedTable(input, isSystemApplied, catalogMatch),
     [input, isSystemApplied, catalogMatch],
   );
-
-  const safeQuery = input.query ?? '';
+  const safeQuery = (input.query ?? '').toLowerCase();
   const filtered = useMemo(
-    () => allTables.filter((t) => t.nome.toLowerCase().includes(safeQuery.toLowerCase())),
+    () => allTables.filter((t) => t.nome.toLowerCase().includes(safeQuery)),
     [allTables, safeQuery],
   );
-
   const sections = useMemo(
     () => groupSections(filtered, input.isRoomContext, input.currentUserId),
     [filtered, input.isRoomContext, input.currentUserId],
   );
-
-  const checkApplied = useCallback(
-    (table: PerformanceTableSummary) => {
-      if (table.origem === 'PESSOAL') return false;
-      return isTableApplied(table, input.sessionConfig, appliedAuthorId);
-    },
-    [input.sessionConfig, appliedAuthorId],
-  );
+  const checkApplied = useCheckAppliedCallback(allTables, input.sessionConfig, appliedAuthorId);
 
   return { filtered, sections, checkApplied };
 }

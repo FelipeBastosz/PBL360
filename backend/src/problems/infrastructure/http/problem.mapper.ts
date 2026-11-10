@@ -2,6 +2,7 @@ import type { ProblemDeletionImpactDto } from '../../application/dtos/problem-de
 import type { ProblemResponseDto } from '../../application/dtos/problem-response.dto';
 import type { GetProblemDeletionImpactOutput } from '../../application/use-cases/get-problem-deletion-impact.use-case';
 import type { Problem } from '../../domain/entities/problem.entity';
+import { toBrazilianDate } from '@/shared/dates/brazilian-date';
 
 export const toProblemResponse = (problem: Problem): ProblemResponseDto => ({
   id: problem.id,
@@ -9,8 +10,8 @@ export const toProblemResponse = (problem: Problem): ProblemResponseDto => ({
   titulo: problem.title,
   descricao: problem.description ?? null,
   ordem: problem.orderIndex ?? 1,
-  dataInicio: problem.startDate ?? null,
-  dataFim: problem.endDate ?? null,
+  dataInicio: toBrazilianDate(problem.startDate ?? null),
+  dataFim: toBrazilianDate(problem.endDate ?? null),
   autoavaliacaoLiberada: problem.selfEvalReleased,
   avaliacaoEntreParesLiberada: problem.peerEvalReleased,
   liberadoEm: problem.releasedAt ?? null,

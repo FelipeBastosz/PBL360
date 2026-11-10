@@ -6,6 +6,8 @@ import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
 import { FeedbackCard } from './FeedbackCard';
 import { FeedbackEmptyState } from './FeedbackEmptyState';
+import { EvaluationComponentGrades } from './EvaluationComponentGrades';
+import { useProblemFeedbacks } from './useProblemFeedbacks';
 import { useSessionFeedback } from './useSessionFeedback';
 import { cn } from '@/utils/cn';
 
@@ -17,6 +19,12 @@ export default function SessionFeedbackPage() {
   }>();
   const navigate = useNavigate();
   const { feedback, isLoading, error } = useSessionFeedback(sessionId);
+  const needsFallback = !isLoading && !error && !feedback;
+  const { data: problemData } = useProblemFeedbacks(
+    needsFallback ? roomId : undefined,
+    needsFallback ? problemId : undefined,
+  );
+  const sessionGrades = problemData?.sessoes.find((item) => item.sessaoId === sessionId);
 
   const backUrl = `/turmas/${roomId}/problemas/${problemId}/sessoes/${sessionId}`;
   const allFeedbacksUrl = `/turmas/${roomId}/problemas/${problemId}/feedbacks`;
@@ -53,7 +61,13 @@ export default function SessionFeedbackPage() {
             criadoEm={feedback.criadoEm}
             editadoEm={feedback.editadoEm}
             novo={feedback.novo}
+            nota={feedback.nota}
+            avaliacoes={feedback.avaliacoes}
           />
+        ) : sessionGrades?.avaliacoes ? (
+          <div className="flex flex-col gap-2 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+            <EvaluationComponentGrades avaliacoes={sessionGrades.avaliacoes} />
+          </div>
         ) : (
           <FeedbackEmptyState />
         )}

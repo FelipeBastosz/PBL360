@@ -23,10 +23,13 @@ import { GetUserProfileUseCase } from '../../application/use-cases/get-user-prof
 import { UpdateUserProfileUseCase } from '../../application/use-cases/update-user-profile.use-case';
 import { UploadUserPhotoUseCase } from '../../application/use-cases/upload-user-photo.use-case';
 import { DeleteUserPhotoUseCase } from '../../application/use-cases/delete-user-photo.use-case';
+import { ChangeUserPasswordUseCase } from '../../application/use-cases/change-user-password.use-case';
 import { UpdateUserProfileDto } from '../../application/dtos/update-user-profile.dto';
+import { ChangeUserPasswordDto } from '../../application/dtos/change-user-password.dto';
 import type { UserProfileResponseDto } from '../../application/dtos/user-profile-response.dto';
 import { toUserProfileResponse } from './user.mapper';
 import {
+  ChangeUserPasswordSwaggerDocs,
   DeleteUserPhotoSwaggerDocs,
   GetUserPhotoSwaggerDocs,
   GetUserProfileSwaggerDocs,
@@ -43,6 +46,7 @@ export class UsersController {
     private readonly updateUserProfile: UpdateUserProfileUseCase,
     private readonly uploadUserPhoto: UploadUserPhotoUseCase,
     private readonly deleteUserPhoto: DeleteUserPhotoUseCase,
+    private readonly changeUserPassword: ChangeUserPasswordUseCase,
   ) {}
 
   @Get('meu-perfil')
@@ -60,6 +64,20 @@ export class UsersController {
   ): Promise<UserProfileResponseDto> {
     const user = await this.updateUserProfile.execute({ userId, name: dto.nome });
     return toUserProfileResponse(user);
+  }
+
+  @Patch('minha-senha')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ChangeUserPasswordSwaggerDocs
+  async changePassword(
+    @AuthenticatedUserId() userId: string,
+    @Body() dto: ChangeUserPasswordDto,
+  ): Promise<void> {
+    await this.changeUserPassword.execute({
+      userId,
+      currentPassword: dto.senhaAtual,
+      newPassword: dto.novaSenha,
+    });
   }
 
   @Put('minha-foto')

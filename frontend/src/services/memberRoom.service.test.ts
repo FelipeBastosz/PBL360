@@ -12,7 +12,7 @@ vi.mock('@/services/session.service');
 const roomSession = (id: string, problemaId: string) => ({
   id,
   titulo: `Sessão ${id}`,
-  data: '2026-08-12',
+  data: '12-08-2026',
   ordem: 1,
   status: 'agendada',
   problemaId,
@@ -74,7 +74,7 @@ describe('memberRoomService', () => {
         id: 's1',
         titulo: 'Sessão s1',
         descricao: null,
-        data: '2026-08-12',
+        data: '12-08-2026',
         ordem: 1,
         status: 'agendada',
       },

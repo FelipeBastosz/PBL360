@@ -3,6 +3,8 @@ import { BackHeader } from '@/components/layout/BackHeader';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
+import { formatGrade } from '@/utils/formatGrade';
+import { EvaluationComponentGrades } from './EvaluationComponentGrades';
 import { FeedbackCard } from './FeedbackCard';
 import { FeedbackEmptyState } from './FeedbackEmptyState';
 import { GeneralFeedbackSection, IndividualFeedbackSection } from './ProblemFeedbackSections';
@@ -11,6 +13,16 @@ import type { ReceivedProblemFeedbacksResponse, ReceivedSessionFeedback } from '
 import { cn } from '@/utils/cn';
 
 function SessionItem({ item }: { item: ReceivedSessionFeedback }) {
+  if (!item.feedback && item.avaliacoes) {
+    return (
+      <div className="flex flex-col gap-2 rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
+        <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+          {item.rotulo}
+        </span>
+        <EvaluationComponentGrades avaliacoes={item.avaliacoes} />
+      </div>
+    );
+  }
   if (!item.feedback) {
     return (
       <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-black/10 bg-white p-4">
@@ -28,7 +40,9 @@ function SessionItem({ item }: { item: ReceivedSessionFeedback }) {
       criadoEm={item.feedback.criadoEm}
       editadoEm={item.feedback.editadoEm}
       novo={item.feedback.novo}
+      nota={item.feedback.nota}
       tag={item.rotulo}
+      avaliacoes={item.feedback.avaliacoes}
     />
   );
 }
@@ -36,6 +50,16 @@ function SessionItem({ item }: { item: ReceivedSessionFeedback }) {
 function FeedbacksList({ data }: { data: ReceivedProblemFeedbacksResponse }) {
   return (
     <div className="flex flex-col gap-6">
+      {typeof data.notaFinal === 'number' && Number.isFinite(data.notaFinal) && (
+        <section aria-label="Nota Final" className="flex justify-end">
+          <span
+            data-testid="feedback-nota-final"
+            className="rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-900"
+          >
+            Nota final {formatGrade(data.notaFinal)}
+          </span>
+        </section>
+      )}
       {data.individual && <IndividualFeedbackSection feedback={data.individual} />}
       {data.geral && <GeneralFeedbackSection feedback={data.geral} />}
       {data.sessoes.length > 0 && (
@@ -59,7 +83,10 @@ export default function ProblemFeedbacksPage() {
   const navigate = useNavigate();
   const { data, isLoading, error } = useProblemFeedbacks(roomId, problemId);
   const isEmpty =
-    !data?.individual && !data?.geral && (!data?.sessoes || data.sessoes.length === 0);
+    !data?.individual &&
+    !data?.geral &&
+    (!data?.sessoes || data.sessoes.length === 0) &&
+    (typeof data?.notaFinal !== 'number' || !Number.isFinite(data.notaFinal));
 
   return (
     <div className="min-h-dvh bg-surface pb-12">

@@ -9,7 +9,7 @@ export class MemberSessionResponseDto extends SessionDetailResponseDto {
 export class RoomSessionResponseDto {
   @ApiProperty({ format: 'uuid' }) id: string;
   @ApiProperty({ example: 'Abertura do problema' }) titulo: string;
-  @ApiProperty({ example: '2026-10-15', format: 'date' }) data: string;
+  @ApiProperty({ example: '15-10-2026', pattern: '^\\d{2}-\\d{2}-\\d{4}$' }) data: string;
   @ApiProperty({ example: 1 }) ordem: number;
   @ApiProperty({ example: 'agendada' }) status: string;
   @ApiProperty({ format: 'uuid' }) problemaId: string;

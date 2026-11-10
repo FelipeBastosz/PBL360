@@ -147,4 +147,34 @@ describe('DeleteProblemModal', () => {
     await user.keyboard('{Escape}');
     expect(onCancel).toHaveBeenCalledOnce();
   });
+
+  it('renders contextual error alert and Entendi button when errorMessage is provided', async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+
+    render(
+      <DeleteProblemModal
+        problemTitle="Problema 1"
+        impact={zeroImpact}
+        isOpen={true}
+        isLoading={false}
+        errorMessage="Não é possível excluir: existem 2 sessões e 1 feedback vinculados a este problema."
+        onConfirm={vi.fn()}
+        onCancel={onCancel}
+      />,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Não é possível excluir o problema' }),
+    ).toBeInTheDocument();
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent(
+      'Não é possível excluir: existem 2 sessões e 1 feedback vinculados a este problema.',
+    );
+    expect(screen.queryByRole('button', { name: 'Sim, excluir problema' })).not.toBeInTheDocument();
+
+    const entendiBtn = screen.getByRole('button', { name: 'Entendi' });
+    await user.click(entendiBtn);
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
 });

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
+import { readReceivedFeedbackGrades } from './received-feedback-grades.reads';
 import type {
   ReceivedFeedbackRepository,
   ReceivedProblemFeedbacks,
@@ -24,18 +25,20 @@ export class PgReceivedFeedbackRepository implements ReceivedFeedbackRepository 
 
   readSession(sessionId: string, studentId: string) {
     return this.dataSource.transaction(async (manager) => {
-      const rows = await manager.query<ReceivedFeedbackRow[]>(READ_SESSION_FEEDBACK, [
+      const [row] = await manager.query<ReceivedFeedbackRow[]>(READ_SESSION_FEEDBACK, [
         sessionId,
         studentId,
       ]);
-      const row = rows[0];
       if (!row) return null;
+      const { roomId, problemId } = row;
+      const grades = await readReceivedFeedbackGrades(manager, roomId, problemId, studentId);
       const newlyRead = await this.recordViews(manager, [row.id], studentId);
-      return toReceivedFeedback(row, newlyRead);
+      const score = grades.sessions.get(sessionId) ?? null;
+      return toReceivedFeedback(row, newlyRead, score, grades.components?.get(sessionId));
     });
   }
 
-  readProblem(problemId: string, studentId: string) {
+  readProblem(problemId: string, studentId: string, roomId: string) {
     return this.dataSource.transaction(async (manager) => {
       const sessions = await manager.query<ReceivedSessionRow[]>(READ_PROBLEM_SESSIONS, [
         problemId,
@@ -44,7 +47,8 @@ export class PgReceivedFeedbackRepository implements ReceivedFeedbackRepository 
         problemId,
         studentId,
       ]);
-      const result = toReceivedProblem(rows, sessions, new Set());
+      const grades = await readReceivedFeedbackGrades(manager, roomId, problemId, studentId);
+      const result = toReceivedProblem(rows, sessions, new Set(), grades);
       return this.recordProblemViews(manager, result, studentId);
     });
   }
