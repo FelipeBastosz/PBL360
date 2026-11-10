@@ -296,6 +296,54 @@ describe('PgEvaluationHistoryRepository', () => {
       expect(result[0]?.avaliacoesPares).toBe(1);
       expect(result[0]?.notaPares).toBeNull();
     });
+
+    it('reflects peer evaluation adjustment with original score and AJUSTADA status', async () => {
+      manager.query.mockImplementation((sql: string) => {
+        if (sql.includes('SELECT u.id AS "alunoId"')) {
+          return Promise.resolve([
+            { alunoId: 'student-1', nome: 'Diego Alves', matricula: '20240001' },
+          ]);
+        }
+        if (sql.includes('FROM session_evaluation_configs')) return Promise.resolve([]);
+        if (sql.includes('FROM sessions s') && sql.includes('JOIN performance_tables pt')) {
+          return Promise.resolve([{ id: 'table-1', name: 'Barema' }]);
+        }
+        if (sql.includes('FROM performance_criteria')) {
+          return Promise.resolve([{ id: 'crit-1', name: 'Critério 1', weight: 1, orderIndex: 1 }]);
+        }
+        if (sql.includes('FROM formulas f')) {
+          return Promise.resolve([
+            { type: 'CRITERIOS', weight: 70 },
+            { type: 'PAPEL', weight: 30 },
+          ]);
+        }
+        if (sql.includes("type = 'SELF_ASSESSMENT'")) return Promise.resolve([]);
+        if (sql.includes("type = 'PEER_ASSESSMENT'") && sql.includes('grade_adjustments')) {
+          return Promise.resolve([
+            { studentId: 'student-1', previousValue: '8.50', newValue: '9.50' },
+          ]);
+        }
+        if (sql.includes("type = 'PEER_ASSESSMENT'") && sql.includes('evaluations')) {
+          return Promise.resolve([{ studentId: 'student-1', sessionScore: '8.50' }]);
+        }
+        return Promise.resolve([]);
+      });
+
+      const result = await repository.getHistory(sessionId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        alunoId: 'student-1',
+        nome: 'Diego Alves',
+        matricula: '20240001',
+        notaAluno: null,
+        notaAlunoOriginal: 8.5,
+        notaTutor: null,
+        notaPares: 9.5,
+        avaliacoesPares: 1,
+        situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
+      });
+    });
   });
 
   describe('getStudentComparison', () => {

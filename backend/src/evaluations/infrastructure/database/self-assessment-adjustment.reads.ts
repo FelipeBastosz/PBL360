@@ -153,33 +153,26 @@ const draftPeer = (sessionId: string, studentId: string): SelfAssessmentAdjustme
   tipo: 'PARES',
 });
 
+const resolveOriginalPeerScore = (submitted: ScoreRow[], adjustments: AdjustmentRow[]) =>
+  adjustments.length > 0
+    ? Number(adjustments[adjustments.length - 1]!.previousValue)
+    : submitted.length > 0
+      ? averageScore(submitted)
+      : 0;
+
 const buildPeerFormHistory = (
   sessionId: string,
   studentId: string,
   submitted: ScoreRow[],
   adjustments: AdjustmentRow[],
-): SelfAssessmentAdjustmentHistory => {
-  const originalScore =
-    adjustments.length > 0
-      ? Number(adjustments[adjustments.length - 1]!.previousValue)
-      : averageScore(submitted);
-
-  return {
-    sessionId,
-    studentId,
-    status: EvaluationStatus.SUBMITTED,
-    originalScore,
-    adjustments: adjustments.map(toAdjustment),
-    tipo: 'PARES',
-  };
-};
-
-async function isPeerReleased(manager: EntityManager, sessionId: string): Promise<boolean> {
-  const [session] = await manager.query<SessionReleaseRow[]>(FIND_SESSION_EVALUATION_RELEASES, [
-    sessionId,
-  ]);
-  return Boolean(session?.peerEvalReleased);
-}
+): SelfAssessmentAdjustmentHistory => ({
+  sessionId,
+  studentId,
+  status: EvaluationStatus.SUBMITTED,
+  originalScore: resolveOriginalPeerScore(submitted, adjustments),
+  adjustments: adjustments.map(toAdjustment),
+  tipo: 'PARES',
+});
 
 const submittedScores = (rows: ScoreRow[]) =>
   rows.filter((r) => r.status === EvaluationStatus.SUBMITTED && r.sessionScore !== null);
@@ -197,12 +190,13 @@ async function readPeerFormHistory(
     lock ? LOCK_PEER_FORM_SCORES : FIND_PEER_FORM_SCORES,
     [sessionId, studentId],
   );
-  if (rows.length === 0) return null;
-  if (await isPeerReleased(manager, sessionId)) return draftPeer(sessionId, studentId);
-
-  const submitted = submittedScores(rows);
-  if (submitted.length === 0) return draftPeer(sessionId, studentId);
   const adjustments = await findPeerAdjustments(manager, sessionId, studentId);
+  const submitted = submittedScores(rows);
+
+  if (rows.length === 0 && adjustments.length === 0) return null;
+  if (submitted.length === 0 && adjustments.length === 0) {
+    return draftPeer(sessionId, studentId);
+  }
   return buildPeerFormHistory(sessionId, studentId, submitted, adjustments);
 }
 

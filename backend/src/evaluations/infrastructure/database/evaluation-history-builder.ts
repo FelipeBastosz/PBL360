@@ -26,6 +26,7 @@ export interface HistoryMaps {
   selfMap: Map<string, SelfEvaluationRow>;
   adjustmentMap: Map<string, SelfAdjustmentRow>;
   peerMap: Map<string, number[]>;
+  peerAdjustmentMap?: Map<string, { previousValue: number; newValue: number }>;
   tutorMap: Map<string, Array<{ criterionId: string; score: number }>>;
   tutorBonusMap?: Map<string, number | null>;
 }
@@ -115,20 +116,52 @@ function resolveHistoryConfig(config: HistoryConfigInput) {
   };
 }
 
+function buildPeerAdjustedItem(
+  student: StudentRow,
+  peerAdj: { previousValue: number; newValue: number },
+  scores: ReturnType<typeof extractStudentScores>,
+): SessionEvaluationHistoryItem {
+  return {
+    alunoId: student.alunoId,
+    nome: student.nome,
+    matricula: student.matricula ?? null,
+    notaAluno: null,
+    notaAlunoOriginal: peerAdj.previousValue,
+    notaTutor: scores.notaTutor,
+    notaPares: peerAdj.newValue,
+    avaliacoesPares: scores.avaliacoesPares,
+    situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
+  };
+}
+
+function resolveStudentItem(
+  student: StudentRow,
+  selfGrades: ReturnType<typeof resolveStudentSelfGrades>,
+  scores: ReturnType<typeof extractStudentScores>,
+  peerAdj?: { previousValue: number; newValue: number },
+): SessionEvaluationHistoryItem {
+  if (peerAdj && selfGrades.notaAluno === null) {
+    return buildPeerAdjustedItem(student, peerAdj, scores);
+  }
+  return {
+    alunoId: student.alunoId,
+    nome: student.nome,
+    matricula: student.matricula ?? null,
+    ...selfGrades,
+    ...scores,
+  };
+}
+
 export function buildHistoryStudentItem(
   student: StudentRow,
   config: HistoryConfigInput,
   maps: HistoryMaps,
   expectedPeerCount = 0,
 ): SessionEvaluationHistoryItem {
-  const resolvedConfig = resolveHistoryConfig(config);
-  return {
-    alunoId: student.alunoId,
-    nome: student.nome,
-    matricula: student.matricula ?? null,
-    ...resolveStudentSelfGrades(student.alunoId, maps),
-    ...extractStudentScores(student.alunoId, resolvedConfig, maps, expectedPeerCount),
-  };
+  const cfg = resolveHistoryConfig(config);
+  const self = resolveStudentSelfGrades(student.alunoId, maps);
+  const scores = extractStudentScores(student.alunoId, cfg, maps, expectedPeerCount);
+  return resolveStudentItem(student, self, scores, maps.peerAdjustmentMap?.get(student.alunoId));
 }
 
 export function buildComparisonCriteriaItens(

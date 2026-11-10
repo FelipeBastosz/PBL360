@@ -27,6 +27,16 @@ export const FIND_SESSION_ADJUSTMENTS_QUERY = `
    ORDER BY ga.created_at DESC, ga.id DESC;
 `;
 
+export const FIND_SESSION_PEER_ADJUSTMENTS_QUERY = `
+  SELECT DISTINCT ON (ga.student_id)
+         ga.student_id AS "studentId",
+         ga.previous_value AS "previousValue",
+         ga.new_value AS "newValue"
+    FROM grade_adjustments ga
+   WHERE ga.session_id = $1 AND ga.type = 'PEER_ASSESSMENT'
+   ORDER BY ga.student_id, ga.created_at DESC, ga.id DESC;
+`;
+
 export const FIND_SESSION_PEER_EVALUATIONS_QUERY = `
   SELECT e.student_id AS "studentId", e.session_score AS "sessionScore"
     FROM evaluations e
@@ -85,6 +95,16 @@ export const FIND_SELF_ADJUSTMENTS_DETAIL_QUERY = `
     FROM grade_adjustments ga
     JOIN users u ON u.id = ga.created_by
    WHERE ga.evaluation_id = $1
+   ORDER BY ga.created_at DESC, ga.id DESC;
+`;
+
+export const FIND_STUDENT_PEER_ADJUSTMENTS_DETAIL_QUERY = `
+  SELECT ga.previous_value AS "previousValue", ga.new_value AS "newValue",
+         ga.justification, ga.created_by AS "authorId", u.name AS "authorName",
+         ga.created_at AS "createdAt"
+    FROM grade_adjustments ga
+    JOIN users u ON u.id = ga.created_by
+   WHERE ga.session_id = $1 AND ga.student_id = $2 AND ga.type = 'PEER_ASSESSMENT'
    ORDER BY ga.created_at DESC, ga.id DESC;
 `;
 

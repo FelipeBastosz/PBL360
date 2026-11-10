@@ -121,24 +121,20 @@ function StudentPhoto({ student, index }: Omit<HistoryStudentCardProps, 'onSelec
 
 export function HistoryStudentCard({ student, index, onSelect }: HistoryStudentCardProps) {
   const displayName = getDisplayName(student, false);
-  const isClickable = hasSubmitted(student);
 
   return (
     <article
       className={cn(
         'relative flex items-center gap-3 rounded-xl border border-[#E2E4EC] bg-white p-[13.8px] shadow-[0_2px_8px_rgb(26_29_41/0.08)] transition-colors',
-        isClickable &&
-          'focus-within:ring-2 focus-within:ring-brand-900 focus-within:ring-offset-2 hover:bg-surface-50',
+        'focus-within:ring-2 focus-within:ring-brand-900 focus-within:ring-offset-2 hover:bg-surface-50',
       )}
     >
-      {isClickable && (
-        <button
-          type="button"
-          onClick={() => onSelect(student)}
-          aria-label={`Ajustar nota de ${displayName}`}
-          className="absolute inset-0 z-10 cursor-pointer rounded-xl outline-none"
-        />
-      )}
+      <button
+        type="button"
+        onClick={() => onSelect(student)}
+        aria-label={`Ajustar nota de ${displayName}`}
+        className="absolute inset-0 z-10 cursor-pointer rounded-xl outline-none"
+      />
       <StudentPhoto student={student} index={index} />
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <h2 className="truncate text-[15px] leading-[18px] font-semibold text-brand-900">

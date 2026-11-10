@@ -74,6 +74,32 @@ describe('AdjustEvaluationGradeModal', () => {
       expect(screen.getByRole('heading', { name: 'Sem matrícula' })).toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: 'Elisa Nunes' })).not.toBeInTheDocument();
     });
+
+    it('displays the peer assessment warning banner when adjusting peer grade', () => {
+      const peerStudent: AdjustStudentInfo = {
+        alunoId: 'student-2',
+        nome: 'Diego Alves',
+        matricula: '26121199',
+        notaAluno: null,
+        notaPares: 8.5,
+        avaliacoesPares: 3,
+      };
+
+      render(
+        <AdjustEvaluationGradeModal
+          isOpen={true}
+          student={peerStudent}
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />,
+      );
+
+      expect(
+        screen.getByText(
+          'A avaliação por pares está em andamento. Inserir uma nota sobrescreverá a média dos pares.',
+        ),
+      ).toBeInTheDocument();
+    });
   });
 
   describe('Validação de Input (Botão Desabilitado)', () => {

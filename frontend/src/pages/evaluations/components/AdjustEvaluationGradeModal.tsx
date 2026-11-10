@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { getInitials } from '@/utils/initials';
@@ -13,6 +14,7 @@ export type AdjustStudentInfo = {
   notaVigente?: number | null;
   notaAlunoOriginal?: number | null;
   notaPares?: number | null;
+  avaliacoesPares?: number;
 };
 
 export type AdjustEvaluationGradeModalProps = {
@@ -107,6 +109,12 @@ function AdjustEvaluationGradeForm({
     onSubmit({ novaNota: parsedGrade, justificativa: justification.trim() });
   };
 
+  const isPeerAssessment =
+    student.notaAluno === null &&
+    (student.notaPares !== null ||
+      student.avaliacoesPares !== undefined ||
+      student.notaAlunoOriginal !== null);
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -118,6 +126,11 @@ function AdjustEvaluationGradeForm({
         onClose={onClose}
         isLoading={isLoading}
       />
+      {isPeerAssessment && (
+        <Alert tone="info">
+          A avaliação por pares está em andamento. Inserir uma nota sobrescreverá a média dos pares.
+        </Alert>
+      )}
       <GradeInputs
         currentGrade={currentGrade}
         newGrade={newGrade}
