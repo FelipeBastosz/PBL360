@@ -175,4 +175,28 @@ describe('RegisterPage', () => {
       'Já existe uma conta cadastrada com este e-mail.',
     );
   });
+
+  it('renders terms and privacy checkbox with clickable links opening modal', async () => {
+    const { user } = renderApp('/cadastro?perfil=professor');
+
+    const checkbox = await screen.findByRole('checkbox', {
+      name: /eu li e concordo com os termos de uso e a política de privacidade/i,
+    });
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox).not.toBeChecked();
+
+    await user.click(checkbox);
+    expect(checkbox).toBeChecked();
+
+    await user.click(screen.getByRole('button', { name: 'Termos de Uso' }));
+    expect(screen.getByRole('heading', { name: 'Termos de Uso' })).toBeInTheDocument();
+    expect(screen.getByText('Termos e Politica em desenvolvimento')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(screen.queryByRole('heading', { name: 'Termos de Uso' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Política de Privacidade' }));
+    expect(screen.getByRole('heading', { name: 'Política de Privacidade' })).toBeInTheDocument();
+    expect(screen.getByText('Termos e Politica em desenvolvimento')).toBeInTheDocument();
+  });
 });
