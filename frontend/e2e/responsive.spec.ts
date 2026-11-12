@@ -61,5 +61,16 @@ for (const viewport of VIEWPORTS) {
       await expect(close).toBeInViewport();
       await expectNoHorizontalScroll(page);
     });
+
+    test('should align the FAB with the header avatar on /turmas', async ({ page }) => {
+      await mockTutorSession(page);
+      await page.goto('/turmas');
+
+      const avatar = await page.getByRole('button', { name: 'Abrir menu da conta' }).boundingBox();
+      const fab = await page.getByRole('button', { name: 'Ações de turma' }).boundingBox();
+      expect(
+        Math.abs(fab!.x + fab!.width / 2 - (avatar!.x + avatar!.width / 2)),
+      ).toBeLessThanOrEqual(1);
+    });
   });
 }
