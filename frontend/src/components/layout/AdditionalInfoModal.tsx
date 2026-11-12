@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { AboutProjectContent, TeamMembersContent } from '@/components/layout/AdditionalInfoDetails';
 import { BrandHero } from '@/components/layout/BrandHero';
 import { Button } from '@/components/ui/Button';
 import { LegalDocumentModal } from '@/components/ui/LegalDocumentModal';
 import { GENERIC_LEGAL_CONTENT, LEGAL_PRIVACY_TITLE, LEGAL_TERMS_TITLE } from '@/content/legal';
+import { ABOUT_PROJECT_TITLE, TEAM_MEMBERS_TITLE } from '@/content/projectInfo';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 export type AdditionalInfoModalProps = {
@@ -12,8 +14,7 @@ export type AdditionalInfoModalProps = {
 };
 
 type AdditionalInfoLinksProps = {
-  onOpenTerms: () => void;
-  onOpenPrivacy: () => void;
+  onSelect: (title: string) => void;
 };
 
 function AdditionalInfoHeader({ onClose }: { onClose: () => void }) {
@@ -34,25 +35,34 @@ function AdditionalInfoHeader({ onClose }: { onClose: () => void }) {
   );
 }
 
-function AdditionalInfoLinks({ onOpenTerms, onOpenPrivacy }: AdditionalInfoLinksProps) {
+const INFO_LINKS = [
+  { label: 'Sobre o Projeto', title: ABOUT_PROJECT_TITLE },
+  { label: 'Equipe Responsável', title: TEAM_MEMBERS_TITLE },
+  { label: 'Termos de Uso', title: LEGAL_TERMS_TITLE },
+  { label: 'Política de Privacidade', title: LEGAL_PRIVACY_TITLE },
+];
+
+function AdditionalInfoLinks({ onSelect }: AdditionalInfoLinksProps) {
   return (
-    <div className="mt-2 flex flex-col items-center gap-3 border-t border-black/5 pt-4">
-      <button
-        type="button"
-        onClick={onOpenTerms}
-        className="text-base font-semibold text-brand-900 underline underline-offset-4 transition-colors hover:text-brand-700"
-      >
-        Termos de Uso
-      </button>
-      <button
-        type="button"
-        onClick={onOpenPrivacy}
-        className="text-base font-semibold text-brand-900 underline underline-offset-4 transition-colors hover:text-brand-700"
-      >
-        Política de Privacidade
-      </button>
+    <div className="mt-2 flex flex-col items-center gap-2.5 border-t border-black/5 pt-4">
+      {INFO_LINKS.map(({ label, title }) => (
+        <button
+          key={title}
+          type="button"
+          onClick={() => onSelect(title)}
+          className="text-base font-semibold text-brand-900 underline underline-offset-4 transition-colors hover:text-brand-700"
+        >
+          {label}
+        </button>
+      ))}
     </div>
   );
+}
+
+function renderDocContent(activeDoc: string | null) {
+  if (activeDoc === ABOUT_PROJECT_TITLE) return <AboutProjectContent />;
+  if (activeDoc === TEAM_MEMBERS_TITLE) return <TeamMembersContent />;
+  return undefined;
 }
 
 export function AdditionalInfoModal({ isOpen, onClose }: AdditionalInfoModalProps) {
@@ -76,10 +86,7 @@ export function AdditionalInfoModal({ isOpen, onClose }: AdditionalInfoModalProp
             <BrandHero markClassName="size-20" className="my-2" />
           </div>
 
-          <AdditionalInfoLinks
-            onOpenTerms={() => setActiveDoc(LEGAL_TERMS_TITLE)}
-            onOpenPrivacy={() => setActiveDoc(LEGAL_PRIVACY_TITLE)}
-          />
+          <AdditionalInfoLinks onSelect={setActiveDoc} />
 
           <div className="mt-6 border-t border-black/5 pt-4">
             <Button
@@ -96,10 +103,12 @@ export function AdditionalInfoModal({ isOpen, onClose }: AdditionalInfoModalProp
       <LegalDocumentModal
         isOpen={activeDoc !== null}
         title={activeDoc ?? ''}
-        content={GENERIC_LEGAL_CONTENT}
+        content={renderDocContent(activeDoc) ? undefined : GENERIC_LEGAL_CONTENT}
         onClose={() => setActiveDoc(null)}
         zIndex="z-[60]"
-      />
+      >
+        {renderDocContent(activeDoc)}
+      </LegalDocumentModal>
     </>
   );
 }

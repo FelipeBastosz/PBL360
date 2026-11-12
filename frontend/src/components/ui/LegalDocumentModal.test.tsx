@@ -32,6 +32,16 @@ describe('LegalDocumentModal', () => {
     expect(screen.getByText('Termos e Politica em desenvolvimento')).toBeInTheDocument();
   });
 
+  it('renders custom children when provided', () => {
+    render(
+      <LegalDocumentModal isOpen={true} title="Conteúdo Customizado" onClose={vi.fn()}>
+        <span data-testid="custom-child">Filho customizado</span>
+      </LegalDocumentModal>,
+    );
+
+    expect(screen.getByTestId('custom-child')).toBeInTheDocument();
+  });
+
   it('calls onClose when close icon or Fechar button is clicked', async () => {
     const user = userEvent.setup();
     const handleClose = vi.fn();

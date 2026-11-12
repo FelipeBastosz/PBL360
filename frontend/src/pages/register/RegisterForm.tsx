@@ -172,3 +172,5 @@ export function RegisterForm(props: RegisterFormProps) {
     </>
   );
 }
+
+export default RegisterForm;
