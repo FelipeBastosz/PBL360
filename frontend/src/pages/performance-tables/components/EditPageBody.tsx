@@ -1,5 +1,7 @@
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 import { Alert } from '@/components/ui/Alert';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 import { EditMainContent } from './EditMainContent';
 import type { useEditPerformanceTableForm } from '../hooks/useEditPerformanceTableForm';
 import type { useEditModals } from '../hooks/useEditModals';
@@ -22,7 +24,7 @@ export function EditPageBody({
   onExit,
 }: Props) {
   return (
-    <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4">
+    <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4')}>
       {form.permissions && !form.permissions.podeEditarCriterios && (
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 shadow-xs">
           <LockClosedIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />

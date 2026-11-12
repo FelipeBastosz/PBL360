@@ -64,7 +64,7 @@ export function ApplyScopeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-      <div className="relative w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl">
         <button
           type="button"
           onClick={isLoading ? undefined : onClose}
@@ -115,7 +115,7 @@ export function IgnoredSessionsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-      <div className="relative w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl">
         <div className="flex items-center gap-2 text-amber-600">
           <ExclamationCircleIcon className="size-6 shrink-0" />
           <h2 className="text-base font-bold text-ink">Aviso sobre sessões seguintes</h2>

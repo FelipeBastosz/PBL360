@@ -22,13 +22,15 @@ function ManageProblemCard({
 }) {
   return (
     <div className={cn(CARD_CLASS, 'flex-row items-center justify-between gap-3 p-4')}>
-      <h3 className="font-bold text-ink">{problem.titulo}</h3>
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-col">
+        <h3 className="font-bold break-words text-ink">{problem.titulo}</h3>
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
         <button
           type="button"
           onClick={() => onEdit(problem)}
           aria-label={`Editar ${problem.titulo}`}
-          className="p-1 text-ink/70 hover:text-brand-900 focus-visible:outline-2"
+          className="relative p-1 text-ink/70 hover:text-brand-900 after:absolute after:-inset-1.5 focus-visible:outline-2"
         >
           <PencilIcon className="size-5" />
         </button>
@@ -36,7 +38,7 @@ function ManageProblemCard({
           type="button"
           onClick={() => onDelete(problem)}
           aria-label={`Excluir ${problem.titulo}`}
-          className="p-1 text-danger hover:text-danger/80 focus-visible:outline-2 focus-visible:outline-danger"
+          className="relative p-1 text-danger hover:text-danger/80 after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-danger"
         >
           <TrashIcon className="size-5" />
         </button>
@@ -47,7 +49,7 @@ function ManageProblemCard({
 
 function ManageFooter({ onFinish }: { onFinish: () => void }) {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 border-t border-black/5 bg-surface/95 px-6 py-4 backdrop-blur-xs">
+    <footer className="fixed right-0 bottom-0 left-0 border-t border-black/5 bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
       <div className="mx-auto flex max-w-md flex-col gap-2">
         <Button onClick={onFinish}>Concluir edição</Button>
         <Button variant="link" onClick={onFinish}>
@@ -136,7 +138,7 @@ export default function ManageProblemsPage() {
   const state = useManageProblems(id);
 
   return (
-    <div className="min-h-dvh bg-surface pb-36">
+    <div className="min-h-dvh bg-surface pb-[calc(10rem+env(safe-area-inset-bottom))]">
       <RoomProblemsHeader room={state.room} user={user} />
       <ManageProblemsContent
         isLoading={state.isLoading}

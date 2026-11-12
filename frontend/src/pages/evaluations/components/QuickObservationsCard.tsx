@@ -29,7 +29,7 @@ function ActiveTagRow({
           type="button"
           aria-label={`Diminuir marcação ${tag.nome}`}
           onClick={onDecrement}
-          className="flex size-6 items-center justify-center rounded-lg border border-brand-900/20 bg-white text-xs font-bold text-brand-900 hover:bg-brand-100 active:scale-95"
+          className="relative flex size-6 items-center justify-center rounded-lg border border-brand-900/20 bg-white text-xs font-bold text-brand-900 after:absolute after:-inset-2 hover:bg-brand-100 active:scale-95"
         >
           −
         </button>
@@ -40,7 +40,7 @@ function ActiveTagRow({
           type="button"
           aria-label={`Aumentar marcação ${tag.nome}`}
           onClick={onIncrement}
-          className="flex size-6 items-center justify-center rounded-lg border border-brand-900/20 bg-white text-xs font-bold text-brand-900 hover:bg-brand-100 active:scale-95"
+          className="relative flex size-6 items-center justify-center rounded-lg border border-brand-900/20 bg-white text-xs font-bold text-brand-900 after:absolute after:-inset-2 hover:bg-brand-100 active:scale-95"
         >
           +
         </button>

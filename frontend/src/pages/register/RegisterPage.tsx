@@ -59,7 +59,7 @@ export default function RegisterPage() {
         Já tem conta?{' '}
         <Link
           to={`${ROUTES.login}?perfil=${toProfileParam(profile)}`}
-          className="text-brand-900 underline-offset-4 hover:underline"
+          className="-my-3 inline-block py-3 text-brand-900 underline-offset-4 hover:underline"
         >
           Entrar
         </Link>

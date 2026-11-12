@@ -39,7 +39,7 @@ export function FormActions({ onSave, onCancel }: { onSave: () => void; onCancel
       <button
         type="button"
         onClick={onCancel}
-        className="text-center text-sm font-semibold text-brand-900 underline hover:opacity-80"
+        className="relative text-center text-sm font-semibold text-brand-900 underline after:absolute after:inset-x-0 after:-inset-y-2 hover:opacity-80"
       >
         Cancelar
       </button>

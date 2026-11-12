@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { BackHeader } from '@/components/layout/BackHeader';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
 import { FeedbackCard } from './FeedbackCard';
@@ -8,6 +9,7 @@ import { FeedbackEmptyState } from './FeedbackEmptyState';
 import { EvaluationComponentGrades } from './EvaluationComponentGrades';
 import { useProblemFeedbacks } from './useProblemFeedbacks';
 import { useSessionFeedback } from './useSessionFeedback';
+import { cn } from '@/utils/cn';
 
 export default function SessionFeedbackPage() {
   const { roomId, problemId, sessionId } = useParams<{
@@ -35,7 +37,7 @@ export default function SessionFeedbackPage() {
         onBack={() => navigate(backUrl)}
       />
 
-      <main className="mx-auto mt-6 flex w-full max-w-md flex-col gap-4 px-4 sm:max-w-xl">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
         <Link
           to={allFeedbacksUrl}
           className="flex items-center justify-between rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:bg-black/[0.02]"

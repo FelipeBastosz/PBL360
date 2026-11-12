@@ -7,6 +7,8 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { observationService } from '@/services/observation.service';
 import type { BehaviorTag, ObservationItem } from '@/types/observation';
 import { EvaluationHeader } from './components/EvaluationHeader';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 
 function TagRowActions({
   tag,
@@ -26,7 +28,7 @@ function TagRowActions({
           type="button"
           aria-label={`Diminuir ${tag.nome}`}
           onClick={onDecrement}
-          className="flex size-7 items-center justify-center rounded-lg border border-brand-900/20 bg-gray-50 text-xs font-bold text-brand-900 transition hover:bg-brand-100 active:scale-95"
+          className="relative flex size-7 items-center justify-center rounded-lg border border-brand-900/20 bg-gray-50 text-xs font-bold text-brand-900 transition after:absolute after:-inset-2 hover:bg-brand-100 active:scale-95"
         >
           −
         </button>
@@ -37,7 +39,7 @@ function TagRowActions({
           type="button"
           aria-label={`Aumentar ${tag.nome}`}
           onClick={onIncrement}
-          className="flex size-7 items-center justify-center rounded-lg border border-brand-900/20 bg-gray-50 text-xs font-bold text-brand-900 transition hover:bg-brand-100 active:scale-95"
+          className="relative flex size-7 items-center justify-center rounded-lg border border-brand-900/20 bg-gray-50 text-xs font-bold text-brand-900 transition after:absolute after:-inset-2 hover:bg-brand-100 active:scale-95"
         >
           +
         </button>
@@ -49,7 +51,7 @@ function TagRowActions({
     <button
       type="button"
       onClick={onIncrement}
-      className="flex items-center gap-1 rounded-full border border-brand-900 bg-white px-3.5 py-1 text-xs font-bold text-brand-900 transition hover:bg-brand-50 active:scale-95"
+      className="relative flex items-center gap-1 rounded-full border border-brand-900 bg-white px-3.5 py-1 text-xs font-bold text-brand-900 transition after:absolute after:inset-x-0 after:-inset-y-2 hover:bg-brand-50 active:scale-95"
     >
       <PlusIcon className="size-3.5 stroke-[2.5]" />
       <span>Marcar</span>
@@ -207,7 +209,7 @@ export function StudentObservationTagsPage() {
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <EvaluationHeader onBack={() => navigate(-1)} />
-      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4 sm:max-w-2xl">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4')}>
         {isLoading && (
           <div className="mt-12 flex justify-center">
             <Spinner className="size-8 text-brand-900" />

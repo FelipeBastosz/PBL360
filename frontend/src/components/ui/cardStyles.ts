@@ -8,4 +8,8 @@ export const CARD_ACCENT_CLASS =
 
 export const PAGE_CONTAINER_CLASS = 'mx-auto w-full max-w-md px-4 sm:max-w-2xl lg:max-w-5xl';
 
+// Fixed bar sharing the page container; the negative margin centers the 56px FAB under the
+// 36px header avatar.
+export const FAB_CONTAINER_CLASS = `${PAGE_CONTAINER_CLASS} pointer-events-none fixed inset-x-0 bottom-6 flex flex-col items-end gap-3 [&>*]:pointer-events-auto [&>*]:-mr-2.5`;
+
 export const CARD_GRID_CLASS = 'stagger-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0';

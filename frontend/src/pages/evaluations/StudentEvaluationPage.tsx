@@ -9,6 +9,8 @@ import { QuickObservationsCard } from './components/QuickObservationsCard';
 import { EvaluationFeedbackCard } from './components/EvaluationFeedbackCard';
 import { JustificationModal } from './components/JustificationModal';
 import { useStudentEvaluation } from './hooks/useStudentEvaluation';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 
 function EvaluationActionButtons({
   onSend,
@@ -143,7 +145,7 @@ export function StudentEvaluationPage() {
   return (
     <div className="min-h-dvh bg-surface pb-12">
       <EvaluationHeader />
-      <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4 sm:max-w-2xl">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4')}>
         {state.error && <Alert tone="error">{state.error.message}</Alert>}
         {isPokerActive && (
           <Alert tone="info">
