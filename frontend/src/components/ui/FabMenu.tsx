@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/utils/cn';
+import { FAB_CONTAINER_CLASS } from './cardStyles';
 
 export type FabAction = {
   label: string;
@@ -66,7 +67,7 @@ export function FabMenu({ label, actions }: FabMenuProps) {
           className="fixed inset-0 z-20 cursor-default bg-ink/10 backdrop-blur-[1px] animate-fade-in"
         />
       )}
-      <div className="fixed right-6 bottom-6 z-20 flex flex-col items-end gap-3 pb-[env(safe-area-inset-bottom)]">
+      <div className={cn(FAB_CONTAINER_CLASS, 'z-20 pb-[env(safe-area-inset-bottom)]')}>
         {isOpen && (
           <div className="flex flex-col items-end gap-2">
             {actions.map((action, index) => (
