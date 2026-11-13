@@ -24,6 +24,7 @@ import { ObservationsModule } from './observations/observations.module';
 import { GradesModule } from './grades/grades.module';
 import { PlanningPokerModule } from './planning-poker/planning-poker.module';
 import { DisciplinesModule } from './disciplines/disciplines.module';
+import { ConversationsModule } from './conversations/conversations.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { DisciplinesModule } from './disciplines/disciplines.module';
     GradesModule,
     PlanningPokerModule,
     DisciplinesModule,
+    ConversationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
