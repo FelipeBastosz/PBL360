@@ -203,6 +203,64 @@ describe('ExceljsReportRenderer', () => {
     expect(rowValues(workbook.worksheets[0]!, 3)).toEqual([EMPTY_DOCUMENT_MESSAGE]);
   });
 
+  it('paints the header in the brand color, stripes rows and colors statuses and results', async () => {
+    const workbook = await renderWorkbook(
+      buildReportDocument({
+        sections: [
+          {
+            kind: 'table',
+            title: 'Notas',
+            columns: [
+              { header: 'Aluno', type: ReportColumnType.TEXT },
+              { header: 'Nota final', type: ReportColumnType.NUMBER },
+              { header: 'Situação', type: ReportColumnType.TEXT },
+            ],
+            rows: [
+              ['Ana', 8.6, 'Completa'],
+              ['Bia', 4, 'Parcial'],
+            ],
+          },
+        ],
+      }),
+    );
+    const grades = sheetOf(workbook, 'Notas');
+    const header = headerRowNumber(grades, 'Aluno');
+    const first = grades.getRow(header + 1);
+    const second = grades.getRow(header + 2);
+
+    expect(grades.getRow(header).getCell(1).fill).toMatchObject({ fgColor: { argb: 'FF000077' } });
+    expect(grades.getRow(header).getCell(1).font).toMatchObject({ color: { argb: 'FFFFFFFF' } });
+    expect(first.getCell(1).font).toMatchObject({ bold: true });
+    expect(first.getCell(2).font).toMatchObject({ bold: true, color: { argb: 'FF067647' } });
+    expect(first.getCell(3).fill).toMatchObject({ fgColor: { argb: 'FFECFDF3' } });
+    expect(second.getCell(1).fill).toMatchObject({ fgColor: { argb: 'FFEEEEFB' } });
+    expect(second.getCell(2).font).toMatchObject({ color: { argb: 'FFB42318' } });
+  });
+
+  it('leaves out the columns that no row fills', async () => {
+    const workbook = await renderWorkbook(
+      buildReportDocument({
+        sections: [
+          {
+            kind: 'table',
+            title: 'Notas',
+            columns: [
+              { header: 'Aluno', type: ReportColumnType.TEXT },
+              { header: 'Matrícula', type: ReportColumnType.TEXT },
+              { header: 'Nota', type: ReportColumnType.NUMBER },
+            ],
+            rows: [[null, '001', 8]],
+          },
+        ],
+      }),
+    );
+    const grades = sheetOf(workbook, 'Notas');
+    const header = headerRowNumber(grades, 'Matrícula');
+
+    expect(rowValues(grades, header)).toEqual(['Matrícula', 'Nota']);
+    expect(rowValues(grades, header + 1)).toEqual(['001', 8]);
+  });
+
   it('cuts text at the Excel cell limit so the file stays valid', async () => {
     const workbook = await renderWorkbook(
       buildReportDocument({

@@ -1,4 +1,4 @@
-import type { CellValue, Worksheet } from 'exceljs';
+import type { CellValue, Row, Worksheet } from 'exceljs';
 import {
   ReportColumnType,
   type ReportCellValue,
@@ -16,9 +16,13 @@ import {
   formatCellText,
   normalizeCell,
 } from '../report-cell';
+import { MISSING, STRIPE, toArgb } from '../report-palette';
+import { resultColumnIndex, withoutEmptyColumns } from '../report-table-view';
+import { styleDataCell } from './xlsx-cell-style';
 import {
   TEXT_FORMAT,
   setColumnWidths,
+  solidFill,
   toExcelText,
   writeHeader,
   writeMessage,
@@ -38,13 +42,24 @@ const numberFormat = (column: ReportColumn): string => {
   return decimals === 0 ? '0' : `0.${'0'.repeat(decimals)}`;
 };
 
-const writeDataRow = (sheet: Worksheet, columns: ReportColumn[], values: ReportCellValue[]) => {
+const writeDataRow = (
+  sheet: Worksheet,
+  columns: ReportColumn[],
+  values: ReportCellValue[],
+  rowIndex: number,
+) => {
   const cells = columns.map((column, index) => normalizeCell(values[index], column.type));
   const row = sheet.addRow(cells.map(toExcelValue));
+  const result = resultColumnIndex(columns);
   columns.forEach((column, index) => {
     const cell = row.getCell(index + 1);
     cell.alignment = CELL_ALIGNMENT;
     cell.numFmt = column.type === ReportColumnType.TEXT ? TEXT_FORMAT : numberFormat(column);
+    styleDataCell(cell, cells[index]!, {
+      rowIndex,
+      isLead: index === 0,
+      isResult: index === result,
+    });
   });
 };
 
@@ -61,8 +76,9 @@ const fittedWidths = (section: ReportTableSection): number[] =>
 export const writeTableSheet = (
   sheet: Worksheet,
   document: ReportDocument,
-  section: ReportTableSection,
+  source: ReportTableSection,
 ): void => {
+  const section = withoutEmptyColumns(source);
   writePreamble(sheet, document, section.title);
   const header = writeHeader(
     sheet,
@@ -71,11 +87,17 @@ export const writeTableSheet = (
   setColumnWidths(sheet, fittedWidths(section));
   if (section.rows.length === 0) return writeMessage(sheet, EMPTY_TABLE_MESSAGE);
 
-  section.rows.forEach((values) => writeDataRow(sheet, section.columns, values));
+  section.rows.forEach((values, index) => writeDataRow(sheet, section.columns, values, index));
   sheet.autoFilter = {
     from: { row: header.number, column: 1 },
     to: { row: header.number, column: section.columns.length },
   };
+};
+
+const styleTextEntry = (row: Row, isMissing: boolean, index: number): void => {
+  if (index % 2 === 1) row.eachCell((cell) => (cell.fill = solidFill(STRIPE)));
+  row.getCell(1).font = { bold: true };
+  if (isMissing) row.getCell(2).font = { italic: true, color: { argb: toArgb(MISSING) } };
 };
 
 export const writeTextSheet = (
@@ -88,11 +110,12 @@ export const writeTextSheet = (
   setColumnWidths(sheet, TEXT_SECTION_WIDTHS);
   if (section.entries.length === 0) return writeMessage(sheet, EMPTY_TEXT_SECTION_MESSAGE);
 
-  section.entries.forEach(({ label, text }) => {
+  section.entries.forEach(({ label, text }, index) => {
     const row = sheet.addRow([toExcelText(label), toExcelText(text ?? MISSING_TEXT_LABEL)]);
     row.eachCell((cell) => {
       cell.alignment = CELL_ALIGNMENT;
       cell.numFmt = TEXT_FORMAT;
     });
+    styleTextEntry(row, text === null, index);
   });
 };
