@@ -10,13 +10,12 @@ export const WHITE = '#FFFFFF';
 
 export interface ReportTone {
   foreground: string;
-  background: string;
 }
 
-const SUCCESS: ReportTone = { foreground: '#067647', background: '#ECFDF3' };
-const WARNING: ReportTone = { foreground: '#B54708', background: '#FFF4E5' };
-const DANGER: ReportTone = { foreground: '#B42318', background: '#FEF3F2' };
-const NEUTRAL: ReportTone = { foreground: '#475467', background: '#F2F4F7' };
+const SUCCESS: ReportTone = { foreground: '#067647' };
+const WARNING: ReportTone = { foreground: '#B54708' };
+const DANGER: ReportTone = { foreground: '#B42318' };
+const NEUTRAL: ReportTone = { foreground: '#475467' };
 
 const STATUS_TONES: ReadonlyMap<string, ReportTone> = new Map([
   ['Presente', SUCCESS],

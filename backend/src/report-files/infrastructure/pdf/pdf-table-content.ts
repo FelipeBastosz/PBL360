@@ -12,7 +12,7 @@ import {
   formatCellText,
   normalizeCell,
 } from '../report-cell';
-import { BRAND_900, CARD, STRIPE, gradeTone, statusTone, type ReportTone } from '../report-palette';
+import { BRAND_900, CARD, STRIPE, gradeTone, statusTone } from '../report-palette';
 import { resultColumnIndex, withoutEmptyColumns } from '../report-table-view';
 import { breakLongWords, messageContent } from './pdf-text-format';
 
@@ -26,15 +26,6 @@ interface GroupedRow {
   repeated: number;
   group: number;
 }
-
-export const PILL_LAYOUT: CustomTableLayout = {
-  hLineWidth: () => 0,
-  vLineWidth: () => 0,
-  paddingLeft: () => 5,
-  paddingRight: () => 5,
-  paddingTop: () => 1,
-  paddingBottom: () => 1,
-};
 
 export const tableLayout = (fills: string[]): CustomTableLayout => ({
   fillColor: (rowIndex) => (rowIndex === 0 ? BRAND_900 : (fills[rowIndex - 1] ?? CARD)),
@@ -75,20 +66,13 @@ export const groupRows = ({ columns, rows }: ReportTableSection): GroupedRow[] =
   });
 };
 
-const pillCell = (text: string, tone: ReportTone): TableCell => ({
-  table: {
-    body: [[{ text, style: 'pill', color: tone.foreground, fillColor: tone.background }]],
-  },
-  layout: PILL_LAYOUT,
-});
-
 const valueCell = (column: ReportColumn, value: ReportCellValue, isResult: boolean): TableCell => {
   const text = breakLongWords(formatCellText(value, columnDecimals(column)));
   if (typeof value === 'number' && isResult) {
     return { text, style: 'result', color: gradeTone(value)?.foreground ?? BRAND_900 };
   }
   const tone = typeof value === 'string' ? statusTone(value) : undefined;
-  return tone ? pillCell(text, tone) : { text };
+  return tone ? { text, style: 'status', color: tone.foreground } : { text };
 };
 
 const dataCell = (columns: ReportColumn[], row: GroupedRow, index: number): TableCell => {

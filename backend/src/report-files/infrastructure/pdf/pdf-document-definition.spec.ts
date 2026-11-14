@@ -220,7 +220,7 @@ describe('buildPdfDefinition', () => {
     ]);
   });
 
-  it('shows status values as colored pills', () => {
+  it('shows status values as colored text without a background', () => {
     const document = singleTable(
       [
         { header: 'Aluno', type: ReportColumnType.TEXT },
@@ -228,12 +228,13 @@ describe('buildPdfDefinition', () => {
       ],
       [['Ana', 'Completa']],
     );
-    const pill = tableAt(contentOf(definitionOf(document)), 1).table.body[1]?.[1];
+    const status = tableAt(contentOf(definitionOf(document)), 1).table.body[1]?.[1];
 
-    expect(pill).toMatchObject({
-      table: {
-        body: [[{ text: 'Completa', style: 'pill', color: '#067647', fillColor: '#ECFDF3' }]],
-      },
+    expect(status).toEqual({
+      text: 'Completa',
+      style: 'status',
+      color: '#067647',
+      alignment: 'left',
     });
   });
 

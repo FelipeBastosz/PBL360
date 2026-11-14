@@ -135,7 +135,7 @@ describe('buildClassFinalReportDocument', () => {
       table?: {
         headerRows: number;
         dontBreakRows: boolean;
-        body: Array<Array<{ text?: string; table?: { body: Array<Array<{ text: string }>> } }>>;
+        body: Array<Array<{ text: string }>>;
       };
     }>;
     const table = content.find((item) => item.table)?.table;
@@ -154,7 +154,7 @@ describe('buildClassFinalReportDocument', () => {
       'Média geral',
       'Situação',
     ]);
-    expect(table?.body[1]?.map((cell) => cell.text ?? cell.table?.body[0]?.[0]?.text)).toEqual([
+    expect(table?.body[1]?.map((cell) => cell.text)).toEqual([
       'Ana Souza',
       '00000001',
       '8,0',

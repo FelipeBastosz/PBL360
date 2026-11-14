@@ -15,7 +15,7 @@ export const PDF_STYLES: StyleDictionary = {
   sectionTitle: { fontSize: 10, bold: true, color: BRAND_900, margin: [0, 20, 0, 8] },
   tableHeader: { fontSize: 7.5, bold: true, color: WHITE },
   rowLead: { bold: true },
-  pill: { fontSize: 7.5, bold: true, noWrap: true },
+  status: { bold: true, noWrap: true },
   result: { bold: true },
   missing: { color: MISSING, italics: true },
   message: { color: MUTED, italics: true },

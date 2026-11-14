@@ -13,7 +13,6 @@ const styleStatus = (cell: Cell, value: string): boolean => {
   const tone = statusTone(value);
   if (!tone) return false;
   cell.font = { bold: true, color: { argb: toArgb(tone.foreground) } };
-  cell.fill = solidFill(tone.background);
   return true;
 };
 

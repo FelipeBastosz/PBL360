@@ -203,7 +203,7 @@ describe('ExceljsReportRenderer', () => {
     expect(rowValues(workbook.worksheets[0]!, 3)).toEqual([EMPTY_DOCUMENT_MESSAGE]);
   });
 
-  it('paints the header in the brand color, stripes rows and colors statuses and results', async () => {
+  it('paints the header in the brand color, stripes rows and colors the text of statuses and results', async () => {
     const workbook = await renderWorkbook(
       buildReportDocument({
         sections: [
@@ -232,7 +232,10 @@ describe('ExceljsReportRenderer', () => {
     expect(grades.getRow(header).getCell(1).font).toMatchObject({ color: { argb: 'FFFFFFFF' } });
     expect(first.getCell(1).font).toMatchObject({ bold: true });
     expect(first.getCell(2).font).toMatchObject({ bold: true, color: { argb: 'FF067647' } });
-    expect(first.getCell(3).fill).toMatchObject({ fgColor: { argb: 'FFECFDF3' } });
+    expect(first.getCell(3).font).toMatchObject({ bold: true, color: { argb: 'FF067647' } });
+    expect(first.getCell(3).fill).toMatchObject({ pattern: 'none' });
+    expect(second.getCell(3).fill).toMatchObject({ fgColor: { argb: 'FFEEEEFB' } });
+    expect(second.getCell(3).font).toMatchObject({ color: { argb: 'FFB54708' } });
     expect(second.getCell(1).fill).toMatchObject({ fgColor: { argb: 'FFEEEEFB' } });
     expect(second.getCell(2).font).toMatchObject({ color: { argb: 'FFB42318' } });
   });
