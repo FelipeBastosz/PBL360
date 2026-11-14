@@ -30,20 +30,20 @@ function PeerCardHeader({
   isSubmitted: boolean;
 }) {
   return (
-    <div className="mb-2 flex items-center justify-between border-b border-black/5 pb-4">
-      <div className="flex items-center gap-4">
-        <span className="flex size-12 items-center justify-center rounded-xl bg-surface">
+    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-black/5 pb-4">
+      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-surface">
           <UserCircleIcon className="size-7 text-ink" />
         </span>
-        <div className="flex flex-col">
-          <span className="text-lg font-semibold text-ink">{name}</span>
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-lg font-semibold text-ink">{name}</span>
           {papel && (
             <span className="text-xs font-semibold text-warning">Papel: {roleLabel(papel)}</span>
           )}
         </div>
       </div>
       {isSubmitted && (
-        <span className="text-xs font-semibold text-success">Avaliação já enviada</span>
+        <span className="shrink-0 text-xs font-semibold text-success">Avaliação já enviada</span>
       )}
     </div>
   );

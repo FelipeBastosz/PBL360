@@ -12,6 +12,42 @@ type Props = {
   onTabChange: (tab: FormulaActiveTab) => void;
 };
 
+function FormulaTabs({ activeTab, onTabChange }: Props) {
+  return (
+    <div
+      className={cn(
+        PAGE_CONTAINER_CLASS,
+        'flex items-center gap-6 overflow-x-auto text-sm font-semibold [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-8 [&::-webkit-scrollbar]:hidden',
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => onTabChange('DESEMPENHO')}
+        className={cn(
+          'shrink-0 whitespace-nowrap pb-3 transition-colors border-b-2',
+          activeTab === 'DESEMPENHO'
+            ? 'border-white text-white'
+            : 'border-transparent text-white/60 hover:text-white',
+        )}
+      >
+        Fórmulas de Desempenho
+      </button>
+      <button
+        type="button"
+        onClick={() => onTabChange('NOTA_FINAL')}
+        className={cn(
+          'shrink-0 whitespace-nowrap pb-3 transition-colors border-b-2',
+          activeTab === 'NOTA_FINAL'
+            ? 'border-white text-white'
+            : 'border-transparent text-white/60 hover:text-white',
+        )}
+      >
+        Fórmula da Nota Final
+      </button>
+    </div>
+  );
+}
+
 export function SessionFormulasTabsHeader({ activeTab, onTabChange }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -32,33 +68,7 @@ export function SessionFormulasTabsHeader({ activeTab, onTabChange }: Props) {
         </div>
         <UserMenuButton user={user} />
       </div>
-
-      <div className={cn(PAGE_CONTAINER_CLASS, 'flex items-center gap-8 text-sm font-semibold')}>
-        <button
-          type="button"
-          onClick={() => onTabChange('DESEMPENHO')}
-          className={cn(
-            'pb-3 transition-colors border-b-2',
-            activeTab === 'DESEMPENHO'
-              ? 'border-white text-white'
-              : 'border-transparent text-white/60 hover:text-white',
-          )}
-        >
-          Fórmulas de Desempenho
-        </button>
-        <button
-          type="button"
-          onClick={() => onTabChange('NOTA_FINAL')}
-          className={cn(
-            'pb-3 transition-colors border-b-2',
-            activeTab === 'NOTA_FINAL'
-              ? 'border-white text-white'
-              : 'border-transparent text-white/60 hover:text-white',
-          )}
-        >
-          Fórmula da Nota Final
-        </button>
-      </div>
+      <FormulaTabs activeTab={activeTab} onTabChange={onTabChange} />
     </header>
   );
 }

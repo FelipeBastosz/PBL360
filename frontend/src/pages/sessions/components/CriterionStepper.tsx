@@ -76,8 +76,8 @@ function CriterionInfo({
   subtitle?: string;
 }) {
   return (
-    <div className="flex flex-col pr-4">
-      <span className="font-semibold text-brand-900">{nome}</span>
+    <div className="flex min-w-0 flex-col pr-2">
+      <span className="font-semibold break-words text-brand-900">{nome}</span>
       <span className="text-sm text-muted">{subtitle ?? `Peso ${formatGrade(peso)}`}</span>
     </div>
   );

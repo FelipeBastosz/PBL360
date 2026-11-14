@@ -66,7 +66,7 @@ function EvaluationSwitch({
       aria-label={label}
       disabled={isDisabled}
       onClick={onToggle}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+      className={`relative h-6 w-11 shrink-0 after:absolute after:inset-x-0 after:-inset-y-2.5 rounded-full transition-colors ${
         isDisabled
           ? 'cursor-not-allowed opacity-40 bg-black/20'
           : isLiberada

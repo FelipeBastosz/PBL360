@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { UserMenuButton } from '@/components/layout/UserMenu';
-import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { FAB_CONTAINER_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/routes/paths';
 import { cn } from '@/utils/cn';
@@ -43,7 +43,7 @@ export function PerformanceTablesFabMenu({
   const navigate = useNavigate();
 
   return (
-    <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3">
+    <div className={FAB_CONTAINER_CLASS}>
       {isOpen && (
         <div className="flex animate-fade-up flex-col items-end gap-2">
           <button

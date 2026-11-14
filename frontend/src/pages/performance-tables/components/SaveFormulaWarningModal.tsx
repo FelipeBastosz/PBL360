@@ -43,7 +43,7 @@ export function SaveFormulaWarningModal({ isOpen, isLoading, onConfirm, onCancel
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative flex w-full max-w-sm flex-col gap-4 rounded-[24px] bg-white p-6 text-center shadow-2xl">
+      <div className="relative flex max-h-full w-full max-w-sm overflow-y-auto flex-col gap-4 rounded-[24px] bg-white p-6 text-center shadow-2xl">
         <button
           type="button"
           onClick={isLoading ? undefined : onCancel}

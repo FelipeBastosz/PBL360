@@ -37,7 +37,7 @@ function ManageRoomCard({
             <Link
               to={ROUTES.editRoom.replace(':id', room.id)}
               aria-label={`Editar ${room.nome}`}
-              className="p-1 text-ink/70 hover:text-brand-900 focus-visible:outline-2 focus-visible:outline-brand-900"
+              className="relative p-1 text-ink/70 hover:text-brand-900 after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-brand-900"
             >
               <PencilIcon className="size-5" />
             </Link>
@@ -45,7 +45,7 @@ function ManageRoomCard({
               type="button"
               onClick={() => onDeleteRequest(room)}
               aria-label={`Excluir ${room.nome}`}
-              className="p-1 text-danger hover:text-danger/80 focus-visible:outline-2 focus-visible:outline-danger"
+              className="relative p-1 text-danger hover:text-danger/80 after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-danger"
             >
               <TrashIcon className="size-5" />
             </button>
@@ -58,7 +58,7 @@ function ManageRoomCard({
 
 function ManageRoomsFooter({ onFinish }: { onFinish: () => void }) {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 border-t border-black/5 bg-surface/95 px-6 py-4 backdrop-blur-xs">
+    <footer className="fixed right-0 bottom-0 left-0 border-t border-black/5 bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
       <div className="mx-auto flex max-w-md flex-col gap-2">
         <Button onClick={onFinish}>Concluir edição</Button>
         <Button variant="link" onClick={onFinish}>
@@ -129,7 +129,7 @@ export default function ManageRoomsPage() {
   const filteredRooms = rooms.filter((r) => r.nome.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div className="min-h-dvh bg-surface pb-36">
+    <div className="min-h-dvh bg-surface pb-[calc(10rem+env(safe-area-inset-bottom))]">
       <AppHeader />
       <div className={cn(PAGE_CONTAINER_CLASS, 'mt-4')}>
         <SearchField label="Pesquisar turma" value={query} onChange={setQuery} />

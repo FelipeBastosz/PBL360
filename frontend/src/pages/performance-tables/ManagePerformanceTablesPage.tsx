@@ -123,7 +123,7 @@ function ManageActions({
       <button
         type="button"
         onClick={onCancel}
-        className="text-center text-sm font-semibold text-brand-900 underline hover:opacity-80"
+        className="relative text-center text-sm font-semibold text-brand-900 underline after:absolute after:inset-x-0 after:-inset-y-2 hover:opacity-80"
       >
         Cancelar
       </button>
@@ -165,7 +165,7 @@ export function ManagePerformanceTablesPage() {
       <ManageHeader />
       <ManageSearch query={query} setQuery={setQuery} />
 
-      <main className="mx-auto mt-6 flex w-full max-w-md flex-col px-4">
+      <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col')}>
         {isLoading && (
           <div className="mt-12 flex justify-center">
             <Spinner className="size-8 text-brand-900" />
