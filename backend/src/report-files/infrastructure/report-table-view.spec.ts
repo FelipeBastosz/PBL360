@@ -14,7 +14,7 @@ const section = (rows: ReportTableSection['rows']): ReportTableSection => ({
 });
 
 describe('withoutEmptyColumns', () => {
-  it('drops the columns that no row fills, such as a hidden student name', () => {
+  it('drops the text columns that no row fills, such as a hidden student name', () => {
     const view = withoutEmptyColumns(
       section([
         [null, '001', '  ', 8],
@@ -29,18 +29,33 @@ describe('withoutEmptyColumns', () => {
     ]);
   });
 
+  it('keeps grade columns even when nobody has a grade yet', () => {
+    const view = withoutEmptyColumns(
+      section([
+        ['Ana', '001', null, null],
+        ['Bia', '002', null, null],
+      ]),
+    );
+
+    expect(view.columns.map((column) => column.header)).toEqual(['Aluno', 'Matrícula', 'Nota']);
+    expect(view.rows).toEqual([
+      ['Ana', '001', null],
+      ['Bia', '002', null],
+    ]);
+  });
+
   it('keeps the table as it is when every column has a value', () => {
     const source = section([['Ana', '001', 'Proativo', 8]]);
 
     expect(withoutEmptyColumns(source)).toBe(source);
   });
 
-  it('keeps the columns of a table without rows or without any value', () => {
+  it('keeps a table without rows and leaves only grades when no text is filled', () => {
     const empty = section([]);
     const blank = section([[null, null, null, null]]);
 
     expect(withoutEmptyColumns(empty)).toBe(empty);
-    expect(withoutEmptyColumns(blank)).toBe(blank);
+    expect(withoutEmptyColumns(blank).columns.map((column) => column.header)).toEqual(['Nota']);
   });
 });
 
