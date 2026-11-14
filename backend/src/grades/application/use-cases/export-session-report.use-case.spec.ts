@@ -223,7 +223,6 @@ describe('ExportSessionReportUseCase', () => {
         { header: 'Matrícula', type: ReportColumnType.TEXT },
         { header: 'Chamada', type: ReportColumnType.TEXT },
         { header: 'Papel', type: ReportColumnType.TEXT },
-        { header: 'Nota adicional de papel', type: ReportColumnType.NUMBER, decimals: 1 },
         { header: 'Marcações', type: ReportColumnType.TEXT },
         { header: 'Situação da nota', type: ReportColumnType.TEXT },
         { header: 'Nota', type: ReportColumnType.NUMBER, decimals: 1 },
@@ -234,7 +233,6 @@ describe('ExportSessionReportUseCase', () => {
           '2026001',
           'Presente',
           'Coordenador',
-          9.0,
           'Participativa, Pontual',
           'Nota enviada',
           8.7,
@@ -244,12 +242,11 @@ describe('ExportSessionReportUseCase', () => {
           '2026002',
           'Atrasado',
           'Secretário da mesa',
-          8.0,
           'Atraso leve',
           'Rascunho',
           null,
         ],
-        ['Carlos Dias', null, 'Não registrada', null, null, null, 'Não registrada', null],
+        ['Carlos Dias', null, 'Não registrada', null, null, 'Não registrada', null],
       ]);
     }
 
@@ -283,7 +280,7 @@ describe('ExportSessionReportUseCase', () => {
       8.75,
     );
 
-    expect(row.slice(6)).toEqual(['Nota enviada', 8.8]);
+    expect(row.slice(5)).toEqual(['Nota enviada', 8.8]);
   });
 
   it('uses the peer form grade as the session grade', async () => {
@@ -298,7 +295,7 @@ describe('ExportSessionReportUseCase', () => {
       7.25,
     );
 
-    expect(row.slice(6)).toEqual(['Nota enviada', 7.3]);
+    expect(row.slice(5)).toEqual(['Nota enviada', 7.3]);
   });
 
   it('uses the self-assessment grade as the session grade', async () => {
@@ -308,7 +305,7 @@ describe('ExportSessionReportUseCase', () => {
       9.125,
     );
 
-    expect(row.slice(6)).toEqual(['Nota enviada', 9.1]);
+    expect(row.slice(5)).toEqual(['Nota enviada', 9.1]);
   });
 
   it.each([
@@ -320,7 +317,7 @@ describe('ExportSessionReportUseCase', () => {
       sessionGrade({ nota, situacao, modalidade: 'PARES' }),
     );
 
-    expect(row.slice(6)).toEqual([label, nota]);
+    expect(row.slice(5)).toEqual([label, nota]);
   });
 
   it('gives precedence to absence over a submitted evaluation', async () => {
@@ -333,7 +330,7 @@ describe('ExportSessionReportUseCase', () => {
       0,
     );
 
-    expect(row.slice(6)).toEqual(['Ausente', 0]);
+    expect(row.slice(5)).toEqual(['Ausente', 0]);
   });
 
   it('keeps a peer modality pending even when a stale tutor draft exists', async () => {
@@ -342,7 +339,7 @@ describe('ExportSessionReportUseCase', () => {
       sessionGrade({ modalidade: 'PARES' }),
     );
 
-    expect(row.slice(6)).toEqual(['Não registrada', null]);
+    expect(row.slice(5)).toEqual(['Não registrada', null]);
   });
 
   it('marks a student missing from the grades response as not recorded', async () => {
@@ -353,7 +350,7 @@ describe('ExportSessionReportUseCase', () => {
 
     await exportReport();
 
-    expect(tableRows()[0]!.slice(6)).toEqual(['Não registrada', null]);
+    expect(tableRows()[0]!.slice(5)).toEqual(['Não registrada', null]);
   });
 
   it('hides student names and omits the feedback section when requested', async () => {
@@ -366,7 +363,7 @@ describe('ExportSessionReportUseCase', () => {
     const rows = tableRows();
     expect(rows[0]![0]).toBeNull();
     expect(rows[0]![1]).toBe('2026001');
-    expect(rows[0]![7]).toBe(8.7);
+    expect(rows[0]![6]).toBe(8.7);
     expect(generatedDocument().sections).toHaveLength(1);
   });
 
@@ -381,7 +378,7 @@ describe('ExportSessionReportUseCase', () => {
     }
   });
 
-  it('shows the frozen applied bonus for submitted evaluations and the role score otherwise', async () => {
+  it('leaves the role score out of the report, even when the student has one', async () => {
     reportRepository.getSessionReportData.mockResolvedValue({
       ...baseSessionReportData,
       students: [
@@ -404,7 +401,18 @@ describe('ExportSessionReportUseCase', () => {
 
     await exportReport();
 
-    expect(tableRows().map((row) => row[4])).toEqual([5.0, null, 7.5]);
+    const columns = generatedDocument().sections[0]!;
+    expect(columns.kind === 'table' && columns.columns.map(({ header }) => header)).toEqual([
+      'Aluno',
+      'Matrícula',
+      'Chamada',
+      'Papel',
+      'Marcações',
+      'Situação da nota',
+      'Nota',
+    ]);
+    expect(tableRows().every((row) => row.length === 7)).toBe(true);
+    expect(tableRows().flat()).not.toContain(5.0);
   });
 
   it('handles missing data gracefully without errors', async () => {
