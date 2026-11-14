@@ -3,6 +3,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import type { EvaluationAdjustmentSituation } from '@/types/evaluationHistory';
 import { getInitials } from '@/utils/initials';
 import { GradeInputs, JustificationField } from './AdjustEvaluationGradeFields';
 
@@ -15,6 +16,7 @@ export type AdjustStudentInfo = {
   notaAlunoOriginal?: number | null;
   notaPares?: number | null;
   avaliacoesPares?: number;
+  situacaoAjuste?: EvaluationAdjustmentSituation;
 };
 
 export type AdjustEvaluationGradeModalProps = {
@@ -92,9 +94,9 @@ type FormProps = {
 function isPeerAssessmentUnderway(student: AdjustStudentInfo): boolean {
   return (
     student.notaAluno === null &&
-    (student.notaPares !== null ||
-      student.avaliacoesPares !== undefined ||
-      student.notaAlunoOriginal !== null)
+    (student.notaPares === null || student.notaPares === undefined) &&
+    student.situacaoAjuste !== 'AJUSTADA' &&
+    (student.avaliacoesPares !== undefined || student.notaAlunoOriginal !== null)
   );
 }
 
@@ -180,7 +182,7 @@ export function AdjustEvaluationGradeModal({
     >
       <div className="fixed inset-0" aria-hidden="true" onClick={isLoading ? undefined : onClose} />
       <AdjustEvaluationGradeForm
-        key={`${student.alunoId}-${student.notaVigente ?? student.notaAluno ?? 0}`}
+        key={`${student.alunoId}-${student.notaVigente ?? student.notaAluno ?? student.notaPares ?? 0}`}
         student={student}
         hideNames={hideNames}
         onClose={onClose}
