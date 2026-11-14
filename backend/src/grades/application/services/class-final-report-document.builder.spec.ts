@@ -111,12 +111,8 @@ describe('buildClassFinalReportDocument', () => {
     const definition = buildPdfDefinition(document, logo);
     const header = definition.header as DynamicContent;
 
-    expect(header(2, 10, { width: 842, height: 595, orientation: 'landscape' })).toMatchObject({
-      stack: [
-        { text: [{ text: 'Turma: ', bold: true }, 'Turma A'] },
-        { text: [{ text: 'Disciplina: ', bold: true }, 'MED101'] },
-        { text: [{ text: 'Semestre: ', bold: true }, '2026.2'] },
-      ],
+    expect(header(2, 10, { width: 595, height: 842, orientation: 'portrait' })).toMatchObject({
+      columns: [{}, { stack: [{}, { text: 'Turma A · MED101 · 2026.2' }] }],
     });
   });
 
@@ -136,7 +132,11 @@ describe('buildClassFinalReportDocument', () => {
       logo,
     );
     const content = definition.content as Array<{
-      table?: { headerRows: number; dontBreakRows: boolean; body: Array<Array<{ text: string }>> };
+      table?: {
+        headerRows: number;
+        dontBreakRows: boolean;
+        body: Array<Array<{ text?: string; table?: { body: Array<Array<{ text: string }>> } }>>;
+      };
     }>;
     const table = content.find((item) => item.table)?.table;
 
@@ -154,7 +154,7 @@ describe('buildClassFinalReportDocument', () => {
       'Média geral',
       'Situação',
     ]);
-    expect(table?.body[1]?.map((cell) => cell.text)).toEqual([
+    expect(table?.body[1]?.map((cell) => cell.text ?? cell.table?.body[0]?.[0]?.text)).toEqual([
       'Ana Souza',
       '00000001',
       '8,0',
