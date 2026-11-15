@@ -378,6 +378,32 @@ describe('ExportSessionReportUseCase', () => {
     }
   });
 
+  it('normalizes empty or whitespace-only feedbacks to null and omits the author suffix', async () => {
+    reportRepository.getSessionReportData.mockResolvedValue({
+      ...baseSessionReportData,
+      generalFeedback: { text: '   ', authorName: 'Prof. Carlos' },
+      students: [
+        student({ feedback: { text: '', authorName: 'Prof. Carlos' } }),
+        student({
+          studentId: 'stud-2',
+          name: 'Bruno Lima',
+          feedback: { text: '   \n ', authorName: 'Prof. Carlos' },
+        }),
+      ],
+    });
+
+    await exportReport();
+
+    const feedbackSection = generatedDocument().sections[1]!;
+    expect(feedbackSection.kind).toBe('text');
+    if (feedbackSection.kind === 'text') {
+      expect(feedbackSection.entries).toEqual([
+        { label: 'Ana Souza', text: null },
+        { label: 'Bruno Lima', text: null },
+      ]);
+    }
+  });
+
   it('leaves the role score out of the report, even when the student has one', async () => {
     reportRepository.getSessionReportData.mockResolvedValue({
       ...baseSessionReportData,
