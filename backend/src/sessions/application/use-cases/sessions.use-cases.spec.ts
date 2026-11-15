@@ -31,6 +31,7 @@ describe('Session use cases', () => {
         observacoes: 0,
         avaliacoes: 0,
         feedbacks: 0,
+        avaliacaoGeral: 0,
       }),
       delete: jest.fn().mockResolvedValue(undefined),
     };
@@ -73,6 +74,7 @@ describe('Session use cases', () => {
       observacoes: 0,
       avaliacoes: 0,
       feedbacks: 0,
+      avaliacaoGeral: 0,
     });
     const useCase = new GetSessionDeletionImpactUseCase(repository, access);
     await expect(
@@ -89,10 +91,11 @@ describe('Session use cases', () => {
       observations: 0,
       evaluations: 0,
       feedbacks: 0,
+      generalEvaluation: 0,
     });
   });
 
-  it.each(['chamada', 'papeis', 'observacoes', 'avaliacoes', 'feedbacks'])(
+  it.each(['chamada', 'papeis', 'observacoes', 'avaliacoes', 'feedbacks', 'avaliacaoGeral'])(
     'blocks deletion and returns structured details when %s records exist',
     async (field) => {
       const impact = {
@@ -101,6 +104,7 @@ describe('Session use cases', () => {
         observacoes: 0,
         avaliacoes: 0,
         feedbacks: 0,
+        avaliacaoGeral: 0,
         [field]: 3,
       };
       repository.getDeletionImpact.mockResolvedValueOnce(impact);
@@ -128,6 +132,7 @@ describe('Session use cases', () => {
       observacoes: 0,
       avaliacoes: 0,
       feedbacks: 2,
+      avaliacaoGeral: 0,
     });
     await expect(
       new GetSessionDeletionImpactUseCase(repository, access).execute({
@@ -143,6 +148,7 @@ describe('Session use cases', () => {
       observations: 0,
       evaluations: 0,
       feedbacks: 2,
+      generalEvaluation: 0,
     });
   });
 

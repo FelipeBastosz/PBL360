@@ -45,6 +45,7 @@ interface SessionDeletionImpactResponseBody {
   observacoes: number;
   avaliacoes: number;
   feedbacks: number;
+  avaliacaoGeral: number;
 }
 
 interface ProblemDeletionImpactResponseBody {
@@ -908,6 +909,7 @@ describe('Sessions (e2e)', () => {
         observacoes: 0,
         avaliacoes: 0,
         feedbacks: 0,
+        avaliacaoGeral: 0,
       });
     });
 

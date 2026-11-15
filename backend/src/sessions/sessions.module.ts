@@ -12,6 +12,7 @@ import { SessionAccessService } from './application/services/session-access.serv
 import { Attendance } from './domain/entities/attendance.entity';
 import { SessionAttachment } from './domain/entities/session-attachment.entity';
 import { Session } from './domain/entities/session.entity';
+import { SessionGeneralEvaluation } from './domain/entities/session-general-evaluation.entity';
 import { SessionRoleAssignment } from './domain/entities/session-role.entity';
 import { SESSION_ROLE_REPOSITORY } from './domain/repositories/session-role.repository';
 import { PgSessionRoleRepository } from './infrastructure/database/pg-session-role.repository';
@@ -43,6 +44,11 @@ import { SESSION_ATTACHMENT_REPOSITORY } from './domain/repositories/session-att
 import { PgSessionAttachmentRepository } from './infrastructure/database/pg-session-attachment.repository';
 import { SessionEvaluationConfigurationController } from './infrastructure/http/session-evaluation-configuration.controller';
 import { SessionEvaluationConfigurationService } from './application/services/session-evaluation-configuration.service';
+import { GetSessionGeneralEvaluationUseCase } from './application/use-cases/get-session-general-evaluation.use-case';
+import { SaveSessionGeneralEvaluationUseCase } from './application/use-cases/save-session-general-evaluation.use-case';
+import { SESSION_GENERAL_EVALUATION_REPOSITORY } from './domain/repositories/session-general-evaluation.repository';
+import { PgSessionGeneralEvaluationRepository } from './infrastructure/database/pg-session-general-evaluation.repository';
+import { SessionGeneralEvaluationsController } from './infrastructure/http/session-general-evaluations.controller';
 
 import { SessionTableEditingController } from './infrastructure/http/session-table-editing.controller';
 import { GetSessionTableEditPermissionsUseCase } from './application/use-cases/get-session-table-edit-permissions.use-case';
@@ -54,7 +60,13 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Session, SessionRoleAssignment, Attendance, SessionAttachment]),
+    TypeOrmModule.forFeature([
+      Session,
+      SessionRoleAssignment,
+      Attendance,
+      SessionAttachment,
+      SessionGeneralEvaluation,
+    ]),
     RoomsModule,
     ProblemsModule,
   ],
@@ -67,6 +79,7 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     SessionAttachmentsController,
     EvaluationReleasesController,
     SessionEvaluationConfigurationController,
+    SessionGeneralEvaluationsController,
   ],
   providers: [
     CreateSessionUseCase,
@@ -92,11 +105,17 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     GetEvaluationReleasesUseCase,
     UpdateEvaluationReleasesUseCase,
     SessionEvaluationConfigurationService,
+    GetSessionGeneralEvaluationUseCase,
+    SaveSessionGeneralEvaluationUseCase,
     { provide: SESSION_REPOSITORY, useClass: PgSessionRepository },
     { provide: SESSION_ROLE_REPOSITORY, useClass: PgSessionRoleRepository },
     { provide: ATTENDANCE_REPOSITORY, useClass: PgAttendanceRepository },
     { provide: ROOM_SESSION_REPOSITORY, useClass: PgRoomSessionRepository },
     { provide: SESSION_ATTACHMENT_REPOSITORY, useClass: PgSessionAttachmentRepository },
+    {
+      provide: SESSION_GENERAL_EVALUATION_REPOSITORY,
+      useClass: PgSessionGeneralEvaluationRepository,
+    },
     { provide: SESSION_REPORT_REPOSITORY, useClass: PgSessionReportRepository },
   ],
   exports: [

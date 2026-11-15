@@ -9,6 +9,7 @@ describe('toSessionDeletionImpactResponse', () => {
       observations: 3,
       evaluations: 4,
       feedbacks: 5,
+      generalEvaluation: 6,
     });
 
     expect(response).toEqual({
@@ -18,6 +19,7 @@ describe('toSessionDeletionImpactResponse', () => {
       observacoes: 3,
       avaliacoes: 4,
       feedbacks: 5,
+      avaliacaoGeral: 6,
     });
     expect(Object.keys(response)).toEqual([
       'podeExcluir',
@@ -26,6 +28,7 @@ describe('toSessionDeletionImpactResponse', () => {
       'observacoes',
       'avaliacoes',
       'feedbacks',
+      'avaliacaoGeral',
     ]);
   });
 });
