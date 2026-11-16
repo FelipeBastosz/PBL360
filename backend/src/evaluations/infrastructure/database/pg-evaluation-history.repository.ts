@@ -35,6 +35,7 @@ import {
 import type { SelfEvaluationRow, StudentRow } from './evaluation-history.types';
 import { FIND_EVALUATION_ITEMS_QUERY } from './evaluation-history.queries';
 import {
+  isPeerWindowOpen,
   mapAdjustments,
   mapPeerAdjustments,
   mapPeers,
@@ -163,21 +164,21 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
   }
 
   private async loadHistoryMaps(manager: EntityManager, sessionId: string) {
-    const [selfEvals, adjustments, peerAdjustments, peers, tutorScores] = await Promise.all([
+    const [selfEvals, adjustments, peerAdj, peers, tutorScores, timing] = await Promise.all([
       readSessionSelfEvaluations(manager, sessionId),
       readSessionAdjustments(manager, sessionId),
       readSessionPeerAdjustments(manager, sessionId),
       readSessionPeerEvaluations(manager, sessionId),
       readSessionTutorScores(manager, sessionId),
+      readSessionTiming(manager, sessionId),
     ]);
-    const { tutorMap, tutorBonusMap } = mapTutors(tutorScores);
     return {
       selfMap: mapSelf(selfEvals),
       adjustmentMap: mapAdjustments(adjustments),
       peerMap: mapPeers(peers),
-      peerAdjustmentMap: mapPeerAdjustments(peerAdjustments),
-      tutorMap,
-      tutorBonusMap,
+      peerAdjustmentMap: mapPeerAdjustments(peerAdj),
+      peerWindowOpen: isPeerWindowOpen(timing),
+      ...mapTutors(tutorScores),
     };
   }
 

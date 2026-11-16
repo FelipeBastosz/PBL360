@@ -79,16 +79,11 @@ function allPeersSubmitted(input: PeerAssessmentSessionInput): boolean {
 }
 
 function hasPendingPeers(input: PeerAssessmentSessionInput): boolean {
-  return (
-    input.expectedPeerCount !== undefined &&
-    input.expectedPeerCount > 0 &&
-    input.receivedScores.length > 0 &&
-    input.receivedScores.length < input.expectedPeerCount
-  );
+  return isOpen(input.release, input.now) && !allPeersSubmitted(input);
 }
 
 function pendingOrNoData(input: PeerAssessmentSessionInput): EvaluationComponentResult {
-  if (isOpen(input.release, input.now) || hasPendingPeers(input)) {
+  if (hasPendingPeers(input)) {
     return withoutData('PENDENTE');
   }
   const average = averageOf(input.receivedScores);
@@ -104,10 +99,6 @@ export function calculatePeerAssessmentSession(
   if (excluded) return excluded;
   if (input.adjustedScore !== undefined && input.adjustedScore !== null) {
     return { grade: input.adjustedScore, situation: 'AVALIADA' };
-  }
-  if (allPeersSubmitted(input)) {
-    const average = averageOf(input.receivedScores);
-    if (average !== null) return { grade: average, situation: 'AVALIADA' };
   }
   return pendingOrNoData(input);
 }

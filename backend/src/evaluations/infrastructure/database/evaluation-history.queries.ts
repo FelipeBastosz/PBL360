@@ -72,7 +72,8 @@ export const FIND_STUDENT_PARTICIPANT_QUERY = `
 `;
 
 export const FIND_SESSION_TIMINGS_QUERY = `
-  SELECT self_eval_released AS "selfEvalReleased", self_eval_deadline AS "selfEvalDeadline"
+  SELECT self_eval_released AS "selfEvalReleased", self_eval_deadline AS "selfEvalDeadline",
+         peer_eval_released AS "peerEvalReleased", peer_eval_deadline AS "peerEvalDeadline"
     FROM sessions WHERE id = $1;
 `;
 

@@ -1,8 +1,14 @@
 import type {
   SelfAdjustmentRow,
   SelfEvaluationRow,
+  SessionTimingRow,
   TutorScoreRow,
 } from './evaluation-history.types';
+
+export function isPeerWindowOpen(timing: SessionTimingRow | null, now = new Date()): boolean {
+  if (!timing?.peerEvalReleased) return false;
+  return !timing.peerEvalDeadline || new Date(timing.peerEvalDeadline) > now;
+}
 
 export function mapSelf(rows: SelfEvaluationRow[]): Map<string, SelfEvaluationRow> {
   const map = new Map<string, SelfEvaluationRow>();

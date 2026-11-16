@@ -27,6 +27,7 @@ export interface HistoryMaps {
   adjustmentMap: Map<string, SelfAdjustmentRow>;
   peerMap: Map<string, number[]>;
   peerAdjustmentMap?: Map<string, { previousValue: number; newValue: number }>;
+  peerWindowOpen?: boolean;
   tutorMap: Map<string, Array<{ criterionId: string; score: number }>>;
   tutorBonusMap?: Map<string, number | null>;
 }
@@ -65,10 +66,7 @@ function resolveSelfGrades(
 
 function extractStudentScores(
   studentId: string,
-  config: {
-    criteria: Array<{ id: string; weight: number }>;
-    formula: { criteriaWeight: number; roleWeight: number };
-  },
+  config: ReturnType<typeof resolveHistoryConfig>,
   maps: HistoryMaps,
   expectedPeerCount = 0,
 ) {
@@ -76,9 +74,10 @@ function extractStudentScores(
   const tutor = maps.tutorMap.get(studentId) ?? [];
   const bonus = maps.tutorBonusMap?.get(studentId) ?? null;
   const allPeersSubmitted = expectedPeerCount > 0 && peers.length >= expectedPeerCount;
+  const hasPendingPeers = Boolean(maps.peerWindowOpen) && !allPeersSubmitted;
   return {
     notaTutor: calculateTutorScore(tutor, config, bonus),
-    notaPares: allPeersSubmitted ? calculatePeerAverage(peers) : null,
+    notaPares: hasPendingPeers ? null : calculatePeerAverage(peers),
     avaliacoesPares: peers.length,
   };
 }
