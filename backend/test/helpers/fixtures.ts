@@ -59,6 +59,17 @@ const recordUserAcceptance = async (dataSource: DataSource, userId: string): Pro
   );
 };
 
+export const acceptCurrentTermForAllUsers = async (dataSource: DataSource): Promise<void> => {
+  await dataSource.query(`
+    INSERT INTO user_term_acceptances (user_id, term_id, term_version, accepted_at)
+    SELECT users.id, terms.id, terms.version, now()
+    FROM users
+    CROSS JOIN commitment_terms AS terms
+    WHERE terms.is_current = TRUE
+    ON CONFLICT (user_id) DO NOTHING;
+  `);
+};
+
 export const insertUser = async (
   app: INestApplication,
   dataSource: DataSource,

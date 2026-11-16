@@ -6,7 +6,12 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, insertDefaultPerformanceTable, signAccessToken } from './helpers/fixtures';
+import {
+  acceptCurrentTermForAllUsers,
+  cleanDatabase,
+  insertDefaultPerformanceTable,
+  signAccessToken,
+} from './helpers/fixtures';
 
 interface SessionRoleResponseBody {
   alunoId: string;
@@ -157,6 +162,8 @@ describe('Session Roles (e2e)', () => {
       [problemId],
     );
     session2Id = sess2.id;
+
+    await acceptCurrentTermForAllUsers(dataSource);
 
     ownerToken = signAccessToken(app, ownerTutorId, 'carlos@uefs.br', UserType.TUTOR);
     coTutorToken = signAccessToken(app, coTutorId, 'maria@uefs.br', UserType.TUTOR);

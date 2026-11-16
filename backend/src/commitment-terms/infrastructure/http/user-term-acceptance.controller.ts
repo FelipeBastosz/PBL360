@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { AllowUnacceptedTerms } from '@/shared/decorators/allow-unaccepted-terms.decorator';
@@ -29,6 +29,7 @@ export class UserTermAcceptancesController {
   }
 
   @Post()
+  @HttpCode(HttpStatus.OK)
   @AcceptCommitmentTermSwaggerDocs
   async accept(
     @AuthenticatedUserId() userId: string,

@@ -8,7 +8,7 @@ import { UserType } from '@/users/domain/enums/user-type.enum';
 import { REPORT_FILE_GENERATOR } from '@/report-files/domain/services/report-file-generator';
 import { ReportGenerationError } from '@/report-files/application/errors/report-generation.error';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, signAccessToken } from './helpers/fixtures';
+import { acceptCurrentTermForAllUsers, cleanDatabase, signAccessToken } from './helpers/fixtures';
 
 const binaryParser = (
   res: request.Response,
@@ -94,6 +94,8 @@ describe('Problem Report Export (e2e)', () => {
       [UserType.STUDENT],
     );
     student2Id = student2.id;
+
+    await acceptCurrentTermForAllUsers(dataSource);
 
     const [room] = await dataSource.query<[{ id: string }]>(
       `INSERT INTO rooms (tutor_id, name, course_code, room_code, semester, active)
