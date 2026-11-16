@@ -66,7 +66,7 @@ describe('routing and session', () => {
     expect(sessionStore.getToken()).toBeNull();
   });
 
-  it('opens the profile choice after the splash screen', async () => {
+  it('opens the login page after the splash screen', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const { user } = renderApp('/');
 
@@ -77,14 +77,20 @@ describe('routing and session', () => {
     });
 
     expect(
-      await screen.findByRole('heading', { name: 'Como você vai acessar?' }, { timeout: 5_000 }),
+      await screen.findByRole('button', { name: 'Entrar' }, { timeout: 5_000 }),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole('link', { name: /Aluno/ }));
+    await user.click(screen.getByRole('link', { name: 'Cadastre-se' }));
 
     expect(
-      await screen.findByRole('link', { name: 'Criar conta' }, { timeout: 5_000 }),
-    ).toHaveAttribute('href', '/cadastro?perfil=aluno');
+      await screen.findByRole(
+        'heading',
+        {
+          name: 'Como você deseja se cadastrar?',
+        },
+        { timeout: 5_000 },
+      ),
+    ).toBeInTheDocument();
   }, 15_000);
 
   it('shows the not found page for an unknown path', async () => {

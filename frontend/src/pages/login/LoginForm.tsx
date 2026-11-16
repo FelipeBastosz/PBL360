@@ -18,7 +18,6 @@ type LoginFormProps = {
   onSubmit: () => void;
   isLoading: boolean;
   errorMessage?: string;
-  registerTo: string;
 };
 
 export function LoginForm(props: LoginFormProps) {
@@ -60,9 +59,9 @@ export function LoginForm(props: LoginFormProps) {
       </Button>
       <div className="mt-6 flex flex-col items-center gap-1 text-sm">
         <p className="text-muted">
-          Não tem conta?{' '}
-          <Link to={props.registerTo} className={TEXT_LINK_CLASS}>
-            Criar conta
+          Não tem uma conta?{' '}
+          <Link to={ROUTES.profileSelection} className={TEXT_LINK_CLASS}>
+            Cadastre-se
           </Link>
         </p>
       </div>

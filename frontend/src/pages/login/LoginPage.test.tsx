@@ -33,7 +33,7 @@ describe('LoginPage', () => {
 
   it('stores the session and opens the rooms page on success', async () => {
     vi.mocked(authService.login).mockResolvedValue(sessionFor(studentUser));
-    const { user } = renderApp('/entrar?perfil=aluno');
+    const { user } = renderApp('/entrar');
 
     await fillAndSubmit(user);
 
@@ -78,12 +78,12 @@ describe('LoginPage', () => {
     expect(screen.getByText(message)).toBeInTheDocument();
   });
 
-  it('keeps the chosen profile on the register link', async () => {
-    renderApp('/entrar?perfil=professor');
+  it('links to the profile selection screen on the register link', async () => {
+    renderApp('/entrar');
 
-    expect(await screen.findByRole('link', { name: 'Criar conta' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'Cadastre-se' })).toHaveAttribute(
       'href',
-      '/cadastro?perfil=professor',
+      '/perfil',
     );
   });
 });

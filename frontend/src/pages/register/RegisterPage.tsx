@@ -9,7 +9,7 @@ import {
   toRegisterPayload,
   validateRegisterForm,
 } from '@/utils/authForms';
-import { parseProfileParam, profileLabel, toProfileParam } from '@/utils/profile';
+import { parseProfileParam, profileLabel } from '@/utils/profile';
 import { RegisterForm } from './RegisterForm';
 
 function initialValues(profileParam: string | null): RegisterFormValues {
@@ -58,7 +58,7 @@ export default function RegisterPage() {
       <p className="mt-6 text-center text-base font-semibold text-brand-300 animate-fade-up [animation-delay:420ms]">
         Já tem conta?{' '}
         <Link
-          to={`${ROUTES.login}?perfil=${toProfileParam(profile)}`}
+          to={ROUTES.login}
           className="-my-3 inline-block py-3 text-brand-900 underline-offset-4 hover:underline"
         >
           Entrar
