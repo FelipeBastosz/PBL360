@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScoreStepper } from '@/components/ui/ScoreStepper';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { Alert } from '@/components/ui/Alert';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
 import { SaveFormulaScopeModal } from './SaveFormulaScopeModal';
@@ -27,25 +28,16 @@ function FormulaWeightRow({
         <span className="text-base font-bold text-brand-900">{title}</span>
         <span className="text-xs text-muted">{subtitle}</span>
       </div>
-      <ScoreStepper value={weight} onChange={onChange} label={title} min={0} max={10} step={1} />
+      <ScoreStepper value={weight} onChange={onChange} label={title} min={1} max={9} step={1} />
     </div>
   );
 }
 
-function FormulaBalanceSummary({
-  isBalanced,
-  totalSum,
-}: {
-  isBalanced: boolean;
-  totalSum: number;
-}) {
+function FormulaAutoAdjustNotice() {
   return (
-    <div className="flex items-center justify-between px-2 text-sm font-bold">
-      <span className={isBalanced ? 'text-ink' : 'text-danger'}>Soma dos pesos</span>
-      <span className={isBalanced ? 'text-emerald-700' : 'text-danger'}>
-        {totalSum.toFixed(1).replace('.', ',')} / 10,0
-      </span>
-    </div>
+    <Alert tone="info" className="text-xs">
+      Ajuste automático: a soma dos pesos é sempre mantida em 10,0 (mínimo de 1,0 por peso).
+    </Alert>
   );
 }
 
@@ -114,7 +106,7 @@ export function FinalScoreFormulaTab({ sessionId }: { sessionId: string }) {
         />
       </div>
 
-      <FormulaBalanceSummary isBalanced={editor.isBalanced} totalSum={editor.totalSum} />
+      <FormulaAutoAdjustNotice />
       <FormulaActions editor={editor} onSave={() => setIsModalOpen(true)} />
 
       <SaveFormulaScopeModal

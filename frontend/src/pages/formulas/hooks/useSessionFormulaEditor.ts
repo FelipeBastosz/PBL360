@@ -30,22 +30,48 @@ function computeBalance(sw: number, rw: number) {
   return { totalSum, isBalanced: Math.abs(totalSum - 10.0) < 0.05 };
 }
 
-export function useSessionFormulaEditor(sessionId: string) {
-  const { notify } = useToast();
+function clampWeight(val: number): number {
+  if (Number.isNaN(val)) return 1;
+  return Math.min(9, Math.max(1, Math.round(val * 10) / 10));
+}
+
+function useFormulaWeights() {
   const [sessionWeight, setSW] = useState(7.0);
   const [roleWeight, setRW] = useState(3.0);
+
+  const applyWeights = useCallback((components: FormulaComponent[]) => {
+    const w = extractWeights(components);
+    const sw = clampWeight(w.sessionWeight);
+    const rw = Number((10 - sw).toFixed(1));
+    setSW(sw);
+    setRW(rw);
+  }, []);
+
+  const setSessionWeight = useCallback((val: number) => {
+    const primary = clampWeight(val);
+    setSW(primary);
+    setRW(Number((10 - primary).toFixed(1)));
+  }, []);
+
+  const setRoleWeight = useCallback((val: number) => {
+    const primary = clampWeight(val);
+    setRW(primary);
+    setSW(Number((10 - primary).toFixed(1)));
+  }, []);
+
+  return { sessionWeight, roleWeight, applyWeights, setSessionWeight, setRoleWeight };
+}
+
+export function useSessionFormulaEditor(sessionId: string) {
+  const { notify } = useToast();
+  const { sessionWeight, roleWeight, applyWeights, setSessionWeight, setRoleWeight } =
+    useFormulaWeights();
   const [isLocked, setIsLocked] = useState(false);
 
   const fetcher = useCallback(() => sessionService.getEvaluationConfig(sessionId), [sessionId]);
   const loadAction = useAsyncAction(fetcher);
   const saveAction = useAsyncAction(sessionService.updateFormula);
   const restoreAction = useAsyncAction(sessionService.restoreDefaultFormula);
-
-  const applyWeights = useCallback((components: FormulaComponent[]) => {
-    const w = extractWeights(components);
-    setSW(w.sessionWeight);
-    setRW(w.roleWeight);
-  }, []);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -72,9 +98,9 @@ export function useSessionFormulaEditor(sessionId: string) {
 
   return {
     sessionWeight,
-    setSessionWeight: setSW,
+    setSessionWeight,
     roleWeight,
-    setRoleWeight: setRW,
+    setRoleWeight,
     ...computeBalance(sessionWeight, roleWeight),
     isLocked,
     isLoading: loadAction.isLoading,
