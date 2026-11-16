@@ -494,6 +494,50 @@ describe('Session report export (e2e)', () => {
     expect(res.text).not.toContain('Renderer engine crash');
   });
 
+  it('exports a self-assessment session and lists its evaluations without a tutor evaluation', async () => {
+    const [selfSession] = await db.query<[{ id: string }]>(
+      `INSERT INTO sessions (
+         problem_id, performance_table_id, title, date, order_index, status,
+         self_eval_released, self_eval_deadline
+       ) VALUES ($1, $2, 'Sessão de autoavaliação', '2026-10-21', 2, 'agendada', true, '2099-10-21')
+       RETURNING id;`,
+      [problemId, tableId],
+    );
+    await db.query(
+      `INSERT INTO attendances (session_id, student_id, recorded_by, status)
+       VALUES ($1, $2, $3, '${AttendanceStatus.PRESENT}');`,
+      [selfSession.id, studentAna.id, owner.id],
+    );
+    await api(app, studentAna)
+      .put(`/sessoes/${selfSession.id}/autoavaliacao`, {
+        itens: [
+          { criterioId: crit1Id, nota: 9 },
+          { criterioId: crit2Id, nota: 9 },
+        ],
+        enviar: true,
+      })
+      .expect(200);
+
+    await api(app, owner).get(`/sessoes/${selfSession.id}/avaliacoes`).expect(200);
+
+    const res = await api(app, owner)
+      .get(exportPath(selfSession.id, 'XLSX'))
+      .buffer(true)
+      .parse(binaryParser)
+      .expect(200);
+    const sheet = (await loadWorkbook(res.body)).getWorksheet('Dados da sessão')!;
+    let anaRow: unknown[] = [];
+    sheet.eachRow((row) => {
+      const values = row.values as unknown[];
+      if (values.includes('Ana Souza')) anaRow = values;
+    });
+
+    expect(anaRow).toContain('Nota enviada');
+    expect(anaRow).toContain(9);
+
+    await api(app, owner).get(exportPath(selfSession.id, 'PDF')).expect(200);
+  });
+
   it('exports valid empty report when classroom has no students', async () => {
     const [emptyRoom] = await db.query<[{ id: string }]>(
       `INSERT INTO rooms (tutor_id, name, course_code, room_code, semester, active)
