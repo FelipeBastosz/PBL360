@@ -5,7 +5,7 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, signAccessToken } from './helpers/fixtures';
+import { acceptCurrentTermForAllUsers, cleanDatabase, signAccessToken } from './helpers/fixtures';
 
 interface ComponentBody {
   nota: number | null;
@@ -134,6 +134,8 @@ describe('Grades (e2e)', () => {
        VALUES ($1, $2, $3, 8.5);`,
       [sessionId, studentId, criterionId],
     );
+
+    await acceptCurrentTermForAllUsers(dataSource);
 
     tutorToken = signAccessToken(app, tutorId, 'carlos.grades@uefs.br', UserType.TUTOR);
     studentToken = signAccessToken(app, studentId, 'ana.grades@discente.uefs.br', UserType.STUDENT);

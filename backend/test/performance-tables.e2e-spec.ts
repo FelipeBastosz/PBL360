@@ -13,7 +13,7 @@ import { InvalidPerformanceTableError } from '@/performance-tables/domain/errors
 import { type ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { signAccessToken } from './helpers/fixtures';
+import { acceptCurrentTermForAllUsers, signAccessToken } from './helpers/fixtures';
 
 describe('Performance tables (e2e)', () => {
   let app: INestApplication;
@@ -91,6 +91,7 @@ describe('Performance tables (e2e)', () => {
        VALUES ($1, 'Problema vinculado', $2);`,
       [room.id, ownerId],
     );
+    await acceptCurrentTermForAllUsers(dataSource);
     ownerToken = signAccessToken(app, ownerId, 'owner@uefs.br', UserType.TUTOR);
     otherTutorToken = signAccessToken(app, otherTutorId, 'other@uefs.br', UserType.TUTOR);
     studentToken = signAccessToken(app, studentId, 'aluno@discente.uefs.br', UserType.STUDENT);

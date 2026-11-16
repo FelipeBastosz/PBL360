@@ -7,6 +7,7 @@ import { appConfig, authConfig, databaseConfig, mailConfig } from './config/env.
 import { validateEnv } from './config/env.validation';
 import { buildTypeOrmOptions } from './config/typeorm.config';
 import { AuthGuard } from './shared/guards/auth.guard';
+import { TermsAcceptanceGuard } from './shared/guards/terms-acceptance.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
 import { THROTTLERS } from './shared/throttling/throttlers';
 import { HttpLoggerMiddleware } from './shared/middlewares/http-logger.middleware';
@@ -24,6 +25,7 @@ import { ObservationsModule } from './observations/observations.module';
 import { GradesModule } from './grades/grades.module';
 import { PlanningPokerModule } from './planning-poker/planning-poker.module';
 import { DisciplinesModule } from './disciplines/disciplines.module';
+import { CommitmentTermsModule } from './commitment-terms/commitment-terms.module';
 
 @Module({
   imports: [
@@ -52,9 +54,11 @@ import { DisciplinesModule } from './disciplines/disciplines.module';
     GradesModule,
     PlanningPokerModule,
     DisciplinesModule,
+    CommitmentTermsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: TermsAcceptanceGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })

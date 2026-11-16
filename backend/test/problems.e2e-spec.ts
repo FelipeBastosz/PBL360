@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { signAccessToken } from './helpers/fixtures';
+import { acceptCurrentTermForAllUsers, signAccessToken } from './helpers/fixtures';
 
 interface ProblemResponseBody {
   id: string;
@@ -92,6 +92,8 @@ describe('Problems (e2e)', () => {
       roomId,
       tutor1Id,
     ]);
+
+    await acceptCurrentTermForAllUsers(dataSource);
 
     tutor1Token = signAccessToken(app, tutor1Id, 'carlos@uefs.br', UserType.TUTOR);
     tutor2Token = signAccessToken(app, tutor2Id, 'maria@uefs.br', UserType.TUTOR);

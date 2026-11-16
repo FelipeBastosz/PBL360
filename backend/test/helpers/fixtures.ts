@@ -20,6 +20,13 @@ export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
     'TRUNCATE problem_grades, session_grades, criterion_grades, formula_components, formulas, grade_adjustments, evaluation_items, evaluations, session_evaluation_configs, observation_tags, observations, behavior_tags, student_session_feedback_reads, feedback_revisions, feedback, session_attachments, attendances, session_roles, sessions, problems, performance_criteria, performance_tables, room_students, room_tutor_events, room_tutors, rooms, password_reset_codes, email_verification_codes, user_photos, users CASCADE;',
   );
   await insertSystemPerformanceTables(dataSource);
+  await resetCommitmentTerms(dataSource);
+};
+
+const resetCommitmentTerms = async (dataSource: DataSource): Promise<void> => {
+  await dataSource.query(`DELETE FROM commitment_terms WHERE version = 'test-current';`);
+  await dataSource.query(`UPDATE commitment_terms SET is_current = FALSE WHERE is_current = TRUE;`);
+  await dataSource.query(`UPDATE commitment_terms SET is_current = TRUE WHERE version = '1.1';`);
 };
 
 export const insertDefaultPerformanceTable = async (
@@ -41,11 +48,34 @@ export const signAccessToken = (
     .get(JwtService)
     .sign({ sub: id, email, type, ver: version }, { audience: ACCESS_TOKEN_AUDIENCE });
 
+const recordUserAcceptance = async (dataSource: DataSource, userId: string): Promise<void> => {
+  await dataSource.query(
+    `INSERT INTO user_term_acceptances (user_id, term_id, term_version, accepted_at)
+     SELECT $1, id, version, now()
+     FROM commitment_terms
+     WHERE is_current = TRUE
+     LIMIT 1;`,
+    [userId],
+  );
+};
+
+export const acceptCurrentTermForAllUsers = async (dataSource: DataSource): Promise<void> => {
+  await dataSource.query(`
+    INSERT INTO user_term_acceptances (user_id, term_id, term_version, accepted_at)
+    SELECT users.id, terms.id, terms.version, now()
+    FROM users
+    CROSS JOIN commitment_terms AS terms
+    WHERE terms.is_current = TRUE
+    ON CONFLICT (user_id) DO NOTHING;
+  `);
+};
+
 export const insertUser = async (
   app: INestApplication,
   dataSource: DataSource,
   email: string,
   type: UserType = UserType.TUTOR,
+  hasAcceptedTerms = true,
 ): Promise<TestUser> => {
   const [row] = await dataSource.query<[{ id: string }]>(
     `INSERT INTO users (name, email, password_hash, type, registration_number, active)
@@ -53,6 +83,9 @@ export const insertUser = async (
       RETURNING id;`,
     [email, type, type === UserType.STUDENT ? email.slice(0, 8) : null],
   );
+  if (hasAcceptedTerms) {
+    await recordUserAcceptance(dataSource, row.id);
+  }
   const token = signAccessToken(app, row.id, email, type);
 
   return { id: row.id, email, type, token };
