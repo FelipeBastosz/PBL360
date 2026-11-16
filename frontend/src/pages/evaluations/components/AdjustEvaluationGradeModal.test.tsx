@@ -74,6 +74,80 @@ describe('AdjustEvaluationGradeModal', () => {
       expect(screen.getByRole('heading', { name: 'Sem matrícula' })).toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: 'Elisa Nunes' })).not.toBeInTheDocument();
     });
+
+    it('hides the peer warning banner when peer grade is already available', () => {
+      const peerStudent: AdjustStudentInfo = {
+        alunoId: 'student-2',
+        nome: 'Diego Alves',
+        matricula: '26121199',
+        notaAluno: null,
+        notaPares: 8.5,
+        avaliacoesPares: 3,
+        situacaoAjuste: 'SEM_AJUSTE',
+      };
+
+      render(
+        <AdjustEvaluationGradeModal
+          isOpen={true}
+          student={peerStudent}
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryByText(/sobrescreverá a média dos pares/i)).not.toBeInTheDocument();
+    });
+
+    it('displays the in-progress peer warning banner only when peer grade is still null', () => {
+      const peerStudent: AdjustStudentInfo = {
+        alunoId: 'student-2',
+        nome: 'Diego Alves',
+        matricula: '26121199',
+        notaAluno: null,
+        notaPares: null,
+        avaliacoesPares: 1,
+        situacaoAjuste: 'SEM_AJUSTE',
+      };
+
+      render(
+        <AdjustEvaluationGradeModal
+          isOpen={true}
+          student={peerStudent}
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />,
+      );
+
+      expect(
+        screen.getByText(
+          'A avaliação por pares está em andamento. Inserir uma nota sobrescreverá a média dos pares.',
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('hides the peer warning banner when the peer grade was already adjusted', () => {
+      const adjustedPeerStudent: AdjustStudentInfo = {
+        alunoId: 'student-2',
+        nome: 'Diego Alves',
+        matricula: '26121199',
+        notaAluno: null,
+        notaPares: 9.0,
+        notaAlunoOriginal: 8.5,
+        avaliacoesPares: 3,
+        situacaoAjuste: 'AJUSTADA',
+      };
+
+      render(
+        <AdjustEvaluationGradeModal
+          isOpen={true}
+          student={adjustedPeerStudent}
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryByText(/sobrescreverá a média dos pares/i)).not.toBeInTheDocument();
+    });
   });
 
   describe('Validação de Input (Botão Desabilitado)', () => {

@@ -86,6 +86,34 @@ describe('peer-assessment session component', () => {
     });
   });
 
+  it('does not present peer grade while window is open if not all classmates submitted their evaluations', () => {
+    expect(peer({ release: open, receivedScores: [8, 6], expectedPeerCount: 3 })).toEqual({
+      grade: null,
+      situation: 'PENDENTE',
+    });
+  });
+
+  it('presents partial peer average after the window closes when some classmates submitted', () => {
+    expect(peer({ release: closed, receivedScores: [8, 6], expectedPeerCount: 3 })).toEqual({
+      grade: 7,
+      situation: 'AVALIADA',
+    });
+  });
+
+  it('presents peer grade when all expected classmates submitted their evaluations', () => {
+    expect(peer({ receivedScores: [8, 6, 7], expectedPeerCount: 3 })).toEqual({
+      grade: 7,
+      situation: 'AVALIADA',
+    });
+  });
+
+  it('presents peer grade when all expected classmates submitted their evaluations even if window is open', () => {
+    expect(peer({ release: open, receivedScores: [8, 6, 7], expectedPeerCount: 3 })).toEqual({
+      grade: 7,
+      situation: 'AVALIADA',
+    });
+  });
+
   it('has no data while the window is open, even with partial scores', () => {
     expect(peer({ release: open, receivedScores: [10] })).toEqual({
       grade: null,

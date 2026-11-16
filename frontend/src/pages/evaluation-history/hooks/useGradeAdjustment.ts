@@ -19,10 +19,14 @@ export function useGradeAdjustment(
     if (!selected || !sessionId) return;
     setIsSaving(true);
     try {
+      const payloadWithTipo = {
+        ...payload,
+        ...(selected.notaAluno === null ? { tipo: 'PARES' as const } : {}),
+      };
       const response = await evaluationService.adjustSelfAssessment(
         sessionId,
         selected.alunoId,
-        payload,
+        payloadWithTipo,
       );
       onAdjusted(response);
       notify({ tone: 'success', message: 'Ajuste de nota salvo com sucesso!' });
