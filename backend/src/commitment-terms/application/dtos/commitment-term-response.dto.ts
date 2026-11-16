@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CommitmentTermResponseDto {
-  @ApiProperty({ example: '1.0', description: 'Versão do termo de compromisso.' })
+  @ApiProperty({ example: '1.1', description: 'Versão do termo de compromisso.' })
   versao: string;
 
   @ApiProperty({

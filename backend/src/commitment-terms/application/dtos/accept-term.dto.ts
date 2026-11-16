@@ -3,7 +3,7 @@ import { IsNotEmpty, IsString } from 'class-validator';
 
 export class AcceptTermDto {
   @ApiProperty({
-    example: '1.0',
+    example: '1.1',
     description: 'Versão do termo de compromisso que está sendo aceita.',
   })
   @IsString({ message: 'A versão deve ser um texto.' })

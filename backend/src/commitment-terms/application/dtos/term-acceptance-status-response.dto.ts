@@ -8,7 +8,7 @@ export class TermAcceptanceStatusResponseDto {
   aceito: boolean;
 
   @ApiProperty({
-    example: '1.0',
+    example: '1.1',
     nullable: true,
     description: 'Versão do termo aceita pelo usuário (nulo se ainda não aceitou).',
   })
@@ -23,7 +23,7 @@ export class TermAcceptanceStatusResponseDto {
   aceitoEm: Date | null;
 
   @ApiProperty({
-    example: '1.0',
+    example: '1.1',
     description: 'Versão vigente atual do termo de compromisso.',
   })
   versaoVigente: string;
