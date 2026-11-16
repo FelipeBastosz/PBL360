@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react';
+import { PrivacyPolicyContent } from '@/components/layout/PrivacyPolicyContent';
+import { TermsOfUseContent } from '@/components/layout/TermsOfUseContent';
 import { Alert } from '@/components/ui/Alert';
 import { AvatarPicker } from '@/components/ui/AvatarPicker';
 import { Button } from '@/components/ui/Button';
 import { LegalDocumentModal } from '@/components/ui/LegalDocumentModal';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { TextField } from '@/components/ui/TextField';
-import { GENERIC_LEGAL_CONTENT, LEGAL_PRIVACY_TITLE, LEGAL_TERMS_TITLE } from '@/content/legal';
+import { LEGAL_PRIVACY_TITLE, LEGAL_TERMS_TITLE } from '@/content/legal';
 import type { FieldErrors } from '@/hooks/useForm';
 import type { RegisterFormValues } from '@/utils/authForms';
 
@@ -126,6 +128,12 @@ function TermsCheckbox({ onOpenTerms, onOpenPrivacy }: TermsCheckboxProps) {
   );
 }
 
+function renderLegalContent(legalDoc: string | null) {
+  if (legalDoc === LEGAL_TERMS_TITLE) return <TermsOfUseContent />;
+  if (legalDoc === LEGAL_PRIVACY_TITLE) return <PrivacyPolicyContent />;
+  return null;
+}
+
 export function RegisterForm(props: RegisterFormProps) {
   const { values, errors, onChange, isLoading, errorMessages } = props;
   const [legalDoc, setLegalDoc] = useState<string | null>(null);
@@ -166,9 +174,11 @@ export function RegisterForm(props: RegisterFormProps) {
       <LegalDocumentModal
         isOpen={legalDoc !== null}
         title={legalDoc ?? ''}
-        content={GENERIC_LEGAL_CONTENT}
         onClose={() => setLegalDoc(null)}
-      />
+        maxWidth="max-w-2xl"
+      >
+        {renderLegalContent(legalDoc)}
+      </LegalDocumentModal>
     </>
   );
 }

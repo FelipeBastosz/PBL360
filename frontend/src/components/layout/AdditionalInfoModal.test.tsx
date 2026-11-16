@@ -17,7 +17,7 @@ describe('AdditionalInfoModal', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByLabelText('PBL360')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sobre o Projeto' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Equipe Responsável' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Desenvolvedores' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Termos de Uso' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Política de Privacidade' })).toBeInTheDocument();
   });
@@ -33,35 +33,47 @@ describe('AdditionalInfoModal', () => {
       screen.getByText(/Desenvolvido na matéria de MI de Engenharia de Software - EXA613/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/professora Larissa Rocha Soares Bastos/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
+      'href',
+      'mailto:contato.pbl360@gmail.com',
+    );
   });
 
   it('opens team members modal with members in alphabetical order', async () => {
     const user = userEvent.setup();
     render(<AdditionalInfoModal isOpen={true} onClose={vi.fn()} />);
 
-    await user.click(screen.getByRole('button', { name: 'Equipe Responsável' }));
+    await user.click(screen.getByRole('button', { name: 'Desenvolvedores' }));
 
-    expect(screen.getByRole('heading', { name: 'Equipe Responsável' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Desenvolvedores' })).toBeInTheDocument();
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(TEAM_MEMBERS.length);
 
     TEAM_MEMBERS.forEach((member, index) => {
-      expect(links[index]).toHaveTextContent(member.name);
+      expect(links[index].textContent?.trim()).toBe(member.name);
       expect(links[index]).toHaveAttribute('href', member.github);
       expect(links[index]).toHaveAttribute('target', '_blank');
     });
   });
 
-  it('opens terms of use and privacy policy modals', async () => {
+  it('opens terms of use and privacy policy modals with contact email', async () => {
     const user = userEvent.setup();
     render(<AdditionalInfoModal isOpen={true} onClose={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: 'Termos de Uso' }));
     expect(screen.getByRole('heading', { name: 'Termos de Uso' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
+      'href',
+      'mailto:contato.pbl360@gmail.com',
+    );
 
     await user.click(screen.getByRole('button', { name: /fechar termos de uso/i }));
     await user.click(screen.getByRole('button', { name: 'Política de Privacidade' }));
     expect(screen.getByRole('heading', { name: 'Política de Privacidade' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
+      'href',
+      'mailto:contato.pbl360@gmail.com',
+    );
   });
 
   it('calls onClose when close icon is clicked', async () => {

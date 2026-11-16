@@ -67,6 +67,9 @@ describe('UserMenu', () => {
 
     await user.click(screen.getByRole('button', { name: 'Termos de Uso' }));
     expect(screen.getByRole('heading', { name: 'Termos de Uso' })).toBeInTheDocument();
-    expect(screen.getByText('Termos e Politica em desenvolvimento')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
+      'href',
+      'mailto:contato.pbl360@gmail.com',
+    );
   });
 });

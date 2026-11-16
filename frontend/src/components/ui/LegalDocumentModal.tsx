@@ -10,6 +10,7 @@ export type LegalDocumentModalProps = {
   children?: ReactNode;
   onClose: () => void;
   zIndex?: string;
+  maxWidth?: string;
 };
 
 function LegalDocumentHeader({ title, onClose }: { title: string; onClose: () => void }) {
@@ -37,6 +38,7 @@ export function LegalDocumentModal({
   children,
   onClose,
   zIndex = 'z-50',
+  maxWidth = 'max-w-md',
 }: LegalDocumentModalProps) {
   useEscapeKey(isOpen, onClose);
 
@@ -49,7 +51,9 @@ export function LegalDocumentModal({
       aria-labelledby="legal-document-modal-title"
       className={`fixed inset-0 ${zIndex} flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-fade-in`}
     >
-      <div className="relative flex max-h-[90vh] w-full max-w-md flex-col rounded-3xl bg-white p-6 shadow-2xl animate-pop-in">
+      <div
+        className={`relative flex max-h-[90vh] w-full ${maxWidth} flex-col rounded-3xl bg-white p-6 shadow-2xl animate-pop-in`}
+      >
         <LegalDocumentHeader title={title} onClose={onClose} />
 
         <div className="mt-4 overflow-y-auto py-2">

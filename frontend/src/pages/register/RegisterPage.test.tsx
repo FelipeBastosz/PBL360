@@ -190,13 +190,25 @@ describe('RegisterPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Termos de Uso' }));
     expect(screen.getByRole('heading', { name: 'Termos de Uso' })).toBeInTheDocument();
-    expect(screen.getByText('Termos e Politica em desenvolvimento')).toBeInTheDocument();
+    expect(
+      screen.getByText(/é uma aplicação web experimental desenvolvida na disciplina/i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
+      'href',
+      'mailto:contato.pbl360@gmail.com',
+    );
 
     await user.click(screen.getByRole('button', { name: 'Fechar' }));
     expect(screen.queryByRole('heading', { name: 'Termos de Uso' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Política de Privacidade' }));
     expect(screen.getByRole('heading', { name: 'Política de Privacidade' })).toBeInTheDocument();
-    expect(screen.getByText('Termos e Politica em desenvolvimento')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Esta política detalha como tratamos seus dados pessoais/i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
+      'href',
+      'mailto:contato.pbl360@gmail.com',
+    );
   });
 });
