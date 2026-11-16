@@ -279,9 +279,9 @@ describe('Conversations (e2e)', () => {
 
     it('ordena conversas pela última mensagem DESC com NULLS LAST e reflete possuiFoto', async () => {
       await dataSource.query(
-        `INSERT INTO user_photos (user_id, photo_url, photo_key, mime_type, size_bytes)
-         VALUES ($1, $2, $3, $4, $5);`,
-        [student.id, 'http://test.local/photo.jpg', 'photo-key', 'image/jpeg', 1024],
+        `INSERT INTO user_photos (user_id, content, mime_type)
+         VALUES ($1, $2, $3);`,
+        [student.id, Buffer.from([0xff, 0xd8, 0xff]), 'image/jpeg'],
       );
 
       const conv1 = (
@@ -449,7 +449,7 @@ describe('Conversations (e2e)', () => {
         await new Promise((resolve) => setTimeout(resolve, 20));
       }
 
-      expect(sentMessages[0]?.remetente.nome).toBe('Carlos Mendes');
+      expect(sentMessages[0]?.remetente.nome).toBe('Usuário de Teste');
 
       // Página 1 (mais recentes: limit 2 -> msgs 4 e 5)
       const page1Res = await api(app, student)
