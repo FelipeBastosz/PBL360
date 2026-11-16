@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 export interface NewCommitmentTerm {
   version: string;
@@ -9,6 +9,10 @@ export interface NewCommitmentTerm {
 
 @Entity('commitment_terms')
 @Unique('uq_commitment_terms_version', ['version'])
+@Index('uq_commitment_terms_current', ['isCurrent'], {
+  unique: true,
+  where: '"is_current" = TRUE',
+})
 export class CommitmentTerm {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -25,7 +29,7 @@ export class CommitmentTerm {
   @Column({ name: 'is_current', type: 'boolean', default: false })
   isCurrent: boolean;
 
-  @Column({ name: 'created_at', type: 'timestamptz' })
+  @Column({ name: 'created_at', type: 'timestamptz', default: () => 'now()' })
   createdAt: Date;
 
   static create(props: NewCommitmentTerm): CommitmentTerm {
