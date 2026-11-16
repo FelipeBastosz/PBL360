@@ -20,20 +20,13 @@ export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
     'TRUNCATE problem_grades, session_grades, criterion_grades, formula_components, formulas, grade_adjustments, evaluation_items, evaluations, session_evaluation_configs, observation_tags, observations, behavior_tags, student_session_feedback_reads, feedback_revisions, feedback, session_attachments, attendances, session_roles, sessions, problems, performance_criteria, performance_tables, room_students, room_tutor_events, room_tutors, rooms, password_reset_codes, email_verification_codes, user_photos, users CASCADE;',
   );
   await insertSystemPerformanceTables(dataSource);
-  await insertDefaultCommitmentTerm(dataSource);
+  await resetCommitmentTerms(dataSource);
 };
 
-export const insertDefaultCommitmentTerm = async (dataSource: DataSource): Promise<void> => {
-  await dataSource.query(`
-    INSERT INTO commitment_terms (version, title, content, is_current)
-    VALUES (
-      '1.0',
-      'Termo de Compromisso e Uso do Sistema PBL360',
-      'Ao utilizar a plataforma PBL360, docentes e discentes comprometem-se a cumprir com as diretrizes de integridade acadêmica do método PBL, prezando pelo sigilo das avaliações e pela colaboração ética e construtiva.',
-      TRUE
-    )
-    ON CONFLICT (version) DO NOTHING;
-  `);
+const resetCommitmentTerms = async (dataSource: DataSource): Promise<void> => {
+  await dataSource.query(`DELETE FROM commitment_terms WHERE version = 'test-current';`);
+  await dataSource.query(`UPDATE commitment_terms SET is_current = FALSE WHERE is_current = TRUE;`);
+  await dataSource.query(`UPDATE commitment_terms SET is_current = TRUE WHERE version = '1.1';`);
 };
 
 export const insertDefaultPerformanceTable = async (
