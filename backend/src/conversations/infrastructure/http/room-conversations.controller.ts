@@ -9,7 +9,10 @@ import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { CreateConversationDto } from '../../application/dtos/create-conversation.dto';
-import type { ConversationResponseDto } from '../../application/dtos/conversation-response.dto';
+import type {
+  ConversationResponseDto,
+  CreateConversationResponseDto,
+} from '../../application/dtos/conversation-response.dto';
 import { GetOrCreateConversationUseCase } from '../../application/use-cases/get-or-create-conversation.use-case';
 import { ListRoomConversationsUseCase } from '../../application/use-cases/list-room-conversations.use-case';
 import { toConversationResponse, toInterlocutorResponse } from './conversation.mapper';
@@ -48,7 +51,7 @@ export class RoomConversationsController {
     @Body() dto: CreateConversationDto,
     @AuthenticatedUser() user: AuthenticatedUserRef,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<ConversationResponseDto> {
+  ): Promise<CreateConversationResponseDto> {
     const result = await this.getOrCreateConversation.execute({
       roomId,
       authenticatedUser: { id: user.id, type: user.type },
@@ -60,7 +63,6 @@ export class RoomConversationsController {
     return {
       id: result.conversation.id,
       interlocutor: toInterlocutorResponse(result.interlocutor),
-      ultimaMensagem: null,
     };
   }
 }

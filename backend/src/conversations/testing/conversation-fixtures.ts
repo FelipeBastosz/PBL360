@@ -53,7 +53,7 @@ export const buildMessage = (overrides: Partial<Message> = {}): Message => {
 export const conversationRepositoryStub = (): jest.Mocked<ConversationRepository> => ({
   findById: jest.fn(),
   findByRoomTutorAndStudent: jest.fn(),
-  create: jest.fn(),
+  findOrCreate: jest.fn(),
   listByRoomAndUser: jest.fn(),
 });
 
@@ -69,4 +69,9 @@ export const userRepositoryStub = (): jest.Mocked<UserRepository> => ({
   findById: jest.fn(),
   updateName: jest.fn(),
   save: jest.fn(),
+});
+
+export const conversationAccessServiceStub = () => ({
+  assertCanAccess: jest.fn(),
+  assertCanSend: jest.fn(),
 });

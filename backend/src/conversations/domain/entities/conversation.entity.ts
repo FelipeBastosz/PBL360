@@ -20,7 +20,6 @@ export class Conversation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index('idx_conversations_room_id')
   @Column({ name: 'room_id', type: 'uuid' })
   roomId: string;
 

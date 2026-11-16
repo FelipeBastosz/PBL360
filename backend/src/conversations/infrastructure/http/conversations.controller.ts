@@ -1,5 +1,21 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { IdentityThrottlerGuard } from '@/shared/throttling/identity-throttler.guard';
+import {
+  AUTH_THROTTLER,
+  MESSAGE_SEND_LIMIT,
+  ROOM_ENTRY_THROTTLER,
+} from '@/shared/throttling/throttlers';
 import {
   AuthenticatedUser,
   type AuthenticatedUserRef,
@@ -53,6 +69,9 @@ export class ConversationsController {
   @Post(':conversaId/mensagens')
   @HttpCode(HttpStatus.CREATED)
   @SendMessageSwaggerDocs
+  @UseGuards(IdentityThrottlerGuard)
+  @Throttle(MESSAGE_SEND_LIMIT)
+  @SkipThrottle({ [AUTH_THROTTLER]: true, [ROOM_ENTRY_THROTTLER]: true })
   async send(
     @UuidParam('conversaId') conversationId: string,
     @Body() dto: SendMessageDto,

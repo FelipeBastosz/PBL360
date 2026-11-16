@@ -1,46 +1,32 @@
-import {
-  ForbiddenError,
-  InvalidRequestError,
-  NotFoundError,
-} from '@/shared/errors/application.error';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import { UserType } from '@/users/domain/enums/user-type.enum';
-import { buildRoom, roomAccessStub, roomRepositoryStub } from '@/rooms/testing/room-fixtures';
-import type { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import {
-  buildConversation,
   buildMessage,
   CONVERSATION_ID,
-  conversationRepositoryStub,
+  conversationAccessServiceStub,
   messageRepositoryStub,
-  ROOM_ID,
-  STUDENT_ID,
   TUTOR_ID,
 } from '../../testing/conversation-fixtures';
 import { SendMessageUseCase } from './send-message.use-case';
+import type { ConversationAccessService } from '../services/conversation-access.service';
 
 describe('SendMessageUseCase', () => {
-  let conversations: ReturnType<typeof conversationRepositoryStub>;
+  let accessService: ReturnType<typeof conversationAccessServiceStub>;
   let messages: ReturnType<typeof messageRepositoryStub>;
-  let rooms: ReturnType<typeof roomRepositoryStub>;
-  let roomAccess: ReturnType<typeof roomAccessStub>;
   let useCase: SendMessageUseCase;
 
   beforeEach(() => {
-    conversations = conversationRepositoryStub();
+    accessService = conversationAccessServiceStub();
     messages = messageRepositoryStub();
-    rooms = roomRepositoryStub();
-    roomAccess = roomAccessStub();
 
     useCase = new SendMessageUseCase(
-      conversations,
+      accessService as unknown as ConversationAccessService,
       messages,
-      rooms,
-      roomAccess as unknown as RoomAccessService,
     );
   });
 
-  it.each(['', '   ', null, undefined])(
-    'throws InvalidRequestError when message text is empty: %p',
+  it.each(['', '   ', '\u200B\u200C\u200D\uFEFF', null, undefined])(
+    'throws InvalidRequestError when message text is empty or only whitespace/invisible chars: %p',
     async (emptyText) => {
       await expect(
         useCase.execute({
@@ -64,74 +50,64 @@ describe('SendMessageUseCase', () => {
     ).rejects.toBeInstanceOf(InvalidRequestError);
   });
 
-  it('throws NotFoundError when conversation does not exist', async () => {
-    conversations.findById.mockResolvedValue(null);
-
-    await expect(
-      useCase.execute({
-        conversationId: CONVERSATION_ID,
-        authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
-        text: 'Olá!',
-      }),
-    ).rejects.toBeInstanceOf(NotFoundError);
-  });
-
-  it('throws ForbiddenError when user is not participant in conversation', async () => {
-    conversations.findById.mockResolvedValue(buildConversation());
-
-    await expect(
-      useCase.execute({
-        conversationId: CONVERSATION_ID,
-        authenticatedUser: { id: 'other-user', type: UserType.STUDENT },
-        text: 'Olá!',
-      }),
-    ).rejects.toBeInstanceOf(ForbiddenError);
-  });
-
-  it('throws ForbiddenError when the room is inactive', async () => {
-    conversations.findById.mockResolvedValue(buildConversation());
-    const room = buildRoom({ id: ROOM_ID, active: false, tutorId: TUTOR_ID });
-    roomAccess.assertMemberCanAccessRoom.mockResolvedValue(room);
-
-    await expect(
-      useCase.execute({
-        conversationId: CONVERSATION_ID,
-        authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
-        text: 'Olá!',
-      }),
-    ).rejects.toThrow('Não é possível enviar mensagens em uma sala desativada.');
-  });
-
-  it('throws ForbiddenError when student has lost membership in the room', async () => {
-    conversations.findById.mockResolvedValue(buildConversation());
-    const room = buildRoom({ id: ROOM_ID, active: true, tutorId: TUTOR_ID });
-    roomAccess.assertMemberCanAccessRoom.mockResolvedValue(room);
-    rooms.hasStudent.mockResolvedValue(false);
-
-    await expect(
-      useCase.execute({
-        conversationId: CONVERSATION_ID,
-        authenticatedUser: { id: STUDENT_ID, type: UserType.STUDENT },
-        text: 'Olá!',
-      }),
-    ).rejects.toThrow('Você não possui mais vínculo de discente nesta sala.');
-  });
-
-  it('creates and returns message when input is valid', async () => {
-    conversations.findById.mockResolvedValue(buildConversation());
-    const room = buildRoom({ id: ROOM_ID, active: true, tutorId: TUTOR_ID });
-    roomAccess.assertMemberCanAccessRoom.mockResolvedValue(room);
-
-    const created = buildMessage({ text: 'Olá!' });
+  it('accepts message with 1500 emojis even if UTF-16 length exceeds 2000', async () => {
+    const emojiText = '😀'.repeat(1500);
+    const created = buildMessage({ text: emojiText });
     messages.create.mockResolvedValue(created);
 
     const result = await useCase.execute({
       conversationId: CONVERSATION_ID,
       authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
-      text: '   Olá!   ',
+      text: emojiText,
     });
 
     expect(result).toBe(created);
-    expect(messages.create).toHaveBeenCalledWith(CONVERSATION_ID, TUTOR_ID, 'Olá!');
+    expect(messages.create).toHaveBeenCalledWith(CONVERSATION_ID, TUTOR_ID, emojiText);
+  });
+
+  it('accepts message with exactly 2000 characters', async () => {
+    const maxText = 'x'.repeat(2000);
+    const created = buildMessage({ text: maxText });
+    messages.create.mockResolvedValue(created);
+
+    const result = await useCase.execute({
+      conversationId: CONVERSATION_ID,
+      authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
+      text: maxText,
+    });
+
+    expect(result).toBe(created);
+    expect(messages.create).toHaveBeenCalledWith(CONVERSATION_ID, TUTOR_ID, maxText);
+  });
+
+  it('strips invisible zero-width characters and whitespace from message text', async () => {
+    const raw = '\u200B  Olá mundo!  \u200D';
+    const created = buildMessage({ text: 'Olá mundo!' });
+    messages.create.mockResolvedValue(created);
+
+    const result = await useCase.execute({
+      conversationId: CONVERSATION_ID,
+      authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
+      text: raw,
+    });
+
+    expect(result).toBe(created);
+    expect(messages.create).toHaveBeenCalledWith(CONVERSATION_ID, TUTOR_ID, 'Olá mundo!');
+  });
+
+  it('delegates validation to accessService.assertCanSend', async () => {
+    const created = buildMessage({ text: 'Olá!' });
+    messages.create.mockResolvedValue(created);
+
+    await useCase.execute({
+      conversationId: CONVERSATION_ID,
+      authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
+      text: 'Olá!',
+    });
+
+    expect(accessService.assertCanSend).toHaveBeenCalledWith(CONVERSATION_ID, {
+      id: TUTOR_ID,
+      type: UserType.TUTOR,
+    });
   });
 });

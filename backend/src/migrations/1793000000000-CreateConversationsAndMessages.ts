@@ -16,7 +16,6 @@ export class CreateConversationsAndMessages1793000000000 implements MigrationInt
         CONSTRAINT uq_conversations_room_tutor_student UNIQUE (room_id, tutor_id, student_id)
       );
 
-      CREATE INDEX idx_conversations_room_id ON conversations (room_id);
       CREATE INDEX idx_conversations_tutor_id ON conversations (tutor_id);
       CREATE INDEX idx_conversations_student_id ON conversations (student_id);
 

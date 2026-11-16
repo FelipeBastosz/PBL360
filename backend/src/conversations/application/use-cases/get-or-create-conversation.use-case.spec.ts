@@ -48,7 +48,19 @@ describe('GetOrCreateConversationUseCase', () => {
     ).rejects.toBeInstanceOf(InvalidRequestError);
   });
 
-  it('throws NotFoundError when recipient does not exist or is inactive', async () => {
+  it('throws ForbiddenError when the room is inactive', async () => {
+    roomAccess.assertMemberCanAccessRoom.mockResolvedValue(buildRoom({ active: false }));
+
+    await expect(
+      useCase.execute({
+        roomId: ROOM_ID,
+        authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
+        recipientId: STUDENT_ID,
+      }),
+    ).rejects.toThrow('Não é possível iniciar conversas em uma sala desativada.');
+  });
+
+  it('throws NotFoundError when recipient does not exist', async () => {
     roomAccess.assertMemberCanAccessRoom.mockResolvedValue(buildRoom());
     users.findById.mockResolvedValue(null);
 
@@ -59,6 +71,19 @@ describe('GetOrCreateConversationUseCase', () => {
         recipientId: STUDENT_ID,
       }),
     ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('throws NotFoundError when recipient is inactive (active: false)', async () => {
+    roomAccess.assertMemberCanAccessRoom.mockResolvedValue(buildRoom());
+    users.findById.mockResolvedValue(buildUser({ id: STUDENT_ID, active: false }));
+
+    await expect(
+      useCase.execute({
+        roomId: ROOM_ID,
+        authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
+        recipientId: STUDENT_ID,
+      }),
+    ).rejects.toThrow('Destinatário não encontrado.');
   });
 
   it('throws InvalidRequestError when both participants are tutors', async () => {
@@ -124,7 +149,10 @@ describe('GetOrCreateConversationUseCase', () => {
     rooms.hasStudent.mockResolvedValue(true);
 
     const existingConversation = buildConversation();
-    conversations.findByRoomTutorAndStudent.mockResolvedValue(existingConversation);
+    conversations.findOrCreate.mockResolvedValue({
+      conversation: existingConversation,
+      created: false,
+    });
 
     const result = await useCase.execute({
       roomId: ROOM_ID,
@@ -135,7 +163,7 @@ describe('GetOrCreateConversationUseCase', () => {
     expect(result.created).toBe(false);
     expect(result.conversation).toBe(existingConversation);
     expect(result.interlocutor.id).toBe(STUDENT_ID);
-    expect(conversations.create).not.toHaveBeenCalled();
+    expect(conversations.findOrCreate).toHaveBeenCalledWith(ROOM_ID, TUTOR_ID, STUDENT_ID);
   });
 
   it('creates new conversation with created=true when student initiates with tutor and none exists', async () => {
@@ -144,9 +172,8 @@ describe('GetOrCreateConversationUseCase', () => {
     const tutor = buildUser({ id: TUTOR_ID, name: 'Carlos', type: UserType.TUTOR });
     users.findById.mockResolvedValue(tutor);
 
-    conversations.findByRoomTutorAndStudent.mockResolvedValue(null);
     const created = buildConversation();
-    conversations.create.mockResolvedValue(created);
+    conversations.findOrCreate.mockResolvedValue({ conversation: created, created: true });
 
     const result = await useCase.execute({
       roomId: ROOM_ID,
@@ -157,6 +184,6 @@ describe('GetOrCreateConversationUseCase', () => {
     expect(result.created).toBe(true);
     expect(result.conversation).toBe(created);
     expect(result.interlocutor.id).toBe(TUTOR_ID);
-    expect(conversations.create).toHaveBeenCalledWith(ROOM_ID, TUTOR_ID, STUDENT_ID);
+    expect(conversations.findOrCreate).toHaveBeenCalledWith(ROOM_ID, TUTOR_ID, STUDENT_ID);
   });
 });

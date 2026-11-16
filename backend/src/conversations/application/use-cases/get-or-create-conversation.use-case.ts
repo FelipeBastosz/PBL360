@@ -54,26 +54,21 @@ export class GetOrCreateConversationUseCase {
       throw new InvalidRequestError('Não é possível iniciar uma conversa consigo mesmo.');
     }
     const room = await this.roomAccess.assertMemberCanAccessRoom(roomId, authenticatedUser);
+    if (!room.active) {
+      throw new ForbiddenError('Não é possível iniciar conversas em uma sala desativada.');
+    }
     const recipient = await this.getRecipient(recipientId);
 
     this.validateRoles(authenticatedUser.type, recipient.type);
     const participants = await this.resolveParticipants(room, authenticatedUser, recipient);
 
-    return this.findOrCreate(roomId, participants, recipient);
-  }
+    const { conversation, created } = await this.conversations.findOrCreate(
+      roomId,
+      participants.tutorId,
+      participants.studentId,
+    );
 
-  private async findOrCreate(
-    roomId: string,
-    participants: { tutorId: string; studentId: string },
-    recipient: User,
-  ): Promise<GetOrCreateConversationOutput> {
-    const { tutorId, studentId } = participants;
-    const existing = await this.conversations.findByRoomTutorAndStudent(roomId, tutorId, studentId);
-    if (existing) {
-      return this.toOutput(existing, recipient, false);
-    }
-    const created = await this.conversations.create(roomId, tutorId, studentId);
-    return this.toOutput(created, recipient, true);
+    return this.toOutput(conversation, recipient, created);
   }
 
   private async getRecipient(recipientId: string): Promise<User> {

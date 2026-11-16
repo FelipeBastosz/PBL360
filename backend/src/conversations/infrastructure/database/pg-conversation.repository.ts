@@ -5,6 +5,7 @@ import { Conversation } from '../../domain/entities/conversation.entity';
 import type {
   ConversationListItem,
   ConversationRepository,
+  FindOrCreateConversationResult,
 } from '../../domain/repositories/conversation.repository';
 import type { UserType } from '@/users/domain/enums/user-type.enum';
 
@@ -41,6 +42,14 @@ const LIST_ROOM_CONVERSATIONS_QUERY = `
   ORDER BY lm.sent_at DESC NULLS LAST, c.created_at DESC;
 `;
 
+const INSERT_CONVERSATION_QUERY = `
+  INSERT INTO conversations (room_id, tutor_id, student_id)
+  VALUES ($1, $2, $3)
+  ON CONFLICT (room_id, tutor_id, student_id) DO NOTHING
+  RETURNING id, room_id AS "roomId", tutor_id AS "tutorId", student_id AS "studentId",
+            created_at AS "createdAt", updated_at AS "updatedAt";
+`;
+
 @Injectable()
 export class PgConversationRepository implements ConversationRepository {
   constructor(
@@ -66,25 +75,39 @@ export class PgConversationRepository implements ConversationRepository {
     });
   }
 
-  async create(roomId: string, tutorId: string, studentId: string): Promise<Conversation> {
-    const rows = await this.dataSource.query<Conversation[]>(
-      `INSERT INTO conversations (room_id, tutor_id, student_id)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (room_id, tutor_id, student_id) DO NOTHING
-       RETURNING id, room_id AS "roomId", tutor_id AS "tutorId", student_id AS "studentId",
-                 created_at AS "createdAt", updated_at AS "updatedAt";`,
-      [roomId, tutorId, studentId],
-    );
-
-    if (rows.length > 0 && rows[0]) {
-      return rows[0];
+  async findOrCreate(
+    roomId: string,
+    tutorId: string,
+    studentId: string,
+  ): Promise<FindOrCreateConversationResult> {
+    const existing = await this.findByRoomTutorAndStudent(roomId, tutorId, studentId);
+    if (existing) {
+      return { conversation: existing, created: false };
     }
 
-    const existing = await this.findByRoomTutorAndStudent(roomId, tutorId, studentId);
-    if (!existing) {
+    const inserted = await this.insertIfAbsent(roomId, tutorId, studentId);
+    if (inserted) {
+      return { conversation: inserted, created: true };
+    }
+
+    const conflicted = await this.findByRoomTutorAndStudent(roomId, tutorId, studentId);
+    if (!conflicted) {
       throw new Error('Falha ao obter ou criar conversa.');
     }
-    return existing;
+    return { conversation: conflicted, created: false };
+  }
+
+  private async insertIfAbsent(
+    roomId: string,
+    tutorId: string,
+    studentId: string,
+  ): Promise<Conversation | null> {
+    const rows = await this.dataSource.query<Conversation[]>(INSERT_CONVERSATION_QUERY, [
+      roomId,
+      tutorId,
+      studentId,
+    ]);
+    return rows[0] ?? null;
   }
 
   async listByRoomAndUser(roomId: string, userId: string): Promise<ConversationListItem[]> {

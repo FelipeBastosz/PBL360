@@ -11,7 +11,10 @@ import {
 } from '@nestjs/swagger';
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
 import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
-import { ConversationResponseDto } from '../../application/dtos/conversation-response.dto';
+import {
+  ConversationResponseDto,
+  CreateConversationResponseDto,
+} from '../../application/dtos/conversation-response.dto';
 import {
   MessageResponseDto,
   MessagesListResponseDto,
@@ -46,11 +49,11 @@ export const CreateConversationSwaggerDocs = applyDecorators(
   }),
   ApiCreatedResponse({
     description: 'Conversa criada com sucesso.',
-    type: ConversationResponseDto,
+    type: CreateConversationResponseDto,
   }),
   ApiOkResponse({
     description: 'Conversa existente recuperada com sucesso.',
-    type: ConversationResponseDto,
+    type: CreateConversationResponseDto,
   }),
   ApiBadRequestResponse({
     description: 'Dados inválidos, tentativa de conversar consigo mesmo ou par não permitido.',

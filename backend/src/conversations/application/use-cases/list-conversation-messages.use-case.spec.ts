@@ -1,41 +1,27 @@
-import {
-  ForbiddenError,
-  InvalidRequestError,
-  NotFoundError,
-} from '@/shared/errors/application.error';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import { UserType } from '@/users/domain/enums/user-type.enum';
-import { buildRoom, roomAccessStub, roomRepositoryStub } from '@/rooms/testing/room-fixtures';
-import type { RoomAccessService } from '@/rooms/application/services/room-access.service';
 import {
-  buildConversation,
   buildMessage,
   CONVERSATION_ID,
-  conversationRepositoryStub,
+  conversationAccessServiceStub,
   messageRepositoryStub,
-  ROOM_ID,
-  STUDENT_ID,
   TUTOR_ID,
 } from '../../testing/conversation-fixtures';
 import { ListConversationMessagesUseCase } from './list-conversation-messages.use-case';
+import type { ConversationAccessService } from '../services/conversation-access.service';
 
 describe('ListConversationMessagesUseCase', () => {
-  let conversations: ReturnType<typeof conversationRepositoryStub>;
+  let accessService: ReturnType<typeof conversationAccessServiceStub>;
   let messages: ReturnType<typeof messageRepositoryStub>;
-  let rooms: ReturnType<typeof roomRepositoryStub>;
-  let roomAccess: ReturnType<typeof roomAccessStub>;
   let useCase: ListConversationMessagesUseCase;
 
   beforeEach(() => {
-    conversations = conversationRepositoryStub();
+    accessService = conversationAccessServiceStub();
     messages = messageRepositoryStub();
-    rooms = roomRepositoryStub();
-    roomAccess = roomAccessStub();
 
     useCase = new ListConversationMessagesUseCase(
-      conversations,
+      accessService as unknown as ConversationAccessService,
       messages,
-      rooms,
-      roomAccess as unknown as RoomAccessService,
     );
   });
 
@@ -49,64 +35,96 @@ describe('ListConversationMessagesUseCase', () => {
     ).rejects.toBeInstanceOf(InvalidRequestError);
   });
 
-  it('throws NotFoundError when conversation does not exist', async () => {
-    conversations.findById.mockResolvedValue(null);
+  it('delegates access validation to accessService.assertCanAccess', async () => {
+    messages.listByConversation.mockResolvedValue({ messages: [], nextCursor: null });
+
+    await useCase.execute({
+      conversationId: CONVERSATION_ID,
+      authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
+      query: {},
+    });
+
+    expect(accessService.assertCanAccess).toHaveBeenCalledWith(CONVERSATION_ID, {
+      id: TUTOR_ID,
+      type: UserType.TUTOR,
+    });
+  });
+
+  it('uses default limit of 30 when limit is undefined', async () => {
+    messages.listByConversation.mockResolvedValue({ messages: [], nextCursor: null });
+
+    await useCase.execute({
+      conversationId: CONVERSATION_ID,
+      authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
+      query: {},
+    });
+
+    expect(messages.listByConversation).toHaveBeenCalledWith(CONVERSATION_ID, {
+      cursor: undefined,
+      afterId: undefined,
+      limit: 30,
+    });
+  });
+
+  it('clamps limit to maximum 50', async () => {
+    messages.listByConversation.mockResolvedValue({ messages: [], nextCursor: null });
+
+    await useCase.execute({
+      conversationId: CONVERSATION_ID,
+      authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
+      query: { limit: 100 },
+    });
+
+    expect(messages.listByConversation).toHaveBeenCalledWith(CONVERSATION_ID, {
+      cursor: undefined,
+      afterId: undefined,
+      limit: 50,
+    });
+  });
+
+  it('throws NotFoundError when cursor does not exist', async () => {
+    messages.findById.mockResolvedValue(null);
 
     await expect(
       useCase.execute({
         conversationId: CONVERSATION_ID,
         authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
-        query: {},
+        query: { cursor: 'missing-id' },
       }),
-    ).rejects.toBeInstanceOf(NotFoundError);
+    ).rejects.toThrow('Mensagem de referência (cursor) não encontrada nesta conversa.');
   });
 
-  it('throws ForbiddenError when user is not a participant of the conversation', async () => {
-    conversations.findById.mockResolvedValue(buildConversation());
-
-    await expect(
-      useCase.execute({
-        conversationId: CONVERSATION_ID,
-        authenticatedUser: { id: 'other-user', type: UserType.TUTOR },
-        query: {},
-      }),
-    ).rejects.toBeInstanceOf(ForbiddenError);
-  });
-
-  it('throws ForbiddenError when tutor has lost membership in the room', async () => {
-    conversations.findById.mockResolvedValue(buildConversation());
-    const room = buildRoom({ id: ROOM_ID, tutorId: 'different-tutor' });
-    roomAccess.assertMemberCanAccessRoom.mockResolvedValue(room);
-    rooms.hasTutor.mockResolvedValue(false);
+  it('throws NotFoundError when cursor belongs to another conversation', async () => {
+    const foreignMessage = buildMessage({
+      id: 'foreign-msg',
+      conversationId: 'different-conversation-id',
+    });
+    messages.findById.mockResolvedValue(foreignMessage);
 
     await expect(
       useCase.execute({
         conversationId: CONVERSATION_ID,
         authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
-        query: {},
+        query: { cursor: 'foreign-msg' },
       }),
-    ).rejects.toThrow('Você não possui mais vínculo de professor nesta sala.');
+    ).rejects.toThrow('Mensagem de referência (cursor) não encontrada nesta conversa.');
   });
 
-  it('throws ForbiddenError when student has lost membership in the room', async () => {
-    conversations.findById.mockResolvedValue(buildConversation());
-    const room = buildRoom({ id: ROOM_ID, tutorId: TUTOR_ID });
-    roomAccess.assertMemberCanAccessRoom.mockResolvedValue(room);
-    rooms.hasStudent.mockResolvedValue(false);
+  it('throws NotFoundError when apos does not exist', async () => {
+    messages.findById.mockResolvedValue(null);
 
     await expect(
       useCase.execute({
         conversationId: CONVERSATION_ID,
-        authenticatedUser: { id: STUDENT_ID, type: UserType.STUDENT },
-        query: {},
+        authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
+        query: { afterId: 'missing-apos' },
       }),
-    ).rejects.toThrow('Você não possui mais vínculo de discente nesta sala.');
+    ).rejects.toThrow('Mensagem de referência (apos) não encontrada nesta conversa.');
   });
 
-  it('returns messages and pagination cursor for valid participant', async () => {
-    conversations.findById.mockResolvedValue(buildConversation());
-    const room = buildRoom({ id: ROOM_ID, tutorId: TUTOR_ID });
-    roomAccess.assertMemberCanAccessRoom.mockResolvedValue(room);
+  it('returns messages and pagination cursor for valid query', async () => {
+    const validRef = buildMessage({ id: 'ref-msg', conversationId: CONVERSATION_ID });
+    messages.findById.mockResolvedValue(validRef);
 
     const messageList = [buildMessage()];
     messages.listByConversation.mockResolvedValue({
@@ -117,13 +135,13 @@ describe('ListConversationMessagesUseCase', () => {
     const result = await useCase.execute({
       conversationId: CONVERSATION_ID,
       authenticatedUser: { id: TUTOR_ID, type: UserType.TUTOR },
-      query: { limit: 20 },
+      query: { cursor: 'ref-msg', limit: 20 },
     });
 
     expect(result.messages).toBe(messageList);
     expect(result.nextCursor).toBe('next-id');
     expect(messages.listByConversation).toHaveBeenCalledWith(CONVERSATION_ID, {
-      cursor: undefined,
+      cursor: 'ref-msg',
       afterId: undefined,
       limit: 20,
     });

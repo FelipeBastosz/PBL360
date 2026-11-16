@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { NotFoundError } from '@/shared/errors/application.error';
 import { Message } from '../../domain/entities/message.entity';
 import type {
   ListMessagesOptions,
@@ -104,12 +103,10 @@ export class PgMessageRepository implements MessageRepository {
     const { cursor, afterId, limit } = options;
 
     if (afterId) {
-      await this.assertReferenceExists(conversationId, afterId, 'apos');
       return this.listAfter(conversationId, afterId, limit);
     }
 
     if (cursor) {
-      await this.assertReferenceExists(conversationId, cursor, 'cursor');
       return this.listWithCursor(conversationId, cursor, limit);
     }
 
@@ -158,19 +155,6 @@ export class PgMessageRepository implements MessageRepository {
 
     const messages = targetRows.reverse().map((r) => this.toMessageEntity(r));
     return { messages, nextCursor };
-  }
-
-  private async assertReferenceExists(
-    conversationId: string,
-    referenceId: string,
-    paramName: string,
-  ): Promise<void> {
-    const ref = await this.findById(referenceId);
-    if (!ref || ref.conversationId !== conversationId) {
-      throw new NotFoundError(
-        `Mensagem de referência (${paramName}) não encontrada nesta conversa.`,
-      );
-    }
   }
 
   private toMessageEntity(row: RawMessageRow): Message {

@@ -19,6 +19,11 @@ export interface ConversationListItem {
   lastMessage: ConversationLastMessage | null;
 }
 
+export interface FindOrCreateConversationResult {
+  conversation: Conversation;
+  created: boolean;
+}
+
 export interface ConversationRepository {
   findById(id: string): Promise<Conversation | null>;
   findByRoomTutorAndStudent(
@@ -26,7 +31,11 @@ export interface ConversationRepository {
     tutorId: string,
     studentId: string,
   ): Promise<Conversation | null>;
-  create(roomId: string, tutorId: string, studentId: string): Promise<Conversation>;
+  findOrCreate(
+    roomId: string,
+    tutorId: string,
+    studentId: string,
+  ): Promise<FindOrCreateConversationResult>;
   listByRoomAndUser(roomId: string, userId: string): Promise<ConversationListItem[]>;
 }
 

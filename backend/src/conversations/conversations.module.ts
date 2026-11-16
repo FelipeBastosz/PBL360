@@ -14,11 +14,13 @@ import { GetOrCreateConversationUseCase } from './application/use-cases/get-or-c
 import { ListRoomConversationsUseCase } from './application/use-cases/list-room-conversations.use-case';
 import { ListConversationMessagesUseCase } from './application/use-cases/list-conversation-messages.use-case';
 import { SendMessageUseCase } from './application/use-cases/send-message.use-case';
+import { ConversationAccessService } from './application/services/conversation-access.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Conversation, Message]), RoomsModule, UsersModule],
   controllers: [RoomConversationsController, ConversationsController],
   providers: [
+    ConversationAccessService,
     GetOrCreateConversationUseCase,
     ListRoomConversationsUseCase,
     ListConversationMessagesUseCase,
@@ -32,6 +34,6 @@ import { SendMessageUseCase } from './application/use-cases/send-message.use-cas
       useClass: PgMessageRepository,
     },
   ],
-  exports: [CONVERSATION_REPOSITORY, MESSAGE_REPOSITORY],
+  exports: [CONVERSATION_REPOSITORY, MESSAGE_REPOSITORY, ConversationAccessService],
 })
 export class ConversationsModule {}
