@@ -257,12 +257,11 @@ describe('Session report export (e2e)', () => {
     });
 
     expect(anaRowValues).toBeDefined();
-    // Student, Matricula, Chamada, Papel, Nota adicional de papel, Marcações, Situação, Nota
     expect(anaRowValues).toContain('Ana Souza');
     expect(anaRowValues).toContain('20260001');
     expect(anaRowValues).toContain('Presente');
     expect(anaRowValues).toContain('Coordenador');
-    expect(anaRowValues).toContain(5);
+    expect(anaRowValues).not.toContain(5);
     expect(anaRowValues).toContain('Liderança');
     expect(anaRowValues).toContain('Nota enviada');
     expect(anaRowValues).toContain(7.1);
@@ -312,14 +311,12 @@ describe('Session report export (e2e)', () => {
     expect(exportedValues).toContain(8);
   });
 
-  it('prevents role score divergence when role is modified or added after submission', async () => {
-    // 1. Tutor modifies Ana's role score to 10 in session_roles
+  it('keeps the session grade and never shows a role score when roles change after submission', async () => {
     await db.query(
       'UPDATE session_roles SET role_score = 10.0 WHERE session_id = $1 AND student_id = $2;',
       [sessionId, studentAna.id],
     );
 
-    // 2. Tutor gives João a role with score 10 in session_roles
     await db.query(
       `INSERT INTO session_roles (session_id, student_id, role, role_score)
        VALUES ($1, $2, '${SessionRole.BOARD_SECRETARY}', 10.0);`,
@@ -343,12 +340,10 @@ describe('Session report export (e2e)', () => {
       if (values.includes('João Silva')) joaoRow = values;
     });
 
-    // Ana: role bonus column remains 5 (frozen appliedBonus), grade remains 7.1
-    expect(anaRow).toContain(5);
+    expect(anaRow).not.toContain(5);
     expect(anaRow).not.toContain(10);
     expect(anaRow).toContain(7.1);
 
-    // João: role bonus column is null/empty (not 10), grade remains 8.0
     expect(joaoRow).not.toContain(10);
     expect(joaoRow).toContain(8.0);
   });
@@ -497,6 +492,50 @@ describe('Session report export (e2e)', () => {
     });
     expect(res.headers['content-disposition']).toBeUndefined();
     expect(res.text).not.toContain('Renderer engine crash');
+  });
+
+  it('exports a self-assessment session and lists its evaluations without a tutor evaluation', async () => {
+    const [selfSession] = await db.query<[{ id: string }]>(
+      `INSERT INTO sessions (
+         problem_id, performance_table_id, title, date, order_index, status,
+         self_eval_released, self_eval_deadline
+       ) VALUES ($1, $2, 'Sessão de autoavaliação', '2026-10-21', 2, 'agendada', true, '2099-10-21')
+       RETURNING id;`,
+      [problemId, tableId],
+    );
+    await db.query(
+      `INSERT INTO attendances (session_id, student_id, recorded_by, status)
+       VALUES ($1, $2, $3, '${AttendanceStatus.PRESENT}');`,
+      [selfSession.id, studentAna.id, owner.id],
+    );
+    await api(app, studentAna)
+      .put(`/sessoes/${selfSession.id}/autoavaliacao`, {
+        itens: [
+          { criterioId: crit1Id, nota: 9 },
+          { criterioId: crit2Id, nota: 9 },
+        ],
+        enviar: true,
+      })
+      .expect(200);
+
+    await api(app, owner).get(`/sessoes/${selfSession.id}/avaliacoes`).expect(200);
+
+    const res = await api(app, owner)
+      .get(exportPath(selfSession.id, 'XLSX'))
+      .buffer(true)
+      .parse(binaryParser)
+      .expect(200);
+    const sheet = (await loadWorkbook(res.body)).getWorksheet('Dados da sessão')!;
+    let anaRow: unknown[] = [];
+    sheet.eachRow((row) => {
+      const values = row.values as unknown[];
+      if (values.includes('Ana Souza')) anaRow = values;
+    });
+
+    expect(anaRow).toContain('Nota enviada');
+    expect(anaRow).toContain(9);
+
+    await api(app, owner).get(exportPath(selfSession.id, 'PDF')).expect(200);
   });
 
   it('exports valid empty report when classroom has no students', async () => {

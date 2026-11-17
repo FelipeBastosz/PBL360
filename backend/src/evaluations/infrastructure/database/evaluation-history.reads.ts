@@ -4,11 +4,13 @@ import {
   FIND_RECEIVED_PEER_EVALUATIONS_QUERY,
   FIND_SELF_ADJUSTMENTS_DETAIL_QUERY,
   FIND_SESSION_ADJUSTMENTS_QUERY,
+  FIND_SESSION_PEER_ADJUSTMENTS_QUERY,
   FIND_SESSION_PEER_EVALUATIONS_QUERY,
   FIND_SESSION_SELF_EVALUATIONS_QUERY,
   FIND_SESSION_TIMINGS_QUERY,
   FIND_SESSION_TUTOR_SCORES_QUERY,
   FIND_STUDENT_PARTICIPANT_QUERY,
+  FIND_STUDENT_PEER_ADJUSTMENTS_DETAIL_QUERY,
   FIND_STUDENT_SELF_EVALUATION_QUERY,
   FIND_STUDENT_TUTOR_SCORES_QUERY,
   IS_STUDENT_PARTICIPATING_QUERY,
@@ -65,6 +67,15 @@ export function readSessionAdjustments(
   return manager.query<SelfAdjustmentRow[]>(FIND_SESSION_ADJUSTMENTS_QUERY, [sessionId]);
 }
 
+export function readSessionPeerAdjustments(
+  manager: EntityManager,
+  sessionId: string,
+): Promise<
+  Array<{ studentId: string; previousValue: string | number; newValue: string | number }>
+> {
+  return manager.query(FIND_SESSION_PEER_ADJUSTMENTS_QUERY, [sessionId]);
+}
+
 export function readSessionPeerEvaluations(
   manager: EntityManager,
   sessionId: string,
@@ -117,6 +128,17 @@ export function readStudentSelfAdjustments(
 ): Promise<SelfAdjustmentDetailRow[]> {
   return manager.query<SelfAdjustmentDetailRow[]>(FIND_SELF_ADJUSTMENTS_DETAIL_QUERY, [
     evaluationId,
+  ]);
+}
+
+export function readStudentPeerAdjustments(
+  manager: EntityManager,
+  sessionId: string,
+  studentId: string,
+): Promise<SelfAdjustmentDetailRow[]> {
+  return manager.query<SelfAdjustmentDetailRow[]>(FIND_STUDENT_PEER_ADJUSTMENTS_DETAIL_QUERY, [
+    sessionId,
+    studentId,
   ]);
 }
 

@@ -17,6 +17,50 @@ export type FeedbackCardProps = {
   avaliacoes?: ReceivedSessionComponents;
 };
 
+type FeedbackCardHeaderProps = {
+  autor: FeedbackAuthor;
+  criadoEm: string;
+  tag?: string;
+  nota?: number | null;
+  novo?: boolean;
+};
+
+function FeedbackCardHeader({ autor, criadoEm, tag, nota, novo }: FeedbackCardHeaderProps) {
+  const displayDate = formatDayShortMonth(criadoEm);
+  const formattedFullDate = formatDate(criadoEm);
+
+  return (
+    <header className="flex items-start justify-between gap-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <UserAvatar user={{ id: autor.id, nome: autor.nome, possuiFoto: false }} />
+        <div className="flex flex-col min-w-0">
+          <span className="truncate text-sm font-semibold text-ink">{autor.nome}</span>
+          <time dateTime={criadoEm} title={formattedFullDate} className="text-xs text-muted">
+            {displayDate}
+          </time>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0">
+        {tag && (
+          <span className="rounded-md bg-surface px-2 py-0.5 text-xs font-medium text-muted">
+            {tag}
+          </span>
+        )}
+        {typeof nota === 'number' && Number.isFinite(nota) && (
+          <span
+            data-testid="feedback-nota"
+            className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-900 border border-brand-200"
+          >
+            Nota {formatGrade(nota)}
+          </span>
+        )}
+        <FeedbackBadge isNew={novo} />
+      </div>
+    </header>
+  );
+}
+
 export function FeedbackCard({
   autor,
   texto,
@@ -27,39 +71,9 @@ export function FeedbackCard({
   tag,
   avaliacoes,
 }: FeedbackCardProps) {
-  const displayDate = formatDayShortMonth(criadoEm);
-  const formattedFullDate = formatDate(criadoEm);
-
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
-      <header className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <UserAvatar user={{ id: autor.id, nome: autor.nome, possuiFoto: false }} />
-          <div className="flex flex-col min-w-0">
-            <span className="truncate text-sm font-semibold text-ink">{autor.nome}</span>
-            <time dateTime={criadoEm} title={formattedFullDate} className="text-xs text-muted">
-              {displayDate}
-            </time>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {tag && (
-            <span className="rounded-md bg-surface px-2 py-0.5 text-xs font-medium text-muted">
-              {tag}
-            </span>
-          )}
-          {typeof nota === 'number' && Number.isFinite(nota) && (
-            <span
-              data-testid="feedback-nota"
-              className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-900 border border-brand-200"
-            >
-              Nota {formatGrade(nota)}
-            </span>
-          )}
-          <FeedbackBadge isNew={novo} />
-        </div>
-      </header>
+      <FeedbackCardHeader autor={autor} criadoEm={criadoEm} tag={tag} nota={nota} novo={novo} />
 
       <EvaluationComponentGrades avaliacoes={avaliacoes} />
 

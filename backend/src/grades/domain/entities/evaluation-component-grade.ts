@@ -37,6 +37,7 @@ export interface PeerAssessmentSessionInput {
   receivedScores: number[];
   now: Date;
   adjustedScore?: number | null;
+  expectedPeerCount?: number;
 }
 
 const isOpen = (release: EvaluationRelease, now: Date): boolean =>
@@ -69,6 +70,28 @@ export function calculateSelfAssessmentSession(
   return { grade: 0, situation: 'NAO_ENVIADA' };
 }
 
+function allPeersSubmitted(input: PeerAssessmentSessionInput): boolean {
+  return (
+    input.expectedPeerCount !== undefined &&
+    input.expectedPeerCount > 0 &&
+    input.receivedScores.length >= input.expectedPeerCount
+  );
+}
+
+function hasPendingPeers(input: PeerAssessmentSessionInput): boolean {
+  return isOpen(input.release, input.now) && !allPeersSubmitted(input);
+}
+
+function pendingOrNoData(input: PeerAssessmentSessionInput): EvaluationComponentResult {
+  if (hasPendingPeers(input)) {
+    return withoutData('PENDENTE');
+  }
+  const average = averageOf(input.receivedScores);
+  if (average !== null) return { grade: average, situation: 'AVALIADA' };
+  if (wasNeverReleased(input.release)) return withoutData('NAO_LIBERADA');
+  return withoutData('SEM_AVALIACOES');
+}
+
 export function calculatePeerAssessmentSession(
   input: PeerAssessmentSessionInput,
 ): EvaluationComponentResult {
@@ -77,11 +100,7 @@ export function calculatePeerAssessmentSession(
   if (input.adjustedScore !== undefined && input.adjustedScore !== null) {
     return { grade: input.adjustedScore, situation: 'AVALIADA' };
   }
-  if (isOpen(input.release, input.now)) return withoutData('PENDENTE');
-  const average = averageOf(input.receivedScores);
-  if (average !== null) return { grade: average, situation: 'AVALIADA' };
-  if (wasNeverReleased(input.release)) return withoutData('NAO_LIBERADA');
-  return withoutData('SEM_AVALIACOES');
+  return pendingOrNoData(input);
 }
 
 export function calculatePokerPeerSession(input: PokerPeerSessionInput): EvaluationComponentResult {

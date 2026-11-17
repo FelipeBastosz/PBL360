@@ -4,25 +4,38 @@ import type {
   SessionReportStudentData,
 } from '@/sessions/domain/repositories/session-report.repository';
 
+function normalizeFeedbackText(text: string | null | undefined): string | null {
+  return text && text.trim().length > 0 ? text : null;
+}
+
 export function buildFeedbackEntries(
   data: SessionReportData,
   ocultarNome = false,
 ): ReportTextEntry[] {
   const entries: ReportTextEntry[] = [];
-  if (data.generalFeedback) {
+  const generalText = normalizeFeedbackText(data.generalFeedback?.text);
+  if (data.generalFeedback && generalText !== null) {
     entries.push({
       label: `Geral (Autor: ${data.generalFeedback.authorName})`,
-      text: data.generalFeedback.text,
+      text: generalText,
     });
   }
   for (const student of data.students) {
-    const fb = student.feedback;
-    entries.push({
-      label: feedbackStudentLabel(student, fb?.authorName, ocultarNome),
-      text: fb?.text ?? null,
-    });
+    entries.push(buildStudentFeedbackEntry(student, ocultarNome));
   }
   return entries;
+}
+
+function buildStudentFeedbackEntry(
+  student: SessionReportStudentData,
+  ocultarNome: boolean,
+): ReportTextEntry {
+  const text = normalizeFeedbackText(student.feedback?.text);
+  const authorName = text !== null ? student.feedback?.authorName : undefined;
+  return {
+    label: feedbackStudentLabel(student, authorName, ocultarNome),
+    text,
+  };
 }
 
 function feedbackStudentLabel(
