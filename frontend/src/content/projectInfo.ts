@@ -16,7 +16,7 @@ export type TeamMember = {
 export const TEAM_MEMBERS_TITLE = 'Desenvolvedores';
 
 export const TEAM_MEMBERS: TeamMember[] = [
-  { name: 'Daniel Porto', github: 'https://github.com/DanielPortoBraz' },
+  { name: 'Daniel Braz', github: 'https://github.com/DanielPortoBraz' },
   { name: 'Enzo Cauã', github: 'https://github.com/Enzo-Caua' },
   { name: 'Felipe Bastos', github: 'https://github.com/FelipeBastosz' },
   { name: 'Ítallo Guimarães', github: 'https://github.com/ItalloGuimaraes' },
@@ -26,5 +26,5 @@ export const TEAM_MEMBERS: TeamMember[] = [
   { name: 'Kevin Borges', github: 'https://github.com/kevincorges' },
   { name: 'Levi Vasconcelos', github: 'https://github.com/levi-vasc' },
   { name: 'Lucas Oliveira', github: 'https://github.com/silvaluccs' },
-  { name: 'Nathan de Jesus', github: 'https://github.com/enejota-njs' },
+  { name: 'Nathan Santos', github: 'https://github.com/enejota-njs' },
 ];
