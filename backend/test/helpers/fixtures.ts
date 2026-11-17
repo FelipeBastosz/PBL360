@@ -26,7 +26,7 @@ export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
 const resetCommitmentTerms = async (dataSource: DataSource): Promise<void> => {
   await dataSource.query(`DELETE FROM commitment_terms WHERE version = 'test-current';`);
   await dataSource.query(`UPDATE commitment_terms SET is_current = FALSE WHERE is_current = TRUE;`);
-  await dataSource.query(`UPDATE commitment_terms SET is_current = TRUE WHERE version = '1.1';`);
+  await dataSource.query(`UPDATE commitment_terms SET is_current = TRUE WHERE version = '1.2';`);
 };
 
 export const insertDefaultPerformanceTable = async (
