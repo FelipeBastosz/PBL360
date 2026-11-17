@@ -82,7 +82,7 @@ const mockFeedbacks = {
   ],
 };
 
-function createMockProblemReportPdf(options?: { ocultarNomes?: boolean }): Buffer {
+function createMockProblemReportPdf(options?: { ocultarNomes?: boolean }): string {
   const student1Line = options?.ocultarNomes
     ? '(Matricula: 20260001 | Nota Final: 8.75) Tj'
     : '(Aluno: Ana Silva | Matricula: 20260001 | Nota Final: 8.75) Tj';
@@ -105,6 +105,8 @@ function createMockProblemReportPdf(options?: { ocultarNomes?: boolean }): Buffe
     'ET',
   ].join('\n');
 
+  const contentLength = new TextEncoder().encode(content).length;
+
   const pdfString = `%PDF-1.4
 1 0 obj
 << /Type /Catalog /Pages 2 0 R >>
@@ -119,7 +121,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 5 0 obj
-<< /Length ${Buffer.byteLength(content)} >>
+<< /Length ${contentLength} >>
 stream
 ${content}
 endstream
@@ -138,24 +140,75 @@ startxref
 450
 %%EOF`;
 
-  return Buffer.from(pdfString);
+  return pdfString;
 }
 
-async function readStreamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
+async function readStreamToBuffer(stream: AsyncIterable<Uint8Array | string>): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  const encoder = new TextEncoder();
+  let totalLength = 0;
   for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const bytes = typeof chunk === 'string' ? encoder.encode(chunk) : chunk;
+    chunks.push(bytes);
+    totalLength += bytes.length;
   }
-  return Buffer.concat(chunks);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+function toBase64Url(str: string): string {
+  return btoa(str).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+async function createRealTutorToken(): Promise<string> {
+  const secret = 'change-me-in-every-environment';
+  const header = toBase64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const now = Math.floor(Date.now() / 1000);
+  const payload = toBase64Url(
+    JSON.stringify({
+      sub: '7408a053-c198-4834-a737-0a325410a556',
+      email: 'carlos@uefs.br',
+      type: 'TUTOR',
+      ver: 0,
+      iat: now,
+      exp: now + 86400,
+      aud: 'pbl360:access',
+    }),
+  );
+
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sigBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(`${header}.${payload}`));
+  const bytes = new Uint8Array(sigBuffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const signature = toBase64Url(binary);
+
+  return `${header}.${payload}.${signature}`;
 }
 
 test.describe('Professor Flows - Problem Grades & Reports', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
+    const authToken = await createRealTutorToken();
+
+    await page.addInitScript((token) => {
       localStorage.setItem(
         'pbl360.session',
         JSON.stringify({
-          token: 'mock-tutor-token',
+          token,
           expiraEm: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           usuario: {
             id: 'user-tutor-1',
@@ -166,7 +219,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
           },
         }),
       );
-    });
+    }, authToken);
 
     await page.route('**/api/salas/sala-1', async (route) => {
       await route.fulfill({
@@ -205,26 +258,6 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify(mockFeedbacks),
-      });
-    });
-
-    await page.route('**/api/modelos-feedback', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          {
-            id: 'tmpl-1',
-            titulo: 'Boa participação e engajamento',
-            texto: 'Demonstrou participação ativa durante a sessão tutorial.',
-          },
-          {
-            id: 'tmpl-2',
-            titulo: 'Necessidade de aprofundar argumentos',
-            texto:
-              'Participou das discussões, porém recomenda-se aprofundar a fundamentação teórica.',
-          },
-        ]),
       });
     });
   });
@@ -391,13 +424,15 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
 
     const templateDialog = page.getByRole('dialog', { name: 'Modelos de feedback' });
     await expect(templateDialog).toBeVisible();
-    await expect(templateDialog.getByText('Boa participação e engajamento')).toBeVisible();
+    await expect(templateDialog.getByText('Boa participação e engajamento')).toBeVisible({
+      timeout: 15000,
+    });
 
     await templateDialog.getByRole('button', { name: /Boa participação e engajamento/i }).click();
     await expect(templateDialog).not.toBeVisible();
 
     await expect(commentField).toHaveValue(
-      'Observação inicial do tutor.\n\nDemonstrou participação ativa durante a sessão tutorial.',
+      'Observação inicial do tutor.\n\nDemonstrou participação ativa durante a sessão tutorial, contribuindo com perguntas e reflexões pertinentes para o avanço da discussão do grupo.',
     );
 
     await commentField.focus();
@@ -414,7 +449,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
       sessao_id: 'sess-1',
       nota: 8.5,
       texto:
-        'Observação inicial do tutor.\n\nDemonstrou participação ativa durante a sessão tutorial. Continuar assim!',
+        'Observação inicial do tutor.\n\nDemonstrou participação ativa durante a sessão tutorial, contribuindo com perguntas e reflexões pertinentes para o avanço da discussão do grupo. Continuar assim!',
     });
   });
 
@@ -432,6 +467,9 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
 
     const templateDialog = page.getByRole('dialog', { name: 'Modelos de feedback' });
     await expect(templateDialog).toBeVisible();
+    await expect(templateDialog.getByText('Boa participação e engajamento')).toBeVisible({
+      timeout: 15000,
+    });
 
     await templateDialog.getByRole('button', { name: 'Cancelar' }).click();
     await expect(templateDialog).not.toBeVisible();
@@ -442,7 +480,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
   test('should display active export buttons, validate downloaded PDF content, and preview report', async ({
     page,
   }, testInfo) => {
-    const mockPdfBuffer = createMockProblemReportPdf();
+    const mockPdfContent = createMockProblemReportPdf();
     let pdfExportRequested = false;
     let excelExportRequested = false;
     let capturedPdfParams: Record<string, string> = {};
@@ -455,7 +493,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/pdf',
-          body: mockPdfBuffer,
+          body: mockPdfContent,
         });
         return;
       }
@@ -464,7 +502,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          body: Buffer.from('mock-excel-binary-report'),
+          body: 'mock-excel-binary-report',
         });
         return;
       }
@@ -525,7 +563,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     const downloadedPdf = await readStreamToBuffer(stream!);
     expect(downloadedPdf.length).toBeGreaterThan(0);
 
-    const pdfText = downloadedPdf.toString('latin1');
+    const pdfText = new TextDecoder('latin1').decode(downloadedPdf);
     expect(pdfText).toContain('%PDF-');
     expect(pdfText).toContain('Relatorio de Notas - Problema 1: Dor Toracica');
     expect(pdfText).toContain('Turma: MED101 - Medicina 2026.1');
@@ -567,7 +605,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
               type="application/pdf"
               width="100%"
               height="800px"
-              src="data:application/pdf;base64,${downloadedPdf.toString('base64')}"
+              src="data:application/pdf;base64,${btoa(String.fromCharCode(...downloadedPdf))}"
             />
           </div>
         </body>
@@ -671,7 +709,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     const stream = await pdfDownload.createReadStream();
     expect(stream).not.toBeNull();
     const downloadedPdf = await readStreamToBuffer(stream!);
-    const pdfText = downloadedPdf.toString('latin1');
+    const pdfText = new TextDecoder('latin1').decode(downloadedPdf);
 
     expect(pdfText).toContain('%PDF-');
     expect(pdfText).toContain('Matricula: 20260001');
@@ -702,7 +740,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          body: Buffer.from('mock-excel-anonymized-report'),
+          body: 'mock-excel-anonymized-report',
         });
         return;
       }
