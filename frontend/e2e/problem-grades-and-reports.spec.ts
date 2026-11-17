@@ -207,6 +207,26 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         body: JSON.stringify(mockFeedbacks),
       });
     });
+
+    await page.route('**/api/modelos-feedback', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 'tmpl-1',
+            titulo: 'Boa participação e engajamento',
+            texto: 'Demonstrou participação ativa durante a sessão tutorial.',
+          },
+          {
+            id: 'tmpl-2',
+            titulo: 'Necessidade de aprofundar argumentos',
+            texto:
+              'Participou das discussões, porém recomenda-se aprofundar a fundamentação teórica.',
+          },
+        ]),
+      });
+    });
   });
 
   test('should navigate from problem hub to problem grades report', async ({ page }) => {
@@ -328,6 +348,95 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
 
     await expect(dialog).not.toBeVisible();
     expect(studentFeedbackPut).toBe(true);
+  });
+
+  test('should allow professor to select a feedback template, concatenate, manually edit and submit', async ({
+    page,
+  }) => {
+    let capturedPayload: unknown = null;
+
+    await page.route(
+      '**/api/salas/sala-1/problemas/prob-1/feedbacks/alunos/aluno-1',
+      async (route) => {
+        if (route.request().method() === 'PUT') {
+          capturedPayload = route.request().postDataJSON();
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              id: 'fb-student-1',
+              alunoId: 'aluno-1',
+              texto: (capturedPayload as { texto?: string })?.texto,
+            }),
+          });
+        }
+      },
+    );
+
+    await page.goto('/turmas/sala-1/problemas/prob-1/notas');
+
+    const gradeCell = page.getByRole('button', { name: /Ana Silva.*Abertura/i });
+    await expect(gradeCell).toBeVisible();
+    await gradeCell.click();
+
+    const dialog = page.getByRole('dialog', { name: /Feedback - Abertura/i });
+    await expect(dialog).toBeVisible();
+
+    const commentField = dialog.getByPlaceholder(/Digite o feedback detalhado do aluno/i);
+    await commentField.fill('Observação inicial do tutor.');
+
+    const useTemplateBtn = dialog.getByRole('button', { name: /Usar modelo/i });
+    await expect(useTemplateBtn).toBeVisible();
+    await useTemplateBtn.click();
+
+    const templateDialog = page.getByRole('dialog', { name: 'Modelos de feedback' });
+    await expect(templateDialog).toBeVisible();
+    await expect(templateDialog.getByText('Boa participação e engajamento')).toBeVisible();
+
+    await templateDialog.getByRole('button', { name: /Boa participação e engajamento/i }).click();
+    await expect(templateDialog).not.toBeVisible();
+
+    await expect(commentField).toHaveValue(
+      'Observação inicial do tutor.\n\nDemonstrou participação ativa durante a sessão tutorial.',
+    );
+
+    await commentField.focus();
+    await commentField.press('End');
+    await page.keyboard.type(' Continuar assim!');
+
+    const saveBtn = dialog.getByRole('button', { name: 'Salvar' });
+    await saveBtn.click();
+
+    await expect(dialog).not.toBeVisible();
+    expect(capturedPayload).toEqual({
+      escopo: 'ALUNO',
+      destinatario_id: 'aluno-1',
+      sessao_id: 'sess-1',
+      nota: 8.5,
+      texto:
+        'Observação inicial do tutor.\n\nDemonstrou participação ativa durante a sessão tutorial. Continuar assim!',
+    });
+  });
+
+  test('should allow canceling template selection without altering comment', async ({ page }) => {
+    await page.goto('/turmas/sala-1/problemas/prob-1/notas');
+
+    const gradeCell = page.getByRole('button', { name: /Ana Silva.*Abertura/i });
+    await gradeCell.click();
+
+    const dialog = page.getByRole('dialog', { name: /Feedback - Abertura/i });
+    const commentField = dialog.getByPlaceholder(/Digite o feedback detalhado do aluno/i);
+    await commentField.fill('Texto inalterado.');
+
+    await dialog.getByRole('button', { name: /Usar modelo/i }).click();
+
+    const templateDialog = page.getByRole('dialog', { name: 'Modelos de feedback' });
+    await expect(templateDialog).toBeVisible();
+
+    await templateDialog.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(templateDialog).not.toBeVisible();
+
+    await expect(commentField).toHaveValue('Texto inalterado.');
   });
 
   test('should display active export buttons, validate downloaded PDF content, and preview report', async ({
