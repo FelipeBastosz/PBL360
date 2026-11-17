@@ -21,6 +21,16 @@ const ACCEPTANCE_COLUMNS = `
   accepted_at AS "acceptedAt"
 `;
 
+const UPSERT_ACCEPTANCE_QUERY = `
+  INSERT INTO user_term_acceptances (user_id, term_id, term_version, accepted_at)
+  VALUES ($1, $2, $3, $4)
+  ON CONFLICT (user_id) DO UPDATE
+    SET term_id = EXCLUDED.term_id,
+        term_version = EXCLUDED.term_version,
+        accepted_at = EXCLUDED.accepted_at
+  RETURNING ${ACCEPTANCE_COLUMNS};
+`;
+
 const toEntity = (row: UserTermAcceptanceRow): UserTermAcceptance =>
   Object.assign(new UserTermAcceptance(), row);
 
@@ -47,8 +57,10 @@ export class PgUserTermAcceptanceRepository implements UserTermAcceptanceReposit
     const rows = await this.repository.query<{ exists: boolean }[]>(
       `SELECT EXISTS (
          SELECT 1
-         FROM user_term_acceptances
-         WHERE user_id = $1
+         FROM user_term_acceptances AS uta
+         JOIN commitment_terms AS ct ON ct.id = uta.term_id
+         WHERE uta.user_id = $1
+           AND ct.is_current = TRUE
        ) AS "exists";`,
       [userId],
     );
@@ -56,13 +68,12 @@ export class PgUserTermAcceptanceRepository implements UserTermAcceptanceReposit
   }
 
   async create(acceptance: UserTermAcceptance): Promise<UserTermAcceptance> {
-    const rows = await this.repository.query<UserTermAcceptanceRow[]>(
-      `INSERT INTO user_term_acceptances (user_id, term_id, term_version, accepted_at)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (user_id) DO NOTHING
-       RETURNING ${ACCEPTANCE_COLUMNS};`,
-      [acceptance.userId, acceptance.termId, acceptance.termVersion, acceptance.acceptedAt],
-    );
+    const rows = await this.repository.query<UserTermAcceptanceRow[]>(UPSERT_ACCEPTANCE_QUERY, [
+      acceptance.userId,
+      acceptance.termId,
+      acceptance.termVersion,
+      acceptance.acceptedAt,
+    ]);
     const row = firstRowOrNull(rows);
     if (row) {
       return toEntity(row);

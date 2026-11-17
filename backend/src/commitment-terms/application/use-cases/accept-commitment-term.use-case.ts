@@ -32,12 +32,13 @@ export class AcceptCommitmentTermUseCase {
       throw new NotFoundError('Nenhum termo de compromisso vigente foi encontrado.');
     }
 
+    this.assertValidVersion(input.version, currentTerm.version);
+
     const existing = await this.userTermAcceptances.findByUserId(input.userId);
-    if (existing) {
+    if (existing && existing.termVersion === currentTerm.version) {
       return this.toStatus(existing, currentTerm.version);
     }
 
-    this.assertValidVersion(input.version, currentTerm.version);
     const saved = await this.recordAcceptance(input.userId, currentTerm);
     return this.toStatus(saved, currentTerm.version);
   }
@@ -67,7 +68,7 @@ export class AcceptCommitmentTermUseCase {
     versaoVigente: string,
   ): UserTermAcceptanceStatus {
     return {
-      aceito: true,
+      aceito: acceptance.termVersion === versaoVigente,
       versaoAceita: acceptance.termVersion,
       aceitoEm: acceptance.acceptedAt,
       versaoVigente,

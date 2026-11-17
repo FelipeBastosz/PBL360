@@ -57,6 +57,26 @@ describe('GetUserTermAcceptanceUseCase', () => {
     });
   });
 
+  it('returns aceito: false when user accepted an older version', async () => {
+    termsRepo.findCurrent.mockResolvedValue(currentTerm);
+    const acceptance = UserTermAcceptance.create({
+      userId: 'user-1',
+      termId: 'term-old',
+      termVersion: '0.9',
+      acceptedAt: new Date('2026-11-01T10:00:00Z'),
+    });
+    acceptancesRepo.findByUserId.mockResolvedValue(acceptance);
+
+    const result = await useCase.execute('user-1');
+
+    expect(result).toEqual({
+      aceito: false,
+      versaoAceita: '0.9',
+      aceitoEm: new Date('2026-11-01T10:00:00Z'),
+      versaoVigente: '1.0',
+    });
+  });
+
   it('throws NotFoundError if there is no current term', async () => {
     termsRepo.findCurrent.mockResolvedValue(null);
 
