@@ -121,17 +121,17 @@ function StudentPhoto({ student, index }: Omit<HistoryStudentCardProps, 'onSelec
 
 export function HistoryStudentCard({ student, index, onSelect }: HistoryStudentCardProps) {
   const displayName = getDisplayName(student, false);
-  const isClickable = hasSubmitted(student);
+  const canAdjust = hasSubmitted(student);
 
   return (
     <article
       className={cn(
         'relative flex items-center gap-3 rounded-xl border border-[#E2E4EC] bg-white p-[13.8px] shadow-[0_2px_8px_rgb(26_29_41/0.08)] transition-colors',
-        isClickable &&
+        canAdjust &&
           'focus-within:ring-2 focus-within:ring-brand-900 focus-within:ring-offset-2 hover:bg-surface-50',
       )}
     >
-      {isClickable && (
+      {canAdjust && (
         <button
           type="button"
           onClick={() => onSelect(student)}
@@ -147,7 +147,10 @@ export function HistoryStudentCard({ student, index, onSelect }: HistoryStudentC
         <SituationLine student={student} />
       </div>
       <div className="flex shrink-0 items-center gap-[15.5px]">
-        <ScoreColumn label="Aluno" value={getStudentScore(student)} />
+        <ScoreColumn
+          label={student.notaPares !== null && student.notaAluno === null ? 'Pares' : 'Aluno'}
+          value={getStudentScore(student)}
+        />
         <ScoreArrow />
         <ScoreColumn label="Tutor" value={getTutorScore(student)} isTutor />
       </div>

@@ -81,6 +81,36 @@ export function calculateSessionComponents(
   };
 }
 
+function countParticipatingPeers(ctx: EvaluationComponentContext, sessionId: string): number {
+  return ctx.attendances.filter(
+    (a) =>
+      String(a.session_id) === sessionId &&
+      (a.status === 'PRESENT' || a.status === 'LATE') &&
+      String(a.student_id) !== String(ctx.student.id),
+  ).length;
+}
+
+function formPeerComponent(
+  ctx: EvaluationComponentContext,
+  session: GradeRow,
+  shared: { attendance: GradeAttendance; now: Date },
+  belongs: (row: GradeRow) => boolean,
+): Pick<SessionEvaluationComponents, 'peer' | 'peerSource'> {
+  const adjustedScore = numberOrNull(ctx.peerAdjustments?.find(belongs)?.score);
+  const receivedScores = ctx.peerScores.filter(belongs).map((row) => Number(row.score));
+  const expectedPeerCount = countParticipatingPeers(ctx, String(session.id));
+  return {
+    peer: calculatePeerAssessmentSession({
+      ...shared,
+      release: releaseOf(session, 'peer'),
+      receivedScores,
+      adjustedScore,
+      expectedPeerCount,
+    }),
+    peerSource: 'FORMULARIO',
+  };
+}
+
 function peerComponent(
   ctx: EvaluationComponentContext,
   session: GradeRow,
@@ -92,13 +122,7 @@ function peerComponent(
     const peer = calculatePokerPeerSession({ attendance: shared.attendance, finalGrade });
     return { peer, peerSource: 'PLANNING_POKER' };
   }
-  const adjustedScore = numberOrNull(ctx.peerAdjustments?.find(belongs)?.score);
-  const receivedScores = ctx.peerScores.filter(belongs).map((row) => Number(row.score));
-  const release = releaseOf(session, 'peer');
-  return {
-    peer: calculatePeerAssessmentSession({ ...shared, release, receivedScores, adjustedScore }),
-    peerSource: 'FORMULARIO',
-  };
+  return formPeerComponent(ctx, session, shared, belongs);
 }
 
 const belongsTo =

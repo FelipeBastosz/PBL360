@@ -28,7 +28,17 @@ const adjustedItem: StudentEvaluationHistoryItem = {
   situacaoAjuste: 'AJUSTADA',
 };
 
-const notSubmittedItem: StudentEvaluationHistoryItem = { ...baseItem, notaAluno: null };
+const notSubmittedItem: StudentEvaluationHistoryItem = {
+  ...baseItem,
+  notaAluno: null,
+  notaPares: null,
+};
+
+const peerOnlyItem: StudentEvaluationHistoryItem = {
+  ...baseItem,
+  notaAluno: null,
+  notaPares: 8,
+};
 
 describe('formatScore', () => {
   it('formats with comma and a single decimal place', () => {
@@ -51,6 +61,12 @@ describe('student and tutor scores', () => {
   it('shows the original score as the student score and the current one as the tutor score', () => {
     expect(getStudentScore(adjustedItem)).toBe(9.5);
     expect(getTutorScore(adjustedItem)).toBe(8.5);
+  });
+
+  it('shows the peer score when self-assessment was not submitted', () => {
+    expect(getStudentScore(peerOnlyItem)).toBe(8);
+    expect(hasSubmitted(peerOnlyItem)).toBe(true);
+    expect(getSituationLabel(peerOnlyItem)).toBe('Sem ajuste do tutor');
   });
 });
 

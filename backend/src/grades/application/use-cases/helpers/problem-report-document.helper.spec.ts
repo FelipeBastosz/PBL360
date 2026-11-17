@@ -524,6 +524,31 @@ describe('problem-report-document.helper', () => {
     expect(doc.sections.some((s) => s.title === 'Pendências de avaliação')).toBe(false);
   });
 
+  it('omits empty or whitespace-only feedbacks and normalizes empty general feedback to null', () => {
+    const emptyFeedbacks: ProblemFeedbackDetail[] = [
+      { ...feedbacks[0]!, text: '   ' },
+      { ...feedbacks[1]!, text: '' },
+      { ...feedbacks[2]!, text: '  \n ' },
+    ];
+
+    const doc = buildProblemReportDocument({
+      room,
+      problem,
+      grades,
+      feedbacks: emptyFeedbacks,
+      format: ReportFileFormat.PDF,
+    });
+
+    const generalSection = doc.sections.find((s) => s.title === 'Feedback geral do problema');
+    expect(generalSection).toEqual({
+      kind: 'text',
+      title: 'Feedback geral do problema',
+      entries: [{ label: 'Turma', text: null }],
+    });
+    expect(doc.sections.some((s) => s.title === 'Feedbacks das sessões')).toBe(false);
+    expect(doc.sections.some((s) => s.title === 'Feedbacks individuais')).toBe(false);
+  });
+
   it('omits pendencies, feedbacks and marcacoes when all three flags are false', () => {
     const doc = buildProblemReportDocument({
       room,
