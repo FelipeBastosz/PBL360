@@ -7,7 +7,7 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, signAccessToken } from './helpers/fixtures';
+import { acceptCurrentTermForAllUsers, cleanDatabase, signAccessToken } from './helpers/fixtures';
 
 interface RoomPerformanceTableResponseItem {
   id: string;
@@ -92,6 +92,8 @@ describe('Room Performance Tables (e2e)', () => {
       [UserType.STUDENT],
     );
     studentId = student.id;
+
+    await acceptCurrentTermForAllUsers(dataSource);
 
     ownerToken = signAccessToken(app, ownerId, 'carlos.tutor@uefs.br', UserType.TUTOR);
     coTutorToken = signAccessToken(app, coTutorId, 'maria.cotutor@uefs.br', UserType.TUTOR);

@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, signAccessToken } from './helpers/fixtures';
+import { acceptCurrentTermForAllUsers, cleanDatabase, signAccessToken } from './helpers/fixtures';
 
 const DATABASE_HOOK_TIMEOUT_MS = 30_000;
 
@@ -79,6 +79,8 @@ describe('Session Authorization Matrix (e2e)', () => {
       [UserType.STUDENT],
     );
     studentId = student.id;
+
+    await acceptCurrentTermForAllUsers(dataSource);
 
     ownerToken = signAccessToken(app, ownerTutorId, 'carlos.matrix@uefs.br', UserType.TUTOR);
     coTutorToken = signAccessToken(app, coTutorId, 'maria.matrix@uefs.br', UserType.TUTOR);
