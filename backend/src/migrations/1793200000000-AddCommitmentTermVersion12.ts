@@ -61,8 +61,8 @@ A autoria moral do software e do código-fonte pertence aos estudantes desenvolv
 
 Para dúvidas, suporte acadêmico ou solicitações referentes aos seus dados pessoais, entre em contato com a equipe e o Encarregado de Dados pelo e-mail: **[contato.pbl360@gmail.com](mailto:contato.pbl360@gmail.com)**.`;
 
-export class AddCommitmentTermVersion1217932000000 implements MigrationInterface {
-  name = 'AddCommitmentTermVersion1217932000000';
+export class AddCommitmentTermVersion121793200000000 implements MigrationInterface {
+  name = 'AddCommitmentTermVersion121793200000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
