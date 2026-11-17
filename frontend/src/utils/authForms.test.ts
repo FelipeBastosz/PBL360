@@ -82,7 +82,7 @@ describe('validateRegisterForm', () => {
     });
 
     expect(errors.termosAceitos).toBe(
-      'Você deve concordar com os Termos de Uso e Política de Privacidade.',
+      'O cadastro só pode ser realizado se você marcar que leu e concorda com os Termos de Uso e Política de Privacidade.',
     );
   });
 });

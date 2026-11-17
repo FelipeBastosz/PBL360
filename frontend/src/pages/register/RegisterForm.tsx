@@ -87,9 +87,20 @@ type TermsCheckboxProps = {
   onOpenTerms: () => void;
 };
 
+function TermsNotice({ message }: { message?: string }) {
+  return (
+    <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-2.5 text-xs text-rose-900 text-left animate-shake">
+      <span className="font-semibold">Aviso:</span>{' '}
+      {message ??
+        'O cadastro só pode ser realizado se você marcar que leu e concorda com os Termos de Uso e Política de Privacidade.'}
+    </div>
+  );
+}
+
 function TermsCheckbox({ checked, onChange, error, onOpenTerms }: TermsCheckboxProps) {
   return (
-    <div className="flex flex-col gap-1 text-left">
+    <div className="flex flex-col gap-2 text-left">
+      {error ? <TermsNotice message={error} /> : null}
       <label className="flex items-start gap-3 cursor-pointer select-none text-xs text-muted">
         <input
           type="checkbox"
@@ -113,7 +124,6 @@ function TermsCheckbox({ checked, onChange, error, onOpenTerms }: TermsCheckboxP
           .
         </span>
       </label>
-      {error ? <p className="text-xs text-rose-600 pl-7">{error}</p> : null}
     </div>
   );
 }
@@ -158,12 +168,7 @@ export function RegisterForm(props: RegisterFormProps) {
           error={errors.termosAceitos}
           onOpenTerms={() => setLegalDoc(LEGAL_TERMS_AND_PRIVACY_TITLE)}
         />
-        <Button
-          type="submit"
-          isLoading={isLoading}
-          disabled={!values.termosAceitos}
-          className="mt-2"
-        >
+        <Button type="submit" isLoading={isLoading} className="mt-2">
           Criar conta
         </Button>
       </form>

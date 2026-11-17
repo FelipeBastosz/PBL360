@@ -37,17 +37,17 @@ Para dúvidas contate contato.pbl360@gmail.com.`,
 
     render(<TermsAndPrivacyContent />);
 
-    const versionElements = await screen.findAllByText(
+    const versionElement = await screen.findByText(
       /Versão 1.2 \(MVP Acadêmico e Conformidade LGPD/i,
     );
-    expect(versionElements.length).toBeGreaterThan(0);
+    expect(versionElement).toBeInTheDocument();
     expect(screen.getByText('1. Objeto e Condições de Acesso')).toBeInTheDocument();
     expect(
       screen.getByText('3. Limitação de Responsabilidade (Leia com Atenção)'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
-      'href',
-      'mailto:contato.pbl360@gmail.com',
-    );
+    expect(screen.getByText(/contato\.pbl360@gmail\.com/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /contato\.pbl360@gmail\.com/i }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -62,7 +62,7 @@ export function validateRegisterForm(values: RegisterFormValues): Errors<Registe
     ...validateNewPasswordForm(values),
     termosAceitos: values.termosAceitos
       ? undefined
-      : 'Você deve concordar com os Termos de Uso e Política de Privacidade.',
+      : 'O cadastro só pode ser realizado se você marcar que leu e concorda com os Termos de Uso e Política de Privacidade.',
   };
 }
 

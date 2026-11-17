@@ -67,23 +67,14 @@ Nos termos do **Art. 18 da Lei Geral de Proteção de Dados (LGPD)**, você pode
 
 A autoria moral do software e do código-fonte pertence aos estudantes desenvolvedores da disciplina, enquanto a posse institucional e patrimonial do projeto pertence à Universidade Estadual de Feira de Santana (UEFS). Os conteúdos inseridos (feedbacks, avaliações e mensagens) pertencem aos seus respectivos autores, sendo licenciados à plataforma apenas para o processamento pedagógico.
 
-Para dúvidas, suporte acadêmico ou solicitações referentes aos seus dados pessoais, entre em contato com a equipe e o Encarregado de Dados pelo e-mail: [${PROJECT_EMAIL}](mailto:${PROJECT_EMAIL}).`,
+Para dúvidas, suporte acadêmico ou solicitações referentes aos seus dados pessoais, entre em contato com a equipe e o Encarregado de Dados pelo e-mail: **${PROJECT_EMAIL}**.`,
 };
 
+function cleanMailtoSyntax(text: string): string {
+  return text.replace(/\[([^\]]+)\]\(mailto:[^)]+\)/g, '$1');
+}
+
 function renderToken(token: string, key: number): ReactNode {
-  if (token.startsWith('[') && token.includes('](mailto:')) {
-    const label = token.slice(1, token.indexOf(']'));
-    const mailto = token.slice(token.indexOf('](mailto:') + 9, -1);
-    return (
-      <a
-        key={key}
-        href={`mailto:${mailto}`}
-        className="font-medium text-brand-900 underline underline-offset-2 hover:text-brand-700"
-      >
-        {label}
-      </a>
-    );
-  }
   if (token.startsWith('**') && token.endsWith('**')) {
     return (
       <strong key={key} className="text-brand-900 font-semibold">
@@ -98,11 +89,13 @@ function renderToken(token: string, key: number): ReactNode {
       </em>
     );
   }
-  if (token.includes('@') && !token.startsWith('http')) {
+  if (token.startsWith('http://') || token.startsWith('https://')) {
     return (
       <a
         key={key}
-        href={`mailto:${token}`}
+        href={token}
+        target="_blank"
+        rel="noopener noreferrer"
         className="font-medium text-brand-900 underline underline-offset-2 hover:text-brand-700"
       >
         {token}
@@ -113,22 +106,22 @@ function renderToken(token: string, key: number): ReactNode {
 }
 
 function renderInlineText(text: string): ReactNode[] {
+  const cleaned = cleanMailtoSyntax(text);
   const parts: ReactNode[] = [];
-  const regex =
-    /(\[.*?\]\(mailto:.*?\)|\*\*.*?\*\*|\*.*?\*|https?:\/\/[^\s)]+|[\w.-]+@[\w.-]+\.\w+)/g;
+  const regex = /(\*\*.*?\*\*|\*.*?\*|https?:\/\/[^\s)]+)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = regex.exec(text)) !== null) {
+  while ((match = regex.exec(cleaned)) !== null) {
     if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
+      parts.push(cleaned.slice(lastIndex, match.index));
     }
     parts.push(renderToken(match[0], match.index));
     lastIndex = regex.lastIndex;
   }
 
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
+  if (lastIndex < cleaned.length) {
+    parts.push(cleaned.slice(lastIndex));
   }
 
   return parts;
@@ -231,8 +224,8 @@ export function TermsAndPrivacyContent() {
   useEffect(() => {
     let isMounted = true;
     commitmentTermsService
-      .getCurrentTerm()
-      .then((data) => {
+      .getCurrentTerm?.()
+      ?.then((data) => {
         if (isMounted && data) {
           setTerm(data);
         }
@@ -253,16 +246,11 @@ export function TermsAndPrivacyContent() {
 
   return (
     <div className="flex flex-col gap-4 text-left">
-      <div className="border-b border-black/5 pb-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-muted">
-            Versão {term.versao} (MVP Acadêmico e Conformidade LGPD – Lei nº 13.709/2018)
-          </p>
-          {isLoading && (
-            <span className="text-[10px] text-brand-700 animate-pulse">Atualizando...</span>
-          )}
+      {isLoading && (
+        <div className="flex justify-end border-b border-black/5 pb-1">
+          <span className="text-[10px] text-brand-700 animate-pulse">Atualizando termos...</span>
         </div>
-      </div>
+      )}
       {blocks.map((block, index) => renderBlock(block, index))}
     </div>
   );

@@ -82,7 +82,7 @@ Nos termos do **Art. 18 da Lei Geral de Proteção de Dados (LGPD)**, você pode
 
 A autoria moral do software e do código-fonte pertence aos estudantes desenvolvedores da disciplina, enquanto a posse institucional e patrimonial do projeto pertence à Universidade Estadual de Feira de Santana (UEFS). Os conteúdos inseridos (feedbacks, avaliações e mensagens) pertencem aos seus respectivos autores, sendo licenciados à plataforma apenas para o processamento pedagógico.
 
-Para dúvidas, suporte acadêmico ou solicitações referentes aos seus dados pessoais, entre em contato com a equipe e o Encarregado de Dados pelo e-mail: **[contato.pbl360@gmail.com](mailto:contato.pbl360@gmail.com)**.`;
+Para dúvidas, suporte acadêmico ou solicitações referentes aos seus dados pessoais, entre em contato com a equipe e o Encarregado de Dados pelo e-mail: **contato.pbl360@gmail.com**.`;
 
 describe('Commitment Terms (e2e)', () => {
   let app: INestApplication;

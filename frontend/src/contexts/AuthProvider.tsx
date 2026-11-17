@@ -8,13 +8,30 @@ import type { LoginPayload, SessionResponse, UserResponse } from '@/types/auth';
 import { AuthContext, SESSION_EXPIRED_MESSAGE, SESSION_SWITCHED_MESSAGE } from './authContext';
 import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
 
+function markLoginTermsCheck(): void {
+  try {
+    sessionStorage.setItem('pbl360.checkTermsOnLogin', 'true');
+  } catch {
+    // ignore
+  }
+}
+
+function clearSessionData(): void {
+  sessionStore.clear();
+  clearUserPhotoCache();
+  try {
+    sessionStorage.removeItem('pbl360.checkTermsOnLogin');
+  } catch {
+    // ignore
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionResponse | null>(() => sessionStore.restore());
   const { notify } = useToast();
 
   const logout = useCallback(() => {
-    sessionStore.clear();
-    clearUserPhotoCache();
+    clearSessionData();
     setSession(null);
   }, []);
 
@@ -41,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (payload: LoginPayload) => {
     const nextSession = await authService.login(payload);
     sessionStore.save(nextSession);
+    markLoginTermsCheck();
     setSession(nextSession);
     return nextSession.usuario;
   }, []);

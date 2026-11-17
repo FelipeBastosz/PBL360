@@ -72,9 +72,9 @@ describe('UserMenu', () => {
     expect(
       screen.getByRole('heading', { name: 'Termos de Uso e Política de Privacidade' }),
     ).toBeInTheDocument();
-    expect(await screen.findByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
-      'href',
-      'mailto:contato.pbl360@gmail.com',
-    );
+    expect(await screen.findByText(/contato\.pbl360@gmail\.com/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /contato\.pbl360@gmail\.com/i }),
+    ).not.toBeInTheDocument();
   });
 });
