@@ -1,13 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { PrivacyPolicyContent } from '@/components/layout/PrivacyPolicyContent';
-import { TermsOfUseContent } from '@/components/layout/TermsOfUseContent';
+import { TermsAndPrivacyContent } from '@/components/layout/TermsAndPrivacyContent';
 import { Alert } from '@/components/ui/Alert';
 import { AvatarPicker } from '@/components/ui/AvatarPicker';
 import { Button } from '@/components/ui/Button';
 import { LegalDocumentModal } from '@/components/ui/LegalDocumentModal';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { TextField } from '@/components/ui/TextField';
-import { LEGAL_PRIVACY_TITLE, LEGAL_TERMS_TITLE } from '@/content/legal';
+import { LEGAL_TERMS_AND_PRIVACY_TITLE } from '@/content/legal';
 import type { FieldErrors } from '@/hooks/useForm';
 import type { RegisterFormValues } from '@/utils/authForms';
 
@@ -82,56 +81,54 @@ function PasswordFields({ values, errors, onChange }: RegisterFormProps) {
 }
 
 type TermsCheckboxProps = {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  error?: string;
   onOpenTerms: () => void;
-  onOpenPrivacy: () => void;
 };
 
-function TermsCheckbox({ onOpenTerms, onOpenPrivacy }: TermsCheckboxProps) {
-  const [checked, setChecked] = useState(false);
-
+function TermsCheckbox({ checked, onChange, error, onOpenTerms }: TermsCheckboxProps) {
   return (
-    <label className="flex items-start gap-3 cursor-pointer select-none text-xs text-muted">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => setChecked(e.target.checked)}
-        className="mt-0.5 size-4 rounded border-black/20 text-brand-900 focus:ring-brand-900 cursor-pointer"
-      />
-      <span>
-        Eu li e concordo com os{' '}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onOpenTerms();
-          }}
-          className="font-semibold text-brand-900 underline underline-offset-2 hover:text-brand-700"
-        >
-          Termos de Uso
-        </button>
-        {' e a '}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onOpenPrivacy();
-          }}
-          className="font-semibold text-brand-900 underline underline-offset-2 hover:text-brand-700"
-        >
-          Política de Privacidade
-        </button>
-        .
-      </span>
-    </label>
+    <div className="flex flex-col gap-1 text-left">
+      <label className="flex items-start gap-3 cursor-pointer select-none text-xs text-muted">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="mt-0.5 size-4 rounded border-black/20 text-brand-900 focus:ring-brand-900 cursor-pointer"
+        />
+        <span>
+          Eu li e concordo com os{' '}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenTerms();
+            }}
+            className="font-semibold text-brand-900 underline underline-offset-2 hover:text-brand-700"
+          >
+            Termos de Uso e Política de Privacidade
+          </button>
+          .
+        </span>
+      </label>
+      {error ? <p className="text-xs text-rose-600 pl-7">{error}</p> : null}
+    </div>
   );
 }
 
-function renderLegalContent(legalDoc: string | null) {
-  if (legalDoc === LEGAL_TERMS_TITLE) return <TermsOfUseContent />;
-  if (legalDoc === LEGAL_PRIVACY_TITLE) return <PrivacyPolicyContent />;
-  return null;
+function FormErrorAlert({ errorMessages }: { errorMessages?: string[] }) {
+  if (!errorMessages?.length) return null;
+  return (
+    <div className="animate-shake">
+      <Alert tone="error">
+        {errorMessages.map((message) => (
+          <p key={message}>{message}</p>
+        ))}
+      </Alert>
+    </div>
+  );
 }
 
 export function RegisterForm(props: RegisterFormProps) {
@@ -152,22 +149,21 @@ export function RegisterForm(props: RegisterFormProps) {
           error={errors.foto}
           optional={values.tipo !== 'ALUNO'}
         />
-        {errorMessages?.length ? (
-          <div className="animate-shake">
-            <Alert tone="error">
-              {errorMessages.map((message) => (
-                <p key={message}>{message}</p>
-              ))}
-            </Alert>
-          </div>
-        ) : null}
+        <FormErrorAlert errorMessages={errorMessages} />
         <IdentityFields {...props} />
         <PasswordFields {...props} />
         <TermsCheckbox
-          onOpenTerms={() => setLegalDoc(LEGAL_TERMS_TITLE)}
-          onOpenPrivacy={() => setLegalDoc(LEGAL_PRIVACY_TITLE)}
+          checked={values.termosAceitos}
+          onChange={(checked) => onChange('termosAceitos', checked)}
+          error={errors.termosAceitos}
+          onOpenTerms={() => setLegalDoc(LEGAL_TERMS_AND_PRIVACY_TITLE)}
         />
-        <Button type="submit" isLoading={isLoading} className="mt-2">
+        <Button
+          type="submit"
+          isLoading={isLoading}
+          disabled={!values.termosAceitos}
+          className="mt-2"
+        >
           Criar conta
         </Button>
       </form>
@@ -177,7 +173,7 @@ export function RegisterForm(props: RegisterFormProps) {
         onClose={() => setLegalDoc(null)}
         maxWidth="max-w-2xl"
       >
-        {renderLegalContent(legalDoc)}
+        <TermsAndPrivacyContent />
       </LegalDocumentModal>
     </>
   );

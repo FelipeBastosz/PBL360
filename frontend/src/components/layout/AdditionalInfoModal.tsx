@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { AboutProjectContent, TeamMembersContent } from '@/components/layout/AdditionalInfoDetails';
-import { PrivacyPolicyContent } from '@/components/layout/PrivacyPolicyContent';
-import { TermsOfUseContent } from '@/components/layout/TermsOfUseContent';
+import { TermsAndPrivacyContent } from '@/components/layout/TermsAndPrivacyContent';
 import { BrandHero } from '@/components/layout/BrandHero';
 import { Button } from '@/components/ui/Button';
 import { LegalDocumentModal } from '@/components/ui/LegalDocumentModal';
-import { LEGAL_PRIVACY_TITLE, LEGAL_TERMS_TITLE } from '@/content/legal';
+import {
+  LEGAL_PRIVACY_TITLE,
+  LEGAL_TERMS_AND_PRIVACY_TITLE,
+  LEGAL_TERMS_TITLE,
+} from '@/content/legal';
 import { ABOUT_PROJECT_TITLE, TEAM_MEMBERS_TITLE } from '@/content/projectInfo';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 
@@ -40,8 +43,7 @@ function AdditionalInfoHeader({ onClose }: { onClose: () => void }) {
 const INFO_LINKS = [
   { label: 'Sobre o Projeto', title: ABOUT_PROJECT_TITLE },
   { label: 'Desenvolvedores', title: TEAM_MEMBERS_TITLE },
-  { label: 'Termos de Uso', title: LEGAL_TERMS_TITLE },
-  { label: 'Política de Privacidade', title: LEGAL_PRIVACY_TITLE },
+  { label: 'Termos de Uso e Política de Privacidade', title: LEGAL_TERMS_AND_PRIVACY_TITLE },
 ];
 
 function AdditionalInfoLinks({ onSelect }: AdditionalInfoLinksProps) {
@@ -64,14 +66,25 @@ function AdditionalInfoLinks({ onSelect }: AdditionalInfoLinksProps) {
 function renderDocContent(activeDoc: string | null) {
   if (activeDoc === ABOUT_PROJECT_TITLE) return <AboutProjectContent />;
   if (activeDoc === TEAM_MEMBERS_TITLE) return <TeamMembersContent />;
-  if (activeDoc === LEGAL_TERMS_TITLE) return <TermsOfUseContent />;
-  if (activeDoc === LEGAL_PRIVACY_TITLE) return <PrivacyPolicyContent />;
+  if (
+    activeDoc === LEGAL_TERMS_AND_PRIVACY_TITLE ||
+    activeDoc === LEGAL_TERMS_TITLE ||
+    activeDoc === LEGAL_PRIVACY_TITLE
+  ) {
+    return <TermsAndPrivacyContent />;
+  }
   return undefined;
 }
 
 function getModalMaxWidth(activeDoc: string | null) {
   if (activeDoc === TEAM_MEMBERS_TITLE) return 'max-w-lg';
-  if (activeDoc === LEGAL_TERMS_TITLE || activeDoc === LEGAL_PRIVACY_TITLE) return 'max-w-2xl';
+  if (
+    activeDoc === LEGAL_TERMS_AND_PRIVACY_TITLE ||
+    activeDoc === LEGAL_TERMS_TITLE ||
+    activeDoc === LEGAL_PRIVACY_TITLE
+  ) {
+    return 'max-w-2xl';
+  }
   return 'max-w-md';
 }
 

@@ -62,12 +62,17 @@ describe('UserMenu', () => {
 
     expect(screen.getByRole('heading', { name: 'Informações adicionais' })).toBeInTheDocument();
     expect(screen.getByLabelText('PBL360')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Termos de Uso' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Política de Privacidade' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Termos de Uso e Política de Privacidade' }),
+    ).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Termos de Uso' }));
-    expect(screen.getByRole('heading', { name: 'Termos de Uso' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
+    await user.click(
+      screen.getByRole('button', { name: 'Termos de Uso e Política de Privacidade' }),
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Termos de Uso e Política de Privacidade' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
       'href',
       'mailto:contato.pbl360@gmail.com',
     );

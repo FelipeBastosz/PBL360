@@ -17,6 +17,7 @@ const student: RegisterFormValues = {
   foto: photo,
   senha: 'senha-secreta',
   confirmacao: 'senha-secreta',
+  termosAceitos: true,
 };
 
 describe('validateLoginForm', () => {
@@ -72,6 +73,17 @@ describe('validateRegisterForm', () => {
     });
 
     expect(Object.values(errors).filter(Boolean)).toEqual([]);
+  });
+
+  it('requires accepting terms of use and privacy policy', () => {
+    const errors = validateRegisterForm({
+      ...student,
+      termosAceitos: false,
+    });
+
+    expect(errors.termosAceitos).toBe(
+      'Você deve concordar com os Termos de Uso e Política de Privacidade.',
+    );
   });
 });
 
