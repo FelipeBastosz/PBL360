@@ -41,4 +41,5 @@ export const authConfig = registerAs('auth', () => ({
 export const mailConfig = registerAs('mail', () => ({
   smtpUser: process.env.SMTP_USER ?? '',
   smtpPass: process.env.SMTP_PASS ?? '',
+  brevoApiKey: process.env.BREVO_API_KEY ?? '',
 }));

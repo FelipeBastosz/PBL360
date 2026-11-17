@@ -5,7 +5,7 @@ const MIN_PRODUCTION_SECRET_LENGTH = 32;
 const NODE_ENVS = ['development', 'test', 'production'];
 const INTEGER_KEYS = ['PORT', 'DB_PORT', 'BCRYPT_ROUNDS'];
 const DATABASE_KEYS = ['DB_HOST', 'DB_USERNAME', 'DB_PASSWORD', 'DB_NAME'];
-const REQUIRED_IN_PRODUCTION = [...DATABASE_KEYS, 'CORS_ORIGIN', 'SMTP_USER', 'SMTP_PASS'];
+const REQUIRED_IN_PRODUCTION = [...DATABASE_KEYS, 'CORS_ORIGIN', 'SMTP_USER'];
 
 const isBlank = (value: string | undefined): boolean => value === undefined || value.trim() === '';
 
@@ -36,7 +36,8 @@ const missingInProduction = (env: Env, keys: string[]): string[] =>
   keys.filter((key) => isBlank(env[key])).map((key) => `${key} is required in production.`);
 
 const checkProduction = (env: Env): string[] => {
-  const missing = missingInProduction(env, REQUIRED_IN_PRODUCTION);
+  const mailSecret = isBlank(env.BREVO_API_KEY) ? ['SMTP_PASS'] : [];
+  const missing = missingInProduction(env, [...REQUIRED_IN_PRODUCTION, ...mailSecret]);
 
   return env.DB_SYNCHRONIZE === 'true'
     ? [...missing, 'DB_SYNCHRONIZE cannot be enabled in production.']

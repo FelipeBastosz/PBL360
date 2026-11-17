@@ -55,6 +55,15 @@ describe('validateEnv', () => {
     );
   });
 
+  it('requires the SMTP password in production unless a Brevo key is set', () => {
+    expect(() => validateEnv(productionEnv({ SMTP_PASS: '' }))).toThrow(
+      'SMTP_PASS is required in production.',
+    );
+    expect(() =>
+      validateEnv(productionEnv({ SMTP_PASS: '', BREVO_API_KEY: 'xkeysib-test' })),
+    ).not.toThrow();
+  });
+
   it('refuses schema synchronization in production', () => {
     expect(() => validateEnv(productionEnv({ DB_SYNCHRONIZE: 'true' }))).toThrow(
       'DB_SYNCHRONIZE cannot be enabled in production.',
