@@ -57,7 +57,6 @@ const mockDefaultTable = {
 
 test.describe('Performance Tables - Co-tutor Flow (Closes #457)', () => {
   test.beforeEach(async ({ page }) => {
-    // Authenticate as a co-tutor
     await page.addInitScript(() => {
       localStorage.setItem(
         'pbl360.session',
@@ -75,7 +74,6 @@ test.describe('Performance Tables - Co-tutor Flow (Closes #457)', () => {
       );
     });
 
-    // Mock API routes
     await page.route('**/api/tabelas-desempenho/table-shared-1', async (route) => {
       await route.fulfill({
         status: 200,
@@ -118,34 +116,28 @@ test.describe('Performance Tables - Co-tutor Flow (Closes #457)', () => {
   }) => {
     await page.goto('/formulas/table-shared-1');
 
-    // Title and Header
     await expect(
       page.getByRole('heading', { level: 1, name: 'Barema de Avaliação PBL' }),
     ).toBeVisible();
 
-    // Informative shared formula banner
     const sharedBanner = page.getByRole('status');
     await expect(sharedBanner).toBeVisible();
     await expect(sharedBanner).toContainText(
       'Fórmula compartilhada da turma · Criada por Professor Titular.',
     );
 
-    // Description card
     await expect(page.getByRole('heading', { level: 2, name: 'Descrição' })).toBeVisible();
     await expect(
       page.getByText('Fórmula compartilhada da turma com critérios de avaliação tutorial.'),
     ).toBeVisible();
 
-    // Criteria list and weight badges
     await expect(page.getByText('Comportamento e Postura')).toBeVisible();
     await expect(page.getByText('Domínio do Conteúdo')).toBeVisible();
     await expect(page.getByText('Pontualidade, ética e respeito mútuo no grupo.')).toBeVisible();
 
-    // Verify weight badges (static spans, read-only)
     const weightBadges = page.locator('span.inline-flex:has-text("5")');
     await expect(weightBadges).toHaveCount(2);
 
-    // No error alerts should be displayed
     await expect(page.locator('[role="alert"]')).not.toBeVisible();
   });
 
@@ -171,7 +163,6 @@ test.describe('Performance Tables - Co-tutor Flow (Closes #457)', () => {
     ).toBeVisible();
     await expect(page.getByText('Comportamento e Postura')).toBeVisible();
 
-    // Shared banner should NOT be present
     await expect(page.getByRole('status')).not.toBeVisible();
   });
 
@@ -183,7 +174,6 @@ test.describe('Performance Tables - Co-tutor Flow (Closes #457)', () => {
     ).toBeVisible();
     await expect(page.getByText('Comportamento e Postura')).toBeVisible();
 
-    // Shared banner should NOT be present
     await expect(page.getByRole('status')).not.toBeVisible();
   });
 });
