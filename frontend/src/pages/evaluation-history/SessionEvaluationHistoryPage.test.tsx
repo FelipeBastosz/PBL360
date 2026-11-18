@@ -124,18 +124,77 @@ describe('SessionEvaluationHistoryPage', () => {
     expect(within(carla).getByText('8,5')).toBeInTheDocument();
 
     expect(within(cardOf('Bruno Mendes')).getByText('Avaliação pendente')).toBeInTheDocument();
+    expect(within(cardOf('Bruno Mendes')).getByText('Aluno')).toBeInTheDocument();
     expect(evaluationHistoryService.list).toHaveBeenCalledWith('sess-1');
   });
 
-  it('opens the adjustment sheet when clicking the student card of a submitted evaluation', async () => {
+  it('displays "Pares" when peer evaluation is submitted without self-assessment', async () => {
+    vi.mocked(evaluationHistoryService.list).mockResolvedValue({
+      alunos: [
+        {
+          alunoId: 'aluno-4',
+          nome: 'Diego Alves',
+          matricula: '26121199',
+          notaAluno: null,
+          notaAlunoOriginal: null,
+          notaTutor: null,
+          notaPares: 8.5,
+          avaliacoesPares: 3,
+          situacaoAjuste: 'SEM_AJUSTE',
+        },
+      ],
+    });
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Diego Alves' });
+    const diego = cardOf('Diego Alves');
+    expect(within(diego).getByText('Pares')).toBeInTheDocument();
+    expect(within(diego).getByText('8,5')).toBeInTheDocument();
+  });
+
+  it('opens the adjustment sheet only when the student has a submitted or peer score', async () => {
     renderPage();
     await screen.findByRole('heading', { name: 'Elisa Nunes' });
 
-    expect(within(cardOf('Bruno Mendes')).queryByRole('button')).not.toBeInTheDocument();
+    expect(
+      within(cardOf('Bruno Mendes')).queryByRole('button', {
+        name: 'Ajustar nota de Bruno Mendes',
+      }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(cardOf('Bruno Mendes'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Ajustar nota de Elisa Nunes' }));
 
     expect(screen.getByRole('dialog', { name: 'Elisa Nunes' })).toBeInTheDocument();
+  });
+
+  it('does not allow opening the adjustment modal while peer grade is not yet available', async () => {
+    vi.mocked(evaluationHistoryService.list).mockResolvedValue({
+      alunos: [
+        {
+          alunoId: 'aluno-4',
+          nome: 'Diego Alves',
+          matricula: '26121199',
+          notaAluno: null,
+          notaAlunoOriginal: null,
+          notaTutor: null,
+          notaPares: null,
+          avaliacoesPares: 2,
+          situacaoAjuste: 'SEM_AJUSTE',
+        },
+      ],
+    });
+    renderPage();
+    await screen.findByRole('heading', { name: 'Diego Alves' });
+
+    expect(
+      within(cardOf('Diego Alves')).queryByRole('button', { name: 'Ajustar nota de Diego Alves' }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(cardOf('Diego Alves'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('saves the adjustment and shows the new tutor score on the card', async () => {
@@ -171,6 +230,61 @@ describe('SessionEvaluationHistoryPage', () => {
     });
     expect(await within(cardOf('Elisa Nunes')).findByText('6,5')).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('opens modal without peer warning banner and saves adjustment for peer assessment', async () => {
+    vi.mocked(evaluationHistoryService.list).mockResolvedValue({
+      alunos: [
+        {
+          alunoId: 'aluno-4',
+          nome: 'Diego Alves',
+          matricula: '26121199',
+          notaAluno: null,
+          notaAlunoOriginal: null,
+          notaTutor: null,
+          notaPares: 8.5,
+          avaliacoesPares: 3,
+          situacaoAjuste: 'SEM_AJUSTE',
+        },
+      ],
+    });
+    vi.mocked(evaluationService.adjustSelfAssessment).mockResolvedValue({
+      alunoId: 'aluno-4',
+      notaOriginal: 8.5,
+      notaVigente: 9.0,
+      ajuste: {
+        valorAnterior: 8.5,
+        valorNovo: 9.0,
+        justificativa: 'Nota revisada pelo tutor.',
+        autor: { id: 'tutor-1', nome: 'Professor Silva' },
+        ajustadoEm: '2026-10-15T12:00:00Z',
+      },
+    });
+
+    renderPage();
+    await screen.findByRole('heading', { name: 'Diego Alves' });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustar nota de Diego Alves' }));
+
+    expect(screen.queryByText(/sobrescreverá a média dos pares/i)).not.toBeInTheDocument();
+
+    const grade = screen.getByLabelText('Nova nota');
+    await userEvent.clear(grade);
+    await userEvent.type(grade, '9.0');
+    await userEvent.type(
+      screen.getByLabelText('Justificativa do ajuste'),
+      'Nota revisada pelo tutor.',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar ajuste' }));
+
+    expect(evaluationService.adjustSelfAssessment).toHaveBeenCalledWith('sess-1', 'aluno-4', {
+      novaNota: 9.0,
+      justificativa: 'Nota revisada pelo tutor.',
+      tipo: 'PARES',
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustar nota de Diego Alves' }));
+    expect(screen.queryByText(/sobrescreverá a média dos pares/i)).not.toBeInTheDocument();
   });
 
   it('shows an error when the history cannot be loaded', async () => {

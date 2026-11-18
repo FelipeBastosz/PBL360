@@ -15,11 +15,13 @@ import {
   readPeerItemRows,
   readReceivedPeerEvaluations,
   readSessionAdjustments,
+  readSessionPeerAdjustments,
   readSessionPeerEvaluations,
   readSessionSelfEvaluations,
   readSessionTiming,
   readSessionTutorScores,
   readStudentParticipant,
+  readStudentPeerAdjustments,
   readStudentSelfAdjustments,
   readStudentSelfEvaluation,
   readStudentTutorScores,
@@ -32,7 +34,14 @@ import {
 } from './evaluation-history-builder';
 import type { SelfEvaluationRow, StudentRow } from './evaluation-history.types';
 import { FIND_EVALUATION_ITEMS_QUERY } from './evaluation-history.queries';
-import { mapAdjustments, mapPeers, mapSelf, mapTutors } from './evaluation-history.maps';
+import {
+  isPeerWindowOpen,
+  mapAdjustments,
+  mapPeerAdjustments,
+  mapPeers,
+  mapSelf,
+  mapTutors,
+} from './evaluation-history.maps';
 
 @Injectable()
 export class PgEvaluationHistoryRepository implements EvaluationHistoryRepository {
@@ -48,7 +57,10 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
       if (students.length === 0) return [];
       const config = await readHistoryConfig(manager, sessionId);
       const maps = await this.loadHistoryMaps(manager, sessionId);
-      return students.map((student) => buildHistoryStudentItem(student, config, maps));
+      const expectedPeerCount = Math.max(0, students.length - 1);
+      return students.map((student) =>
+        buildHistoryStudentItem(student, config, maps, expectedPeerCount),
+      );
     });
   }
 
@@ -95,7 +107,9 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
     const timing = await readSessionTiming(manager, sessionId);
     const selfEval = await readStudentSelfEvaluation(manager, sessionId, studentId);
     const selfScores = await this.loadSelfScores(manager, selfEval);
-    const adjustments = selfEval ? await readStudentSelfAdjustments(manager, selfEval.id) : [];
+    const adjustments = selfEval
+      ? await readStudentSelfAdjustments(manager, selfEval.id)
+      : await readStudentPeerAdjustments(manager, sessionId, studentId);
     const status = studentSelfAssessmentStatus(
       {
         selfEvalReleased: Boolean(timing?.selfEvalReleased),
@@ -150,19 +164,21 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
   }
 
   private async loadHistoryMaps(manager: EntityManager, sessionId: string) {
-    const [selfEvals, adjustments, peers, tutorScores] = await Promise.all([
+    const [selfEvals, adjustments, peerAdj, peers, tutorScores, timing] = await Promise.all([
       readSessionSelfEvaluations(manager, sessionId),
       readSessionAdjustments(manager, sessionId),
+      readSessionPeerAdjustments(manager, sessionId),
       readSessionPeerEvaluations(manager, sessionId),
       readSessionTutorScores(manager, sessionId),
+      readSessionTiming(manager, sessionId),
     ]);
-    const { tutorMap, tutorBonusMap } = mapTutors(tutorScores);
     return {
       selfMap: mapSelf(selfEvals),
       adjustmentMap: mapAdjustments(adjustments),
       peerMap: mapPeers(peers),
-      tutorMap,
-      tutorBonusMap,
+      peerAdjustmentMap: mapPeerAdjustments(peerAdj),
+      peerWindowOpen: isPeerWindowOpen(timing),
+      ...mapTutors(tutorScores),
     };
   }
 

@@ -207,7 +207,7 @@ describe('Self-assessment adjustments (e2e)', () => {
     await api(app, tutor).get(`${adjustmentsPath()}?tipo=XYZ`).expect(400);
   });
 
-  it('handles peer assessment adjustments: blocks while release is open and keeps original score immutable after close', async () => {
+  it('handles peer assessment adjustments: allows tutor adjustment while release is open, blocks student, and persists in history', async () => {
     const peerStudent = draftStudent;
     // Insert peer evaluations for peerStudent
     await db.query(
@@ -216,32 +216,17 @@ describe('Self-assessment adjustments (e2e)', () => {
       [student.id, peerStudent.id, sessionId],
     );
 
-    // When peer release is open, adjustments are blocked with 409
+    // When peer release is open, students are blocked with 403
     await db.query('UPDATE sessions SET peer_eval_released = true WHERE id = $1;', [sessionId]);
-    const blocked = await api(app, tutor)
+    await api(app, student)
       .post(adjustmentsPath(peerStudent.id), { novaNota: 8.5, justificativa, tipo: 'PARES' })
-      .expect(409);
-    expect((blocked.body as { message: string }).message).toBe(
-      'A avaliação entre pares ainda não foi finalizada.',
-    );
+      .expect(403);
 
-    const draftHistory = await api(app, tutor)
-      .get(`${adjustmentsPath(peerStudent.id)}?tipo=PARES`)
-      .expect(200);
-    expect(draftHistory.body as HistoryBody).toEqual({
-      notaOriginal: null,
-      notaVigente: null,
-      ajustes: [],
-    });
-
-    // Close peer release
-    await db.query('UPDATE sessions SET peer_eval_released = false WHERE id = $1;', [sessionId]);
-
-    // Now adjustment is accepted; original score uses presentGrade (7.55 -> 7.6)
-    const adjusted = await api(app, tutor)
+    // When peer release is open, tutor adjustment is accepted with 200 OK
+    const adjustedWhileOpen = await api(app, tutor)
       .post(adjustmentsPath(peerStudent.id), { novaNota: 8.5, justificativa, tipo: 'PARES' })
       .expect(200);
-    expect(adjusted.body as AdjustmentResponseBody).toMatchObject({
+    expect(adjustedWhileOpen.body as AdjustmentResponseBody).toMatchObject({
       alunoId: peerStudent.id,
       notaOriginal: 7.6,
       notaVigente: 8.5,
@@ -251,13 +236,63 @@ describe('Self-assessment adjustments (e2e)', () => {
       },
     });
 
+    const openHistory = await api(app, tutor)
+      .get(`${adjustmentsPath(peerStudent.id)}?tipo=PARES`)
+      .expect(200);
+    expect(openHistory.body as HistoryBody).toMatchObject({
+      notaOriginal: 7.6,
+      notaVigente: 8.5,
+    });
+
+    // Verify evaluation history table reflects the peer adjustment
+    const historyTable = await api(app, tutor)
+      .get(`/sessoes/${sessionId}/historico-avaliacoes`)
+      .expect(200);
+    const item = (
+      historyTable.body as {
+        alunos: Array<{
+          alunoId: string;
+          notaPares: number;
+          notaAlunoOriginal: number;
+          situacaoAjuste: string;
+        }>;
+      }
+    ).alunos.find((a) => a.alunoId === peerStudent.id);
+    expect(item).toMatchObject({
+      alunoId: peerStudent.id,
+      notaPares: 8.5,
+      notaAlunoOriginal: 7.6,
+      situacaoAjuste: 'AJUSTADA',
+    });
+
+    // Close peer release (finalized)
+    await db.query('UPDATE sessions SET peer_eval_released = false WHERE id = $1;', [sessionId]);
+
+    // Adjustment is also accepted when finalized; original score remains immutable (7.6)
+    const adjustedAfterClose = await api(app, tutor)
+      .post(adjustmentsPath(peerStudent.id), {
+        novaNota: 9.0,
+        justificativa: 'Segunda revisão pós fechamento',
+        tipo: 'PARES',
+      })
+      .expect(200);
+    expect(adjustedAfterClose.body as AdjustmentResponseBody).toMatchObject({
+      alunoId: peerStudent.id,
+      notaOriginal: 7.6,
+      notaVigente: 9.0,
+      ajuste: {
+        valorAnterior: 8.5,
+        valorNovo: 9.0,
+      },
+    });
+
     // Check history reflects the immutable original score
     const history = await api(app, tutor)
       .get(`${adjustmentsPath(peerStudent.id)}?tipo=PARES`)
       .expect(200);
     expect(history.body as HistoryBody).toMatchObject({
       notaOriginal: 7.6,
-      notaVigente: 8.5,
+      notaVigente: 9.0,
     });
   });
 

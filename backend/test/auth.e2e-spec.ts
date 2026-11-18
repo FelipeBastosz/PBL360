@@ -786,6 +786,12 @@ describe('Auth (e2e)', () => {
         request(app.getHttpServer() as Server)
           .get('/api/salas')
           .set('Authorization', `Bearer ${oldToken}`);
+
+      await request(app.getHttpServer() as Server)
+        .post('/api/usuarios/meu-aceite-termo')
+        .set('Authorization', `Bearer ${oldToken}`)
+        .send({ versao: '1.1' })
+        .expect(200);
       await listRooms().expect(200);
 
       await requestReset('carlos@uefs.br').expect(200);

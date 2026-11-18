@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import type { EvaluationAdjustmentSituation } from '@/types/evaluationHistory';
 import { getInitials } from '@/utils/initials';
 import { GradeInputs, JustificationField } from './AdjustEvaluationGradeFields';
 
@@ -12,6 +14,9 @@ export type AdjustStudentInfo = {
   notaAluno?: number | null;
   notaVigente?: number | null;
   notaAlunoOriginal?: number | null;
+  notaPares?: number | null;
+  avaliacoesPares?: number;
+  situacaoAjuste?: EvaluationAdjustmentSituation;
 };
 
 export type AdjustEvaluationGradeModalProps = {
@@ -86,6 +91,28 @@ type FormProps = {
   isLoading: boolean;
 };
 
+function isPeerAssessmentUnderway(student: AdjustStudentInfo): boolean {
+  return (
+    student.notaAluno === null &&
+    (student.notaPares === null || student.notaPares === undefined) &&
+    student.situacaoAjuste !== 'AJUSTADA' &&
+    (student.avaliacoesPares !== undefined || student.notaAlunoOriginal !== null)
+  );
+}
+
+function FormSubmitButton({ disabled, isLoading }: { disabled: boolean; isLoading: boolean }) {
+  return (
+    <Button
+      type="submit"
+      disabled={disabled}
+      isLoading={isLoading}
+      className="mt-1 w-full rounded-2xl py-3.5 text-sm font-semibold"
+    >
+      Salvar ajuste
+    </Button>
+  );
+}
+
 function AdjustEvaluationGradeForm({
   student,
   hideNames,
@@ -93,7 +120,7 @@ function AdjustEvaluationGradeForm({
   onSubmit,
   isLoading,
 }: FormProps) {
-  const currentGrade = student.notaVigente ?? student.notaAluno ?? 0;
+  const currentGrade = student.notaVigente ?? student.notaAluno ?? student.notaPares ?? 0;
   const [newGrade, setNewGrade] = useState(String(currentGrade));
   const [justification, setJustification] = useState('');
 
@@ -117,6 +144,11 @@ function AdjustEvaluationGradeForm({
         onClose={onClose}
         isLoading={isLoading}
       />
+      {isPeerAssessmentUnderway(student) && (
+        <Alert tone="info">
+          A avaliação por pares está em andamento. Inserir uma nota sobrescreverá a média dos pares.
+        </Alert>
+      )}
       <GradeInputs
         currentGrade={currentGrade}
         newGrade={newGrade}
@@ -124,14 +156,7 @@ function AdjustEvaluationGradeForm({
         isLoading={isLoading}
       />
       <JustificationField value={justification} onChange={setJustification} isLoading={isLoading} />
-      <Button
-        type="submit"
-        disabled={!canSubmit || isLoading}
-        isLoading={isLoading}
-        className="mt-1 w-full rounded-2xl py-3.5 text-sm font-semibold"
-      >
-        Salvar ajuste
-      </Button>
+      <FormSubmitButton disabled={!canSubmit || isLoading} isLoading={isLoading} />
     </form>
   );
 }
@@ -157,7 +182,7 @@ export function AdjustEvaluationGradeModal({
     >
       <div className="fixed inset-0" aria-hidden="true" onClick={isLoading ? undefined : onClose} />
       <AdjustEvaluationGradeForm
-        key={`${student.alunoId}-${student.notaVigente ?? student.notaAluno ?? 0}`}
+        key={`${student.alunoId}-${student.notaVigente ?? student.notaAluno ?? student.notaPares ?? 0}`}
         student={student}
         hideNames={hideNames}
         onClose={onClose}

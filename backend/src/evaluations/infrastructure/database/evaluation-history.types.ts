@@ -55,4 +55,6 @@ export interface TutorScoreRow {
 export interface SessionTimingRow {
   selfEvalReleased: boolean;
   selfEvalDeadline: Date | null;
+  peerEvalReleased?: boolean;
+  peerEvalDeadline?: Date | null;
 }

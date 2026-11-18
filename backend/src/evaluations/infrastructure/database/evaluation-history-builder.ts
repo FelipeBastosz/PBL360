@@ -26,6 +26,8 @@ export interface HistoryMaps {
   selfMap: Map<string, SelfEvaluationRow>;
   adjustmentMap: Map<string, SelfAdjustmentRow>;
   peerMap: Map<string, number[]>;
+  peerAdjustmentMap?: Map<string, { previousValue: number; newValue: number }>;
+  peerWindowOpen?: boolean;
   tutorMap: Map<string, Array<{ criterionId: string; score: number }>>;
   tutorBonusMap?: Map<string, number | null>;
 }
@@ -64,18 +66,18 @@ function resolveSelfGrades(
 
 function extractStudentScores(
   studentId: string,
-  config: {
-    criteria: Array<{ id: string; weight: number }>;
-    formula: { criteriaWeight: number; roleWeight: number };
-  },
+  config: ReturnType<typeof resolveHistoryConfig>,
   maps: HistoryMaps,
+  expectedPeerCount = 0,
 ) {
   const peers = maps.peerMap.get(studentId) ?? [];
   const tutor = maps.tutorMap.get(studentId) ?? [];
   const bonus = maps.tutorBonusMap?.get(studentId) ?? null;
+  const allPeersSubmitted = expectedPeerCount > 0 && peers.length >= expectedPeerCount;
+  const hasPendingPeers = Boolean(maps.peerWindowOpen) && !allPeersSubmitted;
   return {
     notaTutor: calculateTutorScore(tutor, config, bonus),
-    notaPares: calculatePeerAverage(peers),
+    notaPares: hasPendingPeers ? null : calculatePeerAverage(peers),
     avaliacoesPares: peers.length,
   };
 }
@@ -92,15 +94,15 @@ function resolveStudentSelfGrades(studentId: string, maps: HistoryMaps) {
   );
 }
 
-function resolveHistoryConfig(
-  config:
-    | SessionEvaluationConfig
-    | {
-        criteria: Array<{ id: string; weight: number }>;
-        formula?: { criteriaWeight: number; roleWeight: number };
-      }
-    | Array<{ id: string; weight: number }>,
-) {
+export type HistoryConfigInput =
+  | SessionEvaluationConfig
+  | {
+      criteria: Array<{ id: string; weight: number }>;
+      formula?: { criteriaWeight: number; roleWeight: number };
+    }
+  | Array<{ id: string; weight: number }>;
+
+function resolveHistoryConfig(config: HistoryConfigInput) {
   if (Array.isArray(config)) {
     return {
       criteria: config,
@@ -113,25 +115,52 @@ function resolveHistoryConfig(
   };
 }
 
-export function buildHistoryStudentItem(
+function buildPeerAdjustedItem(
   student: StudentRow,
-  config:
-    | SessionEvaluationConfig
-    | {
-        criteria: Array<{ id: string; weight: number }>;
-        formula?: { criteriaWeight: number; roleWeight: number };
-      }
-    | Array<{ id: string; weight: number }>,
-  maps: HistoryMaps,
+  peerAdj: { previousValue: number; newValue: number },
+  scores: ReturnType<typeof extractStudentScores>,
 ): SessionEvaluationHistoryItem {
-  const resolvedConfig = resolveHistoryConfig(config);
   return {
     alunoId: student.alunoId,
     nome: student.nome,
     matricula: student.matricula ?? null,
-    ...resolveStudentSelfGrades(student.alunoId, maps),
-    ...extractStudentScores(student.alunoId, resolvedConfig, maps),
+    notaAluno: null,
+    notaAlunoOriginal: peerAdj.previousValue,
+    notaTutor: scores.notaTutor,
+    notaPares: peerAdj.newValue,
+    avaliacoesPares: scores.avaliacoesPares,
+    situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
   };
+}
+
+function resolveStudentItem(
+  student: StudentRow,
+  selfGrades: ReturnType<typeof resolveStudentSelfGrades>,
+  scores: ReturnType<typeof extractStudentScores>,
+  peerAdj?: { previousValue: number; newValue: number },
+): SessionEvaluationHistoryItem {
+  if (peerAdj && selfGrades.notaAluno === null) {
+    return buildPeerAdjustedItem(student, peerAdj, scores);
+  }
+  return {
+    alunoId: student.alunoId,
+    nome: student.nome,
+    matricula: student.matricula ?? null,
+    ...selfGrades,
+    ...scores,
+  };
+}
+
+export function buildHistoryStudentItem(
+  student: StudentRow,
+  config: HistoryConfigInput,
+  maps: HistoryMaps,
+  expectedPeerCount = 0,
+): SessionEvaluationHistoryItem {
+  const cfg = resolveHistoryConfig(config);
+  const self = resolveStudentSelfGrades(student.alunoId, maps);
+  const scores = extractStudentScores(student.alunoId, cfg, maps, expectedPeerCount);
+  return resolveStudentItem(student, self, scores, maps.peerAdjustmentMap?.get(student.alunoId));
 }
 
 export function buildComparisonCriteriaItens(

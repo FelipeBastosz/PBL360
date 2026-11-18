@@ -40,7 +40,11 @@ import { JoinRoomUseCase } from '../../application/use-cases/join-room.use-case'
 import { LeaveRoomUseCase } from '../../application/use-cases/leave-room.use-case';
 import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
 import { RoomEntryThrottlerGuard } from '@/shared/throttling/room-entry-throttler.guard';
-import { AUTH_THROTTLER, ROOM_ENTRY_LIMIT } from '@/shared/throttling/throttlers';
+import {
+  AUTH_THROTTLER,
+  MESSAGE_SEND_THROTTLER,
+  ROOM_ENTRY_LIMIT,
+} from '@/shared/throttling/throttlers';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import {
   roomCodeFromInviteLink,
@@ -83,7 +87,7 @@ export class RoomsController {
   @HttpCode(HttpStatus.OK)
   @Roles(UserType.STUDENT)
   @Throttle(ROOM_ENTRY_LIMIT)
-  @SkipThrottle({ [AUTH_THROTTLER]: true })
+  @SkipThrottle({ [AUTH_THROTTLER]: true, [MESSAGE_SEND_THROTTLER]: true })
   @UseGuards(RoomEntryThrottlerGuard)
   @JoinRoomByCodeSwaggerDocs
   joinByCode(
@@ -97,7 +101,7 @@ export class RoomsController {
   @HttpCode(HttpStatus.OK)
   @Roles(UserType.STUDENT)
   @Throttle(ROOM_ENTRY_LIMIT)
-  @SkipThrottle({ [AUTH_THROTTLER]: true })
+  @SkipThrottle({ [AUTH_THROTTLER]: true, [MESSAGE_SEND_THROTTLER]: true })
   @UseGuards(RoomEntryThrottlerGuard)
   @JoinRoomByLinkSwaggerDocs
   joinByLink(

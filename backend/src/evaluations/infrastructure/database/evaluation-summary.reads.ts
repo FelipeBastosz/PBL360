@@ -24,6 +24,9 @@ interface SummaryItemRow {
   score: string;
 }
 
+const hasSubmittedTutorEvaluation = (row: SummaryRow) =>
+  row.evaluationId !== null && row.status === EvaluationStatus.SUBMITTED;
+
 const hasSubmittedOrAdjusted = (row: SummaryRow) =>
   row.status === EvaluationStatus.SUBMITTED ||
   (row.adjustedScore !== null && row.adjustedScore !== undefined);
@@ -76,7 +79,7 @@ function calculatedSummary(
   const summary = emptySummary(row);
   const adjusted = adjustedSummary(row, summary);
   if (adjusted) return adjusted;
-  if (row.status !== EvaluationStatus.SUBMITTED) return summary;
+  if (!hasSubmittedTutorEvaluation(row)) return summary;
   const scores = calculateScores(items, row.evaluationId);
   const bonus = row.appliedBonus === null ? null : Number(row.appliedBonus);
   summary.sessionScore = SessionGradeCalculator.calculate(

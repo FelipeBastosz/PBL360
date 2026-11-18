@@ -1,8 +1,14 @@
 import type {
   SelfAdjustmentRow,
   SelfEvaluationRow,
+  SessionTimingRow,
   TutorScoreRow,
 } from './evaluation-history.types';
+
+export function isPeerWindowOpen(timing: SessionTimingRow | null, now = new Date()): boolean {
+  if (!timing?.peerEvalReleased) return false;
+  return !timing.peerEvalDeadline || new Date(timing.peerEvalDeadline) > now;
+}
 
 export function mapSelf(rows: SelfEvaluationRow[]): Map<string, SelfEvaluationRow> {
   const map = new Map<string, SelfEvaluationRow>();
@@ -14,6 +20,21 @@ export function mapAdjustments(rows: SelfAdjustmentRow[]): Map<string, SelfAdjus
   const map = new Map<string, SelfAdjustmentRow>();
   for (const row of rows) {
     if (!map.has(row.evaluationId)) map.set(row.evaluationId, row);
+  }
+  return map;
+}
+
+export function mapPeerAdjustments(
+  rows: Array<{ studentId: string; previousValue: string | number; newValue: string | number }>,
+): Map<string, { previousValue: number; newValue: number }> {
+  const map = new Map<string, { previousValue: number; newValue: number }>();
+  for (const row of rows) {
+    if (!map.has(row.studentId)) {
+      map.set(row.studentId, {
+        previousValue: Number(row.previousValue),
+        newValue: Number(row.newValue),
+      });
+    }
   }
   return map;
 }

@@ -6,7 +6,12 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, insertDefaultPerformanceTable, signAccessToken } from './helpers/fixtures';
+import {
+  acceptCurrentTermForAllUsers,
+  cleanDatabase,
+  insertDefaultPerformanceTable,
+  signAccessToken,
+} from './helpers/fixtures';
 
 interface ProblemFormulaResponseBody {
   escopo: string;
@@ -85,6 +90,8 @@ describe('Formula Retrieval Authorization (e2e)', () => {
        RETURNING id;`,
     );
     unrelatedTutorId = unrelatedTutor.id;
+
+    await acceptCurrentTermForAllUsers(dataSource);
 
     ownerToken = signAccessToken(app, ownerTutorId, 'carlos.formula@uefs.br', UserType.TUTOR);
     coTutorToken = signAccessToken(app, coTutorId, 'maria.formula@uefs.br', UserType.TUTOR);

@@ -5,7 +5,8 @@ import { Injectable } from '@nestjs/common';
 import type * as PdfMake from 'pdfmake';
 import type { ReportDocument } from '../../domain/report-document';
 import type { ReportRenderer } from '../../domain/services/report-renderer';
-import { PDF_FONT, buildPdfDefinition } from './pdf-document-definition';
+import { buildPdfDefinition } from './pdf-document-definition';
+import { PDF_FONT } from './pdf-theme';
 
 const pdfmake = createRequire(__filename)('pdfmake') as typeof PdfMake;
 const LOGO_PATH = join(__dirname, 'assets', 'pbl360-logo.svg');
