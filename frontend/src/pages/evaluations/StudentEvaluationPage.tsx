@@ -3,6 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { planningPokerService } from '@/services/planningPoker.service';
+import { isFeedbackOverLimit } from '@/utils/feedbackTemplates';
 import { EvaluationHeader } from './components/EvaluationHeader';
 import { CriteriaScoresCard } from './components/CriteriaScoresCard';
 import { QuickObservationsCard } from './components/QuickObservationsCard';
@@ -18,19 +19,21 @@ function EvaluationActionButtons({
   isSaving,
   isEnviada,
   isBlocked,
+  isOverLimit = false,
 }: {
   onSend: () => void;
   onDraft: () => void;
   isSaving: boolean;
   isEnviada: boolean;
   isBlocked?: boolean;
+  isOverLimit?: boolean;
 }) {
   return (
     <div className="mt-2 flex flex-col gap-2.5">
       <button
         type="button"
         onClick={onSend}
-        disabled={isSaving || isBlocked}
+        disabled={isSaving || isBlocked || isOverLimit}
         className="w-full rounded-2xl bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-brand-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       >
         Enviar avaliação e feedback
@@ -38,7 +41,7 @@ function EvaluationActionButtons({
       <button
         type="button"
         onClick={onDraft}
-        disabled={isSaving || isEnviada || isBlocked}
+        disabled={isSaving || isEnviada || isBlocked || isOverLimit}
         className="w-full rounded-2xl border border-brand-900 bg-white py-3 text-sm font-bold text-brand-900 transition hover:bg-brand-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
       >
         Salvar rascunho
@@ -60,21 +63,15 @@ type MainContentProps = {
   onNavigateMoreTags: () => void;
 };
 
-function EvaluationMainContent({
+function EvaluationCards({
   studentName,
   state,
-  isPokerActive,
-  onSend,
   onNavigateMoreTags,
-}: MainContentProps) {
-  if (state.isLoading) {
-    return (
-      <div className="mt-12 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
-      </div>
-    );
-  }
-
+}: {
+  studentName: string;
+  state: ReturnType<typeof useStudentEvaluation>;
+  onNavigateMoreTags: () => void;
+}) {
   return (
     <>
       <CriteriaScoresCard
@@ -94,13 +91,48 @@ function EvaluationMainContent({
         onDecrement={state.handleTagDecrement}
         onNavigateMoreTags={onNavigateMoreTags}
       />
-      <EvaluationFeedbackCard feedback={state.feedback} onChange={state.setFeedback} />
+    </>
+  );
+}
+
+function EvaluationMainContent({
+  studentName,
+  state,
+  isPokerActive,
+  onSend,
+  onNavigateMoreTags,
+}: MainContentProps) {
+  if (state.isLoading) {
+    return (
+      <div className="mt-12 flex justify-center">
+        <Spinner className="size-8 text-brand-900" />
+      </div>
+    );
+  }
+
+  const isFeedbackDisabled = state.isSaving || state.isLoading || isPokerActive;
+  const isOverLimit = isFeedbackOverLimit(state.feedback);
+  const handleDraft = () => !isOverLimit && state.submitEvaluation(false);
+
+  return (
+    <>
+      <EvaluationCards
+        studentName={studentName}
+        state={state}
+        onNavigateMoreTags={onNavigateMoreTags}
+      />
+      <EvaluationFeedbackCard
+        feedback={state.feedback}
+        onChange={state.setFeedback}
+        disabled={isFeedbackDisabled}
+      />
       <EvaluationActionButtons
         onSend={onSend}
-        onDraft={() => state.submitEvaluation(false)}
+        onDraft={handleDraft}
         isSaving={state.isSaving}
         isEnviada={state.status === 'ENVIADA'}
         isBlocked={isPokerActive}
+        isOverLimit={isOverLimit}
       />
     </>
   );
@@ -128,7 +160,7 @@ export function StudentEvaluationPage() {
   const isPokerActive = useActivePokerStatus(sessionId);
 
   const handleSend = () => {
-    if (isPokerActive) return;
+    if (isPokerActive || isFeedbackOverLimit(state.feedback)) return;
     return state.status === 'ENVIADA' ? setIsJustifyOpen(true) : state.submitEvaluation(true);
   };
 

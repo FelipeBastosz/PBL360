@@ -17,9 +17,20 @@ describe('feedbackTemplates utils', () => {
       expect(result).toBe('Demonstrou engajamento.');
     });
 
+    it('returns the template text when current text is null or undefined', () => {
+      expect(appendFeedbackTemplate(null, 'Demonstrou engajamento.')).toBe(
+        'Demonstrou engajamento.',
+      );
+      expect(appendFeedbackTemplate(undefined, 'Demonstrou engajamento.')).toBe(
+        'Demonstrou engajamento.',
+      );
+    });
+
     it('returns the current text untouched when template text is empty or whitespace', () => {
       expect(appendFeedbackTemplate('Texto anterior', '')).toBe('Texto anterior');
       expect(appendFeedbackTemplate('Texto anterior', '   ')).toBe('Texto anterior');
+      expect(appendFeedbackTemplate('Texto anterior', null)).toBe('Texto anterior');
+      expect(appendFeedbackTemplate('Texto anterior', undefined)).toBe('Texto anterior');
     });
 
     it('concatenates template with existing text separating with two newlines', () => {
@@ -41,6 +52,8 @@ describe('feedbackTemplates utils', () => {
       expect(isFeedbackOverLimit('a'.repeat(2000))).toBe(false);
       expect(isFeedbackOverLimit('Curto')).toBe(false);
       expect(isFeedbackOverLimit('')).toBe(false);
+      expect(isFeedbackOverLimit(null)).toBe(false);
+      expect(isFeedbackOverLimit(undefined)).toBe(false);
     });
 
     it('returns true when text exceeds default limit of 2000 characters', () => {

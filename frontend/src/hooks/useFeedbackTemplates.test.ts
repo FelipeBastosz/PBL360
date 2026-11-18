@@ -1,4 +1,4 @@
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { feedbackService } from '@/services/feedback.service';
 import { useFeedbackTemplates } from './useFeedbackTemplates';
@@ -27,21 +27,40 @@ describe('useFeedbackTemplates', () => {
     vi.clearAllMocks();
   });
 
-  it('fetches and returns feedback templates on mount', async () => {
+  it('does not fetch on mount (on-demand loading)', () => {
+    const { result } = renderHook(() => useFeedbackTemplates());
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.templates).toEqual([]);
+    expect(feedbackService.listTemplates).not.toHaveBeenCalled();
+  });
+
+  it('fetches templates on demand via fetchTemplates', async () => {
     vi.mocked(feedbackService.listTemplates).mockResolvedValueOnce(mockTemplates);
 
     const { result } = renderHook(() => useFeedbackTemplates());
 
-    expect(result.current.isLoading).toBe(true);
-    expect(result.current.templates).toEqual([]);
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
+    await act(async () => {
+      await result.current.fetchTemplates();
     });
 
     expect(result.current.templates).toEqual(mockTemplates);
     expect(result.current.error).toBeNull();
     expect(feedbackService.listTemplates).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores response if data is not an array', async () => {
+    vi.mocked(feedbackService.listTemplates).mockResolvedValueOnce({
+      invalid: 'payload',
+    } as unknown as typeof mockTemplates);
+
+    const { result } = renderHook(() => useFeedbackTemplates());
+
+    await act(async () => {
+      await result.current.fetchTemplates();
+    });
+
+    expect(result.current.templates).toEqual([]);
   });
 
   it('handles error gracefully when API fails', async () => {
@@ -51,31 +70,24 @@ describe('useFeedbackTemplates', () => {
 
     const { result } = renderHook(() => useFeedbackTemplates());
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
+    await act(async () => {
+      await result.current.fetchTemplates();
     });
 
     expect(result.current.templates).toEqual([]);
     expect(result.current.error).toBe('Não foi possível carregar os modelos de feedback.');
   });
 
-  it('allows manual reload of templates', async () => {
-    vi.mocked(feedbackService.listTemplates)
-      .mockRejectedValueOnce(new Error('Network error'))
-      .mockResolvedValueOnce(mockTemplates);
+  it('supports reload alias for fetchTemplates', async () => {
+    vi.mocked(feedbackService.listTemplates).mockResolvedValueOnce(mockTemplates);
 
     const { result } = renderHook(() => useFeedbackTemplates());
-
-    await waitFor(() => {
-      expect(result.current.error).not.toBeNull();
-    });
 
     await act(async () => {
       await result.current.reload();
     });
 
     expect(result.current.templates).toEqual(mockTemplates);
-    expect(result.current.error).toBeNull();
-    expect(feedbackService.listTemplates).toHaveBeenCalledTimes(2);
+    expect(feedbackService.listTemplates).toHaveBeenCalledTimes(1);
   });
 });

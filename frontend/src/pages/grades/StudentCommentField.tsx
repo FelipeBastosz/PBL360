@@ -64,7 +64,11 @@ export function StudentCommentField({
         <label htmlFor="student-feedback-text" className="text-sm font-semibold text-ink">
           Comentário de Feedback <span className="text-danger">*</span>
         </label>
-        <FeedbackTemplateSelector onSelect={handleSelectTemplate} disabled={disabled} />
+        <FeedbackTemplateSelector
+          onSelect={handleSelectTemplate}
+          disabled={disabled}
+          currentFeedback={value}
+        />
       </div>
 
       <textarea

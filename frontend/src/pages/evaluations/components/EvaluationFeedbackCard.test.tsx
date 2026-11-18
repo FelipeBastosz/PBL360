@@ -14,6 +14,7 @@ vi.mock('@/hooks/useFeedbackTemplates', () => ({
     ],
     isLoading: false,
     error: null,
+    fetchTemplates: vi.fn(),
     reload: vi.fn(),
   }),
 }));
@@ -61,14 +62,25 @@ describe('EvaluationFeedbackCard', () => {
     );
   });
 
-  it('displays warning alert when feedback exceeds 2000 characters', () => {
+  it('displays warning alert with proper a11y attributes when feedback exceeds 2000 characters', () => {
     const longFeedback = 'a'.repeat(2005);
     render(<EvaluationFeedbackCard feedback={longFeedback} onChange={vi.fn()} />);
 
-    expect(
-      screen.getByText(/O feedback ultrapassa o limite de 2000 caracteres \(2005\/2000\)/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText('2005/2000')).toHaveClass('text-danger');
+    const alertMsg = screen.getByRole('alert');
+    expect(alertMsg).toHaveAttribute('aria-live', 'polite');
+    expect(alertMsg).toHaveTextContent(
+      'O feedback ultrapassa o limite de 2000 caracteres (2005/2000). Reduza o texto antes de salvar.',
+    );
+
+    const counter = screen.getByText('2005/2000');
+    expect(counter).toHaveClass('text-danger', 'shrink-0', 'whitespace-nowrap');
+
+    const textarea = screen.getByPlaceholderText('Escreva aqui um feedback para o(a) aluno(a)...');
+    expect(textarea).toHaveAttribute('aria-labelledby', 'feedback-title');
+    expect(screen.getByRole('heading', { name: 'Feedback' })).toHaveAttribute(
+      'id',
+      'feedback-title',
+    );
   });
 
   it('disables textarea and selector when disabled prop is true', () => {

@@ -14,6 +14,7 @@ vi.mock('@/hooks/useFeedbackTemplates', () => ({
     ],
     isLoading: false,
     error: null,
+    fetchTemplates: vi.fn(),
     reload: vi.fn(),
   }),
 }));

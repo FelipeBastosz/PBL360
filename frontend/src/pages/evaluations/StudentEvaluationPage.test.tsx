@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -166,6 +166,24 @@ describe('StudentEvaluationPage', () => {
         'Boa participação.',
       );
     });
+  });
+
+  it('blocks saving and disables action buttons when feedback exceeds 2000 characters', async () => {
+    vi.mocked(evaluationService.saveEvaluation).mockResolvedValue(mockEvalData);
+    renderPage();
+
+    const textarea = await screen.findByPlaceholderText(
+      'Escreva aqui um feedback para o(a) aluno(a)...',
+    );
+    fireEvent.change(textarea, { target: { value: 'a'.repeat(2005) } });
+
+    const sendBtn = screen.getByRole('button', { name: 'Enviar avaliação e feedback' });
+    const draftBtn = screen.getByRole('button', { name: 'Salvar rascunho' });
+
+    expect(sendBtn).toBeDisabled();
+    expect(draftBtn).toBeDisabled();
+
+    expect(evaluationService.saveEvaluation).not.toHaveBeenCalled();
   });
 
   it('requires justification to submit changes for already submitted evaluation', async () => {

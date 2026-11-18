@@ -12,6 +12,34 @@ type Props = {
   disabled?: boolean;
 };
 
+function FeedbackCardFooter({ length, isOverLimit }: { length: number; isOverLimit: boolean }) {
+  return (
+    <div className="mt-1 flex items-center justify-between gap-2">
+      {isOverLimit ? (
+        <p
+          id="feedback-limit-warning"
+          role="alert"
+          aria-live="polite"
+          className="text-xs font-medium text-danger"
+        >
+          O feedback ultrapassa o limite de 2000 caracteres ({length}/{FEEDBACK_MAX_LENGTH}). Reduza
+          o texto antes de salvar.
+        </p>
+      ) : (
+        <span />
+      )}
+      <span
+        className={cn(
+          'text-xs font-medium shrink-0 whitespace-nowrap',
+          isOverLimit ? 'text-danger font-semibold' : 'text-muted',
+        )}
+      >
+        {length}/{FEEDBACK_MAX_LENGTH}
+      </span>
+    </div>
+  );
+}
+
 export function EvaluationFeedbackCard({ feedback, onChange, disabled = false }: Props) {
   const isOverLimit = isFeedbackOverLimit(feedback);
 
@@ -22,8 +50,14 @@ export function EvaluationFeedbackCard({ feedback, onChange, disabled = false }:
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-base font-bold text-brand-900">Feedback</h2>
-        <FeedbackTemplateSelector onSelect={handleSelectTemplate} disabled={disabled} />
+        <h2 id="feedback-title" className="text-base font-bold text-brand-900">
+          Feedback
+        </h2>
+        <FeedbackTemplateSelector
+          onSelect={handleSelectTemplate}
+          disabled={disabled}
+          currentFeedback={feedback}
+        />
       </div>
 
       <textarea
@@ -32,6 +66,7 @@ export function EvaluationFeedbackCard({ feedback, onChange, disabled = false }:
         value={feedback}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
+        aria-labelledby="feedback-title"
         aria-invalid={isOverLimit}
         aria-describedby={isOverLimit ? 'feedback-limit-warning' : undefined}
         className={cn(
@@ -42,24 +77,7 @@ export function EvaluationFeedbackCard({ feedback, onChange, disabled = false }:
         )}
       />
 
-      <div className="mt-1 flex items-center justify-between gap-2">
-        {isOverLimit ? (
-          <p id="feedback-limit-warning" className="text-xs font-medium text-danger">
-            O feedback ultrapassa o limite de 2000 caracteres ({feedback.length}/
-            {FEEDBACK_MAX_LENGTH}). Reduza o texto antes de salvar.
-          </p>
-        ) : (
-          <span />
-        )}
-        <span
-          className={cn(
-            'text-xs font-medium',
-            isOverLimit ? 'text-danger font-semibold' : 'text-muted',
-          )}
-        >
-          {feedback.length}/{FEEDBACK_MAX_LENGTH}
-        </span>
-      </div>
+      <FeedbackCardFooter length={feedback.length} isOverLimit={isOverLimit} />
     </div>
   );
 }
