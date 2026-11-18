@@ -35,6 +35,10 @@ export const GetSessionGeneralEvaluationSwaggerDocs = applyDecorators(
     type: SessionGeneralEvaluationResponseDto,
     isArray: true,
   }),
+  ApiBadRequestResponse({
+    description: 'Identificador da sessão inválido.',
+    type: ErrorResponseDto,
+  }),
   unauthorized,
   forbidden,
   notFound,

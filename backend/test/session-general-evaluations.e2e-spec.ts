@@ -86,6 +86,9 @@ describe('Session general evaluations (e2e)', () => {
     expect(editedBody.criadoEm).toBe(firstBody.criadoEm);
     expect(editedBody.texto).toBe('Registro corrigido.');
     expect(editedBody.autor.id).toBe(fixture.owner.id);
+    expect(new Date(editedBody.editadoEm).getTime()).toBeGreaterThan(
+      new Date(editedBody.criadoEm).getTime(),
+    );
     expect(coTutorEditedBody.id).toBe(coTutorBody.id);
     expect(coTutorEditedBody.texto).toBe('Relato da co-tutora corrigido.');
     expect(coTutorEditedBody.autor.id).toBe(coTutor.id);
@@ -126,6 +129,8 @@ describe('Session general evaluations (e2e)', () => {
     for (const texto of ['', '   ', 'x'.repeat(2001), 123]) {
       await api(app, fixture.owner).put(path(), { texto }).expect(400);
     }
+    await api(app, fixture.owner).put(path(), { texto: null }).expect(400);
+    await api(app, fixture.owner).put(path(), {}).expect(400);
     await api(app, fixture.owner).get('/sessoes/invalido/avaliacao-geral').expect(400);
     await api(app, fixture.owner)
       .put('/sessoes/invalido/avaliacao-geral', { texto: 'Válido.' })
@@ -148,6 +153,8 @@ describe('Session general evaluations (e2e)', () => {
     ]);
 
     await api(app, fixture.student).get(path()).expect(200, [saved.body]);
+    await api(app, coTutor).get(path()).expect(403);
+    await api(app, coTutor).put(path(), { texto: 'Tentativa após sair.' }).expect(403);
     const [row] = await db.query<[{ count: number }]>(
       'SELECT COUNT(*)::int AS count FROM session_general_evaluations WHERE session_id = $1;',
       [sessionId],
@@ -179,6 +186,11 @@ describe('Session general evaluations (e2e)', () => {
     await api(app, fixture.owner)
       .get('/sessoes/00000000-0000-0000-0000-000000000000/avaliacao-geral')
       .expect(404);
+    await api(app, fixture.owner)
+      .put('/sessoes/00000000-0000-0000-0000-000000000000/avaliacao-geral', {
+        texto: 'Sessão inexistente.',
+      })
+      .expect(404);
   });
 
   it('preserves the complete prior version when a save fails', async () => {
@@ -186,6 +198,7 @@ describe('Session general evaluations (e2e)', () => {
       .put(path(), { texto: 'Versão preservada.' })
       .expect(200);
     const savedBody = saved.body as SessionGeneralEvaluationResponseDto;
+    await new Promise((resolve) => setTimeout(resolve, 5));
     jest
       .spyOn(
         app.get<SessionGeneralEvaluationRepository>(SESSION_GENERAL_EVALUATION_REPOSITORY),
@@ -193,7 +206,7 @@ describe('Session general evaluations (e2e)', () => {
       )
       .mockRejectedValue(new Error('Falha simulada de persistência.'));
 
-    await api(app, coTutor).put(path(), { texto: 'Versão que falhou.' }).expect(500);
+    await api(app, fixture.owner).put(path(), { texto: 'Versão que falhou.' }).expect(500);
     await api(app, fixture.student).get(path()).expect(200, [savedBody]);
   });
 });

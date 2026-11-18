@@ -292,6 +292,7 @@ describe('Sessions Swagger Documentation (e2e)', () => {
       expect(document.paths[generalEvaluationPath]?.get?.security).toEqual(
         expect.arrayContaining([{ jwt: [] }]),
       );
+      expect(document.paths[generalEvaluationPath]?.get?.responses['400']).toBeDefined();
       expect(
         Object.keys(
           document.components.schemas.SessionGeneralEvaluationResponseDto?.properties ?? {},
