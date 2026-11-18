@@ -19,6 +19,7 @@ export interface GetSessionDeletionImpactOutput {
   observations: number;
   evaluations: number;
   feedbacks: number;
+  generalEvaluation: number;
 }
 
 @Injectable()
@@ -43,6 +44,7 @@ export class GetSessionDeletionImpactUseCase {
       observations: impact.observacoes,
       evaluations: impact.avaliacoes,
       feedbacks: impact.feedbacks,
+      generalEvaluation: impact.avaliacaoGeral,
     };
   }
 }

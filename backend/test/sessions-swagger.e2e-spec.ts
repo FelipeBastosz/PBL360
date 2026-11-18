@@ -50,6 +50,7 @@ describe('Sessions Swagger Documentation (e2e)', () => {
   const itemPath = '/api/salas/{roomId}/problemas/{problemId}/sessoes/{sessionId}';
   const impactPath =
     '/api/salas/{roomId}/problemas/{problemId}/sessoes/{sessionId}/impacto-exclusao';
+  const generalEvaluationPath = '/api/sessoes/{sessaoId}/avaliacao-geral';
 
   beforeAll(async () => {
     ({ app } = await createTestApp());
@@ -275,7 +276,28 @@ describe('Sessions Swagger Documentation (e2e)', () => {
         'observacoes',
         'avaliacoes',
         'feedbacks',
+        'avaliacaoGeral',
       ]);
+    });
+  });
+
+  describe('Session General Evaluation Swagger Documentation', () => {
+    it('documents the general evaluation endpoints and response schema', () => {
+      expect(document.paths[generalEvaluationPath]?.get?.summary).toBe(
+        'Consulta a avaliação geral da sessão',
+      );
+      expect(document.paths[generalEvaluationPath]?.put?.summary).toBe(
+        'Registra ou atualiza a avaliação geral da sessão',
+      );
+      expect(document.paths[generalEvaluationPath]?.get?.security).toEqual(
+        expect.arrayContaining([{ jwt: [] }]),
+      );
+      expect(document.paths[generalEvaluationPath]?.get?.responses['400']).toBeDefined();
+      expect(
+        Object.keys(
+          document.components.schemas.SessionGeneralEvaluationResponseDto?.properties ?? {},
+        ),
+      ).toEqual(['id', 'texto', 'autor', 'criadoEm', 'editadoEm']);
     });
   });
 
