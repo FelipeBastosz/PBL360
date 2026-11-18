@@ -18,7 +18,7 @@ export interface NewUserTermAcceptance {
 }
 
 @Entity('user_term_acceptances')
-@Unique('uq_user_term_acceptances_user', ['userId'])
+@Unique('uq_user_term_acceptances_user_term', ['userId', 'termId'])
 @Index('idx_user_term_acceptances_user_id', ['userId'])
 export class UserTermAcceptance {
   @PrimaryGeneratedColumn('uuid')

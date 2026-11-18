@@ -19,13 +19,19 @@ describe('GetUserTermAcceptanceUseCase', () => {
 
   beforeEach(() => {
     termsRepo = { findCurrent: jest.fn(), findByVersion: jest.fn() };
-    acceptancesRepo = { findByUserId: jest.fn(), hasAccepted: jest.fn(), create: jest.fn() };
+    acceptancesRepo = {
+      findByUserId: jest.fn(),
+      findByUserIdAndTermId: jest.fn(),
+      hasAccepted: jest.fn(),
+      create: jest.fn(),
+    };
     useCase = new GetUserTermAcceptanceUseCase(termsRepo, acceptancesRepo);
   });
 
   it('returns false and null values when user has not accepted', async () => {
     termsRepo.findCurrent.mockResolvedValue(currentTerm);
     acceptancesRepo.findByUserId.mockResolvedValue(null);
+    acceptancesRepo.hasAccepted.mockResolvedValue(false);
 
     const result = await useCase.execute('user-1');
 
@@ -46,6 +52,7 @@ describe('GetUserTermAcceptanceUseCase', () => {
       acceptedAt: new Date('2026-11-16T10:00:00Z'),
     });
     acceptancesRepo.findByUserId.mockResolvedValue(acceptance);
+    acceptancesRepo.hasAccepted.mockResolvedValue(true);
 
     const result = await useCase.execute('user-1');
 

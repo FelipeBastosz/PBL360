@@ -22,13 +22,18 @@ describe('AcceptCommitmentTermUseCase', () => {
 
   beforeEach(() => {
     termsRepo = { findCurrent: jest.fn(), findByVersion: jest.fn() };
-    acceptancesRepo = { findByUserId: jest.fn(), hasAccepted: jest.fn(), create: jest.fn() };
+    acceptancesRepo = {
+      findByUserId: jest.fn(),
+      findByUserIdAndTermId: jest.fn(),
+      hasAccepted: jest.fn(),
+      create: jest.fn(),
+    };
     useCase = new AcceptCommitmentTermUseCase(termsRepo, acceptancesRepo);
   });
 
   it('records acceptance when valid and returns acceptance status', async () => {
     termsRepo.findCurrent.mockResolvedValue(currentTerm);
-    acceptancesRepo.findByUserId.mockResolvedValue(null);
+    acceptancesRepo.findByUserIdAndTermId.mockResolvedValue(null);
 
     const savedDate = new Date('2026-11-16T12:00:00Z');
     acceptancesRepo.create.mockImplementation((acc) =>
@@ -48,7 +53,7 @@ describe('AcceptCommitmentTermUseCase', () => {
 
   it('throws ConflictError (409) if submitted version does not match current version', async () => {
     termsRepo.findCurrent.mockResolvedValue(currentTerm);
-    acceptancesRepo.findByUserId.mockResolvedValue(null);
+    acceptancesRepo.findByUserIdAndTermId.mockResolvedValue(null);
 
     await expect(useCase.execute({ userId: 'user-1', version: '0.9' })).rejects.toThrow(
       ConflictError,
@@ -66,7 +71,7 @@ describe('AcceptCommitmentTermUseCase', () => {
       termVersion: '1.0',
       acceptedAt: existingDate,
     });
-    acceptancesRepo.findByUserId.mockResolvedValue(existing);
+    acceptancesRepo.findByUserIdAndTermId.mockResolvedValue(existing);
 
     const result = await useCase.execute({ userId: 'user-1', version: '1.0' });
 
