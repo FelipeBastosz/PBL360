@@ -92,6 +92,9 @@ describe('EditPerformanceTablePage', () => {
     renderPage();
 
     await screen.findByRole('heading', { name: 'Sessão de apresentação' });
+    expect(screen.getByText('10 / 10')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Concluir edição' })).toBeEnabled();
+
     await userEvent.click(screen.getByRole('button', { name: 'Excluir critério Comportamento' }));
 
     expect(screen.getByText('Excluir critério?')).toBeInTheDocument();
@@ -99,6 +102,11 @@ describe('EditPerformanceTablePage', () => {
 
     expect(screen.queryByText('Comportamento')).not.toBeInTheDocument();
     expect(screen.getByText('Domínio')).toBeInTheDocument();
+    expect(screen.getByText('5 / 10')).toBeInTheDocument();
+    expect(
+      screen.getByText('A soma dos pesos deve ser exatamente 10 (atual: 5).'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Concluir edição' })).toBeDisabled();
   });
 
   it('opens modal to delete the entire formula and deletes via service', async () => {
@@ -149,25 +157,20 @@ describe('EditPerformanceTablePage', () => {
         await screen.findByText('Esta tabela já foi usada em sessões que aconteceram'),
       ).toBeInTheDocument();
 
-      // Name & description editing button should NOT be rendered
       expect(
         screen.queryByRole('button', { name: 'Editar descrição e título' }),
       ).not.toBeInTheDocument();
 
-      // Add criterion button should NOT be rendered
       expect(screen.queryByRole('button', { name: '+Adicionar critério' })).not.toBeInTheDocument();
 
-      // Delete criterion button should NOT be rendered
       expect(
         screen.queryByRole('button', { name: 'Excluir critério Comportamento' }),
       ).not.toBeInTheDocument();
 
-      // Delete whole formula button should NOT be rendered when editing from session
       expect(
         screen.queryByRole('button', { name: 'Excluir essa fórmula' }),
       ).not.toBeInTheDocument();
 
-      // Edit criterion opens modal with disabled name and description
       await userEvent.click(screen.getByRole('button', { name: 'Editar critério Comportamento' }));
       expect(screen.getByLabelText('Nome do Critério')).toBeDisabled();
       expect(screen.getByLabelText('Descrição do Critério')).toBeDisabled();
@@ -201,17 +204,14 @@ describe('EditPerformanceTablePage', () => {
 
       await screen.findByRole('heading', { name: 'Sessão de apresentação' });
 
-      // Elements enabled in full mode
       expect(screen.getByRole('button', { name: 'Editar descrição e título' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '+Adicionar critério' })).toBeInTheDocument();
       expect(
         screen.getByRole('button', { name: 'Excluir critério Comportamento' }),
       ).toBeInTheDocument();
 
-      // Click to conclude editing
       await userEvent.click(screen.getByRole('button', { name: 'Concluir edição' }));
 
-      // EditScopeModal should appear
       expect(
         screen.getByRole('heading', { name: 'Onde aplicar as alterações?' }),
       ).toBeInTheDocument();
@@ -222,7 +222,6 @@ describe('EditPerformanceTablePage', () => {
       expect(screen.getByText('P1S1')).toBeInTheDocument();
       expect(screen.getByText('P1S2')).toBeInTheDocument();
 
-      // Confirm with default SESSAO scope
       await userEvent.click(screen.getByRole('button', { name: 'Confirmar e salvar' }));
 
       expect(sessionService.editSessionTable).toHaveBeenCalledWith('sess-1', {
@@ -324,6 +323,33 @@ describe('EditPerformanceTablePage', () => {
         'sess-1',
         expect.objectContaining({ escopo: 'TODAS' }),
       );
+    });
+
+    it('formats decimal weight with comma and at most one decimal place when editing criterion', async () => {
+      render(
+        <MemoryRouter
+          initialEntries={[{ pathname: '/formulas/table-1/editar', state: sessionTarget }]}
+        >
+          <Routes>
+            <Route path="/formulas/:id/editar" element={<EditPerformanceTablePage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await screen.findByRole('heading', { name: 'Sessão de apresentação' });
+      await userEvent.click(screen.getByRole('button', { name: 'Editar critério Comportamento' }));
+
+      const weightInput = screen.getByLabelText('Peso');
+      expect(weightInput).toHaveValue('5');
+
+      await userEvent.clear(weightInput);
+      await userEvent.type(weightInput, '4.55');
+      expect(weightInput).toHaveValue('4,5');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar Edição' }));
+
+      expect(screen.getByText('4,5')).toBeInTheDocument();
+      expect(screen.getByText('9,5 / 10')).toBeInTheDocument();
     });
   });
 });

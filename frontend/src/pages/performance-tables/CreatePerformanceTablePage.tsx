@@ -5,10 +5,12 @@ import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import type { CriterionInput } from '@/types/performanceTable';
 import { TitleCard, FormActions } from './components/CreatePerformanceTableCards';
+import { FormulaBalanceSummary } from './components/FormulaBalanceSummary';
 import { CreatePerformanceTableModals } from './components/CreatePerformanceTableModals';
 import { useCreatePerformanceTableForm } from './hooks/useCreatePerformanceTableForm';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
+import { formatCriterionWeight } from '@/utils/criterionWeight';
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {
   const { user } = useAuth();
@@ -46,7 +48,7 @@ function CriterionRow({
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-brand-900">{item.nome}</span>
         <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-ink">
-          {item.peso}
+          {formatCriterionWeight(item.peso)}
         </span>
       </div>
       <div className="mt-1 flex items-center justify-between">
@@ -199,7 +201,12 @@ export function CreatePerformanceTablePage() {
           onOpenDelete={modals.setCriterionToDelete}
           hasError={Boolean(form.fieldErrors.criterios)}
         />
-        <FormActions onSave={form.handleSave} onCancel={() => form.navigate(-1)} />
+        <FormulaBalanceSummary totalWeight={form.totalWeight} />
+        <FormActions
+          onSave={form.handleSave}
+          onCancel={() => form.navigate(-1)}
+          disabled={form.totalWeight !== 10}
+        />
       </main>
       <CreateModalsSection form={form} modals={modals} />
     </div>

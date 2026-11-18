@@ -15,7 +15,7 @@ export function validateFormula(nome: string, count: number, totalWeight: number
       fields: { criterios: true },
     };
   }
-  if (totalWeight !== 10) {
+  if (Math.round((totalWeight + Number.EPSILON) * 10) / 10 !== 10) {
     return {
       error: 'A soma dos pesos dos critérios deve ser exatamente 10.',
       fields: { criterios: true },
@@ -56,7 +56,8 @@ export function useCreateMyFormula() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ nome?: boolean; criterios?: boolean }>({});
 
-  const totalWeight = criterios.reduce((acc, c) => acc + c.peso, 0);
+  const totalWeight =
+    Math.round((criterios.reduce((acc, c) => acc + c.peso, 0) + Number.EPSILON) * 10) / 10;
   const otherWeightsSum = modals.editingCriterion
     ? totalWeight - modals.editingCriterion.peso
     : totalWeight;

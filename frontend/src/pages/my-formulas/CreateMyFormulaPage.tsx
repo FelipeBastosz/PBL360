@@ -7,6 +7,8 @@ import {
   FormActions,
 } from '@/pages/performance-tables/components/CreatePerformanceTableCards';
 import { CreatePerformanceTableModals } from '@/pages/performance-tables/components/CreatePerformanceTableModals';
+import { FormulaBalanceSummary } from '@/pages/performance-tables/components/FormulaBalanceSummary';
+import { formatCriterionWeight } from '@/utils/criterionWeight';
 import { MyFormulasHeader } from './components/MyFormulasHeader';
 import { useCreateMyFormula } from './hooks/useCreateMyFormula';
 
@@ -24,7 +26,7 @@ function CriterionRow({
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-brand-900">{item.nome}</span>
         <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-ink">
-          {item.peso}
+          {formatCriterionWeight(item.peso)}
         </span>
       </div>
       <div className="mt-1 flex items-center justify-between">
@@ -149,7 +151,9 @@ export function CreateMyFormulaPage() {
           onOpenDelete={formState.setCriterionToDelete}
           hasError={Boolean(formState.fieldErrors.criterios)}
         />
+        <FormulaBalanceSummary totalWeight={formState.totalWeight} />
         <FormActions
+          disabled={formState.totalWeight !== 10}
           onSave={formState.handleSave}
           onCancel={() => formState.navigate(ROUTES.myFormulas)}
         />

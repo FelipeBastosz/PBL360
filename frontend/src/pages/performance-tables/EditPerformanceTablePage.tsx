@@ -99,7 +99,8 @@ function computeDialogMetrics(
   modals: ReturnType<typeof useEditModals>,
 ) {
   const canEditCriteria = form.permissions ? form.permissions.podeEditarCriterios : true;
-  const totalWeight = form.criterios.reduce((sum, c) => sum + c.peso, 0);
+  const totalWeight =
+    Math.round((form.criterios.reduce((sum, c) => sum + c.peso, 0) + Number.EPSILON) * 10) / 10;
   const otherWeightsSum = modals.editingCriterion
     ? totalWeight - modals.editingCriterion.peso
     : totalWeight;
@@ -158,6 +159,7 @@ export function EditPerformanceTablePage() {
         modals={modals}
         canEditCriteria={dialogs.canEditCriteria}
         isSessionContext={Boolean(form.activeSessionId)}
+        totalWeight={dialogs.totalWeight}
         onRequestSave={dialogs.handleRequestSave}
         onExit={onExit}
       />

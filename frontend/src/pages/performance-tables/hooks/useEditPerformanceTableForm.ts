@@ -11,7 +11,8 @@ import { useFetchTableInitialData, type InitialFormulaData } from './useFetchEdi
 function validateEditFormula(nome: string, count: number, totalWeight: number) {
   if (!nome.trim()) return 'O título da fórmula é obrigatório.';
   if (count === 0) return 'A tabela deve possuir ao menos um critério.';
-  if (totalWeight !== 10) return 'A soma dos pesos dos critérios deve ser exatamente 10.';
+  if (Math.round((totalWeight + Number.EPSILON) * 10) / 10 !== 10)
+    return 'A soma dos pesos dos critérios deve ser exatamente 10.';
   return null;
 }
 
@@ -120,7 +121,8 @@ function useSaveExecution(
 
   const prepareSave = (): boolean => {
     setErrorMessage(null);
-    const totalWeight = data.criterios.reduce((sum, c) => sum + c.peso, 0);
+    const totalWeight =
+      Math.round((data.criterios.reduce((sum, c) => sum + c.peso, 0) + Number.EPSILON) * 10) / 10;
     const err = validateEditFormula(data.nome, data.criterios.length, totalWeight);
     if (err) setErrorMessage(err);
     return !err;
