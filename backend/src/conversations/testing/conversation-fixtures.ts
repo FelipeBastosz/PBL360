@@ -69,6 +69,7 @@ export const userRepositoryStub = (): jest.Mocked<UserRepository> => ({
   findById: jest.fn(),
   updateName: jest.fn(),
   save: jest.fn(),
+  saveWithTermAcceptance: jest.fn(),
 });
 
 export const conversationAccessServiceStub = () => ({

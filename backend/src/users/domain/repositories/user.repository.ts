@@ -12,6 +12,7 @@ export interface UserRepository {
   findById(id: string): Promise<User | null>;
   updateName(userId: string, name: string): Promise<User>;
   save(user: User): Promise<User>;
+  saveWithTermAcceptance(user: User, termId: string, termVersion: string): Promise<User>;
 }
 
 export const USER_REPOSITORY = Symbol('UserRepository');

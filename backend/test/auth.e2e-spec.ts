@@ -65,6 +65,8 @@ const studentPayload = () => ({
   email: 'ana@discente.uefs.br',
   senha: 'senha-secreta',
   tipo: 'ALUNO',
+  versaoTermo: '1.2',
+  aceitaTermos: true,
   matricula: '20240001',
   foto: pngPhotoBytes(),
 });
@@ -74,6 +76,8 @@ const tutorPayload = () => ({
   email: 'carlos@uefs.br',
   senha: 'senha-secreta',
   tipo: 'PROFESSOR',
+  versaoTermo: '1.2',
+  aceitaTermos: true,
 });
 
 describe('Auth (e2e)', () => {

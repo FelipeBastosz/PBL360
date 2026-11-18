@@ -59,6 +59,8 @@ describe('Swagger (e2e)', () => {
       'email',
       'senha',
       'tipo',
+      'versaoTermo',
+      'aceitaTermos',
       'matricula',
       'foto',
     ]);
