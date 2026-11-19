@@ -161,54 +161,28 @@ async function readStreamToBuffer(stream: AsyncIterable<Uint8Array | string>): P
   return result;
 }
 
-function toBase64Url(str: string): string {
-  return btoa(str).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-}
-
-async function createRealTutorToken(): Promise<string> {
-  const secret = 'change-me-in-every-environment';
-  const header = toBase64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const now = Math.floor(Date.now() / 1000);
-  const payload = toBase64Url(
-    JSON.stringify({
-      sub: '7408a053-c198-4834-a737-0a325410a556',
-      email: 'carlos@uefs.br',
-      type: 'TUTOR',
-      ver: 0,
-      iat: now,
-      exp: now + 86400,
-      aud: 'pbl360:access',
-    }),
-  );
-
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
-  const sigBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(`${header}.${payload}`));
-  const bytes = new Uint8Array(sigBuffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const signature = toBase64Url(binary);
-
-  return `${header}.${payload}.${signature}`;
-}
+const mockFeedbackTemplates = [
+  {
+    id: '4f700000-0000-4000-8000-000000000001',
+    titulo: 'Boa participação e engajamento',
+    texto:
+      'Demonstrou participação ativa durante a sessão tutorial, contribuindo com perguntas e reflexões pertinentes para o avanço da discussão do grupo.',
+  },
+  {
+    id: '4f700000-0000-4000-8000-000000000002',
+    titulo: 'Necessidade de aprofundar argumentos',
+    texto:
+      'Participou das discussões da sessão, porém recomenda-se aprofundar a fundamentação teórica e articular melhor as evidências ao apresentar argumentos ao grupo.',
+  },
+];
 
 test.describe('Professor Flows - Problem Grades & Reports', () => {
   test.beforeEach(async ({ page }) => {
-    const authToken = await createRealTutorToken();
-
-    await page.addInitScript((token) => {
+    await page.addInitScript(() => {
       localStorage.setItem(
         'pbl360.session',
         JSON.stringify({
-          token,
+          token: 'mock-tutor-token',
           expiraEm: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           usuario: {
             id: 'user-tutor-1',
@@ -219,7 +193,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
           },
         }),
       );
-    }, authToken);
+    });
 
     await page.route('**/api/salas/sala-1', async (route) => {
       await route.fulfill({
@@ -258,6 +232,14 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify(mockFeedbacks),
+      });
+    });
+
+    await page.route('**/api/modelos-feedback', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockFeedbackTemplates),
       });
     });
   });
@@ -424,12 +406,11 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
 
     const templateDialog = page.getByRole('dialog', { name: 'Modelos de feedback' });
     await expect(templateDialog).toBeVisible();
-    await expect(templateDialog.getByText('Boa participação e engajamento')).toBeVisible({
-      timeout: 15000,
-    });
+    await expect(templateDialog.getByText('Boa participação e engajamento')).toBeVisible();
 
     await templateDialog.getByRole('button', { name: /Boa participação e engajamento/i }).click();
     await expect(templateDialog).not.toBeVisible();
+    expect(capturedPayload).toBeNull();
 
     await expect(commentField).toHaveValue(
       'Observação inicial do tutor.\n\nDemonstrou participação ativa durante a sessão tutorial, contribuindo com perguntas e reflexões pertinentes para o avanço da discussão do grupo.',
@@ -451,9 +432,13 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
       texto:
         'Observação inicial do tutor.\n\nDemonstrou participação ativa durante a sessão tutorial, contribuindo com perguntas e reflexões pertinentes para o avanço da discussão do grupo. Continuar assim!',
     });
+    expect(capturedPayload).not.toHaveProperty('templateId');
+    expect(capturedPayload).not.toHaveProperty('modeloId');
   });
 
-  test('should allow canceling template selection without altering comment', async ({ page }) => {
+  test('should allow canceling template selection via Cancelar or Escape without closing parent modal or altering comment', async ({
+    page,
+  }) => {
     await page.goto('/turmas/sala-1/problemas/prob-1/notas');
 
     const gradeCell = page.getByRole('button', { name: /Ana Silva.*Abertura/i });
@@ -467,13 +452,19 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
 
     const templateDialog = page.getByRole('dialog', { name: 'Modelos de feedback' });
     await expect(templateDialog).toBeVisible();
-    await expect(templateDialog.getByText('Boa participação e engajamento')).toBeVisible({
-      timeout: 15000,
-    });
+    await expect(templateDialog.getByText('Boa participação e engajamento')).toBeVisible();
 
     await templateDialog.getByRole('button', { name: 'Cancelar' }).click();
     await expect(templateDialog).not.toBeVisible();
+    await expect(dialog).toBeVisible();
+    await expect(commentField).toHaveValue('Texto inalterado.');
 
+    await dialog.getByRole('button', { name: /Usar modelo/i }).click();
+    await expect(templateDialog).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(templateDialog).not.toBeVisible();
+    await expect(dialog).toBeVisible();
     await expect(commentField).toHaveValue('Texto inalterado.');
   });
 
