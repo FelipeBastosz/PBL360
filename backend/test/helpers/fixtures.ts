@@ -66,7 +66,7 @@ export const acceptCurrentTermForAllUsers = async (dataSource: DataSource): Prom
     FROM users
     CROSS JOIN commitment_terms AS terms
     WHERE terms.is_current = TRUE
-    ON CONFLICT (user_id) DO NOTHING;
+    ON CONFLICT (user_id, term_id) DO NOTHING;
   `);
 };
 
