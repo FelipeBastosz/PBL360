@@ -2,11 +2,18 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { feedbackService } from '@/services/feedback.service';
+import { sessionService } from '@/services/session.service';
 import SessionFeedbackPage from './SessionFeedbackPage';
 
 vi.mock('@/services/feedback.service', () => ({
   feedbackService: {
     getMySessionFeedback: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/session.service', () => ({
+  sessionService: {
+    getGeneralEvaluations: vi.fn(),
   },
 }));
 
@@ -32,6 +39,7 @@ function renderPage() {
 describe('SessionFeedbackPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValue([]);
   });
 
   it('renders tutor feedback, author, and date without grade block', async () => {
@@ -78,5 +86,46 @@ describe('SessionFeedbackPage', () => {
     expect(
       await screen.findByText('Seu tutor ainda não enviou feedback para esta sessão'),
     ).toBeInTheDocument();
+  });
+
+  it('renders general evaluation unavailable notice when none registered', async () => {
+    vi.mocked(feedbackService.getMySessionFeedback).mockResolvedValueOnce(null);
+    vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([]);
+
+    renderPage();
+
+    expect(
+      await screen.findByText('A avaliação geral da sessão ainda não está disponível.'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders general evaluation text, author, and dates alongside individual feedback', async () => {
+    vi.mocked(feedbackService.getMySessionFeedback).mockResolvedValueOnce({
+      id: 'fb-1',
+      autor: { id: 'prof-1', nome: 'Prof. Carlos' },
+      texto: 'Individual feedback content.',
+      criadoEm: '2026-04-12T10:00:00Z',
+      editadoEm: null,
+      novo: false,
+      nota: 9,
+    });
+    vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([
+      {
+        id: 'eval-1',
+        texto: 'A turma teve um ótimo desempenho coletivo.',
+        autor: { id: 'prof-1', nome: 'Prof. Carlos' },
+        criadoEm: '2026-04-12T11:00:00Z',
+        editadoEm: '2026-04-12T12:00:00Z',
+      },
+    ]);
+
+    renderPage();
+
+    expect(
+      await screen.findByText('A turma teve um ótimo desempenho coletivo.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Individual feedback content.')).toBeInTheDocument();
+    expect(screen.getByText(/Criado em 12\/04\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(/Editado em 12\/04\/2026/)).toBeInTheDocument();
   });
 });

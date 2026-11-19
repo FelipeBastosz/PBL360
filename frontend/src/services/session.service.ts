@@ -21,6 +21,8 @@ import type {
   SessionTableEditPermissions,
   EditSessionTablePayload,
   EditSessionTableResponse,
+  SessionGeneralEvaluation,
+  SaveSessionGeneralEvaluationPayload,
 } from '@/types/session';
 import type { ExportSessionReportOptions } from '@/types/sessionReport';
 import { api } from './api';
@@ -141,5 +143,21 @@ export const sessionService = {
   editSessionTable: (sessionId: string, payload: EditSessionTablePayload) =>
     api
       .put<EditSessionTableResponse>(`${BASE}/${sessionId}/tabela/edicao`, payload)
+      .then((r) => r.data),
+
+  getGeneralEvaluations: (sessionId: string) =>
+    api
+      .get<SessionGeneralEvaluation[] | SessionGeneralEvaluation | null>(
+        `${BASE}/${sessionId}/avaliacao-geral`,
+      )
+      .then((r) => {
+        if (Array.isArray(r.data)) return r.data;
+        if (r.data) return [r.data];
+        return [];
+      }),
+
+  saveGeneralEvaluation: (sessionId: string, payload: SaveSessionGeneralEvaluationPayload) =>
+    api
+      .put<SessionGeneralEvaluation>(`${BASE}/${sessionId}/avaliacao-geral`, payload)
       .then((r) => r.data),
 };

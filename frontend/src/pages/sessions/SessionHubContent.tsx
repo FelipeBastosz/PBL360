@@ -7,6 +7,7 @@ import { PlanningPokerHubCard } from './PlanningPokerHubCard';
 import { usePlanningPokerEntry } from './usePlanningPokerEntry';
 import { StudentEvaluationCenter } from './StudentEvaluationCenter';
 import { StudentPokerNotice } from './StudentPokerNotice';
+import { SessionGeneralEvaluationCard } from './components/SessionGeneralEvaluationCard';
 
 type SessionHubContentProps = {
   isLoading: boolean;
@@ -27,6 +28,7 @@ function StudentHubContent({ sessionId, basePath, pokerPath }: StudentHubContent
       <StudentEvaluationCenter feedbackHref={`${basePath}/feedback`}>
         <StudentPokerNotice sessionId={sessionId} pokerPath={pokerPath} />
       </StudentEvaluationCenter>
+      <SessionGeneralEvaluationCard sessionId={sessionId} isProfessor={false} />
       <SessionAttachments sessionId={sessionId} canUpload />
     </>
   );
@@ -69,6 +71,7 @@ function ProfessorHubContent(props: ProfessorHubContentProps) {
         isAttendancePending={props.isAttendancePending}
         isLoading={props.isUpdating}
       />
+      <SessionGeneralEvaluationCard sessionId={props.sessionId} isProfessor={true} />
       <SessionAttachments sessionId={props.sessionId} canUpload />
     </>
   );

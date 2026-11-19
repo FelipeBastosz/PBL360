@@ -10,6 +10,7 @@ import { FeedbackEmptyState } from './FeedbackEmptyState';
 import { EvaluationComponentGrades } from './EvaluationComponentGrades';
 import { useProblemFeedbacks } from './useProblemFeedbacks';
 import { useSessionFeedback } from './useSessionFeedback';
+import { SessionGeneralEvaluationSection } from './SessionGeneralEvaluationSection';
 import { cn } from '@/utils/cn';
 
 type SessionFeedbackContentProps = {
@@ -98,6 +99,8 @@ export default function SessionFeedbackPage() {
           </span>
           <ChevronRightIcon className="size-5 text-muted" aria-hidden />
         </Link>
+
+        <SessionGeneralEvaluationSection sessionId={sessionId} />
 
         <SessionFeedbackContent
           isLoading={isLoading}
