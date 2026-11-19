@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sessionService } from '@/services/session.service';
@@ -32,14 +32,14 @@ describe('SessionGeneralEvaluationSection', () => {
     vi.clearAllMocks();
   });
 
-  it('renders unavailable notice when no evaluation is available', async () => {
+  it('renders nothing when no evaluation is available', async () => {
     vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([]);
 
-    render(<SessionGeneralEvaluationSection sessionId="sess-1" />);
+    const { container } = render(<SessionGeneralEvaluationSection sessionId="sess-1" />);
 
-    expect(
-      await screen.findByText('O feedback geral da sessão ainda não está disponível.'),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(container.firstChild).toBeNull();
+    });
   });
 
   it('renders evaluation with author, creation and edition dates, and text', async () => {
@@ -47,10 +47,11 @@ describe('SessionGeneralEvaluationSection', () => {
 
     render(<SessionGeneralEvaluationSection sessionId="sess-1" />);
 
-    expect(await screen.findByText('Participação ativa de todos os alunos.')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'DA TURMA' })).toBeInTheDocument();
+    expect(screen.getByText('Participação ativa de todos os alunos.')).toBeInTheDocument();
     expect(screen.getByText('Prof. Carlos')).toBeInTheDocument();
-    expect(screen.getByText(/Criado em 12\/04\/2026/)).toBeInTheDocument();
-    expect(screen.getByText(/Editado em 12\/04\/2026/)).toBeInTheDocument();
+    expect(screen.getByText('12 abr')).toBeInTheDocument();
+    expect(screen.getByText(/editado em 12\/04\/2026/i)).toBeInTheDocument();
   });
 
   it('renders multiple evaluations when registered by co-tutors', async () => {

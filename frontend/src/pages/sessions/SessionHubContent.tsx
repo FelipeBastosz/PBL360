@@ -28,7 +28,6 @@ function StudentHubContent({ sessionId, basePath, pokerPath }: StudentHubContent
       <StudentEvaluationCenter feedbackHref={`${basePath}/feedback`}>
         <StudentPokerNotice sessionId={sessionId} pokerPath={pokerPath} />
       </StudentEvaluationCenter>
-      <SessionGeneralEvaluationCard sessionId={sessionId} isProfessor={false} />
       <SessionAttachments sessionId={sessionId} canUpload />
     </>
   );
@@ -71,8 +70,12 @@ function ProfessorHubContent(props: ProfessorHubContentProps) {
         isAttendancePending={props.isAttendancePending}
         isLoading={props.isUpdating}
       />
-      <SessionGeneralEvaluationCard sessionId={props.sessionId} isProfessor={true} />
       <SessionAttachments sessionId={props.sessionId} canUpload />
+      <SessionGeneralEvaluationCard
+        sessionId={props.sessionId}
+        isProfessor={true}
+        className="lg:col-span-2"
+      />
     </>
   );
 }

@@ -48,6 +48,21 @@ describe('SessionGeneralEvaluationCard', () => {
     expect(screen.getByRole('button', { name: 'Registrar feedback' })).toBeInTheDocument();
   });
 
+  it('applies custom className to root container', async () => {
+    vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([]);
+
+    const { container } = render(
+      <SessionGeneralEvaluationCard
+        sessionId="sess-1"
+        isProfessor={true}
+        className="lg:col-span-2"
+      />,
+    );
+
+    expect(await screen.findByText('Feedback Geral da Sessão')).toBeInTheDocument();
+    expect(container.firstChild).toHaveClass('lg:col-span-2');
+  });
+
   it('opens registration modal when clicking register button', async () => {
     const user = userEvent.setup();
     vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([]);

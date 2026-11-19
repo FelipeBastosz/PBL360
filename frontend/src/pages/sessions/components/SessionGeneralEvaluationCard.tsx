@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import type { SessionGeneralEvaluation } from '@/types/session';
+import { cn } from '@/utils/cn';
 import { useSessionGeneralEvaluations } from './hooks/useSessionGeneralEvaluations';
 import { ProfessorEvaluationSummary } from './ProfessorEvaluationSummary';
 import { SessionGeneralEvaluationItem } from './SessionGeneralEvaluationItem';
@@ -13,6 +14,7 @@ import { SessionGeneralEvaluationModal } from './SessionGeneralEvaluationModal';
 type SessionGeneralEvaluationCardProps = {
   sessionId: string;
   isProfessor: boolean;
+  className?: string;
 };
 
 function CardHeader() {
@@ -80,19 +82,21 @@ function CardErrorState({ error, onReload }: { error: string; onReload: () => vo
   );
 }
 
+type ProfessorListProps = {
+  evaluations: SessionGeneralEvaluation[];
+  currentUserId?: string;
+  myEvaluation: SessionGeneralEvaluation | null;
+  onOpenEdit: (item: SessionGeneralEvaluation) => void;
+  onOpenCreate: () => void;
+};
+
 function ProfessorEvaluationsList({
   evaluations,
   currentUserId,
   myEvaluation,
   onOpenEdit,
   onOpenCreate,
-}: {
-  evaluations: SessionGeneralEvaluation[];
-  currentUserId?: string;
-  myEvaluation: SessionGeneralEvaluation | null;
-  onOpenEdit: (item: SessionGeneralEvaluation) => void;
-  onOpenCreate: () => void;
-}) {
+}: ProfessorListProps) {
   return (
     <div className="flex flex-col gap-3">
       {evaluations.map((item) => {
@@ -182,29 +186,23 @@ function CardBody({
   );
 }
 
-export function SessionGeneralEvaluationCard({
-  sessionId,
-  isProfessor,
-}: SessionGeneralEvaluationCardProps) {
-  const { user } = useAuth();
-  const { evaluations, setEvaluations, isLoading, error, reload } =
-    useSessionGeneralEvaluations(sessionId);
+function useEvaluationModalState(
+  setEvaluations: React.Dispatch<React.SetStateAction<SessionGeneralEvaluation[]>>,
+) {
   const [selectedEvaluation, setSelectedEvaluation] = useState<SessionGeneralEvaluation | null>(
     null,
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const myEvaluation = evaluations.find((e) => e.autor.id === user?.id) ?? null;
-
-  const handleOpenCreate = () => {
+  const openCreate = () => {
     setSelectedEvaluation(null);
     setIsModalOpen(true);
   };
-
-  const handleOpenEdit = (item: SessionGeneralEvaluation) => {
+  const openEdit = (item: SessionGeneralEvaluation) => {
     setSelectedEvaluation(item);
     setIsModalOpen(true);
   };
+  const closeModal = () => setIsModalOpen(false);
 
   const handleSaved = (saved: SessionGeneralEvaluation) => {
     setEvaluations((prev) => {
@@ -213,8 +211,27 @@ export function SessionGeneralEvaluationCard({
     });
   };
 
+  return { selectedEvaluation, isModalOpen, openCreate, openEdit, closeModal, handleSaved };
+}
+
+export function SessionGeneralEvaluationCard({
+  sessionId,
+  isProfessor,
+  className,
+}: SessionGeneralEvaluationCardProps) {
+  const { user } = useAuth();
+  const { evaluations, setEvaluations, isLoading, error, reload } =
+    useSessionGeneralEvaluations(sessionId);
+  const modal = useEvaluationModalState(setEvaluations);
+  const myEvaluation = evaluations.find((e) => e.autor.id === user?.id) ?? null;
+
   return (
-    <div className="relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+    <div
+      className={cn(
+        'relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm',
+        className,
+      )}
+    >
       <CardHeader />
       <CardBody
         isLoading={isLoading}
@@ -224,15 +241,15 @@ export function SessionGeneralEvaluationCard({
         currentUserId={user?.id}
         myEvaluation={myEvaluation}
         onReload={reload}
-        onOpenCreate={handleOpenCreate}
-        onOpenEdit={handleOpenEdit}
+        onOpenCreate={modal.openCreate}
+        onOpenEdit={modal.openEdit}
       />
       <SessionGeneralEvaluationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={modal.isModalOpen}
+        onClose={modal.closeModal}
         sessionId={sessionId}
-        existingEvaluation={selectedEvaluation}
-        onSaved={handleSaved}
+        existingEvaluation={modal.selectedEvaluation}
+        onSaved={modal.handleSaved}
       />
     </div>
   );

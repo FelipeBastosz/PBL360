@@ -59,6 +59,7 @@ describe('SessionFeedbackPage', () => {
     expect(screen.getByText('Excelente participação na discussão.')).toBeInTheDocument();
     expect(screen.queryByTestId('feedback-nota')).not.toBeInTheDocument();
     expect(screen.getByText('Todos os feedbacks do problema')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'INDIVIDUAL' })).toBeInTheDocument();
   });
 
   it('renders "Novo" badge when feedback is new', async () => {
@@ -78,8 +79,9 @@ describe('SessionFeedbackPage', () => {
     expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 8,5');
   });
 
-  it('renders empty state when tutor has not sent feedback yet', async () => {
+  it('renders empty state when neither general evaluation nor individual feedback exist', async () => {
     vi.mocked(feedbackService.getMySessionFeedback).mockResolvedValueOnce(null);
+    vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([]);
 
     renderPage();
 
@@ -88,18 +90,26 @@ describe('SessionFeedbackPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders general evaluation unavailable notice when none registered', async () => {
+  it('renders general evaluation under DA TURMA section when no individual feedback', async () => {
     vi.mocked(feedbackService.getMySessionFeedback).mockResolvedValueOnce(null);
-    vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([]);
+    vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([
+      {
+        id: 'eval-1',
+        texto: 'A turma teve um ótimo desempenho coletivo.',
+        autor: { id: 'prof-1', nome: 'Prof. Carlos' },
+        criadoEm: '2026-04-12T11:00:00Z',
+        editadoEm: null,
+      },
+    ]);
 
     renderPage();
 
-    expect(
-      await screen.findByText('O feedback geral da sessão ainda não está disponível.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'DA TURMA' })).toBeInTheDocument();
+    expect(screen.getByText('A turma teve um ótimo desempenho coletivo.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'INDIVIDUAL' })).not.toBeInTheDocument();
   });
 
-  it('renders general evaluation text, author, and dates alongside individual feedback', async () => {
+  it('renders both DA TURMA and INDIVIDUAL sections with respective feedback cards', async () => {
     vi.mocked(feedbackService.getMySessionFeedback).mockResolvedValueOnce({
       id: 'fb-1',
       autor: { id: 'prof-1', nome: 'Prof. Carlos' },
@@ -121,11 +131,11 @@ describe('SessionFeedbackPage', () => {
 
     renderPage();
 
-    expect(
-      await screen.findByText('A turma teve um ótimo desempenho coletivo.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'DA TURMA' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'INDIVIDUAL' })).toBeInTheDocument();
+    expect(screen.getByText('A turma teve um ótimo desempenho coletivo.')).toBeInTheDocument();
     expect(screen.getByText('Individual feedback content.')).toBeInTheDocument();
-    expect(screen.getByText(/Criado em 12\/04\/2026/)).toBeInTheDocument();
-    expect(screen.getByText(/Editado em 12\/04\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(/editado em 12\/04\/2026/i)).toBeInTheDocument();
+    expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 9,0');
   });
 });
