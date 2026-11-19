@@ -14,6 +14,22 @@ describe('feedbackService', () => {
     vi.clearAllMocks();
   });
 
+  it('fetches feedback templates catalog', async () => {
+    const mockTemplates = [
+      {
+        id: 'tmpl-1',
+        titulo: 'Boa participação',
+        texto: 'Demonstrou participação ativa.',
+      },
+    ];
+    vi.mocked(api.get).mockResolvedValueOnce({ data: mockTemplates });
+
+    const result = await feedbackService.listTemplates();
+
+    expect(api.get).toHaveBeenCalledWith('/modelos-feedback');
+    expect(result).toEqual(mockTemplates);
+  });
+
   it('fetches session feedback for the student', async () => {
     const mockData = {
       id: 'fb-1',

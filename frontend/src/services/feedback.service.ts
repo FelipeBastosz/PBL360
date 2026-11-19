@@ -7,9 +7,13 @@ import type {
   SaveGeneralFeedbackPayload,
   ReceivedFeedbackResponse,
   ReceivedProblemFeedbacksResponse,
+  FeedbackTemplateResponse,
 } from '@/types/feedback';
 
 export const feedbackService = {
+  listTemplates: (): Promise<FeedbackTemplateResponse[]> =>
+    api.get<FeedbackTemplateResponse[]>('/modelos-feedback').then((r) => r.data),
+
   getProblemFeedbacks: (roomId: string, problemId: string): Promise<ProblemFeedbacksResponse> =>
     api
       .get<ProblemFeedbacksResponse>(`/salas/${roomId}/problemas/${problemId}/feedbacks`)

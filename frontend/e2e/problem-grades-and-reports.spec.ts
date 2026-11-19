@@ -82,7 +82,7 @@ const mockFeedbacks = {
   ],
 };
 
-function createMockProblemReportPdf(options?: { ocultarNomes?: boolean }): Buffer {
+function createMockProblemReportPdf(options?: { ocultarNomes?: boolean }): string {
   const student1Line = options?.ocultarNomes
     ? '(Matricula: 20260001 | Nota Final: 8.75) Tj'
     : '(Aluno: Ana Silva | Matricula: 20260001 | Nota Final: 8.75) Tj';
@@ -105,6 +105,8 @@ function createMockProblemReportPdf(options?: { ocultarNomes?: boolean }): Buffe
     'ET',
   ].join('\n');
 
+  const contentLength = new TextEncoder().encode(content).length;
+
   const pdfString = `%PDF-1.4
 1 0 obj
 << /Type /Catalog /Pages 2 0 R >>
@@ -119,7 +121,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 5 0 obj
-<< /Length ${Buffer.byteLength(content)} >>
+<< /Length ${contentLength} >>
 stream
 ${content}
 endstream
@@ -138,16 +140,41 @@ startxref
 450
 %%EOF`;
 
-  return Buffer.from(pdfString);
+  return pdfString;
 }
 
-async function readStreamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
+async function readStreamToBuffer(stream: AsyncIterable<Uint8Array | string>): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  const encoder = new TextEncoder();
+  let totalLength = 0;
   for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const bytes = typeof chunk === 'string' ? encoder.encode(chunk) : chunk;
+    chunks.push(bytes);
+    totalLength += bytes.length;
   }
-  return Buffer.concat(chunks);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
 }
+
+const mockFeedbackTemplates = [
+  {
+    id: '4f700000-0000-4000-8000-000000000001',
+    titulo: 'Boa participação e engajamento',
+    texto:
+      'Demonstrou participação ativa durante a sessão tutorial, contribuindo com perguntas e reflexões pertinentes para o avanço da discussão do grupo.',
+  },
+  {
+    id: '4f700000-0000-4000-8000-000000000002',
+    titulo: 'Necessidade de aprofundar argumentos',
+    texto:
+      'Participou das discussões da sessão, porém recomenda-se aprofundar a fundamentação teórica e articular melhor as evidências ao apresentar argumentos ao grupo.',
+  },
+];
 
 test.describe('Professor Flows - Problem Grades & Reports', () => {
   test.beforeEach(async ({ page }) => {
@@ -205,6 +232,14 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify(mockFeedbacks),
+      });
+    });
+
+    await page.route('**/api/modelos-feedback', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockFeedbackTemplates),
       });
     });
   });
@@ -330,10 +365,113 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     expect(studentFeedbackPut).toBe(true);
   });
 
+  test('should allow professor to select a feedback template, concatenate, manually edit and submit', async ({
+    page,
+  }) => {
+    let capturedPayload: unknown = null;
+
+    await page.route(
+      '**/api/salas/sala-1/problemas/prob-1/feedbacks/alunos/aluno-1',
+      async (route) => {
+        if (route.request().method() === 'PUT') {
+          capturedPayload = route.request().postDataJSON();
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              id: 'fb-student-1',
+              alunoId: 'aluno-1',
+              texto: (capturedPayload as { texto?: string })?.texto,
+            }),
+          });
+        }
+      },
+    );
+
+    await page.goto('/turmas/sala-1/problemas/prob-1/notas');
+
+    const gradeCell = page.getByRole('button', { name: /Ana Silva.*Abertura/i });
+    await expect(gradeCell).toBeVisible();
+    await gradeCell.click();
+
+    const dialog = page.getByRole('dialog', { name: /Feedback - Abertura/i });
+    await expect(dialog).toBeVisible();
+
+    const commentField = dialog.getByPlaceholder(/Digite o feedback detalhado do aluno/i);
+    await commentField.fill('Observação inicial do tutor.');
+
+    const useTemplateBtn = dialog.getByRole('button', { name: /Usar modelo/i });
+    await expect(useTemplateBtn).toBeVisible();
+    await useTemplateBtn.click();
+
+    const templateDialog = page.getByRole('dialog', { name: 'Modelos de feedback' });
+    await expect(templateDialog).toBeVisible();
+    await expect(templateDialog.getByText('Boa participação e engajamento')).toBeVisible();
+
+    await templateDialog.getByRole('button', { name: /Boa participação e engajamento/i }).click();
+    await expect(templateDialog).not.toBeVisible();
+    expect(capturedPayload).toBeNull();
+
+    await expect(commentField).toHaveValue(
+      'Observação inicial do tutor.\n\nDemonstrou participação ativa durante a sessão tutorial, contribuindo com perguntas e reflexões pertinentes para o avanço da discussão do grupo.',
+    );
+
+    await commentField.focus();
+    await commentField.press('End');
+    await page.keyboard.type(' Continuar assim!');
+
+    const saveBtn = dialog.getByRole('button', { name: 'Salvar' });
+    await saveBtn.click();
+
+    await expect(dialog).not.toBeVisible();
+    expect(capturedPayload).toEqual({
+      escopo: 'ALUNO',
+      destinatario_id: 'aluno-1',
+      sessao_id: 'sess-1',
+      nota: 8.5,
+      texto:
+        'Observação inicial do tutor.\n\nDemonstrou participação ativa durante a sessão tutorial, contribuindo com perguntas e reflexões pertinentes para o avanço da discussão do grupo. Continuar assim!',
+    });
+    expect(capturedPayload).not.toHaveProperty('templateId');
+    expect(capturedPayload).not.toHaveProperty('modeloId');
+  });
+
+  test('should allow canceling template selection via Cancelar or Escape without closing parent modal or altering comment', async ({
+    page,
+  }) => {
+    await page.goto('/turmas/sala-1/problemas/prob-1/notas');
+
+    const gradeCell = page.getByRole('button', { name: /Ana Silva.*Abertura/i });
+    await gradeCell.click();
+
+    const dialog = page.getByRole('dialog', { name: /Feedback - Abertura/i });
+    const commentField = dialog.getByPlaceholder(/Digite o feedback detalhado do aluno/i);
+    await commentField.fill('Texto inalterado.');
+
+    await dialog.getByRole('button', { name: /Usar modelo/i }).click();
+
+    const templateDialog = page.getByRole('dialog', { name: 'Modelos de feedback' });
+    await expect(templateDialog).toBeVisible();
+    await expect(templateDialog.getByText('Boa participação e engajamento')).toBeVisible();
+
+    await templateDialog.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(templateDialog).not.toBeVisible();
+    await expect(dialog).toBeVisible();
+    await expect(commentField).toHaveValue('Texto inalterado.');
+
+    await dialog.getByRole('button', { name: /Usar modelo/i }).click();
+    await expect(templateDialog).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(templateDialog).not.toBeVisible();
+    await expect(dialog).toBeVisible();
+    await expect(commentField).toHaveValue('Texto inalterado.');
+  });
+
   test('should display active export buttons, validate downloaded PDF content, and preview report', async ({
     page,
   }, testInfo) => {
-    const mockPdfBuffer = createMockProblemReportPdf();
+    const mockPdfContent = createMockProblemReportPdf();
     let pdfExportRequested = false;
     let excelExportRequested = false;
     let capturedPdfParams: Record<string, string> = {};
@@ -346,7 +484,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/pdf',
-          body: mockPdfBuffer,
+          body: mockPdfContent,
         });
         return;
       }
@@ -355,7 +493,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          body: Buffer.from('mock-excel-binary-report'),
+          body: 'mock-excel-binary-report',
         });
         return;
       }
@@ -416,7 +554,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     const downloadedPdf = await readStreamToBuffer(stream!);
     expect(downloadedPdf.length).toBeGreaterThan(0);
 
-    const pdfText = downloadedPdf.toString('latin1');
+    const pdfText = new TextDecoder('latin1').decode(downloadedPdf);
     expect(pdfText).toContain('%PDF-');
     expect(pdfText).toContain('Relatorio de Notas - Problema 1: Dor Toracica');
     expect(pdfText).toContain('Turma: MED101 - Medicina 2026.1');
@@ -458,7 +596,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
               type="application/pdf"
               width="100%"
               height="800px"
-              src="data:application/pdf;base64,${downloadedPdf.toString('base64')}"
+              src="data:application/pdf;base64,${btoa(String.fromCharCode(...downloadedPdf))}"
             />
           </div>
         </body>
@@ -562,7 +700,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     const stream = await pdfDownload.createReadStream();
     expect(stream).not.toBeNull();
     const downloadedPdf = await readStreamToBuffer(stream!);
-    const pdfText = downloadedPdf.toString('latin1');
+    const pdfText = new TextDecoder('latin1').decode(downloadedPdf);
 
     expect(pdfText).toContain('%PDF-');
     expect(pdfText).toContain('Matricula: 20260001');
@@ -593,7 +731,7 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          body: Buffer.from('mock-excel-anonymized-report'),
+          body: 'mock-excel-anonymized-report',
         });
         return;
       }

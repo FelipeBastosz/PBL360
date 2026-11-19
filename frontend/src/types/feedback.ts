@@ -95,3 +95,9 @@ export interface ReceivedProblemFeedbacksResponse {
   geral: ReceivedFeedbackResponse | null;
   sessoes: ReceivedSessionFeedback[];
 }
+
+export interface FeedbackTemplateResponse {
+  id: string;
+  titulo: string;
+  texto: string;
+}

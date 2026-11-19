@@ -6,6 +6,9 @@ import {
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
+import { InvalidFeedbackTemplateError } from '../errors/invalid-feedback-template.error';
+
+export { InvalidFeedbackTemplateError };
 
 export interface CreateFeedbackTemplateProps {
   title: string;
@@ -32,10 +35,35 @@ export class FeedbackTemplate {
 
   static create(props: CreateFeedbackTemplateProps): FeedbackTemplate {
     const template = new FeedbackTemplate();
-    template.title = props.title.trim();
-    template.text = props.text.trim();
+    template.title = props.title?.trim();
+    template.text = props.text?.trim();
+
+    template.assertIsValid();
+
     template.createdAt = new Date();
     template.updatedAt = template.createdAt;
     return template;
+  }
+
+  private assertIsValid(): void {
+    if (!this.title) {
+      throw new InvalidFeedbackTemplateError('O título do modelo de feedback é obrigatório.');
+    }
+
+    if (this.title.length > 120) {
+      throw new InvalidFeedbackTemplateError(
+        'O título do modelo de feedback deve ter no máximo 120 caracteres.',
+      );
+    }
+
+    if (!this.text) {
+      throw new InvalidFeedbackTemplateError('O texto do modelo de feedback é obrigatório.');
+    }
+
+    if (this.text.length > 2000) {
+      throw new InvalidFeedbackTemplateError(
+        'O texto do modelo de feedback deve ter no máximo 2000 caracteres.',
+      );
+    }
   }
 }
