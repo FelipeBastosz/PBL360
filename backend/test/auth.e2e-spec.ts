@@ -794,7 +794,7 @@ describe('Auth (e2e)', () => {
       await request(app.getHttpServer() as Server)
         .post('/api/usuarios/meu-aceite-termo')
         .set('Authorization', `Bearer ${oldToken}`)
-        .send({ versao: '1.1' })
+        .send({ versao: '1.2' })
         .expect(200);
       await listRooms().expect(200);
 

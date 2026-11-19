@@ -18,8 +18,9 @@ describe('AdditionalInfoModal', () => {
     expect(screen.getByLabelText('PBL360')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sobre o Projeto' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Desenvolvedores' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Termos de Uso' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Política de Privacidade' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Termos de Uso e Política de Privacidade' }),
+    ).toBeInTheDocument();
   });
 
   it('opens about project modal with summary and course details', async () => {
@@ -56,24 +57,20 @@ describe('AdditionalInfoModal', () => {
     });
   });
 
-  it('opens terms of use and privacy policy modals with contact email', async () => {
+  it('opens unified terms of use and privacy policy modal with contact email', async () => {
     const user = userEvent.setup();
     render(<AdditionalInfoModal isOpen={true} onClose={vi.fn()} />);
 
-    await user.click(screen.getByRole('button', { name: 'Termos de Uso' }));
-    expect(screen.getByRole('heading', { name: 'Termos de Uso' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
-      'href',
-      'mailto:contato.pbl360@gmail.com',
+    await user.click(
+      screen.getByRole('button', { name: 'Termos de Uso e Política de Privacidade' }),
     );
-
-    await user.click(screen.getByRole('button', { name: /fechar termos de uso/i }));
-    await user.click(screen.getByRole('button', { name: 'Política de Privacidade' }));
-    expect(screen.getByRole('heading', { name: 'Política de Privacidade' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'contato.pbl360@gmail.com' })).toHaveAttribute(
-      'href',
-      'mailto:contato.pbl360@gmail.com',
-    );
+    expect(
+      screen.getByRole('heading', { name: 'Termos de Uso e Política de Privacidade' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText(/contato\.pbl360@gmail\.com/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /contato\.pbl360@gmail\.com/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('calls onClose when close icon is clicked', async () => {

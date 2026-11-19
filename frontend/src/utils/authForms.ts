@@ -25,6 +25,7 @@ export type RegisterFormValues = {
   foto: File | null;
   senha: string;
   confirmacao: string;
+  termosAceitos: boolean;
 };
 
 export function validateLoginForm(values: LoginFormValues): Errors<LoginFormValues> {
@@ -59,6 +60,9 @@ export function validateRegisterForm(values: RegisterFormValues): Errors<Registe
         : undefined,
     foto: isStudent || values.foto ? validatePhoto(values.foto) : undefined,
     ...validateNewPasswordForm(values),
+    termosAceitos: values.termosAceitos
+      ? undefined
+      : 'O cadastro só pode ser realizado se você marcar que leu e concorda com os Termos de Uso e Política de Privacidade.',
   };
 }
 
