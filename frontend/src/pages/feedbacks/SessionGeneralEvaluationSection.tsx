@@ -3,16 +3,14 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSessionGeneralEvaluations } from '@/pages/sessions/components/hooks/useSessionGeneralEvaluations';
+import { ItemDates } from '@/pages/sessions/components/SessionGeneralEvaluationItem';
 import type { SessionGeneralEvaluation } from '@/types/session';
-import { formatDateTime } from '@/utils/date';
 
 type SessionGeneralEvaluationSectionProps = {
   sessionId?: string;
 };
 
 function GeneralEvaluationItem({ evaluation }: { evaluation: SessionGeneralEvaluation }) {
-  const isEdited = Boolean(evaluation.editadoEm && evaluation.editadoEm !== evaluation.criadoEm);
-
   return (
     <article className="flex flex-col gap-2.5 rounded-xl border border-black/5 bg-surface/40 p-4">
       <header className="flex items-center gap-2.5 min-w-0">
@@ -22,19 +20,7 @@ function GeneralEvaluationItem({ evaluation }: { evaluation: SessionGeneralEvalu
         />
         <div className="flex flex-col min-w-0">
           <span className="truncate text-sm font-semibold text-ink">{evaluation.autor.nome}</span>
-          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
-            <time dateTime={evaluation.criadoEm}>
-              Criado em {formatDateTime(evaluation.criadoEm)}
-            </time>
-            {isEdited && (
-              <>
-                <span>•</span>
-                <time dateTime={evaluation.editadoEm!}>
-                  Editado em {formatDateTime(evaluation.editadoEm!)}
-                </time>
-              </>
-            )}
-          </div>
+          <ItemDates criadoEm={evaluation.criadoEm} editadoEm={evaluation.editadoEm} />
         </div>
       </header>
 
@@ -48,7 +34,7 @@ function GeneralEvaluationItem({ evaluation }: { evaluation: SessionGeneralEvalu
 function SectionEmptyState() {
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border border-black/5 bg-surface/50 py-4 px-4 text-center">
-      <p className="text-sm text-muted">A avaliação geral da sessão ainda não está disponível.</p>
+      <p className="text-sm text-muted">O feedback geral da sessão ainda não está disponível.</p>
     </div>
   );
 }
@@ -61,7 +47,7 @@ export function SessionGeneralEvaluationSection({
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
       <header>
-        <h3 className="text-base font-bold text-brand-900">Avaliação Geral da Sessão</h3>
+        <h3 className="text-base font-bold text-brand-900">Feedback Geral da Sessão</h3>
         <p className="mt-0.5 text-xs text-muted">
           Parecer da tutoria sobre o desempenho da turma nesta sessão.
         </p>

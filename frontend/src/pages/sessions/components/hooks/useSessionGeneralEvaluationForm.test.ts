@@ -131,7 +131,7 @@ describe('useSessionGeneralEvaluationForm', () => {
       texto: 'Novo parecer.',
     });
     expect(mockNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ tone: 'success', message: 'Avaliação geral salva com sucesso!' }),
+      expect.objectContaining({ tone: 'success', message: 'Feedback geral salvo com sucesso!' }),
     );
     expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ texto: 'Novo parecer.' }));
     expect(onClose).toHaveBeenCalled();

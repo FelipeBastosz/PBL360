@@ -20,7 +20,7 @@ function validateEvaluationText(text: string): string | null {
 
 function resolveErrorMessage(err: unknown): string {
   return (
-    (err as { message?: string })?.message || 'Não foi possível salvar a avaliação geral da sessão.'
+    (err as { message?: string })?.message || 'Não foi possível salvar o feedback geral da sessão.'
   );
 }
 
@@ -47,7 +47,7 @@ export function useSessionGeneralEvaluationForm({
     setApiError(null);
     try {
       const saved = await sessionService.saveGeneralEvaluation(sessionId, { texto: texto.trim() });
-      notify({ tone: 'success', message: 'Avaliação geral salva com sucesso!' });
+      notify({ tone: 'success', message: 'Feedback geral salvo com sucesso!' });
       onSaved(saved);
       onClose();
     } catch (err: unknown) {

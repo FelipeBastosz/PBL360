@@ -38,7 +38,7 @@ describe('SessionGeneralEvaluationSection', () => {
     render(<SessionGeneralEvaluationSection sessionId="sess-1" />);
 
     expect(
-      await screen.findByText('A avaliação geral da sessão ainda não está disponível.'),
+      await screen.findByText('O feedback geral da sessão ainda não está disponível.'),
     ).toBeInTheDocument();
   });
 

@@ -95,7 +95,7 @@ describe('SessionFeedbackPage', () => {
     renderPage();
 
     expect(
-      await screen.findByText('A avaliação geral da sessão ainda não está disponível.'),
+      await screen.findByText('O feedback geral da sessão ainda não está disponível.'),
     ).toBeInTheDocument();
   });
 

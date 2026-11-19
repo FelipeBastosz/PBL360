@@ -41,11 +41,11 @@ describe('SessionGeneralEvaluationCard', () => {
 
     render(<SessionGeneralEvaluationCard sessionId="sess-1" isProfessor={true} />);
 
-    expect(await screen.findByText('Avaliação Geral da Sessão')).toBeInTheDocument();
+    expect(await screen.findByText('Feedback Geral da Sessão')).toBeInTheDocument();
     expect(
-      screen.getByText('Nenhuma avaliação geral registrada para a turma ainda.'),
+      screen.getByText('Nenhum feedback geral registrado para a turma ainda.'),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /Registrar/i }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('button', { name: 'Registrar feedback' })).toBeInTheDocument();
   });
 
   it('opens registration modal when clicking register button', async () => {
@@ -54,7 +54,7 @@ describe('SessionGeneralEvaluationCard', () => {
 
     render(<SessionGeneralEvaluationCard sessionId="sess-1" isProfessor={true} />);
 
-    const registerBtn = (await screen.findAllByRole('button', { name: /Registrar/i }))[0];
+    const registerBtn = await screen.findByRole('button', { name: 'Registrar feedback' });
     await user.click(registerBtn);
 
     expect(
@@ -62,7 +62,7 @@ describe('SessionGeneralEvaluationCard', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders evaluation with author, creation and edition dates for professor', async () => {
+  it('renders evaluation summary with author and edit button for the author', async () => {
     vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([mockEvaluation]);
 
     render(<SessionGeneralEvaluationCard sessionId="sess-1" isProfessor={true} />);
@@ -71,9 +71,33 @@ describe('SessionGeneralEvaluationCard', () => {
       await screen.findByText('Excelente dinâmica e participação coletiva.'),
     ).toBeInTheDocument();
     expect(screen.getByText('Prof. Carlos')).toBeInTheDocument();
-    expect(screen.getByText(/Criado em 12\/04\/2026/)).toBeInTheDocument();
-    expect(screen.getByText(/Editado em 12\/04\/2026/)).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /Editar/i }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('(você)')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar feedback geral' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Registrar meu feedback' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('allows co-tutor to view other tutor feedback and register their own feedback', async () => {
+    mockUser = { id: 'prof-cotutor-2', nome: 'Profa. Fernanda', tipo: 'PROFESSOR' };
+    vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([mockEvaluation]);
+
+    render(<SessionGeneralEvaluationCard sessionId="sess-1" isProfessor={true} />);
+
+    expect(
+      await screen.findByText('Excelente dinâmica e participação coletiva.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Editar feedback geral' })).not.toBeInTheDocument();
+
+    const addMyFeedbackBtn = screen.getByRole('button', { name: 'Registrar meu feedback' });
+    expect(addMyFeedbackBtn).toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.click(addMyFeedbackBtn);
+
+    expect(
+      await screen.findByText('Consolidado de feedback para todos os alunos na sessão'),
+    ).toBeInTheDocument();
   });
 
   it('renders unavailable notice for student when no evaluation exists', async () => {
@@ -83,7 +107,7 @@ describe('SessionGeneralEvaluationCard', () => {
     render(<SessionGeneralEvaluationCard sessionId="sess-1" isProfessor={false} />);
 
     expect(
-      await screen.findByText('A avaliação geral da sessão ainda não está disponível.'),
+      await screen.findByText('O feedback geral da sessão ainda não está disponível.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Registrar/i })).not.toBeInTheDocument();
   });
@@ -99,7 +123,6 @@ describe('SessionGeneralEvaluationCard', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Prof. Carlos')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Editar/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Registrar/i })).not.toBeInTheDocument();
   });
 
   it('displays error and allows retrying upon fetch failure', async () => {

@@ -5,21 +5,22 @@ import type { SessionGeneralEvaluation } from '@/types/session';
 function resolveErrorMessage(err: unknown): string {
   return (
     (err as { message?: string })?.message ||
-    'Não foi possível carregar a avaliação geral da sessão.'
+    'Não foi possível carregar o feedback geral da sessão.'
   );
 }
 
 export function useSessionGeneralEvaluations(sessionId?: string) {
+  const isAvailable = Boolean(sessionId && sessionService?.getGeneralEvaluations);
   const [evaluations, setEvaluations] = useState<SessionGeneralEvaluation[]>([]);
-  const [isLoading, setIsLoading] = useState(Boolean(sessionId));
+  const [isLoading, setIsLoading] = useState(isAvailable);
   const [error, setError] = useState<string | null>(null);
 
   const fetchEvaluations = useCallback(async (id: string) => {
+    if (typeof sessionService?.getGeneralEvaluations !== 'function') return;
     setIsLoading(true);
     setError(null);
     try {
-      const data = await sessionService.getGeneralEvaluations(id);
-      setEvaluations(data);
+      setEvaluations(await sessionService.getGeneralEvaluations(id));
     } catch (err: unknown) {
       setError(resolveErrorMessage(err));
     } finally {
@@ -28,7 +29,7 @@ export function useSessionGeneralEvaluations(sessionId?: string) {
   }, []);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || typeof sessionService?.getGeneralEvaluations !== 'function') return;
     let isCurrent = true;
     sessionService
       .getGeneralEvaluations(sessionId)

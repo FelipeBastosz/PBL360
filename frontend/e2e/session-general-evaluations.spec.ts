@@ -8,6 +8,14 @@ const mockTeacher = {
   ativo: true,
 };
 
+const mockCoTutor = {
+  id: 'user-cotutor-2',
+  nome: 'Fernanda Lima',
+  email: 'fernanda@faculdade.edu.br',
+  tipo: 'PROFESSOR',
+  ativo: true,
+};
+
 const mockStudent = {
   id: 'user-student-1',
   nome: 'Mariana Souza',
@@ -102,11 +110,19 @@ test.describe('Session General Evaluations Flow', () => {
       });
     });
 
-    await page.route('**/api/sessoes/**/poker*', async (route) => {
+    await page.route(/\/api\/sessoes\/[^/]+\/poker\/disponibilidade/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ podeAbrir: true }),
+        body: JSON.stringify({ disponivel: false, motivo: null, pokerAbertoId: null }),
+      });
+    });
+
+    await page.route(/\/api\/sessoes\/[^/]+\/poker$/, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Nenhum poker aberto' }),
       });
     });
 
@@ -143,15 +159,12 @@ test.describe('Session General Evaluations Flow', () => {
 
     await page.goto('/turmas/sala-1/problemas/prob-1/sessoes/sess-1');
 
-    await expect(page.getByRole('heading', { name: 'Avaliação Geral da Sessão' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Feedback Geral da Sessão' })).toBeVisible();
     await expect(
-      page.getByText('Nenhuma avaliação geral registrada para a turma ainda.'),
+      page.getByText('Nenhum feedback geral registrado para a turma ainda.'),
     ).toBeVisible();
 
-    await page
-      .getByRole('button', { name: /Registrar/i })
-      .first()
-      .click();
+    await page.getByRole('button', { name: 'Registrar feedback' }).click();
 
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(
@@ -168,10 +181,7 @@ test.describe('Session General Evaluations Flow', () => {
     ).toBeVisible();
     await expect(page.getByText('Carlos Silva')).toBeVisible();
 
-    await page
-      .getByRole('button', { name: /Editar/i })
-      .first()
-      .click();
+    await page.getByRole('button', { name: 'Editar feedback geral' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByText(/Última edição:/i)).toBeVisible();
 
@@ -185,13 +195,141 @@ test.describe('Session General Evaluations Flow', () => {
     ).toBeVisible();
   });
 
+  test('co-tutor views existing evaluation and can register own feedback without editing other tutor feedback', async ({
+    page,
+  }) => {
+    const evaluationsDb: Array<typeof mockGeneralEvaluation> = [mockGeneralEvaluation];
+
+    await page.addInitScript((user) => {
+      localStorage.setItem(
+        'pbl360.session',
+        JSON.stringify({
+          token: 'mock-auth-token',
+          expiraEm: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          usuario: user,
+        }),
+      );
+    }, mockCoTutor);
+
+    await page.route('**/api/termos-compromisso/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ versao: '1.0', aceitou: true }),
+      });
+    });
+
+    await page.route('**/api/salas/sala-1/problemas/prob-1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockProblem),
+      });
+    });
+
+    await page.route('**/api/salas/sala-1/problemas/prob-1/sessoes/sess-1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockSession),
+      });
+    });
+
+    await page.route('**/api/sessoes/sess-1/liberacoes', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          autoavaliacao: { liberada: false, prazo: null, enviadas: 0, esperadas: 10 },
+          pares: { liberada: false, prazo: null, enviadas: 0, esperadas: 10 },
+          atualizadoEm: '2026-02-01T14:00:00.000Z',
+          atualizadoPor: 'user-tutor-1',
+        }),
+      });
+    });
+
+    await page.route('**/api/sessoes/sess-1/anexos', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route(/\/api\/sessoes\/[^/]+\/poker\/disponibilidade/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ disponivel: false, motivo: null, pokerAbertoId: null }),
+      });
+    });
+
+    await page.route(/\/api\/sessoes\/[^/]+\/poker$/, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Nenhum poker aberto' }),
+      });
+    });
+
+    await page.route('**/api/sessoes/sess-1/avaliacao-geral', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(evaluationsDb),
+        });
+      } else if (route.request().method() === 'PUT') {
+        const body = JSON.parse(route.request().postData() || '{}');
+        const now = new Date().toISOString();
+        const record = {
+          id: 'eval-cotutor-2',
+          texto: body.texto,
+          autor: { id: mockCoTutor.id, nome: mockCoTutor.nome },
+          criadoEm: now,
+          editadoEm: null,
+        };
+        evaluationsDb.push(record);
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(record),
+        });
+      }
+    });
+
+    await page.goto('/turmas/sala-1/problemas/prob-1/sessoes/sess-1');
+
+    await expect(page.getByRole('heading', { name: 'Feedback Geral da Sessão' })).toBeVisible();
+    await expect(page.getByText('Carlos Silva')).toBeVisible();
+    await expect(
+      page.getByText('A turma demonstrou excelente argumentação e planejamento na sessão.'),
+    ).toBeVisible();
+
+    const generalCard = page.locator('div').filter({ hasText: 'Feedback Geral da Sessão' }).first();
+    await expect(generalCard.getByRole('button', { name: 'Editar feedback geral' })).toHaveCount(0);
+
+    const addBtn = generalCard.getByRole('button', { name: 'Registrar meu feedback' });
+    await expect(addBtn).toBeVisible();
+    await addBtn.click();
+
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page
+      .getByLabel(/Comentário Geral/i)
+      .fill('Observações da co-tutoria: excelente engajamento.');
+    await page.getByRole('button', { name: 'Salvar' }).click();
+
+    await expect(page.getByText('Observações da co-tutoria: excelente engajamento.')).toBeVisible();
+    await expect(page.getByText('Fernanda Lima')).toBeVisible();
+    await expect(generalCard.getByRole('button', { name: 'Editar feedback geral' })).toHaveCount(1);
+    await expect(generalCard.getByRole('button', { name: 'Registrar meu feedback' })).toHaveCount(
+      0,
+    );
+  });
+
   test('student reads general evaluation on session hub and session feedback page', async ({
     page,
   }) => {
-    page.on('pageerror', (err) => console.log('PAGE ERROR T2:', err));
-    page.on('response', (res) => {
-      if (res.status() >= 400) console.log('HTTP ERROR T2:', res.status(), res.url());
-    });
     await page.addInitScript((user) => {
       localStorage.setItem(
         'pbl360.session',
@@ -252,11 +390,19 @@ test.describe('Session General Evaluations Flow', () => {
       });
     });
 
-    await page.route('**/api/sessoes/**/poker*', async (route) => {
+    await page.route(/\/api\/sessoes\/[^/]+\/poker\/disponibilidade/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ podeAbrir: true }),
+        body: JSON.stringify({ disponivel: false, motivo: null, pokerAbertoId: null }),
+      });
+    });
+
+    await page.route(/\/api\/sessoes\/[^/]+\/poker$/, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Nenhum poker aberto' }),
       });
     });
 
@@ -268,7 +414,7 @@ test.describe('Session General Evaluations Flow', () => {
       });
     });
 
-    await page.route('**/api/feedbacks/minha-sessao/sess-1', async (route) => {
+    await page.route('**/api/sessoes/sess-1/meu-feedback', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -286,16 +432,13 @@ test.describe('Session General Evaluations Flow', () => {
 
     await page.goto('/turmas/sala-1/problemas/prob-1/sessoes/sess-1');
 
-    await expect(page.getByRole('heading', { name: 'Avaliação Geral da Sessão' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Feedback Geral da Sessão' })).toBeVisible();
     await expect(
       page.getByText('A turma demonstrou excelente argumentação e planejamento na sessão.'),
     ).toBeVisible();
     await expect(page.getByText('Carlos Silva')).toBeVisible();
 
-    const generalCard = page
-      .locator('div')
-      .filter({ hasText: 'Avaliação Geral da Sessão' })
-      .first();
+    const generalCard = page.locator('div').filter({ hasText: 'Feedback Geral da Sessão' }).first();
     await expect(generalCard.getByRole('button', { name: /Editar/i })).toHaveCount(0);
     await expect(generalCard.getByRole('button', { name: /Registrar/i })).toHaveCount(0);
 

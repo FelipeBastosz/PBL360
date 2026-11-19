@@ -22,7 +22,7 @@ export function SessionGeneralEvaluationModal({
       isOpen={isOpen}
       onClose={onClose}
       placement="center"
-      title="Avaliação Geral da Sessão"
+      title="Feedback Geral da Sessão"
       description="Consolidado de feedback para todos os alunos na sessão"
     >
       {isOpen && (

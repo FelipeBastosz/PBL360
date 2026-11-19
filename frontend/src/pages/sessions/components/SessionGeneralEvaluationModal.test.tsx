@@ -40,7 +40,7 @@ describe('SessionGeneralEvaluationModal', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Avaliação Geral da Sessão' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Feedback Geral da Sessão' })).toBeInTheDocument();
     expect(
       screen.getByText('Consolidado de feedback para todos os alunos na sessão'),
     ).toBeInTheDocument();
@@ -64,6 +64,7 @@ describe('SessionGeneralEvaluationModal', () => {
     const textarea = screen.getByLabelText(/Comentário Geral/);
     expect(textarea).toHaveValue('Participação ativa da turma no fechamento.');
     expect(screen.getByText(/Última edição:/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Excluir/i })).not.toBeInTheDocument();
   });
 
   it('validates empty submission', async () => {
@@ -121,7 +122,7 @@ describe('SessionGeneralEvaluationModal', () => {
   it('displays API error on submission failure', async () => {
     const user = userEvent.setup();
     vi.mocked(sessionService.saveGeneralEvaluation).mockRejectedValueOnce(
-      new Error('Erro no servidor ao salvar avaliação.'),
+      new Error('Erro no servidor ao salvar feedback.'),
     );
 
     render(
@@ -138,6 +139,6 @@ describe('SessionGeneralEvaluationModal', () => {
     await user.type(textarea, 'Texto de teste.');
     await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
-    expect(await screen.findByText('Erro no servidor ao salvar avaliação.')).toBeInTheDocument();
+    expect(await screen.findByText('Erro no servidor ao salvar feedback.')).toBeInTheDocument();
   });
 });
