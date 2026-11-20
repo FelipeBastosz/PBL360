@@ -25,7 +25,8 @@ export class AddDraftCommitmentTermVersion1793100000000 implements MigrationInte
 
     await queryRunner.query(
       `INSERT INTO commitment_terms (version, title, content, is_current)
-       VALUES ($1, $2, $3, TRUE);`,
+       VALUES ($1, $2, $3, TRUE)
+       ON CONFLICT (version) DO UPDATE SET is_current = TRUE;`,
       ['1.1', 'Termo de Compromisso e Uso do Sistema PBL360', DRAFT_TERM_CONTENT],
     );
   }
@@ -36,8 +37,6 @@ export class AddDraftCommitmentTermVersion1793100000000 implements MigrationInte
       SET is_current = FALSE
       WHERE version = '1.1' AND is_current = TRUE;
     `);
-
-    await queryRunner.query(`DELETE FROM commitment_terms WHERE version = '1.1';`);
 
     await queryRunner.query(`
       UPDATE commitment_terms

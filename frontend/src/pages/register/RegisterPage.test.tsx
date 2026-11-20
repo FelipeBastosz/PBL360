@@ -25,6 +25,11 @@ async function fillCommonFields(user: User, email: string) {
   await user.type(screen.getByLabelText('Email Institucional'), email);
   await user.type(screen.getByLabelText('Senha'), 'senha-secreta');
   await user.type(screen.getByLabelText('Confirmar a Senha'), 'senha-secreta');
+  await user.click(
+    screen.getByRole('checkbox', {
+      name: /eu li e concordo com os termos de uso e política de privacidade/i,
+    }),
+  );
 }
 
 describe('RegisterPage', () => {
@@ -174,5 +179,76 @@ describe('RegisterPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Já existe uma conta cadastrada com este e-mail.',
     );
+  });
+
+  it('blocks registration when terms checkbox is not checked and displays notice only upon submit attempt', async () => {
+    const { user } = renderApp('/cadastro?perfil=professor');
+
+    await user.type(await screen.findByLabelText('Nome completo'), 'Ana Souza');
+    await user.type(screen.getByLabelText('Email Institucional'), 'carlos@uefs.br');
+    await user.type(screen.getByLabelText('Senha'), 'senha-secreta');
+    await user.type(screen.getByLabelText('Confirmar a Senha'), 'senha-secreta');
+
+    const submitButton = screen.getByRole('button', { name: 'Criar conta' });
+    expect(
+      screen.queryByText(/o cadastro só pode ser realizado se você marcar que leu e concorda/i),
+    ).not.toBeInTheDocument();
+
+    await user.click(submitButton);
+
+    expect(
+      await screen.findByText(
+        /o cadastro só pode ser realizado se você marcar que leu e concorda/i,
+      ),
+    ).toBeInTheDocument();
+    expect(authService.register).not.toHaveBeenCalled();
+  });
+
+  it('renders unified terms and privacy checkbox with notice appearing upon submit attempt and plain email', async () => {
+    const { user } = renderApp('/cadastro?perfil=professor');
+
+    expect(
+      screen.queryByText(/o cadastro só pode ser realizado se você marcar que leu e concorda/i),
+    ).not.toBeInTheDocument();
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: /eu li e concordo com os termos de uso e política de privacidade/i,
+    });
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox).not.toBeChecked();
+
+    const submitButton = screen.getByRole('button', { name: 'Criar conta' });
+
+    await user.click(
+      screen.getByRole('button', { name: 'Termos de Uso e Política de Privacidade' }),
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Termos de Uso e Política de Privacidade' }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(/é uma aplicação web experimental, sem fins lucrativos/i),
+    ).toBeInTheDocument();
+    expect(await screen.findByText(/contato\.pbl360@gmail\.com/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /contato\.pbl360@gmail\.com/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(
+      screen.queryByRole('heading', { name: 'Termos de Uso e Política de Privacidade' }),
+    ).not.toBeInTheDocument();
+
+    await user.click(submitButton);
+    expect(
+      await screen.findByText(
+        /o cadastro só pode ser realizado se você marcar que leu e concorda/i,
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(checkbox);
+    expect(checkbox).toBeChecked();
+    expect(
+      screen.queryByText(/o cadastro só pode ser realizado se você marcar que leu e concorda/i),
+    ).not.toBeInTheDocument();
   });
 });

@@ -26,7 +26,7 @@ export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
 const resetCommitmentTerms = async (dataSource: DataSource): Promise<void> => {
   await dataSource.query(`DELETE FROM commitment_terms WHERE version = 'test-current';`);
   await dataSource.query(`UPDATE commitment_terms SET is_current = FALSE WHERE is_current = TRUE;`);
-  await dataSource.query(`UPDATE commitment_terms SET is_current = TRUE WHERE version = '1.1';`);
+  await dataSource.query(`UPDATE commitment_terms SET is_current = TRUE WHERE version = '1.2';`);
 };
 
 export const insertDefaultPerformanceTable = async (
@@ -66,7 +66,7 @@ export const acceptCurrentTermForAllUsers = async (dataSource: DataSource): Prom
     FROM users
     CROSS JOIN commitment_terms AS terms
     WHERE terms.is_current = TRUE
-    ON CONFLICT (user_id) DO NOTHING;
+    ON CONFLICT (user_id, term_id) DO NOTHING;
   `);
 };
 

@@ -2,9 +2,11 @@ import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { authService } from '@/services/auth.service';
+import { commitmentTermsService } from '@/services/commitmentTerms.service';
 import { renderApp, sessionFor, studentUser } from '@/testing/renderApp';
 
 vi.mock('@/services/auth.service');
+vi.mock('@/services/commitmentTerms.service');
 vi.mock('@/services/room.service', () => ({
   roomService: { list: async () => [], listMyRooms: async () => [] },
 }));
@@ -85,5 +87,86 @@ describe('LoginPage', () => {
       'href',
       '/perfil',
     );
+  });
+
+  it('shows reacceptance popup right after login when user version differs from current and proceeds after acceptance', async () => {
+    vi.mocked(authService.login).mockResolvedValue(sessionFor(studentUser));
+    vi.mocked(commitmentTermsService.getMyAcceptanceStatus).mockResolvedValue({
+      aceito: false,
+      versaoAceita: '1.1',
+      aceitoEm: '2026-11-01T10:00:00.000Z',
+      versaoVigente: '1.2',
+    });
+    vi.mocked(commitmentTermsService.getCurrentTerm).mockResolvedValue({
+      versao: '1.2',
+      titulo: 'Termos de Uso e Política de Privacidade – PBL360',
+      texto: '# Termos de Uso e Política de Privacidade',
+    });
+    vi.mocked(commitmentTermsService.acceptTerm).mockResolvedValue({
+      aceito: true,
+      versaoAceita: '1.2',
+      aceitoEm: '2026-11-17T12:00:00.000Z',
+      versaoVigente: '1.2',
+    });
+
+    const { user } = renderApp('/entrar');
+    await fillAndSubmit(user);
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Atualização dos Termos de Uso e Política de Privacidade',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/sua versão anterior: v1.1/i)).toBeInTheDocument();
+
+    const submitBtn = screen.getByRole('button', { name: 'Confirmar' });
+    expect(submitBtn).toBeDisabled();
+
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: /eu li e concordo com os termos de uso e política de privacidade atualizados/i,
+      }),
+    );
+    expect(submitBtn).toBeEnabled();
+
+    await user.click(submitBtn);
+
+    expect(commitmentTermsService.acceptTerm).toHaveBeenCalledWith('1.2');
+    expect(
+      await screen.findByText('Você ainda não faz parte de nenhuma turma.'),
+    ).toBeInTheDocument();
+  });
+
+  it('logs out and remains on login page when clicking Sair da conta in popup', async () => {
+    vi.mocked(authService.login).mockResolvedValue(sessionFor(studentUser));
+    vi.mocked(commitmentTermsService.getMyAcceptanceStatus).mockResolvedValue({
+      aceito: false,
+      versaoAceita: null,
+      aceitoEm: null,
+      versaoVigente: '1.2',
+    });
+    vi.mocked(commitmentTermsService.getCurrentTerm).mockResolvedValue({
+      versao: '1.2',
+      titulo: 'Termos de Uso e Política de Privacidade – PBL360',
+      texto: '# Termos de Uso e Política de Privacidade',
+    });
+
+    const { user } = renderApp('/entrar');
+    await fillAndSubmit(user);
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Atualização dos Termos de Uso e Política de Privacidade',
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Sair da conta' }));
+
+    expect(
+      screen.queryByRole('heading', {
+        name: 'Atualização dos Termos de Uso e Política de Privacidade',
+      }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument();
   });
 });

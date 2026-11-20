@@ -32,6 +32,8 @@ export const RegisterAuthSwaggerDocs = applyDecorators(
     summary: 'Cadastra um usuário',
     description:
       'Cria a conta inativa e envia um código de verificação para o e-mail institucional. ' +
+      'Exige a confirmação explícita `aceitaTermos: true` e a versão vigente em `versaoTermo`; ' +
+      'o aceite fica registrado junto com a conta. ' +
       'Nenhum token é emitido aqui: use o `usuarioId` devolvido em /autenticacao/verificar-codigo ' +
       'para ativar a conta. PROFESSOR pode omitir matrícula e foto; ALUNO precisa das duas. ' +
       'A foto vai no campo `foto` de um `multipart/form-data` e é gravada no banco.',
@@ -47,7 +49,10 @@ export const RegisterAuthSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
   ApiPayloadTooLargeResponse({ description: 'Foto maior que 2 MB.', type: ErrorResponseDto }),
-  ApiConflictResponse({ description: 'E-mail já cadastrado.', type: ErrorResponseDto }),
+  ApiConflictResponse({
+    description: 'E-mail já cadastrado ou versão do termo desatualizada.',
+    type: ErrorResponseDto,
+  }),
 );
 
 export const LoginAuthSwaggerDocs = applyDecorators(

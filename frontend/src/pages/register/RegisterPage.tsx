@@ -21,6 +21,7 @@ function initialValues(profileParam: string | null): RegisterFormValues {
     foto: null,
     senha: '',
     confirmacao: '',
+    termosAceitos: false,
   };
 }
 

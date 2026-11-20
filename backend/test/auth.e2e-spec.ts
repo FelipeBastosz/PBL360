@@ -65,6 +65,8 @@ const studentPayload = () => ({
   email: 'ana@discente.uefs.br',
   senha: 'senha-secreta',
   tipo: 'ALUNO',
+  versaoTermo: '1.2',
+  aceitaTermos: true,
   matricula: '20240001',
   foto: pngPhotoBytes(),
 });
@@ -74,6 +76,8 @@ const tutorPayload = () => ({
   email: 'carlos@uefs.br',
   senha: 'senha-secreta',
   tipo: 'PROFESSOR',
+  versaoTermo: '1.2',
+  aceitaTermos: true,
 });
 
 describe('Auth (e2e)', () => {
@@ -790,7 +794,7 @@ describe('Auth (e2e)', () => {
       await request(app.getHttpServer() as Server)
         .post('/api/usuarios/meu-aceite-termo')
         .set('Authorization', `Bearer ${oldToken}`)
-        .send({ versao: '1.1' })
+        .send({ versao: '1.2' })
         .expect(200);
       await listRooms().expect(200);
 

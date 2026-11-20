@@ -32,6 +32,8 @@ export const toRegisterUserInput = (
   email: dto.email,
   password: dto.senha,
   type: DOMAIN_TYPE[dto.tipo],
+  acceptedTermVersion: dto.versaoTermo,
+  acceptsTerms: dto.aceitaTermos,
   registrationNumber: dto.matricula ?? null,
   photo,
 });

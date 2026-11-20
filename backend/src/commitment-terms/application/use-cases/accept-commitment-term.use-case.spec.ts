@@ -22,13 +22,18 @@ describe('AcceptCommitmentTermUseCase', () => {
 
   beforeEach(() => {
     termsRepo = { findCurrent: jest.fn(), findByVersion: jest.fn() };
-    acceptancesRepo = { findByUserId: jest.fn(), hasAccepted: jest.fn(), create: jest.fn() };
+    acceptancesRepo = {
+      findByUserId: jest.fn(),
+      findByUserIdAndTermId: jest.fn(),
+      hasAccepted: jest.fn(),
+      create: jest.fn(),
+    };
     useCase = new AcceptCommitmentTermUseCase(termsRepo, acceptancesRepo);
   });
 
   it('records acceptance when valid and returns acceptance status', async () => {
     termsRepo.findCurrent.mockResolvedValue(currentTerm);
-    acceptancesRepo.findByUserId.mockResolvedValue(null);
+    acceptancesRepo.findByUserIdAndTermId.mockResolvedValue(null);
 
     const savedDate = new Date('2026-11-16T12:00:00Z');
     acceptancesRepo.create.mockImplementation((acc) =>
@@ -48,7 +53,7 @@ describe('AcceptCommitmentTermUseCase', () => {
 
   it('throws ConflictError (409) if submitted version does not match current version', async () => {
     termsRepo.findCurrent.mockResolvedValue(currentTerm);
-    acceptancesRepo.findByUserId.mockResolvedValue(null);
+    acceptancesRepo.findByUserIdAndTermId.mockResolvedValue(null);
 
     await expect(useCase.execute({ userId: 'user-1', version: '0.9' })).rejects.toThrow(
       ConflictError,
@@ -66,7 +71,7 @@ describe('AcceptCommitmentTermUseCase', () => {
       termVersion: '1.0',
       acceptedAt: existingDate,
     });
-    acceptancesRepo.findByUserId.mockResolvedValue(existing);
+    acceptancesRepo.findByUserIdAndTermId.mockResolvedValue(existing);
 
     const result = await useCase.execute({ userId: 'user-1', version: '1.0' });
 
@@ -77,6 +82,34 @@ describe('AcceptCommitmentTermUseCase', () => {
       versaoVigente: '1.0',
     });
     expect(acceptancesRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('updates acceptance when user accepted an older version and submits current version', async () => {
+    termsRepo.findCurrent.mockResolvedValue(currentTerm);
+    const oldDate = new Date('2026-11-01T08:00:00Z');
+    const existingOld = UserTermAcceptance.create({
+      userId: 'user-1',
+      termId: 'old-uuid',
+      termVersion: '0.9',
+      acceptedAt: oldDate,
+    });
+    acceptancesRepo.findByUserId.mockResolvedValue(existingOld);
+    acceptancesRepo.findByUserIdAndTermId.mockResolvedValue(null);
+
+    const newDate = new Date('2026-11-16T12:00:00Z');
+    acceptancesRepo.create.mockImplementation((acc) =>
+      Promise.resolve(Object.assign(acc, { acceptedAt: newDate })),
+    );
+
+    const result = await useCase.execute({ userId: 'user-1', version: '1.0' });
+
+    expect(result).toEqual({
+      aceito: true,
+      versaoAceita: '1.0',
+      aceitoEm: newDate,
+      versaoVigente: '1.0',
+    });
+    expect(acceptancesRepo.create).toHaveBeenCalledTimes(1);
   });
 
   it('throws NotFoundError if current term does not exist', async () => {

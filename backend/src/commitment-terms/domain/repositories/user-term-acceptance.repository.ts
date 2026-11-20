@@ -2,6 +2,7 @@ import type { UserTermAcceptance } from '../entities/user-term-acceptance.entity
 
 export interface UserTermAcceptanceRepository {
   findByUserId(userId: string): Promise<UserTermAcceptance | null>;
+  findByUserIdAndTermId(userId: string, termId: string): Promise<UserTermAcceptance | null>;
   hasAccepted(userId: string): Promise<boolean>;
   create(acceptance: UserTermAcceptance): Promise<UserTermAcceptance>;
 }
