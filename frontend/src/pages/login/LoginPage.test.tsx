@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { authService } from '@/services/auth.service';
 import { commitmentTermsService } from '@/services/commitmentTerms.service';
@@ -11,9 +11,24 @@ vi.mock('@/services/room.service', () => ({
   roomService: { list: async () => [], listMyRooms: async () => [] },
 }));
 
+beforeEach(() => {
+  vi.mocked(commitmentTermsService.getMyAcceptanceStatus).mockResolvedValue({
+    aceito: true,
+    versaoAceita: '1.2',
+    aceitoEm: '2026-11-17T12:00:00.000Z',
+    versaoVigente: '1.2',
+  });
+  vi.mocked(commitmentTermsService.getCurrentTerm).mockResolvedValue({
+    versao: '1.2',
+    titulo: 'Termos de Uso e Política de Privacidade – PBL360',
+    texto: '# Termos de Uso e Política de Privacidade',
+  });
+});
+
 afterEach(() => {
   vi.resetAllMocks();
   localStorage.clear();
+  sessionStorage.clear();
 });
 
 async function fillAndSubmit(user: ReturnType<typeof renderApp>['user']) {

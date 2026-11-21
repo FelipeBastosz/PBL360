@@ -1,5 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '@/services/apiError';
+import { commitmentTermsService } from '@/services/commitmentTerms.service';
 import { sessionStore } from '@/services/sessionStore';
 import { renderApp, sessionFor, studentUser } from '@/testing/renderApp';
 
@@ -10,7 +12,9 @@ vi.mock('@/services/room.service', () => ({
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
   localStorage.clear();
+  sessionStorage.clear();
 });
 
 describe('routing and session', () => {
@@ -98,6 +102,72 @@ describe('routing and session', () => {
 
     expect(
       await screen.findByRole('heading', { name: 'Página não encontrada' }),
+    ).toBeInTheDocument();
+  });
+
+  it('checks term acceptance on restored session and blocks protected routes until accepted', async () => {
+    vi.spyOn(commitmentTermsService, 'getMyAcceptanceStatus').mockResolvedValue({
+      aceito: false,
+      versaoAceita: '1.1',
+      aceitoEm: '2026-10-01T10:00:00.000Z',
+      versaoVigente: '1.2',
+    });
+    vi.spyOn(commitmentTermsService, 'getCurrentTerm').mockResolvedValue({
+      versao: '1.2',
+      titulo: 'Termos v1.2',
+      texto: '### 1. Regras\n\nConteúdo vigente para sessão restaurada.',
+    });
+    vi.spyOn(commitmentTermsService, 'acceptTerm').mockResolvedValue({
+      aceito: true,
+      versaoAceita: '1.2',
+      aceitoEm: '2026-11-18T12:00:00.000Z',
+      versaoVigente: '1.2',
+    });
+
+    sessionStore.save(sessionFor(studentUser));
+    const { user } = renderApp('/turmas');
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Atualização dos Termos de Uso e Política de Privacidade',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Você ainda não faz parte de nenhuma turma.'),
+    ).not.toBeInTheDocument();
+
+    await user.click(await screen.findByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: 'Confirmar' }));
+
+    expect(
+      await screen.findByText('Você ainda não faz parte de nenhuma turma.'),
+    ).toBeInTheDocument();
+  });
+
+  it('blocks protected routes when term acceptance check fails and allows retrying', async () => {
+    vi.spyOn(commitmentTermsService, 'getMyAcceptanceStatus')
+      .mockRejectedValueOnce(new ApiError(500, ['Erro interno']))
+      .mockResolvedValueOnce({
+        aceito: true,
+        versaoAceita: '1.2',
+        aceitoEm: '2026-11-17T12:00:00.000Z',
+        versaoVigente: '1.2',
+      });
+
+    sessionStore.save(sessionFor(studentUser));
+    const { user } = renderApp('/turmas');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Não foi possível verificar os termos' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Você ainda não faz parte de nenhuma turma.'),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+
+    expect(
+      await screen.findByText('Você ainda não faz parte de nenhuma turma.'),
     ).toBeInTheDocument();
   });
 });

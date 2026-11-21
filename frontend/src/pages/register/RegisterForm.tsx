@@ -8,6 +8,7 @@ import { PasswordField } from '@/components/ui/PasswordField';
 import { TextField } from '@/components/ui/TextField';
 import { LEGAL_TERMS_AND_PRIVACY_TITLE } from '@/content/legal';
 import type { FieldErrors } from '@/hooks/useForm';
+import type { CurrentCommitmentTerm } from '@/services/commitmentTerms.service';
 import type { RegisterFormValues } from '@/utils/authForms';
 
 type RegisterFormProps = {
@@ -17,6 +18,10 @@ type RegisterFormProps = {
   onSubmit: () => void;
   isLoading: boolean;
   errorMessages?: string[];
+  currentTerm?: CurrentCommitmentTerm | null;
+  isTermLoading?: boolean;
+  termError?: string | null;
+  onRetryTerm?: () => void;
 };
 
 function IdentityFields({ values, errors, onChange }: RegisterFormProps) {
@@ -85,6 +90,9 @@ type TermsCheckboxProps = {
   onChange: (checked: boolean) => void;
   error?: string;
   onOpenTerms: () => void;
+  currentVersion?: string;
+  termError?: string | null;
+  onRetryTerm?: () => void;
 };
 
 function TermsNotice({ message }: { message?: string }) {
@@ -97,9 +105,32 @@ function TermsNotice({ message }: { message?: string }) {
   );
 }
 
-function TermsCheckbox({ checked, onChange, error, onOpenTerms }: TermsCheckboxProps) {
+function TermLoadAlert({ message, onRetry }: { message?: string | null; onRetry?: () => void }) {
+  if (!message) return null;
+  return (
+    <Alert tone="error" className="text-xs">
+      <p>{message}</p>
+      {onRetry ? (
+        <Button type="button" variant="outline" size="sm" onClick={onRetry} className="mt-2">
+          Tentar novamente
+        </Button>
+      ) : null}
+    </Alert>
+  );
+}
+
+function TermsCheckbox({
+  checked,
+  onChange,
+  error,
+  onOpenTerms,
+  currentVersion,
+  termError,
+  onRetryTerm,
+}: TermsCheckboxProps) {
   return (
     <div className="flex flex-col gap-2 text-left">
+      <TermLoadAlert message={termError} onRetry={onRetryTerm} />
       {error ? <TermsNotice message={error} /> : null}
       <label className="flex items-start gap-3 cursor-pointer select-none text-xs text-muted">
         <input
@@ -121,7 +152,7 @@ function TermsCheckbox({ checked, onChange, error, onOpenTerms }: TermsCheckboxP
           >
             Termos de Uso e Política de Privacidade
           </button>
-          .
+          {currentVersion ? ` (v${currentVersion})` : ''}.
         </span>
       </label>
     </div>
@@ -142,8 +173,19 @@ function FormErrorAlert({ errorMessages }: { errorMessages?: string[] }) {
 }
 
 export function RegisterForm(props: RegisterFormProps) {
-  const { values, errors, onChange, isLoading, errorMessages } = props;
+  const {
+    values,
+    errors,
+    onChange,
+    isLoading,
+    errorMessages,
+    currentTerm,
+    isTermLoading,
+    termError,
+    onRetryTerm,
+  } = props;
   const [legalDoc, setLegalDoc] = useState<string | null>(null);
+  const submitDisabled = Boolean(isTermLoading) || !currentTerm || Boolean(termError);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -167,8 +209,10 @@ export function RegisterForm(props: RegisterFormProps) {
           onChange={(checked) => onChange('termosAceitos', checked)}
           error={errors.termosAceitos}
           onOpenTerms={() => setLegalDoc(LEGAL_TERMS_AND_PRIVACY_TITLE)}
+          termError={termError}
+          onRetryTerm={onRetryTerm}
         />
-        <Button type="submit" isLoading={isLoading} className="mt-2">
+        <Button type="submit" isLoading={isLoading} disabled={submitDisabled} className="mt-2">
           Criar conta
         </Button>
       </form>
@@ -178,7 +222,13 @@ export function RegisterForm(props: RegisterFormProps) {
         onClose={() => setLegalDoc(null)}
         maxWidth="max-w-2xl"
       >
-        <TermsAndPrivacyContent />
+        <TermsAndPrivacyContent
+          term={currentTerm ?? null}
+          isLoading={isTermLoading}
+          error={termError}
+          onRetry={onRetryTerm}
+          requireLiveTerm
+        />
       </LegalDocumentModal>
     </>
   );

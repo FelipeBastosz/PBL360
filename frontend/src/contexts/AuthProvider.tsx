@@ -26,8 +26,14 @@ function clearSessionData(): void {
   }
 }
 
+function restoreSessionWithTermsCheck(): SessionResponse | null {
+  const restored = sessionStore.restore();
+  if (restored) markLoginTermsCheck();
+  return restored;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<SessionResponse | null>(() => sessionStore.restore());
+  const [session, setSession] = useState<SessionResponse | null>(restoreSessionWithTermsCheck);
   const { notify } = useToast();
 
   const logout = useCallback(() => {
@@ -45,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (stored: SessionResponse | null) => {
       setSession(stored);
       if (stored && stored.usuario.id !== session?.usuario.id) {
+        markLoginTermsCheck();
         notify({ tone: 'info', message: SESSION_SWITCHED_MESSAGE });
       }
     },

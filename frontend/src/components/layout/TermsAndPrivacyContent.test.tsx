@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { commitmentTermsService } from '@/services/commitmentTerms.service';
 import { TermsAndPrivacyContent } from './TermsAndPrivacyContent';
@@ -49,5 +50,29 @@ Para dúvidas contate contato.pbl360@gmail.com.`,
     expect(
       screen.queryByRole('link', { name: /contato\.pbl360@gmail\.com/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it('does not render static fallback in live mode when getCurrentTerm fails and allows retry', async () => {
+    const user = userEvent.setup();
+    vi.mocked(commitmentTermsService.getCurrentTerm)
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({
+        versao: '1.3',
+        titulo: 'Termos v1.3',
+        texto: '### 1. Novo Documento\n\nConteúdo oficial da versão 1.3.',
+      });
+
+    render(<TermsAndPrivacyContent requireLiveTerm />);
+
+    expect(
+      await screen.findByText(
+        /não foi possível carregar os termos de uso e política de privacidade/i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/aplicação web experimental/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+
+    expect(await screen.findByText(/conteúdo oficial da versão 1\.3/i)).toBeInTheDocument();
   });
 });
