@@ -38,8 +38,8 @@ export class GetUserPhotoUseCase {
 
     const requester = await this.users.findById(requesterId);
 
-    if (!requester?.isTutor()) {
-      throw new ForbiddenError('Apenas professores podem ver a foto de outros usuários.');
+    if (!requester) {
+      throw new ForbiddenError('Usuário não autorizado a visualizar fotos.');
     }
   }
 }

@@ -39,8 +39,17 @@ describe('GetUserPhotoUseCase', () => {
     ).resolves.toBeDefined();
   });
 
-  it('does not let a student see the photo of someone else', async () => {
+  it('lets a student see the photo of another user', async () => {
     users.findById.mockResolvedValue(requesterOfType(UserType.STUDENT));
+
+    await expect(
+      useCase.execute({ userId: STUDENT_ID, requesterId: OTHER_ID }),
+    ).resolves.toBeDefined();
+    expect(photos.findByUserId).toHaveBeenCalledWith(STUDENT_ID);
+  });
+
+  it('rejects a requester that no longer exists', async () => {
+    users.findById.mockResolvedValue(null);
 
     await expect(
       useCase.execute({ userId: STUDENT_ID, requesterId: OTHER_ID }),

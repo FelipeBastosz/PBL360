@@ -15,6 +15,7 @@ describe('User photos (e2e)', () => {
   let student: TestUser;
   let otherStudent: TestUser;
   let tutor: TestUser;
+  let otherTutor: TestUser;
 
   const photoPath = (userId: string) => `/usuarios/${userId}/foto`;
 
@@ -40,6 +41,7 @@ describe('User photos (e2e)', () => {
     student = await insertUser(app, dataSource, '20240001@discente.uefs.br', UserType.STUDENT);
     otherStudent = await insertUser(app, dataSource, '20240002@discente.uefs.br', UserType.STUDENT);
     tutor = await insertUser(app, dataSource, 'carlos@uefs.br');
+    otherTutor = await insertUser(app, dataSource, 'ana@uefs.br');
     await storePhotoFor(student.id);
   });
 
@@ -55,12 +57,14 @@ describe('User photos (e2e)', () => {
     await api(app, tutor).get(photoPath(student.id)).expect(200);
   });
 
-  it('does not let a student see the photo of another student', async () => {
-    const response = await api(app, otherStudent).get(photoPath(student.id)).expect(403);
+  it('lets students and tutors see photos of other users', async () => {
+    await api(app, otherStudent).get(photoPath(student.id)).expect(200);
 
-    expect((response.body as { message: string }).message).toBe(
-      'Apenas professores podem ver a foto de outros usuários.',
-    );
+    await storePhotoFor(tutor.id);
+    await api(app, student).get(photoPath(tutor.id)).expect(200);
+
+    await storePhotoFor(otherTutor.id);
+    await api(app, tutor).get(photoPath(otherTutor.id)).expect(200);
   });
 
   it('requires authentication', async () => {
