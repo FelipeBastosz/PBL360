@@ -8,6 +8,7 @@ export interface SessionDeletionImpact {
   observacoes: number;
   avaliacoes: number;
   feedbacks: number;
+  avaliacaoGeral: number;
 }
 
 export interface SessionRepository {

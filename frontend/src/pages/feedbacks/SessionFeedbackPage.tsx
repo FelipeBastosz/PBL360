@@ -4,12 +4,63 @@ import { BackHeader } from '@/components/layout/BackHeader';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
+import type { ReceivedFeedbackResponse, ReceivedSessionFeedback } from '@/types/feedback';
 import { FeedbackCard } from './FeedbackCard';
 import { FeedbackEmptyState } from './FeedbackEmptyState';
 import { EvaluationComponentGrades } from './EvaluationComponentGrades';
 import { useProblemFeedbacks } from './useProblemFeedbacks';
 import { useSessionFeedback } from './useSessionFeedback';
 import { cn } from '@/utils/cn';
+
+type SessionFeedbackContentProps = {
+  isLoading: boolean;
+  error: string | null;
+  feedback: ReceivedFeedbackResponse | null;
+  sessionGrades?: ReceivedSessionFeedback | null;
+};
+
+function SessionFeedbackContent({
+  isLoading,
+  error,
+  feedback,
+  sessionGrades,
+}: SessionFeedbackContentProps) {
+  if (isLoading) {
+    return (
+      <div className="mt-8 flex justify-center">
+        <Spinner className="size-8 text-brand-900" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <Alert tone="error">{error}</Alert>;
+  }
+
+  if (feedback) {
+    return (
+      <FeedbackCard
+        autor={feedback.autor}
+        texto={feedback.texto}
+        criadoEm={feedback.criadoEm}
+        editadoEm={feedback.editadoEm}
+        novo={feedback.novo}
+        nota={feedback.nota}
+        avaliacoes={feedback.avaliacoes}
+      />
+    );
+  }
+
+  if (sessionGrades?.avaliacoes) {
+    return (
+      <div className="flex flex-col gap-2 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+        <EvaluationComponentGrades avaliacoes={sessionGrades.avaliacoes} />
+      </div>
+    );
+  }
+
+  return <FeedbackEmptyState />;
+}
 
 export default function SessionFeedbackPage() {
   const { roomId, problemId, sessionId } = useParams<{
@@ -48,29 +99,12 @@ export default function SessionFeedbackPage() {
           <ChevronRightIcon className="size-5 text-muted" aria-hidden />
         </Link>
 
-        {isLoading ? (
-          <div className="mt-8 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
-          </div>
-        ) : error ? (
-          <Alert tone="error">{error}</Alert>
-        ) : feedback ? (
-          <FeedbackCard
-            autor={feedback.autor}
-            texto={feedback.texto}
-            criadoEm={feedback.criadoEm}
-            editadoEm={feedback.editadoEm}
-            novo={feedback.novo}
-            nota={feedback.nota}
-            avaliacoes={feedback.avaliacoes}
-          />
-        ) : sessionGrades?.avaliacoes ? (
-          <div className="flex flex-col gap-2 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
-            <EvaluationComponentGrades avaliacoes={sessionGrades.avaliacoes} />
-          </div>
-        ) : (
-          <FeedbackEmptyState />
-        )}
+        <SessionFeedbackContent
+          isLoading={isLoading}
+          error={error}
+          feedback={feedback}
+          sessionGrades={sessionGrades}
+        />
       </main>
     </div>
   );

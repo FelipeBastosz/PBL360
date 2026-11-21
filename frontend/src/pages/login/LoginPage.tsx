@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { APP_TAGLINE } from '@/assets/brand';
 import { AuthCard } from '@/components/layout/AuthCard';
 import { AuthShell } from '@/components/layout/AuthShell';
@@ -22,12 +22,10 @@ function redirectTarget(state: unknown): string {
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const { notify } = useToast();
   const form = useForm({ email: '', senha: '' }, validateLoginForm);
   const { run, isLoading, error } = useAsyncAction(login);
-  const profileQuery = searchParams.get('perfil') ? `?${searchParams.toString()}` : '';
 
   async function handleSubmit() {
     if (!form.validateAll()) return;
@@ -61,7 +59,6 @@ export default function LoginPage() {
           onSubmit={handleSubmit}
           isLoading={isLoading}
           errorMessage={error && !getPendingVerification(error) ? error.message : undefined}
-          registerTo={`${ROUTES.register}${profileQuery}`}
         />
       </AuthCard>
     </AuthShell>

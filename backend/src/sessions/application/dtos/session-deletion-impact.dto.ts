@@ -18,4 +18,7 @@ export class SessionDeletionImpactDto {
 
   @ApiProperty({ example: 0 })
   feedbacks: number;
+
+  @ApiProperty({ example: 0 })
+  avaliacaoGeral: number;
 }

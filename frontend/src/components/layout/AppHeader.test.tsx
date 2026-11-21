@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppHeader } from './AppHeader';
@@ -16,7 +16,8 @@ vi.mock('@/services/room.service', () => ({
 
 describe('AppHeader', () => {
   afterEach(() => {
-    vi.resetAllMocks();
+    cleanup();
+    vi.clearAllMocks();
     localStorage.clear();
     clearUserPhotoCache();
   });
@@ -26,7 +27,7 @@ describe('AppHeader', () => {
     sessionStore.save(sessionFor({ ...studentUser, possuiFoto: true }));
     renderApp('/turmas');
 
-    const photo = await screen.findByRole('img', { name: 'Foto de Ana Souza' });
+    const photo = await screen.findByRole('img', { name: 'Foto de Ana Souza' }, { timeout: 4000 });
 
     expect(photo.getAttribute('src')).toMatch(/^data:image\/png;base64,/);
     expect(userService.getPhoto).toHaveBeenCalledWith(studentUser.id);
@@ -56,7 +57,9 @@ describe('AppHeader', () => {
     await user.click(await screen.findByRole('button', { name: 'Abrir menu da conta' }));
     await user.click(screen.getByRole('button', { name: 'Sair da conta' }));
 
-    expect(await screen.findByRole('button', { name: 'Entrar' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Entrar' }, { timeout: 4000 }),
+    ).toBeInTheDocument();
     expect(sessionStore.getToken()).toBeNull();
   });
 

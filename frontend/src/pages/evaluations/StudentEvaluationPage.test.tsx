@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -136,6 +136,54 @@ describe('StudentEvaluationPage', () => {
       justificativa: undefined,
       notaCargo: null,
     });
+    expect(evaluationService.saveFeedback).not.toHaveBeenCalled();
+  });
+
+  it('does not save empty or whitespace-only feedback, but saves trimmed non-empty feedback', async () => {
+    vi.mocked(evaluationService.saveEvaluation).mockResolvedValue(mockEvalData);
+    vi.mocked(evaluationService.saveFeedback).mockResolvedValue({} as never);
+    renderPage();
+
+    const textarea = await screen.findByPlaceholderText(
+      'Escreva aqui um feedback para o(a) aluno(a)...',
+    );
+    await userEvent.type(textarea, '   ');
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar avaliação e feedback' }));
+
+    await waitFor(() => {
+      expect(evaluationService.saveEvaluation).toHaveBeenCalledTimes(1);
+    });
+    expect(evaluationService.saveFeedback).not.toHaveBeenCalled();
+
+    await userEvent.clear(textarea);
+    await userEvent.type(textarea, '  Boa participação.  ');
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar avaliação e feedback' }));
+
+    await waitFor(() => {
+      expect(evaluationService.saveFeedback).toHaveBeenCalledWith(
+        'sess-1',
+        'st-1',
+        'Boa participação.',
+      );
+    });
+  });
+
+  it('blocks saving and disables action buttons when feedback exceeds 2000 characters', async () => {
+    vi.mocked(evaluationService.saveEvaluation).mockResolvedValue(mockEvalData);
+    renderPage();
+
+    const textarea = await screen.findByPlaceholderText(
+      'Escreva aqui um feedback para o(a) aluno(a)...',
+    );
+    fireEvent.change(textarea, { target: { value: 'a'.repeat(2005) } });
+
+    const sendBtn = screen.getByRole('button', { name: 'Enviar avaliação e feedback' });
+    const draftBtn = screen.getByRole('button', { name: 'Salvar rascunho' });
+
+    expect(sendBtn).toBeDisabled();
+    expect(draftBtn).toBeDisabled();
+
+    expect(evaluationService.saveEvaluation).not.toHaveBeenCalled();
   });
 
   it('requires justification to submit changes for already submitted evaluation', async () => {

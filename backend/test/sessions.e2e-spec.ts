@@ -6,7 +6,12 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, insertDefaultPerformanceTable, signAccessToken } from './helpers/fixtures';
+import {
+  acceptCurrentTermForAllUsers,
+  cleanDatabase,
+  insertDefaultPerformanceTable,
+  signAccessToken,
+} from './helpers/fixtures';
 
 interface SessionCreatedResponseBody {
   id: string;
@@ -45,6 +50,7 @@ interface SessionDeletionImpactResponseBody {
   observacoes: number;
   avaliacoes: number;
   feedbacks: number;
+  avaliacaoGeral: number;
 }
 
 interface ProblemDeletionImpactResponseBody {
@@ -173,6 +179,8 @@ describe('Sessions (e2e)', () => {
       [otherRoomId, otherTutorId],
     );
     otherProblemId = otherProblem.id;
+
+    await acceptCurrentTermForAllUsers(dataSource);
 
     ownerToken = signAccessToken(app, ownerTutorId, 'carlos@uefs.br', UserType.TUTOR);
     coTutorToken = signAccessToken(app, coTutorId, 'maria@uefs.br', UserType.TUTOR);
@@ -908,6 +916,7 @@ describe('Sessions (e2e)', () => {
         observacoes: 0,
         avaliacoes: 0,
         feedbacks: 0,
+        avaliacaoGeral: 0,
       });
     });
 

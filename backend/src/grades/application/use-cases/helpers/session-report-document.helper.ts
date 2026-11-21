@@ -1,4 +1,3 @@
-import { EvaluationStatus } from '@/evaluations/domain/enums/evaluation-status.enum';
 import { AttendanceStatus } from '@/sessions/domain/enums/attendance-status.enum';
 import { SessionRole } from '@/sessions/domain/enums/session-role.enum';
 import {
@@ -38,7 +37,6 @@ export const SESSION_REPORT_COLUMNS: ReportColumn[] = [
   { header: 'Matrícula', type: ReportColumnType.TEXT },
   { header: 'Chamada', type: ReportColumnType.TEXT },
   { header: 'Papel', type: ReportColumnType.TEXT },
-  { header: 'Nota adicional de papel', type: ReportColumnType.NUMBER, decimals: 1 },
   { header: 'Marcações', type: ReportColumnType.TEXT },
   { header: 'Situação da nota', type: ReportColumnType.TEXT },
   { header: 'Nota', type: ReportColumnType.NUMBER, decimals: 1 },
@@ -64,26 +62,17 @@ const getAttendance = (s: AttendanceStatus | string | null) =>
 const getRole = (r: SessionRole | string | null) =>
   r ? (ROLE_LABELS[r as SessionRole] ?? r) : null;
 
-export function getScore(student: SessionReportStudentData): number | null {
-  return student.evaluationStatus === EvaluationStatus.SUBMITTED
-    ? student.appliedBonus
-    : student.roleScore;
-}
-
 export function buildStudentRow(
   student: SessionReportStudentData,
   { gradeStatus, grade }: SessionReportGrade,
   hiddenStudentName: boolean,
   showTags: boolean,
 ): ReportCellValue[] {
-  const score = getScore(student);
-
   return [
     !hiddenStudentName ? student.name : null,
     student.matricula ?? null,
     getAttendance(student.attendanceStatus),
     getRole(student.role),
-    score !== null && score !== undefined ? Number(score) : null,
     showTags && student.tags.length > 0 ? student.tags.join(', ') : null,
     gradeStatus,
     grade,

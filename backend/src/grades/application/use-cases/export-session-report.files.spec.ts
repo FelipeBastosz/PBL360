@@ -238,17 +238,17 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
 
     // Row 8 contains table headers
     const headerRow = sheet1.getRow(8);
-    const headers = [1, 2, 3, 4, 5, 6, 7, 8].map((col) => headerRow.getCell(col).value);
+    const headers = [1, 2, 3, 4, 5, 6, 7].map((col) => headerRow.getCell(col).value);
     expect(headers).toEqual([
       'Aluno',
       'Matrícula',
       'Chamada',
       'Papel',
-      'Nota adicional de papel',
       'Marcações',
       'Situação da nota',
       'Nota',
     ]);
+    expect(headerRow.cellCount).toBe(7);
 
     // Verify Row 9 (Ana Souza - Complete with submitted grade)
     const anaRow = sheet1.getRow(9);
@@ -256,39 +256,34 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
     expect(anaRow.getCell(2).value).toBe('2026001');
     expect(anaRow.getCell(3).value).toBe('Presente');
     expect(anaRow.getCell(4).value).toBe('Coordenador');
-    // Numeric cell for role score
-    expect(typeof anaRow.getCell(5).value).toBe('number');
-    expect(anaRow.getCell(5).value).toBe(9.5);
-    expect(anaRow.getCell(6).value).toBe('Participativo, Liderança');
-    expect(anaRow.getCell(7).value).toBe('Nota enviada');
-    expect(typeof anaRow.getCell(8).value).toBe('number');
-    expect(anaRow.getCell(8).value).toBe(9);
+    expect(anaRow.getCell(5).value).toBe('Participativo, Liderança');
+    expect(anaRow.getCell(6).value).toBe('Nota enviada');
+    expect(typeof anaRow.getCell(7).value).toBe('number');
+    expect(anaRow.getCell(7).value).toBe(9);
 
     // Verify Row 10 (Bruno Lima - Draft evaluation)
     const brunoRow = sheet1.getRow(10);
     expect(brunoRow.getCell(1).value).toBe('Bruno Lima');
     expect(brunoRow.getCell(3).value).toBe('Atrasado');
     expect(brunoRow.getCell(4).value).toBe('Secretário do quadro');
-    expect(brunoRow.getCell(5).value).toBe(8.0);
-    expect(brunoRow.getCell(6).value).toBe('Atraso justificado');
-    expect(brunoRow.getCell(7).value).toBe('Rascunho');
-    expect(brunoRow.getCell(8).value).toBeNull(); // Draft has null score
+    expect(brunoRow.getCell(5).value).toBe('Atraso justificado');
+    expect(brunoRow.getCell(6).value).toBe('Rascunho');
+    expect(brunoRow.getCell(7).value).toBeNull(); // Draft has null score
 
     // Verify Row 11 (Carlos Dias - Excused)
     const carlosRow = sheet1.getRow(11);
     expect(carlosRow.getCell(1).value).toBe('Carlos Dias');
     expect(carlosRow.getCell(3).value).toBe('Justificado');
     expect(carlosRow.getCell(4).value).toBe('Secretário da mesa');
-    expect(carlosRow.getCell(5).value).toBeNull();
-    expect(carlosRow.getCell(7).value).toBe('Falta justificada');
-    expect(carlosRow.getCell(8).value).toBeNull();
+    expect(carlosRow.getCell(6).value).toBe('Falta justificada');
+    expect(carlosRow.getCell(7).value).toBeNull();
 
     // Verify Row 12 (Daniela Castro - Absent students get zero even with a submitted evaluation)
     const danielaRow = sheet1.getRow(12);
     expect(danielaRow.getCell(1).value).toBe('Daniela Castro');
     expect(danielaRow.getCell(3).value).toBe('Ausente');
-    expect(danielaRow.getCell(7).value).toBe('Ausente');
-    expect(danielaRow.getCell(8).value).toBe(0);
+    expect(danielaRow.getCell(6).value).toBe('Ausente');
+    expect(danielaRow.getCell(7).value).toBe(0);
 
     // Verify Row 13 (Eduardo Ramos - All missing data)
     const eduardoRow = sheet1.getRow(13);
@@ -297,9 +292,8 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
     expect(eduardoRow.getCell(3).value).toBe('Não registrada');
     expect(eduardoRow.getCell(4).value).toBeNull();
     expect(eduardoRow.getCell(5).value).toBeNull();
-    expect(eduardoRow.getCell(6).value).toBeNull();
-    expect(eduardoRow.getCell(7).value).toBe('Não registrada');
-    expect(eduardoRow.getCell(8).value).toBeNull();
+    expect(eduardoRow.getCell(6).value).toBe('Não registrada');
+    expect(eduardoRow.getCell(7).value).toBeNull();
 
     // Inspect Sheet 2: Feedbacks da sessão
     const sheet2 = workbook.getWorksheet('Feedbacks da sessão')!;

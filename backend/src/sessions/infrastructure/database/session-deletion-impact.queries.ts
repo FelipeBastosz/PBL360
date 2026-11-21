@@ -12,7 +12,8 @@ export async function readSessionDeletionImpact(
        (SELECT COUNT(*)::int FROM session_roles WHERE session_id = $1) AS papeis,
        (SELECT COUNT(*)::int FROM observations WHERE session_id = $1) AS observacoes,
        (SELECT COUNT(*)::int FROM evaluations WHERE session_id = $1 OR config_session_id = $1) AS avaliacoes,
-       (SELECT COUNT(*)::int FROM feedback WHERE sessao_id = $1) AS feedbacks;`,
+       (SELECT COUNT(*)::int FROM feedback WHERE sessao_id = $1) AS feedbacks,
+       (SELECT COUNT(*)::int FROM session_general_evaluations WHERE session_id = $1) AS "avaliacaoGeral";`,
     [sessionId],
   );
   return requireFirstRow(rows, 'Failed to read session deletion impact.');

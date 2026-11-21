@@ -20,7 +20,14 @@ import {
   type DeletionFixture,
 } from './helpers/deletion-impact-fixtures';
 
-const EMPTY_SESSION = { chamada: 0, papeis: 0, observacoes: 0, avaliacoes: 0, feedbacks: 0 };
+const EMPTY_SESSION = {
+  chamada: 0,
+  papeis: 0,
+  observacoes: 0,
+  avaliacoes: 0,
+  feedbacks: 0,
+  avaliacaoGeral: 0,
+};
 const EMPTY_PROBLEM = { sessoes: 0, notas: 0, feedbacks: 0, avaliacoes: 0 };
 
 describe('Deletion impact (e2e)', () => {
@@ -109,6 +116,26 @@ describe('Deletion impact (e2e)', () => {
     expect(row.count).toBe(1);
   });
 
+  it('counts general session evaluations and blocks deletion with structured details', async () => {
+    const sessionId = await insertDeletionSession(db, fixture.problemId);
+    await api(app, fixture.owner)
+      .put(`/sessoes/${sessionId}/avaliacao-geral`, { texto: 'Relato da sessão.' })
+      .expect(200);
+    const expected = { ...EMPTY_SESSION, avaliacaoGeral: 1 };
+    const impact = await api(app, fixture.owner)
+      .get(`${sessionPath(sessionId)}/impacto-exclusao`)
+      .expect(200);
+    expect(impact.body).toEqual({ podeExcluir: false, ...expected });
+    const response = await api(app, fixture.owner).delete(sessionPath(sessionId)).expect(409);
+    expect(response.body).toEqual({
+      statusCode: 409,
+      error: 'Conflict',
+      message: 'A sessão não pode ser excluída pois possui registros vinculados.',
+      detalhes: expected,
+    });
+    await api(app, fixture.owner).get(`/sessoes/${sessionId}/avaliacao-geral`).expect(200);
+  });
+
   it('reports actual evaluations, attendance, roles and observations alongside feedbacks', async () => {
     const sessionId = await insertDeletionSession(db, fixture.problemId);
     await insertDeletionFeedback(db, fixture, sessionId);
@@ -119,7 +146,14 @@ describe('Deletion impact (e2e)', () => {
       'INSERT INTO problem_grades (problem_id, student_id, grade, formula_version) VALUES ($1, $2, 0, 1)',
       [fixture.problemId, fixture.student.id],
     );
-    const expectedSession = { chamada: 1, papeis: 1, observacoes: 1, avaliacoes: 1, feedbacks: 1 };
+    const expectedSession = {
+      chamada: 1,
+      papeis: 1,
+      observacoes: 1,
+      avaliacoes: 1,
+      feedbacks: 1,
+      avaliacaoGeral: 0,
+    };
     const expectedProblem = { sessoes: 1, notas: 1, avaliacoes: 1, feedbacks: 2 };
     const sessionImpact = await api(app, fixture.owner)
       .get(`${sessionPath(sessionId)}/impacto-exclusao`)

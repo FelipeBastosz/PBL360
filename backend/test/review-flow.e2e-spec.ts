@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
-import { cleanDatabase, signAccessToken } from './helpers/fixtures';
+import { acceptCurrentTermForAllUsers, cleanDatabase, signAccessToken } from './helpers/fixtures';
 
 interface GradesResponseBody {
   sessoes: Array<{ id: string; rotulo: string; data: string }>;
@@ -88,6 +88,8 @@ describe('Review Walkthrough Flow & Calculation Verification (e2e)', () => {
       [UserType.STUDENT],
     );
     joaoId = joao.id;
+
+    await acceptCurrentTermForAllUsers(dataSource);
 
     tutorToken = signAccessToken(app, tutorId, 'carlos.review@uefs.br', UserType.TUTOR);
     coTutorToken = signAccessToken(app, coTutorId, 'maria.review@uefs.br', UserType.TUTOR);

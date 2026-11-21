@@ -85,7 +85,11 @@ function validateStudentFeedback(
   const gradeErr = validateGrade(nota);
   const justErr = validateJustification(changed, just);
   if (gradeErr) errors.nota = gradeErr;
-  if (!texto.trim()) errors.texto = 'O comentário de feedback é obrigatório.';
+  if (!texto.trim()) {
+    errors.texto = 'O comentário de feedback é obrigatório.';
+  } else if (texto.length > 2000) {
+    errors.texto = 'O comentário de feedback deve ter no máximo 2000 caracteres.';
+  }
   if (justErr) errors.justificativa = justErr;
   return errors;
 }

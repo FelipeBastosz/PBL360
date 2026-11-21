@@ -59,4 +59,5 @@ export const toSessionDeletionImpactResponse = (
   observacoes: impact.observations,
   avaliacoes: impact.evaluations,
   feedbacks: impact.feedbacks,
+  avaliacaoGeral: impact.generalEvaluation,
 });

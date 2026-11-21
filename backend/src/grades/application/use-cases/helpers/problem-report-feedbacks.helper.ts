@@ -23,13 +23,19 @@ export function buildFeedbackSections(
   return sections;
 }
 
+function normalizeFeedbackText(text: string | null | undefined): string | null {
+  return text && text.trim().length > 0 ? text : null;
+}
+
 function buildGeneralFeedbackSection(feedbacks: ProblemFeedbackDetail[]): ReportTextSection {
   const general = feedbacks.find((f) => f.scope === FeedbackScope.PROBLEM);
-  const label = general?.authorName ? `Turma (Autor: ${general.authorName})` : 'Turma';
+  const text = normalizeFeedbackText(general?.text);
+  const label =
+    text !== null && general?.authorName ? `Turma (Autor: ${general.authorName})` : 'Turma';
   return {
     kind: 'text',
     title: 'Feedback geral do problema',
-    entries: [{ label, text: general?.text ?? null }],
+    entries: [{ label, text }],
   };
 }
 
@@ -38,7 +44,9 @@ function buildSessionFeedbacksSection(
   studentMatriculaMap: Map<string, string | null>,
   ocultarNomes = false,
 ): ReportTextSection | null {
-  const sessionFeedbacks = feedbacks.filter((f) => f.scope === FeedbackScope.SESSION);
+  const sessionFeedbacks = feedbacks.filter(
+    (f) => f.scope === FeedbackScope.SESSION && normalizeFeedbackText(f.text) !== null,
+  );
   if (sessionFeedbacks.length === 0) return null;
   return {
     kind: 'text',
@@ -75,7 +83,9 @@ function buildIndividualFeedbacksSection(
   studentMatriculaMap: Map<string, string | null>,
   ocultarNomes = false,
 ): ReportTextSection | null {
-  const studentFeedbacks = feedbacks.filter((f) => f.scope === FeedbackScope.STUDENT);
+  const studentFeedbacks = feedbacks.filter(
+    (f) => f.scope === FeedbackScope.STUDENT && normalizeFeedbackText(f.text) !== null,
+  );
   if (studentFeedbacks.length === 0) return null;
   return {
     kind: 'text',
