@@ -1,12 +1,4 @@
-import {
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useExpiryTimer } from '@/hooks/useExpiryTimer';
 import { useToast } from '@/hooks/useToast';
 import { setUnauthorizedHandler } from '@/services/api';
@@ -30,48 +22,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionResponse | null>(() => sessionStore.restore());
   const { notify } = useToast();
 
-function restoreSessionWithTermsCheck(): SessionResponse | null {
-  const restored = sessionStore.restore();
-  if (restored) markLoginTermsCheck();
-  return restored;
-}
-
-function useAuthActions(setSession: Dispatch<SetStateAction<SessionResponse | null>>) {
   const logout = useCallback(() => {
-    clearSessionData();
+    sessionStore.clear();
+    clearUserPhotoCache();
     setSession(null);
-  }, [setSession]);
-
-  const login = useCallback(
-    async (payload: LoginPayload) => {
-      const nextSession = await authService.login(payload);
-      sessionStore.save(nextSession);
-      markLoginTermsCheck();
-      setSession(nextSession);
-      return nextSession.usuario;
-    },
-    [setSession],
-  );
-
-  const updateUser = useCallback(
-    (updatedPartial: Partial<UserResponse>) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        const updatedUser = { ...prev.usuario, ...updatedPartial };
-        sessionStore.saveUser(updatedUser);
-        return { ...prev, usuario: updatedUser };
-      });
-    },
-    [setSession],
-  );
-
-  return { logout, login, updateUser };
-}
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<SessionResponse | null>(restoreSessionWithTermsCheck);
-  const { notify } = useToast();
-  const { logout, login, updateUser } = useAuthActions(setSession);
+  }, []);
 
   const expire = useCallback(() => {
     logout();
@@ -117,4 +72,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}}
+}
