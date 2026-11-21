@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
 import { ApiError } from '@/services/apiError';
 import type { ChangePasswordPayload, UserProfileResponse } from '@/types/user';
@@ -28,7 +27,7 @@ export function useProfileActions(
   setActionError: (msg: string | null) => void,
   setSuccessMessage: (msg: string | null) => void,
 ) {
-  const { user, updateUser } = useAuth();
+  const { updateUser } = useAuth();
   const photoActions = useProfilePhotoActions(
     profile,
     setProfile,
@@ -43,7 +42,6 @@ export function useProfileActions(
       try {
         const updated = await userService.updateProfile({ nome: newName });
         setProfile(updated);
-        if (user) sessionStore.saveUser({ ...user, nome: updated.nome });
         updateUser?.({ nome: updated.nome });
         setSuccessMessage('Nome atualizado com sucesso.');
         return true;
@@ -52,7 +50,7 @@ export function useProfileActions(
         return false;
       }
     },
-    [user, setProfile, updateUser, setActionError, setSuccessMessage],
+    [setProfile, updateUser, setActionError, setSuccessMessage],
   );
 
   const changePassword = useCallback(

@@ -99,7 +99,7 @@ export class UsersController {
   }
 
   @Get(':id/foto')
-  @Header('Cache-Control', 'private, max-age=3600')
+  @Header('Cache-Control', 'private, no-store')
   @GetUserPhotoSwaggerDocs
   async photo(
     @UuidParam('id') userId: string,
