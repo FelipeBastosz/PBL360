@@ -47,7 +47,7 @@ describe('User photos (e2e)', () => {
     const response = await api(app, student).get(photoPath(student.id)).expect(200);
 
     expect(response.headers['content-type']).toBe('image/png');
-    expect(response.headers['cache-control']).toBe('private, max-age=3600');
+    expect(response.headers['cache-control']).toBe('private, no-store');
     expect(Buffer.from(response.body as Buffer).equals(pngPhotoBytes())).toBe(true);
   });
 

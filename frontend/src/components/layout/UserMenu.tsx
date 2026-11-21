@@ -1,12 +1,4 @@
-import {
-  useContext,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type ComponentType,
-  type SVGProps,
-} from 'react';
+import { useEffect, useId, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -18,7 +10,6 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { AuthContext } from '@/contexts/authContext';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/routes/paths';
 import type { UserResponse } from '@/types/auth';
@@ -207,7 +198,7 @@ type UserMenuButtonProps = {
 };
 
 export function UserMenuButton({ user, className }: UserMenuButtonProps) {
-  const authUser = useContext(AuthContext)?.user ?? null;
+  const { user: authUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const close = () => setIsOpen(false);
 

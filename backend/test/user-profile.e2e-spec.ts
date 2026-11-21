@@ -1,5 +1,6 @@
 import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
+import { hash } from 'bcrypt';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -242,6 +243,45 @@ describe('User profile and photos (e2e)', () => {
         .get(`/usuarios/${student.id}/foto`)
         .expect(200);
       expect(Buffer.from(photoResponse.body as Buffer).equals(pngPhotoBytes())).toBe(true);
+    });
+
+    it('persists replaced photo across real login and serves it without browser caching', async () => {
+      const passwordHash = await hash('SenhaForte123!', 4);
+      await dataSource.query(`UPDATE users SET password_hash = $2 WHERE id = $1;`, [
+        student.id,
+        passwordHash,
+      ]);
+
+      await request(app.getHttpServer() as Server)
+        .put('/api/usuarios/minha-foto')
+        .set('Authorization', `Bearer ${student.token}`)
+        .attach('foto', pngPhotoBytes(), { filename: 'first.png', contentType: 'image/png' })
+        .expect(204);
+
+      await request(app.getHttpServer() as Server)
+        .put('/api/usuarios/minha-foto')
+        .set('Authorization', `Bearer ${student.token}`)
+        .attach('foto', jpegPhotoBytes(), { filename: 'second.jpg', contentType: 'image/jpeg' })
+        .expect(204);
+
+      const loginResponse = await api(app)
+        .post('/autenticacao/login', { email: student.email, senha: 'SenhaForte123!' })
+        .expect(200);
+
+      const session = loginResponse.body as {
+        token: string;
+        usuario: { id: string; possuiFoto: boolean };
+      };
+      expect(session.usuario.id).toBe(student.id);
+      expect(session.usuario.possuiFoto).toBe(true);
+
+      const photoResponse = await api(app, { ...student, token: session.token })
+        .get(`/usuarios/${student.id}/foto`)
+        .expect(200);
+
+      expect(photoResponse.headers['content-type']).toBe('image/jpeg');
+      expect(photoResponse.headers['cache-control']).toBe('private, no-store');
+      expect(Buffer.from(photoResponse.body as Buffer).equals(jpegPhotoBytes())).toBe(true);
     });
   });
 });

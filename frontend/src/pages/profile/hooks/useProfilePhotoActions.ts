@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { clearUserPhotoCache, setUserPhotoCache } from '@/hooks/useUserPhoto';
-import { sessionStore } from '@/services/sessionStore';
 import { userService } from '@/services/user.service';
 import { ApiError } from '@/services/apiError';
 import type { UserProfileResponse } from '@/types/user';
@@ -28,7 +27,7 @@ export function useProfilePhotoActions(
   setActionError: (msg: string | null) => void,
   setSuccessMessage: (msg: string | null) => void,
 ) {
-  const { user, updateUser } = useAuth();
+  const { updateUser } = useAuth();
 
   const uploadPhoto = useCallback(
     async (file: File): Promise<boolean> => {
@@ -39,7 +38,6 @@ export function useProfilePhotoActions(
         if (profile) {
           setUserPhotoCache(profile.id, file);
           setProfile((prev) => (prev ? { ...prev, possuiFoto: true } : null));
-          if (user) sessionStore.saveUser({ ...user, possuiFoto: true });
           updateUser?.({ possuiFoto: true });
         }
         setSuccessMessage('Foto atualizada com sucesso.');
@@ -49,7 +47,7 @@ export function useProfilePhotoActions(
         return false;
       }
     },
-    [user, profile, setProfile, updateUser, setActionError, setSuccessMessage],
+    [profile, setProfile, updateUser, setActionError, setSuccessMessage],
   );
 
   const deletePhoto = useCallback(async (): Promise<boolean> => {
@@ -60,7 +58,6 @@ export function useProfilePhotoActions(
       if (profile) {
         clearUserPhotoCache(profile.id);
         setProfile((prev) => (prev ? { ...prev, possuiFoto: false } : null));
-        if (user) sessionStore.saveUser({ ...user, possuiFoto: false });
         updateUser?.({ possuiFoto: false });
       }
       setSuccessMessage('Foto removida com sucesso.');
@@ -69,7 +66,7 @@ export function useProfilePhotoActions(
       setActionError(getErrorMessage(err, 'Erro ao remover a foto.'));
       return false;
     }
-  }, [user, profile, setProfile, updateUser, setActionError, setSuccessMessage]);
+  }, [profile, setProfile, updateUser, setActionError, setSuccessMessage]);
 
   return { uploadPhoto, deletePhoto };
 }
