@@ -5,6 +5,7 @@ export interface SeedUserData {
   email: string;
   type: UserType;
   registrationNumber?: string;
+  acceptsCommitmentTerm?: boolean;
 }
 
 export const SEED_USERS: SeedUserData[] = [
@@ -103,5 +104,11 @@ export const SEED_USERS: SeedUserData[] = [
     email: '20240011@discente.uefs.br',
     type: UserType.STUDENT,
     registrationNumber: '20240011',
+  },
+  {
+    name: 'Teste Sem Aceite',
+    email: 'sem-aceite@uefs.br',
+    type: UserType.TUTOR,
+    acceptsCommitmentTerm: false,
   },
 ];
