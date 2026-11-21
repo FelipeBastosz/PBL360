@@ -1,4 +1,12 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useExpiryTimer } from '@/hooks/useExpiryTimer';
 import { useToast } from '@/hooks/useToast';
 import { setUnauthorizedHandler } from '@/services/api';
@@ -32,14 +40,42 @@ function restoreSessionWithTermsCheck(): SessionResponse | null {
   return restored;
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<SessionResponse | null>(restoreSessionWithTermsCheck);
-  const { notify } = useToast();
-
+function useAuthActions(setSession: Dispatch<SetStateAction<SessionResponse | null>>) {
   const logout = useCallback(() => {
     clearSessionData();
     setSession(null);
-  }, []);
+  }, [setSession]);
+
+  const login = useCallback(
+    async (payload: LoginPayload) => {
+      const nextSession = await authService.login(payload);
+      sessionStore.save(nextSession);
+      markLoginTermsCheck();
+      setSession(nextSession);
+      return nextSession.usuario;
+    },
+    [setSession],
+  );
+
+  const updateUser = useCallback(
+    (updatedPartial: Partial<UserResponse>) => {
+      setSession((prev) => {
+        if (!prev) return null;
+        const updatedUser = { ...prev.usuario, ...updatedPartial };
+        sessionStore.saveUser(updatedUser);
+        return { ...prev, usuario: updatedUser };
+      });
+    },
+    [setSession],
+  );
+
+  return { logout, login, updateUser };
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<SessionResponse | null>(restoreSessionWithTermsCheck);
+  const { notify } = useToast();
+  const { logout, login, updateUser } = useAuthActions(setSession);
 
   const expire = useCallback(() => {
     logout();
@@ -61,23 +97,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => setUnauthorizedHandler(expire), [expire]);
   useEffect(() => sessionStore.subscribe(syncWithOtherTabs), [syncWithOtherTabs]);
   useExpiryTimer(session?.expiraEm, expire);
-
-  const login = useCallback(async (payload: LoginPayload) => {
-    const nextSession = await authService.login(payload);
-    sessionStore.save(nextSession);
-    markLoginTermsCheck();
-    setSession(nextSession);
-    return nextSession.usuario;
-  }, []);
-
-  const updateUser = useCallback((updatedPartial: Partial<UserResponse>) => {
-    setSession((prev) => {
-      if (!prev) return null;
-      const updatedUser = { ...prev.usuario, ...updatedPartial };
-      sessionStore.saveUser(updatedUser);
-      return { ...prev, usuario: updatedUser };
-    });
-  }, []);
 
   const value = useMemo(
     () => ({

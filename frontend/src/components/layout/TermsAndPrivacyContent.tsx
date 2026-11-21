@@ -160,7 +160,7 @@ function renderSectionBody(text: string, key?: number): ReactNode {
   );
 }
 
-function TermLoadError({ message, onRetry }: { message: string; onRetry?: () => void }) {
+export function TermLoadError({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <Alert tone="error" className="text-xs">
       <p>{message}</p>

@@ -75,47 +75,31 @@ function ReacceptanceCheckbox({
   );
 }
 
-type ReacceptanceBodyProps = {
-  currentVersion: string;
-  previousVersion: string | null;
-  term: CurrentCommitmentTerm | null;
-  isTermLoading: boolean;
-  termError: string | null;
-  onRetryTerm: () => void;
-  agreed: boolean;
-  onAgreeChange: (checked: boolean) => void;
-  error: string | null;
-};
-
 function ReacceptanceBody({
-  currentVersion,
   previousVersion,
-  term,
-  isTermLoading,
-  termError,
-  onRetryTerm,
-  agreed,
-  onAgreeChange,
-  error,
-}: ReacceptanceBodyProps) {
+  state,
+}: {
+  previousVersion: string | null;
+  state: ReturnType<typeof useReacceptanceModal>;
+}) {
   return (
     <div className="mt-4 flex flex-col gap-3 overflow-y-auto pr-1">
-      <ReacceptanceNotice currentVersion={currentVersion} previousVersion={previousVersion} />
+      <ReacceptanceNotice currentVersion={state.activeVersion} previousVersion={previousVersion} />
       <div className="max-h-64 overflow-y-auto rounded-xl border border-black/10 bg-slate-50/70 p-4">
         <TermsAndPrivacyContent
-          term={term}
-          isLoading={isTermLoading}
-          error={termError}
-          onRetry={onRetryTerm}
+          term={state.term}
+          isLoading={state.isTermLoading}
+          error={state.termError}
+          onRetry={() => void state.reloadTerm()}
           requireLiveTerm
         />
       </div>
       <ReacceptanceCheckbox
-        agreed={agreed}
-        onChange={onAgreeChange}
-        currentVersion={currentVersion}
+        agreed={state.agreed}
+        onChange={state.handleAgreeChange}
+        currentVersion={state.activeVersion}
       />
-      {error && <Alert tone="error">{error}</Alert>}
+      {state.error && <Alert tone="error">{state.error}</Alert>}
     </div>
   );
 }
@@ -167,51 +151,33 @@ function ModalHeader() {
   );
 }
 
-function useTermAcceptanceSubmit(
-  term: CurrentCommitmentTerm | null,
-  isTermLoading: boolean,
-  reloadTerm: () => Promise<CurrentCommitmentTerm | null>,
-  onAccepted: () => void,
-) {
-  const [agreed, setAgreed] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  function handleAgreeChange(checked: boolean) {
-    if (checked) setError(null);
-    setAgreed(checked);
-  }
-
-  async function handleConfirm() {
-    if (!agreed || !term || isTermLoading) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      await commitmentTermsService.acceptTerm(term.versao);
-      onAccepted();
-    } catch (caught) {
-      if (isConflictError(caught)) {
-        setAgreed(false);
-        setError(REACCEPTANCE_CONFLICT_MESSAGE);
-        await reloadTerm();
-      } else {
-        setError('Não foi possível registrar o aceite. Tente novamente.');
-      }
-    } finally {
-      setIsLoading(false);
+async function submitTermAcceptance(params: {
+  versao: string;
+  reloadTerm: () => Promise<CurrentCommitmentTerm | null>;
+  onAccepted: () => void;
+  setAgreed: (agreed: boolean) => void;
+  setError: (error: string | null) => void;
+  setIsLoading: (loading: boolean) => void;
+}) {
+  params.setIsLoading(true);
+  params.setError(null);
+  try {
+    await commitmentTermsService.acceptTerm(params.versao);
+    params.onAccepted();
+  } catch (caught) {
+    if (isConflictError(caught)) {
+      params.setAgreed(false);
+      params.setError(REACCEPTANCE_CONFLICT_MESSAGE);
+      await params.reloadTerm();
+    } else {
+      params.setError('Não foi possível registrar o aceite. Tente novamente.');
     }
+  } finally {
+    params.setIsLoading(false);
   }
-
-  return { agreed, isLoading, error, handleAgreeChange, handleConfirm };
 }
 
-export function TermsReacceptanceModal({
-  isOpen,
-  currentVersion,
-  previousVersion,
-  onAccepted,
-  onLogout,
-}: TermsReacceptanceModalProps) {
+function useReacceptanceModal(isOpen: boolean, currentVersion: string, onAccepted: () => void) {
   const {
     term,
     isLoading: isTermLoading,
@@ -221,17 +187,52 @@ export function TermsReacceptanceModal({
     enabled: isOpen,
     requireLiveTerm: true,
   });
-  const { agreed, isLoading, error, handleAgreeChange, handleConfirm } = useTermAcceptanceSubmit(
+  const [agreed, setAgreed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleAgreeChange(checked: boolean) {
+    if (checked) setError(null);
+    setAgreed(checked);
+  }
+
+  function handleConfirm() {
+    if (!agreed || !term || isTermLoading) return;
+    void submitTermAcceptance({
+      versao: term.versao,
+      reloadTerm,
+      onAccepted,
+      setAgreed,
+      setError,
+      setIsLoading,
+    });
+  }
+
+  return {
     term,
     isTermLoading,
+    termError,
     reloadTerm,
-    onAccepted,
-  );
+    activeVersion: term?.versao ?? currentVersion,
+    confirmDisabled: !agreed || isTermLoading || !term || Boolean(termError),
+    agreed,
+    isLoading,
+    error,
+    handleAgreeChange,
+    handleConfirm,
+  };
+}
+
+export function TermsReacceptanceModal({
+  isOpen,
+  currentVersion,
+  previousVersion,
+  onAccepted,
+  onLogout,
+}: TermsReacceptanceModalProps) {
+  const state = useReacceptanceModal(isOpen, currentVersion, onAccepted);
 
   if (!isOpen) return null;
-
-  const activeVersion = term?.versao ?? currentVersion;
-  const confirmDisabled = !agreed || isTermLoading || !term || Boolean(termError);
 
   return (
     <div
@@ -242,22 +243,12 @@ export function TermsReacceptanceModal({
     >
       <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-3xl bg-white p-6 shadow-2xl animate-pop-in">
         <ModalHeader />
-        <ReacceptanceBody
-          currentVersion={activeVersion}
-          previousVersion={previousVersion}
-          term={term}
-          isTermLoading={isTermLoading}
-          termError={termError}
-          onRetryTerm={() => void reloadTerm()}
-          agreed={agreed}
-          onAgreeChange={handleAgreeChange}
-          error={error}
-        />
+        <ReacceptanceBody previousVersion={previousVersion} state={state} />
         <ReacceptanceActions
-          isLoading={isLoading}
-          disabled={confirmDisabled}
+          isLoading={state.isLoading}
+          disabled={state.confirmDisabled}
           onLogout={onLogout}
-          onConfirm={handleConfirm}
+          onConfirm={state.handleConfirm}
         />
       </div>
     </div>

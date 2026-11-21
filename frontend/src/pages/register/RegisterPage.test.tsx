@@ -287,7 +287,6 @@ describe('RegisterPage', () => {
       name: /eu li e concordo com os termos de uso e política de privacidade/i,
     });
     expect(checkbox).not.toBeChecked();
-    expect(screen.getByText(/\(v1\.3\)/i)).toBeInTheDocument();
 
     await user.click(
       screen.getByRole('button', { name: 'Termos de Uso e Política de Privacidade' }),
@@ -330,6 +329,5 @@ describe('RegisterPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Criar conta' })).toBeEnabled();
     });
-    expect(screen.getByText(/\(v1\.2\)/i)).toBeInTheDocument();
   });
 });

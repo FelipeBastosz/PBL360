@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { TermsAndPrivacyContent } from '@/components/layout/TermsAndPrivacyContent';
+import { TermLoadError, TermsAndPrivacyContent } from '@/components/layout/TermsAndPrivacyContent';
 import { Alert } from '@/components/ui/Alert';
 import { AvatarPicker } from '@/components/ui/AvatarPicker';
 import { Button } from '@/components/ui/Button';
@@ -105,20 +105,6 @@ function TermsNotice({ message }: { message?: string }) {
   );
 }
 
-function TermLoadAlert({ message, onRetry }: { message?: string | null; onRetry?: () => void }) {
-  if (!message) return null;
-  return (
-    <Alert tone="error" className="text-xs">
-      <p>{message}</p>
-      {onRetry ? (
-        <Button type="button" variant="outline" size="sm" onClick={onRetry} className="mt-2">
-          Tentar novamente
-        </Button>
-      ) : null}
-    </Alert>
-  );
-}
-
 function TermsCheckbox({
   checked,
   onChange,
@@ -130,7 +116,7 @@ function TermsCheckbox({
 }: TermsCheckboxProps) {
   return (
     <div className="flex flex-col gap-2 text-left">
-      <TermLoadAlert message={termError} onRetry={onRetryTerm} />
+      {termError ? <TermLoadError message={termError} onRetry={onRetryTerm} /> : null}
       {error ? <TermsNotice message={error} /> : null}
       <label className="flex items-start gap-3 cursor-pointer select-none text-xs text-muted">
         <input
@@ -172,13 +158,65 @@ function FormErrorAlert({ errorMessages }: { errorMessages?: string[] }) {
   );
 }
 
+function RegisterFields(props: RegisterFormProps) {
+  const { values, errors, onChange, errorMessages } = props;
+
+  return (
+    <>
+      <AvatarPicker
+        value={values.foto}
+        onChange={(file) => onChange('foto', file)}
+        error={errors.foto}
+        optional={values.tipo !== 'ALUNO'}
+      />
+      <FormErrorAlert errorMessages={errorMessages} />
+      <IdentityFields {...props} />
+      <PasswordFields {...props} />
+    </>
+  );
+}
+
+type RegisterTermsModalProps = {
+  legalDoc: string | null;
+  onClose: () => void;
+  currentTerm?: CurrentCommitmentTerm | null;
+  isTermLoading?: boolean;
+  termError?: string | null;
+  onRetryTerm?: () => void;
+};
+
+function RegisterTermsModal({
+  legalDoc,
+  onClose,
+  currentTerm,
+  isTermLoading,
+  termError,
+  onRetryTerm,
+}: RegisterTermsModalProps) {
+  return (
+    <LegalDocumentModal
+      isOpen={legalDoc !== null}
+      title={legalDoc ?? ''}
+      onClose={onClose}
+      maxWidth="max-w-2xl"
+    >
+      <TermsAndPrivacyContent
+        term={currentTerm ?? null}
+        isLoading={isTermLoading}
+        error={termError}
+        onRetry={onRetryTerm}
+        requireLiveTerm
+      />
+    </LegalDocumentModal>
+  );
+}
+
 export function RegisterForm(props: RegisterFormProps) {
   const {
     values,
     errors,
     onChange,
     isLoading,
-    errorMessages,
     currentTerm,
     isTermLoading,
     termError,
@@ -195,15 +233,7 @@ export function RegisterForm(props: RegisterFormProps) {
   return (
     <>
       <form noValidate onSubmit={handleSubmit} className="stagger-in flex flex-col gap-5">
-        <AvatarPicker
-          value={values.foto}
-          onChange={(file) => onChange('foto', file)}
-          error={errors.foto}
-          optional={values.tipo !== 'ALUNO'}
-        />
-        <FormErrorAlert errorMessages={errorMessages} />
-        <IdentityFields {...props} />
-        <PasswordFields {...props} />
+        <RegisterFields {...props} />
         <TermsCheckbox
           checked={values.termosAceitos}
           onChange={(checked) => onChange('termosAceitos', checked)}
@@ -216,20 +246,14 @@ export function RegisterForm(props: RegisterFormProps) {
           Criar conta
         </Button>
       </form>
-      <LegalDocumentModal
-        isOpen={legalDoc !== null}
-        title={legalDoc ?? ''}
+      <RegisterTermsModal
+        legalDoc={legalDoc}
         onClose={() => setLegalDoc(null)}
-        maxWidth="max-w-2xl"
-      >
-        <TermsAndPrivacyContent
-          term={currentTerm ?? null}
-          isLoading={isTermLoading}
-          error={termError}
-          onRetry={onRetryTerm}
-          requireLiveTerm
-        />
-      </LegalDocumentModal>
+        currentTerm={currentTerm}
+        isTermLoading={isTermLoading}
+        termError={termError}
+        onRetryTerm={onRetryTerm}
+      />
     </>
   );
 }
