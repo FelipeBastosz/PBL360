@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { userService } from '@/services/user.service';
+import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
 import { AuthContext } from '@/contexts/authContext';
 import ProfilePage from './ProfilePage';
 import type { UserProfileResponse } from '@/types/user';
@@ -17,12 +18,6 @@ vi.mock('@/services/user.service', () => ({
     changePassword: vi.fn(),
     getPhoto: vi.fn(),
   },
-}));
-
-vi.mock('@/hooks/useUserPhoto', () => ({
-  useUserPhoto: vi.fn(() => null),
-  clearUserPhotoCache: vi.fn(),
-  setUserPhotoCache: vi.fn(),
 }));
 
 const mockStudentProfile: UserProfileResponse = {
@@ -80,6 +75,10 @@ function renderProfilePage(profileData = mockStudentProfile) {
 describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearUserPhotoCache();
+    vi.mocked(userService.getPhoto).mockResolvedValue(
+      new Blob(['existing-photo'], { type: 'image/png' }),
+    );
   });
 
   it('renders student profile data with read-only email and matricula', async () => {
@@ -239,5 +238,22 @@ describe('ProfilePage', () => {
     await user.click(retryBtn);
 
     expect(await screen.findByText('Aluno Teste')).toBeInTheDocument();
+  });
+
+  it('preserves previous photo and shows error when photo upload fails', async () => {
+    const user = userEvent.setup();
+    vi.mocked(userService.uploadPhoto).mockRejectedValue(new Error('Arquivo inválido'));
+
+    const { updateUserMock } = renderProfilePage({ ...mockStudentProfile, possuiFoto: true });
+    expect(await screen.findByRole('img', { name: 'Foto de Aluno Teste' })).toBeInTheDocument();
+    updateUserMock.mockClear();
+
+    const fileInput = screen.getByTestId('photo-input');
+    const file = new File(['bad'], 'bad.png', { type: 'image/png' });
+    await user.upload(fileInput, file);
+
+    expect(await screen.findByText('Arquivo inválido')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Foto de Aluno Teste' })).toBeInTheDocument();
+    expect(updateUserMock).not.toHaveBeenCalled();
   });
 });
