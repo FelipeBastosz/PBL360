@@ -332,4 +332,51 @@ describe('sessionService', () => {
       url: '/sessoes/sess-1/tabela/edicao',
     });
   });
+
+  it('fetches session general evaluations returning array', async () => {
+    const mockEvaluations = [
+      {
+        id: 'eval-1',
+        texto: 'A turma teve bom desempenho.',
+        autor: { id: 'prof-1', nome: 'Prof. Carlos' },
+        criadoEm: '2026-11-18T10:00:00Z',
+        editadoEm: null,
+      },
+    ];
+    const adapter = respondWith(mockEvaluations);
+
+    await expect(sessionService.getGeneralEvaluations('sess-1')).resolves.toEqual(mockEvaluations);
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'get',
+      url: '/sessoes/sess-1/avaliacao-geral',
+    });
+  });
+
+  it('fetches session general evaluations returning empty array when empty or null', async () => {
+    respondWith([]);
+    await expect(sessionService.getGeneralEvaluations('sess-1')).resolves.toEqual([]);
+
+    respondWith(null);
+    await expect(sessionService.getGeneralEvaluations('sess-1')).resolves.toEqual([]);
+  });
+
+  it('saves session general evaluation successfully', async () => {
+    const mockSaved = {
+      id: 'eval-1',
+      texto: 'Novo relato da sessão.',
+      autor: { id: 'prof-1', nome: 'Prof. Carlos' },
+      criadoEm: '2026-11-18T10:00:00Z',
+      editadoEm: '2026-11-18T10:30:00Z',
+    };
+    const adapter = respondWith(mockSaved);
+
+    await expect(
+      sessionService.saveGeneralEvaluation('sess-1', { texto: 'Novo relato da sessão.' }),
+    ).resolves.toEqual(mockSaved);
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'put',
+      url: '/sessoes/sess-1/avaliacao-geral',
+      data: JSON.stringify({ texto: 'Novo relato da sessão.' }),
+    });
+  });
 });

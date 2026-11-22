@@ -221,3 +221,20 @@ export type UpdateSessionFormulaPayload = {
   componentes: SessionFormulaComponent[];
   aplicarNasSeguintes?: boolean;
 };
+
+export type SessionGeneralEvaluationAuthor = {
+  id: string;
+  nome: string;
+};
+
+export type SessionGeneralEvaluation = {
+  id: string;
+  texto: string;
+  autor: SessionGeneralEvaluationAuthor;
+  criadoEm: string;
+  editadoEm: string | null;
+};
+
+export type SaveSessionGeneralEvaluationPayload = {
+  texto: string;
+};

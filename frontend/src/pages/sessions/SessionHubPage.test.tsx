@@ -21,6 +21,8 @@ vi.mock('@/services/session.service', () => ({
     getForMember: vi.fn(),
     listAttachments: vi.fn().mockResolvedValue([]),
     getReleases: vi.fn(),
+    getGeneralEvaluations: vi.fn().mockResolvedValue([]),
+    saveGeneralEvaluation: vi.fn(),
   },
 }));
 
