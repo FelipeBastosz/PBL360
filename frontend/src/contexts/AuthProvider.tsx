@@ -40,6 +40,16 @@ function restoreSessionWithTermsCheck(): SessionResponse | null {
   return restored;
 }
 
+function mergeSessionUser(
+  prev: SessionResponse | null,
+  updatedPartial: Partial<UserResponse>,
+): SessionResponse | null {
+  if (!prev) return null;
+  const usuario = { ...prev.usuario, ...updatedPartial };
+  sessionStore.saveUser(usuario);
+  return { ...prev, usuario };
+}
+
 function useAuthActions(setSession: Dispatch<SetStateAction<SessionResponse | null>>) {
   const logout = useCallback(() => {
     clearSessionData();
@@ -49,6 +59,7 @@ function useAuthActions(setSession: Dispatch<SetStateAction<SessionResponse | nu
   const login = useCallback(
     async (payload: LoginPayload) => {
       const nextSession = await authService.login(payload);
+      clearUserPhotoCache();
       sessionStore.save(nextSession);
       markLoginTermsCheck();
       setSession(nextSession);
@@ -59,12 +70,7 @@ function useAuthActions(setSession: Dispatch<SetStateAction<SessionResponse | nu
 
   const updateUser = useCallback(
     (updatedPartial: Partial<UserResponse>) => {
-      setSession((prev) => {
-        if (!prev) return null;
-        const updatedUser = { ...prev.usuario, ...updatedPartial };
-        sessionStore.saveUser(updatedUser);
-        return { ...prev, usuario: updatedUser };
-      });
+      setSession((prev) => mergeSessionUser(prev, updatedPartial));
     },
     [setSession],
   );
@@ -85,8 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Keeps this tab on the account whose token the API client will actually send.
   const syncWithOtherTabs = useCallback(
     (stored: SessionResponse | null) => {
+      const switched = stored?.usuario.id !== session?.usuario.id;
+      if (!stored || switched) clearUserPhotoCache();
       setSession(stored);
-      if (stored && stored.usuario.id !== session?.usuario.id) {
+      if (stored && switched) {
         markLoginTermsCheck();
         notify({ tone: 'info', message: SESSION_SWITCHED_MESSAGE });
       }

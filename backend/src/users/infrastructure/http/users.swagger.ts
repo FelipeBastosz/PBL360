@@ -25,7 +25,7 @@ export const GetUserPhotoSwaggerDocs = applyDecorators(
     summary: 'Devolve a foto (carômetro) de um usuário',
     description:
       'Responde com os bytes da imagem gravada no banco e o `Content-Type` original. ' +
-      'O próprio usuário vê a sua foto; professores veem a de qualquer usuário.',
+      'Qualquer usuário autenticado pode ver a foto de outros usuários.',
   }),
   ApiProduces(...PHOTO_MIME_TYPES),
   ApiOkResponse({
@@ -38,10 +38,6 @@ export const GetUserPhotoSwaggerDocs = applyDecorators(
   }),
   ApiUnauthorizedResponse({
     description: 'JWT não informado, inválido ou expirado.',
-    type: ErrorResponseDto,
-  }),
-  ApiForbiddenResponse({
-    description: 'Aluno tentando ver a foto de outro usuário.',
     type: ErrorResponseDto,
   }),
   ApiNotFoundResponse({ description: 'O usuário não tem foto.', type: ErrorResponseDto }),
