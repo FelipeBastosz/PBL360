@@ -24,7 +24,7 @@ function ensureDefaultCommitmentTermMocks() {
       aceitoEm: '2026-11-17T12:00:00.000Z',
       versaoVigente: FALLBACK_TERM_1_2.versao,
     });
-  } else if (defaultTermSpies.has(acceptanceFn) && !acceptanceFn.getMockImplementation()) {
+  } else if (defaultTermSpies.has(acceptanceFn) || !acceptanceFn.getMockImplementation()) {
     acceptanceFn.mockResolvedValue({
       aceito: true,
       versaoAceita: FALLBACK_TERM_1_2.versao,
@@ -38,7 +38,7 @@ function ensureDefaultCommitmentTermMocks() {
     const spy = vi.spyOn(commitmentTermsService, 'getCurrentTerm');
     defaultTermSpies.add(spy);
     spy.mockResolvedValue(FALLBACK_TERM_1_2);
-  } else if (defaultTermSpies.has(currentTermFn) && !currentTermFn.getMockImplementation()) {
+  } else if (defaultTermSpies.has(currentTermFn) || !currentTermFn.getMockImplementation()) {
     currentTermFn.mockResolvedValue(FALLBACK_TERM_1_2);
   }
 }
