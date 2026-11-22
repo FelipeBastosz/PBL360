@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
@@ -173,6 +173,32 @@ describe('RoomChat', () => {
       await within(dialog).findByText('Você não possui mais vínculo de professor nesta sala.'),
     ).toBeInTheDocument();
     expect(within(dialog).getByLabelText('Mensagem para Ana Souza')).toHaveValue('Olá');
+  });
+
+  it('loads each older page once while the tutor scrolls up the history', async () => {
+    vi.mocked(conversationService.listMessages)
+      .mockResolvedValueOnce({ itens: [anaMessage], proximoCursor: 'msg-1' })
+      .mockResolvedValueOnce({
+        itens: [{ ...anaMessage, id: 'msg-0', texto: 'Bom dia, professora.' }],
+        proximoCursor: null,
+      });
+    renderChat();
+    const dialog = await openChat();
+    await userEvent.click(await within(dialog).findByRole('button', { name: /ana souza/i }));
+    const list = await within(dialog).findByRole('list', { name: 'Mensagens com Ana Souza' });
+    const container = list.parentElement!;
+    Object.defineProperty(container, 'scrollHeight', { configurable: true, value: 1000 });
+    Object.defineProperty(container, 'clientHeight', { configurable: true, value: 300 });
+
+    container.scrollTop = 0;
+    fireEvent.scroll(container);
+    fireEvent.scroll(container);
+
+    expect(await within(dialog).findByText('Bom dia, professora.')).toBeInTheDocument();
+    expect(conversationService.listMessages).toHaveBeenCalledTimes(2);
+    expect(conversationService.listMessages).toHaveBeenLastCalledWith('conv-ana', {
+      cursor: 'msg-1',
+    });
   });
 
   it('lists only the tutors of the room for a student', async () => {

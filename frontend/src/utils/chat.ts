@@ -53,6 +53,36 @@ export function mergeMessages(first: ChatMessage[], second: ChatMessage[]): Chat
   return [...first, ...second.filter((message) => !known.has(message.id))];
 }
 
+type ScrollMetrics = Pick<HTMLElement, 'scrollHeight' | 'scrollTop' | 'clientHeight'>;
+
+// Close enough to the end counts as "at the end": a few pixels of rounding or a half-visible
+// last bubble should not stop the list from following new messages.
+const NEAR_BOTTOM_PX = 80;
+
+export function isNearBottom({ scrollHeight, scrollTop, clientHeight }: ScrollMetrics): boolean {
+  return scrollHeight - scrollTop - clientHeight <= NEAR_BOTTOM_PX;
+}
+
+type ListEnds = { firstId?: string; lastId?: string };
+
+export type ListChange = 'initial' | 'older' | 'newer' | 'none';
+
+// What changed between two renders of a conversation, judged by its first and last messages.
+export function describeListChange(before: ListEnds, after: ListEnds): ListChange {
+  if (!before.lastId) return after.lastId ? 'initial' : 'none';
+  if (after.lastId !== before.lastId) return 'newer';
+  if (after.firstId !== before.firstId) return 'older';
+  return 'none';
+}
+
+// How close to the top the reader gets before the previous page is requested, so it is
+// usually in place before they reach the very first message on screen.
+const NEAR_TOP_PX = 120;
+
+export function isNearTop({ scrollTop }: Pick<HTMLElement, 'scrollTop'>): boolean {
+  return scrollTop <= NEAR_TOP_PX;
+}
+
 const pad = (value: number) => String(value).padStart(2, '0');
 
 export function formatMessageTime(isoDate: string, now: Date = new Date()): string {

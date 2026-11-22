@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { usePolling } from '@/hooks/usePolling';
 import { conversationService } from '@/services/conversation.service';
@@ -53,11 +53,17 @@ export function useMessageHistory(conversationId: string | null) {
 
   usePolling(pollNewer, POLL_INTERVAL_MS, history.isReady);
 
+  // Scrolling fires many events before the loading state renders; one request per page.
+  const requestedCursor = useRef<string | null>(null);
+
   const loadOlder = useCallback(() => {
-    if (!conversationId || !history.nextCursor) return;
-    fetchOlder(conversationId, { cursor: history.nextCursor }).then(
-      (r) => r.ok && setHistory(withOlder(r.data)),
-    );
+    const cursor = history.nextCursor;
+    if (!conversationId || !cursor || requestedCursor.current === cursor) return;
+    requestedCursor.current = cursor;
+    fetchOlder(conversationId, { cursor }).then((r) => {
+      if (r.ok) setHistory(withOlder(r.data));
+      else requestedCursor.current = null;
+    });
   }, [conversationId, history.nextCursor, fetchOlder]);
 
   return {

@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { ChatMessage, Conversation } from '@/types/conversation';
 import {
   buildChatContacts,
+  describeListChange,
   formatMessageTime,
   hasUnreadMessage,
   isLaterThan,
+  isNearBottom,
+  isNearTop,
   mergeMessages,
   splitContacts,
 } from './chat';
@@ -101,5 +104,43 @@ describe('formatMessageTime', () => {
 
   it('adds the day for an older message', () => {
     expect(formatMessageTime(new Date(2026, 10, 3, 14, 30).toISOString(), now)).toBe('03/11 14:30');
+  });
+});
+
+describe('isNearBottom', () => {
+  it('treats the end of the list and a few pixels above it as the bottom', () => {
+    expect(isNearBottom({ scrollHeight: 1000, clientHeight: 300, scrollTop: 700 })).toBe(true);
+    expect(isNearBottom({ scrollHeight: 1000, clientHeight: 300, scrollTop: 640 })).toBe(true);
+  });
+
+  it('is false while the reader is up in the history', () => {
+    expect(isNearBottom({ scrollHeight: 1000, clientHeight: 300, scrollTop: 200 })).toBe(false);
+  });
+});
+
+describe('describeListChange', () => {
+  it('spots the first load, older messages at the top and newer ones at the end', () => {
+    expect(describeListChange({}, { firstId: '1', lastId: '2' })).toBe('initial');
+    expect(describeListChange({ firstId: '3', lastId: '4' }, { firstId: '1', lastId: '4' })).toBe(
+      'older',
+    );
+    expect(describeListChange({ firstId: '1', lastId: '2' }, { firstId: '1', lastId: '3' })).toBe(
+      'newer',
+    );
+    expect(describeListChange({ firstId: '1', lastId: '2' }, { firstId: '1', lastId: '2' })).toBe(
+      'none',
+    );
+  });
+
+  it('does nothing while the conversation is still empty', () => {
+    expect(describeListChange({}, {})).toBe('none');
+  });
+});
+
+describe('isNearTop', () => {
+  it('is true close to the beginning of the history', () => {
+    expect(isNearTop({ scrollTop: 0 })).toBe(true);
+    expect(isNearTop({ scrollTop: 120 })).toBe(true);
+    expect(isNearTop({ scrollTop: 400 })).toBe(false);
   });
 });
