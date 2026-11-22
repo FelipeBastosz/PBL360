@@ -1,8 +1,10 @@
 import { MaxBytes } from '@/shared/validators/max-bytes.decorator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsEnum,
+  Equals,
   IsNotEmpty,
   IsString,
   Length,
@@ -45,6 +47,24 @@ export class RegisterUserDto {
   @ApiProperty({ enum: UserTypePayload, example: UserTypePayload.ALUNO })
   @IsEnum(UserTypePayload, { message: 'O tipo deve ser PROFESSOR ou ALUNO.' })
   tipo!: UserTypePayload;
+
+  @ApiProperty({
+    maxLength: 20,
+    description: 'Versão vigente dos Termos de Uso e Política de Privacidade aceita no cadastro.',
+    example: '1.2',
+  })
+  @IsString({ message: 'A versão dos termos é obrigatória.' })
+  @IsNotEmpty({ message: 'A versão dos termos é obrigatória.' })
+  @MaxLength(20, { message: 'A versão dos termos deve ter no máximo 20 caracteres.' })
+  versaoTermo!: string;
+
+  @ApiProperty({
+    example: true,
+    description: 'Deve ser true após a confirmação explícita de leitura e aceite dos termos.',
+  })
+  @Transform(({ value }: { value: unknown }) => value === true || value === 'true')
+  @Equals(true, { message: 'É necessário aceitar os termos para concluir o cadastro.' })
+  aceitaTermos!: boolean;
 
   @ApiPropertyOptional({
     pattern: '^\\d{8}$',

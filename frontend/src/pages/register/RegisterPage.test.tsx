@@ -2,11 +2,13 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
 import { authService } from '@/services/auth.service';
+import { commitmentTermsService } from '@/services/commitmentTerms.service';
 import { renderApp, studentUser } from '@/testing/renderApp';
 
 vi.mock('@/services/auth.service');
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.resetAllMocks();
 });
 
@@ -25,6 +27,11 @@ async function fillCommonFields(user: User, email: string) {
   await user.type(screen.getByLabelText('Email Institucional'), email);
   await user.type(screen.getByLabelText('Senha'), 'senha-secreta');
   await user.type(screen.getByLabelText('Confirmar a Senha'), 'senha-secreta');
+  await user.click(
+    screen.getByRole('checkbox', {
+      name: /eu li e concordo com os termos de uso e política de privacidade/i,
+    }),
+  );
 }
 
 describe('RegisterPage', () => {
@@ -78,6 +85,8 @@ describe('RegisterPage', () => {
       email: 'ana@discente.uefs.br',
       senha: 'senha-secreta',
       tipo: 'ALUNO',
+      versaoTermo: '1.2',
+      aceitaTermos: true,
       matricula: '20240001',
       foto: photo,
     });
@@ -97,6 +106,8 @@ describe('RegisterPage', () => {
       email: 'carlos@uefs.br',
       senha: 'senha-secreta',
       tipo: 'PROFESSOR',
+      versaoTermo: '1.2',
+      aceitaTermos: true,
     });
   });
 
@@ -174,5 +185,149 @@ describe('RegisterPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Já existe uma conta cadastrada com este e-mail.',
     );
+  });
+
+  it('blocks registration when terms checkbox is not checked and displays notice only upon submit attempt', async () => {
+    const { user } = renderApp('/cadastro?perfil=professor');
+
+    await user.type(await screen.findByLabelText('Nome completo'), 'Ana Souza');
+    await user.type(screen.getByLabelText('Email Institucional'), 'carlos@uefs.br');
+    await user.type(screen.getByLabelText('Senha'), 'senha-secreta');
+    await user.type(screen.getByLabelText('Confirmar a Senha'), 'senha-secreta');
+
+    const submitButton = screen.getByRole('button', { name: 'Criar conta' });
+    expect(
+      screen.queryByText(/o cadastro só pode ser realizado se você marcar que leu e concorda/i),
+    ).not.toBeInTheDocument();
+
+    await user.click(submitButton);
+
+    expect(
+      await screen.findByText(
+        /o cadastro só pode ser realizado se você marcar que leu e concorda/i,
+      ),
+    ).toBeInTheDocument();
+    expect(authService.register).not.toHaveBeenCalled();
+  });
+
+  it('renders unified terms and privacy checkbox with notice appearing upon submit attempt and plain email', async () => {
+    const { user } = renderApp('/cadastro?perfil=professor');
+
+    expect(
+      screen.queryByText(/o cadastro só pode ser realizado se você marcar que leu e concorda/i),
+    ).not.toBeInTheDocument();
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: /eu li e concordo com os termos de uso e política de privacidade/i,
+    });
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox).not.toBeChecked();
+
+    const submitButton = screen.getByRole('button', { name: 'Criar conta' });
+
+    await user.click(
+      screen.getByRole('button', { name: 'Termos de Uso e Política de Privacidade' }),
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Termos de Uso e Política de Privacidade' }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(/é uma aplicação web experimental, sem fins lucrativos/i),
+    ).toBeInTheDocument();
+    expect(await screen.findByText(/contato\.pbl360@gmail\.com/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /contato\.pbl360@gmail\.com/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(
+      screen.queryByRole('heading', { name: 'Termos de Uso e Política de Privacidade' }),
+    ).not.toBeInTheDocument();
+
+    await user.click(submitButton);
+    expect(
+      await screen.findByText(
+        /o cadastro só pode ser realizado se você marcar que leu e concorda/i,
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(checkbox);
+    expect(checkbox).toBeChecked();
+    expect(
+      screen.queryByText(/o cadastro só pode ser realizado se você marcar que leu e concorda/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('reloads current term, unchecks acceptance and updates displayed version on 409 term conflict', async () => {
+    vi.spyOn(commitmentTermsService, 'getCurrentTerm')
+      .mockResolvedValueOnce({
+        versao: '1.2',
+        titulo: 'Termos v1.2',
+        texto: '### 1. Regras v1.2\n\nTexto da versão 1.2.',
+      })
+      .mockResolvedValueOnce({
+        versao: '1.3',
+        titulo: 'Termos v1.3',
+        texto: '### 1. Regras v1.3\n\nTexto atualizado da versão 1.3.',
+      });
+    vi.mocked(authService.register)
+      .mockRejectedValueOnce(
+        new ApiError(409, ['A versão dos termos enviada não corresponde à versão vigente.']),
+      )
+      .mockResolvedValueOnce(registered);
+
+    const { user } = renderApp('/cadastro?perfil=professor');
+    await fillCommonFields(user, 'carlos@uefs.br');
+    await user.click(screen.getByRole('button', { name: 'Criar conta' }));
+
+    expect(
+      await screen.findByText(/os termos de uso e política de privacidade foram atualizados/i),
+    ).toBeInTheDocument();
+    const checkbox = screen.getByRole('checkbox', {
+      name: /eu li e concordo com os termos de uso e política de privacidade/i,
+    });
+    expect(checkbox).not.toBeChecked();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Termos de Uso e Política de Privacidade' }),
+    );
+    expect(await screen.findByText(/texto atualizado da versão 1\.3/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Fechar' }));
+
+    await user.click(checkbox);
+    await user.click(screen.getByRole('button', { name: 'Criar conta' }));
+
+    expect(await screen.findByRole('heading', { name: 'Confirmar e-mail' })).toBeInTheDocument();
+    expect(authService.register).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        versaoTermo: '1.3',
+        aceitaTermos: true,
+      }),
+    );
+  });
+
+  it('disables submit without fallback when loading terms fails and enables after retry', async () => {
+    vi.spyOn(commitmentTermsService, 'getCurrentTerm')
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({
+        versao: '1.2',
+        titulo: 'Termos v1.2',
+        texto: '### 1. Regras v1.2\n\nTermos carregados na nova tentativa.',
+      });
+
+    const { user } = renderApp('/cadastro?perfil=professor');
+
+    expect(
+      await screen.findByText(
+        /não foi possível carregar os termos de uso e política de privacidade/i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Criar conta' })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Criar conta' })).toBeEnabled();
+    });
   });
 });

@@ -1,5 +1,5 @@
 import type { DataSource, Repository } from 'typeorm';
-import { DEFAULT_PASSWORD, runSeed, seedUser } from './seed';
+import { DEFAULT_PASSWORD, runSeed, seedCommitmentTermAcceptances, seedUser } from './seed';
 import { SEED_USERS } from './seed-users';
 
 const TEST_ENV = { NODE_ENV: 'test', BCRYPT_ROUNDS: '4' };
@@ -12,9 +12,9 @@ describe('seed.ts', () => {
   let mockUserRepo: jest.Mocked<Pick<Repository<User>, 'findOneBy' | 'save'>>;
   let mockPhotoRepo: jest.Mocked<Pick<Repository<UserPhoto>, 'save'>>;
   let mockTagRepo: jest.Mocked<Pick<Repository<BehaviorTag>, 'findOneBy' | 'save'>>;
-  let mockDataSource: jest.Mocked<Pick<DataSource, 'getRepository' | 'initialize' | 'destroy'>> & {
-    isInitialized: boolean;
-  };
+  let mockDataSource: jest.Mocked<
+    Pick<DataSource, 'getRepository' | 'initialize' | 'destroy' | 'query'>
+  > & { isInitialized: boolean };
 
   beforeEach(() => {
     mockUserRepo = {
@@ -35,6 +35,7 @@ describe('seed.ts', () => {
         mockDataSource.isInitialized = true;
         return Promise.resolve();
       }),
+      query: jest.fn().mockResolvedValue([{ id: 'term-1', version: '1.2' }]),
       destroy: jest.fn().mockImplementation(() => {
         mockDataSource.isInitialized = false;
         return Promise.resolve();
@@ -97,6 +98,37 @@ describe('seed.ts', () => {
 
       expect(result).toBe(false);
       expect(mockUserRepo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('seedCommitmentTermAcceptances', () => {
+    it('accepts the current term for all seeded users except the designated test user', async () => {
+      await seedCommitmentTermAcceptances(mockDataSource as unknown as DataSource);
+
+      expect(mockDataSource.query).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('INSERT INTO user_term_acceptances'),
+        [
+          SEED_USERS.filter((user) => user.acceptsCommitmentTerm !== false).map(
+            (user) => user.email,
+          ),
+          'term-1',
+        ],
+      );
+      expect(mockDataSource.query).toHaveBeenNthCalledWith(
+        3,
+        expect.stringContaining('DELETE FROM user_term_acceptances'),
+        ['term-1', ['sem-aceite@uefs.br']],
+      );
+    });
+
+    it('fails explicitly when no current commitment term exists', async () => {
+      mockDataSource.query.mockResolvedValueOnce([]);
+
+      await expect(
+        seedCommitmentTermAcceptances(mockDataSource as unknown as DataSource),
+      ).rejects.toThrow('no current commitment term was found');
+      expect(mockDataSource.query).toHaveBeenCalledTimes(1);
     });
   });
 

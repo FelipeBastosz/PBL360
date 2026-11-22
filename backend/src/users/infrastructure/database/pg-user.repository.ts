@@ -40,6 +40,16 @@ const USER_COLUMNS = `
     created_at AS "createdAt"`;
 
 const WRITABLE_COLUMNS = `name, email, password_hash, registration_number, type, active, token_version`;
+const ASSERT_CURRENT_TERM_QUERY = `
+  SELECT id
+  FROM commitment_terms
+  WHERE id = $1 AND version = $2 AND is_current = TRUE
+  FOR SHARE;
+`;
+const INSERT_TERM_ACCEPTANCE_QUERY = `
+  INSERT INTO user_term_acceptances (user_id, term_id, term_version, accepted_at)
+  VALUES ($1, $2, $3, now());
+`;
 
 @Injectable()
 export class PgUserRepository implements UserRepository {
@@ -90,16 +100,44 @@ export class PgUserRepository implements UserRepository {
   }
 
   async save(user: User): Promise<User> {
-    try {
-      return await this.users.manager.transaction(async (manager) => {
-        const saved = await (user.id
-          ? this.updateExisting(manager, user)
-          : this.insertNew(manager, user));
+    return this.inTransaction((manager) => this.saveInTransaction(manager, user));
+  }
 
-        return this.savePendingPhoto(manager, user, saved);
-      });
+  async saveWithTermAcceptance(user: User, termId: string, termVersion: string): Promise<User> {
+    return this.inTransaction(async (manager) => {
+      await this.assertCurrentTerm(manager, termId, termVersion);
+      const saved = await this.saveInTransaction(manager, user);
+      await manager.query(INSERT_TERM_ACCEPTANCE_QUERY, [saved.id, termId, termVersion]);
+      return saved;
+    });
+  }
+
+  private async inTransaction<T>(operation: (manager: EntityManager) => Promise<T>): Promise<T> {
+    try {
+      return await this.users.manager.transaction(operation);
     } catch (error) {
       throw this.translateConflict(error);
+    }
+  }
+
+  private async saveInTransaction(manager: EntityManager, user: User): Promise<User> {
+    const saved = await (user.id
+      ? this.updateExisting(manager, user)
+      : this.insertNew(manager, user));
+    return this.savePendingPhoto(manager, user, saved);
+  }
+
+  private async assertCurrentTerm(
+    manager: EntityManager,
+    termId: string,
+    termVersion: string,
+  ): Promise<void> {
+    const rows = await manager.query<{ id: string }[]>(ASSERT_CURRENT_TERM_QUERY, [
+      termId,
+      termVersion,
+    ]);
+    if (rows.length === 0) {
+      throw new ConflictError('A versão dos termos enviada não corresponde à versão vigente.');
     }
   }
 

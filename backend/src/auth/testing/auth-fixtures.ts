@@ -9,6 +9,9 @@ export const userRepositoryStub = (): jest.Mocked<UserRepository> => ({
   findById: jest.fn(),
   updateName: jest.fn(),
   save: jest.fn((user: User) => Promise.resolve(user)),
+  saveWithTermAcceptance: jest.fn((user: User, _termId: string, _termVersion: string) =>
+    Promise.resolve(user),
+  ),
 });
 
 export const buildStudent = (overrides: Partial<User> = {}): User => {

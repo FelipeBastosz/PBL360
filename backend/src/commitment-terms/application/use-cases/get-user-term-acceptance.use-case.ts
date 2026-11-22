@@ -32,8 +32,9 @@ export class GetUserTermAcceptanceUseCase {
     }
 
     const acceptance = await this.userTermAcceptances.findByUserId(userId);
+    const acceptedCurrentTerm = await this.userTermAcceptances.hasAccepted(userId);
     return {
-      aceito: Boolean(acceptance),
+      aceito: acceptedCurrentTerm,
       versaoAceita: acceptance?.termVersion ?? null,
       aceitoEm: acceptance?.acceptedAt ?? null,
       versaoVigente: currentTerm.version,

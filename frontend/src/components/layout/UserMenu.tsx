@@ -13,13 +13,16 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowRightStartOnRectangleIcon,
   BookOpenIcon,
+  InformationCircleIcon,
   TagIcon,
   UserIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { AdditionalInfoModal } from '@/components/layout/AdditionalInfoModal';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { AuthContext } from '@/contexts/authContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { ROUTES } from '@/routes/paths';
 import type { UserResponse } from '@/types/auth';
 import { cn } from '@/utils/cn';
@@ -89,17 +92,6 @@ function MenuEntry({ item, onNavigate }: { item: MenuItem; onNavigate: () => voi
   );
 }
 
-function useCloseOnEscape(isOpen: boolean, onClose: () => void) {
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
-}
-
 function DrawerHeader({ titleId, onClose }: { titleId: string; onClose: () => void }) {
   const { user } = useAuth();
 
@@ -126,7 +118,12 @@ function DrawerHeader({ titleId, onClose }: { titleId: string; onClose: () => vo
   );
 }
 
-function DrawerNav({ onClose }: { onClose: () => void }) {
+type DrawerNavProps = {
+  onClose: () => void;
+  onOpenAdditionalInfo: () => void;
+};
+
+function DrawerNav({ onClose, onOpenAdditionalInfo }: DrawerNavProps) {
   const { user } = useAuth();
 
   return (
@@ -136,6 +133,19 @@ function DrawerNav({ onClose }: { onClose: () => void }) {
         {menuItems(user?.tipo === 'PROFESSOR').map((item) => (
           <MenuEntry key={item.label} item={item} onNavigate={onClose} />
         ))}
+      </div>
+      <div className="mt-4 border-t border-black/5 pt-4">
+        <button
+          type="button"
+          onClick={onOpenAdditionalInfo}
+          className={cn(
+            ITEM_CLASS,
+            'transition-colors duration-200 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-900',
+          )}
+        >
+          <InformationCircleIcon className="size-6 shrink-0" aria-hidden />
+          <span className="flex-1 text-left">Informações adicionais</span>
+        </button>
       </div>
     </nav>
   );
@@ -169,34 +179,38 @@ function DrawerFooter({ onClose }: { onClose: () => void }) {
 }
 
 function UserMenuDrawer({ onClose }: { onClose: () => void }) {
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  useCloseOnEscape(true, onClose);
+  useEscapeKey(true, onClose, isInfoOpen);
 
   useEffect(() => panelRef.current?.focus(), []);
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-hidden
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-black/50 backdrop-blur-xs animate-fade-in"
-      />
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="relative flex h-full w-[300px] max-w-[85vw] flex-col bg-white shadow-2xl animate-drawer-in focus:outline-none"
-      >
-        <DrawerHeader titleId={titleId} onClose={onClose} />
-        <DrawerNav onClose={onClose} />
-        <DrawerFooter onClose={onClose} />
+    <>
+      <div className="fixed inset-0 z-50 flex justify-end">
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden
+          onClick={onClose}
+          className="absolute inset-0 cursor-default bg-black/50 backdrop-blur-xs animate-fade-in"
+        />
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          tabIndex={-1}
+          className="relative flex h-full w-[300px] max-w-[85vw] flex-col bg-white shadow-2xl animate-drawer-in focus:outline-none"
+        >
+          <DrawerHeader titleId={titleId} onClose={onClose} />
+          <DrawerNav onClose={onClose} onOpenAdditionalInfo={() => setIsInfoOpen(true)} />
+          <DrawerFooter onClose={onClose} />
+        </div>
       </div>
-    </div>,
+      <AdditionalInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
+    </>,
     document.body,
   );
 }

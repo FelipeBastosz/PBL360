@@ -1,4 +1,12 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useExpiryTimer } from '@/hooks/useExpiryTimer';
 import { useToast } from '@/hooks/useToast';
 import { setUnauthorizedHandler } from '@/services/api';
@@ -7,6 +15,30 @@ import { sessionStore } from '@/services/sessionStore';
 import type { LoginPayload, SessionResponse, UserResponse } from '@/types/auth';
 import { AuthContext, SESSION_EXPIRED_MESSAGE, SESSION_SWITCHED_MESSAGE } from './authContext';
 import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
+
+function markLoginTermsCheck(): void {
+  try {
+    sessionStorage.setItem('pbl360.checkTermsOnLogin', 'true');
+  } catch {
+    // ignore
+  }
+}
+
+function clearSessionData(): void {
+  sessionStore.clear();
+  clearUserPhotoCache();
+  try {
+    sessionStorage.removeItem('pbl360.checkTermsOnLogin');
+  } catch {
+    // ignore
+  }
+}
+
+function restoreSessionWithTermsCheck(): SessionResponse | null {
+  const restored = sessionStore.restore();
+  if (restored) markLoginTermsCheck();
+  return restored;
+}
 
 function mergeSessionUser(
   prev: SessionResponse | null,
@@ -18,15 +50,38 @@ function mergeSessionUser(
   return { ...prev, usuario };
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<SessionResponse | null>(() => sessionStore.restore());
-  const { notify } = useToast();
-
+function useAuthActions(setSession: Dispatch<SetStateAction<SessionResponse | null>>) {
   const logout = useCallback(() => {
-    sessionStore.clear();
-    clearUserPhotoCache();
+    clearSessionData();
     setSession(null);
-  }, []);
+  }, [setSession]);
+
+  const login = useCallback(
+    async (payload: LoginPayload) => {
+      const nextSession = await authService.login(payload);
+      clearUserPhotoCache();
+      sessionStore.save(nextSession);
+      markLoginTermsCheck();
+      setSession(nextSession);
+      return nextSession.usuario;
+    },
+    [setSession],
+  );
+
+  const updateUser = useCallback(
+    (updatedPartial: Partial<UserResponse>) => {
+      setSession((prev) => mergeSessionUser(prev, updatedPartial));
+    },
+    [setSession],
+  );
+
+  return { logout, login, updateUser };
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<SessionResponse | null>(restoreSessionWithTermsCheck);
+  const { notify } = useToast();
+  const { logout, login, updateUser } = useAuthActions(setSession);
 
   const expire = useCallback(() => {
     logout();
@@ -39,7 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const switched = stored?.usuario.id !== session?.usuario.id;
       if (!stored || switched) clearUserPhotoCache();
       setSession(stored);
-      if (stored && switched) notify({ tone: 'info', message: SESSION_SWITCHED_MESSAGE });
+      if (stored && switched) {
+        markLoginTermsCheck();
+        notify({ tone: 'info', message: SESSION_SWITCHED_MESSAGE });
+      }
     },
     [session?.usuario.id, notify],
   );
@@ -48,22 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => sessionStore.subscribe(syncWithOtherTabs), [syncWithOtherTabs]);
   useExpiryTimer(session?.expiraEm, expire);
 
-  const login = useCallback(async (payload: LoginPayload) => {
-    const nextSession = await authService.login(payload);
-    clearUserPhotoCache();
-    sessionStore.save(nextSession);
-    setSession(nextSession);
-    return nextSession.usuario;
-  }, []);
-
-  const updateUser = useCallback((updatedPartial: Partial<UserResponse>) => {
-    setSession((prev) => mergeSessionUser(prev, updatedPartial));
-  }, []);
-
   const value = useMemo(
     () => ({
       user: session?.usuario ?? null,
-      isAuthenticated: !!session,
+      isAuthenticated: session !== null,
       login,
       logout,
       updateUser,

@@ -33,6 +33,8 @@ describe('auth.mapper', () => {
       email: 'ana@discente.uefs.br',
       senha: 'senha-secreta',
       tipo: UserTypePayload.ALUNO,
+      versaoTermo: '1.2',
+      aceitaTermos: true,
       matricula: '20240001',
     };
     const photo = pngPhotoBytes();
@@ -42,6 +44,8 @@ describe('auth.mapper', () => {
       email: 'ana@discente.uefs.br',
       password: 'senha-secreta',
       type: UserType.STUDENT,
+      acceptedTermVersion: '1.2',
+      acceptsTerms: true,
       registrationNumber: '20240001',
       photo,
     });
@@ -53,6 +57,8 @@ describe('auth.mapper', () => {
       email: 'carlos@uefs.br',
       senha: 'senha-secreta',
       tipo: UserTypePayload.PROFESSOR,
+      versaoTermo: '1.2',
+      aceitaTermos: true,
     } as RegisterUserDto;
 
     expect(toRegisterUserInput(dto)).toMatchObject({

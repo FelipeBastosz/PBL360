@@ -84,8 +84,58 @@ async function seedAllUsers(ds: DataSource, env: NodeJS.ProcessEnv): Promise<voi
   }
 }
 
+async function findCurrentCommitmentTerm(ds: DataSource): Promise<{ id: string; version: string }> {
+  const currentTerms = await ds.query<Array<{ id: string; version: string }>>(
+    `SELECT id, version FROM commitment_terms WHERE is_current = TRUE LIMIT 1;`,
+  );
+  const currentTerm = currentTerms[0];
+  if (!currentTerm) {
+    throw new Error('Cannot seed user acceptances: no current commitment term was found.');
+  }
+  return currentTerm;
+}
+
+async function seedAcceptedUsers(ds: DataSource, termId: string): Promise<void> {
+  const acceptedEmails = SEED_USERS.filter((user) => user.acceptsCommitmentTerm !== false).map(
+    (user) => user.email,
+  );
+  await ds.query(
+    `INSERT INTO user_term_acceptances (user_id, term_id, term_version, accepted_at)
+     SELECT users.id, terms.id, terms.version, now()
+     FROM users
+     CROSS JOIN commitment_terms AS terms
+     WHERE users.email = ANY($1::text[])
+       AND terms.id = $2
+     ON CONFLICT (user_id, term_id) DO NOTHING;`,
+    [acceptedEmails, termId],
+  );
+}
+
+async function removeAcceptanceForTestUsers(ds: DataSource, termId: string): Promise<void> {
+  const unacceptedEmails = SEED_USERS.filter((user) => user.acceptsCommitmentTerm === false).map(
+    (user) => user.email,
+  );
+  if (unacceptedEmails.length > 0) {
+    await ds.query(
+      `DELETE FROM user_term_acceptances AS acceptances
+       USING users
+       WHERE acceptances.user_id = users.id
+         AND acceptances.term_id = $1
+         AND users.email = ANY($2::text[]);`,
+      [termId, unacceptedEmails],
+    );
+  }
+}
+
+export async function seedCommitmentTermAcceptances(ds: DataSource): Promise<void> {
+  const currentTerm = await findCurrentCommitmentTerm(ds);
+  await seedAcceptedUsers(ds, currentTerm.id);
+  await removeAcceptanceForTestUsers(ds, currentTerm.id);
+}
+
 async function executeSeeds(ds: DataSource, env: NodeJS.ProcessEnv): Promise<void> {
   await seedAllUsers(ds, env);
+  await seedCommitmentTermAcceptances(ds);
   await seedAllPerformanceTables(ds);
   await seedAllBehaviorTags(ds);
   const studentEmails = SEED_USERS.filter((u) => u.type === UserType.STUDENT).map((u) => u.email);

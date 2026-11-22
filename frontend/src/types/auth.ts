@@ -21,6 +21,8 @@ export type RegisterPayload = {
   email: string;
   senha: string;
   tipo: UserTypePayload;
+  versaoTermo: string;
+  aceitaTermos: boolean;
   matricula?: string;
   foto?: File;
 };
