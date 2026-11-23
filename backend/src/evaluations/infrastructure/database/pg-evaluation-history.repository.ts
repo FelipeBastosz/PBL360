@@ -26,13 +26,16 @@ import {
   readStudentSelfEvaluation,
   readStudentTutorScores,
 } from './evaluation-history.reads';
+import { buildHistoryStudentItem } from './evaluation-history-builder';
 import {
   buildComparisonAdjustments,
   buildComparisonCriteriaItens,
   buildComparisonPeers,
-  buildHistoryStudentItem,
-} from './evaluation-history-builder';
+} from './evaluation-history-comparison.builder';
 import type { SelfEvaluationRow, StudentRow } from './evaluation-history.types';
+import { readSessionDecidedPokerRounds } from './evaluation-history-poker.reads';
+import { mapPokerRounds } from './evaluation-history-poker.builder';
+import { loadComparisonPoker, withPokerComparison } from './evaluation-history-poker.loader';
 import { FIND_EVALUATION_ITEMS_QUERY } from './evaluation-history.queries';
 import {
   isPeerWindowOpen,
@@ -80,17 +83,15 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
   ): Promise<StudentSessionEvaluationComparison | null> {
     const student = await readStudentParticipant(manager, sessionId, studentId);
     if (!student) return null;
-    const [selfData, tutorScores, peerData, config] = await this.loadComparisonBundles(
+    const [selfData, tutorScores, peerData, config, poker] = await this.loadComparisonBundles(
       manager,
       sessionId,
       studentId,
     );
-    return this.assembleStudentComparison(
-      student,
-      config.criteria,
-      selfData,
-      tutorScores,
-      peerData,
+    return withPokerComparison(
+      this.assembleStudentComparison(student, config.criteria, selfData, tutorScores, peerData),
+      selfData.selfEval,
+      poker,
     );
   }
 
@@ -100,6 +101,7 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
       this.loadTutorScores(manager, sessionId, studentId),
       this.loadStudentPeerData(manager, sessionId, studentId),
       readHistoryConfig(manager, sessionId),
+      loadComparisonPoker(manager, sessionId, studentId),
     ]);
   }
 
@@ -159,18 +161,20 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
       aluno: { alunoId: student.alunoId, nome: student.nome },
       autoavaliacao: this.assembleSelfAssessment(selfData, criteria, tutorScores),
       pares: buildComparisonPeers(peerData.peerRows, peerData.peerItemsMap),
+      planningPoker: null,
       ajustes: buildComparisonAdjustments(selfData.adjustments),
     };
   }
 
   private async loadHistoryMaps(manager: EntityManager, sessionId: string) {
-    const [selfEvals, adjustments, peerAdj, peers, tutorScores, timing] = await Promise.all([
+    const [selfEvals, adjustments, peerAdj, peers, tutorScores, timing, poker] = await Promise.all([
       readSessionSelfEvaluations(manager, sessionId),
       readSessionAdjustments(manager, sessionId),
       readSessionPeerAdjustments(manager, sessionId),
       readSessionPeerEvaluations(manager, sessionId),
       readSessionTutorScores(manager, sessionId),
       readSessionTiming(manager, sessionId),
+      readSessionDecidedPokerRounds(manager, sessionId),
     ]);
     return {
       selfMap: mapSelf(selfEvals),
@@ -178,6 +182,7 @@ export class PgEvaluationHistoryRepository implements EvaluationHistoryRepositor
       peerMap: mapPeers(peers),
       peerAdjustmentMap: mapPeerAdjustments(peerAdj),
       peerWindowOpen: isPeerWindowOpen(timing),
+      pokerMap: mapPokerRounds(poker),
       ...mapTutors(tutorScores),
     };
   }

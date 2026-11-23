@@ -26,6 +26,7 @@ import type {
   StudentRow,
   TutorScoreRow,
 } from './evaluation-history.types';
+import type { PeerAdjustmentRow } from './evaluation-history.maps';
 import { readSessionConfig, readSessionTableConfig } from './session-evaluation-config.persistence';
 
 export async function readParticipatingStatus(
@@ -70,9 +71,7 @@ export function readSessionAdjustments(
 export function readSessionPeerAdjustments(
   manager: EntityManager,
   sessionId: string,
-): Promise<
-  Array<{ studentId: string; previousValue: string | number; newValue: string | number }>
-> {
+): Promise<PeerAdjustmentRow[]> {
   return manager.query(FIND_SESSION_PEER_ADJUSTMENTS_QUERY, [sessionId]);
 }
 

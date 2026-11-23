@@ -1,8 +1,6 @@
 import {
   EvaluationAdjustmentSituation,
-  type ComparisonAdjustment,
-  type ComparisonCriterionItem,
-  type ComparisonPeerEvaluation,
+  EvaluationHistoryOrigin,
   type SessionEvaluationHistoryItem,
 } from '../../domain/entities/evaluation-history.entity';
 import type { SessionEvaluationConfig } from '../../domain/entities/session-evaluation-config.entity';
@@ -11,10 +9,9 @@ import {
   calculatePeerAverage,
   calculateTutorScore,
 } from './evaluation-history-scores';
+import { buildPokerHistoryItem } from './evaluation-history-poker.builder';
 import type {
-  ComparisonPeerItemRow,
-  ComparisonPeerRow,
-  SelfAdjustmentDetailRow,
+  PokerRoundHistoryRow,
   SelfAdjustmentRow,
   SelfEvaluationRow,
   StudentRow,
@@ -30,6 +27,7 @@ export interface HistoryMaps {
   peerWindowOpen?: boolean;
   tutorMap: Map<string, Array<{ criterionId: string; score: number }>>;
   tutorBonusMap?: Map<string, number | null>;
+  pokerMap?: Map<string, PokerRoundHistoryRow>;
 }
 
 export function getInitials(name: string): string {
@@ -130,7 +128,17 @@ function buildPeerAdjustedItem(
     notaPares: peerAdj.newValue,
     avaliacoesPares: scores.avaliacoesPares,
     situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
+    origem: EvaluationHistoryOrigin.PARES,
   };
+}
+
+function resolveOrigin(
+  selfGrades: ReturnType<typeof resolveStudentSelfGrades>,
+  scores: ReturnType<typeof extractStudentScores>,
+): EvaluationHistoryOrigin | null {
+  if (selfGrades.notaAluno !== null) return EvaluationHistoryOrigin.AUTOAVALIACAO;
+  if (scores.notaPares !== null) return EvaluationHistoryOrigin.PARES;
+  return null;
 }
 
 function resolveStudentItem(
@@ -148,6 +156,7 @@ function resolveStudentItem(
     matricula: student.matricula ?? null,
     ...selfGrades,
     ...scores,
+    origem: resolveOrigin(selfGrades, scores),
   };
 }
 
@@ -160,46 +169,9 @@ export function buildHistoryStudentItem(
   const cfg = resolveHistoryConfig(config);
   const self = resolveStudentSelfGrades(student.alunoId, maps);
   const scores = extractStudentScores(student.alunoId, cfg, maps, expectedPeerCount);
+  const pokerRound = maps.pokerMap?.get(student.alunoId);
+  if (pokerRound && self.notaAluno === null) {
+    return buildPokerHistoryItem(student, pokerRound, scores.notaTutor);
+  }
   return resolveStudentItem(student, self, scores, maps.peerAdjustmentMap?.get(student.alunoId));
-}
-
-export function buildComparisonCriteriaItens(
-  criteria: Array<{ id: string; name: string }>,
-  selfScores: Map<string, number>,
-  tutorScores: Map<string, number>,
-): ComparisonCriterionItem[] {
-  return criteria.map((c) => ({
-    criterioId: c.id,
-    nome: c.name,
-    notaAluno: selfScores.has(c.id) ? selfScores.get(c.id)! : null,
-    notaTutor: tutorScores.has(c.id) ? tutorScores.get(c.id)! : null,
-  }));
-}
-
-export function buildComparisonPeers(
-  peerRows: ComparisonPeerRow[],
-  itemsMap: Map<string, ComparisonPeerItemRow[]>,
-): ComparisonPeerEvaluation[] {
-  return peerRows.map((p) => ({
-    avaliadorId: p.avaliadorId,
-    avaliadorNome: p.avaliadorNome,
-    enviadaEm: p.enviadaEm,
-    notaConsolidada: Number(p.notaConsolidada),
-    itens: (itemsMap.get(p.id) ?? []).map((it) => ({
-      criterioId: it.criterionId,
-      nota: Number(it.score),
-    })),
-  }));
-}
-
-export function buildComparisonAdjustments(
-  rows: SelfAdjustmentDetailRow[],
-): ComparisonAdjustment[] {
-  return rows.map((a) => ({
-    valorAnterior: Number(a.previousValue),
-    valorNovo: Number(a.newValue),
-    justificativa: a.justification,
-    autor: { id: a.authorId, nome: a.authorName },
-    ajustadoEm: a.createdAt,
-  }));
 }

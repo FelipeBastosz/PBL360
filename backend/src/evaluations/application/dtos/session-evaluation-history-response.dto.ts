@@ -1,5 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { EvaluationAdjustmentSituation } from '../../domain/entities/evaluation-history.entity';
+import {
+  EvaluationAdjustmentSituation,
+  EvaluationHistoryOrigin,
+} from '../../domain/entities/evaluation-history.entity';
 
 export class StudentEvaluationHistoryItemDto {
   @ApiProperty({ format: 'uuid', description: 'ID do aluno.' })
@@ -27,7 +30,7 @@ export class StudentEvaluationHistoryItemDto {
     type: Number,
     nullable: true,
     description:
-      'Nota original da autoavaliação quando houver ajuste. Null se não houve ajuste ou se não enviada.',
+      'Nota de referência antes da intervenção do tutor: autoavaliação original, média original dos pares ou média dos votos do planning poker. Null se não houve ajuste.',
   })
   notaAlunoOriginal!: number | null;
 
@@ -42,20 +45,30 @@ export class StudentEvaluationHistoryItemDto {
     type: Number,
     nullable: true,
     description:
-      'Média das notas de critérios recebidas dos pares na sessão. Null se não recebeu avaliações.',
+      'Nota vigente de pares: média do formulário (ou o ajuste do tutor) ou a nota decidida no planning poker (ou o ajuste mais recente). Null se ainda não avaliado.',
   })
   notaPares!: number | null;
 
   @ApiProperty({
-    description: 'Quantidade de avaliações de pares recebidas pelo aluno na sessão.',
+    description:
+      'Quantidade de avaliações de pares recebidas pelo aluno na sessão (no planning poker, a quantidade de votos da rodada).',
   })
   avaliacoesPares!: number;
 
   @ApiProperty({
     enum: EvaluationAdjustmentSituation,
-    description: 'Indica se a autoavaliação foi ajustada (AJUSTADA) ou não (SEM_AJUSTE).',
+    description:
+      'Indica se a nota foi ajustada pelo tutor com justificativa (AJUSTADA) ou não (SEM_AJUSTE). No planning poker, o reajuste na mesa também conta.',
   })
   situacaoAjuste!: EvaluationAdjustmentSituation;
+
+  @ApiProperty({
+    enum: EvaluationHistoryOrigin,
+    nullable: true,
+    description:
+      'Origem da nota exibida: AUTOAVALIACAO, PARES (formulário) ou PLANNING_POKER. Null se a avaliação está pendente.',
+  })
+  origem!: EvaluationHistoryOrigin | null;
 }
 
 export class SessionEvaluationHistoryResponseDto {

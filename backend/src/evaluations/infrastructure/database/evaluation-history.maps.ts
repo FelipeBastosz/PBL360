@@ -24,14 +24,21 @@ export function mapAdjustments(rows: SelfAdjustmentRow[]): Map<string, SelfAdjus
   return map;
 }
 
+export interface PeerAdjustmentRow {
+  studentId: string;
+  previousValue: string | number;
+  originalValue?: string | number | null;
+  newValue: string | number;
+}
+
 export function mapPeerAdjustments(
-  rows: Array<{ studentId: string; previousValue: string | number; newValue: string | number }>,
+  rows: PeerAdjustmentRow[],
 ): Map<string, { previousValue: number; newValue: number }> {
   const map = new Map<string, { previousValue: number; newValue: number }>();
   for (const row of rows) {
     if (!map.has(row.studentId)) {
       map.set(row.studentId, {
-        previousValue: Number(row.previousValue),
+        previousValue: Number(row.originalValue ?? row.previousValue),
         newValue: Number(row.newValue),
       });
     }
