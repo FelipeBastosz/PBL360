@@ -15,6 +15,7 @@ import {
 import { roleBadge } from '@/utils/sessionRoles';
 import { AttendanceCounters } from './AttendanceCounters';
 import { DragGhost } from './DragGhost';
+import { OffTableDropZone } from './OffTableDropZone';
 import { OffTablePanel } from './OffTablePanel';
 import { PrefillNotice } from './PrefillNotice';
 import { RollCallPanels } from './RollCallPanels';
@@ -135,6 +136,12 @@ export function RollCallScreen({
         <CarometroSection board={board} change={change} table={table} />
         <SaveBar isDirty={isDirty} isSaving={isSaving} onSave={() => void save()} />
       </aside>
+      {dragged && table.drag && dragged.lugar !== null && (
+        <OffTableDropZone
+          studentName={dragged.nome}
+          isHovered={table.drag.target === OFF_TABLE_DROP}
+        />
+      )}
       {dragged && table.drag && <DragGhost student={dragged} point={table.drag.point} />}
       <RollCallPanels board={board} change={change} table={table} roles={roles} />
     </main>
