@@ -2,12 +2,12 @@ import { PROJECT_EMAIL } from '@/content/projectInfo';
 
 function TermsHeader() {
   return (
-    <div className="border-b border-black/5 pb-3">
+    <div className="border-b border-border-subtle pb-3">
       <p className="text-xs font-medium text-muted">
         Versão 1.1 (MVP Acadêmico) &bull; Atualizado em 16 de novembro de 2026
       </p>
       <p className="mt-2 text-sm text-muted">
-        O <strong className="text-brand-900">PBL360</strong> é uma aplicação web experimental
+        O <strong className="text-brand-accent">PBL360</strong> é uma aplicação web experimental
         desenvolvida na disciplina EXA613 – Engenharia de Software na Universidade Estadual de Feira
         de Santana (UEFS), sob tutoria da Profa. Dra. Larissa Rocha Soares Bastos. O sistema possui
         caráter estritamente acadêmico e sem fins lucrativos.
@@ -19,7 +19,7 @@ function TermsHeader() {
 function TermsScope() {
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className="text-sm font-semibold text-brand-900">1. Objeto e Condições de Acesso</h3>
+      <h3 className="text-sm font-semibold text-brand-accent">1. Objeto e Condições de Acesso</h3>
       <p className="text-xs leading-relaxed text-muted">
         O sistema destina-se ao registro, acompanhamento e avaliação de sessões tutoriais baseadas
         na metodologia PBL, bem como à comunicação direta via chat entre alunos e professores. O
@@ -33,11 +33,11 @@ function TermsScope() {
 
 function TermsLiability() {
   return (
-    <section className="flex flex-col gap-1.5 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs">
-      <h3 className="font-semibold uppercase tracking-wide text-amber-950">
+    <section className="flex flex-col gap-1.5 rounded-xl border border-warning-line bg-warning-soft p-3 text-xs">
+      <h3 className="font-semibold uppercase tracking-wide text-warning">
         2. Limitação de Responsabilidade (Leia com Atenção)
       </h3>
-      <p className="font-medium leading-relaxed text-amber-900">
+      <p className="font-medium leading-relaxed text-warning">
         O PBL360 é fornecido &ldquo;no estado em que se encontra&rdquo; (as-is), sujeito a falhas,
         instabilidades ou manutenções sem aviso prévio. O sistema tem caráter auxiliar e NÃO
         substitui os sistemas acadêmicos oficiais da UEFS. A equipe desenvolvedora e a universidade
@@ -50,7 +50,7 @@ function TermsLiability() {
 function TermsChatRules() {
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className="text-sm font-semibold text-brand-900">
+      <h3 className="text-sm font-semibold text-brand-accent">
         3. Sistema de Chat entre Aluno e Professor
       </h3>
       <p className="text-xs leading-relaxed text-muted">
@@ -67,7 +67,7 @@ function TermsChatRules() {
 function TermsRules() {
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className="text-sm font-semibold text-brand-900">
+      <h3 className="text-sm font-semibold text-brand-accent">
         4. Regras de Uso e Condutas Proibidas
       </h3>
       <ul className="list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted">
@@ -87,8 +87,8 @@ function TermsRules() {
 
 function TermsIntellectualPropertyAndContact() {
   return (
-    <section className="flex flex-col gap-1.5 border-t border-black/5 pt-3">
-      <h3 className="text-sm font-semibold text-brand-900">
+    <section className="flex flex-col gap-1.5 border-t border-border-subtle pt-3">
+      <h3 className="text-sm font-semibold text-brand-accent">
         5. Propriedade Intelectual, Posse e Contato
       </h3>
       <p className="text-xs leading-relaxed text-muted">
@@ -101,7 +101,7 @@ function TermsIntellectualPropertyAndContact() {
         Para dúvidas, notificações ou suporte acadêmico, entre em contato pelo e-mail:{' '}
         <a
           href={`mailto:${PROJECT_EMAIL}`}
-          className="font-medium text-brand-900 underline underline-offset-2 hover:text-brand-700"
+          className="font-medium text-brand-accent underline underline-offset-2 hover:text-brand-accent"
         >
           {PROJECT_EMAIL}
         </a>

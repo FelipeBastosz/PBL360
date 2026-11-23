@@ -20,7 +20,7 @@ type CalendarProps = {
 };
 
 const NAV_BUTTON_CLASS =
-  'rounded-full p-1.5 text-ink/70 transition-colors hover:bg-black/5 hover:text-brand-900 focus-visible:outline-2 focus-visible:outline-brand-900';
+  'rounded-full p-1.5 text-ink/70 transition-colors hover:bg-subtle hover:text-brand-accent focus-visible:outline-2 focus-visible:outline-brand-accent';
 
 function CalendarHeader({
   month,
@@ -39,7 +39,7 @@ function CalendarHeader({
       >
         <ChevronLeftIcon className="size-5" aria-hidden />
       </button>
-      <p aria-live="polite" className="text-sm font-semibold capitalize text-brand-900">
+      <p aria-live="polite" className="text-sm font-semibold capitalize text-brand-accent">
         {formatMonthTitle(month)}
       </p>
       <button
@@ -70,10 +70,10 @@ function DayButton({ day, isSelected, isToday, onSelect }: DayButtonProps) {
       aria-pressed={isSelected}
       aria-current={isToday ? 'date' : undefined}
       className={cn(
-        'mx-auto flex size-9 items-center justify-center rounded-full text-sm transition-colors focus-visible:outline-2 focus-visible:outline-brand-900',
+        'mx-auto flex size-9 items-center justify-center rounded-full text-sm transition-colors focus-visible:outline-2 focus-visible:outline-brand-accent',
         day.inMonth ? 'text-ink' : 'text-placeholder',
-        isToday && !isSelected && 'font-bold text-brand-900 ring-1 ring-brand-300',
-        isSelected ? 'bg-brand-900 font-semibold text-white' : 'hover:bg-brand-50',
+        isToday && !isSelected && 'font-bold text-brand-accent ring-1 ring-brand-300',
+        isSelected ? 'bg-brand-primary font-semibold text-brand-on-primary' : 'hover:bg-brand-soft',
       )}
     >
       {day.day}
@@ -89,7 +89,7 @@ export function Calendar({ selected, onSelect, today = todayParts() }: CalendarP
   });
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-white p-3 shadow-lg animate-slide-down">
+    <div className="rounded-2xl border border-border bg-elevated p-3 shadow-lg animate-slide-down">
       <CalendarHeader
         month={visible}
         onShift={(delta) => setVisible((m) => shiftMonth(m, delta))}

@@ -24,7 +24,7 @@ type AdditionalInfoLinksProps = {
 
 function AdditionalInfoHeader({ onClose }: { onClose: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-black/5 pb-3">
+    <div className="flex items-center justify-between gap-3 border-b border-border-subtle pb-3">
       <h2 id="additional-info-modal-title" className="text-lg font-semibold text-ink text-left">
         Informações adicionais
       </h2>
@@ -32,7 +32,7 @@ function AdditionalInfoHeader({ onClose }: { onClose: () => void }) {
         type="button"
         onClick={onClose}
         aria-label="Fechar informações adicionais"
-        className="-mr-2 rounded-full p-2 text-muted transition-[background-color,scale] duration-200 hover:bg-black/5 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
+        className="-mr-2 rounded-full p-2 text-muted transition-[background-color,scale] duration-200 hover:bg-subtle active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent"
       >
         <XMarkIcon className="size-6" />
       </button>
@@ -48,13 +48,13 @@ const INFO_LINKS = [
 
 function AdditionalInfoLinks({ onSelect }: AdditionalInfoLinksProps) {
   return (
-    <div className="mt-2 flex flex-col items-center gap-2.5 border-t border-black/5 pt-4">
+    <div className="mt-2 flex flex-col items-center gap-2.5 border-t border-border-subtle pt-4">
       {INFO_LINKS.map(({ label, title }) => (
         <button
           key={title}
           type="button"
           onClick={() => onSelect(title)}
-          className="text-base font-semibold text-brand-900 underline underline-offset-4 transition-colors hover:text-brand-700"
+          className="text-base font-semibold text-brand-accent underline underline-offset-4 transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           {label}
         </button>
@@ -102,7 +102,7 @@ export function AdditionalInfoModal({ isOpen, onClose }: AdditionalInfoModalProp
         aria-labelledby="additional-info-modal-title"
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-fade-in"
       >
-        <div className="relative flex max-h-[90vh] w-full max-w-sm flex-col rounded-3xl bg-white p-6 shadow-2xl animate-pop-in">
+        <div className="relative flex max-h-[90vh] w-full max-w-sm flex-col rounded-3xl border border-border-subtle bg-elevated p-6 shadow-2xl animate-pop-in">
           <AdditionalInfoHeader onClose={onClose} />
 
           <div className="my-4 flex flex-col items-center justify-center">
@@ -111,7 +111,7 @@ export function AdditionalInfoModal({ isOpen, onClose }: AdditionalInfoModalProp
 
           <AdditionalInfoLinks onSelect={setActiveDoc} />
 
-          <div className="mt-6 border-t border-black/5 pt-4">
+          <div className="mt-6 border-t border-border-subtle pt-4">
             <Button
               type="button"
               onClick={onClose}

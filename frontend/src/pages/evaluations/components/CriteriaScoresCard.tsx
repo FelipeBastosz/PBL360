@@ -19,10 +19,10 @@ type Props = {
 
 function FinalScoreRow({ score }: { score: number }) {
   return (
-    <div className="mt-4 flex items-center justify-between border-t border-black/10 pt-4">
-      <span className="text-sm font-bold text-brand-900">Nota final da sessão</span>
+    <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+      <span className="text-sm font-bold text-brand-accent">Nota final da sessão</span>
       <div className="flex items-center gap-1.5">
-        <span className="rounded-xl bg-brand-900 px-3.5 py-1 text-base font-bold text-white shadow-xs">
+        <span className="rounded-xl bg-brand-primary px-3.5 py-1 text-base font-bold text-white shadow-xs">
           {formatGrade(score)}
         </span>
         <span className="text-xs text-muted">/ 10</span>
@@ -87,7 +87,7 @@ function EditableScoreInput({
       onKeyDown={(e) => {
         if (e.key === 'Enter') e.currentTarget.blur();
       }}
-      className="w-14 rounded-xl border border-black/10 bg-surface/50 py-1.5 text-center text-base font-bold text-brand-900 transition focus:border-brand-900 focus:bg-white focus:outline-hidden"
+      className="w-14 rounded-xl border border-border bg-surface/50 py-1.5 text-center text-base font-bold text-brand-accent transition focus:border-brand-accent focus:bg-elevated focus:outline-hidden"
     />
   );
 }
@@ -109,7 +109,7 @@ function ScoreRow({
   }
 
   return (
-    <div className="flex items-center justify-between border-b border-black/5 py-3.5 last:border-b-0">
+    <div className="flex items-center justify-between border-b border-border-subtle py-3.5 last:border-b-0">
       <div className="flex flex-col pr-4">
         <span className="text-sm font-semibold text-ink">{label}</span>
         <span className="text-xs text-muted">{subtitle}</span>
@@ -120,7 +120,7 @@ function ScoreRow({
           aria-label={`Diminuir nota de ${label}`}
           disabled={score <= 0}
           onClick={() => handleStep(-1)}
-          className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-ink transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
+          className="flex size-9 items-center justify-center rounded-xl border border-border text-lg font-bold text-ink transition hover:bg-subtle active:scale-95 disabled:opacity-30 sm:size-10"
         >
           −
         </button>
@@ -130,7 +130,7 @@ function ScoreRow({
           aria-label={`Aumentar nota de ${label}`}
           disabled={score >= 10}
           onClick={() => handleStep(1)}
-          className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-brand-900 transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
+          className="flex size-9 items-center justify-center rounded-xl border border-border text-lg font-bold text-brand-accent transition hover:bg-subtle active:scale-95 disabled:opacity-30 sm:size-10"
         >
           +
         </button>
@@ -148,7 +148,7 @@ function CardHeader({
 }) {
   return (
     <div className="flex flex-col">
-      <h2 className="text-base font-bold break-words text-brand-900">
+      <h2 className="text-base font-bold break-words text-brand-accent">
         Notas do aluno: {studentName}
       </h2>
       {papel && (
@@ -183,7 +183,7 @@ export function CriteriaScoresCard({
   });
 
   return (
-    <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-border-subtle bg-elevated p-5 shadow-sm">
       <CardHeader studentName={studentName} papel={papel} />
       <div className="mt-3 flex flex-col">
         {criteria.map((criterion) => (

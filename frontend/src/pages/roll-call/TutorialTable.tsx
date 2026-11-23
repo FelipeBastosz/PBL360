@@ -41,7 +41,7 @@ export function TutorialTable({
       >
         <polygon
           points="50,0 100,22 100,78 50,100 0,78 0,22"
-          className="fill-brand-50 stroke-brand-900"
+          className="fill-brand-soft stroke-brand-accent"
           strokeWidth="0.6"
           vectorEffect="non-scaling-stroke"
         />

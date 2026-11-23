@@ -127,7 +127,7 @@ export function StudentGradeField(props: StudentGradeFieldProps) {
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       aria-label={`Avaliar ${studentName} na sessão ${sessionName}:${cellText}`}
-      className="cursor-pointer hover:bg-gray-50 transition px-3 py-3.5 text-center text-muted group-hover:text-ink focus-visible:outline-none focus-visible:bg-gray-100"
+      className="cursor-pointer hover:bg-subtle transition px-3 py-3.5 text-center text-muted group-hover:text-ink focus-visible:outline-none focus-visible:bg-subtle"
     >
       {cellText}
     </td>

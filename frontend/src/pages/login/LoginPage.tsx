@@ -25,7 +25,7 @@ function LoginHeader() {
       <BrandHero
         tagline={APP_TAGLINE}
         markClassName="size-32 text-card"
-        discClassName="fill-brand-900"
+        discClassName="fill-brand-accent"
         className="mb-8 lg:hidden"
       />
       <h1 className="mb-6 hidden text-3xl font-semibold text-ink lg:block">Entrar</h1>

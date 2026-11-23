@@ -19,7 +19,7 @@ export function MyFormulasFabMenu({ onOpenCreateModal }: { onOpenCreateModal: ()
               setIsOpen(false);
               navigate(ROUTES.manageMyFormulas);
             }}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+            className="rounded-full border border-brand-accent bg-elevated px-5 py-2 text-sm font-semibold text-brand-accent shadow-sm hover:bg-brand-soft"
           >
             Editar uma fórmula
           </button>
@@ -29,7 +29,7 @@ export function MyFormulasFabMenu({ onOpenCreateModal }: { onOpenCreateModal: ()
               setIsOpen(false);
               onOpenCreateModal();
             }}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+            className="rounded-full border border-brand-accent bg-elevated px-5 py-2 text-sm font-semibold text-brand-accent shadow-sm hover:bg-brand-soft"
           >
             Criar nova fórmula
           </button>
@@ -39,8 +39,8 @@ export function MyFormulasFabMenu({ onOpenCreateModal }: { onOpenCreateModal: ()
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex size-14 items-center justify-center rounded-full bg-brand-900 text-white shadow-lg transition-transform',
-          isOpen ? 'rotate-45 bg-danger' : '',
+          'flex size-14 items-center justify-center rounded-full bg-brand-primary text-white shadow-lg transition-transform',
+          isOpen ? 'rotate-45 bg-danger-solid' : '',
         )}
         aria-label="Ações de fórmula"
       >

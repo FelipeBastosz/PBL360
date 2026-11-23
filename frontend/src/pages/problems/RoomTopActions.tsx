@@ -24,7 +24,7 @@ function ActionContent({
 }) {
   return (
     <>
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-900 transition-[scale] duration-200 group-hover:scale-105">
+      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-accent transition-[scale] duration-200 group-hover:scale-105">
         <Icon className="size-6" />
       </div>
       <div>

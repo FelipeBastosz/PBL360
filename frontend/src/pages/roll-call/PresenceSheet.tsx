@@ -18,7 +18,10 @@ type PresenceSheetProps = {
 const OPTION_STYLE: Record<AttendanceStatus, { Icon: typeof CheckIcon; active: string }> = {
   PRESENTE: { Icon: CheckIcon, active: 'border-success bg-success-soft text-success' },
   ATRASADO: { Icon: ClockIcon, active: 'border-warning-line bg-warning-soft text-warning' },
-  JUSTIFICADO: { Icon: LockClosedIcon, active: 'border-brand-900 bg-brand-50 text-brand-900' },
+  JUSTIFICADO: {
+    Icon: LockClosedIcon,
+    active: 'border-brand-accent bg-brand-soft text-brand-accent',
+  },
   AUSENTE: { Icon: XMarkIcon, active: 'border-danger bg-danger-soft text-danger' },
 };
 
@@ -50,8 +53,8 @@ function StatusOptions({ options, current, onPick }: StatusOptionsProps) {
             aria-checked={current === status}
             onClick={() => onPick(status)}
             className={cn(
-              'flex h-12 min-w-0 items-center justify-center gap-1 rounded-xl border px-1 text-[0.8125rem] font-semibold sm:gap-1.5 sm:text-sm transition-[background-color,border-color,color,scale] duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-900',
-              current === status ? active : 'border-black/10 bg-white text-muted hover:bg-black/5',
+              'flex h-12 min-w-0 items-center justify-center gap-1 rounded-xl border px-1 text-[0.8125rem] font-semibold sm:gap-1.5 sm:text-sm transition-[background-color,border-color,color,scale] duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-accent',
+              current === status ? active : 'border-border bg-elevated text-muted hover:bg-subtle',
             )}
           >
             <Icon className="size-4 shrink-0 max-[359px]:hidden" strokeWidth={2.5} aria-hidden />
@@ -79,7 +82,7 @@ function SeatedActions({
       <button
         type="button"
         onClick={onUnseat}
-        className="h-12 rounded-xl border border-black/10 bg-white font-semibold text-muted transition-[background-color,scale] duration-200 hover:bg-black/5 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-brand-900"
+        className="h-12 rounded-xl border border-border bg-elevated font-semibold text-muted transition-[background-color,scale] duration-200 hover:bg-subtle active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-brand-accent"
       >
         Tirar da mesa
       </button>

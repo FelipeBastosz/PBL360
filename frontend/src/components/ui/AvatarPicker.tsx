@@ -18,12 +18,12 @@ function AvatarDisc({ preview, hasError }: { preview: string | null; hasError: b
       <span
         key={preview ?? 'empty'}
         aria-hidden
-        className="absolute inset-0 rounded-full border-2 border-brand-900/40 animate-ring"
+        className="absolute inset-0 rounded-full border-2 border-brand-accent/40 animate-ring"
       />
       <span
         className={cn(
-          'relative flex size-full items-center justify-center overflow-hidden rounded-full border-2 bg-brand-100 transition-transform duration-300 ease-out group-hover:scale-[1.04] group-active:scale-95',
-          hasError ? 'border-danger' : 'border-brand-900',
+          'relative flex size-full items-center justify-center overflow-hidden rounded-full border-2 bg-brand-soft transition-transform duration-300 ease-out group-hover:scale-[1.04] group-active:scale-95',
+          hasError ? 'border-danger' : 'border-brand-accent',
         )}
       >
         {preview ? (
@@ -34,7 +34,7 @@ function AvatarDisc({ preview, hasError }: { preview: string | null; hasError: b
             className="size-full object-cover animate-develop"
           />
         ) : (
-          <UserIcon className="size-16 text-brand-900" strokeWidth={1.4} aria-hidden />
+          <UserIcon className="size-16 text-brand-accent" strokeWidth={1.4} aria-hidden />
         )}
       </span>
       <CameraBadge done={Boolean(preview)} />
@@ -46,7 +46,7 @@ function CameraBadge({ done }: { done: boolean }) {
   const Icon = done ? CheckIcon : CameraIcon;
 
   return (
-    <span className="absolute right-0 bottom-0 flex size-9 items-center justify-center rounded-full bg-brand-900 text-white ring-4 ring-surface transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110">
+    <span className="absolute right-0 bottom-0 flex size-9 items-center justify-center rounded-full border border-brand-primary-border bg-brand-primary text-brand-on-primary ring-4 ring-surface transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110">
       <Icon
         key={done ? 'done' : 'camera'}
         className="size-5 animate-pop-in"
@@ -59,7 +59,7 @@ function CameraBadge({ done }: { done: boolean }) {
 
 function AvatarCaption({ hasPhoto, optional }: { hasPhoto: boolean; optional?: boolean }) {
   return (
-    <span className="text-lg text-brand-900">
+    <span className="text-lg text-brand-accent">
       {hasPhoto ? 'Trocar foto de perfil' : 'Adicionar foto de perfil'}
       {optional && (
         <>
@@ -95,7 +95,7 @@ export function AvatarPicker({ value, onChange, error, hint, optional }: AvatarP
         onClick={() => inputRef.current?.click()}
         aria-describedby={describedBy}
         className={cn(
-          'group flex flex-col items-center gap-3 rounded-2xl p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900',
+          'group flex flex-col items-center gap-3 rounded-2xl p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent',
           error && 'animate-shake',
         )}
       >

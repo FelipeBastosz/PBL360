@@ -11,12 +11,12 @@ type Props = {
 
 function getMethodBadgeClass(method?: string) {
   if (method === 'Autoavaliação') {
-    return 'bg-emerald-50 text-emerald-800 border border-emerald-200/70';
+    return 'bg-success-soft text-success border border-success/30';
   }
   if (method === 'Avaliação por Pares') {
-    return 'bg-violet-50 text-violet-800 border border-violet-200/70';
+    return 'bg-violet-50 text-violet-800 border border-violet-200/70 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-400/30';
   }
-  return 'bg-blue-50 text-blue-800 border border-blue-200/70';
+  return 'bg-blue-50 text-blue-800 border border-blue-200/70 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-400/30';
 }
 
 export function SessionWeightRow({
@@ -26,10 +26,10 @@ export function SessionWeightRow({
   onChange,
 }: Props) {
   return (
-    <div className="flex items-center justify-between border-b border-black/5 p-4 last:border-b-0 sm:p-5">
+    <div className="flex items-center justify-between border-b border-border-subtle p-4 last:border-b-0 sm:p-5">
       <div className="flex flex-col pr-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-base font-bold text-brand-900">{session.rotulo}</span>
+          <span className="text-base font-bold text-brand-accent">{session.rotulo}</span>
           <span
             className={cn(
               'rounded-full px-2.5 py-0.5 text-[11px] font-bold shadow-2xs',

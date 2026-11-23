@@ -32,9 +32,9 @@ export default function ProfilePage() {
       <BackHeader title="Meu Perfil" subtitle="Minha Conta" onBack={() => navigate(ROUTES.rooms)} />
 
       <main className={cn(PAGE_CONTAINER_CLASS, 'mx-auto max-w-2xl py-6')}>
-        <div className="rounded-[20px] border border-black/5 bg-white p-6 shadow-[0_4px_24px_rgba(0,0,80,0.08)] sm:p-10">
-          <div className="mb-6 flex flex-col gap-1 border-b border-gray-200 pb-4">
-            <h1 className="text-xl font-bold text-brand-900 sm:text-2xl">Dados da Conta</h1>
+        <div className="rounded-[20px] border border-border-subtle bg-elevated p-6 shadow-[0_4px_24px_rgb(0_0_0/0.12)] sm:p-10">
+          <div className="mb-6 flex flex-col gap-1 border-b border-border pb-4">
+            <h1 className="text-xl font-bold text-brand-accent sm:text-2xl">Dados da Conta</h1>
             <p className="text-sm text-brand-300">
               Consulte suas informações acadêmicas e gerencie seu nome e foto de exibição.
             </p>
@@ -54,7 +54,7 @@ export default function ProfilePage() {
 
           <ProfilePhotoSection profile={profile} onUpload={uploadPhoto} onDelete={deletePhoto} />
 
-          <hr className="my-6 border-gray-200" />
+          <hr className="my-6 border-border" />
 
           <ProfileDetailsForm
             profile={profile}

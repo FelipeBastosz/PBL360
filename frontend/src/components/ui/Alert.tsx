@@ -18,7 +18,7 @@ const TONES: Record<AlertTone, { className: string; Icon: typeof CheckCircleIcon
   success: { className: 'border-success/30 text-success bg-success-soft', Icon: CheckCircleIcon },
   error: { className: 'border-danger/30 text-danger bg-danger-soft', Icon: ExclamationCircleIcon },
   info: {
-    className: 'border-brand-300/40 text-brand-900 bg-brand-50',
+    className: 'border-brand-border text-brand-accent bg-brand-soft',
     Icon: InformationCircleIcon,
   },
 };

@@ -21,7 +21,7 @@ export function EvaluationComponentGrades({
   return (
     <p
       data-testid="feedback-modalidade"
-      className="w-fit rounded-lg border border-black/5 bg-surface px-2.5 py-1 text-xs font-medium text-ink"
+      className="w-fit rounded-lg border border-border-subtle bg-surface px-2.5 py-1 text-xs font-medium text-ink"
     >
       {label}: <strong>{formatGrade(grade.nota)}</strong>
     </p>

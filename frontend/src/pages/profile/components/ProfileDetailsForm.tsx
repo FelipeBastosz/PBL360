@@ -19,8 +19,8 @@ export function ProfileDetailsForm({
       <ProfileNameField initialName={profile.nome} onSaveName={onSaveName} />
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-lg text-brand-900">E-mail institucional</label>
-        <p className="flex h-12 w-full items-center rounded-xl border border-black/10 bg-brand-50/50 px-4 text-base text-gray-500 shadow-[0_1px_2px_rgb(16_33_76/0.06)]">
+        <label className="text-lg text-brand-accent">E-mail institucional</label>
+        <p className="flex h-12 w-full items-center rounded-xl border border-border bg-brand-soft/50 px-4 text-base text-muted shadow-[0_1px_2px_rgb(0_0_0/0.08)]">
           {profile.email}
         </p>
         <span className="text-sm text-brand-300">Apenas para consulta.</span>
@@ -28,8 +28,8 @@ export function ProfileDetailsForm({
 
       {profile.tipo === 'ALUNO' && (
         <div className="flex flex-col gap-1.5">
-          <label className="text-lg text-brand-900">Matrícula</label>
-          <p className="flex h-12 w-full items-center rounded-xl border border-black/10 bg-brand-50/50 px-4 text-base text-gray-500 shadow-[0_1px_2px_rgb(16_33_76/0.06)]">
+          <label className="text-lg text-brand-accent">Matrícula</label>
+          <p className="flex h-12 w-full items-center rounded-xl border border-border bg-brand-soft/50 px-4 text-base text-muted shadow-[0_1px_2px_rgb(0_0_0/0.08)]">
             {profile.matricula ?? 'Não informada'}
           </p>
           <span className="text-sm text-brand-300">Apenas para consulta.</span>
@@ -37,13 +37,13 @@ export function ProfileDetailsForm({
       )}
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-lg text-brand-900">Tipo de conta</label>
-        <p className="flex h-12 w-full items-center rounded-xl border border-black/10 bg-brand-50/50 px-4 text-base text-gray-500 shadow-[0_1px_2px_rgb(16_33_76/0.06)]">
+        <label className="text-lg text-brand-accent">Tipo de conta</label>
+        <p className="flex h-12 w-full items-center rounded-xl border border-border bg-brand-soft/50 px-4 text-base text-muted shadow-[0_1px_2px_rgb(0_0_0/0.08)]">
           {profileLabel(profile.tipo)}
         </p>
       </div>
 
-      <hr className="my-1 border-gray-200" />
+      <hr className="my-1 border-border" />
 
       <ChangePasswordForm onSavePassword={onSavePassword} />
     </div>

@@ -22,7 +22,7 @@ export function FlowShell({
 }: FlowShellProps) {
   return (
     <div className="flex min-h-dvh flex-col bg-surface">
-      <header className="flex h-20 shrink-0 items-center gap-6 px-6 text-white bg-brand-900 lg:px-10">
+      <header className="flex h-20 shrink-0 items-center gap-6 border-b border-brand-primary-border bg-brand-primary px-6 text-brand-on-primary lg:px-10">
         <Link
           to={backTo}
           aria-label={backLabel}
@@ -42,7 +42,7 @@ export function FlowShell({
           subtitle ? 'pt-6' : 'pt-14',
         )}
       >
-        <div className="w-full max-w-sm lg:max-w-md lg:rounded-[20px] lg:border lg:border-black/5 lg:p-10 lg:bg-white lg:shadow-xl">
+        <div className="w-full max-w-sm lg:max-w-md lg:rounded-[20px] lg:border lg:border-border-subtle lg:p-10 lg:bg-elevated lg:shadow-xl">
           {children}
         </div>
       </main>

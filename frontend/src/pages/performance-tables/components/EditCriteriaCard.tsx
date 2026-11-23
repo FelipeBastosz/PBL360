@@ -13,10 +13,10 @@ function CriterionRow({
   canDelete?: boolean;
 }) {
   return (
-    <div className="border-b border-black/5 px-4 py-3">
+    <div className="border-b border-border-subtle px-4 py-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-brand-900">{item.nome}</span>
-        <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-ink">
+        <span className="text-sm font-semibold text-brand-accent">{item.nome}</span>
+        <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-subtle px-3 py-1 text-xs font-bold text-ink">
           {item.peso}
         </span>
       </div>
@@ -27,7 +27,7 @@ function CriterionRow({
             type="button"
             onClick={onEdit}
             aria-label={`Editar critério ${item.nome}`}
-            className="inline-flex size-11 items-center justify-center rounded-full transition-[background-color,scale] duration-200 active:scale-90 focus-visible:outline-2 text-brand-900 hover:bg-brand-50 focus-visible:outline-brand-900"
+            className="inline-flex size-11 items-center justify-center rounded-full transition-[background-color,scale] duration-200 active:scale-90 focus-visible:outline-2 text-brand-accent hover:bg-brand-soft focus-visible:outline-brand-accent"
           >
             <PencilIcon className="size-5" />
           </button>
@@ -61,8 +61,8 @@ export function EditCriteriaCard({
   onOpenDelete: (criterion: CriterionInput) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-[14px] border border-black/5 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-sm font-semibold text-brand-900">
+    <div className="overflow-hidden rounded-[14px] border border-border-subtle bg-elevated shadow-sm">
+      <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3 text-sm font-semibold text-brand-accent">
         <span>Critério</span>
         <span>Peso</span>
       </div>
@@ -81,7 +81,7 @@ export function EditCriteriaCard({
         <button
           type="button"
           onClick={onOpenAdd}
-          className="w-full px-4 py-3 text-left text-sm font-semibold text-brand-900 hover:bg-brand-50"
+          className="w-full px-4 py-3 text-left text-sm font-semibold text-brand-accent hover:bg-brand-soft"
         >
           +Adicionar critério
         </button>

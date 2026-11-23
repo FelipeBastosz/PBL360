@@ -32,7 +32,7 @@ function JustificationTextarea({
         placeholder="Ex.: atestado médico"
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
-        className="w-full resize-none rounded-xl border border-black/10 px-4 py-3 text-base text-ink placeholder:text-placeholder focus:border-brand-900 focus:shadow-[0_0_0_4px_rgb(0_0_119/0.12)] focus:outline-none"
+        className="w-full resize-none rounded-xl border border-border px-4 py-3 text-base text-ink placeholder:text-placeholder focus:border-brand-accent focus:shadow-[0_0_0_4px_var(--color-brand-shadow)] focus:outline-none"
       />
       {error && (
         <p id={`${id}-error`} className="text-sm text-danger animate-slide-down">
@@ -59,7 +59,7 @@ export function JustificationForm({ initialValue, onCancel, onConfirm }: Justifi
 
   return (
     <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-2 animate-slide-down">
-      <label htmlFor={id} className="text-sm font-medium text-brand-900">
+      <label htmlFor={id} className="text-sm font-medium text-brand-accent">
         Justificativa
       </label>
       <JustificationTextarea
@@ -78,7 +78,7 @@ export function JustificationForm({ initialValue, onCancel, onConfirm }: Justifi
         </Button>
         <button
           type="submit"
-          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-brand-900 px-4 text-base font-semibold text-white shadow-sm transition-[background-color,scale] duration-200 hover:bg-brand-700 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-brand-900"
+          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-brand-primary px-4 text-base font-semibold text-white shadow-sm transition-[background-color,scale] duration-200 hover:bg-brand-primary-hover active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           Justificar falta
         </button>

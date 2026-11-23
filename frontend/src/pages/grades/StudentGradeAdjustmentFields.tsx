@@ -16,7 +16,7 @@ function CurrentGradeCard({ value }: { value?: number | string | null }) {
       : '—';
 
   return (
-    <div className="flex flex-col justify-between rounded-2xl border border-black/5 bg-gray-50/70 p-3.5 shadow-2xs">
+    <div className="flex flex-col justify-between rounded-2xl border border-border-subtle bg-subtle/70 p-3.5 shadow-2xs">
       <label htmlFor="student-current-grade" className="text-xs font-medium text-muted">
         Nota do aluno
       </label>
@@ -45,11 +45,11 @@ function NewGradeCard({ value, onChange, error, disabled }: NewGradeCardProps) {
       className={cn(
         'flex flex-col justify-between rounded-2xl border-2 p-3.5 shadow-2xs transition',
         error
-          ? 'border-danger/70 bg-red-50/30 focus-within:ring-2 focus-within:ring-danger/20'
-          : 'border-brand-500 bg-blue-50/40 focus-within:ring-2 focus-within:ring-brand-500/20',
+          ? 'border-danger/70 bg-danger-soft/60 focus-within:ring-2 focus-within:ring-danger/20'
+          : 'border-brand-accent bg-brand-soft/60 focus-within:ring-2 focus-within:ring-brand-accent/20',
       )}
     >
-      <label htmlFor="new-grade-input" className="text-xs font-semibold text-brand-700">
+      <label htmlFor="new-grade-input" className="text-xs font-semibold text-brand-accent">
         Nova nota
       </label>
       <input
@@ -63,7 +63,7 @@ function NewGradeCard({ value, onChange, error, disabled }: NewGradeCardProps) {
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         placeholder="0,0"
-        className="w-full bg-transparent text-xl font-bold text-brand-700 outline-none placeholder:text-brand-300"
+        className="w-full bg-transparent text-xl font-bold text-brand-accent outline-none placeholder:text-brand-300"
       />
     </div>
   );
@@ -131,7 +131,7 @@ export function GradeJustificationField({
           'w-full resize-none rounded-2xl border p-3.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2',
           hasError
             ? 'border-danger/70 focus:border-danger focus:ring-danger/20'
-            : 'border-black/10 focus:border-brand-500 focus:ring-brand-500/20',
+            : 'border-border focus:border-brand-accent focus:ring-brand-accent/20',
         )}
       />
       <div className="flex items-center justify-between text-xs text-muted">

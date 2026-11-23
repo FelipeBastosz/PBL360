@@ -46,7 +46,7 @@ function LoginLink() {
       Já tem conta?{' '}
       <Link
         to={ROUTES.login}
-        className="-my-3 inline-block py-3 text-brand-900 underline-offset-4 hover:underline"
+        className="-my-3 inline-block py-3 text-brand-accent underline-offset-4 hover:underline"
       >
         Entrar
       </Link>

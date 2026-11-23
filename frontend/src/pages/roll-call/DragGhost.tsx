@@ -11,7 +11,7 @@ export function DragGhost({ student, point }: { student: RollCallStudent; point:
     >
       <StudentAvatar
         student={student}
-        className="size-16 scale-110 text-lg opacity-90 shadow-[0_16px_32px_-12px_rgb(0_0_119/0.7)] ring-4 ring-white"
+        className="size-16 scale-110 text-lg opacity-90 shadow-[0_16px_32px_-12px_var(--color-brand-shadow)] ring-4 ring-white"
       />
     </div>
   );
