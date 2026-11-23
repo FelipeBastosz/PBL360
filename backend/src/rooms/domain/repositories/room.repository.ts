@@ -40,6 +40,20 @@ export interface RoomTutor {
   isResponsible: boolean;
 }
 
+export interface TransferRoomOwnershipInput {
+  roomId: string;
+  expectedOwnerId: string;
+  newOwnerId: string;
+  transferredById: string;
+}
+
+export type TransferRoomOwnershipOutcome =
+  | { status: 'transferred'; roomId: string; ownerId: string }
+  | { status: 'not_found' }
+  | { status: 'not_owner' }
+  | { status: 'same_owner' }
+  | { status: 'tutor_not_linked' };
+
 export interface RoomRepository {
   create(room: Room): Promise<Room>;
 
@@ -70,6 +84,8 @@ export interface RoomRepository {
   findForStudent(studentId: string): Promise<StudentRoomSummary[]>;
 
   findStudents(roomId: string): Promise<RoomStudentSummary[]>;
+
+  transferOwnership(input: TransferRoomOwnershipInput): Promise<TransferRoomOwnershipOutcome>;
 }
 
 export const ROOM_REPOSITORY = Symbol('RoomRepository');

@@ -6,7 +6,6 @@ import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
 import { violatedUniqueConstraint } from '@/shared/database/unique-violation';
 
 import { Room } from '../../domain/entities/room.entity';
-import { User } from '@/users/domain/entities/user.entity';
 import { RoomCodeInUseError } from '../../domain/errors/room-code-in-use.error';
 import {
   hasRoomStudent,
@@ -15,12 +14,21 @@ import {
   removeRoomStudent,
 } from './room-member-queries';
 import { listRoomStudents, queryStudentRooms } from './room-student-queries';
-import { ROOM_COLUMNS, ROOM_WITH_TUTOR_COLUMNS, type RoomRow } from './room-row';
+import { executeTransferRoomOwnership } from './room-ownership-queries';
+import {
+  fetchTutorSummary,
+  ROOM_COLUMNS,
+  ROOM_WITH_TUTOR_COLUMNS,
+  toRoomEntity,
+  type RoomRow,
+} from './room-row';
 import type {
   RoomRepository,
   RoomTutor,
   RoomStudentSummary,
   StudentRoomSummary,
+  TransferRoomOwnershipInput,
+  TransferRoomOwnershipOutcome,
   TutorRoomSummary,
 } from '../../domain/repositories/room.repository';
 
@@ -30,17 +38,6 @@ interface TutorRoomRow extends RoomRow {
   totalStudents: number;
   totalProblems: number;
 }
-
-const fetchTutor = async (
-  queryRunner: { query: EntityManager['query'] },
-  tutorId: string,
-): Promise<{ name: string; email: string } | undefined> => {
-  const [tutor] = await queryRunner.query<{ name: string; email: string }[]>(
-    'SELECT name, email FROM users WHERE id = $1 LIMIT 1;',
-    [tutorId],
-  );
-  return tutor;
-};
 
 @Injectable()
 export class PgRoomRepository implements RoomRepository {
@@ -125,9 +122,9 @@ export class PgRoomRepository implements RoomRepository {
       [room.id, room.name, room.semester, room.active],
     );
     const updatedRow = requireFirstRow(rows, `Room ${room.id} not found for update.`);
-    const tutor = await fetchTutor(this.rooms, updatedRow.tutorId);
+    const tutor = await fetchTutorSummary(this.rooms, updatedRow.tutorId);
 
-    return this.toEntity({
+    return toRoomEntity(this.rooms, {
       ...updatedRow,
       tutorName: tutor?.name,
       tutorEmail: tutor?.email,
@@ -184,6 +181,12 @@ export class PgRoomRepository implements RoomRepository {
     return removeRoomStudent(this.rooms, roomId, studentId);
   }
 
+  transferOwnership(input: TransferRoomOwnershipInput): Promise<TransferRoomOwnershipOutcome> {
+    return this.rooms.manager.transaction((manager) =>
+      executeTransferRoomOwnership(manager, input),
+    );
+  }
+
   private async insertWithOwner(manager: EntityManager, room: Room): Promise<Room> {
     const rows = await manager.query<RoomRow[]>(
       `INSERT INTO rooms (tutor_id, name, course_code, room_code, semester, active)
@@ -196,9 +199,9 @@ export class PgRoomRepository implements RoomRepository {
       row.id,
       room.tutorId,
     ]);
-    const tutor = await fetchTutor(manager, room.tutorId);
+    const tutor = await fetchTutorSummary(manager, room.tutorId);
 
-    return this.toEntity({
+    return toRoomEntity(this.rooms, {
       ...row,
       tutorName: tutor?.name,
       tutorEmail: tutor?.email,
@@ -209,24 +212,11 @@ export class PgRoomRepository implements RoomRepository {
     const rows = await this.rooms.query<RoomRow[]>(sql, params);
     const row = firstRowOrNull(rows);
 
-    return row ? this.toEntity(row) : null;
+    return row ? toRoomEntity(this.rooms, row) : null;
   }
 
   private toTutorSummary(row: TutorRoomRow): TutorRoomSummary {
     const { totalStudents, totalProblems, ...roomRow } = row;
-    return { room: this.toEntity(roomRow), totalStudents, totalProblems };
-  }
-
-  private toEntity(row: RoomRow): Room {
-    const { tutorName, tutorEmail, ...baseRow } = row;
-    const room = this.rooms.create(baseRow);
-    if (baseRow.tutorId && tutorName) {
-      room.tutor = Object.assign(new User(), {
-        id: baseRow.tutorId,
-        name: tutorName,
-        email: tutorEmail ?? '',
-      });
-    }
-    return room;
+    return { room: toRoomEntity(this.rooms, roomRow), totalStudents, totalProblems };
   }
 }
