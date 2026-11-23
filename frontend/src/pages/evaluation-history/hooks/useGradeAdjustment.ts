@@ -21,7 +21,7 @@ export function useGradeAdjustment(
     try {
       const payloadWithTipo = {
         ...payload,
-        ...(selected.notaAluno === null ? { tipo: 'PARES' as const } : {}),
+        tipo: selected.notaAluno === null ? ('PARES' as const) : ('AUTOAVALIACAO' as const),
       };
       const response = await evaluationService.adjustSelfAssessment(
         sessionId,

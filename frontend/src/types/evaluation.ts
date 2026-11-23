@@ -80,9 +80,12 @@ export type SelfAssessmentAdjustment = {
   ajustadoEm: string;
 };
 
+export type AdjustmentTarget = 'AUTOAVALIACAO' | 'PARES';
+
 export type AdjustSelfAssessmentPayload = {
   novaNota: number;
   justificativa: string;
+  tipo?: AdjustmentTarget;
 };
 
 export type SelfAssessmentAdjustmentResponse = {
@@ -96,24 +99,6 @@ export type SelfAssessmentAdjustmentHistoryResponse = {
   notaOriginal: number | null;
   notaVigente: number | null;
   ajustes: SelfAssessmentAdjustment[];
-};
-
-export type EvaluationAdjustmentSituation = 'SEM_AJUSTE' | 'AJUSTADA';
-
-export type StudentEvaluationHistoryItem = {
-  alunoId: string;
-  nome: string;
-  matricula: string | null;
-  notaAluno: number | null;
-  notaAlunoOriginal: number | null;
-  notaTutor: number | null;
-  notaPares: number | null;
-  avaliacoesPares: number;
-  situacaoAjuste: EvaluationAdjustmentSituation;
-};
-
-export type SessionEvaluationHistoryResponse = {
-  alunos: StudentEvaluationHistoryItem[];
 };
 
 export type SelfAssessmentResponse = {

@@ -11,7 +11,7 @@ import type { StudentEvaluationHistoryItem } from '@/types/evaluationHistory';
 import SessionEvaluationHistoryPage from './SessionEvaluationHistoryPage';
 
 vi.mock('@/services/evaluationHistory.service', () => ({
-  evaluationHistoryService: { list: vi.fn() },
+  evaluationHistoryService: { list: vi.fn(), detail: vi.fn() },
 }));
 vi.mock('@/services/evaluation.service', () => ({
   evaluationService: { adjustSelfAssessment: vi.fn() },
@@ -69,6 +69,74 @@ const students: StudentEvaluationHistoryItem[] = [
   },
 ];
 
+const emptyDetail = {
+  aluno: { alunoId: 'aluno-1', nome: 'Elisa Nunes' },
+  autoavaliacao: { status: 'ENVIADA', enviadaEm: null, notaConsolidada: 8, itens: [] },
+  pares: [],
+  planningPoker: null,
+  ajustes: [],
+};
+
+const pokerStudents: StudentEvaluationHistoryItem[] = [
+  {
+    alunoId: 'aluno-5',
+    nome: 'Fábio Prado',
+    matricula: '26121200',
+    notaAluno: null,
+    notaAlunoOriginal: null,
+    notaTutor: null,
+    notaPares: 7.5,
+    avaliacoesPares: 3,
+    situacaoAjuste: 'SEM_AJUSTE',
+    origem: 'PLANNING_POKER',
+  },
+  {
+    alunoId: 'aluno-6',
+    nome: 'Gabi Torres',
+    matricula: '26121201',
+    notaAluno: null,
+    notaAlunoOriginal: 6,
+    notaTutor: null,
+    notaPares: 8,
+    avaliacoesPares: 3,
+    situacaoAjuste: 'AJUSTADA',
+    origem: 'PLANNING_POKER',
+  },
+  {
+    alunoId: 'aluno-7',
+    nome: 'Hugo Lima',
+    matricula: '26121202',
+    notaAluno: null,
+    notaAlunoOriginal: null,
+    notaTutor: null,
+    notaPares: null,
+    avaliacoesPares: 0,
+    situacaoAjuste: 'SEM_AJUSTE',
+    origem: null,
+  },
+];
+
+const pokerDetail = {
+  ...emptyDetail,
+  aluno: { alunoId: 'aluno-5', nome: 'Fábio Prado' },
+  planningPoker: {
+    rodadaId: 'rodada-1',
+    numero: 1,
+    anonimo: false,
+    media: 7.5,
+    notaDecidida: 7.5,
+    notaVigente: 7.5,
+    ajustadaNaMesa: false,
+    justificativaMesa: null,
+    decididaEm: '2026-10-15T12:00:00Z',
+    decididaPor: { id: 'tutor-1', nome: 'Professor Silva' },
+    votos: [
+      { avaliadorId: 'aluno-6', avaliadorNome: 'Gabi Torres', nota: 7 },
+      { avaliadorId: 'aluno-7', avaliadorNome: 'Hugo Lima', nota: 8 },
+    ],
+  },
+};
+
 function renderPage() {
   return render(
     <AuthContext.Provider
@@ -94,6 +162,7 @@ describe('SessionEvaluationHistoryPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(evaluationHistoryService.list).mockResolvedValue({ alunos: students });
+    vi.mocked(evaluationHistoryService.detail).mockResolvedValue(emptyDetail);
   });
 
   it('shows every score with a single decimal place and a comma', async () => {
@@ -227,6 +296,7 @@ describe('SessionEvaluationHistoryPage', () => {
     expect(evaluationService.adjustSelfAssessment).toHaveBeenCalledWith('sess-1', 'aluno-1', {
       novaNota: 6.5,
       justificativa: 'Revisado após conversa com o aluno.',
+      tipo: 'AUTOAVALIACAO',
     });
     expect(await within(cardOf('Elisa Nunes')).findByText('6,5')).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -303,5 +373,86 @@ describe('SessionEvaluationHistoryPage', () => {
     expect(
       await screen.findByText('Nenhum aluno com presença registrada nesta sessão.'),
     ).toBeInTheDocument();
+  });
+
+  describe('planning poker', () => {
+    beforeEach(() => {
+      vi.mocked(evaluationHistoryService.list).mockResolvedValue({ alunos: pokerStudents });
+      vi.mocked(evaluationHistoryService.detail).mockResolvedValue(pokerDetail);
+    });
+
+    it('shows the decided poker grade instead of a pending evaluation', async () => {
+      renderPage();
+
+      await screen.findByRole('heading', { name: 'Fábio Prado' });
+      const fabio = cardOf('Fábio Prado');
+      expect(within(fabio).getByText('Sem ajuste do tutor')).toBeInTheDocument();
+      expect(within(fabio).getByText('Poker')).toBeInTheDocument();
+      expect(within(fabio).getByText('7,5')).toBeInTheDocument();
+      expect(within(fabio).queryByText('Avaliação pendente')).not.toBeInTheDocument();
+
+      const gabi = cardOf('Gabi Torres');
+      expect(within(gabi).getByText('Ajustada com justificativa')).toBeInTheDocument();
+      expect(within(gabi).getByText('6,0')).toBeInTheDocument();
+      expect(within(gabi).getByText('8,0')).toBeInTheDocument();
+
+      const hugo = cardOf('Hugo Lima');
+      expect(within(hugo).getByText('Avaliação pendente')).toBeInTheDocument();
+      expect(
+        within(hugo).queryByRole('button', { name: 'Ajustar nota de Hugo Lima' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('opens the modal with the current poker grade and the round details', async () => {
+      renderPage();
+
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'Ajustar nota de Fábio Prado' }),
+      );
+
+      const dialog = screen.getByRole('dialog', { name: 'Fábio Prado' });
+      expect(within(dialog).getByLabelText('Nota do planning poker')).toHaveValue('7,5');
+      expect(await within(dialog).findByText('Média dos votos')).toBeInTheDocument();
+      expect(within(dialog).getByText('7,0 · 8,0')).toBeInTheDocument();
+      expect(evaluationHistoryService.detail).toHaveBeenCalledWith('sess-1', 'aluno-5');
+    });
+
+    it('sends the adjustment as a peer adjustment and updates the card', async () => {
+      vi.mocked(evaluationService.adjustSelfAssessment).mockResolvedValue({
+        alunoId: 'aluno-5',
+        notaOriginal: 7.5,
+        notaVigente: 9,
+        ajuste: {
+          valorAnterior: 7.5,
+          valorNovo: 9,
+          justificativa: 'Destaque na condução do grupo.',
+          autor: { id: 'tutor-1', nome: 'Professor Silva' },
+          ajustadoEm: '2026-10-15T12:00:00Z',
+        },
+      });
+      renderPage();
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'Ajustar nota de Fábio Prado' }),
+      );
+
+      const grade = screen.getByLabelText('Nova nota');
+      await userEvent.clear(grade);
+      await userEvent.type(grade, '9');
+      await userEvent.type(
+        screen.getByLabelText('Justificativa do ajuste'),
+        'Destaque na condução do grupo.',
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar ajuste' }));
+
+      expect(evaluationService.adjustSelfAssessment).toHaveBeenCalledWith('sess-1', 'aluno-5', {
+        novaNota: 9,
+        justificativa: 'Destaque na condução do grupo.',
+        tipo: 'PARES',
+      });
+      const fabio = cardOf('Fábio Prado');
+      expect(await within(fabio).findByText('Ajustada com justificativa')).toBeInTheDocument();
+      expect(within(fabio).getByText('7,5')).toBeInTheDocument();
+      expect(within(fabio).getByText('9,0')).toBeInTheDocument();
+    });
   });
 });

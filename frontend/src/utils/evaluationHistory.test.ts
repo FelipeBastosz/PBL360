@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { StudentEvaluationHistoryItem } from '@/types/evaluationHistory';
 import {
+  applyAdjustment,
   formatScore,
   getDisplayName,
+  getScoreLabel,
   getSituationLabel,
   getStudentScore,
   getTutorScore,
@@ -88,5 +90,58 @@ describe('getSituationLabel / hasSubmitted', () => {
   it('tells whether the evaluation was submitted', () => {
     expect(hasSubmitted(baseItem)).toBe(true);
     expect(hasSubmitted(notSubmittedItem)).toBe(false);
+  });
+});
+
+describe('planning poker', () => {
+  const pokerItem: StudentEvaluationHistoryItem = {
+    ...baseItem,
+    notaAluno: null,
+    notaTutor: null,
+    notaPares: 8,
+    origem: 'PLANNING_POKER',
+  };
+  const pokerAdjustedAtTable: StudentEvaluationHistoryItem = {
+    ...pokerItem,
+    notaAlunoOriginal: 6.5,
+    situacaoAjuste: 'AJUSTADA',
+  };
+  const response = {
+    alunoId: 'aluno-1',
+    notaOriginal: 8,
+    notaVigente: 9,
+    ajuste: {
+      valorAnterior: 8,
+      valorNovo: 9,
+      justificativa: 'Revisada pelo tutor.',
+      autor: { id: 'tutor-1', nome: 'Tutor' },
+      ajustadoEm: '2026-10-15T12:00:00Z',
+    },
+  };
+
+  it('labels the score column by the origin of the grade', () => {
+    expect(getScoreLabel(baseItem)).toBe('Aluno');
+    expect(getScoreLabel(peerOnlyItem)).toBe('Pares');
+    expect(getScoreLabel(pokerItem)).toBe('Poker');
+  });
+
+  it('treats a decided poker grade as submitted', () => {
+    expect(hasSubmitted(pokerItem)).toBe(true);
+    expect(getSituationLabel(pokerItem)).toBe('Sem ajuste do tutor');
+    expect(getStudentScore(pokerItem)).toBe(8);
+  });
+
+  it('keeps the vote average as reference after a new adjustment', () => {
+    const [updated] = applyAdjustment([pokerAdjustedAtTable], response);
+
+    expect(updated).toMatchObject({ notaAlunoOriginal: 6.5, notaPares: 9 });
+    expect(getTutorScore(updated!)).toBe(9);
+  });
+
+  it('uses the decided grade as reference on the first adjustment', () => {
+    const [updated] = applyAdjustment([pokerItem], response);
+
+    expect(updated).toMatchObject({ notaAlunoOriginal: 8, notaPares: 9 });
+    expect(getSituationLabel(updated!)).toBe('Ajustada com justificativa');
   });
 });

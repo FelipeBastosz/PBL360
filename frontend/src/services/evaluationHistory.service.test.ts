@@ -28,4 +28,15 @@ describe('evaluationHistoryService', () => {
     expect(config.method).toBe('get');
     expect(config.url).toBe('/sessoes/sess-1/historico-avaliacoes');
   });
+
+  it('loads the detail of a student in the session history', async () => {
+    const body = { aluno: { alunoId: 'aluno-1', nome: 'Ana' }, planningPoker: null, ajustes: [] };
+    const adapter = respondWith(body);
+
+    await expect(evaluationHistoryService.detail('sess-1', 'aluno-1')).resolves.toEqual(body);
+
+    const config = adapter.mock.calls[0][0];
+    expect(config.method).toBe('get');
+    expect(config.url).toBe('/sessoes/sess-1/historico-avaliacoes/aluno-1');
+  });
 });

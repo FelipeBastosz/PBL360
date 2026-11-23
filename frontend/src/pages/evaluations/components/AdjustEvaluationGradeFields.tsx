@@ -3,6 +3,7 @@ import { cn } from '@/utils/cn';
 
 type GradeInputsProps = {
   currentGrade: number;
+  currentGradeLabel?: string;
   newGrade: string;
   onNewGradeChange: (value: string) => void;
   isLoading?: boolean;
@@ -10,6 +11,7 @@ type GradeInputsProps = {
 
 export function GradeInputs({
   currentGrade,
+  currentGradeLabel = 'Nota do aluno',
   newGrade,
   onNewGradeChange,
   isLoading,
@@ -18,7 +20,7 @@ export function GradeInputs({
     <div className="grid grid-cols-2 gap-3">
       <div className="flex flex-col justify-between rounded-2xl border border-black/5 bg-gray-50/70 p-3.5 shadow-2xs">
         <label htmlFor="student-current-grade" className="text-xs font-medium text-muted">
-          Nota do aluno
+          {currentGradeLabel}
         </label>
         <input
           id="student-current-grade"

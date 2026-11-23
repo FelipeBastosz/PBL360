@@ -1,9 +1,12 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
-import type { EvaluationAdjustmentSituation } from '@/types/evaluationHistory';
+import type {
+  EvaluationAdjustmentSituation,
+  EvaluationHistoryOrigin,
+} from '@/types/evaluationHistory';
 import { getInitials } from '@/utils/initials';
 import { GradeInputs, JustificationField } from './AdjustEvaluationGradeFields';
 
@@ -17,6 +20,7 @@ export type AdjustStudentInfo = {
   notaPares?: number | null;
   avaliacoesPares?: number;
   situacaoAjuste?: EvaluationAdjustmentSituation;
+  origem?: EvaluationHistoryOrigin | null;
 };
 
 export type AdjustEvaluationGradeModalProps = {
@@ -26,6 +30,7 @@ export type AdjustEvaluationGradeModalProps = {
   hideNames?: boolean;
   onSubmit: (payload: { novaNota: number; justificativa: string }) => Promise<void> | void;
   isLoading?: boolean;
+  details?: ReactNode;
 };
 
 function parseGrade(raw: string): number | null {
@@ -89,6 +94,7 @@ type FormProps = {
   onClose: () => void;
   onSubmit: (payload: { novaNota: number; justificativa: string }) => Promise<void> | void;
   isLoading: boolean;
+  details?: ReactNode;
 };
 
 function isPeerAssessmentUnderway(student: AdjustStudentInfo): boolean {
@@ -98,6 +104,12 @@ function isPeerAssessmentUnderway(student: AdjustStudentInfo): boolean {
     student.situacaoAjuste !== 'AJUSTADA' &&
     (student.avaliacoesPares !== undefined || student.notaAlunoOriginal !== null)
   );
+}
+
+function currentGradeLabelOf(student: AdjustStudentInfo): string {
+  if (student.origem === 'PLANNING_POKER') return 'Nota do planning poker';
+  if (student.notaAluno === null && student.notaPares != null) return 'Nota dos pares';
+  return 'Nota do aluno';
 }
 
 function FormSubmitButton({ disabled, isLoading }: { disabled: boolean; isLoading: boolean }) {
@@ -119,6 +131,7 @@ function AdjustEvaluationGradeForm({
   onClose,
   onSubmit,
   isLoading,
+  details,
 }: FormProps) {
   const currentGrade = student.notaVigente ?? student.notaAluno ?? student.notaPares ?? 0;
   const [newGrade, setNewGrade] = useState(String(currentGrade));
@@ -149,8 +162,10 @@ function AdjustEvaluationGradeForm({
           A avaliação por pares está em andamento. Inserir uma nota sobrescreverá a média dos pares.
         </Alert>
       )}
+      {details}
       <GradeInputs
         currentGrade={currentGrade}
+        currentGradeLabel={currentGradeLabelOf(student)}
         newGrade={newGrade}
         onNewGradeChange={setNewGrade}
         isLoading={isLoading}
@@ -168,6 +183,7 @@ export function AdjustEvaluationGradeModal({
   hideNames = false,
   onSubmit,
   isLoading = false,
+  details,
 }: AdjustEvaluationGradeModalProps) {
   useEscapeKey(isOpen, onClose, isLoading);
 
@@ -188,6 +204,7 @@ export function AdjustEvaluationGradeModal({
         onClose={onClose}
         onSubmit={onSubmit}
         isLoading={isLoading}
+        details={details}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { cn } from '@/utils/cn';
 import {
   formatScore,
   getDisplayName,
+  getScoreLabel,
   getSituationLabel,
   getStudentScore,
   getTutorScore,
@@ -147,10 +148,7 @@ export function HistoryStudentCard({ student, index, onSelect }: HistoryStudentC
         <SituationLine student={student} />
       </div>
       <div className="flex shrink-0 items-center gap-[15.5px]">
-        <ScoreColumn
-          label={student.notaPares !== null && student.notaAluno === null ? 'Pares' : 'Aluno'}
-          value={getStudentScore(student)}
-        />
+        <ScoreColumn label={getScoreLabel(student)} value={getStudentScore(student)} />
         <ScoreArrow />
         <ScoreColumn label="Tutor" value={getTutorScore(student)} isTutor />
       </div>
