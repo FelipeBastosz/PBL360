@@ -7,6 +7,7 @@ export enum EvaluationHistoryOrigin {
   AUTOAVALIACAO = 'AUTOAVALIACAO',
   PARES = 'PARES',
   PLANNING_POKER = 'PLANNING_POKER',
+  TUTOR = 'TUTOR',
 }
 
 export interface SessionEvaluationHistoryItem {

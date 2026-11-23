@@ -66,7 +66,7 @@ export class StudentEvaluationHistoryItemDto {
     enum: EvaluationHistoryOrigin,
     nullable: true,
     description:
-      'Origem da nota exibida: AUTOAVALIACAO, PARES (formulário) ou PLANNING_POKER. Null se a avaliação está pendente.',
+      'Origem da nota exibida: AUTOAVALIACAO, PARES (formulário), PLANNING_POKER ou TUTOR (só a avaliação do tutor). Null se a avaliação está pendente.',
   })
   origem!: EvaluationHistoryOrigin | null;
 }

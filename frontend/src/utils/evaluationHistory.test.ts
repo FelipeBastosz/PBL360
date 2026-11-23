@@ -144,4 +144,16 @@ describe('planning poker', () => {
     expect(updated).toMatchObject({ notaAlunoOriginal: 8, notaPares: 9 });
     expect(getSituationLabel(updated!)).toBe('Ajustada com justificativa');
   });
+
+  it('describes a grade given only by the tutor as evaluated', () => {
+    const tutorOnly: StudentEvaluationHistoryItem = {
+      ...notSubmittedItem,
+      notaTutor: 9,
+      origem: 'TUTOR',
+    };
+
+    expect(getSituationLabel(tutorOnly)).toBe('Avaliada pelo tutor');
+    expect(hasSubmitted(tutorOnly)).toBe(false);
+    expect(getTutorScore(tutorOnly)).toBe(9);
+  });
 });

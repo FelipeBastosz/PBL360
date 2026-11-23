@@ -198,4 +198,24 @@ describe('Evaluation history with planning poker', () => {
 
     expect(detail.votos).toEqual([{ avaliadorId: null, avaliadorNome: null, nota: 7 }]);
   });
+
+  it('marks a student graded only by the tutor as evaluated by the tutor', async () => {
+    const repository = buildRepository(
+      mockManager([], {
+        "e.type = 'TUTOR_SESSION'": [
+          { studentId: 'student-3', criterionId: 'crit-1', score: '9.00', bonusScore: null },
+        ],
+      }),
+    );
+
+    const items = await repository.getHistory('session-1');
+
+    expect(items[2]).toMatchObject({
+      notaAluno: null,
+      notaPares: null,
+      notaTutor: 9,
+      origem: EvaluationHistoryOrigin.TUTOR,
+    });
+    expect(items[0]).toMatchObject({ origem: null });
+  });
 });

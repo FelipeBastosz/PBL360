@@ -1,6 +1,6 @@
 export type EvaluationAdjustmentSituation = 'SEM_AJUSTE' | 'AJUSTADA';
 
-export type EvaluationHistoryOrigin = 'AUTOAVALIACAO' | 'PARES' | 'PLANNING_POKER';
+export type EvaluationHistoryOrigin = 'AUTOAVALIACAO' | 'PARES' | 'PLANNING_POKER' | 'TUTOR';
 
 export type StudentEvaluationHistoryItem = {
   alunoId: string;

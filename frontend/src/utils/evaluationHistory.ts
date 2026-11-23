@@ -37,7 +37,12 @@ export function getDisplayName(item: StudentEvaluationHistoryItem, hideNames: bo
   return hideNames ? item.matricula || 'Sem matrícula' : item.nome;
 }
 
+export function isTutorOnlyGrade(item: StudentEvaluationHistoryItem): boolean {
+  return item.origem === 'TUTOR' && !hasSubmitted(item);
+}
+
 export function getSituationLabel(item: StudentEvaluationHistoryItem): string {
+  if (isTutorOnlyGrade(item)) return 'Avaliada pelo tutor';
   if (!hasSubmitted(item)) return 'Avaliação pendente';
   return item.situacaoAjuste === 'AJUSTADA' ? 'Ajustada com justificativa' : 'Sem ajuste do tutor';
 }

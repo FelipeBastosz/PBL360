@@ -138,6 +138,7 @@ function resolveOrigin(
 ): EvaluationHistoryOrigin | null {
   if (selfGrades.notaAluno !== null) return EvaluationHistoryOrigin.AUTOAVALIACAO;
   if (scores.notaPares !== null) return EvaluationHistoryOrigin.PARES;
+  if (scores.notaTutor !== null) return EvaluationHistoryOrigin.TUTOR;
   return null;
 }
 

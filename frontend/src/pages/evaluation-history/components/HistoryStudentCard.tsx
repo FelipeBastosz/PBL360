@@ -9,6 +9,7 @@ import {
   getStudentScore,
   getTutorScore,
   hasSubmitted,
+  isTutorOnlyGrade,
 } from '@/utils/evaluationHistory';
 
 type HistoryStudentCardProps = {
@@ -55,15 +56,16 @@ function PendingClock() {
 }
 
 function SituationLine({ student }: { student: StudentEvaluationHistoryItem }) {
-  const isAdjusted = hasSubmitted(student) && student.situacaoAjuste === 'AJUSTADA';
+  const isDone =
+    (hasSubmitted(student) && student.situacaoAjuste === 'AJUSTADA') || isTutorOnlyGrade(student);
   return (
     <p
       className={cn(
         'flex items-center text-[11.5px] leading-[14px]',
-        isAdjusted ? 'gap-[3.3px] text-[#1E2BAA]' : 'gap-[5.5px] text-[#5C6072]',
+        isDone ? 'gap-[3.3px] text-[#1E2BAA]' : 'gap-[5.5px] text-[#5C6072]',
       )}
     >
-      {isAdjusted ? <CheckMark /> : <PendingClock />}
+      {isDone ? <CheckMark /> : <PendingClock />}
       <span>{getSituationLabel(student)}</span>
     </p>
   );

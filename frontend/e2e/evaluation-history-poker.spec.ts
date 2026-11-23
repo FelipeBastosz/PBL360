@@ -210,4 +210,47 @@ test.describe('E2E Full-Stack: histórico de avaliações com planning poker', (
     await page.getByRole('button', { name: 'Salvar chamada' }).click();
     await expect(page.getByText('Chamada salva.')).toBeVisible();
   });
+
+  test('mostra como avaliado o aluno que recebeu apenas a avaliação do professor', async ({
+    page,
+    request,
+  }) => {
+    const tutor = await signIn(request, TUTOR_EMAIL);
+    const [ana, joao] = scenario.students;
+    const session = await send<{ id: string }>(
+      request,
+      tutor.token,
+      'POST',
+      `/salas/${scenario.roomId}/problemas/${scenario.problemId}/sessoes`,
+      { titulo: 'Sessão avaliada pelo professor', descricao: null, data: sessionDate(2) },
+    );
+    await send(request, tutor.token, 'PUT', `/sessoes/${session.id}/chamada`, {
+      registros: scenario.students.map((student, index) => ({
+        alunoId: student.id,
+        status: 'PRESENTE',
+        lugar: index + 1,
+      })),
+    });
+    const evaluation = await send<{ criterios: Array<{ id: string }> }>(
+      request,
+      tutor.token,
+      'GET',
+      `/sessoes/${session.id}/avaliacoes/${ana!.id}`,
+    );
+    await send(request, tutor.token, 'PUT', `/sessoes/${session.id}/avaliacoes/${ana!.id}`, {
+      itens: evaluation.criterios.map((criterion) => ({ criterioId: criterion.id, nota: 9 })),
+      notaCargo: null,
+      enviar: true,
+    });
+
+    await loginAsTutor(page);
+    await page.goto(
+      `/turmas/${scenario.roomId}/problemas/${scenario.problemId}/sessoes/${session.id}/historico`,
+    );
+
+    const anaCard = cardOf(page, ana!.nome);
+    await expect(anaCard.getByText('Avaliada pelo tutor')).toBeVisible();
+    await expect(anaCard.getByText('9,0')).toBeVisible();
+    await expect(cardOf(page, joao!.nome).getByText('Avaliação pendente')).toBeVisible();
+  });
 });
