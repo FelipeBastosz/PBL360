@@ -1,58 +1,60 @@
-const STORAGE_KEY = 'pbl360_apply_target';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  clearApplyTarget,
+  hasSessionTarget,
+  readApplyTarget,
+  readStringFields,
+} from './navigationState';
 
-export function readStringFields<K extends string>(
-  state: unknown,
-  keys: readonly K[],
-): Record<K, string> | null {
-  if (typeof state !== 'object' || state === null) return null;
-  const record = state as Record<string, unknown>;
-  const hasAll = keys.every((key) => typeof record[key] === 'string' && record[key] !== '');
-  return hasAll ? (record as Record<K, string>) : null;
-}
+describe('readStringFields', () => {
+  it('returns the state when every key holds a non-empty string', () => {
+    expect(readStringFields({ email: 'ana@uefs.br', token: 'x' }, ['email', 'token'])).toEqual({
+      email: 'ana@uefs.br',
+      token: 'x',
+    });
+  });
 
-export type ApplyTarget = {
-  sessionId: string;
-  roomId?: string;
-  problemId?: string;
-};
+  it('returns null when a key is missing, empty or not a string', () => {
+    expect(readStringFields({ email: 'ana@uefs.br' }, ['email', 'token'])).toBeNull();
+    expect(readStringFields({ email: '' }, ['email'])).toBeNull();
+    expect(readStringFields({ email: 1 }, ['email'])).toBeNull();
+  });
 
-export function readApplyTarget(state: unknown): ApplyTarget | null {
-  if (typeof state === 'object' && state !== null) {
-    const record = state as Record<string, unknown>;
-    if (typeof record.sessionId === 'string' && record.sessionId.trim() !== '') {
-      const target: ApplyTarget = {
-        sessionId: record.sessionId,
-        roomId: typeof record.roomId === 'string' ? record.roomId : '',
-        problemId: typeof record.problemId === 'string' ? record.problemId : '',
-      };
-      try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(target));
-      } catch {
-        // ignore
-      }
-      return target;
-    }
-  }
+  it('returns null for a missing state', () => {
+    expect(readStringFields(null, ['email'])).toBeNull();
+    expect(readStringFields(undefined, ['email'])).toBeNull();
+  });
+});
 
-  try {
-    const stored = sessionStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as ApplyTarget;
-      if (parsed && typeof parsed.sessionId === 'string' && parsed.sessionId.trim() !== '') {
-        return parsed;
-      }
-    }
-  } catch {
-    // ignore
-  }
+describe('readApplyTarget', () => {
+  afterEach(() => sessionStorage.clear());
 
-  return null;
-}
+  it('reads the session a table is applied to and remembers it', () => {
+    const state = { sessionId: 'session-1', roomId: 'room-1', problemId: 'problem-1' };
 
-export function clearApplyTarget(): void {
-  try {
-    sessionStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // ignore
-  }
-}
+    expect(readApplyTarget(state)).toEqual(state);
+    expect(readApplyTarget(null)).toEqual(state);
+  });
+
+  it('returns null without a session in the state or in memory', () => {
+    expect(readApplyTarget({ roomId: 'room-1' })).toBeNull();
+    expect(readApplyTarget(null)).toBeNull();
+  });
+
+  it('forgets the remembered session once the flow is cleared', () => {
+    readApplyTarget({ sessionId: 'session-1' });
+
+    clearApplyTarget();
+
+    expect(readApplyTarget(null)).toBeNull();
+  });
+});
+
+describe('hasSessionTarget', () => {
+  it('tells whether the navigation state carries a session', () => {
+    expect(hasSessionTarget({ sessionId: 'session-1' })).toBe(true);
+    expect(hasSessionTarget({ sessionId: ' ' })).toBe(false);
+    expect(hasSessionTarget({ roomId: 'room-1' })).toBe(false);
+    expect(hasSessionTarget(null)).toBe(false);
+  });
+});

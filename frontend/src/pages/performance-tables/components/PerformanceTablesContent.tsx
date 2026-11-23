@@ -61,7 +61,18 @@ function ActiveSessionFormulaBanner({
 }
 
 function SectionsRenderer(props: Props) {
-  if (!props.sections) return null;
+  if (!props.sections) {
+    return (
+      <PerformanceTableSection
+        title="Fórmulas"
+        tables={props.filtered}
+        currentUserId={props.currentUserId}
+        target={props.target}
+        checkIsApplied={props.checkApplied}
+        onOpenDelete={props.onDeleteTable}
+      />
+    );
+  }
   return (
     <>
       <PerformanceTableSection
