@@ -88,6 +88,7 @@ function resolveSelfBadge(summary?: StudentEvaluationSummaryResponse, isRollCall
 
   if (summary.autoavaliacao.status === 'NAO_PARTICIPOU') return 'Não participou';
   if (summary.autoavaliacao.status === 'ENVIADA') return 'Enviada';
+  if (summary.autoavaliacao.status === 'ENCERRADA') return 'Encerrada';
   if (summary.autoavaliacao.status === 'RASCUNHO') return 'Rascunho';
   return 'Pendente';
 }
@@ -176,7 +177,10 @@ function getEvaluationPaths(
   didNotParticipate: boolean,
 ) {
   const selfPath =
-    !didNotParticipate && summary?.autoavaliacao.liberada && sessionId
+    !didNotParticipate &&
+    summary?.autoavaliacao.liberada &&
+    summary.autoavaliacao.status !== 'ENCERRADA' &&
+    sessionId
       ? ROUTES.studentSelfEvaluation.replace(':sessionId', sessionId)
       : undefined;
 

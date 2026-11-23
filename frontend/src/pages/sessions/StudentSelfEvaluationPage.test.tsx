@@ -177,4 +177,19 @@ describe('StudentSelfEvaluationPage', () => {
       expect(screen.queryByRole('button', { name: 'Enviar avaliação' })).not.toBeInTheDocument();
     });
   });
+
+  it('locks the form when the deadline passed without submission', async () => {
+    vi.mocked(evaluationService.getSelfAssessment).mockResolvedValue({
+      ...mockAssessmentData,
+      status: 'ENCERRADA',
+    });
+
+    renderComponent();
+
+    expect(
+      await screen.findByText(/O prazo da autoavaliação terminou e ela não foi enviada/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Enviar avaliação' })).not.toBeInTheDocument();
+    expect(evaluationService.saveSelfAssessment).not.toHaveBeenCalled();
+  });
 });

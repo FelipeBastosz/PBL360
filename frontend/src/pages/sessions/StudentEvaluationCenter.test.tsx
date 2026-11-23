@@ -203,4 +203,16 @@ describe('StudentEvaluationCenter', () => {
       expect(screen.getAllByText('Bloqueada')).toHaveLength(2);
     });
   });
+
+  it('shows the self-assessment as closed and locked after the deadline', async () => {
+    vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
+      ...mockReleasedSummary,
+      autoavaliacao: { ...mockReleasedSummary.autoavaliacao, status: 'ENCERRADA' },
+    });
+    renderComponent();
+
+    expect(await screen.findByText('Encerrada')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /autoavaliação/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /avaliar colegas/i })).toBeInTheDocument();
+  });
 });

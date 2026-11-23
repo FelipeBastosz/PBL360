@@ -113,7 +113,8 @@ function useSelfScoreHandlers(
   scores: Record<string, number>,
   draftTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
 ) {
-  const isEditable = dataStatus !== 'ENVIADA' && dataStatus !== 'NAO_PARTICIPOU';
+  const isEditable =
+    dataStatus !== 'ENVIADA' && dataStatus !== 'NAO_PARTICIPOU' && dataStatus !== 'ENCERRADA';
 
   const setScore = (id: string, s: number) => {
     setScores((prev) => {
