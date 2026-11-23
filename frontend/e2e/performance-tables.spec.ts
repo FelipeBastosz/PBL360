@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mockAcceptedTerms } from './helpers/terms';
 
 const mockSharedTable = {
   id: 'table-shared-1',
@@ -74,6 +75,7 @@ test.describe('Performance Tables - Co-tutor Flow (Closes #457)', () => {
       );
     });
 
+    await mockAcceptedTerms(page);
     await page.route('**/api/tabelas-desempenho/table-shared-1', async (route) => {
       await route.fulfill({
         status: 200,

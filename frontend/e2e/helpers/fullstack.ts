@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const TEACHER_EMAIL = 'carlos@uefs.br';
 const STUDENT_EMAIL = '20240001@discente.uefs.br';
@@ -152,11 +152,35 @@ async function ensurePresent(page: Page, studentName: string) {
   await page.getByRole('dialog').getByRole('button', { name: 'Fechar' }).click();
 }
 
+async function dragOffTable(page: Page, seat: Locator) {
+  const from = (await seat.boundingBox())!;
+  const to = (await page.locator('[data-drop="carometro"]').boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2 + 20, from.y + from.height / 2 + 20, { steps: 4 });
+  await page.mouse.move(to.x + to.width / 2, to.y + 40, { steps: 10 });
+  await page.mouse.up();
+}
+
+async function markOthersAbsent(page: Page, keep: string[]) {
+  const table = page.getByRole('group', { name: 'Mesa tutorial' });
+  const seated = table.getByRole('button', { name: /^Lugar \d+: / });
+  const labels = await seated.evaluateAll((seats) =>
+    seats.map((seat) => seat.getAttribute('aria-label') ?? ''),
+  );
+  for (const label of labels) {
+    if (keep.some((name) => label.includes(name))) continue;
+    await dragOffTable(page, table.getByRole('button', { name: label, exact: true }));
+  }
+}
+
 export async function recordTwoParticipants(page: Page, sessionId: string) {
+  const participants = ['Ana Souza', 'João Silva'];
   await page.goto(`/sessoes/${sessionId}/chamada`);
-  await ensurePresent(page, 'Ana Souza');
-  await ensurePresent(page, 'João Silva');
-  await page.getByRole('button', { name: 'Restantes ausentes' }).click();
+  for (const name of participants) await ensurePresent(page, name);
+  await markOthersAbsent(page, participants);
+  const markRemaining = page.getByRole('button', { name: 'Restantes ausentes' });
+  if (await markRemaining.isEnabled()) await markRemaining.click();
   await page.getByRole('button', { name: 'Salvar chamada' }).click();
   await expect(page.getByText('Chamada salva.')).toBeVisible();
 }

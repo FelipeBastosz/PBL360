@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { mockAcceptedTerms } from './helpers/terms';
 
 const VIEWPORTS = [
   { width: 360, height: 640 },
@@ -34,6 +35,7 @@ async function mockTutorSession(page: Page) {
       }),
     );
   });
+  await mockAcceptedTerms(page);
   await page.route('**/api/salas', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }),
   );
