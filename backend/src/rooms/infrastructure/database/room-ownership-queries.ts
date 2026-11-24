@@ -9,6 +9,11 @@ const LOCK_ROOM_SQL = `SELECT tutor_id AS "tutorId"
   WHERE id = $1 AND deleted_at IS NULL
   FOR UPDATE;`;
 
+const LOCK_RECIPIENT_SQL = `SELECT type, active
+  FROM users
+  WHERE id = $1
+  FOR SHARE;`;
+
 const HAS_TUTOR_SQL = `SELECT EXISTS (
   SELECT 1 FROM room_tutors WHERE room_id = $1 AND tutor_id = $2
 ) AS "exists";`;
@@ -29,6 +34,18 @@ const INSERT_TRANSFER_AUDIT_SQL = `INSERT INTO room_ownership_transfers
 const lockCurrentOwner = async (manager: EntityManager, roomId: string): Promise<string | null> => {
   const rows = await manager.query<{ tutorId: string }[]>(LOCK_ROOM_SQL, [roomId]);
   return rows[0]?.tutorId ?? null;
+};
+
+const validateLockedRecipient = async (
+  manager: EntityManager,
+  tutorId: string,
+): Promise<Exclude<TransferRoomOwnershipOutcome, { status: 'transferred' }> | null> => {
+  const rows = await manager.query<{ type: string; active: boolean }[]>(LOCK_RECIPIENT_SQL, [
+    tutorId,
+  ]);
+  const recipient = rows[0];
+  if (!recipient || recipient.type !== 'TUTOR') return { status: 'tutor_not_found' };
+  return recipient.active ? null : { status: 'tutor_inactive' };
 };
 
 const isTutorLinked = async (
@@ -66,6 +83,8 @@ const validateLockedRoom = async (
   if (!currentOwnerId) return { status: 'not_found' };
   if (currentOwnerId !== input.expectedOwnerId) return { status: 'not_owner' };
   if (input.newOwnerId === input.expectedOwnerId) return { status: 'same_owner' };
+  const recipientError = await validateLockedRecipient(manager, input.newOwnerId);
+  if (recipientError) return recipientError;
   const linked = await isTutorLinked(manager, input.roomId, input.newOwnerId);
   return linked ? null : { status: 'tutor_not_linked' };
 };

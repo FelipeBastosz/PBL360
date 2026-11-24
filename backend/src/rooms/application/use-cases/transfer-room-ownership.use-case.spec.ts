@@ -153,5 +153,23 @@ describe('TransferRoomOwnershipUseCase', () => {
         newOwnerId: NEW_OWNER_ID,
       }),
     ).rejects.toThrow(NotFoundError);
+
+    rooms.transferOwnership.mockResolvedValueOnce({ status: 'tutor_inactive' });
+    await expect(
+      useCase.execute({
+        roomId: ROOM_ID,
+        authenticatedTutorId: OWNER_ID,
+        newOwnerId: NEW_OWNER_ID,
+      }),
+    ).rejects.toThrow(UnprocessableEntityError);
+
+    rooms.transferOwnership.mockResolvedValueOnce({ status: 'tutor_not_found' });
+    await expect(
+      useCase.execute({
+        roomId: ROOM_ID,
+        authenticatedTutorId: OWNER_ID,
+        newOwnerId: NEW_OWNER_ID,
+      }),
+    ).rejects.toThrow(NotFoundError);
   });
 });

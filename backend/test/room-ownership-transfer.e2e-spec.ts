@@ -298,6 +298,43 @@ describe('Room Ownership Transfer (e2e)', () => {
     expect(audits).toEqual([{ new_owner_id: winnerId }]);
   });
 
+  it('blocks transfer with 422 when recipient is deactivated concurrently before commit', async () => {
+    const room = await createRoomWithCoTutor();
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.query('UPDATE users SET active = FALSE WHERE id = $1;', [coTutor.id]);
+      const transferPromise = api(app, owner).patch(`/salas/${room.id}/proprietario`, {
+        professorId: coTutor.id,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await queryRunner.commitTransaction();
+
+      const res = await transferPromise;
+      expect(res.status).toBe(422);
+    } finally {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+      await queryRunner.release();
+    }
+
+    const [persistedRoom] = await dataSource.query<[{ tutor_id: string }]>(
+      'SELECT tutor_id FROM rooms WHERE id = $1;',
+      [room.id],
+    );
+    expect(persistedRoom.tutor_id).toBe(owner.id);
+
+    const audits = await dataSource.query<unknown[]>(
+      'SELECT id FROM room_ownership_transfers WHERE room_id = $1;',
+      [room.id],
+    );
+    expect(audits).toHaveLength(0);
+  });
+
   it('documents PATCH /api/salas/{salaId}/proprietario in Swagger', async () => {
     const res = await request(app.getHttpServer() as Server)
       .get('/api/docs/json')

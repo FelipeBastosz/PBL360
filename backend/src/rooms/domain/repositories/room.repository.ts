@@ -52,6 +52,8 @@ export type TransferRoomOwnershipOutcome =
   | { status: 'not_found' }
   | { status: 'not_owner' }
   | { status: 'same_owner' }
+  | { status: 'tutor_not_found' }
+  | { status: 'tutor_inactive' }
   | { status: 'tutor_not_linked' };
 
 export interface RoomRepository {

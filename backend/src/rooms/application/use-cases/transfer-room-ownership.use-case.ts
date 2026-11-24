@@ -34,6 +34,10 @@ const mapOutcomeToError = (
       return new ForbiddenError('Apenas o professor responsável pode realizar esta ação.');
     case 'same_owner':
       return new InvalidRequestError('O professor selecionado já é o responsável pela sala.');
+    case 'tutor_not_found':
+      return new NotFoundError('Professor não encontrado.');
+    case 'tutor_inactive':
+      return new UnprocessableEntityError('O professor destinatário está inativo.');
     case 'tutor_not_linked':
       return new UnprocessableEntityError('O professor destinatário não está vinculado à sala.');
   }
