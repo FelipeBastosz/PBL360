@@ -24,7 +24,7 @@ export function PokerModal({ isOpen, label, onClose, danger = false, children }:
     >
       <div
         className={cn(
-          'relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl animate-pop-in',
+          'relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-elevated p-6 shadow-2xl animate-pop-in',
           danger && 'border-2 border-danger',
         )}
       >
@@ -32,7 +32,7 @@ export function PokerModal({ isOpen, label, onClose, danger = false, children }:
           type="button"
           onClick={onClose}
           aria-label="Fechar"
-          className="absolute top-4 right-4 rounded-full p-1 text-ink/60 hover:bg-black/5 hover:text-ink"
+          className="absolute top-4 right-4 rounded-full p-1 text-ink/60 hover:bg-subtle hover:text-ink"
         >
           <XMarkIcon className="size-6" />
         </button>

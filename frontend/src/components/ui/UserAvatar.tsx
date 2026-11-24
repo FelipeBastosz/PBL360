@@ -16,7 +16,7 @@ export function UserAvatar({ user, className }: UserAvatarProps) {
   return (
     <div
       className={cn(
-        'flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-200 text-sm font-semibold text-brand-900',
+        'flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-soft text-sm font-semibold text-brand-accent',
         className,
       )}
     >

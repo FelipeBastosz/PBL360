@@ -41,7 +41,7 @@ function RoomUnavailable({ message }: { message: string }) {
       </div>
       <Link
         to={ROUTES.rooms}
-        className="rounded-xl border border-brand-900 bg-white px-5 py-3 font-semibold text-brand-900 transition-[background-color,scale] duration-200 hover:bg-brand-50 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-brand-900"
+        className="rounded-xl border border-brand-accent bg-elevated px-5 py-3 font-semibold text-brand-accent transition-[background-color,scale] duration-200 hover:bg-brand-soft active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-brand-accent"
       >
         Ver minhas turmas
       </Link>
@@ -78,7 +78,7 @@ function RoomProblemsMain({
       <SearchField label="Pesquisar problema" value={query} onChange={setQuery} className="mt-2" />
       {isLoading ? (
         <div className="mt-10 flex justify-center">
-          <Spinner className="size-8 text-brand-900" />
+          <Spinner className="size-8 text-brand-accent" />
         </div>
       ) : problems.length === 0 ? (
         query ? (

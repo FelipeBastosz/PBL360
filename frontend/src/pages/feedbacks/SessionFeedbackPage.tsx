@@ -24,7 +24,7 @@ function IndividualFeedbackSection({ feedback, sessionGrades }: IndividualFeedba
   if (feedback) {
     return (
       <section aria-label="Feedback Individual" className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold text-brand-900 uppercase tracking-wider">
+        <h2 className="text-sm font-semibold text-brand-accent uppercase tracking-wider">
           INDIVIDUAL
         </h2>
         <FeedbackCard
@@ -43,10 +43,10 @@ function IndividualFeedbackSection({ feedback, sessionGrades }: IndividualFeedba
   if (sessionGrades?.avaliacoes) {
     return (
       <section aria-label="Feedback Individual" className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold text-brand-900 uppercase tracking-wider">
+        <h2 className="text-sm font-semibold text-brand-accent uppercase tracking-wider">
           INDIVIDUAL
         </h2>
-        <div className="flex flex-col gap-2 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-2 rounded-2xl border border-border-subtle bg-elevated p-5 shadow-sm">
           <EvaluationComponentGrades avaliacoes={sessionGrades.avaliacoes} />
         </div>
       </section>
@@ -60,9 +60,11 @@ function ProblemFeedbacksNav({ url }: { url: string }) {
   return (
     <Link
       to={url}
-      className="flex items-center justify-between rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:bg-black/[0.02]"
+      className="flex items-center justify-between rounded-2xl border border-border-subtle bg-elevated p-4 shadow-sm transition hover:bg-black/[0.02]"
     >
-      <span className="text-sm font-semibold text-brand-900">Todos os feedbacks do problema</span>
+      <span className="text-sm font-semibold text-brand-accent">
+        Todos os feedbacks do problema
+      </span>
       <ChevronRightIcon className="size-5 text-muted" aria-hidden />
     </Link>
   );
@@ -83,7 +85,7 @@ function FeedbackPageBody(props: FeedbackPageBodyProps) {
   if (props.isPageLoading) {
     return (
       <div className="mt-8 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

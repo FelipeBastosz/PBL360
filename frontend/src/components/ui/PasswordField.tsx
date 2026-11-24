@@ -26,7 +26,7 @@ export function PasswordField(props: PasswordFieldProps) {
           onClick={() => setIsVisible((visible) => !visible)}
           aria-label={isVisible ? 'Ocultar senha' : 'Mostrar senha'}
           aria-pressed={isVisible}
-          className="rounded-md p-2 text-placeholder hover:text-brand-900 focus-visible:outline-2 focus-visible:outline-brand-900"
+          className="rounded-md p-2 text-placeholder hover:text-brand-accent focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           <Icon className="size-6" aria-hidden />
         </button>

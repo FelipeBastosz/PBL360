@@ -16,7 +16,7 @@ type ActionContentProps = {
 function ActionContent({ Icon, title, description }: ActionContentProps) {
   return (
     <>
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-900 transition-transform duration-200 group-hover:scale-105">
+      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-accent transition-transform duration-200 group-hover:scale-105">
         <Icon className="size-6" />
       </div>
       <div>

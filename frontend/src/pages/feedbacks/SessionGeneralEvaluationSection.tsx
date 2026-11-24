@@ -13,7 +13,7 @@ type SessionGeneralEvaluationSectionProps = {
 function GeneralEvaluationsList({ evaluations }: { evaluations: SessionGeneralEvaluation[] }) {
   return (
     <section aria-label="Feedback da Turma" className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold text-brand-900 uppercase tracking-wider">DA TURMA</h2>
+      <h2 className="text-sm font-semibold text-brand-accent uppercase tracking-wider">DA TURMA</h2>
       <div className="flex flex-col gap-3">
         {evaluations.map((item) => {
           const isEdited = Boolean(item.editadoEm && item.editadoEm !== item.criadoEm);
@@ -48,7 +48,7 @@ export function SessionGeneralEvaluationSection({
   if (isLoading && !evaluationsProp) {
     return (
       <div className="flex justify-center py-6">
-        <Spinner className="size-6 text-brand-900" />
+        <Spinner className="size-6 text-brand-accent" />
       </div>
     );
   }

@@ -32,7 +32,7 @@ export default function MemberSessionPage() {
         {error ? (
           <Alert tone="error">{error.message}</Alert>
         ) : (
-          <Spinner className="mx-auto mt-10 size-8 text-brand-900" />
+          <Spinner className="mx-auto mt-10 size-8 text-brand-accent" />
         )}
       </main>
     </div>

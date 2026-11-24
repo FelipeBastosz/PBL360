@@ -35,7 +35,7 @@ function ResultRow({
         onClick={() => onAdd(tutor)}
         disabled={isPending}
         aria-label={`Adicionar ${tutor.nome}`}
-        className="flex items-center gap-1.5 rounded-xl bg-brand-900 px-3 py-2 text-sm font-semibold text-white transition-[background-color,scale] duration-200 hover:bg-brand-700 active:scale-95 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900"
+        className="flex items-center gap-1.5 rounded-xl bg-brand-primary px-3 py-2 text-sm font-semibold text-white transition-[background-color,scale] duration-200 hover:bg-brand-primary-hover active:scale-95 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
       >
         {isPending ? (
           <Spinner className="size-4" />
@@ -62,14 +62,14 @@ function SearchResults({
   if (isSearching)
     return (
       <div className="flex justify-center py-3">
-        <Spinner className="size-5 text-brand-900" />
+        <Spinner className="size-5 text-brand-accent" />
       </div>
     );
   if (failed) return <SearchStatus text="Não foi possível buscar professores agora." />;
   if (!available.length) return <SearchStatus text="Nenhum professor encontrado para convidar." />;
 
   return (
-    <ul className="divide-y divide-black/5">
+    <ul className="divide-y divide-border-subtle">
       {available.map((tutor) => (
         <ResultRow key={tutor.id} tutor={tutor} isPending={pendingId === tutor.id} onAdd={onAdd} />
       ))}

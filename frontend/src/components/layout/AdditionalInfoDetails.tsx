@@ -14,7 +14,7 @@ export function AboutProjectContent() {
         Contato:{' '}
         <a
           href={`mailto:${PROJECT_EMAIL}`}
-          className="font-medium text-brand-900 underline underline-offset-4 transition-colors hover:text-brand-700"
+          className="font-medium text-brand-accent underline underline-offset-4 transition-opacity hover:opacity-80"
         >
           {PROJECT_EMAIL}
         </a>
@@ -32,7 +32,7 @@ export function TeamMembersContent() {
             href={member.github}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block text-sm font-medium text-brand-900 underline underline-offset-4 transition-colors hover:text-brand-700"
+            className="inline-block text-sm font-medium text-brand-accent underline underline-offset-4 transition-opacity hover:opacity-80"
           >
             {member.name}
           </a>

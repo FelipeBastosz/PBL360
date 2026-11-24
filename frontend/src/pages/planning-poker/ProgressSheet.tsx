@@ -16,7 +16,7 @@ type ProgressSheetProps = {
 
 function DoneRow({ item }: { item: PokerCompleted }) {
   return (
-    <div className="flex items-center gap-3 border-b border-black/5 py-2.5">
+    <div className="flex items-center gap-3 border-b border-border-subtle py-2.5">
       <StudentAvatar student={item} className="size-9 text-[13px]" />
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-[15px] font-semibold text-ink">{item.nome}</span>
@@ -25,9 +25,11 @@ function DoneRow({ item }: { item: PokerCompleted }) {
         </span>
       </div>
       <div className="flex flex-col items-end gap-0.5">
-        <span className="text-lg font-bold text-brand-900">{formatPokerGrade(item.notaFinal)}</span>
+        <span className="text-lg font-bold text-brand-accent">
+          {formatPokerGrade(item.notaFinal)}
+        </span>
         {item.ajustada && (
-          <span className="rounded-full border border-brand-200 bg-brand-100 px-1.5 text-[10px] leading-4 font-semibold text-brand-900">
+          <span className="rounded-full border border-brand-border bg-brand-soft px-1.5 text-[10px] leading-4 font-semibold text-brand-accent">
             Reajustada
           </span>
         )}
@@ -38,10 +40,10 @@ function DoneRow({ item }: { item: PokerCompleted }) {
 
 function PendingRow({ student, isVoting }: { student: PokerStudent; isVoting: boolean }) {
   return (
-    <div className="flex items-center gap-3 border-b border-black/5 py-2">
+    <div className="flex items-center gap-3 border-b border-border-subtle py-2">
       <StudentAvatar student={student} className="size-8 text-xs opacity-50" />
       <span className="min-w-0 flex-1 truncate text-sm text-ink">{student.nome}</span>
-      <span className="rounded-md bg-black/5 px-2 py-0.5 text-xs font-semibold text-muted">
+      <span className="rounded-md bg-subtle px-2 py-0.5 text-xs font-semibold text-muted">
         {isVoting ? 'Em votação' : 'Pendente'}
       </span>
     </div>
@@ -50,7 +52,7 @@ function PendingRow({ student, isVoting }: { student: PokerStudent; isVoting: bo
 
 function EmptyDone() {
   return (
-    <div className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-black/15 px-3 py-5 text-center">
+    <div className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-border px-3 py-5 text-center">
       <span className="text-[15px] font-semibold text-ink">Nenhum aluno avaliado ainda</span>
       <span className="text-[13px] leading-normal text-muted">
         As notas aparecem aqui quando você aceitar ou reajustar uma rodada.
@@ -76,7 +78,7 @@ export function ProgressSheet(props: ProgressSheetProps) {
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <span className="text-[13px] font-semibold text-brand-900">Avaliados</span>
+          <span className="text-[13px] font-semibold text-brand-accent">Avaliados</span>
           {props.completed.length === 0 ? (
             <EmptyDone />
           ) : (
@@ -85,7 +87,7 @@ export function ProgressSheet(props: ProgressSheetProps) {
         </div>
         {props.pending.length > 0 && (
           <div className="flex flex-col gap-1">
-            <span className="text-[13px] font-semibold text-brand-900">
+            <span className="text-[13px] font-semibold text-brand-accent">
               Faltam ({props.pending.length})
             </span>
             {props.pending.map((student) => (

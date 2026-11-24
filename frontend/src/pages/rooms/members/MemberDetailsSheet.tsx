@@ -31,7 +31,7 @@ function FullName({ name }: { name: string }) {
 function MemberDetails({ member }: { member: SelectedMember }) {
   if (member.kind === 'student') {
     return (
-      <dl className="divide-y divide-black/5">
+      <dl className="divide-y divide-border-subtle">
         <FullName name={member.student.nome} />
         {member.student.matricula && (
           <DetailRow label="Matrícula" value={member.student.matricula} />
@@ -42,7 +42,7 @@ function MemberDetails({ member }: { member: SelectedMember }) {
     );
   }
   return (
-    <dl className="divide-y divide-black/5">
+    <dl className="divide-y divide-border-subtle">
       <FullName name={member.tutor.nome} />
       <DetailRow label="E-mail" value={member.tutor.email} />
       <DetailRow

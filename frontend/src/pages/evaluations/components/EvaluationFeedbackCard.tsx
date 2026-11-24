@@ -48,9 +48,9 @@ export function EvaluationFeedbackCard({ feedback, onChange, disabled = false }:
   };
 
   return (
-    <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-border-subtle bg-elevated p-5 shadow-sm">
       <div className="flex items-center justify-between gap-2">
-        <h2 id="feedback-title" className="text-base font-bold text-brand-900">
+        <h2 id="feedback-title" className="text-base font-bold text-brand-accent">
           Feedback
         </h2>
         <FeedbackTemplateSelector
@@ -70,10 +70,10 @@ export function EvaluationFeedbackCard({ feedback, onChange, disabled = false }:
         aria-invalid={isOverLimit}
         aria-describedby={isOverLimit ? 'feedback-limit-warning' : undefined}
         className={cn(
-          'mt-3 w-full resize-none rounded-2xl border bg-brand-50/40 p-4 text-sm text-ink placeholder:text-muted transition focus:bg-white focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:bg-black/5',
+          'mt-3 w-full resize-none rounded-2xl border bg-brand-soft/40 p-4 text-sm text-ink placeholder:text-muted transition focus:bg-elevated focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:bg-subtle',
           isOverLimit
             ? 'border-danger focus:border-danger focus:ring-danger'
-            : 'border-brand-100/80 focus:border-brand-900 focus:ring-brand-900',
+            : 'border-brand-100/80 focus:border-brand-accent focus:ring-brand-accent',
         )}
       />
 

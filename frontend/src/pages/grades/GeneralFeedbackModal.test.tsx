@@ -156,6 +156,6 @@ describe('GeneralFeedbackModal', () => {
     const footerText = screen.getByText(/Última edição/i);
     expect(footerText).toBeInTheDocument();
     expect(footerText).toHaveClass('text-sm');
-    expect(footerText).toHaveClass('text-gray-500');
+    expect(footerText).toHaveClass('text-muted');
   });
 });

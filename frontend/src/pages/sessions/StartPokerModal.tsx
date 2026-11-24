@@ -51,17 +51,19 @@ function RadioCard<T>({
       onClick={onSelect}
       className={cn(
         'flex w-full items-start gap-3 rounded-xl px-3.5 py-3 text-left text-ink',
-        selected ? 'border-2 border-brand-900 bg-brand-50' : 'border border-black/10 bg-white',
+        selected
+          ? 'border-2 border-brand-accent bg-brand-soft'
+          : 'border border-border bg-elevated',
       )}
     >
-      <span className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-brand-900">
-        <span className={cn('size-2.5 rounded-full bg-brand-900', !selected && 'opacity-0')} />
+      <span className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-brand-accent">
+        <span className={cn('size-2.5 rounded-full bg-brand-primary', !selected && 'opacity-0')} />
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="flex items-center gap-2">
           <span className="text-[15px] font-semibold">{option.title}</span>
           {option.isDefault && (
-            <span className="rounded-full border border-brand-200 bg-brand-100 px-2 text-[11px] leading-[18px] font-semibold text-brand-900">
+            <span className="rounded-full border border-brand-border bg-brand-soft px-2 text-[11px] leading-[18px] font-semibold text-brand-accent">
               Padrão
             </span>
           )}
@@ -118,7 +120,7 @@ export function StartPokerModal({
     <PokerModal isOpen label="Iniciar planning poker" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <div className="pr-8">
-          <h2 className="text-lg font-bold text-brand-900">Iniciar planning poker</h2>
+          <h2 className="text-lg font-bold text-brand-accent">Iniciar planning poker</h2>
           <p className="mt-1 text-[13px] leading-normal text-muted">
             Avaliação coletiva sobre a mesa da chamada. {presentStudents} alunos presentes.
           </p>

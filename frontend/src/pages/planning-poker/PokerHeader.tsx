@@ -12,7 +12,7 @@ export function PokerHeader({ title, subtitle, onBack }: PokerHeaderProps) {
   const { user } = useAuth();
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-3 bg-brand-900 px-4 text-white">
+    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-brand-primary-border bg-brand-primary px-4 text-white">
       <button
         type="button"
         onClick={onBack}

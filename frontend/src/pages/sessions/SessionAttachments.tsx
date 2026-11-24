@@ -112,16 +112,16 @@ export function SessionAttachments({ sessionId, canUpload = false }: SessionAtta
   return (
     <section aria-labelledby="session-attachments-title" className="flex flex-col gap-3">
       <header className="flex items-baseline justify-between">
-        <h2 id="session-attachments-title" className="text-lg font-semibold text-brand-900">
+        <h2 id="session-attachments-title" className="text-lg font-semibold text-brand-accent">
           Anexos da Sessão
         </h2>
         <span className="text-sm text-muted">
           {countLabel(attachments.length, 'arquivo', 'arquivos')}
         </span>
       </header>
-      <div className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgb(16_33_76/0.06)]">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-elevated p-4 shadow-[0_1px_2px_rgb(0_0_0/0.08)]">
         {isLoading ? (
-          <Spinner className="mx-auto size-6 text-brand-900" />
+          <Spinner className="mx-auto size-6 text-brand-accent" />
         ) : (
           <AttachmentList
             attachments={attachments}

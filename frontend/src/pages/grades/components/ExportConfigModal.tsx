@@ -68,7 +68,7 @@ function ProblemSectionsConfig({
   disabled,
 }: SectionsConfigProps) {
   return (
-    <div className="flex flex-col gap-2 border-t border-black/10 pt-3">
+    <div className="flex flex-col gap-2 border-t border-border pt-3">
       <span className="text-xs font-semibold uppercase tracking-wider text-muted">
         Conteúdo do Relatório
       </span>

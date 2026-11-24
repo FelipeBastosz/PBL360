@@ -23,7 +23,7 @@ export function ClassReportExportActions({
         isLoading={isExportingPDF}
         disabled={isAnyExporting}
         onClick={onExportPdf}
-        className="h-12 w-full rounded-2xl bg-brand-900 font-semibold text-white shadow-md hover:bg-brand-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-12 w-full rounded-2xl bg-brand-primary font-semibold text-white shadow-md hover:bg-brand-primary-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
         Exportar em PDF
       </Button>
@@ -33,7 +33,7 @@ export function ClassReportExportActions({
         isLoading={isExportingExcel}
         disabled={isAnyExporting}
         onClick={onExportExcel}
-        className="h-12 w-full rounded-2xl bg-brand-900 font-semibold text-white shadow-md hover:bg-brand-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-12 w-full rounded-2xl bg-brand-primary font-semibold text-white shadow-md hover:bg-brand-primary-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
         Exportar em Excel
       </Button>

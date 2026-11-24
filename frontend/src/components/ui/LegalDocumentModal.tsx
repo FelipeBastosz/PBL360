@@ -15,7 +15,7 @@ export type LegalDocumentModalProps = {
 
 function LegalDocumentHeader({ title, onClose }: { title: string; onClose: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-black/5 pb-4">
+    <div className="flex items-center justify-between gap-3 border-b border-border-subtle pb-4">
       <h2 id="legal-document-modal-title" className="text-xl font-semibold text-ink text-left">
         {title}
       </h2>
@@ -23,7 +23,7 @@ function LegalDocumentHeader({ title, onClose }: { title: string; onClose: () =>
         type="button"
         onClick={onClose}
         aria-label={`Fechar ${title}`}
-        className="-mr-2 rounded-full p-2 text-muted transition-[background-color,scale] duration-200 hover:bg-black/5 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
+        className="-mr-2 rounded-full p-2 text-muted transition-[background-color,scale] duration-200 hover:bg-subtle active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent"
       >
         <XMarkIcon className="size-6" />
       </button>
@@ -52,7 +52,7 @@ export function LegalDocumentModal({
       className={`fixed inset-0 ${zIndex} flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-fade-in`}
     >
       <div
-        className={`relative flex max-h-[90vh] w-full ${maxWidth} flex-col rounded-3xl bg-white p-6 shadow-2xl animate-pop-in`}
+        className={`relative flex max-h-[90vh] w-full ${maxWidth} flex-col rounded-3xl border border-border-subtle bg-elevated p-6 shadow-2xl animate-pop-in`}
       >
         <LegalDocumentHeader title={title} onClose={onClose} />
 
@@ -64,7 +64,7 @@ export function LegalDocumentModal({
           )}
         </div>
 
-        <div className="mt-6 border-t border-black/5 pt-4">
+        <div className="mt-6 border-t border-border-subtle pt-4">
           <Button
             type="button"
             onClick={onClose}

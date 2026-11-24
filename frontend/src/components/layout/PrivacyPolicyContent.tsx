@@ -2,15 +2,15 @@ import { PROJECT_EMAIL } from '@/content/projectInfo';
 
 function PrivacyHeader() {
   return (
-    <div className="border-b border-black/5 pb-3">
+    <div className="border-b border-border-subtle pb-3">
       <p className="text-xs font-medium text-muted">
         Versão 1.1 (Conformidade LGPD - Lei nº 13.709/2018) &bull; Atualizado em 16 de novembro de
         2026
       </p>
       <p className="mt-2 text-sm text-muted">
         Esta política detalha como tratamos seus dados pessoais no{' '}
-        <strong className="text-brand-900">PBL360</strong> para fins estritamente pedagógicos e de
-        pesquisa acadêmica, sob controle da equipe de desenvolvimento da disciplina EXA613 –
+        <strong className="text-brand-accent">PBL360</strong> para fins estritamente pedagógicos e
+        de pesquisa acadêmica, sob controle da equipe de desenvolvimento da disciplina EXA613 –
         Engenharia de Software na Universidade Estadual de Feira de Santana (UEFS).
       </p>
     </div>
@@ -20,7 +20,7 @@ function PrivacyHeader() {
 function PrivacyDataSummary() {
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className="text-sm font-semibold text-brand-900">1. Dados Coletados e Finalidades</h3>
+      <h3 className="text-sm font-semibold text-brand-accent">1. Dados Coletados e Finalidades</h3>
       <ul className="list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted">
         <li>
           <strong className="text-ink">Identificação:</strong> Nome completo, e-mail institucional e
@@ -54,7 +54,7 @@ function PrivacyDataSummary() {
 function PrivacySecurityAndSharing() {
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className="text-sm font-semibold text-brand-900">
+      <h3 className="text-sm font-semibold text-brand-accent">
         2. Segurança, Sigilo do Chat e Não Comercialização
       </h3>
       <p className="text-xs leading-relaxed text-muted">
@@ -72,8 +72,8 @@ function PrivacySecurityAndSharing() {
 
 function PrivacyRightsAndLifecycle() {
   return (
-    <section className="flex flex-col gap-1.5 border-t border-black/5 pt-3">
-      <h3 className="text-sm font-semibold text-brand-900">
+    <section className="flex flex-col gap-1.5 border-t border-border-subtle pt-3">
+      <h3 className="text-sm font-semibold text-brand-accent">
         3. Retenção e Direitos do Titular (LGPD)
       </h3>
       <p className="text-xs leading-relaxed text-muted">
@@ -86,7 +86,7 @@ function PrivacyRightsAndLifecycle() {
         ou exclusão de sua conta a qualquer momento pelo e-mail do Encarregado:{' '}
         <a
           href={`mailto:${PROJECT_EMAIL}`}
-          className="font-medium text-brand-900 underline underline-offset-2 hover:text-brand-700"
+          className="font-medium text-brand-accent underline underline-offset-2 hover:text-brand-accent"
         >
           {PROJECT_EMAIL}
         </a>

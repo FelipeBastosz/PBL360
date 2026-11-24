@@ -30,7 +30,7 @@ function PeerCardHeader({
   isSubmitted: boolean;
 }) {
   return (
-    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-black/5 pb-4">
+    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-4">
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
         <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-surface">
           <UserCircleIcon className="size-7 text-ink" />
@@ -98,7 +98,7 @@ function PeerEvaluationCard({
     <section aria-label={`Avaliação de ${peer.name}`} className={cn(CARD_CLASS, 'p-4')}>
       <PeerCardHeader name={peer.name} papel={peer.papel} isSubmitted={peer.isSubmitted} />
       <div>
-        <div className="divide-y divide-black/5">
+        <div className="divide-y divide-border-subtle">
           {peer.criteria.map((c) => (
             <CriterionStepper
               key={c.id}
@@ -139,7 +139,7 @@ function PeerEvaluationHeader({
   onBack: () => void;
 }) {
   return (
-    <header className="shrink-0 bg-brand-900 text-white">
+    <header className="shrink-0 border-b border-brand-primary-border bg-brand-primary text-white">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex min-h-16 items-center justify-between py-2')}>
         <div className="flex items-center gap-3">
           <button
@@ -168,7 +168,7 @@ function PeerListBody({ state }: { state: ReturnType<typeof useStudentPeerEvalua
   if (state.isLoading) {
     return (
       <div className="mt-10 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

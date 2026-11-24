@@ -54,7 +54,7 @@ function CopyField({
           type="button"
           onClick={handleCopy}
           aria-label={`Copiar ${label}`}
-          className="rounded-md p-1.5 text-brand-900 hover:bg-black/5"
+          className="rounded-md p-1.5 text-brand-accent hover:bg-subtle"
         >
           {copied ? (
             <CheckIcon className="size-5 text-success" />
@@ -104,7 +104,7 @@ function EditRoomFields({
         error={form.errors.semestre}
       />
 
-      <div className="my-2 h-px w-full bg-black/5" />
+      <div className="my-2 h-px w-full bg-subtle" />
 
       <CopyField label="Código de Acesso" value={room.codigoSala} />
 
@@ -180,7 +180,7 @@ export default function EditRoomPage() {
     >
       {isLoading ? (
         <div className="flex justify-center py-10">
-          <Spinner className="size-8 text-brand-900" />
+          <Spinner className="size-8 text-brand-accent" />
         </div>
       ) : error ? (
         <Alert tone="error">{error.message}</Alert>
