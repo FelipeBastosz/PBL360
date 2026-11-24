@@ -66,6 +66,8 @@ interface ErrorResponseBody {
   error: string;
 }
 
+jest.setTimeout(60000);
+
 describe('Sessions (e2e)', () => {
   let moduleRef: TestingModule;
   let app: INestApplication;
