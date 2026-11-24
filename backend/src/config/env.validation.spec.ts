@@ -55,6 +55,25 @@ describe('validateEnv', () => {
     );
   });
 
+  it('requires the SMTP password in production unless the Gmail API is configured', () => {
+    expect(() => validateEnv(productionEnv({ SMTP_PASS: '' }))).toThrow(
+      'SMTP_PASS is required in production.',
+    );
+    expect(() =>
+      validateEnv(productionEnv({ SMTP_PASS: '', GMAIL_REFRESH_TOKEN: '1//token' })),
+    ).toThrow('GMAIL_CLIENT_ID is required in production.');
+    expect(() =>
+      validateEnv(
+        productionEnv({
+          SMTP_PASS: '',
+          GMAIL_CLIENT_ID: 'id',
+          GMAIL_CLIENT_SECRET: 'secret',
+          GMAIL_REFRESH_TOKEN: '1//token',
+        }),
+      ),
+    ).not.toThrow();
+  });
+
   it('refuses schema synchronization in production', () => {
     expect(() => validateEnv(productionEnv({ DB_SYNCHRONIZE: 'true' }))).toThrow(
       'DB_SYNCHRONIZE cannot be enabled in production.',
