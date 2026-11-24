@@ -753,17 +753,17 @@ describe('Sessions (e2e)', () => {
       const list = response.body as SessionResponseBody[];
       expect(list).toHaveLength(3);
 
-      expect(list[0].titulo).toBe('Sessão 1 - Abertura');
-      expect(list[0].data).toBe('15-10-2026');
-      expect(list[0].ordem).toBe(2);
+      expect(list[0]?.titulo).toBe('Sessão 1 - Abertura');
+      expect(list[0]?.data).toBe('15-10-2026');
+      expect(list[0]?.ordem).toBe(2);
 
-      expect(list[1].titulo).toBe('Sessão Intermediária');
-      expect(list[1].data).toBe('15-10-2026');
-      expect(list[1].ordem).toBe(3);
+      expect(list[1]?.titulo).toBe('Sessão Intermediária');
+      expect(list[1]?.data).toBe('15-10-2026');
+      expect(list[1]?.ordem).toBe(3);
 
-      expect(list[2].titulo).toBe('Sessão 2 - Fechamento');
-      expect(list[2].data).toBe('22-10-2026');
-      expect(list[2].ordem).toBe(1);
+      expect(list[2]?.titulo).toBe('Sessão 2 - Fechamento');
+      expect(list[2]?.data).toBe('22-10-2026');
+      expect(list[2]?.ordem).toBe(1);
     });
 
     it('returns 404 Not Found when problem belongs to another room', async () => {
