@@ -1,6 +1,5 @@
 import type {
   ReceivedFeedback,
-  ReceivedIndividualFeedback,
   ReceivedProblemFeedbacks,
   ReceivedSessionComponents,
 } from '../../domain/repositories/received-feedback.repository';
@@ -50,23 +49,12 @@ export function toReceivedProblem(
   newlyRead: Set<string>,
   grades: ReceivedFeedbackGrades,
 ): ReceivedProblemFeedbacks {
-  const individual = rows.find((row) => row.scope === 'ALUNO');
   const general = rows.find((row) => row.scope === 'PROBLEMA');
   return {
     finalScore: grades.finalScore,
-    individual: individual ? toIndividualFeedback(individual, newlyRead, grades.released) : null,
     general: general ? toReceivedFeedback(general, newlyRead, grades.finalScore) : null,
     sessions: sessions.map((session) => toSessionFeedback(session, rows, newlyRead, grades)),
   };
-}
-
-function toIndividualFeedback(
-  row: ReceivedFeedbackRow,
-  newlyRead: Set<string>,
-  released: boolean,
-): ReceivedIndividualFeedback {
-  const score = released && row.score !== null ? Number(row.score) : null;
-  return toReceivedFeedback(row, newlyRead, score);
 }
 
 function toSessionFeedback(

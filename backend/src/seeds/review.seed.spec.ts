@@ -104,5 +104,17 @@ describe('review.seed.ts', () => {
       expect.stringContaining('INSERT INTO criterion_grades'),
       expect.any(Array),
     );
+    expect(mockDataSource.query).toHaveBeenCalledWith(
+      expect.stringContaining("'SESSAO'"),
+      expect.any(Array),
+    );
+    expect(mockDataSource.query).toHaveBeenCalledWith(
+      expect.stringContaining("'PROBLEMA'"),
+      expect.any(Array),
+    );
+    expect(mockDataSource.query).not.toHaveBeenCalledWith(
+      expect.stringContaining("'ALUNO'"),
+      expect.any(Array),
+    );
   });
 });

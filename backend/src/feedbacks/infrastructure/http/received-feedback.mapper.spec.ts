@@ -27,17 +27,14 @@ describe('Received feedback responses', () => {
 
   it('preserves associated scores and feedback types including zero', () => {
     const result = toReceivedProblemResponse({
-      finalScore: 9,
-      individual: { ...feedback, score: 0 },
-      general: feedback,
+      finalScore: 0,
+      general: { ...feedback, score: 0 },
       sessions: [{ sessionId: 'session', label: 'Sessão', date: '2026-10-01', feedback }],
     });
-    expect(result.individual?.nota).toBe(0);
-    expect(result.notaFinal).toBe(9);
-    expect(result.geral?.nota).toBe(9);
+    expect(result.notaFinal).toBe(0);
+    expect(result.geral?.nota).toBe(0);
     expect(result.feedbacks.map(({ tipo, nota }) => ({ tipo, nota }))).toEqual([
-      { tipo: 'INDIVIDUAL', nota: 0 },
-      { tipo: 'GERAL', nota: 9 },
+      { tipo: 'GERAL', nota: 0 },
       { tipo: 'SESSAO', nota: 9 },
     ]);
     expect(result.sessoes[0]?.feedback?.nota).toBe(9);
@@ -52,14 +49,12 @@ describe('Received feedback responses', () => {
     expect(
       toReceivedProblemResponse({
         finalScore: null,
-        individual: null,
         general: null,
         sessions: [],
       }),
     ).toEqual({
       notaFinal: null,
       feedbacks: [],
-      individual: null,
       geral: null,
       sessoes: [],
     });

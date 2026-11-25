@@ -22,7 +22,6 @@ export const READ_PROBLEM_FEEDBACKS = `
   JOIN problems p ON p.id = f.problema_id
   WHERE f.problema_id = $1 AND (
     (f.escopo = 'PROBLEMA' AND f.destinatario_id IS NULL)
-    OR (f.destinatario_id = $2 AND f.escopo = 'ALUNO')
     OR (f.destinatario_id = $2 AND f.escopo = 'SESSAO' AND ${SUBMITTED})
   ) ORDER BY f.criado_em DESC, f.id;
 `;

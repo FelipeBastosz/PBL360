@@ -166,12 +166,6 @@ async function seedProblemFeedbacks(
   users: ReviewUsers,
 ): Promise<void> {
   await ds.query(
-    `INSERT INTO feedback (autor_id, problema_id, destinatario_id, escopo, nota, texto)
-     VALUES ($1, $2, $3, 'ALUNO', 9.5, 'Desempenho excelente durante todas as discussões.'),
-            ($1, $2, $4, 'ALUNO', 9.0, 'Ótima capacidade analítica e postura colaborativa.');`,
-    [users.tutor.id, problemId, users.student1.id, users.student2.id],
-  );
-  await ds.query(
     `INSERT INTO feedback (autor_id, problema_id, escopo, texto)
      VALUES ($1, $2, 'PROBLEMA', 'A turma demonstrou maturidade na resolução do problema.');`,
     [users.tutor.id, problemId],

@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ReceivedFeedbackResponseDto,
-  ReceivedIndividualFeedbackResponseDto,
   ReceivedSessionComponentsDto,
 } from './received-feedback-response.dto';
 
@@ -41,9 +40,6 @@ export class ReceivedProblemFeedbacksResponseDto {
   @ApiProperty({ type: () => [AssociatedFeedbackResponseDto] })
   feedbacks!: AssociatedFeedbackResponseDto[];
 
-  @ApiProperty({ type: ReceivedIndividualFeedbackResponseDto, nullable: true })
-  individual!: ReceivedIndividualFeedbackResponseDto | null;
-
   @ApiProperty({ type: ReceivedFeedbackResponseDto, nullable: true })
   geral!: ReceivedFeedbackResponseDto | null;
 
@@ -56,8 +52,8 @@ export class ReceivedProblemFeedbacksResponseDto {
 }
 
 export class AssociatedFeedbackResponseDto extends ReceivedFeedbackResponseDto {
-  @ApiProperty({ enum: ['INDIVIDUAL', 'GERAL', 'SESSAO'] })
-  tipo!: 'INDIVIDUAL' | 'GERAL' | 'SESSAO';
+  @ApiProperty({ enum: ['GERAL', 'SESSAO'] })
+  tipo!: 'GERAL' | 'SESSAO';
 
   @ApiPropertyOptional({ format: 'uuid', description: 'Presente apenas em feedback de sessão.' })
   sessaoId?: string;

@@ -30,9 +30,6 @@ export function toReceivedProblemResponse(
   return {
     notaFinal: result.finalScore,
     feedbacks: toAssociatedFeedbacks(result),
-    individual: result.individual
-      ? { ...toReceivedFeedbackResponse(result.individual), nota: result.individual.score }
-      : null,
     geral: result.general ? toReceivedFeedbackResponse(result.general) : null,
     sessoes: result.sessions.map(toSessionResponse),
   };
@@ -40,8 +37,6 @@ export function toReceivedProblemResponse(
 
 function toAssociatedFeedbacks(result: ReceivedProblemFeedbacks): AssociatedFeedbackResponseDto[] {
   const feedbacks: AssociatedFeedbackResponseDto[] = [];
-  if (result.individual)
-    feedbacks.push({ ...toReceivedFeedbackResponse(result.individual), tipo: 'INDIVIDUAL' });
   if (result.general)
     feedbacks.push({ ...toReceivedFeedbackResponse(result.general), tipo: 'GERAL' });
   for (const session of result.sessions) {

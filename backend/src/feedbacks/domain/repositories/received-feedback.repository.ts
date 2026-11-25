@@ -23,11 +23,8 @@ export interface ReceivedFeedback {
   components?: ReceivedSessionComponents;
 }
 
-export type ReceivedIndividualFeedback = ReceivedFeedback;
-
 export interface ReceivedProblemFeedbacks {
   finalScore: number | null;
-  individual: ReceivedIndividualFeedback | null;
   general: ReceivedFeedback | null;
   sessions: {
     sessionId: string;
