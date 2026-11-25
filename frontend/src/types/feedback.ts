@@ -78,8 +78,6 @@ export interface ReceivedFeedbackResponse {
   avaliacoes?: ReceivedSessionComponents;
 }
 
-export type ReceivedIndividualFeedbackResponse = ReceivedFeedbackResponse;
-
 export interface ReceivedSessionFeedback {
   sessaoId: string;
   rotulo: string;
@@ -91,7 +89,6 @@ export interface ReceivedSessionFeedback {
 
 export interface ReceivedProblemFeedbacksResponse {
   notaFinal: number | null;
-  individual: ReceivedIndividualFeedbackResponse | null;
   geral: ReceivedFeedbackResponse | null;
   sessoes: ReceivedSessionFeedback[];
 }
