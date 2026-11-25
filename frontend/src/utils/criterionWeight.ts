@@ -39,3 +39,13 @@ export function stepCriterionWeight(currentRaw: string, delta: number): string {
   const next = Math.min(10, Math.max(0, Math.round((current + delta) * 10) / 10));
   return formatCriterionWeight(next);
 }
+
+export function validateCriterion(nome: string, peso: string): string | null {
+  if (!nome.trim()) return 'O nome do critério é obrigatório.';
+  if (!peso.trim()) return 'O peso do critério é obrigatório.';
+  const parsed = parseCriterionWeight(peso);
+  if (parsed === null || parsed < 0 || parsed > 10) {
+    return 'O peso do critério deve estar entre 0 e 10.';
+  }
+  return null;
+}

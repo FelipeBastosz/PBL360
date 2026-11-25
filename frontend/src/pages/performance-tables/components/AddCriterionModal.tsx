@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { CriterionInput } from '@/types/performanceTable';
-import { formatWeightChange, stepCriterionWeight } from '@/utils/criterionWeight';
+import { parseCriterionWeight, validateCriterion } from '@/utils/criterionWeight';
+import { useCriterionWeightInput } from '../hooks/useCriterionWeightInput';
 import { CriterionWeightField } from './CriterionWeightField';
 
 type Props = {
@@ -9,7 +10,6 @@ type Props = {
   onClose: () => void;
   onAdd: (criterion: CriterionInput) => void;
   nextOrder: number;
-  currentTotalWeight?: number;
 };
 
 type FieldProps = {
@@ -79,21 +79,6 @@ function FormHeader({ errorMsg }: { errorMsg: string | null }) {
   );
 }
 
-function validateCriterion(nome: string, peso: string) {
-  if (!nome.trim()) return { error: 'O nome do critério é obrigatório.' };
-  if (!peso.trim()) return { error: 'O peso do critério é obrigatório.' };
-  const normalized = peso.trim().replace(',', '.');
-  const parsed = Number(normalized);
-  if (Number.isNaN(parsed) || parsed < 0 || parsed > 10) {
-    return { error: 'O peso do critério deve estar entre 0 e 10.' };
-  }
-  const parts = normalized.split('.');
-  if (parts[1] && parts[1].length > 1) {
-    return { error: 'O peso do critério deve ter no máximo uma casa decimal.' };
-  }
-  return { weight: Math.round((parsed + Number.EPSILON) * 10) / 10 };
-}
-
 function buildAddedCriterion(
   nome: string,
   descricao: string,
@@ -115,33 +100,15 @@ function useAddCriterionForm(
 ) {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [peso, setPeso] = useState('1');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  function handleWeightChange(raw: string) {
-    const text = formatWeightChange(raw);
-    if (text === null) return;
-    setPeso(text);
-    setErrorMsg(null);
-  }
-
-  function handleWeightStep(delta: number) {
-    setPeso(stepCriterionWeight(peso, delta));
-    setErrorMsg(null);
-  }
-
-  function handleWeightKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      handleWeightStep(e.key === 'ArrowUp' ? 1 : -1);
-    }
-  }
+  const weightInput = useCriterionWeightInput('1', () => setErrorMsg(null));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const result = validateCriterion(nome, peso);
-    if (result.error) return setErrorMsg(result.error);
-    onAdd(buildAddedCriterion(nome, descricao, result.weight!, nextOrder));
+    const error = validateCriterion(nome, weightInput.peso);
+    if (error) return setErrorMsg(error);
+    const weight = parseCriterionWeight(weightInput.peso)!;
+    onAdd(buildAddedCriterion(nome, descricao, weight, nextOrder));
     onClose();
   }
 
@@ -150,13 +117,10 @@ function useAddCriterionForm(
     setNome,
     descricao,
     setDescricao,
-    peso,
-    handleWeightChange,
-    handleWeightStep,
-    handleWeightKeyDown,
     errorMsg,
     setErrorMsg,
     handleSubmit,
+    ...weightInput,
   };
 }
 

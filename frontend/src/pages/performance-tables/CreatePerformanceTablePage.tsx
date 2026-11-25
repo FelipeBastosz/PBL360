@@ -122,12 +122,9 @@ function CriteriaCard({
 
 function useCreateCriteriaModals(
   setCriterios: React.Dispatch<React.SetStateAction<CriterionInput[]>>,
-  totalWeight: number,
 ) {
   const [editingCriterion, setEditingCriterion] = useState<CriterionInput | null>(null);
   const [criterionToDelete, setCriterionToDelete] = useState<CriterionInput | null>(null);
-
-  const otherWeightsSum = editingCriterion ? totalWeight - editingCriterion.peso : totalWeight;
 
   function handleSaveCriterion(upd: CriterionInput) {
     setCriterios((prev) => prev.map((c) => (c.ordem === upd.ordem ? upd : c)));
@@ -144,7 +141,6 @@ function useCreateCriteriaModals(
     setEditingCriterion,
     criterionToDelete,
     setCriterionToDelete,
-    otherWeightsSum,
     handleSaveCriterion,
     handleDeleteCriterion,
   };
@@ -165,11 +161,9 @@ function CreateModalsSection({ form, modals }: ModalsSectionProps) {
         form.setFieldErrors((prev) => ({ ...prev, criterios: false }));
       }}
       nextOrder={form.criterios.length + 1}
-      totalWeight={form.totalWeight}
       editingCriterion={modals.editingCriterion}
       onCloseEditModal={() => modals.setEditingCriterion(null)}
       onSaveCriterion={modals.handleSaveCriterion}
-      otherWeightsSum={modals.otherWeightsSum}
       criterionToDelete={modals.criterionToDelete}
       onCloseDeleteCriterion={() => modals.setCriterionToDelete(null)}
       onConfirmDeleteCriterion={modals.handleDeleteCriterion}
@@ -179,7 +173,7 @@ function CreateModalsSection({ form, modals }: ModalsSectionProps) {
 
 export function CreatePerformanceTablePage() {
   const form = useCreatePerformanceTableForm();
-  const modals = useCreateCriteriaModals(form.setCriterios, form.totalWeight);
+  const modals = useCreateCriteriaModals(form.setCriterios);
 
   return (
     <div className="min-h-dvh bg-surface pb-12">

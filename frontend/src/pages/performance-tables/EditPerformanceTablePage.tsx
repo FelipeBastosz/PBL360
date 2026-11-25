@@ -94,28 +94,21 @@ function usePageSessionState() {
   return { id: id!, sessionId, target, locationState };
 }
 
-function computeDialogMetrics(
-  form: ReturnType<typeof useEditPerformanceTableForm>,
-  modals: ReturnType<typeof useEditModals>,
-) {
+function computeDialogMetrics(form: ReturnType<typeof useEditPerformanceTableForm>) {
   const canEditCriteria = form.permissions ? form.permissions.podeEditarCriterios : true;
   const totalWeight =
     Math.round((form.criterios.reduce((sum, c) => sum + c.peso, 0) + Number.EPSILON) * 10) / 10;
-  const otherWeightsSum = modals.editingCriterion
-    ? totalWeight - modals.editingCriterion.peso
-    : totalWeight;
-  return { canEditCriteria, totalWeight, otherWeightsSum };
+  return { canEditCriteria, totalWeight };
 }
 
 function useEditPageDialogs(
   form: ReturnType<typeof useEditPerformanceTableForm>,
-  modals: ReturnType<typeof useEditModals>,
   sessionId?: string,
 ) {
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
   const [isSaveWarningOpen, setIsSaveWarningOpen] = useState(false);
   const [isScopeModalOpen, setIsScopeModalOpen] = useState(false);
-  const metrics = computeDialogMetrics(form, modals);
+  const metrics = computeDialogMetrics(form);
 
   const handleRequestSave = () => {
     if (!form.prepareSave()) return;
@@ -147,7 +140,7 @@ export function EditPerformanceTablePage() {
   const modals = useEditModals(form.setCriterios);
   const { notify } = useToast();
   const deletion = useEditPageDeletion(id, form, modals, notify);
-  const dialogs = useEditPageDialogs(form, modals, form.activeSessionId);
+  const dialogs = useEditPageDialogs(form, form.activeSessionId);
 
   const onExit = () => (form.isDirty ? dialogs.setIsDiscardOpen(true) : form.navigate(-1));
 
@@ -166,8 +159,6 @@ export function EditPerformanceTablePage() {
       <EditModalsSection
         form={form}
         modals={modals}
-        totalWeight={dialogs.totalWeight}
-        otherWeightsSum={dialogs.otherWeightsSum}
         canEditCriteria={dialogs.canEditCriteria}
         onConfirmDeleteCriterion={deletion.handleConfirmDeleteCriterion}
         isDeletingFormula={deletion.isDeletingFormula}

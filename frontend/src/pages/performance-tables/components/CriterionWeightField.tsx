@@ -47,6 +47,57 @@ function WeightStepperButtons({ canIncrement, canDecrement, onStep }: StepperPro
   );
 }
 
+type InputProps = {
+  id: string;
+  value: string;
+  disabled: boolean;
+  isInvalid: boolean;
+  numericValue: number | null;
+  placeholder?: string;
+  onChange: (v: string) => void;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+  children: React.ReactNode;
+};
+
+function WeightInputBox(props: InputProps) {
+  const {
+    id,
+    value,
+    disabled,
+    isInvalid,
+    numericValue,
+    placeholder,
+    onChange,
+    onKeyDown,
+    children,
+  } = props;
+  const disabledClass = disabled ? 'bg-black/5 opacity-60 cursor-not-allowed border-black/10' : '';
+  const borderClass = isInvalid ? 'border-danger' : 'border-black/10';
+
+  return (
+    <div className="relative flex items-center">
+      <input
+        id={id}
+        type="text"
+        inputMode="decimal"
+        role="spinbutton"
+        aria-valuemin={0}
+        aria-valuemax={10}
+        aria-valuenow={numericValue ?? undefined}
+        aria-invalid={isInvalid || undefined}
+        aria-describedby={isInvalid ? `${id}-error` : undefined}
+        disabled={disabled}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
+        className={`h-10 w-full rounded-[10px] border pl-3 pr-8 text-sm text-ink ${disabledClass} ${borderClass}`}
+      />
+      {children}
+    </div>
+  );
+}
+
 export function CriterionWeightField(props: Props) {
   const {
     id,
@@ -70,32 +121,22 @@ export function CriterionWeightField(props: Props) {
       <label htmlFor={id} className="text-xs font-semibold text-brand-900">
         {label}
       </label>
-      <div className="relative flex items-center">
-        <input
-          id={id}
-          type="text"
-          inputMode="decimal"
-          role="spinbutton"
-          aria-valuemin={0}
-          aria-valuemax={10}
-          aria-valuenow={numericValue ?? undefined}
-          aria-invalid={isInvalid || undefined}
-          aria-describedby={isInvalid ? `${id}-error` : undefined}
-          disabled={disabled}
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={onKeyDown}
-          className={`h-10 w-full rounded-[10px] border pl-3 pr-8 text-sm text-ink ${
-            disabled ? 'bg-black/5 opacity-60 cursor-not-allowed border-black/10' : ''
-          } ${isInvalid ? 'border-danger' : 'border-black/10'}`}
-        />
+      <WeightInputBox
+        id={id}
+        value={value}
+        disabled={disabled}
+        isInvalid={isInvalid}
+        numericValue={numericValue}
+        placeholder={placeholder}
+        onChange={onChange}
+        onKeyDown={onKeyDown}
+      >
         <WeightStepperButtons
           canIncrement={canIncrement}
           canDecrement={canDecrement}
           onStep={onStep}
         />
-      </div>
+      </WeightInputBox>
       {errorMessage && (
         <p id={`${id}-error`} role="alert" className="text-xs font-semibold text-danger">
           {errorMessage}

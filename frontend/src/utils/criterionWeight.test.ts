@@ -5,6 +5,7 @@ import {
   parseCriterionWeight,
   sanitizeCriterionWeightInput,
   stepCriterionWeight,
+  validateCriterion,
 } from './criterionWeight';
 
 describe('criterionWeight utils', () => {
@@ -97,6 +98,37 @@ describe('criterionWeight utils', () => {
       expect(stepCriterionWeight('0,5', -1)).toBe('0');
       expect(stepCriterionWeight('10', 1)).toBe('10');
       expect(stepCriterionWeight('0', -1)).toBe('0');
+    });
+  });
+
+  describe('validateCriterion', () => {
+    it('returns error when nome is empty', () => {
+      expect(validateCriterion('', '5')).toBe('O nome do critério é obrigatório.');
+      expect(validateCriterion('   ', '5')).toBe('O nome do critério é obrigatório.');
+    });
+
+    it('returns error when peso is empty', () => {
+      expect(validateCriterion('Critério', '')).toBe('O peso do critério é obrigatório.');
+      expect(validateCriterion('Critério', '   ')).toBe('O peso do critério é obrigatório.');
+    });
+
+    it('returns error when peso is outside bounds or invalid', () => {
+      expect(validateCriterion('Critério', '-1')).toBe(
+        'O peso do critério deve estar entre 0 e 10.',
+      );
+      expect(validateCriterion('Critério', '11')).toBe(
+        'O peso do critério deve estar entre 0 e 10.',
+      );
+      expect(validateCriterion('Critério', 'abc')).toBe(
+        'O peso do critério deve estar entre 0 e 10.',
+      );
+    });
+
+    it('returns null when criterion is valid', () => {
+      expect(validateCriterion('Critério', '0')).toBeNull();
+      expect(validateCriterion('Critério', '5')).toBeNull();
+      expect(validateCriterion('Critério', '10')).toBeNull();
+      expect(validateCriterion('Critério', '2,5')).toBeNull();
     });
   });
 });
