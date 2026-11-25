@@ -71,3 +71,12 @@ export type RoomStudent = {
   matricula: string | null;
   dataEntrada: string;
 };
+
+export type TransferRoomOwnershipPayload = {
+  professorId: string;
+};
+
+export type TransferRoomOwnershipResponse = {
+  id: string;
+  professorResponsavelId: string;
+};

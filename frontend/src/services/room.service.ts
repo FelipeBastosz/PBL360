@@ -8,6 +8,8 @@ import type {
   RoomStudent,
   RoomTutor,
   StudentRoom,
+  TransferRoomOwnershipPayload,
+  TransferRoomOwnershipResponse,
   UpdateRoomPayload,
 } from '@/types/room';
 import { api } from './api';
@@ -45,6 +47,11 @@ export const roomService = {
 
   listStudents: (roomId: string) =>
     api.get<RoomStudent[]>(`${BASE}/${roomId}/alunos`).then((r) => r.data),
+
+  transferOwnership: (roomId: string, payload: TransferRoomOwnershipPayload) =>
+    api
+      .patch<TransferRoomOwnershipResponse>(`${BASE}/${roomId}/proprietario`, payload)
+      .then((r) => r.data),
 
   leaveRoom: (roomId: string) =>
     api.delete<void>(`${BASE}/${roomId}/membros/me`).then(() => undefined),
