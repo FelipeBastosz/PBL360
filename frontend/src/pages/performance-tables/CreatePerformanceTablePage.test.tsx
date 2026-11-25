@@ -149,8 +149,8 @@ describe('CreatePerformanceTablePage', () => {
 
     await userEvent.click(screen.getByText('+Adicionar critério'));
     const weightInput = screen.getByLabelText('Peso (0 a 10)');
-    expect(weightInput).toHaveAttribute('min', '0');
-    expect(weightInput).toHaveAttribute('max', '10');
+    expect(weightInput).toHaveAttribute('aria-valuemin', '0');
+    expect(weightInput).toHaveAttribute('aria-valuemax', '10');
 
     await userEvent.type(screen.getByLabelText('Nome do critério'), 'Critério Inválido');
     await userEvent.clear(weightInput);
@@ -167,8 +167,8 @@ describe('CreatePerformanceTablePage', () => {
     const weightInput = screen.getByLabelText('Peso (0 a 10)');
     expect(weightInput).toHaveValue('1');
 
-    const incrementButton = screen.getByRole('button', { name: 'Incrementar' });
-    const decrementButton = screen.getByRole('button', { name: 'Decrementar' });
+    const incrementButton = screen.getByRole('button', { name: 'Aumentar peso' });
+    const decrementButton = screen.getByRole('button', { name: 'Diminuir peso' });
 
     await userEvent.click(incrementButton);
     expect(weightInput).toHaveValue('2');
@@ -176,9 +176,7 @@ describe('CreatePerformanceTablePage', () => {
     await userEvent.click(decrementButton);
     await userEvent.click(decrementButton);
     expect(weightInput).toHaveValue('0');
-
-    await userEvent.click(decrementButton);
-    expect(weightInput).toHaveValue('0');
+    expect(decrementButton).toBeDisabled();
   });
 
   it('formats decimal weights with comma and restricts to at most one decimal place', async () => {

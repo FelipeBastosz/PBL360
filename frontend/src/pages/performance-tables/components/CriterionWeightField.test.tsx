@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { CriterionWeightField } from './CriterionWeightField';
 
 describe('CriterionWeightField', () => {
-  it('renders label and input with value', () => {
+  it('renders label, spinbutton attributes, and stepper buttons', () => {
     render(
       <CriterionWeightField
         id="test-weight"
@@ -15,13 +15,17 @@ describe('CriterionWeightField', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Peso (0 a 10)')).toBeInTheDocument();
+    const input = screen.getByRole('spinbutton', { name: 'Peso (0 a 10)' });
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveAttribute('aria-valuemin', '0');
+    expect(input).toHaveAttribute('aria-valuemax', '10');
+    expect(input).toHaveAttribute('aria-valuenow', '5');
     expect(screen.getByDisplayValue('5')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Incrementar' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Decrementar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Aumentar peso' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Diminuir peso' })).toBeInTheDocument();
   });
 
-  it('triggers onStep with 1 and -1 when clicking stepper buttons', async () => {
+  it('triggers onStep with 1 and -1 when clicking enabled stepper buttons', async () => {
     const user = userEvent.setup();
     const handleStep = vi.fn();
 
@@ -35,11 +39,41 @@ describe('CriterionWeightField', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Incrementar' }));
+    await user.click(screen.getByRole('button', { name: 'Aumentar peso' }));
     expect(handleStep).toHaveBeenCalledWith(1);
 
-    await user.click(screen.getByRole('button', { name: 'Decrementar' }));
+    await user.click(screen.getByRole('button', { name: 'Diminuir peso' }));
     expect(handleStep).toHaveBeenCalledWith(-1);
+  });
+
+  it('disables decrement button when weight is at minimum 0', () => {
+    render(
+      <CriterionWeightField
+        id="test-weight"
+        label="Peso (0 a 10)"
+        value="0"
+        onChange={vi.fn()}
+        onStep={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Diminuir peso' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Aumentar peso' })).not.toBeDisabled();
+  });
+
+  it('disables increment button when weight is at maximum 10', () => {
+    render(
+      <CriterionWeightField
+        id="test-weight"
+        label="Peso (0 a 10)"
+        value="10"
+        onChange={vi.fn()}
+        onStep={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Aumentar peso' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Diminuir peso' })).not.toBeDisabled();
   });
 
   it('calls onChange when user types into the field', async () => {
@@ -74,7 +108,29 @@ describe('CriterionWeightField', () => {
     );
 
     expect(screen.getByLabelText('Peso')).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Incrementar' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Decrementar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Aumentar peso' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Diminuir peso' })).toBeDisabled();
+  });
+
+  it('applies accessibility error attributes and renders error message with role alert', () => {
+    render(
+      <CriterionWeightField
+        id="test-weight"
+        label="Peso (0 a 10)"
+        value="5"
+        hasError
+        errorMessage="Peso inválido"
+        onChange={vi.fn()}
+        onStep={vi.fn()}
+      />,
+    );
+
+    const input = screen.getByRole('spinbutton', { name: 'Peso (0 a 10)' });
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(input).toHaveAttribute('aria-describedby', 'test-weight-error');
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveAttribute('id', 'test-weight-error');
+    expect(alert).toHaveTextContent('Peso inválido');
   });
 });
