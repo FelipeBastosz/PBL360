@@ -9,6 +9,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 
 import { JWT_SECURITY_SCHEME } from '@/config/swagger.config';
@@ -16,6 +17,7 @@ import { ErrorResponseDto } from '@/shared/dtos/error-response.dto';
 import { MessageResponseDto } from '@/shared/dtos/message-response.dto';
 
 import { RoomTutorResponseDto } from '../../application/dtos/room-tutor-response.dto';
+import { TransferRoomOwnershipResponseDto } from '../../application/dtos/transfer-room-ownership.dto';
 
 export const AddTutorToRoomSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
@@ -94,4 +96,38 @@ export const ListRoomTutorsSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
   ApiNotFoundResponse({ description: 'Sala não encontrada.', type: ErrorResponseDto }),
+);
+
+export const TransferRoomOwnershipSwaggerDocs = applyDecorators(
+  ApiBearerAuth(JWT_SECURITY_SCHEME),
+  ApiOperation({
+    summary: 'Transfere a propriedade da sala para outro professor vinculado',
+    description:
+      'Permite que o professor responsável atual transfira a responsabilidade da sala para ' +
+      'outro professor ativo já vinculado à turma. O antigo responsável permanece como co-tutor.',
+  }),
+  ApiOkResponse({
+    description: 'Propriedade da sala transferida com sucesso.',
+    type: TransferRoomOwnershipResponseDto,
+  }),
+  ApiBadRequestResponse({
+    description: 'Identificador inválido ou tentativa de transferência para o próprio responsável.',
+    type: ErrorResponseDto,
+  }),
+  ApiUnauthorizedResponse({
+    description: 'JWT não informado, inválido ou expirado.',
+    type: ErrorResponseDto,
+  }),
+  ApiForbiddenResponse({
+    description: 'Acesso negado. Apenas o professor responsável atual pode transferir a sala.',
+    type: ErrorResponseDto,
+  }),
+  ApiNotFoundResponse({
+    description: 'Sala ou professor não encontrado.',
+    type: ErrorResponseDto,
+  }),
+  ApiUnprocessableEntityResponse({
+    description: 'Professor destinatário inativo ou não vinculado à sala.',
+    type: ErrorResponseDto,
+  }),
 );

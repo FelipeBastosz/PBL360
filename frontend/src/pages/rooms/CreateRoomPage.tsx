@@ -165,7 +165,7 @@ export default function CreateRoomPage() {
       title="Criar turma"
       subtitle="Dados da disciplina"
       backTo={ROUTES.rooms}
-      trailing={<UserMenuButton user={user} />}
+      trailing={<UserMenuButton user={user} className="ring-2 ring-white/20" />}
     >
       <CreateRoomForm />
     </FlowShell>
