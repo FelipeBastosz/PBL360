@@ -20,6 +20,7 @@ import { ProblemCard } from './ProblemCard';
 import { RoomProblemsHeader } from './RoomProblemsHeader';
 import { RoomTopActions } from './RoomTopActions';
 import { RoomInviteSheet } from '../rooms/invite/RoomInviteSheet';
+import { RoomChat } from './chat/RoomChat';
 
 function ProblemsFab({ roomId, onCreate }: { roomId: string; onCreate: () => void }) {
   return (
@@ -53,8 +54,6 @@ type MainProps = {
   roomError: { message: string } | null;
   isProfessor: boolean;
   roomId: string;
-  query: string;
-  setQuery: (q: string) => void;
   isLoading: boolean;
   problems: Problem[];
   onInvite: () => void;
@@ -64,13 +63,13 @@ function RoomProblemsMain({
   roomError,
   isProfessor,
   roomId,
-  query,
-  setQuery,
   isLoading,
-  problems,
+  problems: allProblems,
   onInvite,
 }: MainProps) {
+  const [query, setQuery] = useState('');
   if (roomError) return <RoomUnavailable message={roomError.message} />;
+  const problems = allProblems.filter((p) => p.titulo.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
@@ -121,7 +120,6 @@ export default function RoomProblemsPage() {
   const { user } = useAuth();
   const { notify } = useToast();
   const { room, problems, setProblems, roomError, isLoading } = useRoomWithProblems(id);
-  const [query, setQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const isProfessor = user?.tipo === 'PROFESSOR';
@@ -132,8 +130,6 @@ export default function RoomProblemsPage() {
     notify({ tone: 'success', message: 'Problema criado com sucesso!' });
   }
 
-  const filtered = problems.filter((p) => p.titulo.toLowerCase().includes(query.toLowerCase()));
-
   return (
     <div className="min-h-dvh bg-surface pb-24">
       <RoomProblemsHeader room={room} user={user} />
@@ -141,13 +137,14 @@ export default function RoomProblemsPage() {
         roomError={roomError}
         isProfessor={isProfessor}
         roomId={id ?? ''}
-        query={query}
-        setQuery={setQuery}
         isLoading={isLoading}
-        problems={filtered}
+        problems={problems}
         onInvite={() => setIsInviteOpen(true)}
       />
       {isProfessor && <ProblemsFab roomId={id ?? ''} onCreate={() => setIsCreateModalOpen(true)} />}
+      {room && user && !roomError && (
+        <RoomChat roomId={room.id} isProfessor={isProfessor} currentUserId={user.id} />
+      )}
       <ProblemFormModal
         isOpen={isCreateModalOpen}
         roomId={id ?? ''}

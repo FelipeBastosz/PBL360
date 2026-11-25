@@ -1,3 +1,7 @@
+import type { EntityManager, Repository } from 'typeorm';
+import { User } from '@/users/domain/entities/user.entity';
+import type { Room } from '../../domain/entities/room.entity';
+
 export interface RoomRow {
   id: string;
   tutorId: string;
@@ -35,3 +39,27 @@ export const ROOM_WITH_TUTOR_COLUMNS = `
   rooms.deleted_at AS "deletedAt",
   u.name AS "tutorName",
   u.email AS "tutorEmail"`;
+
+export const fetchTutorSummary = async (
+  queryRunner: { query: EntityManager['query'] },
+  tutorId: string,
+): Promise<{ name: string; email: string } | undefined> => {
+  const [tutor] = await queryRunner.query<{ name: string; email: string }[]>(
+    'SELECT name, email FROM users WHERE id = $1 LIMIT 1;',
+    [tutorId],
+  );
+  return tutor;
+};
+
+export const toRoomEntity = (rooms: Repository<Room>, row: RoomRow): Room => {
+  const { tutorName, tutorEmail, ...baseRow } = row;
+  const room = rooms.create(baseRow);
+  if (baseRow.tutorId && tutorName) {
+    room.tutor = Object.assign(new User(), {
+      id: baseRow.tutorId,
+      name: tutorName,
+      email: tutorEmail ?? '',
+    });
+  }
+  return room;
+};
