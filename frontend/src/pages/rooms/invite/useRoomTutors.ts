@@ -45,6 +45,7 @@ export function useRoomTutors(roomId: string, onTutorAdded?: () => void) {
       `${tutor.nome} agora também é professor desta turma.`,
     );
     if (ok) onTutorAdded?.();
+    return ok;
   };
 
   const remove = (tutor: RoomTutor) =>

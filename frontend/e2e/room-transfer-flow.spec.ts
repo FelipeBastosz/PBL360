@@ -12,18 +12,6 @@ const mockOwnerSession = {
   },
 };
 
-const mockCoTutorSession = {
-  token: 'mock-auth-token',
-  expiraEm: new Date(Date.now() + 86400000).toISOString(),
-  usuario: {
-    id: 'user-cotutor',
-    nome: 'Profa. Cotutora',
-    email: 'cotutora@faculdade.edu.br',
-    tipo: 'PROFESSOR',
-    ativo: true,
-  },
-};
-
 const mockRoom = {
   id: 'sala-1',
   nome: 'MI - Programação - TP01',
@@ -45,13 +33,42 @@ const mockTutors = [
   },
 ];
 
-test.describe('Room Ownership Transfer Flow', () => {
-  test('transfers room ownership to co-tutor successfully', async ({ page }) => {
-    let currentOwnerId = 'user-owner';
-
+test.describe('Room Ownership Transfer - Core Flow', () => {
+  test.beforeEach(async ({ page }) => {
     await page.addInitScript((session) => {
       localStorage.setItem('pbl360.session', JSON.stringify(session));
     }, mockOwnerSession);
+
+    await page.route('**/api/usuarios/meu-aceite-termo', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          aceito: true,
+          versaoAceita: '1.0',
+          aceitoEm: '2026-01-01T00:00:00.000Z',
+          versaoVigente: '1.0',
+        }),
+      });
+    });
+
+    await page.route('**/api/usuarios/*/foto', async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+
+    await page.route('**/api/salas/sala-1/problemas', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+
+    await page.route('**/api/salas/sala-1/conversas', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+  });
+
+  test('transfers room ownership to co-tutor through confirmation modal successfully', async ({
+    page,
+  }) => {
+    let currentOwnerId = 'user-owner';
 
     await page.route('**/api/salas/sala-1', async (route) => {
       await route.fulfill({
@@ -66,22 +83,6 @@ test.describe('Room Ownership Transfer Flow', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify(mockTutors),
-      });
-    });
-
-    await page.route('**/api/salas/sala-1/problemas', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
-    await page.route('**/api/salas/sala-1/conversas', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
       });
     });
 
@@ -107,9 +108,20 @@ test.describe('Room Ownership Transfer Flow', () => {
     const modal = page.getByRole('dialog', { name: 'Transferir propriedade da turma' });
     await expect(modal).toBeVisible();
 
-    await page.getByLabel('Novo professor responsável').selectOption('user-cotutor');
-    await page.getByRole('button', { name: 'Confirmar transferência' }).click();
+    const transferButton = modal.getByRole('button', { name: 'Transferir' });
+    await expect(transferButton).toBeDisabled();
 
+    await modal.getByLabel('Novo professor responsável').selectOption('user-cotutor');
+    await expect(transferButton).toBeEnabled();
+    await transferButton.click();
+
+    const confirmModal = page.getByRole('dialog', { name: 'Confirmar transferência' });
+    await expect(confirmModal).toBeVisible();
+    await expect(confirmModal.getByText('Profa. Cotutora')).toBeVisible();
+
+    await confirmModal.getByRole('button', { name: 'Confirmar transferência' }).click();
+
+    await expect(confirmModal).not.toBeVisible();
     await expect(modal).not.toBeVisible();
     await expect(page.getByText('Propriedade da turma transferida com sucesso!')).toBeVisible();
 
@@ -117,11 +129,9 @@ test.describe('Room Ownership Transfer Flow', () => {
     await expect(page.getByRole('button', { name: 'Transferir turma' })).not.toBeVisible();
   });
 
-  test('opens invite modal on professores tab when room has no co-tutors', async ({ page }) => {
-    await page.addInitScript((session) => {
-      localStorage.setItem('pbl360.session', JSON.stringify(session));
-    }, mockOwnerSession);
-
+  test('explains co-tutor requirement and transitions to invite sheet when no co-tutors exist', async ({
+    page,
+  }) => {
     await page.route('**/api/salas/sala-1', async (route) => {
       await route.fulfill({
         status: 200,
@@ -138,22 +148,6 @@ test.describe('Room Ownership Transfer Flow', () => {
       });
     });
 
-    await page.route('**/api/salas/sala-1/problemas', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
-    await page.route('**/api/salas/sala-1/conversas', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
     await page.goto('/turmas/sala-1/problemas');
     await expect(page.getByText('MI - Programação')).toBeVisible();
 
@@ -163,6 +157,15 @@ test.describe('Room Ownership Transfer Flow', () => {
     const transferAction = page.getByRole('button', { name: 'Transferir turma' });
     await transferAction.click();
 
+    const modal = page.getByRole('dialog', { name: 'Transferir propriedade da turma' });
+    await expect(modal).toBeVisible();
+    await expect(
+      page.getByText(/Não há outros professores vinculados a esta turma no momento/),
+    ).toBeVisible();
+
+    const addTutorButton = modal.getByRole('button', { name: 'Adicionar co-tutor' });
+    await addTutorButton.click();
+
     const inviteSheet = page.getByRole('dialog', { name: 'Convidar para a turma' });
     await expect(inviteSheet).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Professores' })).toHaveAttribute(
@@ -171,10 +174,8 @@ test.describe('Room Ownership Transfer Flow', () => {
     );
   });
 
-  test('does not show transfer option to co-tutors', async ({ page }) => {
-    await page.addInitScript((session) => {
-      localStorage.setItem('pbl360.session', JSON.stringify(session));
-    }, mockCoTutorSession);
+  test('cancels confirmation modal and keeps previous owner', async ({ page }) => {
+    let patchCalled = false;
 
     await page.route('**/api/salas/sala-1', async (route) => {
       await route.fulfill({
@@ -184,28 +185,37 @@ test.describe('Room Ownership Transfer Flow', () => {
       });
     });
 
-    await page.route('**/api/salas/sala-1/problemas', async (route) => {
+    await page.route('**/api/salas/sala-1/professores', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([]),
+        body: JSON.stringify(mockTutors),
       });
     });
 
-    await page.route('**/api/salas/sala-1/conversas', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
+    await page.route('**/api/salas/sala-1/proprietario', async (route) => {
+      patchCalled = true;
+      await route.fulfill({ status: 200, body: '{}' });
     });
 
     await page.goto('/turmas/sala-1/problemas');
-    await expect(page.getByText('MI - Programação')).toBeVisible();
+    await page.getByRole('button', { name: 'Ações de problema' }).click();
+    await page.getByRole('button', { name: 'Transferir turma' }).click();
 
-    const fabButton = page.getByRole('button', { name: 'Ações de problema' });
-    await fabButton.click();
+    const modal = page.getByRole('dialog', { name: 'Transferir propriedade da turma' });
+    await modal.getByLabel('Novo professor responsável').selectOption('user-cotutor');
+    await modal.getByRole('button', { name: 'Transferir' }).click();
 
-    await expect(page.getByRole('button', { name: 'Transferir turma' })).not.toBeVisible();
+    const confirmModal = page.getByRole('dialog', { name: 'Confirmar transferência' });
+    await expect(confirmModal).toBeVisible();
+
+    await confirmModal.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(confirmModal).not.toBeVisible();
+    await expect(modal).toBeVisible();
+
+    await modal.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(modal).not.toBeVisible();
+
+    expect(patchCalled).toBe(false);
   });
 });
