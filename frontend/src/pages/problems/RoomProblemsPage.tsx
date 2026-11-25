@@ -7,7 +7,6 @@ import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyle
 import { cn } from '@/utils/cn';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/useToast';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { memberRoomService, type RoomHeading } from '@/services/memberRoom.service';
 import { problemService } from '@/services/problem.service';
@@ -15,23 +14,29 @@ import { ROUTES } from '@/routes/paths';
 import type { Room } from '@/types/room';
 import type { Problem } from '@/types/problem';
 import { ProblemsEmptyState } from './ProblemsEmptyState';
-import { ProblemFormModal } from './ProblemFormModal';
 import { ProblemCard } from './ProblemCard';
 import { RoomProblemsHeader } from './RoomProblemsHeader';
 import { RoomTopActions } from './RoomTopActions';
-import { RoomInviteSheet } from '../rooms/invite/RoomInviteSheet';
 import { RoomChat } from './chat/RoomChat';
+import { RoomProblemsModals } from './RoomProblemsModals';
+import { useRoomProblemsModals } from './hooks/useRoomProblemsModals';
 
-function ProblemsFab({ roomId, onCreate }: { roomId: string; onCreate: () => void }) {
-  return (
-    <FabMenu
-      label="Ações de problema"
-      actions={[
-        { label: 'Editar um problema', to: `/turmas/${roomId}/problemas/gerenciar` },
-        { label: 'Criar novo problema', onClick: onCreate },
-      ]}
-    />
-  );
+function ProblemsFab({
+  roomId,
+  onCreate,
+  onTransfer,
+}: {
+  roomId: string;
+  onCreate: () => void;
+  onTransfer?: () => void;
+}) {
+  const actions = [
+    { label: 'Editar um problema', to: `/turmas/${roomId}/problemas/gerenciar` },
+    { label: 'Criar novo problema', onClick: onCreate },
+    ...(onTransfer ? [{ label: 'Transferir turma', onClick: onTransfer }] : []),
+  ];
+
+  return <FabMenu label="Ações de problema" actions={actions} />;
 }
 
 function RoomUnavailable({ message }: { message: string }) {
@@ -112,23 +117,16 @@ function useRoomWithProblems(id: string | undefined) {
     fetchProblems(id).then((res) => res.ok && setProblems(res.data as Problem[]));
   }, [id, isProfessor, fetchRoom, fetchProblems]);
 
-  return { room, problems, setProblems, roomError, isLoading };
+  return { room, setRoom, problems, setProblems, roomError, isLoading };
 }
 
 export default function RoomProblemsPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { notify } = useToast();
-  const { room, problems, setProblems, roomError, isLoading } = useRoomWithProblems(id);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const { room, setRoom, problems, setProblems, roomError, isLoading } = useRoomWithProblems(id);
+  const modals = useRoomProblemsModals(id, user?.id, setRoom, setProblems);
   const isProfessor = user?.tipo === 'PROFESSOR';
-
-  function handleSuccess(newProblem: Problem) {
-    setProblems((curr) => [...curr, newProblem]);
-    setIsCreateModalOpen(false);
-    notify({ tone: 'success', message: 'Problema criado com sucesso!' });
-  }
+  const isOwner = isFullRoom(room) && room.professorResponsavelId === user?.id;
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
@@ -139,29 +137,19 @@ export default function RoomProblemsPage() {
         roomId={id ?? ''}
         isLoading={isLoading}
         problems={problems}
-        onInvite={() => setIsInviteOpen(true)}
+        onInvite={modals.openInviteStudents}
       />
-      {isProfessor && <ProblemsFab roomId={id ?? ''} onCreate={() => setIsCreateModalOpen(true)} />}
+      {isProfessor && (
+        <ProblemsFab
+          roomId={id ?? ''}
+          onCreate={modals.openCreate}
+          onTransfer={isOwner ? modals.handleTransferClick : undefined}
+        />
+      )}
       {room && user && !roomError && (
         <RoomChat roomId={room.id} isProfessor={isProfessor} currentUserId={user.id} />
       )}
-      <ProblemFormModal
-        isOpen={isCreateModalOpen}
-        roomId={id ?? ''}
-        initialData={null}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={handleSuccess}
-      />
-      {isFullRoom(room) && isProfessor && (
-        <RoomInviteSheet
-          isOpen={isInviteOpen}
-          onClose={() => setIsInviteOpen(false)}
-          roomId={room.id}
-          roomName={room.nome}
-          roomCode={room.codigoSala}
-          isOwner={room.professorResponsavelId === user?.id}
-        />
-      )}
+      <RoomProblemsModals room={room} user={user} modals={modals} />
     </div>
   );
 }

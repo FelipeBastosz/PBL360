@@ -1,25 +1,26 @@
-import { UserPlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 
-type TransferRoomOwnershipModalProps = {
+export type TransferRoomConfirmModalProps = {
   isOpen: boolean;
+  onClose: () => void;
   targetTutorName: string;
   isLoading: boolean;
   errorMessage?: string | null;
   onConfirm: () => void;
-  onClose: () => void;
 };
 
-function ModalIcon() {
+function ConfirmIcon() {
   return (
-    <div className="flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-900">
-      <UserPlusIcon className="size-6" aria-hidden="true" />
+    <div className="flex size-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+      <ExclamationTriangleIcon className="size-7" aria-hidden="true" />
     </div>
   );
 }
 
-function ModalContent({
+function ConfirmContent({
   targetTutorName,
   errorMessage,
 }: {
@@ -27,29 +28,28 @@ function ModalContent({
   errorMessage?: string | null;
 }) {
   return (
-    <>
-      <ModalIcon />
-      <h2 id="transfer-ownership-title" className="text-xl font-bold text-ink">
-        Transferir propriedade?
+    <div className="flex flex-col items-center gap-3 text-center">
+      <ConfirmIcon />
+      <h2 id="transfer-confirm-title" className="text-xl font-bold text-ink">
+        Confirmar transferência
       </h2>
       <p className="text-base font-semibold text-brand-900">{targetTutorName}</p>
       <div className="rounded-xl bg-surface p-3 text-center">
         <p className="text-xs text-muted leading-relaxed">
-          Você deixará de ser o responsável principal desta turma e passará a atuar como{' '}
-          <strong className="text-ink">co-tutor</strong>. O novo responsável assumirá a gestão da
-          turma.
+          Tem certeza que deseja transferir a propriedade da turma? Você passará a atuar como{' '}
+          <strong className="text-ink">co-tutor</strong> e não poderá desfazer esta ação sozinho.
         </p>
       </div>
       {errorMessage && (
-        <div role="alert" className="w-full rounded-xl bg-danger/10 p-3 text-center">
-          <p className="text-xs font-medium text-danger leading-relaxed">{errorMessage}</p>
-        </div>
+        <Alert tone="error" className="w-full text-xs">
+          {errorMessage}
+        </Alert>
       )}
-    </>
+    </div>
   );
 }
 
-function ModalActions({
+function ConfirmActions({
   isLoading,
   onConfirm,
   onClose,
@@ -81,14 +81,14 @@ function ModalActions({
   );
 }
 
-export function TransferRoomOwnershipModal({
+export function TransferRoomConfirmModal({
   isOpen,
+  onClose,
   targetTutorName,
   isLoading,
   errorMessage,
   onConfirm,
-  onClose,
-}: TransferRoomOwnershipModalProps) {
+}: TransferRoomConfirmModalProps) {
   useEscapeKey(isOpen, onClose, isLoading);
   if (!isOpen) return null;
 
@@ -96,8 +96,8 @@ export function TransferRoomOwnershipModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="transfer-ownership-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in"
+      aria-labelledby="transfer-confirm-title"
+      className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in"
     >
       <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border border-black/5 bg-white p-6 shadow-2xl animate-pop-in">
         <button
@@ -109,11 +109,8 @@ export function TransferRoomOwnershipModal({
         >
           <XMarkIcon className="size-6" />
         </button>
-
-        <div className="flex flex-col items-center gap-3 text-center">
-          <ModalContent targetTutorName={targetTutorName} errorMessage={errorMessage} />
-          <ModalActions isLoading={isLoading} onConfirm={onConfirm} onClose={onClose} />
-        </div>
+        <ConfirmContent targetTutorName={targetTutorName} errorMessage={errorMessage} />
+        <ConfirmActions isLoading={isLoading} onConfirm={onConfirm} onClose={onClose} />
       </div>
     </div>
   );

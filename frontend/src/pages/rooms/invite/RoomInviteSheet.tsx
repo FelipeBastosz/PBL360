@@ -18,6 +18,8 @@ type RoomInviteSheetProps = {
   roomName: string;
   roomCode: string;
   isOwner: boolean;
+  initialTab?: InviteTab;
+  onTutorAdded?: () => void;
 };
 
 function TabSwitch({
@@ -70,9 +72,21 @@ export function RoomInviteSheet({
   roomName,
   roomCode,
   isOwner,
+  initialTab = 'alunos',
+  onTutorAdded,
 }: RoomInviteSheetProps) {
-  const [tab, setTab] = useState<InviteTab>('alunos');
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
+  const [tab, setTab] = useState<InviteTab>(initialTab);
   const idPrefix = useId();
+
+  if (isOpen !== prevIsOpen || initialTab !== prevInitialTab) {
+    setPrevIsOpen(isOpen);
+    setPrevInitialTab(initialTab);
+    if (isOpen) {
+      setTab(initialTab);
+    }
+  }
 
   return (
     <Sheet isOpen={isOpen} title="Convidar para a turma" onClose={onClose}>
@@ -88,7 +102,7 @@ export function RoomInviteSheet({
           {tab === 'alunos' ? (
             <StudentInviteTab roomName={roomName} roomCode={roomCode} />
           ) : (
-            <TutorsTab roomId={roomId} isOwner={isOwner} />
+            <TutorsTab roomId={roomId} isOwner={isOwner} onTutorAdded={onTutorAdded} />
           )}
         </div>
       </div>

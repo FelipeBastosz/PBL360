@@ -116,4 +116,26 @@ describe('RoomInviteSheet', () => {
     expect(screen.queryByLabelText('Buscar professor por nome ou e-mail')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Remover / })).not.toBeInTheDocument();
   });
+
+  it('opens directly on the professors tab when initialTab is professores', async () => {
+    render(
+      <ToastProvider>
+        <RoomInviteSheet
+          isOpen
+          onClose={vi.fn()}
+          roomId="room-1"
+          roomName="MI Programação - TP01"
+          roomCode="aB7kP2x9"
+          isOwner
+          initialTab="professores"
+        />
+      </ToastProvider>,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Professores' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(await screen.findByText('Ana Lima')).toBeInTheDocument();
+  });
 });
