@@ -1,13 +1,17 @@
 import { CheckIcon } from '@heroicons/react/24/outline';
-import { formatCriterionWeight } from '@/utils/criterionWeight';
+import {
+  formatCriterionWeight,
+  isBalancedWeight,
+  sumCriterionWeights,
+} from '@/utils/criterionWeight';
 
 type Props = {
   totalWeight: number;
 };
 
 export function FormulaBalanceSummary({ totalWeight }: Props) {
-  const roundedTotal = Math.round((totalWeight + Number.EPSILON) * 10) / 10;
-  const isBalanced = roundedTotal === 10;
+  const roundedTotal = sumCriterionWeights([totalWeight]);
+  const isBalanced = isBalancedWeight(totalWeight);
   const formattedWeight = formatCriterionWeight(roundedTotal);
 
   return (

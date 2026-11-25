@@ -14,24 +14,21 @@ export function parseCriterionWeight(raw: string): number | null {
   return Math.round((parsed + Number.EPSILON) * 10) / 10;
 }
 
-export function sanitizeCriterionWeightInput(value: string): string {
-  const converted = value.replace('.', ',');
-  if (!/^\d*(,\d*)?$/.test(converted)) return '';
-  const parts = converted.split(',');
-  if (parts.length > 1) {
-    return `${parts[0]},${parts[1].slice(0, 1)}`;
-  }
-  return parts[0];
-}
-
 export function formatWeightChange(raw: string): string | null {
   const text = raw.replace('.', ',');
+  if (!text.trim()) return '';
   if (!/^\d*(,\d*)?$/.test(text)) return null;
+
   const parts = text.split(',');
-  if (parts.length > 1) {
-    return `${parts[0]},${parts[1].slice(0, 1)}`;
-  }
-  return parts[0];
+  const rawInt = parts[0];
+  const intPart = (rawInt === '' && parts.length > 1 ? '0' : rawInt).replace(/^0+(?=\d)/, '');
+  const decimalPart = parts[1] !== undefined ? parts[1].slice(0, 1) : undefined;
+  const formatted = decimalPart !== undefined ? `${intPart},${decimalPart}` : intPart;
+
+  const parsed = parseCriterionWeight(formatted);
+  if (parsed !== null && parsed > 10) return null;
+
+  return formatted;
 }
 
 export function stepCriterionWeight(currentRaw: string, delta: number): string {
@@ -48,4 +45,17 @@ export function validateCriterion(nome: string, peso: string): string | null {
     return 'O peso do critério deve estar entre 0 e 10.';
   }
   return null;
+}
+
+export function sumCriterionWeights(criteria: Array<{ peso: number }> | number[]): number {
+  const sum = criteria.reduce<number>((acc, item) => {
+    const val = typeof item === 'number' ? item : item.peso;
+    return acc + (Number.isFinite(val) ? val : 0);
+  }, 0);
+  return Math.round((sum + Number.EPSILON) * 10) / 10;
+}
+
+export function isBalancedWeight(totalWeight: number): boolean {
+  const rounded = Math.round((totalWeight + Number.EPSILON) * 10) / 10;
+  return rounded === 10;
 }

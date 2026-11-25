@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   formatCriterionWeight,
   formatWeightChange,
+  isBalancedWeight,
   parseCriterionWeight,
-  sanitizeCriterionWeightInput,
   stepCriterionWeight,
+  sumCriterionWeights,
   validateCriterion,
 } from './criterionWeight';
 
@@ -54,34 +55,32 @@ describe('criterionWeight utils', () => {
     });
   });
 
-  describe('sanitizeCriterionWeightInput', () => {
-    it('allows empty string, integers and one decimal digit with comma', () => {
-      expect(sanitizeCriterionWeightInput('')).toBe('');
-      expect(sanitizeCriterionWeightInput('5')).toBe('5');
-      expect(sanitizeCriterionWeightInput('10')).toBe('10');
-      expect(sanitizeCriterionWeightInput('2,')).toBe('2,');
-      expect(sanitizeCriterionWeightInput('2,5')).toBe('2,5');
-    });
-
-    it('converts dot to comma', () => {
-      expect(sanitizeCriterionWeightInput('2.')).toBe('2,');
-      expect(sanitizeCriterionWeightInput('2.5')).toBe('2,5');
-    });
-
-    it('truncates to at most one decimal place and rejects non-numeric characters', () => {
-      expect(sanitizeCriterionWeightInput('2,55')).toBe('2,5');
-      expect(sanitizeCriterionWeightInput('2.55')).toBe('2,5');
-      expect(sanitizeCriterionWeightInput('-1')).toBe('');
-      expect(sanitizeCriterionWeightInput('abc')).toBe('');
-    });
-  });
-
   describe('formatWeightChange', () => {
-    it('returns formatted text with comma and truncates to at most one decimal place', () => {
+    it('allows valid inputs, converts dot to comma and formats correctly', () => {
+      expect(formatWeightChange('')).toBe('');
+      expect(formatWeightChange('5')).toBe('5');
+      expect(formatWeightChange('10')).toBe('10');
+      expect(formatWeightChange('10,')).toBe('10,');
+      expect(formatWeightChange('10,0')).toBe('10,0');
       expect(formatWeightChange('3.5')).toBe('3,5');
       expect(formatWeightChange('3,5')).toBe('3,5');
       expect(formatWeightChange('3.55')).toBe('3,5');
-      expect(formatWeightChange('10')).toBe('10');
+    });
+
+    it('normalizes leading zeros', () => {
+      expect(formatWeightChange('0')).toBe('0');
+      expect(formatWeightChange('00')).toBe('0');
+      expect(formatWeightChange('005')).toBe('5');
+      expect(formatWeightChange('05')).toBe('5');
+      expect(formatWeightChange('0,5')).toBe('0,5');
+      expect(formatWeightChange('00,5')).toBe('0,5');
+    });
+
+    it('blocks typing when value exceeds 10', () => {
+      expect(formatWeightChange('15')).toBeNull();
+      expect(formatWeightChange('99')).toBeNull();
+      expect(formatWeightChange('10,5')).toBeNull();
+      expect(formatWeightChange('10.1')).toBeNull();
     });
 
     it('returns null when invalid non-numeric input', () => {
@@ -129,6 +128,23 @@ describe('criterionWeight utils', () => {
       expect(validateCriterion('Critério', '5')).toBeNull();
       expect(validateCriterion('Critério', '10')).toBeNull();
       expect(validateCriterion('Critério', '2,5')).toBeNull();
+    });
+  });
+
+  describe('sumCriterionWeights and isBalancedWeight', () => {
+    it('sums criteria weights with rounding', () => {
+      expect(sumCriterionWeights([{ peso: 3.3 }, { peso: 3.3 }, { peso: 3.4 }])).toBe(10);
+      expect(sumCriterionWeights([2.5, 2.5])).toBe(5);
+      expect(sumCriterionWeights([])).toBe(0);
+      expect(sumCriterionWeights([{ peso: 0.1 }, { peso: 0.2 }])).toBe(0.3);
+    });
+
+    it('validates if total weight is balanced at 10', () => {
+      expect(isBalancedWeight(10)).toBe(true);
+      expect(isBalancedWeight(9.99999999)).toBe(true);
+      expect(isBalancedWeight(9.9)).toBe(false);
+      expect(isBalancedWeight(10.1)).toBe(false);
+      expect(isBalancedWeight(0)).toBe(false);
     });
   });
 });

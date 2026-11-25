@@ -13,6 +13,7 @@ import { EditPageBody } from './components/EditPageBody';
 import { EditModalsSection } from './components/EditModalsSection';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
+import { sumCriterionWeights } from '@/utils/criterionWeight';
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {
   const { user } = useAuth();
@@ -96,8 +97,7 @@ function usePageSessionState() {
 
 function computeDialogMetrics(form: ReturnType<typeof useEditPerformanceTableForm>) {
   const canEditCriteria = form.permissions ? form.permissions.podeEditarCriterios : true;
-  const totalWeight =
-    Math.round((form.criterios.reduce((sum, c) => sum + c.peso, 0) + Number.EPSILON) * 10) / 10;
+  const totalWeight = sumCriterionWeights(form.criterios);
   return { canEditCriteria, totalWeight };
 }
 

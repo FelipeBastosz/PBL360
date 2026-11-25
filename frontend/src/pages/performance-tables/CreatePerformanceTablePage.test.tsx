@@ -6,10 +6,7 @@ import { performanceTableService } from '@/services/performance-table.service';
 import { CreatePerformanceTablePage } from './CreatePerformanceTablePage';
 
 const mockNotify = vi.fn();
-vi.mock('@/hooks/useToast', () => ({
-  useToast: () => ({ notify: mockNotify }),
-}));
-
+vi.mock('@/hooks/useToast', () => ({ useToast: () => ({ notify: mockNotify }) }));
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { nome: 'Professor Fulano', tipo: 'TUTOR' } }),
 }));
@@ -162,12 +159,19 @@ describe('CreatePerformanceTablePage', () => {
     expect(weightInput).toHaveValue('0');
     expect(screen.getByRole('button', { name: 'Diminuir peso' })).toBeDisabled();
 
-    await userEvent.type(screen.getByLabelText('Nome do critério'), 'Critério Inválido');
     await userEvent.clear(weightInput);
     await userEvent.type(weightInput, '15');
+    expect(weightInput).toHaveValue('1');
+
+    await userEvent.clear(weightInput);
+    await userEvent.type(weightInput, '005');
+    expect(weightInput).toHaveValue('5');
+
+    await userEvent.type(screen.getByLabelText('Nome do critério'), 'Critério Inválido');
+    await userEvent.clear(weightInput);
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
 
-    expect(screen.getByText('O peso do critério deve estar entre 0 e 10.')).toBeInTheDocument();
+    expect(screen.getByText('O peso do critério é obrigatório.')).toBeInTheDocument();
   });
 
   it('allows decimal weights summing to 10 with weight 0 accepted on submit', async () => {
