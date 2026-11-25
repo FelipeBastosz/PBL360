@@ -38,6 +38,8 @@ describe('Grades (e2e)', () => {
   let dataSource: DataSource;
 
   let tutorId: string;
+  let coTutorId: string;
+  let otherTutorId: string;
   let studentId: string;
   let roomId: string;
   let problemId: string;
@@ -45,10 +47,13 @@ describe('Grades (e2e)', () => {
   let criterionId: string;
   let performanceTableId: string;
   let tutorToken: string;
+  let coTutorToken: string;
+  let otherTutorToken: string;
   let studentToken: string;
 
   const server = () => request(app.getHttpServer() as Server);
   const gradesPath = () => `/api/salas/${roomId}/problemas/${problemId}/notas`;
+  const performancePath = () => `/api/salas/${roomId}/alunos/${studentId}/desempenho`;
 
   beforeAll(async () => {
     let moduleRef: TestingModule;
@@ -72,6 +77,22 @@ describe('Grades (e2e)', () => {
     );
     tutorId = tutor.id;
 
+    const [coTutor] = await dataSource.query<[{ id: string }]>(
+      `INSERT INTO users (name, email, password_hash, type, active)
+       VALUES ('Maria Co-tutora', 'maria.grades@uefs.br', 'hash', $1, true)
+       RETURNING id;`,
+      [UserType.TUTOR],
+    );
+    coTutorId = coTutor.id;
+
+    const [otherTutor] = await dataSource.query<[{ id: string }]>(
+      `INSERT INTO users (name, email, password_hash, type, active)
+       VALUES ('João Outro', 'joao.grades@uefs.br', 'hash', $1, true)
+       RETURNING id;`,
+      [UserType.TUTOR],
+    );
+    otherTutorId = otherTutor.id;
+
     const [student] = await dataSource.query<[{ id: string }]>(
       `INSERT INTO users
         (name, email, password_hash, type, registration_number, active)
@@ -88,6 +109,11 @@ describe('Grades (e2e)', () => {
       [tutorId],
     );
     roomId = room.id;
+
+    await dataSource.query('INSERT INTO room_tutors (room_id, tutor_id) VALUES ($1, $2);', [
+      roomId,
+      coTutorId,
+    ]);
 
     await dataSource.query('INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);', [
       roomId,
@@ -138,7 +164,143 @@ describe('Grades (e2e)', () => {
     await acceptCurrentTermForAllUsers(dataSource);
 
     tutorToken = signAccessToken(app, tutorId, 'carlos.grades@uefs.br', UserType.TUTOR);
+    coTutorToken = signAccessToken(app, coTutorId, 'maria.grades@uefs.br', UserType.TUTOR);
+    otherTutorToken = signAccessToken(app, otherTutorId, 'joao.grades@uefs.br', UserType.TUTOR);
     studentToken = signAccessToken(app, studentId, 'ana.grades@discente.uefs.br', UserType.STUDENT);
+  });
+
+  it('returns calculated grades, attendance and mark counts in session date order', async () => {
+    await dataSource.query(
+      'UPDATE criterion_grades SET score = 0 WHERE session_id = $1 AND student_id = $2;',
+      [sessionId, studentId],
+    );
+    await dataSource.query(
+      `INSERT INTO sessions
+        (problem_id, performance_table_id, title, description, date, order_index)
+       VALUES ($1, $2, 'Sessão pendente', 'Sem nota', '2026-10-01', 2);`,
+      [problemId, performanceTableId],
+    );
+    await dataSource.query(
+      `INSERT INTO attendances (session_id, student_id, recorded_by, status)
+       VALUES ($1, $2, $3, 'PRESENT');`,
+      [sessionId, studentId, tutorId],
+    );
+    const [tag] = await dataSource.query<[{ id: string }]>(
+      `INSERT INTO behavior_tags (tutor_id, name) VALUES ($1, 'Colaboração') RETURNING id;`,
+      [tutorId],
+    );
+    const [otherStudent] = await dataSource.query<[{ id: string }]>(
+      `INSERT INTO users
+        (name, email, password_hash, type, registration_number, active)
+       VALUES ('Bruno Discente', 'bruno.grades@discente.uefs.br', 'hash', $1, '20260002', true)
+       RETURNING id;`,
+      [UserType.STUDENT],
+    );
+    await dataSource.query('INSERT INTO room_students (room_id, student_id) VALUES ($1, $2);', [
+      roomId,
+      otherStudent.id,
+    ]);
+    for (let index = 0; index < 2; index += 1) {
+      const [observation] = await dataSource.query<[{ id: string }]>(
+        `INSERT INTO observations (session_id, student_id, author_id, text)
+         VALUES ($1, $2, $3, 'Registro') RETURNING id;`,
+        [sessionId, studentId, tutorId],
+      );
+      await dataSource.query(
+        'INSERT INTO observation_tags (observation_id, tag_id) VALUES ($1, $2);',
+        [observation.id, tag.id],
+      );
+    }
+    const [otherObservation] = await dataSource.query<[{ id: string }]>(
+      `INSERT INTO observations (session_id, student_id, author_id, text)
+       VALUES ($1, $2, $3, 'Outro aluno') RETURNING id;`,
+      [sessionId, otherStudent.id, tutorId],
+    );
+    await dataSource.query(
+      'INSERT INTO observation_tags (observation_id, tag_id) VALUES ($1, $2);',
+      [otherObservation.id, tag.id],
+    );
+
+    const response = await server()
+      .get(performancePath())
+      .set('Authorization', `Bearer ${tutorToken}`)
+      .expect(200);
+    const responseBody = JSON.parse(response.text) as unknown;
+    const body = responseBody as {
+      sala: { id: string; nome: string };
+      aluno: { id: string; nome: string };
+      sessoes: Array<Record<string, unknown>>;
+    };
+
+    expect(body.sala).toEqual({ id: roomId, nome: 'Engenharia de Software' });
+    expect(body.aluno).toEqual({ id: studentId, nome: 'Ana Discente' });
+    expect(body.sessoes).toHaveLength(2);
+    expect(body.sessoes[0]).toMatchObject({
+      rotulo: 'Sessão pendente',
+      data: '01-10-2026',
+      nota: null,
+      situacao: 'PENDENTE',
+      presenca: null,
+      marcacoes: [],
+    });
+    expect(body.sessoes[1]).toMatchObject({
+      sessaoId: sessionId,
+      problemaId: problemId,
+      problemaTitulo: 'Problema de notas',
+      rotulo: 'Sessão de avaliação',
+      data: '02-10-2026',
+      nota: 0,
+      situacao: 'AVALIADA',
+      modalidade: 'TUTOR',
+      presenca: 'PRESENTE',
+      marcacoes: [{ id: tag.id, nome: 'Colaboração', quantidade: 2 }],
+    });
+  });
+
+  it('allows the active co-tutor and restricts access to linked tutors and students', async () => {
+    await server()
+      .get(`${performancePath()}?problemaId=${problemId}`)
+      .set('Authorization', `Bearer ${coTutorToken}`)
+      .expect(200);
+    await server()
+      .get(performancePath())
+      .set('Authorization', `Bearer ${otherTutorToken}`)
+      .expect(403);
+    await server()
+      .get(performancePath())
+      .set('Authorization', `Bearer ${studentToken}`)
+      .expect(403);
+    await server().get(performancePath()).expect(401);
+  });
+
+  it('validates the problem filter and returns 404 for an unlinked student or problem', async () => {
+    await server()
+      .get(`${performancePath()}?problemaId=invalido`)
+      .set('Authorization', `Bearer ${tutorToken}`)
+      .expect(400);
+    await server()
+      .get(`${performancePath()}?problemaId=00000000-0000-4000-8000-000000000000`)
+      .set('Authorization', `Bearer ${tutorToken}`)
+      .expect(404);
+    await server()
+      .get(`/api/salas/${roomId}/alunos/00000000-0000-4000-8000-000000000000/desempenho`)
+      .set('Authorization', `Bearer ${tutorToken}`)
+      .expect(404);
+  });
+
+  it('returns an empty session list when the problem has no sessions', async () => {
+    await dataSource.query('DELETE FROM sessions WHERE id = $1;', [sessionId]);
+
+    const response = await server()
+      .get(`${performancePath()}?problemaId=${problemId}`)
+      .set('Authorization', `Bearer ${tutorToken}`)
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      sala: { id: roomId },
+      aluno: { id: studentId },
+      sessoes: [],
+    });
   });
 
   it('returns calculated grades and persists session and problem grades', async () => {
