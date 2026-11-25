@@ -144,13 +144,23 @@ describe('CreatePerformanceTablePage', () => {
     expect(saveButton).toBeEnabled();
   });
 
-  it('validates that individual weight must be between 0 and 10 and enforces input bounds', async () => {
+  it('enforces bounds on arrow keys and rejects values outside 0 and 10', async () => {
     renderPage({ nome: 'Barema Teste' });
 
     await userEvent.click(screen.getByText('+Adicionar critério'));
     const weightInput = screen.getByLabelText('Peso (0 a 10)');
-    expect(weightInput).toHaveAttribute('aria-valuemin', '0');
-    expect(weightInput).toHaveAttribute('aria-valuemax', '10');
+
+    await userEvent.clear(weightInput);
+    await userEvent.type(weightInput, '9,5');
+    await userEvent.type(weightInput, '{arrowup}');
+    expect(weightInput).toHaveValue('10');
+    expect(screen.getByRole('button', { name: 'Aumentar peso' })).toBeDisabled();
+
+    await userEvent.clear(weightInput);
+    await userEvent.type(weightInput, '0,5');
+    await userEvent.type(weightInput, '{arrowdown}');
+    expect(weightInput).toHaveValue('0');
+    expect(screen.getByRole('button', { name: 'Diminuir peso' })).toBeDisabled();
 
     await userEvent.type(screen.getByLabelText('Nome do critério'), 'Critério Inválido');
     await userEvent.clear(weightInput);
@@ -158,6 +168,43 @@ describe('CreatePerformanceTablePage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
 
     expect(screen.getByText('O peso do critério deve estar entre 0 e 10.')).toBeInTheDocument();
+  });
+
+  it('allows decimal weights summing to 10 with weight 0 accepted on submit', async () => {
+    vi.mocked(performanceTableService.create).mockResolvedValue({} as never);
+    renderPage({ nome: 'Barema Decimal' });
+
+    async function addCriterion(nome: string, peso: string) {
+      await userEvent.click(screen.getByText('+Adicionar critério'));
+      await userEvent.type(screen.getByLabelText('Nome do critério'), nome);
+      await userEvent.clear(screen.getByLabelText('Peso (0 a 10)'));
+      await userEvent.type(screen.getByLabelText('Peso (0 a 10)'), peso);
+      await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+    }
+
+    await addCriterion('Critério 1', '3,3');
+    await addCriterion('Critério 2', '3,3');
+    await addCriterion('Critério 3', '3,4');
+    await addCriterion('Critério Bônus', '0');
+
+    expect(screen.getByText('10 / 10')).toBeInTheDocument();
+    expect(screen.getByText('Soma correta')).toBeInTheDocument();
+
+    const saveButton = screen.getByRole('button', { name: 'Salvar Fórmula' });
+    expect(saveButton).toBeEnabled();
+    await userEvent.click(saveButton);
+
+    expect(performanceTableService.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nome: 'Barema Decimal',
+        criterios: [
+          expect.objectContaining({ nome: 'Critério 1', peso: 3.3 }),
+          expect.objectContaining({ nome: 'Critério 2', peso: 3.3 }),
+          expect.objectContaining({ nome: 'Critério 3', peso: 3.4 }),
+          expect.objectContaining({ nome: 'Critério Bônus', peso: 0 }),
+        ],
+      }),
+    );
   });
 
   it('increments and decrements weight by 1 using stepper buttons and bounds at 0 and 10', async () => {
