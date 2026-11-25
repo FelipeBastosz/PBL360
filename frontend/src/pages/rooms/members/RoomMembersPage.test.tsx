@@ -115,6 +115,21 @@ describe('RoomMembersPage', () => {
     expect(within(dialog).getByText('01/09/2026')).toBeInTheDocument();
   });
 
+  it('links a tutor to the student evolution from the popup', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Ver detalhes de Ana Silva Santos' }),
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Detalhes do Aluno' });
+    expect(within(dialog).getByRole('link', { name: 'Ver evolução nas sessões' })).toHaveAttribute(
+      'href',
+      '/turmas/room-1/participantes/s1/evolucao',
+    );
+  });
+
   it('loads every student photo for a tutor', async () => {
     renderPage();
     await screen.findByText('Ana');
@@ -208,6 +223,9 @@ describe('RoomMembersPage', () => {
 
       const dialog = screen.getByRole('dialog', { name: 'Detalhes do Aluno' });
       expect(within(dialog).getByText('20231002')).toBeInTheDocument();
+      expect(
+        within(dialog).queryByRole('link', { name: 'Ver evolução nas sessões' }),
+      ).not.toBeInTheDocument();
     });
 
     it('only loads the photo of the student who is signed in', async () => {

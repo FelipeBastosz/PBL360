@@ -7,6 +7,7 @@ import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { useAuth } from '@/hooks/useAuth';
 import { RoomProblemsHeader } from '@/pages/problems/RoomProblemsHeader';
 import { ROUTES } from '@/routes/paths';
+import { studentPerformancePath } from '@/pages/student-performance/studentPerformancePath';
 import { cn } from '@/utils/cn';
 import { matchesName } from '@/utils/members';
 import { MemberCard, MemberSection } from './MemberCard';
@@ -96,7 +97,13 @@ function RoomMembers({ roomId }: { roomId: string }) {
           </>
         )}
       </main>
-      <MemberDetailsSheet member={selected} onClose={() => setSelected(null)} />
+      <MemberDetailsSheet
+        member={selected}
+        onClose={() => setSelected(null)}
+        performanceHref={
+          isProfessor ? (studentId) => studentPerformancePath(roomId, studentId) : undefined
+        }
+      />
     </div>
   );
 }
