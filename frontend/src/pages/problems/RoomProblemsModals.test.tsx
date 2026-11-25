@@ -45,9 +45,11 @@ const mockTeacherCoTutor: UserResponse = {
 const mockRoom: Room = {
   id: 'room-1',
   nome: 'MI - Programação - TP01',
-  semestre: '2026.2',
-  descricao: 'Turma de programação',
+  codigoDisciplina: 'EXA801',
   codigoSala: 'aB7kP2x9',
+  semestre: '2026.2',
+  ativo: true,
+  criadoEm: '2026-01-01T00:00:00.000Z',
   professorResponsavelId: 'owner-id',
 };
 

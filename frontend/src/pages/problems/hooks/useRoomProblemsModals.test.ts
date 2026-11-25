@@ -17,9 +17,11 @@ vi.mock('@/services/room.service', () => ({
 const mockRoom: Room = {
   id: 'room-1',
   nome: 'Turma de Teste',
+  codigoDisciplina: 'EXA801',
   codigoSala: 'aB7kP2x9',
   semestre: '2026.2',
-  descricao: '',
+  ativo: true,
+  criadoEm: '2026-01-01T00:00:00.000Z',
   professorResponsavelId: 'owner-1',
 };
 
