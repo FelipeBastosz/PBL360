@@ -60,15 +60,18 @@ Antes foi usado o Brevo, mas ele troca o remetente para um endereço `brevosend.
 
 ## Como atualizar
 
-A produção sai da branch `prod`. Com a CI verde, atualize a `prod` com a `main` e publique a partir dela:
+A produção sai da branch `prod`. Para publicar, atualize a `prod` com a `main`:
 
 ```bash
 git switch prod && git merge main && git push
+```
 
-# API (a partir da raiz do repositório)
+Todo push na `prod` roda a CI e, se ela passar, o job **Deploy** (`.github/workflows/ci.yml`) publica a API no Railway e o front na Vercel. Ele usa dois secrets do repositório: `RAILWAY_API_TOKEN` (token do workspace no Railway) e `VERCEL_TOKEN` (token da conta da Vercel).
+
+Se o GitHub Actions estiver fora do ar, dá para publicar à mão a partir da `prod`:
+
+```bash
 railway up backend --path-as-root --service api
-
-# Front
 cd frontend && vercel deploy --prod
 ```
 
