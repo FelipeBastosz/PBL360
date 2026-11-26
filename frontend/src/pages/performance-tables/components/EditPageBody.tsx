@@ -11,6 +11,7 @@ type Props = {
   modals: ReturnType<typeof useEditModals>;
   canEditCriteria: boolean;
   isSessionContext: boolean;
+  totalWeight: number;
   onRequestSave: () => void;
   onExit: () => void;
 };
@@ -20,6 +21,7 @@ export function EditPageBody({
   modals,
   canEditCriteria,
   isSessionContext,
+  totalWeight,
   onRequestSave,
   onExit,
 }: Props) {
@@ -41,6 +43,7 @@ export function EditPageBody({
         modals={modals}
         canEditCriteria={canEditCriteria}
         isSessionContext={isSessionContext}
+        totalWeight={totalWeight}
         onRequestSave={onRequestSave}
         onExit={onExit}
       />

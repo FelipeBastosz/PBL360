@@ -34,11 +34,13 @@ export function EditActions({
   onCancel,
   onDeleteFormula,
   canDeleteFormula = true,
+  disabled = false,
 }: {
   onSave: () => void;
   onCancel: () => void;
   onDeleteFormula: () => void;
   canDeleteFormula?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className="mt-8 flex flex-col gap-3">
@@ -53,8 +55,9 @@ export function EditActions({
       )}
       <button
         type="button"
+        disabled={disabled}
         onClick={onSave}
-        className="w-full rounded-[14px] bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg hover:bg-brand-primary-hover"
+        className="w-full rounded-[14px] bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg hover:bg-brand-primary-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-brand-primary"
       >
         Concluir edição
       </button>

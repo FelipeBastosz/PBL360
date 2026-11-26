@@ -13,6 +13,7 @@ import { EditPageBody } from './components/EditPageBody';
 import { EditModalsSection } from './components/EditModalsSection';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
+import { sumCriterionWeights } from '@/utils/criterionWeight';
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {
   const { user } = useAuth();
@@ -95,27 +96,20 @@ function usePageSessionState() {
   return { id: id!, sessionId, target, locationState };
 }
 
-function computeDialogMetrics(
-  form: ReturnType<typeof useEditPerformanceTableForm>,
-  modals: ReturnType<typeof useEditModals>,
-) {
+function computeDialogMetrics(form: ReturnType<typeof useEditPerformanceTableForm>) {
   const canEditCriteria = form.permissions ? form.permissions.podeEditarCriterios : true;
-  const totalWeight = form.criterios.reduce((sum, c) => sum + c.peso, 0);
-  const otherWeightsSum = modals.editingCriterion
-    ? totalWeight - modals.editingCriterion.peso
-    : totalWeight;
-  return { canEditCriteria, totalWeight, otherWeightsSum };
+  const totalWeight = sumCriterionWeights(form.criterios);
+  return { canEditCriteria, totalWeight };
 }
 
 function useEditPageDialogs(
   form: ReturnType<typeof useEditPerformanceTableForm>,
-  modals: ReturnType<typeof useEditModals>,
   sessionId?: string,
 ) {
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
   const [isSaveWarningOpen, setIsSaveWarningOpen] = useState(false);
   const [isScopeModalOpen, setIsScopeModalOpen] = useState(false);
-  const metrics = computeDialogMetrics(form, modals);
+  const metrics = computeDialogMetrics(form);
 
   const handleRequestSave = () => {
     if (!form.prepareSave()) return;
@@ -147,7 +141,7 @@ export function EditPerformanceTablePage() {
   const modals = useEditModals(form.setCriterios);
   const { notify } = useToast();
   const deletion = useEditPageDeletion(id, form, modals, notify, target);
-  const dialogs = useEditPageDialogs(form, modals, form.activeSessionId);
+  const dialogs = useEditPageDialogs(form, form.activeSessionId);
 
   const onExit = () => (form.isDirty ? dialogs.setIsDiscardOpen(true) : form.navigate(-1));
 
@@ -159,14 +153,13 @@ export function EditPerformanceTablePage() {
         modals={modals}
         canEditCriteria={dialogs.canEditCriteria}
         isSessionContext={Boolean(form.activeSessionId)}
+        totalWeight={dialogs.totalWeight}
         onRequestSave={dialogs.handleRequestSave}
         onExit={onExit}
       />
       <EditModalsSection
         form={form}
         modals={modals}
-        totalWeight={dialogs.totalWeight}
-        otherWeightsSum={dialogs.otherWeightsSum}
         canEditCriteria={dialogs.canEditCriteria}
         onConfirmDeleteCriterion={deletion.handleConfirmDeleteCriterion}
         isDeletingFormula={deletion.isDeletingFormula}

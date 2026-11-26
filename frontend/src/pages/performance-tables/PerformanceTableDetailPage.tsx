@@ -13,6 +13,7 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
 import type { CriterionInput, PerformanceTable } from '@/types/performanceTable';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { formatCriterionWeight } from '@/utils/criterionWeight';
 import { cn } from '@/utils/cn';
 import { ApplyScopeModal, IgnoredSessionsModal } from './components/ApplyScopeModal';
 import { useApplyTableLogic } from './hooks/useApplyTableLogic';
@@ -57,7 +58,7 @@ function CriteriaListCard({ criteria }: { criteria: CriterionInput[] }) {
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-brand-accent">{item.nome}</span>
               <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-subtle px-3 py-1 text-xs font-bold text-ink">
-                {item.peso}
+                {formatCriterionWeight(item.peso)}
               </span>
             </div>
             {item.descricao && <p className="mt-1 text-xs text-muted">{item.descricao}</p>}

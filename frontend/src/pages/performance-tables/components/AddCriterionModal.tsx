@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { CriterionInput } from '@/types/performanceTable';
+import { parseCriterionWeight, validateCriterion } from '@/utils/criterionWeight';
+import { useCriterionWeightInput } from '../hooks/useCriterionWeightInput';
+import { CriterionWeightField } from './CriterionWeightField';
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (criterion: CriterionInput) => void;
   nextOrder: number;
-  currentTotalWeight: number;
 };
 
 type FieldProps = {
@@ -77,48 +79,36 @@ function FormHeader({ errorMsg }: { errorMsg: string | null }) {
   );
 }
 
-function validateCriterion(nome: string, peso: string, currentTotal: number) {
-  if (!nome.trim()) return { error: 'O nome do critério é obrigatório.' };
-  const parsed = Number(peso);
-  if (Number.isNaN(parsed) || parsed < 1 || parsed > 10) {
-    return { error: 'O peso do critério deve estar entre 1 e 10.' };
-  }
-  if (currentTotal + parsed > 10) {
-    return {
-      error: `A soma total dos pesos não pode ultrapassar 10. Restante: ${10 - currentTotal}.`,
-    };
-  }
-  return { weight: parsed };
+function buildAddedCriterion(
+  nome: string,
+  descricao: string,
+  weight: number,
+  nextOrder: number,
+): CriterionInput {
+  return {
+    nome: nome.trim(),
+    descricao: descricao.trim() || undefined,
+    peso: weight,
+    ordem: nextOrder,
+  };
 }
 
 function useAddCriterionForm(
   onAdd: (c: CriterionInput) => void,
   onClose: () => void,
   nextOrder: number,
-  currentTotalWeight: number,
 ) {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [peso, setPeso] = useState('1');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const weightInput = useCriterionWeightInput('1', () => setErrorMsg(null));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const result = validateCriterion(nome, peso, currentTotalWeight);
-    if (result.error) {
-      setErrorMsg(result.error);
-      return;
-    }
-    onAdd({
-      nome: nome.trim(),
-      descricao: descricao.trim() || undefined,
-      peso: result.weight!,
-      ordem: nextOrder,
-    });
-    setNome('');
-    setDescricao('');
-    setPeso('1');
-    setErrorMsg(null);
+    const error = validateCriterion(nome, weightInput.peso);
+    if (error) return setErrorMsg(error);
+    const weight = parseCriterionWeight(weightInput.peso)!;
+    onAdd(buildAddedCriterion(nome, descricao, weight, nextOrder));
     onClose();
   }
 
@@ -127,11 +117,10 @@ function useAddCriterionForm(
     setNome,
     descricao,
     setDescricao,
-    peso,
-    setPeso,
     errorMsg,
     setErrorMsg,
     handleSubmit,
+    ...weightInput,
   };
 }
 
@@ -139,14 +128,12 @@ function AddCriterionForm({
   onAdd,
   onClose,
   nextOrder,
-  currentTotalWeight,
 }: {
   onAdd: (criterion: CriterionInput) => void;
   onClose: () => void;
   nextOrder: number;
-  currentTotalWeight: number;
 }) {
-  const form = useAddCriterionForm(onAdd, onClose, nextOrder, currentTotalWeight);
+  const form = useAddCriterionForm(onAdd, onClose, nextOrder);
 
   return (
     <form noValidate onSubmit={form.handleSubmit} className="flex flex-col gap-3 pt-2">
@@ -169,15 +156,13 @@ function AddCriterionForm({
         value={form.descricao}
         onChange={form.setDescricao}
       />
-      <CriterionField
+      <CriterionWeightField
         id="criterion-weight"
-        label="Peso (1 a 10)"
-        type="number"
+        label="Peso (0 a 10)"
         value={form.peso}
-        onChange={(v) => {
-          form.setPeso(v);
-          form.setErrorMsg(null);
-        }}
+        onChange={form.handleWeightChange}
+        onStep={form.handleWeightStep}
+        onKeyDown={form.handleWeightKeyDown}
         hasError={Boolean(form.errorMsg)}
       />
       <ModalActions onClose={onClose} />
@@ -185,13 +170,7 @@ function AddCriterionForm({
   );
 }
 
-export function AddCriterionModal({
-  isOpen,
-  onClose,
-  onAdd,
-  nextOrder,
-  currentTotalWeight,
-}: Props) {
+export function AddCriterionModal({ isOpen, onClose, onAdd, nextOrder }: Props) {
   if (!isOpen) return null;
 
   return (
@@ -205,12 +184,7 @@ export function AddCriterionModal({
         >
           <XMarkIcon className="size-4 stroke-[2.5]" />
         </button>
-        <AddCriterionForm
-          onAdd={onAdd}
-          onClose={onClose}
-          nextOrder={nextOrder}
-          currentTotalWeight={currentTotalWeight}
-        />
+        <AddCriterionForm onAdd={onAdd} onClose={onClose} nextOrder={nextOrder} />
       </div>
     </div>
   );

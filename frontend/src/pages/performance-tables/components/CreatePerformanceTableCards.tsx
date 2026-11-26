@@ -26,13 +26,22 @@ export function TitleCard({ value, onChange, hasError }: TitleCardProps) {
   );
 }
 
-export function FormActions({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) {
+export function FormActions({
+  onSave,
+  onCancel,
+  disabled = false,
+}: {
+  onSave: () => void;
+  onCancel: () => void;
+  disabled?: boolean;
+}) {
   return (
     <div className="mt-8 flex flex-col gap-3">
       <button
         type="button"
+        disabled={disabled}
         onClick={onSave}
-        className="w-full rounded-[14px] bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-primary-hover active:scale-[0.98]"
+        className="w-full rounded-[14px] bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-brand-primary disabled:active:scale-100"
       >
         Salvar Fórmula
       </button>
