@@ -1,6 +1,7 @@
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
 
 type FlowShellProps = {
@@ -22,19 +23,23 @@ export function FlowShell({
 }: FlowShellProps) {
   return (
     <div className="flex min-h-dvh flex-col bg-surface">
-      <header className="flex h-20 shrink-0 items-center gap-6 border-b border-brand-primary-border bg-brand-primary px-6 text-brand-on-primary lg:px-10">
-        <Link
-          to={backTo}
-          aria-label={backLabel}
-          className="-ml-2 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
-        >
-          <ChevronLeftIcon className="size-7" aria-hidden />
-        </Link>
-        <div className="flex min-w-0 flex-1 flex-col animate-slide-down">
-          <h1 className="truncate text-2xl leading-tight font-semibold">{title}</h1>
-          {subtitle && <p className="truncate text-base text-white/70">{subtitle}</p>}
+      <header className="sticky top-0 z-10 border-b border-brand-primary-border bg-brand-primary text-brand-on-primary shadow-[0_6px_18px_-12px_var(--color-brand-shadow)]">
+        <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between gap-3')}>
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              to={backTo}
+              aria-label={backLabel}
+              className="-ml-1 shrink-0 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
+            >
+              <ChevronLeftIcon className="size-6" aria-hidden />
+            </Link>
+            <div className="flex min-w-0 flex-col animate-slide-down">
+              <h1 className="truncate text-base font-semibold leading-tight sm:text-lg">{title}</h1>
+              {subtitle && <span className="truncate text-xs text-white/70">{subtitle}</span>}
+            </div>
+          </div>
+          {trailing && <div className="shrink-0 animate-pop-in">{trailing}</div>}
         </div>
-        {trailing && <div className="shrink-0 animate-pop-in">{trailing}</div>}
       </header>
       <main
         className={cn(

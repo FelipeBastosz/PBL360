@@ -1,8 +1,4 @@
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { UserMenuButton } from '@/components/layout/UserMenu';
-import { useAuth } from '@/hooks/useAuth';
-import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
-import { cn } from '@/utils/cn';
+import { AppHeader } from '@/components/layout/AppHeader';
 
 type BackHeaderProps = {
   title: string;
@@ -11,25 +7,5 @@ type BackHeaderProps = {
 };
 
 export function BackHeader({ title, subtitle, onBack }: BackHeaderProps) {
-  const { user } = useAuth();
-
-  return (
-    <header className="sticky top-0 z-30 border-b border-brand-primary-border bg-brand-primary text-brand-on-primary shadow-[0_6px_18px_-12px_var(--color-brand-shadow)]">
-      <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-20 items-center gap-3')}>
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Voltar"
-          className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
-        >
-          <ChevronLeftIcon className="size-6" aria-hidden />
-        </button>
-        <div className="flex min-w-0 flex-1 flex-col animate-slide-down">
-          <h1 className="truncate text-xl leading-tight font-semibold">{title}</h1>
-          <p className="truncate text-sm text-white/70">{subtitle}</p>
-        </div>
-        <UserMenuButton user={user} className="animate-pop-in ring-2 ring-white/20" />
-      </div>
-    </header>
-  );
+  return <AppHeader title={title} subtitle={subtitle} onBack={onBack} backAriaLabel="Voltar" />;
 }

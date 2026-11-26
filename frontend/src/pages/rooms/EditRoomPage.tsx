@@ -176,7 +176,7 @@ export default function EditRoomPage() {
       title="Editar turma"
       subtitle="Dados da disciplina"
       backTo={ROUTES.manageRooms}
-      trailing={<UserMenuButton user={user} />}
+      trailing={<UserMenuButton user={user} className="ring-2 ring-white/20" />}
     >
       {isLoading ? (
         <div className="flex justify-center py-10">

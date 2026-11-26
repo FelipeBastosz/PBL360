@@ -32,6 +32,7 @@ export const roomRepositoryStub = (): jest.Mocked<RoomRepository> => ({
   removeStudent: jest.fn(),
   findForStudent: jest.fn(),
   findStudents: jest.fn(),
+  transferOwnership: jest.fn(),
 });
 
 export const roomAccessStub = () => ({

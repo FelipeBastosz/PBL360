@@ -37,6 +37,7 @@ describe('GetProblemGradesUseCase', () => {
       findFormulaComponents: jest.fn().mockResolvedValue([]),
       saveGrades: jest.fn().mockResolvedValue(undefined),
       findProblemObservationTags: jest.fn(),
+      findStudentSessionDetails: jest.fn().mockResolvedValue([]),
     };
     roomAccess = {
       assertTutorCanAccessRoom: jest.fn().mockResolvedValue(undefined),

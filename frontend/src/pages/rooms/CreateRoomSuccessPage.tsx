@@ -50,7 +50,11 @@ export default function CreateRoomSuccessPage() {
   const roomName = room.nome || room.name;
 
   return (
-    <FlowShell title="Turma criada" backTo={ROUTES.rooms} trailing={<UserMenuButton user={user} />}>
+    <FlowShell
+      title="Turma criada"
+      backTo={ROUTES.rooms}
+      trailing={<UserMenuButton user={user} className="ring-2 ring-white/20" />}
+    >
       <SuccessState
         title="Turma criada com sucesso!"
         description={`Você criou a turma: ${roomName}`}
