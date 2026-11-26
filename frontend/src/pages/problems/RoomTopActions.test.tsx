@@ -27,6 +27,29 @@ describe('RoomTopActions', () => {
     expect(screen.queryByRole('button', { name: /relatório final/i })).not.toBeInTheDocument();
   });
 
+  it('links a student to their own evolution', () => {
+    render(
+      <MemoryRouter>
+        <RoomTopActions isProfessor={false} roomId="room-123" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('link', { name: /minha evolução/i })).toHaveAttribute(
+      'href',
+      '/turmas/room-123/minha-evolucao',
+    );
+  });
+
+  it('does not offer the student evolution to a professor', () => {
+    render(
+      <MemoryRouter>
+        <RoomTopActions isProfessor={true} roomId="room-123" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('link', { name: /minha evolução/i })).not.toBeInTheDocument();
+  });
+
   it('navigates to final report when clicking Relatório Final', async () => {
     const user = userEvent.setup();
     render(

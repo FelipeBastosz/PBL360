@@ -1,6 +1,11 @@
 import type { ComponentType, ReactNode, SVGProps } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DocumentTextIcon, UserGroupIcon, UserPlusIcon } from '@heroicons/react/24/outline';
+import {
+  ChartBarIcon,
+  DocumentTextIcon,
+  UserGroupIcon,
+  UserPlusIcon,
+} from '@heroicons/react/24/outline';
 import { ROUTES } from '@/routes/paths';
 import { INTERACTIVE_CARD_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
@@ -54,6 +59,15 @@ export function RoomTopActions({ isProfessor, roomId, onInvite }: RoomTopActions
             description="Notas de todos os problemas"
           />
         </button>
+      )}
+      {!isProfessor && (
+        <Link to={ROUTES.myPerformance.replace(':roomId', roomId)} className={ACTION_CLASS}>
+          <ActionContent
+            Icon={ChartBarIcon}
+            title="Minha evolução"
+            description="Suas notas por sessão"
+          />
+        </Link>
       )}
       <Link to={`${ROUTES.rooms}/${roomId}/participantes`} className={ACTION_CLASS}>
         <ActionContent Icon={UserGroupIcon} title="Turma" description="Participantes da turma" />
