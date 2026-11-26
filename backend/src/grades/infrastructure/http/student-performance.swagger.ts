@@ -20,8 +20,16 @@ export const GetStudentPerformanceSwaggerDocs = applyDecorators(
     description:
       'Retorna as notas calculadas pelas regras vigentes, a situação, modalidade, presença e contagens de marcações por sessão. O filtro problemaId limita a consulta a um problema da sala. Sessões sem nota permanecem com nota nula; marcações não alteram a nota.',
   }),
-  ApiParam({ name: 'salaId', description: 'Identificador UUID da sala.' }),
-  ApiParam({ name: 'alunoId', description: 'Identificador UUID do aluno vinculado à sala.' }),
+  ApiParam({
+    name: 'salaId',
+    description: 'Identificador UUID da sala.',
+    format: 'uuid',
+  }),
+  ApiParam({
+    name: 'alunoId',
+    description: 'Identificador UUID do aluno vinculado à sala.',
+    format: 'uuid',
+  }),
   ApiQuery({
     name: 'problemaId',
     required: false,

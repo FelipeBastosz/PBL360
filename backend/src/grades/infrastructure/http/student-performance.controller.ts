@@ -18,8 +18,8 @@ export class StudentPerformanceController {
   @Get()
   @GetStudentPerformanceSwaggerDocs
   get(
-    @UuidParam('salaId') roomId: string,
-    @UuidParam('alunoId') studentId: string,
+    @UuidParam('salaId', '4') roomId: string,
+    @UuidParam('alunoId', '4') studentId: string,
     @AuthenticatedUserId() tutorId: string,
     @Query() query: StudentPerformanceQueryDto,
   ): Promise<StudentPerformanceResponseDto> {

@@ -97,7 +97,8 @@ function mapStudentSessions(
   problemTitle: string,
 ): StudentPerformanceSessionDto[] {
   const student = result.alunos.find((item) => item.alunoId === studentId);
-  if (!student) throw new Error(`Missing calculated student ${studentId}.`);
+  if (!student)
+    throw new NotFoundError(`Aluno ${studentId} não encontrado no contexto calculado da sala.`);
   const sessionLabels = new Map(result.sessoes.map((session) => [session.id, session]));
   return student.sessoes.map((session) =>
     mapStudentSession(session, sessionLabels, problemId, problemTitle),
@@ -173,7 +174,7 @@ function enrichSession(
 
 function compareOrderedSessions(left: OrderedSession, right: OrderedSession): number {
   return (
-    left.sortDate.localeCompare(right.sortDate) ||
+    (left.sortDate < right.sortDate ? -1 : left.sortDate > right.sortDate ? 1 : 0) ||
     left.problemOrderIndex - right.problemOrderIndex ||
     left.sessionOrderIndex - right.sessionOrderIndex ||
     left.sessaoId.localeCompare(right.sessaoId)
