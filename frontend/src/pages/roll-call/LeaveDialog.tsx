@@ -20,7 +20,7 @@ export function LeaveDialog({ isOpen, onStay, onLeave }: LeaveDialogProps) {
         <button
           type="button"
           onClick={onLeave}
-          className="h-12 flex-1 rounded-xl bg-danger font-semibold text-white transition-[background-color,scale] duration-200 hover:bg-danger/90 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
+          className="h-12 flex-1 rounded-xl bg-danger-solid font-semibold text-white transition-[background-color,scale] duration-200 hover:bg-danger-solid/90 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
         >
           Sair sem salvar
         </button>

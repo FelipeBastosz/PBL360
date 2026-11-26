@@ -34,7 +34,7 @@ function EvaluationActionButtons({
         type="button"
         onClick={onSend}
         disabled={isSaving || isBlocked || isOverLimit}
-        className="w-full rounded-2xl bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-brand-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-2xl bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-brand-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       >
         Enviar avaliação e feedback
       </button>
@@ -42,7 +42,7 @@ function EvaluationActionButtons({
         type="button"
         onClick={onDraft}
         disabled={isSaving || isEnviada || isBlocked || isOverLimit}
-        className="w-full rounded-2xl border border-brand-900 bg-white py-3 text-sm font-bold text-brand-900 transition hover:bg-brand-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+        className="w-full rounded-2xl border border-brand-accent bg-elevated py-3 text-sm font-bold text-brand-accent transition hover:bg-brand-soft active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
       >
         Salvar rascunho
       </button>
@@ -105,7 +105,7 @@ function EvaluationMainContent({
   if (state.isLoading) {
     return (
       <div className="mt-12 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

@@ -14,7 +14,7 @@ type QueueEditorSheetProps = {
 };
 
 const MOVE =
-  'flex size-11 items-center justify-center rounded-xl border border-black/10 bg-white text-brand-900 disabled:opacity-30';
+  'flex size-11 items-center justify-center rounded-xl border border-border bg-elevated text-brand-accent disabled:opacity-30';
 
 function move(list: PokerStudent[], index: number, delta: number): PokerStudent[] {
   const target = index + delta;
@@ -34,7 +34,7 @@ type QueueRowProps = {
 
 function QueueRow({ student, position, isFirst, isLast, onMove }: QueueRowProps) {
   return (
-    <li className="flex items-center gap-3 border-b border-black/5 py-2">
+    <li className="flex items-center gap-3 border-b border-border-subtle py-2">
       <span className="w-5 text-center text-sm font-semibold text-muted">{position}</span>
       <StudentAvatar student={student} className="size-9 text-[13px]" />
       <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">

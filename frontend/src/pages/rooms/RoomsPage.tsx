@@ -23,7 +23,7 @@ function RoomsEmptyState({ isStudent }: { isStudent: boolean }) {
           : 'Você ainda não possui turmas cadastradas.'}
       </p>
       <p className="mt-1 text-sm text-muted">
-        Toque no <span className="font-bold text-brand-900">+</span> para começar.
+        Toque no <span className="font-bold text-brand-accent">+</span> para começar.
       </p>
     </div>
   );
@@ -53,7 +53,7 @@ function RoomsList({
   if (isLoading) {
     return (
       <div className="mt-10 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

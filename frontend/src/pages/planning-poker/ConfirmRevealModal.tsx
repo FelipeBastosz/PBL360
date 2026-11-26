@@ -29,7 +29,7 @@ export function ConfirmRevealModal({
         <WarningIcon tone="warning" />
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-bold text-ink">Revelar votos agora?</h2>
-          <p className="text-base font-semibold text-brand-900">{title}</p>
+          <p className="text-base font-semibold text-brand-accent">{title}</p>
           <p className="text-sm leading-normal text-pretty text-muted">
             {names}Quem não votou fica fora da média desta rodada.
           </p>

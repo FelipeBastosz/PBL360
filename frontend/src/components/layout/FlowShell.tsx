@@ -23,20 +23,18 @@ export function FlowShell({
 }: FlowShellProps) {
   return (
     <div className="flex min-h-dvh flex-col bg-surface">
-      <header className="sticky top-0 z-10 bg-brand-900 text-white shadow-[0_6px_18px_-12px_rgb(0_0_119/0.8)]">
+      <header className="sticky top-0 z-10 border-b border-brand-primary-border bg-brand-primary text-brand-on-primary shadow-[0_6px_18px_-12px_var(--color-brand-shadow)]">
         <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between gap-3')}>
           <div className="flex min-w-0 items-center gap-3">
             <Link
               to={backTo}
               aria-label={backLabel}
-              className="-ml-1 shrink-0 rounded-full p-2 text-white transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
+              className="-ml-1 shrink-0 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
             >
               <ChevronLeftIcon className="size-6" aria-hidden />
             </Link>
             <div className="flex min-w-0 flex-col animate-slide-down">
-              <h1 className="truncate text-base font-semibold leading-tight text-white sm:text-lg">
-                {title}
-              </h1>
+              <h1 className="truncate text-base font-semibold leading-tight sm:text-lg">{title}</h1>
               {subtitle && <span className="truncate text-xs text-white/70">{subtitle}</span>}
             </div>
           </div>
@@ -49,7 +47,7 @@ export function FlowShell({
           subtitle ? 'pt-6' : 'pt-14',
         )}
       >
-        <div className="w-full max-w-sm lg:max-w-md lg:rounded-[20px] lg:border lg:border-black/5 lg:p-10 lg:bg-white lg:shadow-xl">
+        <div className="w-full max-w-sm lg:max-w-md lg:rounded-[20px] lg:border lg:border-border-subtle lg:p-10 lg:bg-elevated lg:shadow-xl">
           {children}
         </div>
       </main>

@@ -19,7 +19,7 @@ type FieldProps = {
 function FormField({ id, label, placeholder, value, onChange, hasError }: FieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold text-brand-900">
+      <label htmlFor={id} className="text-sm font-semibold text-brand-accent">
         {label}
       </label>
       <input
@@ -28,10 +28,10 @@ function FormField({ id, label, placeholder, value, onChange, hasError }: FieldP
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`h-12 w-full rounded-[10px] border bg-white px-4 text-sm text-ink placeholder:text-placeholder focus:outline-none focus:ring-1 ${
+        className={`h-12 w-full rounded-[10px] border bg-elevated px-4 text-sm text-ink placeholder:text-placeholder focus:outline-none focus:ring-1 ${
           hasError
             ? 'border-danger focus:border-danger focus:ring-danger'
-            : 'border-black/10 focus:border-brand-900 focus:ring-brand-900'
+            : 'border-border focus:border-brand-accent focus:ring-brand-accent'
         }`}
       />
     </div>
@@ -79,7 +79,7 @@ function CreateFormulaForm({
       <div className="mt-2 flex justify-center">
         <button
           type="submit"
-          className="rounded-full bg-brand-900 px-8 py-2.5 text-base font-bold text-white shadow-md transition-all hover:bg-brand-800 active:scale-95"
+          className="rounded-full bg-brand-primary px-8 py-2.5 text-base font-bold text-white shadow-md transition-all hover:bg-brand-primary-hover active:scale-95"
         >
           Criar Fórmula
         </button>
@@ -93,12 +93,12 @@ export function CreateFormulaModal({ isOpen, onClose, onSubmit }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[22px] bg-white p-6 shadow-2xl">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[22px] bg-elevated p-6 shadow-2xl">
         <button
           type="button"
           onClick={onClose}
           aria-label="Fechar"
-          className="absolute right-5 top-5 flex size-7 items-center justify-center rounded-full border border-brand-900 text-brand-900 transition-colors hover:bg-brand-50"
+          className="absolute right-5 top-5 flex size-7 items-center justify-center rounded-full border border-brand-accent text-brand-accent transition-colors hover:bg-brand-soft"
         >
           <XMarkIcon className="size-4 stroke-[2.5]" />
         </button>

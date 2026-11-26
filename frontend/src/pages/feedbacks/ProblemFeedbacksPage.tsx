@@ -15,7 +15,7 @@ import { cn } from '@/utils/cn';
 function SessionItem({ item }: { item: ReceivedSessionFeedback }) {
   if (!item.feedback && item.avaliacoes) {
     return (
-      <div className="flex flex-col gap-2 rounded-2xl border border-black/5 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-2 rounded-2xl border border-border-subtle bg-elevated p-4 shadow-sm">
         <span className="text-xs font-semibold text-muted uppercase tracking-wider">
           {item.rotulo}
         </span>
@@ -25,7 +25,7 @@ function SessionItem({ item }: { item: ReceivedSessionFeedback }) {
   }
   if (!item.feedback) {
     return (
-      <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-black/10 bg-white p-4">
+      <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-border bg-elevated p-4">
         <span className="text-xs font-semibold text-muted uppercase tracking-wider">
           {item.rotulo}
         </span>
@@ -54,7 +54,7 @@ function FeedbacksList({ data }: { data: ReceivedProblemFeedbacksResponse }) {
         <section aria-label="Nota Final" className="flex justify-end">
           <span
             data-testid="feedback-nota-final"
-            className="rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-900"
+            className="rounded-lg border border-brand-border bg-brand-soft px-2.5 py-1 text-xs font-bold text-brand-accent"
           >
             Nota final {formatGrade(data.notaFinal)}
           </span>
@@ -64,7 +64,7 @@ function FeedbacksList({ data }: { data: ReceivedProblemFeedbacksResponse }) {
       {data.geral && <GeneralFeedbackSection feedback={data.geral} />}
       {data.sessoes.length > 0 && (
         <section aria-label="Feedbacks por Sessão" className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-brand-900 uppercase tracking-wider">
+          <h2 className="text-sm font-semibold text-brand-accent uppercase tracking-wider">
             Por Sessão
           </h2>
           <div className="flex flex-col gap-3">
@@ -98,7 +98,7 @@ export default function ProblemFeedbacksPage() {
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-6')}>
         {isLoading ? (
           <div className="mt-8 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
+            <Spinner className="size-8 text-brand-accent" />
           </div>
         ) : error ? (
           <Alert tone="error">{error}</Alert>

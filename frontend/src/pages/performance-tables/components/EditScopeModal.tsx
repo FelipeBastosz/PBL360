@@ -30,7 +30,7 @@ function ScopeRadioGroup({
           value="SESSAO"
           checked={scope === 'SESSAO'}
           onChange={() => onChange('SESSAO')}
-          className="accent-brand-900"
+          className="accent-brand-primary"
         />
         Aplicar só nesta sessão
       </label>
@@ -41,7 +41,7 @@ function ScopeRadioGroup({
           value="TODAS"
           checked={scope === 'TODAS'}
           onChange={() => onChange('TODAS')}
-          className="accent-brand-900"
+          className="accent-brand-primary"
         />
         Em todas as {count} {count === 1 ? 'sessão' : 'sessões'} que usam esta tabela
       </label>
@@ -55,12 +55,12 @@ function SessionList({ sessions }: { sessions: TableSessionUsage[] }) {
   return (
     <div className="flex flex-col gap-1 text-left">
       <span className="text-[11px] font-semibold text-muted uppercase">Sessões vinculadas:</span>
-      <ul className="flex max-h-28 flex-col gap-1 overflow-y-auto rounded-lg border border-black/5 bg-surface/50 p-2 text-xs">
+      <ul className="flex max-h-28 flex-col gap-1 overflow-y-auto rounded-lg border border-border-subtle bg-surface/50 p-2 text-xs">
         {sessions.map((s) => (
           <li key={s.sessaoId} className="flex items-center justify-between text-ink">
             <span className="font-medium">{s.rotulo}</span>
             {s.jaAconteceu && (
-              <span className="rounded bg-black/5 px-1.5 py-0.5 text-[10px] text-muted">
+              <span className="rounded bg-subtle px-1.5 py-0.5 text-[10px] text-muted">
                 já aconteceu
               </span>
             )}
@@ -83,7 +83,7 @@ export function EditScopeModal({ isOpen, isLoading, sessions, onConfirm, onCance
       aria-labelledby="edit-scope-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative flex w-full max-w-sm flex-col gap-4 rounded-[24px] bg-white p-6 shadow-2xl">
+      <div className="relative flex w-full max-w-sm flex-col gap-4 rounded-[24px] bg-elevated p-6 shadow-2xl">
         <button
           type="button"
           onClick={isLoading ? undefined : onCancel}
@@ -94,7 +94,7 @@ export function EditScopeModal({ isOpen, isLoading, sessions, onConfirm, onCance
           <XMarkIcon className="size-6" />
         </button>
 
-        <h2 id="edit-scope-title" className="text-left text-lg font-bold text-brand-900">
+        <h2 id="edit-scope-title" className="text-left text-lg font-bold text-brand-accent">
           Onde aplicar as alterações?
         </h2>
 
@@ -106,7 +106,7 @@ export function EditScopeModal({ isOpen, isLoading, sessions, onConfirm, onCance
             type="button"
             isLoading={isLoading}
             onClick={() => onConfirm(scope)}
-            className="bg-brand-900 hover:bg-brand-800 text-white border-transparent"
+            className="bg-brand-primary hover:bg-brand-primary-hover text-white border-transparent"
           >
             Confirmar e salvar
           </Button>

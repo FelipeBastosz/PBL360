@@ -31,7 +31,7 @@ function SheetHeader({ title, description, leading, onClose, titleId }: SheetHea
         type="button"
         onClick={onClose}
         aria-label="Fechar"
-        className="-mr-2 rounded-full p-2 text-muted transition-[background-color,scale] duration-200 hover:bg-black/5 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
+        className="-mr-2 rounded-full p-2 text-muted transition-[background-color,scale] duration-200 hover:bg-subtle active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent"
       >
         <XMarkIcon className="size-6" aria-hidden />
       </button>
@@ -72,12 +72,12 @@ export function Sheet({ isOpen, onClose, children, placement = 'bottom', ...head
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'relative flex max-h-[88dvh] w-full flex-col bg-white shadow-2xl focus:outline-none sm:max-w-lg sm:rounded-3xl sm:animate-pop-in',
+          'relative flex max-h-[88dvh] w-full flex-col border border-border-subtle bg-elevated shadow-2xl focus:outline-none sm:max-w-lg sm:rounded-3xl sm:animate-pop-in',
           isCentered ? 'max-w-md rounded-3xl animate-pop-in' : 'rounded-t-3xl animate-sheet-up',
         )}
       >
         {!isCentered && (
-          <div className="mx-auto mt-3 h-1.5 w-10 shrink-0 rounded-full bg-black/10 sm:hidden" />
+          <div className="mx-auto mt-3 h-1.5 w-10 shrink-0 rounded-full bg-border sm:hidden" />
         )}
         <SheetHeader {...header} onClose={onClose} titleId={titleId} />
         <div className="overflow-y-auto px-6 pt-2 pb-[max(1.5rem,env(safe-area-inset-bottom))]">

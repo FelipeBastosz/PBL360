@@ -14,17 +14,17 @@ export function ProfileNameField({ initialName, onSaveName }: ProfileNameFieldPr
   return (
     <div>
       <div className="flex items-center justify-between pb-1.5">
-        <label className="text-lg text-brand-900">Nome completo</label>
+        <label className="text-lg text-brand-accent">Nome completo</label>
         {!isEditing && (
           <button
             type="button"
             onClick={startEdit}
             aria-label="Editar nome completo"
             title="Editar nome completo"
-            className="flex items-center gap-1.5 p-1 text-ink/70 transition-colors hover:text-brand-900 focus-visible:outline-2 focus-visible:outline-brand-900"
+            className="flex items-center gap-1.5 p-1 text-ink/70 transition-colors hover:text-brand-accent focus-visible:outline-2 focus-visible:outline-brand-accent"
           >
             <PencilIcon className="size-5" aria-hidden />
-            <span className="text-sm font-semibold text-brand-900">Editar</span>
+            <span className="text-sm font-semibold text-brand-accent">Editar</span>
           </button>
         )}
       </div>
@@ -39,7 +39,7 @@ export function ProfileNameField({ initialName, onSaveName }: ProfileNameFieldPr
           onSave={save}
         />
       ) : (
-        <p className="flex h-12 w-full items-center rounded-xl border border-black/10 bg-white px-4 text-base text-ink shadow-[0_1px_2px_rgb(16_33_76/0.06)]">
+        <p className="flex h-12 w-full items-center rounded-xl border border-border bg-elevated px-4 text-base text-ink shadow-[0_1px_2px_rgb(0_0_0/0.08)]">
           {initialName}
         </p>
       )}

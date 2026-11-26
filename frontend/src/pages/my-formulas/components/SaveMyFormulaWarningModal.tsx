@@ -10,7 +10,7 @@ type Props = {
 
 function WarningIcon() {
   return (
-    <div className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand-900">
+    <div className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand-accent">
       <ExclamationTriangleIcon className="size-7" aria-hidden="true" />
     </div>
   );
@@ -21,7 +21,7 @@ function WarningBody() {
     <div className="flex flex-col gap-2">
       <h2 className="text-xl font-bold text-ink">Salvar alterações na fórmula?</h2>
       <div className="mt-2 rounded-xl bg-brand-soft/60 p-3 text-center">
-        <p className="text-sm font-medium text-brand-900 leading-relaxed">
+        <p className="text-sm font-medium text-brand-accent leading-relaxed">
           <strong>Atenção:</strong> as alterações serão salvas{' '}
           <strong>apenas na sua fórmula original</strong>. Cópias já associadas ou utilizadas em
           sessões <strong>não serão modificadas</strong>.
@@ -43,7 +43,7 @@ export function SaveMyFormulaWarningModal({ isOpen, isLoading, onConfirm, onCanc
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative flex w-full max-w-sm flex-col gap-4 rounded-[24px] bg-white p-6 text-center shadow-2xl">
+      <div className="relative flex w-full max-w-sm flex-col gap-4 rounded-[24px] bg-elevated p-6 text-center shadow-2xl">
         <button
           type="button"
           onClick={isLoading ? undefined : onCancel}
@@ -62,7 +62,7 @@ export function SaveMyFormulaWarningModal({ isOpen, isLoading, onConfirm, onCanc
               type="button"
               isLoading={isLoading}
               onClick={onConfirm}
-              className="bg-brand-900 hover:bg-brand-800 text-white border-transparent"
+              className="bg-brand-primary hover:bg-brand-primary-hover text-white border-transparent"
             >
               Confirmar e salvar
             </Button>

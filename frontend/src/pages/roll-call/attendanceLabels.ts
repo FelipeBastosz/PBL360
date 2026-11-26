@@ -10,6 +10,6 @@ export const STATUS_LABEL: Record<AttendanceStatus, string> = {
 export const STATUS_TEXT_CLASS: Record<AttendanceStatus, string> = {
   PRESENTE: 'text-success',
   ATRASADO: 'text-warning',
-  JUSTIFICADO: 'text-brand-900',
+  JUSTIFICADO: 'text-brand-accent',
   AUSENTE: 'text-danger',
 };

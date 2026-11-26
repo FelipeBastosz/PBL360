@@ -16,7 +16,7 @@ type FabMenuProps = {
 };
 
 const ACTION_CLASS =
-  'rounded-full border border-brand-900/15 bg-white px-5 py-2.5 text-sm font-semibold text-brand-900 shadow-[0_8px_20px_-10px_rgb(0_0_119/0.45)] transition-[background-color,scale] duration-200 animate-fade-up hover:bg-brand-50 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-900';
+  'rounded-full border border-brand-border bg-elevated px-5 py-2.5 text-sm font-semibold text-brand-accent shadow-[0_8px_20px_-10px_var(--color-brand-shadow)] transition-[background-color,scale] duration-200 animate-fade-up hover:bg-brand-soft active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-accent';
 
 function FabActionItem({
   action,
@@ -86,8 +86,10 @@ export function FabMenu({ label, actions }: FabMenuProps) {
           aria-label={label}
           aria-expanded={isOpen}
           className={cn(
-            'flex size-14 items-center justify-center rounded-full text-white shadow-[0_12px_28px_-10px_rgb(0_0_119/0.7)] transition-[rotate,scale,background-color] duration-300 ease-out animate-pop-in [animation-delay:250ms] hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900',
-            isOpen ? 'rotate-45 bg-danger' : 'bg-brand-900',
+            'flex size-14 items-center justify-center rounded-full border shadow-[0_12px_28px_-10px_var(--color-brand-shadow)] transition-[rotate,scale,background-color] duration-300 ease-out animate-pop-in [animation-delay:250ms] hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent',
+            isOpen
+              ? 'rotate-45 border-transparent bg-danger-solid text-white'
+              : 'border-brand-primary-border bg-brand-primary text-brand-on-primary',
           )}
         >
           <PlusIcon className="size-6" strokeWidth={2.5} aria-hidden />

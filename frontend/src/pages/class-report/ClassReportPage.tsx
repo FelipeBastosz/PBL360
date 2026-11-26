@@ -46,7 +46,7 @@ export function ClassReportPage() {
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-6')}>
         {isLoading && (
           <div className="mt-16 flex flex-col items-center justify-center gap-3">
-            <Spinner className="size-8 text-brand-900" />
+            <Spinner className="size-8 text-brand-accent" />
             <p className="text-sm text-muted">Carregando relatório final...</p>
           </div>
         )}

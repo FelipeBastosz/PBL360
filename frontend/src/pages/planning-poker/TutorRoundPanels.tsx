@@ -26,12 +26,12 @@ export function TutorVotingPanel({
     <>
       <PokerCard className="gap-2.5">
         <span className="text-[22px] font-bold text-ink">
-          <span className="text-brand-900">{round.votaram}</span> de {round.votantesEsperados}{' '}
+          <span className="text-brand-accent">{round.votaram}</span> de {round.votantesEsperados}{' '}
           votaram
         </span>
-        <div className="h-2 overflow-hidden rounded-full bg-brand-50">
+        <div className="h-2 overflow-hidden rounded-full bg-brand-soft">
           <div
-            className="h-full rounded-full bg-brand-900 transition-[width] duration-300 ease-out"
+            className="h-full rounded-full bg-brand-primary transition-[width] duration-300 ease-out"
             style={{ width: `${percent}%` }}
           />
         </div>
@@ -90,15 +90,15 @@ export function TutorRevealPanel({
     <>
       <PokerCard className="gap-2.5">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-sm font-bold text-brand-900">Distribuição dos votos</span>
+          <span className="text-sm font-bold text-brand-accent">Distribuição dos votos</span>
           <span className="text-xs text-muted">{summaryOf(round)}</span>
         </div>
         {distributionOf(round).map((item) => (
           <div key={item.label} className="flex items-center gap-2.5">
             <span className="w-[34px] text-right text-sm font-semibold text-ink">{item.label}</span>
-            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-brand-50">
+            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-brand-soft">
               <div
-                className="h-full rounded-full bg-brand-900"
+                className="h-full rounded-full bg-brand-primary"
                 style={{ width: `${item.percent}%` }}
               />
             </div>

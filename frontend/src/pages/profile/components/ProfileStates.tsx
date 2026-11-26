@@ -14,7 +14,7 @@ export function ProfileLoadingState() {
     <div className="min-h-dvh bg-surface">
       <BackHeader title="Meu Perfil" subtitle="Minha Conta" onBack={() => navigate(ROUTES.rooms)} />
       <main className={cn(PAGE_CONTAINER_CLASS, 'flex min-h-[60vh] items-center justify-center')}>
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </main>
     </div>
   );

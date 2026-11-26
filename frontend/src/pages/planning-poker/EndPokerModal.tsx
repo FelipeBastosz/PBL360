@@ -38,7 +38,7 @@ export function EndPokerModal({
         <WarningIcon tone="danger" />
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-bold text-ink">Encerrar planning poker?</h2>
-          <p className="text-base font-semibold text-brand-900">{sessionLabel}</p>
+          <p className="text-base font-semibold text-brand-accent">{sessionLabel}</p>
           <div className="mt-2 rounded-xl bg-danger/10 p-3">
             <p className="text-sm leading-relaxed font-medium text-danger">
               <strong>{title}</strong> {kept}
@@ -49,7 +49,7 @@ export function EndPokerModal({
           <Button
             onClick={onConfirm}
             isLoading={isBusy}
-            className="bg-danger shadow-none hover:bg-danger/90 focus-visible:outline-danger"
+            className="bg-danger-solid shadow-none hover:bg-danger-solid/90 focus-visible:outline-danger"
           >
             Sim, encerrar
           </Button>

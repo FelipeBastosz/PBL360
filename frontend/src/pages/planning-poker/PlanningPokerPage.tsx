@@ -30,7 +30,7 @@ export default function PlanningPokerPage() {
     if (!poker.state) {
       return (
         <div className="mt-16 flex justify-center">
-          <Spinner className="size-8 text-brand-900" />
+          <Spinner className="size-8 text-brand-accent" />
         </div>
       );
     }

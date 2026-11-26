@@ -19,7 +19,7 @@ type TutorWaitingPanelProps = {
 
 function Counter({ value, label, tone }: { value: number; label: string; tone: string }) {
   return (
-    <div className="flex flex-col items-center rounded-xl border border-black/10 bg-white px-1 py-2">
+    <div className="flex flex-col items-center rounded-xl border border-border bg-elevated px-1 py-2">
       <span className={`text-2xl leading-none font-bold ${tone}`}>{value}</span>
       <span className="mt-1 text-[11px] text-muted">{label}</span>
     </div>
@@ -47,13 +47,13 @@ function NextStudentCard({
         </div>
       </div>
       {rest.length > 0 && (
-        <div className="flex flex-col gap-2 border-t border-black/5 pt-3">
+        <div className="flex flex-col gap-2 border-t border-border-subtle pt-3">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[13px] text-muted">Na fila</span>
             <button
               type="button"
               onClick={onEditQueue}
-              className="text-sm font-medium text-brand-900 underline underline-offset-4"
+              className="text-sm font-medium text-brand-accent underline underline-offset-4"
             >
               Editar fila
             </button>
@@ -74,7 +74,7 @@ function ChooseStudent({ queue, onChoose }: Pick<TutorWaitingPanelProps, 'queue'
     <>
       <div
         role="status"
-        className="flex items-start gap-2 rounded-[10px] border border-brand-300/40 bg-brand-50 p-3 text-sm text-brand-900"
+        className="flex items-start gap-2 rounded-[10px] border border-brand-300/40 bg-brand-soft p-3 text-sm text-brand-accent"
       >
         <CursorArrowRaysIcon className="mt-px size-5 shrink-0" aria-hidden />
         <div className="flex-1">
@@ -89,7 +89,7 @@ function ChooseStudent({ queue, onChoose }: Pick<TutorWaitingPanelProps, 'queue'
             key={student.alunoId}
             type="button"
             onClick={() => onChoose(student.alunoId)}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-brand-900/15 bg-white py-1 pr-3 pl-1 text-sm font-medium text-ink shadow-[0_8px_20px_-14px_rgb(0_0_119/0.45)]"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-brand-accent/15 bg-elevated py-1 pr-3 pl-1 text-sm font-medium text-ink shadow-[0_8px_20px_-14px_var(--color-brand-shadow)]"
           >
             <StudentAvatar student={student} className="size-8 text-xs" />
             {firstName(student.nome)}
@@ -106,7 +106,7 @@ export function TutorWaitingPanel(props: TutorWaitingPanelProps) {
     <>
       <div className="grid grid-cols-2 gap-2">
         <Counter value={props.doneCount} label="Avaliados" tone="text-success" />
-        <Counter value={props.queue.length} label="Faltam" tone="text-brand-900" />
+        <Counter value={props.queue.length} label="Faltam" tone="text-brand-accent" />
       </div>
       {!allDone && props.order === 'SEQUENCIAL' && (
         <>

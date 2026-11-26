@@ -65,7 +65,7 @@ function ReacceptanceCheckbox({
         type="checkbox"
         checked={agreed}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 size-4 rounded border-black/20 text-brand-900 focus:ring-brand-900 cursor-pointer"
+        className="mt-0.5 size-4 rounded border-border accent-brand-primary focus:ring-brand-accent cursor-pointer"
       />
       <span>
         Eu li e concordo com os Termos de Uso e Política de Privacidade atualizados (Versão{' '}
@@ -85,7 +85,7 @@ function ReacceptanceBody({
   return (
     <div className="mt-4 flex flex-col gap-3 overflow-y-auto pr-1">
       <ReacceptanceNotice currentVersion={state.activeVersion} previousVersion={previousVersion} />
-      <div className="max-h-64 overflow-y-auto rounded-xl border border-black/10 bg-slate-50/70 p-4">
+      <div className="max-h-64 overflow-y-auto rounded-xl border border-border bg-card p-4">
         <TermsAndPrivacyContent
           term={state.term}
           isLoading={state.isTermLoading}
@@ -116,7 +116,7 @@ function ReacceptanceActions({
   onConfirm: () => void;
 }) {
   return (
-    <div className="mt-5 flex flex-col-reverse gap-2 border-t border-black/5 pt-4 sm:flex-row sm:justify-end">
+    <div className="mt-5 flex flex-col-reverse gap-2 border-t border-border-subtle pt-4 sm:flex-row sm:justify-end">
       <Button
         type="button"
         variant="outline"
@@ -143,7 +143,7 @@ function ReacceptanceActions({
 
 function ModalHeader() {
   return (
-    <div className="border-b border-black/5 pb-3 text-left">
+    <div className="border-b border-border-subtle pb-3 text-left">
       <h2 id="terms-reacceptance-title" className="text-xl font-semibold text-ink">
         Atualização dos Termos de Uso e Política de Privacidade
       </h2>
@@ -241,7 +241,7 @@ export function TermsReacceptanceModal({
       aria-labelledby="terms-reacceptance-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in"
     >
-      <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-3xl bg-white p-6 shadow-2xl animate-pop-in">
+      <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-3xl border border-border-subtle bg-elevated p-6 shadow-2xl animate-pop-in">
         <ModalHeader />
         <ReacceptanceBody previousVersion={previousVersion} state={state} />
         <ReacceptanceActions

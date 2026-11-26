@@ -8,7 +8,7 @@ import { StudentAvatar } from '../roll-call/StudentAvatar';
 const QUICK_CENTS = [0, 500, 600, 700, 750, 800, 850, 900, 950, 1000];
 const FINE_STEP = 10;
 const STEPPER =
-  'size-11 rounded-xl border border-black/10 bg-white text-lg font-bold disabled:opacity-30';
+  'size-11 rounded-xl border border-border bg-elevated text-lg font-bold disabled:opacity-30';
 
 type VoteScreenProps = {
   student: PokerStudent;
@@ -19,10 +19,10 @@ type VoteScreenProps = {
 
 function quickStyle(cents: number, value: number, nearest: number | undefined) {
   if (cents === value) {
-    return 'border-brand-900 bg-brand-900 text-white shadow-[0_10px_20px_-10px_rgb(0_0_119/0.7)]';
+    return 'border-brand-primary-border bg-brand-primary text-brand-on-primary shadow-[0_10px_20px_-10px_var(--color-brand-shadow)]';
   }
-  if (cents === nearest) return 'border-brand-900 bg-brand-50 text-ink';
-  return 'border-black/10 bg-white text-ink';
+  if (cents === nearest) return 'border-brand-accent bg-brand-soft text-ink';
+  return 'border-border bg-elevated text-ink';
 }
 
 function QuickCards({ value, onPick }: { value: number; onPick: (cents: number) => void }) {
@@ -50,9 +50,9 @@ function QuickCards({ value, onPick }: { value: number; onPick: (cents: number) 
 
 function FineAdjust({ value, onChange }: { value: number; onChange: (cents: number) => void }) {
   return (
-    <div className="flex items-center justify-between gap-2 border-t border-black/5 pt-3.5">
+    <div className="flex items-center justify-between gap-2 border-t border-border-subtle pt-3.5">
       <div className="flex min-w-0 flex-col">
-        <span className="text-sm font-semibold text-brand-900">Ajuste fino</span>
+        <span className="text-sm font-semibold text-brand-accent">Ajuste fino</span>
         <span className="text-xs text-muted">Décimos, de 0,1 em 0,1</span>
       </div>
       <div className="flex items-center gap-2">
@@ -73,7 +73,7 @@ function FineAdjust({ value, onChange }: { value: number; onChange: (cents: numb
           aria-label="Aumentar nota"
           disabled={value >= 1000}
           onClick={() => onChange(Math.min(1000, value + FINE_STEP))}
-          className={cn(STEPPER, 'text-brand-900')}
+          className={cn(STEPPER, 'text-brand-accent')}
         >
           +
         </button>
@@ -88,12 +88,12 @@ export function VoteScreen({ student, initial, isBusy, onVote }: VoteScreenProps
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-6">
       <div className="mx-auto flex max-w-md flex-col gap-4">
-        <div className="flex flex-col overflow-hidden rounded-[20px] border border-black/5 bg-white shadow-[0_14px_28px_-18px_rgb(0_0_119/0.45)] animate-pop-in">
-          <div className="h-1 bg-brand-900" />
+        <div className="flex flex-col overflow-hidden rounded-[20px] border border-border-subtle bg-elevated shadow-[0_14px_28px_-18px_var(--color-brand-shadow)] animate-pop-in">
+          <div className="h-1 bg-brand-stripe" />
           <div className="flex flex-col items-center gap-1.5 px-4 py-5 text-center">
             <StudentAvatar
               student={student}
-              className="size-[88px] text-[28px] shadow-[0_0_0_4px_#fff,0_10px_24px_-10px_rgb(0_0_119/0.6)]"
+              className="size-[88px] text-[28px] shadow-[0_0_0_4px_var(--color-elevated),0_10px_24px_-10px_var(--color-brand-shadow)]"
             />
             <span className="mt-1.5 text-xl font-semibold text-ink">{student.nome}</span>
             <span className="text-[13px] text-balance text-muted">
@@ -101,10 +101,10 @@ export function VoteScreen({ student, initial, isBusy, onVote }: VoteScreenProps
             </span>
           </div>
         </div>
-        <div className="flex flex-col gap-3.5 rounded-2xl border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgb(16_33_76/0.06)]">
+        <div className="flex flex-col gap-3.5 rounded-2xl border border-border-subtle bg-elevated p-4 shadow-[0_1px_2px_rgb(0_0_0/0.08)]">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-sm font-semibold text-brand-900">Sua nota</span>
-            <span className="text-[32px] leading-none font-bold text-brand-900">
+            <span className="text-sm font-semibold text-brand-accent">Sua nota</span>
+            <span className="text-[32px] leading-none font-bold text-brand-accent">
               {formatPokerGrade(cents / 100)}
             </span>
           </div>

@@ -6,7 +6,7 @@ import { cn } from '@/utils/cn';
 import { formatRelativeTime } from '@/utils/formatRelativeTime';
 
 const ICON_BUTTON_CLASS =
-  'inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-[background-color,scale] duration-200 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900';
+  'inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-[background-color,scale] duration-200 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent';
 
 type RowProps = {
   attachment: SessionAttachment;
@@ -30,14 +30,14 @@ function DeleteConfirmation({
     <div
       role="group"
       aria-label={`Confirmar exclusão de ${fileName}`}
-      className="flex w-full animate-fade-up flex-wrap items-center justify-end gap-2 border-t border-black/5 pt-3 [animation-duration:200ms]"
+      className="flex w-full animate-fade-up flex-wrap items-center justify-end gap-2 border-t border-border-subtle pt-3 [animation-duration:200ms]"
     >
       <span className="mr-auto text-sm text-ink">Excluir este documento?</span>
       <button
         type="button"
         onClick={onCancel}
         disabled={isDeleting}
-        className="rounded-lg px-3 py-2 text-sm font-semibold text-muted hover:bg-black/5"
+        className="rounded-lg px-3 py-2 text-sm font-semibold text-muted hover:bg-subtle"
       >
         Cancelar
       </button>
@@ -45,7 +45,7 @@ function DeleteConfirmation({
         type="button"
         onClick={onConfirm}
         disabled={isDeleting}
-        className="inline-flex items-center gap-2 rounded-lg bg-danger px-3 py-2 text-sm font-semibold text-white transition-[scale] duration-200 hover:opacity-90 active:scale-95 disabled:opacity-70"
+        className="inline-flex items-center gap-2 rounded-lg bg-danger-solid px-3 py-2 text-sm font-semibold text-white transition-[scale] duration-200 hover:opacity-90 active:scale-95 disabled:opacity-70"
       >
         {isDeleting && <Spinner className="size-4" />}
         Excluir
@@ -73,7 +73,7 @@ function RowActions({
         type="button"
         onClick={onDownload}
         aria-label={`Baixar ${fileName}`}
-        className={cn(ICON_BUTTON_CLASS, 'text-brand-900 hover:bg-brand-50')}
+        className={cn(ICON_BUTTON_CLASS, 'text-brand-accent hover:bg-brand-soft')}
       >
         <ArrowDownTrayIcon className="size-5" aria-hidden />
       </button>
@@ -104,7 +104,7 @@ export function SessionAttachmentRow({ attachment, canDelete, onDownload, onDele
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-xl border border-black/5 bg-surface p-3 animate-fade-up [animation-duration:260ms]">
+    <li className="flex flex-wrap items-center gap-3 rounded-xl border border-border-subtle bg-surface p-3 animate-fade-up [animation-duration:260ms]">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-danger-soft text-danger">
         <DocumentTextIcon className="size-5" aria-hidden />
       </span>

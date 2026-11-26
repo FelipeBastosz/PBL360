@@ -32,14 +32,17 @@ export class StudentPerformanceSessionDto {
   @ApiProperty({ nullable: true, description: 'Nota calculada; zero é um resultado válido.' })
   nota!: number | null;
 
-  @ApiProperty({ description: 'Situação calculada da nota.' })
+  @ApiProperty({
+    enum: ['AVALIADA', 'PENDENTE', 'JUSTIFICADA', 'AUSENTE'],
+    description: 'Situação calculada da nota.',
+  })
   situacao!: string;
 
   @ApiProperty({
-    enum: ['TUTOR', 'AUTOAVALIACAO', 'PARES'],
+    enum: ['TUTOR', 'AUTOAVALIACAO', 'PARES', 'PLANNING_POKER'],
     description: 'Modalidade de avaliação aplicada à sessão.',
   })
-  modalidade!: EvaluationModality;
+  modalidade!: EvaluationModality | 'PLANNING_POKER';
 
   @ApiProperty({
     enum: ['PRESENTE', 'ATRASADO', 'JUSTIFICADO', 'AUSENTE'],
@@ -53,10 +56,24 @@ export class StudentPerformanceSessionDto {
 }
 
 export class StudentPerformanceResponseDto {
-  @ApiProperty({ type: 'object', properties: { id: { type: 'string' }, nome: { type: 'string' } } })
+  @ApiProperty({
+    type: 'object',
+    required: ['id', 'nome'],
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      nome: { type: 'string' },
+    },
+  })
   sala!: { id: string; nome: string };
 
-  @ApiProperty({ type: 'object', properties: { id: { type: 'string' }, nome: { type: 'string' } } })
+  @ApiProperty({
+    type: 'object',
+    required: ['id', 'nome'],
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      nome: { type: 'string' },
+    },
+  })
   aluno!: { id: string; nome: string };
 
   @ApiProperty({ type: [StudentPerformanceSessionDto] })

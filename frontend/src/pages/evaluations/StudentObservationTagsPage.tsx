@@ -28,18 +28,18 @@ function TagRowActions({
           type="button"
           aria-label={`Diminuir ${tag.nome}`}
           onClick={onDecrement}
-          className="relative flex size-7 items-center justify-center rounded-lg border border-brand-900/20 bg-gray-50 text-xs font-bold text-brand-900 transition after:absolute after:-inset-2 hover:bg-brand-100 active:scale-95"
+          className="relative flex size-7 items-center justify-center rounded-lg border border-brand-accent/20 bg-subtle text-xs font-bold text-brand-accent transition after:absolute after:-inset-2 hover:bg-brand-soft active:scale-95"
         >
           −
         </button>
-        <span className="rounded-full bg-brand-900 px-3 py-1 text-xs font-bold text-white shadow-xs">
+        <span className="rounded-full bg-brand-primary px-3 py-1 text-xs font-bold text-white shadow-xs">
           {count} marcações
         </span>
         <button
           type="button"
           aria-label={`Aumentar ${tag.nome}`}
           onClick={onIncrement}
-          className="relative flex size-7 items-center justify-center rounded-lg border border-brand-900/20 bg-gray-50 text-xs font-bold text-brand-900 transition after:absolute after:-inset-2 hover:bg-brand-100 active:scale-95"
+          className="relative flex size-7 items-center justify-center rounded-lg border border-brand-accent/20 bg-subtle text-xs font-bold text-brand-accent transition after:absolute after:-inset-2 hover:bg-brand-soft active:scale-95"
         >
           +
         </button>
@@ -51,7 +51,7 @@ function TagRowActions({
     <button
       type="button"
       onClick={onIncrement}
-      className="relative flex items-center gap-1 rounded-full border border-brand-900 bg-white px-3.5 py-1 text-xs font-bold text-brand-900 transition after:absolute after:inset-x-0 after:-inset-y-2 hover:bg-brand-50 active:scale-95"
+      className="relative flex items-center gap-1 rounded-full border border-brand-accent bg-elevated px-3.5 py-1 text-xs font-bold text-brand-accent transition after:absolute after:inset-x-0 after:-inset-y-2 hover:bg-brand-soft active:scale-95"
     >
       <PlusIcon className="size-3.5 stroke-[2.5]" />
       <span>Marcar</span>
@@ -71,8 +71,8 @@ function TagRow({
   onDecrement: () => void;
 }) {
   return (
-    <div className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-black/5 bg-white p-3.5 shadow-xs">
-      <span className="min-w-32 flex-1 text-sm font-semibold break-words text-brand-900">
+    <div className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle bg-elevated p-3.5 shadow-xs">
+      <span className="min-w-32 flex-1 text-sm font-semibold break-words text-brand-accent">
         {tag.nome}
       </span>
       <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -105,7 +105,7 @@ function CreateTagSection({ onCreate }: { onCreate: (nome: string) => void }) {
       <button
         type="button"
         onClick={() => setIsFormOpen(true)}
-        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-brand-900/40 bg-brand-50/50 py-3 text-xs font-bold text-brand-900 hover:bg-brand-50"
+        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-brand-accent/40 bg-brand-soft/50 py-3 text-xs font-bold text-brand-accent hover:bg-brand-soft"
       >
         <PlusIcon className="size-4" />
         <span>criar nova marcação</span>
@@ -122,11 +122,11 @@ function CreateTagSection({ onCreate }: { onCreate: (nome: string) => void }) {
         maxLength={80}
         onChange={(e) => setNome(e.target.value)}
         autoFocus
-        className="h-10 min-w-0 flex-1 rounded-xl border border-brand-900 px-3 text-xs text-ink focus:outline-none"
+        className="h-10 min-w-0 flex-1 rounded-xl border border-brand-accent px-3 text-xs text-ink focus:outline-none"
       />
       <button
         type="submit"
-        className="rounded-xl bg-brand-900 px-4 text-xs font-bold text-white hover:bg-brand-800"
+        className="rounded-xl bg-brand-primary px-4 text-xs font-bold text-white hover:bg-brand-primary-hover"
       >
         Salvar
       </button>
@@ -212,13 +212,13 @@ export function StudentObservationTagsPage() {
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4')}>
         {isLoading && (
           <div className="mt-12 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
+            <Spinner className="size-8 text-brand-accent" />
           </div>
         )}
         {error && <Alert tone="error">{error.message}</Alert>}
         {!isLoading && (
           <div className="flex flex-col gap-3">
-            <h2 className="text-base font-bold break-words text-brand-900">
+            <h2 className="text-base font-bold break-words text-brand-accent">
               Todas as marcações: {studentName}
             </h2>
             <CreateTagSection onCreate={handleCreateTag} />
@@ -236,7 +236,7 @@ export function StudentObservationTagsPage() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="mt-4 w-full rounded-2xl bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg hover:bg-brand-800"
+              className="mt-4 w-full rounded-2xl bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg hover:bg-brand-primary-hover"
             >
               Concluir
             </button>

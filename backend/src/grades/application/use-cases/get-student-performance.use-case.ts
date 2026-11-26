@@ -25,6 +25,9 @@ interface StudentPerformanceInput {
 }
 
 type SessionDetail = Awaited<ReturnType<GradesRepository['findStudentSessionDetails']>>[number];
+type ProblemGradeResult = Awaited<ReturnType<GetProblemGradesUseCase['execute']>>;
+type ProblemGradeSession = ProblemGradeResult['alunos'][number]['sessoes'][number];
+type ProblemGradeLabel = ProblemGradeResult['sessoes'][number];
 
 interface OrderedSession extends StudentPerformanceSessionDto {
   sortDate: string;
@@ -97,7 +100,8 @@ function mapStudentSessions(
   problemTitle: string,
 ): StudentPerformanceSessionDto[] {
   const student = result.alunos.find((item) => item.alunoId === studentId);
-  if (!student) throw new Error(`Missing calculated student ${studentId}.`);
+  if (!student)
+    throw new NotFoundError(`Aluno ${studentId} não encontrado no contexto calculado da sala.`);
   const sessionLabels = new Map(result.sessoes.map((session) => [session.id, session]));
   return student.sessoes.map((session) =>
     mapStudentSession(session, sessionLabels, problemId, problemTitle),
@@ -105,15 +109,13 @@ function mapStudentSessions(
 }
 
 function mapStudentSession(
-  session: Awaited<
-    ReturnType<GetProblemGradesUseCase['execute']>
-  >['alunos'][number]['sessoes'][number],
-  labels: Map<string, Awaited<ReturnType<GetProblemGradesUseCase['execute']>>['sessoes'][number]>,
+  session: ProblemGradeSession,
+  labels: Map<string, ProblemGradeLabel>,
   problemId: string,
   problemTitle: string,
 ): StudentPerformanceSessionDto {
   const label = labels.get(session.sessaoId);
-  if (!label) throw new Error(`Missing session label for session ${session.sessaoId}.`);
+  if (!label) throw new NotFoundError(`Sessão ${session.sessaoId} não encontrada no cálculo.`);
   return {
     ...toStudentPerformanceSession(session, label, problemId, problemTitle),
     presenca: null,
@@ -121,11 +123,15 @@ function mapStudentSession(
   };
 }
 
+function resolveModality(session: ProblemGradeSession): StudentPerformanceSessionDto['modalidade'] {
+  return session.modalidade === 'PARES' && session.pares.origem === 'PLANNING_POKER'
+    ? 'PLANNING_POKER'
+    : session.modalidade;
+}
+
 function toStudentPerformanceSession(
-  session: Awaited<
-    ReturnType<GetProblemGradesUseCase['execute']>
-  >['alunos'][number]['sessoes'][number],
-  label: Awaited<ReturnType<GetProblemGradesUseCase['execute']>>['sessoes'][number],
+  session: ProblemGradeSession,
+  label: ProblemGradeLabel,
   problemId: string,
   problemTitle: string,
 ): Omit<StudentPerformanceSessionDto, 'presenca' | 'marcacoes'> {
@@ -137,7 +143,7 @@ function toStudentPerformanceSession(
     data: label.data,
     nota: session.nota,
     situacao: session.situacao,
-    modalidade: session.modalidade,
+    modalidade: resolveModality(session),
   };
 }
 
@@ -156,7 +162,8 @@ function enrichSession(
   session: StudentPerformanceSessionDto,
   detail?: SessionDetail,
 ): OrderedSession {
-  if (!detail) throw new Error(`Missing session details for session ${session.sessaoId}.`);
+  if (!detail)
+    throw new NotFoundError(`Detalhes da sessão ${session.sessaoId} não encontrados na sala.`);
   return {
     ...session,
     presenca: detail.attendance ? DOMAIN_TO_ATTENDANCE_STATUS[detail.attendance] : null,
@@ -173,7 +180,7 @@ function enrichSession(
 
 function compareOrderedSessions(left: OrderedSession, right: OrderedSession): number {
   return (
-    left.sortDate.localeCompare(right.sortDate) ||
+    (left.sortDate < right.sortDate ? -1 : left.sortDate > right.sortDate ? 1 : 0) ||
     left.problemOrderIndex - right.problemOrderIndex ||
     left.sessionOrderIndex - right.sessionOrderIndex ||
     left.sessaoId.localeCompare(right.sessaoId)

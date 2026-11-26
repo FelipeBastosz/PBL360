@@ -68,10 +68,10 @@ function EvaluationSwitch({
       onClick={onToggle}
       className={`relative h-6 w-11 shrink-0 after:absolute after:inset-x-0 after:-inset-y-2.5 rounded-full transition-colors ${
         isDisabled
-          ? 'cursor-not-allowed opacity-40 bg-black/20'
+          ? 'cursor-not-allowed opacity-40 bg-border'
           : isLiberada
             ? 'bg-success cursor-pointer'
-            : 'bg-black/20 cursor-pointer'
+            : 'bg-border cursor-pointer'
       }`}
     >
       <span
@@ -90,7 +90,7 @@ function EvaluationReleaseStatus({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-1 pl-6 text-xs text-muted">
-      <span className="font-semibold text-brand-900">
+      <span className="font-semibold text-brand-accent">
         {stats.enviadas} de {stats.esperadas}{' '}
         {stats.esperadas === 1 ? 'aluno enviou' : 'alunos enviaram'}
       </span>
@@ -142,17 +142,17 @@ export function SessionEvaluationsCard({
   const totalAlunosBase = releases?.autoavaliacao?.esperadas;
 
   return (
-    <div className="relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+    <div className="relative flex flex-col gap-3 rounded-2xl border border-border-subtle bg-elevated p-5 shadow-sm">
       <div>
-        <h3 className="text-base font-bold text-brand-900">Autoavaliação e pares</h3>
+        <h3 className="text-base font-bold text-brand-accent">Autoavaliação e pares</h3>
         <p className="mt-0.5 text-xs text-muted">
           Liberar formulários de avaliação dos alunos para esta sessão.
         </p>
       </div>
 
       {isAttendancePending && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-          <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+        <div className="flex items-start gap-2 rounded-xl border border-warning-line bg-warning-soft p-3 text-xs text-warning">
+          <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-warning" />
           <span>
             Salve a chamada da sessão primeiro para definir os alunos participantes e liberar as
             avaliações.
@@ -160,7 +160,7 @@ export function SessionEvaluationsCard({
         </div>
       )}
 
-      <div className="mt-1 flex flex-col divide-y divide-black/5 border-t border-black/5 pt-1">
+      <div className="mt-1 flex flex-col divide-y divide-border-subtle border-t border-border-subtle pt-1">
         <EvaluationToggleRow
           label="Autoavaliação dos alunos"
           info={releases?.autoavaliacao}

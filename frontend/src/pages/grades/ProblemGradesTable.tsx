@@ -24,13 +24,13 @@ export function ProblemGradesTable({
   feedbacks,
 }: ProblemGradesTableProps) {
   return (
-    <div className="rounded-3xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
+    <div className="rounded-3xl border border-border-subtle bg-elevated p-4 shadow-sm sm:p-6">
       <ProblemGradesTableToggle hideNames={hideNames} onToggleHideNames={onToggleHideNames} />
 
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <table className="w-full min-w-[500px] border-collapse text-left text-sm">
           <ProblemGradesTableHeader sessoes={data.sessoes} hideNames={hideNames} />
-          <tbody className="divide-y divide-black/5">
+          <tbody className="divide-y divide-border-subtle">
             {data.alunos.length === 0 ? (
               <tr>
                 <td

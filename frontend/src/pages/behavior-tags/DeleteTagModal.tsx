@@ -32,7 +32,7 @@ function ModalActions({
         type="button"
         isLoading={isLoading}
         onClick={onConfirm}
-        className="border-transparent bg-danger text-white hover:bg-danger/90 focus-visible:outline-danger"
+        className="border-transparent bg-danger-solid text-white hover:bg-danger-solid/90 focus-visible:outline-danger"
       >
         Sim, excluir marcação
       </Button>
@@ -65,13 +65,13 @@ export function DeleteTagModal({
       aria-labelledby="delete-tag-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 border-danger bg-white p-6 shadow-2xl animate-pop-in">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 border-danger bg-elevated p-6 shadow-2xl animate-pop-in">
         <button
           type="button"
           onClick={isLoading ? undefined : onCancel}
           disabled={isLoading}
           aria-label="Fechar confirmação"
-          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-black/5 hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-900"
+          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-subtle hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           <XMarkIcon className="size-6" />
         </button>
@@ -82,7 +82,7 @@ export function DeleteTagModal({
             <h2 id="delete-tag-title" className="text-xl font-bold text-ink">
               Excluir marcação?
             </h2>
-            <p className="text-base font-semibold text-brand-900">{tagName}</p>
+            <p className="text-base font-semibold text-brand-accent">{tagName}</p>
             <div className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
               <p className="text-sm font-medium text-danger leading-relaxed">
                 Atenção: se esta marcação tiver sido utilizada em algum aluno, ela irá sumir do
