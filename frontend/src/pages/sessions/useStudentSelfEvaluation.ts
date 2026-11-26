@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useToast } from '@/hooks/useToast';
+import { ApiError } from '@/services/apiError';
 import { evaluationService } from '@/services/evaluation.service';
 import { sessionService } from '@/services/session.service';
 import type { SelfAssessmentResponse } from '@/types/evaluation';
@@ -37,26 +38,40 @@ function useSelfEvaluationData(sessionId: string) {
     useCallback(() => evaluationService.getSelfAssessment(sessionId), [sessionId]),
   );
 
+  const reload = useCallback(
+    () =>
+      loadEval().then((r) => {
+        if (r.ok) {
+          setData(r.data);
+          setScores(buildInitialScores(r.data));
+          setNotaCargo(r.data.notaCargo ?? (r.data.papel ? 0 : null));
+        }
+      }),
+    [loadEval],
+  );
+
   useEffect(() => {
     loadSession().then((r) => r.ok && setSession(r.data));
-    loadEval().then((r) => {
-      if (r.ok) {
-        setData(r.data);
-        setScores(buildInitialScores(r.data));
-        setNotaCargo(r.data.notaCargo ?? (r.data.papel ? 0 : null));
-      }
-    });
-  }, [loadSession, loadEval]);
+    reload();
+  }, [loadSession, reload]);
 
-  return { data, session, scores, setScores, notaCargo, setNotaCargo, isLoading, error };
+  return { data, session, scores, setScores, notaCargo, setNotaCargo, isLoading, error, reload };
 }
 
+const LOCKED_STATUS = 423;
+
+type DraftTarget = {
+  timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
+  sessionId: string;
+  onLocked: () => void;
+};
+
 function scheduleDraftSave(
-  timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
-  sessionId: string,
+  target: DraftTarget,
   updated: Record<string, number>,
   cargo: number | null,
 ) {
+  const { timerRef, sessionId, onLocked } = target;
   if (timerRef.current) clearTimeout(timerRef.current);
   timerRef.current = setTimeout(() => {
     evaluationService
@@ -65,8 +80,14 @@ function scheduleDraftSave(
         notaCargo: cargo,
         enviar: false,
       })
-      .catch(() => {});
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === LOCKED_STATUS) onLocked();
+      });
   }, 500);
+}
+
+function isPastDeadline(deadline: string | null | undefined, now = Date.now()): boolean {
+  return Boolean(deadline) && new Date(deadline!).getTime() <= now;
 }
 
 function useSubmitSelfAssessment(
@@ -104,36 +125,43 @@ function useSubmitSelfAssessment(
   return { isSaving, saveError, handleSave };
 }
 
-function useSelfScoreHandlers(
-  sessionId: string,
-  dataStatus: string | undefined,
-  setScores: React.Dispatch<React.SetStateAction<Record<string, number>>>,
-  notaCargo: number | null,
-  setNotaCargo: React.Dispatch<React.SetStateAction<number | null>>,
-  scores: Record<string, number>,
-  draftTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
-) {
-  const isEditable =
-    dataStatus !== 'ENVIADA' && dataStatus !== 'NAO_PARTICIPOU' && dataStatus !== 'ENCERRADA';
+type ScoreHandlersInput = {
+  draft: DraftTarget;
+  data: SelfAssessmentResponse | null;
+  scores: Record<string, number>;
+  setScores: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  notaCargo: number | null;
+  setNotaCargo: React.Dispatch<React.SetStateAction<number | null>>;
+};
+
+const LOCKED_STATUSES = ['ENVIADA', 'NAO_PARTICIPOU', 'ENCERRADA'];
+
+function useSelfScoreHandlers(input: ScoreHandlersInput) {
+  const { draft, data, scores, setScores, notaCargo, setNotaCargo } = input;
+  const isEditable = !LOCKED_STATUSES.includes(data?.status ?? '');
+
+  const saveDraft = (updated: Record<string, number>, cargo: number | null) => {
+    if (!isEditable) return;
+    if (isPastDeadline(data?.prazo)) draft.onLocked();
+    else scheduleDraftSave(draft, updated, cargo);
+  };
 
   const setScore = (id: string, s: number) => {
-    setScores((prev) => {
-      const updated = { ...prev, [id]: s };
-      if (isEditable) scheduleDraftSave(draftTimerRef, sessionId, updated, notaCargo);
-      return updated;
-    });
+    const updated = { ...scores, [id]: s };
+    setScores(updated);
+    saveDraft(updated, notaCargo);
   };
 
   const handleCargoChange = (s: number) => {
     setNotaCargo(s);
-    if (isEditable) scheduleDraftSave(draftTimerRef, sessionId, scores, s);
+    saveDraft(scores, s);
   };
 
   return { setScore, handleCargoChange };
 }
 
 export function useStudentSelfEvaluation(sessionId: string) {
-  const { data, session, scores, setScores, notaCargo, setNotaCargo, isLoading, error } =
+  const { data, session, scores, setScores, notaCargo, setNotaCargo, isLoading, error, reload } =
     useSelfEvaluationData(sessionId);
   const {
     isSaving,
@@ -141,28 +169,28 @@ export function useStudentSelfEvaluation(sessionId: string) {
     handleSave: submitAssessment,
   } = useSubmitSelfAssessment(sessionId, scores, notaCargo);
   const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const timer = draftTimerRef.current;
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
+  const cancelPendingDraft = useCallback(() => {
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+    draftTimerRef.current = null;
   }, []);
 
-  const { setScore, handleCargoChange } = useSelfScoreHandlers(
-    sessionId,
-    data?.status,
+  useEffect(() => cancelPendingDraft, [cancelPendingDraft]);
+
+  const onLocked = useCallback(() => {
+    cancelPendingDraft();
+    void reload();
+  }, [cancelPendingDraft, reload]);
+
+  const { setScore, handleCargoChange } = useSelfScoreHandlers({
+    draft: { timerRef: draftTimerRef, sessionId, onLocked },
+    data,
+    scores,
     setScores,
     notaCargo,
     setNotaCargo,
-    scores,
-    draftTimerRef,
-  );
+  });
 
-  const didNotParticipate =
-    data?.participou === false ||
-    data?.status === 'NAO_PARTICIPOU' ||
-    Boolean(error && /não participou/i.test(error.message));
+  const didNotParticipate = data?.participou === false;
 
   return {
     data,
@@ -176,10 +204,7 @@ export function useStudentSelfEvaluation(sessionId: string) {
     error,
     saveError,
     didNotParticipate,
-    handleSave: () =>
-      submitAssessment(() => {
-        if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
-      }),
+    handleSave: () => submitAssessment(cancelPendingDraft),
     setScore,
     setNotaCargo: handleCargoChange,
   };
