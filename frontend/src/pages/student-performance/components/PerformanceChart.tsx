@@ -78,7 +78,7 @@ export function PerformanceChart({ sessions, selectedIndex, onSelect }: Performa
   return (
     <section
       aria-label="Notas por sessão"
-      className="rounded-2xl border border-black/5 bg-white p-3 shadow-[0_1px_2px_rgb(16_33_76/0.06)]"
+      className="rounded-2xl border border-border-subtle bg-elevated p-3 shadow-[0_1px_2px_rgb(0_0_0/0.06)]"
     >
       <ChartHeader total={total} />
       <div
@@ -166,8 +166,8 @@ function ChartMark({ point, index, label, isSelected, onSelect }: ChartMarkProps
         'absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center focus-visible:outline-2',
         isPending
           ? 'h-full w-8 rounded-lg focus-visible:outline-warning'
-          : 'size-11 rounded-full focus-visible:outline-brand-900',
-        isSelected && (isPending ? 'bg-warning/10' : 'bg-brand-900/10'),
+          : 'size-11 rounded-full focus-visible:outline-brand-accent',
+        isSelected && (isPending ? 'bg-warning/10' : 'bg-brand-soft'),
       )}
     >
       {isPending ? (
@@ -175,7 +175,7 @@ function ChartMark({ point, index, label, isSelected, onSelect }: ChartMarkProps
       ) : (
         <span
           className={cn(
-            'size-2.5 rounded-full bg-brand-900 ring-2 ring-white transition-[scale] duration-150',
+            'size-2.5 rounded-full bg-brand-accent ring-2 ring-elevated transition-[scale] duration-150',
             isSelected && 'scale-150',
           )}
         />

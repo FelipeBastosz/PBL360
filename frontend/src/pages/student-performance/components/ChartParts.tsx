@@ -40,7 +40,10 @@ export function GridLines() {
           key={tick.label}
           aria-hidden
           style={{ top: percent(tick.top) }}
-          className={cn('absolute inset-x-0 h-px', tick.top === 100 ? 'bg-black/25' : 'bg-black/5')}
+          className={cn(
+            'absolute inset-x-0 h-px',
+            tick.top === 100 ? 'bg-border' : 'bg-border-subtle',
+          )}
         />
       ))}
     </>
@@ -69,7 +72,7 @@ export function LinePath({ path }: { path: string }) {
       aria-hidden
       viewBox="0 0 1000 100"
       preserveAspectRatio="none"
-      className="absolute inset-0 size-full overflow-visible text-brand-900"
+      className="absolute inset-0 size-full overflow-visible text-brand-accent"
     >
       <path
         d={path}
@@ -90,7 +93,7 @@ export function SelectionGuide({ point }: { point?: ChartPoint }) {
     <span
       aria-hidden
       style={{ left: percent(point.x) }}
-      className="absolute -top-1.5 bottom-0 border-l-[1.5px] border-brand-900/30"
+      className="absolute -top-1.5 bottom-0 border-l-[1.5px] border-brand-border"
     />
   );
 }
@@ -110,7 +113,9 @@ export function XAxis({ sessions, points, selectedIndex }: XAxisProps) {
           style={{ left: percent(point.x) }}
           className={cn(
             'absolute top-1.5 -translate-x-1/2 text-[10px] whitespace-nowrap',
-            index === selectedIndex ? 'font-extrabold text-brand-900' : 'font-semibold text-muted',
+            index === selectedIndex
+              ? 'font-extrabold text-brand-accent'
+              : 'font-semibold text-muted',
           )}
         >
           {formatDayMonth(sessions[index].data)}
@@ -122,13 +127,13 @@ export function XAxis({ sessions, points, selectedIndex }: XAxisProps) {
 
 export function BandLabels({ bands, total }: { bands: ProblemBand[]; total: number }) {
   return (
-    <div aria-hidden className="relative ml-7 h-5 border-t border-black/10">
+    <div aria-hidden className="relative ml-7 h-5 border-t border-border">
       {bands.map((band) => (
         <span
           key={`${band.problemId}-${band.start}`}
           style={bandStyle(band, total)}
           title={band.title}
-          className="absolute top-1 truncate px-1 text-center text-[10px] font-bold text-brand-900"
+          className="absolute top-1 truncate px-1 text-center text-[10px] font-bold text-brand-accent"
         >
           {band.title}
         </span>

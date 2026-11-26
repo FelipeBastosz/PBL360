@@ -73,7 +73,7 @@ function PerformanceLink({ href }: { href: string }) {
   return (
     <Link
       to={href}
-      className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-900 px-4 text-base font-semibold text-white transition-[background-color,scale] duration-200 hover:bg-brand-700 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900"
+      className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 text-base font-semibold text-brand-on-primary transition-[background-color,scale] duration-200 hover:bg-brand-primary-hover active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
     >
       <ChartBarIcon className="size-5" aria-hidden />
       Ver evolução nas sessões

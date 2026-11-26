@@ -15,7 +15,7 @@ type StudentPickerProps = {
 export function StudentPicker({ students, studentId, studentName, onChange }: StudentPickerProps) {
   const options = students ?? [{ id: studentId, nome: studentName }];
   return (
-    <label className="relative flex items-center gap-3 rounded-2xl border border-black/5 bg-white p-3 shadow-[0_1px_2px_rgb(16_33_76/0.06)] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-900">
+    <label className="relative flex items-center gap-3 rounded-2xl border border-border-subtle bg-elevated p-3 shadow-[0_1px_2px_rgb(0_0_0/0.06)] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-accent">
       <MemberAvatar
         name={studentName || '?'}
         photoUserId={studentId}
@@ -25,7 +25,7 @@ export function StudentPicker({ students, studentId, studentName, onChange }: St
         <span className="text-xs font-semibold text-muted">Aluno</span>
         <span className="truncate text-base font-bold text-ink">{studentName || '…'}</span>
       </span>
-      <span aria-hidden className="flex items-center gap-1 text-sm font-semibold text-brand-900">
+      <span aria-hidden className="flex items-center gap-1 text-sm font-semibold text-brand-accent">
         Trocar
         <ChevronDownIcon className="size-4" />
       </span>
@@ -52,7 +52,7 @@ type ProblemFilterProps = {
 };
 
 const CHIP_CLASS =
-  'h-10 shrink-0 rounded-full border px-4 text-sm font-semibold whitespace-nowrap transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900';
+  'h-10 shrink-0 rounded-full border px-4 text-sm font-semibold whitespace-nowrap transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent';
 
 function FilterChip(props: { label: string; isActive: boolean; onClick: () => void }) {
   return (
@@ -63,8 +63,8 @@ function FilterChip(props: { label: string; isActive: boolean; onClick: () => vo
       className={cn(
         CHIP_CLASS,
         props.isActive
-          ? 'border-brand-900 bg-brand-900 text-white'
-          : 'border-black/10 bg-white text-ink hover:border-brand-300',
+          ? 'border-brand-primary bg-brand-primary text-brand-on-primary'
+          : 'border-border bg-elevated text-ink hover:border-brand-border',
       )}
     >
       {props.label}

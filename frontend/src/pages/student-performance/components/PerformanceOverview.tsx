@@ -25,14 +25,13 @@ function SessionDots({ sessions, selectedIndex, onSelect }: SessionDotsProps) {
           aria-label={`Ir para ${session.rotulo} de ${session.problemaTitulo}`}
           aria-current={index === selectedIndex ? 'true' : undefined}
           onClick={() => onSelect(index)}
-          className="flex h-6 items-center px-0.5 focus-visible:outline-2 focus-visible:outline-brand-900"
+          className="flex h-6 items-center px-0.5 focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           <span
             className={cn(
               'block h-2 rounded-full transition-[width,background-color] duration-200',
-              index === selectedIndex ? 'w-5 bg-brand-900' : 'w-2',
-              index !== selectedIndex &&
-                (session.nota === null ? 'bg-warning-line' : 'bg-black/15'),
+              index === selectedIndex ? 'w-5 bg-brand-accent' : 'w-2',
+              index !== selectedIndex && (session.nota === null ? 'bg-warning-line' : 'bg-border'),
             )}
           />
         </button>

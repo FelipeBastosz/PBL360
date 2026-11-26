@@ -17,7 +17,7 @@ const TONE_CLASS: Record<SituationTone, string> = {
   success: 'bg-success-soft text-success',
   warning: 'bg-warning-soft text-warning',
   danger: 'bg-danger-soft text-danger',
-  info: 'bg-brand-50 text-brand-900',
+  info: 'bg-brand-soft text-brand-accent',
 };
 
 type SessionProps = { session: StudentPerformanceSession };
@@ -56,14 +56,14 @@ export function GradeBar({ session }: { session: PerformanceTimelineSession }) {
       className={cn(
         'relative h-2.5 overflow-hidden rounded-full',
         isPending
-          ? 'bg-[repeating-linear-gradient(135deg,var(--color-warning-soft)_0_6px,#fde7c8_6px_12px)]'
-          : 'bg-black/5',
+          ? 'bg-[repeating-linear-gradient(135deg,var(--color-warning-soft)_0_6px,transparent_6px_12px)]'
+          : 'bg-subtle',
       )}
     >
       {!isPending && (
         <span
           style={{ width: `${(session.nota ?? 0) * 10}%` }}
-          className="absolute inset-y-0 left-0 rounded-full bg-brand-900 transition-[width] duration-300"
+          className="absolute inset-y-0 left-0 rounded-full bg-brand-accent transition-[width] duration-300"
         />
       )}
     </div>
@@ -117,7 +117,7 @@ export function SessionMarks({ session }: SessionProps) {
           {session.marcacoes.map((mark) => (
             <li
               key={mark.id}
-              className="inline-flex h-7 items-center gap-1 rounded-full bg-black/5 px-2.5 text-xs font-semibold text-ink"
+              className="inline-flex h-7 items-center gap-1 rounded-full bg-subtle px-2.5 text-xs font-semibold text-ink"
             >
               {mark.nome}
               {mark.quantidade > 1 && <span className="text-muted">×{mark.quantidade}</span>}

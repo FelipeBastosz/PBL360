@@ -18,7 +18,7 @@ type SessionFocusCardProps = {
 };
 
 const NAV_BUTTON_CLASS =
-  'flex size-11 items-center justify-center rounded-xl bg-black/5 text-brand-900 transition-[background-color,scale] duration-200 hover:bg-brand-50 active:scale-95 disabled:cursor-default disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-brand-900';
+  'flex size-11 items-center justify-center rounded-xl bg-subtle text-brand-accent transition-[background-color,scale] duration-200 hover:bg-brand-soft active:scale-95 disabled:cursor-default disabled:opacity-35 focus-visible:outline-2 focus-visible:outline-brand-accent';
 
 function useSwipe(onPrevious: () => void, onNext: () => void) {
   const startX = useRef<number | null>(null);
@@ -44,9 +44,9 @@ export function SessionFocusCard(props: SessionFocusCardProps) {
     <section
       aria-label="Sessão selecionada"
       {...swipe}
-      className="touch-pan-y overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_14px_30px_-20px_rgb(0_0_119/0.55)] select-none"
+      className="touch-pan-y overflow-hidden rounded-2xl border border-border-subtle bg-elevated shadow-[0_14px_30px_-20px_var(--color-brand-shadow)] select-none"
     >
-      <div className="flex items-center gap-1 border-b border-black/5 p-1.5">
+      <div className="flex items-center gap-1 border-b border-border-subtle p-1.5">
         <button
           type="button"
           aria-label="Sessão anterior"
@@ -72,7 +72,7 @@ export function SessionFocusCard(props: SessionFocusCardProps) {
       <div className="flex flex-col gap-4 p-4">
         <div className="flex items-start gap-3">
           <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <p className="truncate text-xs font-bold text-brand-900">{session.problemaTitulo}</p>
+            <p className="truncate text-xs font-bold text-brand-accent">{session.problemaTitulo}</p>
             <h2 className="text-2xl leading-tight font-bold text-ink">{session.rotulo}</h2>
             <p className="text-sm text-muted">{formatDate(session.data)}</p>
           </div>

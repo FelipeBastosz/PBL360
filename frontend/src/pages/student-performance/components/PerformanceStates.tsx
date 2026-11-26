@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { cn } from '@/utils/cn';
 
 const BOX_CLASS =
-  'flex flex-col items-center gap-3 rounded-2xl border border-black/5 bg-white px-4 py-10 text-center';
+  'flex flex-col items-center gap-3 rounded-2xl border border-border-subtle bg-elevated px-4 py-10 text-center';
 
 type StateMessageProps = {
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -30,7 +30,7 @@ function StateMessage({ Icon, iconClassName, title, children }: StateMessageProp
 export function PerformanceLoading({ studentName }: { studentName: string }) {
   return (
     <div className={BOX_CLASS}>
-      <Spinner className="size-8 text-brand-900" label="Carregando desempenho" />
+      <Spinner className="size-8 text-brand-accent" label="Carregando desempenho" />
       <p className="text-sm text-muted">
         Carregando desempenho{studentName ? ` de ${studentName}` : ''}…
       </p>
@@ -42,7 +42,7 @@ export function PerformanceEmpty(props: { message: string; onShowAll?: () => voi
   return (
     <StateMessage
       Icon={ChartBarIcon}
-      iconClassName="bg-brand-50 text-brand-900"
+      iconClassName="bg-brand-soft text-brand-accent"
       title="Nenhuma sessão registrada"
     >
       <p className="max-w-sm text-sm text-muted">{props.message}</p>
