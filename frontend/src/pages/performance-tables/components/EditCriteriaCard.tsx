@@ -1,5 +1,6 @@
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { CriterionInput } from '@/types/performanceTable';
+import { formatCriterionWeight } from '@/utils/criterionWeight';
 
 function CriterionRow({
   item,
@@ -17,7 +18,7 @@ function CriterionRow({
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-brand-accent">{item.nome}</span>
         <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-subtle px-3 py-1 text-xs font-bold text-ink">
-          {item.peso}
+          {formatCriterionWeight(item.peso)}
         </span>
       </div>
       <div className="mt-1 flex items-center justify-between">

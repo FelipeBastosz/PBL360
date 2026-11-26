@@ -5,6 +5,7 @@ import {
   DescriptionCard,
   EditActions,
 } from '@/pages/performance-tables/components/EditPerformanceTableCards';
+import { FormulaBalanceSummary } from '@/pages/performance-tables/components/FormulaBalanceSummary';
 import { MyFormulasHeader } from './components/MyFormulasHeader';
 import { MyFormulaEditModals } from './components/MyFormulaEditModals';
 import { useEditMyFormulaController } from './hooks/useEditMyFormula';
@@ -31,7 +32,9 @@ function EditMyFormulaMain({ ctrl }: { ctrl: ReturnType<typeof useEditMyFormulaC
             onOpenEdit={ctrl.modals.setEditingCriterion}
             onOpenDelete={ctrl.modals.setCriterionToDelete}
           />
+          <FormulaBalanceSummary totalWeight={ctrl.totalWeight} />
           <EditActions
+            disabled={ctrl.totalWeight !== 10}
             onSave={ctrl.handleRequestSave}
             onCancel={ctrl.handleExit}
             onDeleteFormula={() => ctrl.modals.setIsDeleteFormulaOpen(true)}

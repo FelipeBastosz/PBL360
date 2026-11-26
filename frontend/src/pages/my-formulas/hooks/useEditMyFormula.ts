@@ -5,11 +5,13 @@ import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
 import type { CriterionInput } from '@/types/performanceTable';
+import { isBalancedWeight, sumCriterionWeights } from '@/utils/criterionWeight';
 
 export function validateEditFormula(nome: string, count: number, totalWeight: number) {
   if (!nome.trim()) return 'O título da fórmula é obrigatório.';
   if (count === 0) return 'A tabela deve possuir ao menos um critério.';
-  if (totalWeight !== 10) return 'A soma dos pesos dos critérios deve ser exatamente 10.';
+  if (!isBalancedWeight(totalWeight))
+    return 'A soma dos pesos dos critérios deve ser exatamente 10.';
   return null;
 }
 
@@ -199,7 +201,7 @@ export function useEditMyFormulaController() {
   const modals = useFormulaModalStates();
   const actions = useEditFormulaActions(id!, data, modals);
 
-  const totalWeight = data.criterios.reduce((sum, c) => sum + c.peso, 0);
+  const totalWeight = sumCriterionWeights(data.criterios);
   const otherWeightsSum = modals.editingCriterion
     ? totalWeight - modals.editingCriterion.peso
     : totalWeight;

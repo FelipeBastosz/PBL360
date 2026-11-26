@@ -1,6 +1,7 @@
 import { Spinner } from '@/components/ui/Spinner';
 import { DescriptionCard, EditActions } from './EditPerformanceTableCards';
 import { EditCriteriaCard } from './EditCriteriaCard';
+import { FormulaBalanceSummary } from './FormulaBalanceSummary';
 import type { useEditPerformanceTableForm } from '../hooks/useEditPerformanceTableForm';
 import type { useEditModals } from '../hooks/useEditModals';
 
@@ -9,6 +10,7 @@ type MainContentProps = {
   modals: ReturnType<typeof useEditModals>;
   canEditCriteria: boolean;
   isSessionContext: boolean;
+  totalWeight: number;
   onRequestSave: () => void;
   onExit: () => void;
 };
@@ -18,6 +20,7 @@ export function EditMainContent({
   modals,
   canEditCriteria,
   isSessionContext,
+  totalWeight,
   onRequestSave,
   onExit,
 }: MainContentProps) {
@@ -43,11 +46,13 @@ export function EditMainContent({
         onOpenEdit={modals.setEditingCriterion}
         onOpenDelete={modals.setCriterionToDelete}
       />
+      <FormulaBalanceSummary totalWeight={totalWeight} />
       <EditActions
         onSave={onRequestSave}
         onCancel={onExit}
         canDeleteFormula={!isSessionContext}
         onDeleteFormula={() => modals.setIsDeleteFormulaOpen(true)}
+        disabled={totalWeight !== 10}
       />
     </>
   );

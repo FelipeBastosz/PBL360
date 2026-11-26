@@ -5,10 +5,12 @@ import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import type { CriterionInput } from '@/types/performanceTable';
 import { TitleCard, FormActions } from './components/CreatePerformanceTableCards';
+import { FormulaBalanceSummary } from './components/FormulaBalanceSummary';
 import { CreatePerformanceTableModals } from './components/CreatePerformanceTableModals';
 import { useCreatePerformanceTableForm } from './hooks/useCreatePerformanceTableForm';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
+import { formatCriterionWeight } from '@/utils/criterionWeight';
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {
   const { user } = useAuth();
@@ -46,7 +48,7 @@ function CriterionRow({
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-brand-accent">{item.nome}</span>
         <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-subtle px-3 py-1 text-xs font-bold text-ink">
-          {item.peso}
+          {formatCriterionWeight(item.peso)}
         </span>
       </div>
       <div className="mt-1 flex items-center justify-between">
@@ -120,12 +122,9 @@ function CriteriaCard({
 
 function useCreateCriteriaModals(
   setCriterios: React.Dispatch<React.SetStateAction<CriterionInput[]>>,
-  totalWeight: number,
 ) {
   const [editingCriterion, setEditingCriterion] = useState<CriterionInput | null>(null);
   const [criterionToDelete, setCriterionToDelete] = useState<CriterionInput | null>(null);
-
-  const otherWeightsSum = editingCriterion ? totalWeight - editingCriterion.peso : totalWeight;
 
   function handleSaveCriterion(upd: CriterionInput) {
     setCriterios((prev) => prev.map((c) => (c.ordem === upd.ordem ? upd : c)));
@@ -142,7 +141,6 @@ function useCreateCriteriaModals(
     setEditingCriterion,
     criterionToDelete,
     setCriterionToDelete,
-    otherWeightsSum,
     handleSaveCriterion,
     handleDeleteCriterion,
   };
@@ -163,11 +161,9 @@ function CreateModalsSection({ form, modals }: ModalsSectionProps) {
         form.setFieldErrors((prev) => ({ ...prev, criterios: false }));
       }}
       nextOrder={form.criterios.length + 1}
-      totalWeight={form.totalWeight}
       editingCriterion={modals.editingCriterion}
       onCloseEditModal={() => modals.setEditingCriterion(null)}
       onSaveCriterion={modals.handleSaveCriterion}
-      otherWeightsSum={modals.otherWeightsSum}
       criterionToDelete={modals.criterionToDelete}
       onCloseDeleteCriterion={() => modals.setCriterionToDelete(null)}
       onConfirmDeleteCriterion={modals.handleDeleteCriterion}
@@ -177,7 +173,7 @@ function CreateModalsSection({ form, modals }: ModalsSectionProps) {
 
 export function CreatePerformanceTablePage() {
   const form = useCreatePerformanceTableForm();
-  const modals = useCreateCriteriaModals(form.setCriterios, form.totalWeight);
+  const modals = useCreateCriteriaModals(form.setCriterios);
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
@@ -199,7 +195,12 @@ export function CreatePerformanceTablePage() {
           onOpenDelete={modals.setCriterionToDelete}
           hasError={Boolean(form.fieldErrors.criterios)}
         />
-        <FormActions onSave={form.handleSave} onCancel={() => form.navigate(-1)} />
+        <FormulaBalanceSummary totalWeight={form.totalWeight} />
+        <FormActions
+          onSave={form.handleSave}
+          onCancel={() => form.navigate(-1)}
+          disabled={form.totalWeight !== 10}
+        />
       </main>
       <CreateModalsSection form={form} modals={modals} />
     </div>
