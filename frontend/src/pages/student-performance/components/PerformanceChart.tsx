@@ -1,5 +1,5 @@
 import { type KeyboardEvent, type RefObject, useEffect, useRef } from 'react';
-import type { StudentPerformanceSession } from '@/types/studentPerformance';
+import type { PerformanceTimelineSession } from '@/types/studentPerformance';
 import { cn } from '@/utils/cn';
 import { formatDate } from '@/utils/date';
 import { formatGrade } from '@/utils/formatGrade';
@@ -31,7 +31,7 @@ const KEY_STEPS: Record<string, (index: number, last: number) => number> = {
 };
 
 type PerformanceChartProps = {
-  sessions: StudentPerformanceSession[];
+  sessions: PerformanceTimelineSession[];
   selectedIndex: number;
   onSelect: (index: number) => void;
 };
@@ -39,7 +39,18 @@ type PerformanceChartProps = {
 const pointButton = (plot: RefObject<HTMLDivElement | null>, index: number) =>
   plot.current?.querySelector<HTMLButtonElement>(`[data-index="${index}"]`);
 
-function pointLabel(session: StudentPerformanceSession) {
+// Moves only the chart's own scroll area: scrollIntoView would also scroll the page sideways.
+function centerInChart(plot: RefObject<HTMLDivElement | null>, index: number) {
+  const button = pointButton(plot, index);
+  const scroller = plot.current?.closest<HTMLElement>('[data-chart-scroll]');
+  if (!button || !scroller) return;
+  const buttonBox = button.getBoundingClientRect();
+  const scrollerBox = scroller.getBoundingClientRect();
+  const offset = buttonBox.left + buttonBox.width / 2 - (scrollerBox.left + scrollerBox.width / 2);
+  scroller.scrollTo?.({ left: scroller.scrollLeft + offset, behavior: 'smooth' });
+}
+
+function pointLabel(session: PerformanceTimelineSession) {
   const grade = session.nota === null ? 'sem nota' : `nota ${formatGrade(session.nota)}`;
   return `${session.problemaTitulo}, ${session.rotulo}, ${formatDate(session.data)}: ${grade}`;
 }
@@ -52,7 +63,7 @@ export function PerformanceChart({ sessions, selectedIndex, onSelect }: Performa
 
   // The scrollbar is hidden, so the chart follows the selection on its own.
   useEffect(() => {
-    pointButton(plotRef, selectedIndex)?.scrollIntoView?.({ block: 'nearest', inline: 'center' });
+    centerInChart(plotRef, selectedIndex);
   }, [selectedIndex]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -61,7 +72,7 @@ export function PerformanceChart({ sessions, selectedIndex, onSelect }: Performa
     event.preventDefault();
     const next = Math.min(Math.max(step(selectedIndex, total - 1), 0), total - 1);
     onSelect(next);
-    pointButton(plotRef, next)?.focus();
+    pointButton(plotRef, next)?.focus({ preventScroll: true });
   };
 
   return (
@@ -70,7 +81,10 @@ export function PerformanceChart({ sessions, selectedIndex, onSelect }: Performa
       className="rounded-2xl border border-black/5 bg-white p-3 shadow-[0_1px_2px_rgb(16_33_76/0.06)]"
     >
       <ChartHeader total={total} />
-      <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        data-chart-scroll
+        className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <div style={{ minWidth: Y_AXIS_WIDTH_PX + total * SESSION_WIDTH_PX }} className="pt-5 pr-2">
           <div className="flex">
             <YAxis />

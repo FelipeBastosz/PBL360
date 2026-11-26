@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { STATUS_LABEL, STATUS_TEXT_CLASS } from '@/pages/roll-call/attendanceLabels';
-import type { StudentPerformanceSession } from '@/types/studentPerformance';
+import type {
+  PerformanceTimelineSession,
+  StudentPerformanceSession,
+} from '@/types/studentPerformance';
 import { cn } from '@/utils/cn';
 import { formatGrade } from '@/utils/formatGrade';
 import {
@@ -19,13 +22,19 @@ const TONE_CLASS: Record<SituationTone, string> = {
 
 type SessionProps = { session: StudentPerformanceSession };
 
+type GradeDisplayProps = {
+  session: PerformanceTimelineSession;
+  // Why there is no grade yet, in the words of the view (situation, awaiting release...).
+  pendingNote: string;
+};
+
 // Values come straight from the API; nothing is recalculated here.
-export function GradeDisplay({ session }: SessionProps) {
+export function GradeDisplay({ session, pendingNote }: GradeDisplayProps) {
   if (session.nota === null) {
     return (
       <div className="shrink-0 rounded-xl border border-dashed border-warning-line bg-warning-soft px-3 py-2 text-center text-warning">
         <p className="text-sm font-bold">Sem nota</p>
-        <p className="text-[11px]">{situationLabel(session.situacao)}</p>
+        <p className="text-[11px]">{pendingNote}</p>
       </div>
     );
   }
@@ -37,7 +46,7 @@ export function GradeDisplay({ session }: SessionProps) {
   );
 }
 
-export function GradeBar({ session }: SessionProps) {
+export function GradeBar({ session }: { session: PerformanceTimelineSession }) {
   const isPending = session.nota === null;
   const label = isPending ? 'Sem nota registrada' : `Nota ${formatGrade(session.nota)} de 10`;
   return (
@@ -117,5 +126,15 @@ export function SessionMarks({ session }: SessionProps) {
         </ul>
       )}
     </div>
+  );
+}
+
+// Tutors see everything the API returns about the session, marks included.
+export function TutorSessionDetails({ session }: SessionProps) {
+  return (
+    <>
+      <SessionStats session={session} />
+      <SessionMarks session={session} />
+    </>
   );
 }

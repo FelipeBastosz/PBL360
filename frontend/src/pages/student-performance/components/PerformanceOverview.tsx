@@ -1,4 +1,5 @@
-import type { StudentPerformanceSession } from '@/types/studentPerformance';
+import type { ReactNode } from 'react';
+import type { PerformanceTimelineSession } from '@/types/studentPerformance';
 import { cn } from '@/utils/cn';
 import { useSessionSelection } from '../hooks/useSessionSelection';
 import { PerformanceChart } from './PerformanceChart';
@@ -8,7 +9,7 @@ import { SessionFocusCard } from './SessionFocusCard';
 const MAX_DOTS = 12;
 
 type SessionDotsProps = {
-  sessions: StudentPerformanceSession[];
+  sessions: PerformanceTimelineSession[];
   selectedIndex: number;
   onSelect: (index: number) => void;
 };
@@ -40,20 +41,35 @@ function SessionDots({ sessions, selectedIndex, onSelect }: SessionDotsProps) {
   );
 }
 
-export function PerformanceOverview({ sessions }: { sessions: StudentPerformanceSession[] }) {
-  const { index, select, previous, next } = useSessionSelection(sessions);
+type PerformanceOverviewProps<T extends PerformanceTimelineSession> = {
+  sessions: T[];
+  pendingNote: (session: T) => string;
+  renderDetails: (session: T) => ReactNode;
+};
 
+export function PerformanceOverview<T extends PerformanceTimelineSession>({
+  sessions,
+  pendingNote,
+  renderDetails,
+}: PerformanceOverviewProps<T>) {
+  const { index, select, previous, next } = useSessionSelection(sessions);
+  const session = sessions[index];
+
+  // minmax(0, …) keeps a long chart scrolling inside its card instead of widening the page.
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
       <PerformanceChart sessions={sessions} selectedIndex={index} onSelect={select} />
       <div className="flex flex-col gap-3">
         <SessionFocusCard
-          session={sessions[index]}
+          session={session}
           position={index + 1}
           total={sessions.length}
           onPrevious={previous}
           onNext={next}
-        />
+          pendingNote={pendingNote(session)}
+        >
+          {renderDetails(session)}
+        </SessionFocusCard>
         <SessionDots sessions={sessions} selectedIndex={index} onSelect={select} />
         <p className="text-center text-xs text-muted">
           Deslize o card ou toque em uma sessão no gráfico.

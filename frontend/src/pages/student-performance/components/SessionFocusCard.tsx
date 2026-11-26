@@ -1,13 +1,16 @@
-import { type PointerEvent, useRef } from 'react';
+import { type PointerEvent, type ReactNode, useRef } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import type { StudentPerformanceSession } from '@/types/studentPerformance';
+import type { PerformanceTimelineSession } from '@/types/studentPerformance';
 import { formatDate } from '@/utils/date';
-import { GradeBar, GradeDisplay, SessionMarks, SessionStats } from './SessionDetails';
+import { GradeBar, GradeDisplay } from './SessionDetails';
 
 const SWIPE_THRESHOLD_PX = 40;
 
 type SessionFocusCardProps = {
-  session: StudentPerformanceSession;
+  session: PerformanceTimelineSession;
+  pendingNote: string;
+  // What else the viewer may know about the session (tutors and students see different data).
+  children: ReactNode;
   position: number;
   total: number;
   onPrevious: () => void;
@@ -34,7 +37,7 @@ function useSwipe(onPrevious: () => void, onNext: () => void) {
 }
 
 export function SessionFocusCard(props: SessionFocusCardProps) {
-  const { session, position, total, onPrevious, onNext } = props;
+  const { session, position, total, onPrevious, onNext, pendingNote, children } = props;
   const swipe = useSwipe(onPrevious, onNext);
 
   return (
@@ -73,11 +76,10 @@ export function SessionFocusCard(props: SessionFocusCardProps) {
             <h2 className="text-2xl leading-tight font-bold text-ink">{session.rotulo}</h2>
             <p className="text-sm text-muted">{formatDate(session.data)}</p>
           </div>
-          <GradeDisplay session={session} />
+          <GradeDisplay session={session} pendingNote={pendingNote} />
         </div>
         <GradeBar session={session} />
-        <SessionStats session={session} />
-        <SessionMarks session={session} />
+        {children}
       </div>
     </section>
   );

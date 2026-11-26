@@ -1,5 +1,5 @@
 import type { SessionGradeModality } from '@/types/grades';
-import type { StudentPerformanceSession } from '@/types/studentPerformance';
+import type { PerformanceTimelineSession } from '@/types/studentPerformance';
 
 /** Position of a session in the chart, as percentages of the plot area. */
 export type ChartPoint = {
@@ -45,7 +45,7 @@ export const MODALITY_LABELS: Record<SessionGradeModality, string> = {
   PARES: 'Entre pares',
 };
 
-export function toChartPoints(sessions: StudentPerformanceSession[]): ChartPoint[] {
+export function toChartPoints(sessions: PerformanceTimelineSession[]): ChartPoint[] {
   return sessions.map((session, index) => ({
     id: session.sessaoId,
     x: ((index + 0.5) / sessions.length) * 100,
@@ -77,7 +77,7 @@ const toViewBoxPoint = (point: ChartPoint) =>
   `${round(point.x * VIEWBOX_X_SCALE)} ${round(point.y ?? 0)}`;
 
 /** Consecutive sessions of the same problem, used to label and shade the chart. */
-export function toProblemBands(sessions: StudentPerformanceSession[]): ProblemBand[] {
+export function toProblemBands(sessions: PerformanceTimelineSession[]): ProblemBand[] {
   return sessions.reduce<ProblemBand[]>((bands, session, index) => {
     const last = bands[bands.length - 1];
     if (last?.problemId === session.problemaId) {

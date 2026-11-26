@@ -1,4 +1,4 @@
-import type { StudentPerformanceSession } from '@/types/studentPerformance';
+import type { PerformanceTimelineSession } from '@/types/studentPerformance';
 import { cn } from '@/utils/cn';
 import { formatDayMonth } from '@/utils/date';
 import type { ChartPoint, ProblemBand } from '@/utils/studentPerformance';
@@ -96,7 +96,7 @@ export function SelectionGuide({ point }: { point?: ChartPoint }) {
 }
 
 type XAxisProps = {
-  sessions: StudentPerformanceSession[];
+  sessions: PerformanceTimelineSession[];
   points: ChartPoint[];
   selectedIndex: number;
 };

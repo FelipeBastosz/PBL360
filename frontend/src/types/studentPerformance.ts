@@ -21,6 +21,12 @@ export type StudentPerformanceSession = {
   marcacoes: StudentPerformanceMark[];
 };
 
+/** What the evolution chart and the session card need; shared by the tutor and student views. */
+export type PerformanceTimelineSession = Pick<
+  StudentPerformanceSession,
+  'sessaoId' | 'problemaId' | 'problemaTitulo' | 'rotulo' | 'data' | 'nota'
+>;
+
 export type StudentPerformance = {
   sala: { id: string; nome: string };
   aluno: { id: string; nome: string };

@@ -6,8 +6,10 @@ import { ROUTES } from '@/routes/paths';
 import type { ApiError } from '@/services/apiError';
 import type { StudentPerformance } from '@/types/studentPerformance';
 import { cn } from '@/utils/cn';
+import { situationLabel } from '@/utils/studentPerformance';
 import { ProblemFilter, StudentPicker } from './components/PerformanceFilters';
 import { PerformanceOverview } from './components/PerformanceOverview';
+import { TutorSessionDetails } from './components/SessionDetails';
 import {
   PerformanceEmpty,
   PerformanceError,
@@ -50,7 +52,14 @@ function PerformanceContent(props: ContentProps) {
       />
     );
   }
-  return <PerformanceOverview key={performance.aluno.id} sessions={performance.sessoes} />;
+  return (
+    <PerformanceOverview
+      key={performance.aluno.id}
+      sessions={performance.sessoes}
+      pendingNote={(session) => situationLabel(session.situacao)}
+      renderDetails={(session) => <TutorSessionDetails session={session} />}
+    />
+  );
 }
 
 function resolveNames(
