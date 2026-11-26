@@ -13,6 +13,7 @@ describe('GetSelfAssessmentUseCase', () => {
   const evaluations = {
     getSelfAssessment: jest.fn(),
     isStudentParticipating: jest.fn(),
+    isRollCallRecorded: jest.fn(),
   };
   let useCase: GetSelfAssessmentUseCase;
 
@@ -31,6 +32,7 @@ describe('GetSelfAssessmentUseCase', () => {
       adjustments: [],
     });
     evaluations.isStudentParticipating.mockResolvedValue(true);
+    evaluations.isRollCallRecorded.mockResolvedValue(true);
     useCase = new GetSelfAssessmentUseCase(
       sessionAccess as unknown as SessionAccessService,
       evaluations as never,
@@ -42,6 +44,7 @@ describe('GetSelfAssessmentUseCase', () => {
       status: 'RASCUNHO',
       criteria: [{ id: 'criterion-1', name: 'Participação' }],
       items: [{ criterionId: 'criterion-1', score: 7 }],
+      participated: true,
     });
     expect(sessionAccess.assertMemberCanAccessSession).toHaveBeenCalledWith('session-1', {
       id: 'student-1',
@@ -54,6 +57,16 @@ describe('GetSelfAssessmentUseCase', () => {
 
     await expect(useCase.execute('session-1', 'student-1', now)).resolves.toMatchObject({
       status: 'NAO_PARTICIPOU',
+      participated: false,
+    });
+  });
+
+  it('leaves participation unknown while the roll call was not recorded', async () => {
+    evaluations.isStudentParticipating.mockResolvedValue(false);
+    evaluations.isRollCallRecorded.mockResolvedValue(false);
+
+    await expect(useCase.execute('session-1', 'student-1', now)).resolves.toMatchObject({
+      participated: null,
     });
   });
 });

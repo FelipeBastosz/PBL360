@@ -84,6 +84,7 @@ describe('ListSessionPeersUseCase', () => {
       liberada: true,
       prazo: deadline,
       chamadaRealizada: true,
+      participou: true,
       formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [
         {
@@ -179,6 +180,7 @@ describe('ListSessionPeersUseCase', () => {
       liberada: true,
       prazo: null,
       chamadaRealizada: false,
+      participou: null,
       formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [],
     });
@@ -208,6 +210,7 @@ describe('ListSessionPeersUseCase', () => {
       liberada: true,
       prazo: null,
       chamadaRealizada: true,
+      participou: false,
       formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [],
     });

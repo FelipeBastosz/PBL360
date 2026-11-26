@@ -21,6 +21,8 @@ const mockGradesData: ProblemGradesResponse = {
         { sessaoId: 'sess-3', nota: 8.2, situacao: 'AVALIADA' },
       ],
       notaFinal: 8.6,
+      autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+      pares: { nota: null, situacao: 'PENDENTE' },
     },
     {
       alunoId: 'aluno-2',
@@ -32,6 +34,8 @@ const mockGradesData: ProblemGradesResponse = {
         { sessaoId: 'sess-3', nota: 0.0, situacao: 'AUSENTE' },
       ],
       notaFinal: 6.0,
+      autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+      pares: { nota: null, situacao: 'PENDENTE' },
     },
   ],
   mediaTurma: 7.3,

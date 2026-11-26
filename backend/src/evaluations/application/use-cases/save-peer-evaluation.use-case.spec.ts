@@ -319,7 +319,7 @@ describe('SavePeerEvaluationUseCase', () => {
       enviadaEm: null,
       notaCargo: null,
       formula: { criteriaWeight: 70, roleWeight: 30 },
-      criterios: [{ id: 'crit-1', nome: 'Critério 1', peso: 1, notaMaxima: 10 }],
+      criterios: [{ id: 'crit-1', nome: 'Critério 1', peso: 1, notaMaxima: 10, ordem: 1 }],
       itens: [{ criterioId: 'crit-1', nota: 7 }],
     });
   });
@@ -362,7 +362,7 @@ describe('SavePeerEvaluationUseCase', () => {
       enviadaEm: submittedAt,
       notaCargo: null,
       formula: { criteriaWeight: 70, roleWeight: 30 },
-      criterios: [{ id: 'crit-1', nome: 'Critério 1', peso: 1, notaMaxima: 10 }],
+      criterios: [{ id: 'crit-1', nome: 'Critério 1', peso: 1, notaMaxima: 10, ordem: 1 }],
       itens: [{ criterioId: 'crit-1', nota: 9.5 }],
     });
   });

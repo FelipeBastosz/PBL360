@@ -201,9 +201,7 @@ export function StudentEvaluationCenter({ children, feedbackHref }: StudentEvalu
   const { sessionId = '' } = useParams<{ sessionId: string }>();
   const { summary, isRollCallDone } = useStudentEvaluationCenterData(sessionId);
 
-  const didNotParticipate =
-    isRollCallDone &&
-    (summary?.participou === false || summary?.autoavaliacao.status === 'NAO_PARTICIPOU');
+  const didNotParticipate = isRollCallDone && summary?.participou === false;
 
   const { selfPath, peerPath } = getEvaluationPaths(sessionId, summary, didNotParticipate);
 

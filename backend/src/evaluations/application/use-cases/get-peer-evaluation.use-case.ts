@@ -25,6 +25,7 @@ export interface GetPeerEvaluationOutput {
     nome: string;
     peso: number;
     notaMaxima: number;
+    ordem: number;
   }>;
   itens: Array<{
     criterioId: string;
@@ -95,6 +96,7 @@ const mapPeerCriteria = (criteria: PeerEvaluationDetail['config']['criteria']) =
     nome: c.name,
     peso: c.weight,
     notaMaxima: 10,
+    ordem: c.orderIndex,
   }));
 
 const mapPeerItems = (items?: Array<{ criterionId: string; score: number }>) =>

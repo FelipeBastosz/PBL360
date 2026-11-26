@@ -8,6 +8,7 @@ import { StudentEvaluationCenter } from './StudentEvaluationCenter';
 vi.mock('@/services/evaluation.service');
 
 const mockReleasedSummary: StudentEvaluationSummaryResponse = {
+  participou: true,
   autoavaliacao: {
     liberada: true,
     prazo: null,
@@ -27,6 +28,7 @@ const mockReleasedSummary: StudentEvaluationSummaryResponse = {
 };
 
 const mockLockedSummary: StudentEvaluationSummaryResponse = {
+  participou: true,
   autoavaliacao: {
     liberada: false,
     prazo: null,
@@ -46,6 +48,7 @@ const mockLockedSummary: StudentEvaluationSummaryResponse = {
 };
 
 const mockPeersResponse: SessionPeersResponse = {
+  participou: true,
   liberada: true,
   prazo: null,
   colegas: [],
@@ -154,6 +157,7 @@ describe('StudentEvaluationCenter', () => {
   it('renders friendly empty state when student did not participate in the session after roll call', async () => {
     vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
       ...mockLockedSummary,
+      participou: false,
       autoavaliacao: {
         liberada: false,
         prazo: null,

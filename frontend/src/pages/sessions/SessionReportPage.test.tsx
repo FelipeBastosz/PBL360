@@ -239,6 +239,8 @@ describe('SessionReportPage', () => {
             matricula: '20241010',
             sessoes: [{ sessaoId: 'sess-1', nota: 8.5, situacao: 'AVALIADA' }],
             notaFinal: 8.5,
+            autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+            pares: { nota: null, situacao: 'PENDENTE' },
           },
           {
             alunoId: 'aluno-real-2',
@@ -246,6 +248,8 @@ describe('SessionReportPage', () => {
             matricula: '20241020',
             sessoes: [{ sessaoId: 'sess-1', nota: null, situacao: 'PENDENTE' }],
             notaFinal: null,
+            autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+            pares: { nota: null, situacao: 'PENDENTE' },
           },
         ],
         mediaTurma: 8.5,
