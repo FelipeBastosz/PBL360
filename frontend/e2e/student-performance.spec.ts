@@ -353,6 +353,26 @@ test.describe('Evolução do aluno no celular', () => {
   });
 });
 
+test.describe('Evolução com muitas sessões no celular', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test('rola só o gráfico, sem empurrar a página para o lado', async ({ page }) => {
+    await mockApi(page);
+    await page.goto(`/turmas/${ROOM_ID}/participantes/aluno-2/evolucao`);
+    await expect(focusCard(page).getByText('Sessão 18 de 18')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Sessão anterior' }).click();
+    await expect(focusCard(page).getByText('Sessão 17 de 18')).toBeVisible();
+
+    const layout = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth - window.innerWidth,
+      scrollX: window.scrollX,
+    }));
+    expect(layout.overflow).toBeLessThanOrEqual(0);
+    expect(layout.scrollX).toBe(0);
+  });
+});
+
 test.describe('E2E Full-Stack: evolução do aluno', () => {
   test.beforeEach(async () => {
     await skipIfBackendUnavailable();
