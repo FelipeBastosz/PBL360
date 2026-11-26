@@ -705,7 +705,7 @@ describe('Grades (e2e)', () => {
       .get(gradesPath())
       .set('Authorization', `Bearer ${tutorToken}`)
       .expect(200);
-    const gradesBody = gradesRes.body as GradesResponseBody & {
+    const gradesBody = gradesRes.body as {
       alunos: Array<{
         alunoId: string;
         sessoes: Array<{
@@ -713,6 +713,7 @@ describe('Grades (e2e)', () => {
           nota: number | null;
           situacao: string;
           modalidade: string;
+          pares: { origem?: string };
         }>;
       }>;
     };
@@ -736,9 +737,13 @@ describe('Grades (e2e)', () => {
     for (const perfSession of perfBody.sessoes) {
       const gradeSession = anaGrades.sessoes.find((s) => s.sessaoId === perfSession.sessaoId);
       expect(gradeSession).toBeDefined();
+      const expectedModality =
+        gradeSession?.modalidade === 'PARES' && gradeSession.pares.origem === 'PLANNING_POKER'
+          ? 'PLANNING_POKER'
+          : gradeSession?.modalidade;
       expect(perfSession.nota).toBe(gradeSession?.nota);
       expect(perfSession.situacao).toBe(gradeSession?.situacao);
-      expect(perfSession.modalidade).toBe(gradeSession?.modalidade);
+      expect(perfSession.modalidade).toBe(expectedModality);
     }
 
     expect(perfBody.sessoes).toMatchObject([
@@ -767,7 +772,7 @@ describe('Grades (e2e)', () => {
         sessaoId: pokerSessionId,
         nota: 8.4,
         situacao: 'AVALIADA',
-        modalidade: 'PARES',
+        modalidade: 'PLANNING_POKER',
         presenca: 'PRESENTE',
       },
       {

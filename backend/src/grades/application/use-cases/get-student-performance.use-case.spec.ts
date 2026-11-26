@@ -25,6 +25,7 @@ describe('GetStudentPerformanceUseCase', () => {
       nota: number | null;
       situacao: string;
       modalidade?: 'TUTOR' | 'AUTOAVALIACAO' | 'PARES';
+      paresOrigem?: 'FORMULARIO' | 'PLANNING_POKER';
     }>,
     includeStudent = true,
   ): GradesResponseDto => ({
@@ -41,7 +42,11 @@ describe('GetStudentPerformanceUseCase', () => {
               situacao: s.situacao,
               modalidade: s.modalidade ?? 'TUTOR',
               autoavaliacao: { nota: null, situacao: 'NAO_LIBERADA' },
-              pares: { nota: null, situacao: 'NAO_LIBERADA' },
+              pares: {
+                nota: null,
+                situacao: 'NAO_LIBERADA',
+                ...(s.paresOrigem ? { origem: s.paresOrigem } : {}),
+              },
             })),
             notaFinal: 0,
             autoavaliacao: { nota: null, situacao: 'PENDENTE' },
@@ -208,6 +213,54 @@ describe('GetStudentPerformanceUseCase', () => {
     expect(response.sessoes.map((s) => s.sessaoId)).toEqual(['p1-s1', 'p1-s2', 'p2-s1']);
     expect(response.sessoes.map((s) => s.presenca)).toEqual(['AUSENTE', 'JUSTIFICADO', 'ATRASADO']);
     expect(response.sessoes.map((s) => s.modalidade)).toEqual(['PARES', 'AUTOAVALIACAO', 'TUTOR']);
+  });
+
+  it('exposes PLANNING_POKER modality when peer grade origin is PLANNING_POKER', async () => {
+    const { details, grades, useCase } = makeDeps();
+    grades.execute.mockResolvedValue(
+      makeGradeResponse([
+        {
+          id: 'poker-s1',
+          rotulo: 'Sessão Poker',
+          data: '02-10-2026',
+          nota: 8.4,
+          situacao: 'AVALIADA',
+          modalidade: 'PARES',
+          paresOrigem: 'PLANNING_POKER',
+        },
+        {
+          id: 'form-s2',
+          rotulo: 'Sessão Pares',
+          data: '03-10-2026',
+          nota: 7.5,
+          situacao: 'AVALIADA',
+          modalidade: 'PARES',
+          paresOrigem: 'FORMULARIO',
+        },
+      ]),
+    );
+    details.findStudentSessionDetails.mockResolvedValue([
+      {
+        sessionId: 'poker-s1',
+        attendance: 'PRESENT',
+        marks: [],
+        date: '2026-10-02',
+        problemOrderIndex: 1,
+        sessionOrderIndex: 1,
+      },
+      {
+        sessionId: 'form-s2',
+        attendance: 'PRESENT',
+        marks: [],
+        date: '2026-10-03',
+        problemOrderIndex: 1,
+        sessionOrderIndex: 2,
+      },
+    ]);
+
+    const response = await useCase.execute({ roomId, studentId, tutorId });
+
+    expect(response.sessoes.map((s) => s.modalidade)).toEqual(['PLANNING_POKER', 'PARES']);
   });
 
   it('filters calculations and session details when problemId is provided', async () => {

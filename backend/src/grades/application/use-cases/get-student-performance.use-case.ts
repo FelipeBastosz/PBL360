@@ -25,6 +25,9 @@ interface StudentPerformanceInput {
 }
 
 type SessionDetail = Awaited<ReturnType<GradesRepository['findStudentSessionDetails']>>[number];
+type ProblemGradeResult = Awaited<ReturnType<GetProblemGradesUseCase['execute']>>;
+type ProblemGradeSession = ProblemGradeResult['alunos'][number]['sessoes'][number];
+type ProblemGradeLabel = ProblemGradeResult['sessoes'][number];
 
 interface OrderedSession extends StudentPerformanceSessionDto {
   sortDate: string;
@@ -106,10 +109,8 @@ function mapStudentSessions(
 }
 
 function mapStudentSession(
-  session: Awaited<
-    ReturnType<GetProblemGradesUseCase['execute']>
-  >['alunos'][number]['sessoes'][number],
-  labels: Map<string, Awaited<ReturnType<GetProblemGradesUseCase['execute']>>['sessoes'][number]>,
+  session: ProblemGradeSession,
+  labels: Map<string, ProblemGradeLabel>,
   problemId: string,
   problemTitle: string,
 ): StudentPerformanceSessionDto {
@@ -122,11 +123,15 @@ function mapStudentSession(
   };
 }
 
+function resolveModality(session: ProblemGradeSession): StudentPerformanceSessionDto['modalidade'] {
+  return session.modalidade === 'PARES' && session.pares.origem === 'PLANNING_POKER'
+    ? 'PLANNING_POKER'
+    : session.modalidade;
+}
+
 function toStudentPerformanceSession(
-  session: Awaited<
-    ReturnType<GetProblemGradesUseCase['execute']>
-  >['alunos'][number]['sessoes'][number],
-  label: Awaited<ReturnType<GetProblemGradesUseCase['execute']>>['sessoes'][number],
+  session: ProblemGradeSession,
+  label: ProblemGradeLabel,
   problemId: string,
   problemTitle: string,
 ): Omit<StudentPerformanceSessionDto, 'presenca' | 'marcacoes'> {
@@ -138,7 +143,7 @@ function toStudentPerformanceSession(
     data: label.data,
     nota: session.nota,
     situacao: session.situacao,
-    modalidade: session.modalidade,
+    modalidade: resolveModality(session),
   };
 }
 

@@ -39,10 +39,10 @@ export class StudentPerformanceSessionDto {
   situacao!: string;
 
   @ApiProperty({
-    enum: ['TUTOR', 'AUTOAVALIACAO', 'PARES'],
+    enum: ['TUTOR', 'AUTOAVALIACAO', 'PARES', 'PLANNING_POKER'],
     description: 'Modalidade de avaliação aplicada à sessão.',
   })
-  modalidade!: EvaluationModality;
+  modalidade!: EvaluationModality | 'PLANNING_POKER';
 
   @ApiProperty({
     enum: ['PRESENTE', 'ATRASADO', 'JUSTIFICADO', 'AUSENTE'],
