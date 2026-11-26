@@ -1,6 +1,9 @@
 import type { SessionGradeModality } from '@/types/grades';
 import type { AttendanceStatus } from '@/types/session';
 
+// The performance endpoint also reports sessions graded through Planning Poker.
+export type PerformanceModality = SessionGradeModality | 'PLANNING_POKER';
+
 export type StudentPerformanceMark = {
   id: string;
   nome: string;
@@ -16,7 +19,7 @@ export type StudentPerformanceSession = {
   // Calculated by the API; null means there is no grade yet, while 0 is a real grade.
   nota: number | null;
   situacao: string;
-  modalidade: SessionGradeModality;
+  modalidade: PerformanceModality;
   presenca: AttendanceStatus | null;
   marcacoes: StudentPerformanceMark[];
 };

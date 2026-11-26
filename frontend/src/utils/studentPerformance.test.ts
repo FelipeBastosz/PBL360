@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { StudentPerformanceSession } from '@/types/studentPerformance';
 import {
+  MODALITY_LABELS,
   situationLabel,
   situationTone,
   toChartPoints,
@@ -95,6 +96,10 @@ describe('situation helpers', () => {
     expect(situationLabel('NAO_ENVIADA')).toBe('Não enviada');
     expect(situationTone('AVALIADA')).toBe('success');
     expect(situationTone('PENDENTE')).toBe('warning');
+  });
+
+  it('labels the Planning Poker modality', () => {
+    expect(MODALITY_LABELS.PLANNING_POKER).toBe('Planning Poker');
   });
 
   it('keeps an unknown situation readable', () => {

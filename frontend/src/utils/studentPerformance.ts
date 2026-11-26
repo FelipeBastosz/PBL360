@@ -1,5 +1,4 @@
-import type { SessionGradeModality } from '@/types/grades';
-import type { PerformanceTimelineSession } from '@/types/studentPerformance';
+import type { PerformanceModality, PerformanceTimelineSession } from '@/types/studentPerformance';
 
 /** Position of a session in the chart, as percentages of the plot area. */
 export type ChartPoint = {
@@ -39,10 +38,11 @@ const SITUATION_TONES: Record<string, SituationTone> = {
   NAO_ENVIADA: 'danger',
 };
 
-export const MODALITY_LABELS: Record<SessionGradeModality, string> = {
+export const MODALITY_LABELS: Record<PerformanceModality, string> = {
   TUTOR: 'Tutor',
   AUTOAVALIACAO: 'Autoavaliação',
   PARES: 'Entre pares',
+  PLANNING_POKER: 'Planning Poker',
 };
 
 export function toChartPoints(sessions: PerformanceTimelineSession[]): ChartPoint[] {
