@@ -61,7 +61,7 @@ function EditableScoreInput({
       onBlur={handleBlur}
       onChange={handleChange}
       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-      className="w-14 rounded-xl border border-black/10 bg-surface/50 py-1.5 text-center text-base font-bold text-brand-900 transition focus:border-brand-900 focus:bg-white focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-70"
+      className="w-14 rounded-xl border border-border bg-surface/50 py-1.5 text-center text-base font-bold text-brand-accent transition focus:border-brand-accent focus:bg-elevated focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-70"
     />
   );
 }
@@ -77,7 +77,7 @@ function CriterionInfo({
 }) {
   return (
     <div className="flex min-w-0 flex-col pr-2">
-      <span className="font-semibold break-words text-brand-900">{nome}</span>
+      <span className="font-semibold break-words text-brand-accent">{nome}</span>
       <span className="text-sm text-muted">{subtitle ?? `Peso ${formatGrade(peso)}`}</span>
     </div>
   );
@@ -97,7 +97,7 @@ function StepButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex size-9 items-center justify-center rounded-lg border border-black/10 bg-white text-xl leading-none text-brand-900 transition active:bg-surface disabled:opacity-40 sm:size-10"
+      className="flex size-9 items-center justify-center rounded-lg border border-border bg-elevated text-xl leading-none text-brand-accent transition active:bg-surface disabled:opacity-40 sm:size-10"
     >
       {symbol}
     </button>
@@ -122,7 +122,7 @@ export function CriterionStepper({
     <div
       role="group"
       aria-label={criterion.nome}
-      className="flex items-center justify-between border-b border-black/5 py-4 last:border-0"
+      className="flex items-center justify-between border-b border-border-subtle py-4 last:border-0"
     >
       <CriterionInfo nome={criterion.nome} peso={criterion.peso} subtitle={subtitle} />
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">

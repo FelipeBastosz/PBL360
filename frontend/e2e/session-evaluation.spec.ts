@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { mockAcceptedTerms } from './helpers/terms';
+import { mockAuthenticatedShell } from './helpers/terms';
 
 const mockCriteria = [
   { id: 'crit-1', nome: 'Domínio do tema', peso: 50, ordem: 1 },
@@ -43,7 +43,7 @@ async function setupEvaluationMocks(page: Page) {
     );
   });
 
-  await mockAcceptedTerms(page);
+  await mockAuthenticatedShell(page);
   await page.route('**/api/sessoes/sess-1/**/disponibilidade', async (route) => {
     await route.fulfill({
       status: 200,

@@ -24,7 +24,7 @@ function StudentIdentifierCell({
 
   return (
     <td
-      className="sticky left-0 z-10 w-[200px] min-w-[160px] max-w-[240px] truncate border-r border-black/5 bg-white py-3.5 pr-4 pl-4 text-sm font-medium text-ink group-hover:bg-brand-50/50"
+      className="sticky left-0 z-10 w-[200px] min-w-[160px] max-w-[240px] truncate border-r border-border-subtle bg-elevated py-3.5 pr-4 pl-4 text-sm font-medium text-ink group-hover:bg-brand-soft/50"
       title={displayTitle}
     >
       {hideNames ? (
@@ -63,7 +63,7 @@ function AverageCell({ aluno }: { aluno: ClassReportStudent }) {
 
 export function ClassReportRowItem({ aluno, problemas, hideNames }: ClassReportRowItemProps) {
   return (
-    <tr className="group transition-colors duration-150 hover:bg-brand-50/30">
+    <tr className="group transition-colors duration-150 hover:bg-brand-soft/30">
       <StudentIdentifierCell aluno={aluno} hideNames={hideNames} />
       {problemas.map((problema) => {
         const grade =

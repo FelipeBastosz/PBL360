@@ -52,7 +52,7 @@ function TransferPrompt({
           type="button"
           disabled={isBusy}
           onClick={onTransfer}
-          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-brand-900 px-4 text-base font-semibold text-white shadow-sm transition-[background-color,scale] duration-200 hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-brand-900"
+          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-brand-primary px-4 text-base font-semibold text-white shadow-sm transition-[background-color,scale] duration-200 hover:bg-brand-primary-hover active:scale-[0.98] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           Transferir
         </button>
@@ -83,7 +83,7 @@ function RoleForm(props: RoleFormProps) {
           type="button"
           disabled={props.isBusy}
           onClick={props.onConfirm}
-          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-brand-900 px-4 text-base font-semibold text-white shadow-sm transition-[background-color,scale] duration-200 hover:bg-brand-700 active:scale-[0.98] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-brand-900"
+          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-brand-primary px-4 text-base font-semibold text-white shadow-sm transition-[background-color,scale] duration-200 hover:bg-brand-primary-hover active:scale-[0.98] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           Confirmar
         </button>

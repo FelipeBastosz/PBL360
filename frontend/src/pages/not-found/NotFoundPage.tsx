@@ -10,7 +10,7 @@ export default function NotFoundPage() {
         <h1 className="text-2xl font-semibold text-ink">Página não encontrada</h1>
         <p className="text-muted">O endereço acessado não existe ou foi removido.</p>
       </div>
-      <Link to={ROUTES.splash} className="font-semibold text-brand-900 hover:underline">
+      <Link to={ROUTES.splash} className="font-semibold text-brand-accent hover:underline">
         Voltar para o início
       </Link>
     </main>

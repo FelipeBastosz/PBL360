@@ -33,12 +33,12 @@ function TabSwitch({
     <div
       role="tablist"
       aria-label="Quem convidar"
-      className="relative grid grid-cols-2 rounded-xl bg-black/5 p-1"
+      className="relative grid grid-cols-2 rounded-xl bg-subtle p-1"
     >
       <span
         aria-hidden
         className={cn(
-          'absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-white shadow-sm transition-[translate] duration-300 ease-out',
+          'absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-elevated shadow-sm transition-[translate] duration-300 ease-out',
           value === 'professores' && 'translate-x-full',
         )}
       />
@@ -52,8 +52,8 @@ function TabSwitch({
           aria-controls={`${idPrefix}-${tab.id}-panel`}
           onClick={() => onChange(tab.id)}
           className={cn(
-            'relative h-10 rounded-lg text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-brand-900',
-            value === tab.id ? 'text-brand-900' : 'text-muted hover:text-ink',
+            'relative h-10 rounded-lg text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-brand-accent',
+            value === tab.id ? 'text-brand-accent' : 'text-muted hover:text-ink',
           )}
         >
           {tab.label}

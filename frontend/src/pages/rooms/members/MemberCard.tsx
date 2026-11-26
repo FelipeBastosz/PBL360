@@ -20,9 +20,9 @@ export function MemberCard({ name, photoUserId, badge, onSelect }: MemberCardPro
       className={cn(INTERACTIVE_CARD_CLASS, 'items-center gap-2 px-2 py-4 text-center')}
     >
       <MemberAvatar name={name} photoUserId={photoUserId} className="size-14 text-xl" />
-      <span className="w-full truncate font-semibold text-brand-900">{firstName(name)}</span>
+      <span className="w-full truncate font-semibold text-brand-accent">{firstName(name)}</span>
       {badge && (
-        <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-bold text-brand-900">
+        <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-bold text-brand-accent">
           {badge}
         </span>
       )}

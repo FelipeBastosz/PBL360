@@ -17,7 +17,7 @@ export function SelfEvaluationHeader({
   onBack: () => void;
 }) {
   return (
-    <header className="shrink-0 bg-brand-900 text-white">
+    <header className="shrink-0 border-b border-brand-primary-border bg-brand-primary text-white">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex min-h-16 items-center justify-between py-2')}>
         <div className="flex items-center gap-3">
           <button

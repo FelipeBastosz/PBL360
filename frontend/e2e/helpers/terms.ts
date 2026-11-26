@@ -16,3 +16,14 @@ export async function mockAcceptedTerms(page: Page) {
     }),
   );
 }
+
+export async function mockAuthenticatedShell(page: Page) {
+  await mockAcceptedTerms(page);
+  await page.route('**/api/usuarios/minhas-preferencias', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ tema: 'CLARO', cor: '#000077' }),
+    }),
+  );
+}

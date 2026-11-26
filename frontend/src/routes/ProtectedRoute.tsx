@@ -80,7 +80,7 @@ function useTermsAcceptanceCheck(isAuthenticated: boolean, currentUserId: string
 function TermsCheckErrorCard({ onRetry, onLogout }: { onRetry: () => void; onLogout: () => void }) {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-surface p-4">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-3xl border border-border-subtle bg-elevated p-6 shadow-xl">
         <h1 className="text-lg font-semibold text-ink">Não foi possível verificar os termos</h1>
         <Alert tone="error" className="mt-4 text-xs">
           Não foi possível consultar o status dos Termos de Uso e Política de Privacidade. Tente

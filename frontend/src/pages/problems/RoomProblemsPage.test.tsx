@@ -1,9 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/contexts/authContext';
 import { ApiError } from '@/services/apiError';
+import { conversationService } from '@/services/conversation.service';
 import { roomService } from '@/services/room.service';
 import { problemService } from '@/services/problem.service';
 import type { UserResponse } from '@/types/auth';
@@ -21,6 +22,12 @@ vi.mock('@/services/room.service', () => ({
   roomService: {
     getById: vi.fn(),
     listMyRooms: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/conversation.service', () => ({
+  conversationService: {
+    listForRoom: vi.fn(),
   },
 }));
 
@@ -105,6 +112,24 @@ describe('RoomProblemsPage', () => {
     vi.clearAllMocks();
     vi.mocked(roomService.getById).mockResolvedValue(mockRoom);
     vi.mocked(problemService.list).mockResolvedValue([]);
+    vi.mocked(conversationService.listForRoom).mockResolvedValue([]);
+    vi.mocked(roomService.listMyRooms).mockResolvedValue([
+      { salaId: 'room-1', nome: 'MI - Algoritmos - TP02', semestre: '2026.2', totalAlunos: 3 },
+    ]);
+  });
+
+  it.each([
+    ['professor', mockTeacher],
+    ['student', mockStudent],
+  ])('offers the room chat to a %s', async (_role, user) => {
+    renderComponent(user);
+
+    // The chat only mounts once the room has loaded, and fetches its conversations in an
+    // effect that may run after the button is already on screen.
+    expect(
+      await screen.findByRole('button', { name: 'Abrir conversas' }, { timeout: 3000 }),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(conversationService.listForRoom).toHaveBeenCalledWith('room-1'));
   });
 
   describe('when user is a professor', () => {
@@ -195,6 +220,7 @@ describe('RoomProblemsPage', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(
         'Acesso negado para o seu perfil de usuário.',
       );
+      expect(screen.queryByRole('button', { name: /abrir conversas/i })).not.toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Ver minhas turmas' })).toBeInTheDocument();
       expect(screen.queryByPlaceholderText('Pesquisar problema')).not.toBeInTheDocument();
       expect(screen.queryByText(/Nenhum problema disponível/)).not.toBeInTheDocument();

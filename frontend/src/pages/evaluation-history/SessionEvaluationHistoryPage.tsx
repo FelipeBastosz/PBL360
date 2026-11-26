@@ -60,7 +60,7 @@ export default function SessionEvaluationHistoryPage() {
         {error && <Alert tone="error">{error.message}</Alert>}
         {isLoading ? (
           <div className="mt-10 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
+            <Spinner className="size-8 text-brand-accent" />
           </div>
         ) : (
           !error && <HistoryList students={students} onSelect={adjustment.setSelected} />

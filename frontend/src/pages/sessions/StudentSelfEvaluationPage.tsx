@@ -90,7 +90,7 @@ function SelfEvaluationCriteriaCard({
 
   return (
     <div className={cn(CARD_CLASS, 'p-4')}>
-      <div className="divide-y divide-black/5">
+      <div className="divide-y divide-border-subtle">
         {evalState.data.criterios.map((c) => (
           <CriterionStepper
             key={c.id}
@@ -177,7 +177,7 @@ function EvaluationBody({
       <UserSelfCard name={userName} papel={evalState.papel} isSubmitted={isSubmitted} />
       {evalState.isLoading ? (
         <div className="mt-10 flex justify-center">
-          <Spinner className="size-8 text-brand-900" />
+          <Spinner className="size-8 text-brand-accent" />
         </div>
       ) : (
         <EvaluationCriteriaForm

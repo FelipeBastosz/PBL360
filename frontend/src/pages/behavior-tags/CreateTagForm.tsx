@@ -27,20 +27,20 @@ function TagFormFields({
         onChange={(e) => onChange(e.target.value)}
         maxLength={80}
         autoFocus
-        className="h-11 flex-1 rounded-xl border border-black/15 bg-surface px-3.5 text-sm text-ink placeholder:text-placeholder focus:border-brand-900 focus:outline-none focus:ring-1 focus:ring-brand-900"
+        className="h-11 flex-1 rounded-xl border border-border bg-surface px-3.5 text-sm text-ink placeholder:text-placeholder focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent"
       />
       <div className="flex items-center gap-2">
         <button
           type="submit"
           disabled={!nome.trim()}
-          className="h-11 rounded-xl bg-brand-900 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-800 active:scale-95 disabled:opacity-50"
+          className="h-11 rounded-xl bg-brand-primary px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-primary-hover active:scale-95 disabled:opacity-50"
         >
           Salvar
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="h-11 rounded-xl border border-black/15 bg-white px-4 text-sm font-semibold text-muted transition hover:bg-surface hover:text-ink active:scale-95"
+          className="h-11 rounded-xl border border-border bg-elevated px-4 text-sm font-semibold text-muted transition hover:bg-surface hover:text-ink active:scale-95"
         >
           Cancelar
         </button>

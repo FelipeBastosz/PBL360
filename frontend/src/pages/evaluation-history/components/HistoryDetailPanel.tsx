@@ -40,7 +40,7 @@ function PokerSummary({ poker }: { poker: HistoryPlanningPoker }) {
 
 function AdjustmentItem({ adjustment }: { adjustment: HistoryAdjustment }) {
   return (
-    <li className="flex flex-col gap-0.5 border-b border-black/5 py-1.5 last:border-0">
+    <li className="flex flex-col gap-0.5 border-b border-border-subtle py-1.5 last:border-0">
       <span className="text-sm font-semibold text-ink tabular-nums">
         {formatScore(adjustment.valorAnterior)} → {formatScore(adjustment.valorNovo)}
       </span>
@@ -78,7 +78,7 @@ export function HistoryDetailPanel({ detail, isLoading, failed }: HistoryDetailP
   }
   if (!detail || (!detail.planningPoker && detail.ajustes.length === 0)) return null;
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-gray-50/70 p-3.5">
+    <div className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-subtle p-3.5">
       {detail.planningPoker && <PokerSummary poker={detail.planningPoker} />}
       <AdjustmentList adjustments={detail.ajustes} />
     </div>

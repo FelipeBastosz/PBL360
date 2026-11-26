@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route, type WebSocketRoute } from '@playwright/test';
-import { mockAcceptedTerms } from './helpers/terms';
+import { mockAuthenticatedShell } from './helpers/terms';
 
 const ROOM_ID = 'sala-1';
 const PROBLEM_ID = 'problema-1';
@@ -165,7 +165,7 @@ const emitPokerEvent = (socket: WebSocketRoute, name: string, payload: unknown) 
 test.describe('Planning poker grades', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/**', (route) => json(route, { message: 'Não encontrado.' }, 404));
-    await mockAcceptedTerms(page);
+    await mockAuthenticatedShell(page);
   });
 
   test('tutor adjusts the grade with a mandatory justification using one decimal place', async ({

@@ -18,13 +18,13 @@ export function StudentInviteTab({ roomName, roomCode }: StudentInviteTabProps) 
       <p className="text-sm text-muted">
         Os alunos entram na turma com o código ou pelo link de convite.
       </p>
-      <div className="flex flex-col items-center gap-1 rounded-2xl bg-brand-50 px-4 py-5 text-center">
+      <div className="flex flex-col items-center gap-1 rounded-2xl bg-brand-soft px-4 py-5 text-center">
         <span className="text-sm text-brand-300">Código da turma</span>
-        <span className="font-mono text-3xl font-bold tracking-[0.18em] text-brand-900">
+        <span className="font-mono text-3xl font-bold tracking-[0.18em] text-brand-accent">
           {roomCode}
         </span>
       </div>
-      <div className="flex flex-col gap-3 rounded-2xl border border-black/5 p-4">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border-subtle p-4">
         <CopyValue label="Código" value={roomCode} isCode />
         <CopyValue
           label="Link"

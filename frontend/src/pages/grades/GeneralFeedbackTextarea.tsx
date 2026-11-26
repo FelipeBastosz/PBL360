@@ -28,8 +28,8 @@ export function GeneralFeedbackTextarea({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? 'general-feedback-error' : undefined}
         className={cn(
-          'w-full rounded-xl border p-3 text-base text-ink bg-white shadow-[0_1px_2px_rgb(16_33_76/0.06)] transition-[border-color,box-shadow] duration-200 focus:outline-none placeholder:text-placeholder focus:border-brand-900 focus:shadow-[0_0_0_4px_rgb(0_0_119/0.12)] disabled:bg-black/5 disabled:cursor-not-allowed',
-          error ? 'border-danger' : 'border-black/10',
+          'w-full rounded-xl border p-3 text-base text-ink bg-elevated shadow-[0_1px_2px_rgb(0_0_0/0.08)] transition-[border-color,box-shadow] duration-200 focus:outline-none placeholder:text-placeholder focus:border-brand-accent focus:shadow-[0_0_0_4px_var(--color-brand-shadow)] disabled:bg-subtle disabled:cursor-not-allowed',
+          error ? 'border-danger' : 'border-border',
         )}
       />
       {error && (

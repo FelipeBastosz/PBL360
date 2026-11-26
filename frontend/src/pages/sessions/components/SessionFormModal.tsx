@@ -37,13 +37,13 @@ function ModalDialog({
       aria-labelledby="session-form-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl animate-pop-in">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-elevated p-6 shadow-2xl animate-pop-in">
         <button
           type="button"
           onClick={isLoading ? undefined : onClose}
           disabled={isLoading}
           aria-label="Fechar"
-          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-black/5 hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-900"
+          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-subtle hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           <XMarkIcon className="size-6" />
         </button>
@@ -64,7 +64,7 @@ type FormContentProps = {
 function SessionFormContent({ isEditing, isLoading, error, form, onSubmit }: FormContentProps) {
   return (
     <form onSubmit={onSubmit} className="mt-2 flex flex-col gap-4">
-      <h2 id="session-form-title" className="text-center text-xl font-bold text-brand-900">
+      <h2 id="session-form-title" className="text-center text-xl font-bold text-brand-accent">
         {isEditing ? 'Editar Sessão' : 'Criar Sessão'}
       </h2>
       {error && <Alert tone="error">{error.message}</Alert>}

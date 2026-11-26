@@ -24,8 +24,8 @@ export function ProblemGradesTableToggle({
           aria-label="Ocultar nomes"
           onClick={() => onToggleHideNames(!hideNames)}
           className={cn(
-            'relative inline-flex h-6 w-11 shrink-0 after:absolute after:inset-x-0 after:-inset-y-2.5 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-brand-900',
-            hideNames ? 'bg-brand-900' : 'bg-black/20',
+            'relative inline-flex h-6 w-11 shrink-0 after:absolute after:inset-x-0 after:-inset-y-2.5 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-brand-accent',
+            hideNames ? 'bg-brand-primary' : 'bg-border',
           )}
         >
           <span

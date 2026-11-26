@@ -21,7 +21,7 @@ export function ProblemGradesActions({
         type="button"
         variant="outline"
         onClick={onOpenGeneralModal}
-        className="h-12 w-full rounded-2xl border-brand-900 bg-white font-semibold text-brand-900 hover:bg-brand-50"
+        className="h-12 w-full rounded-2xl border-brand-accent bg-elevated font-semibold text-brand-accent hover:bg-brand-soft"
       >
         Feedback geral da turma
       </Button>
@@ -32,7 +32,7 @@ export function ProblemGradesActions({
           isLoading={isExportingPDF}
           disabled={isAnyExporting}
           onClick={() => onExport?.('PDF')}
-          className="h-12 w-full rounded-2xl bg-brand-900 font-semibold text-white shadow-md transition disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-12 w-full rounded-2xl bg-brand-primary font-semibold text-white shadow-md transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           Exportar em PDF
         </Button>
@@ -41,7 +41,7 @@ export function ProblemGradesActions({
           isLoading={isExportingExcel}
           disabled={isAnyExporting}
           onClick={() => onExport?.('XLSX')}
-          className="h-12 w-full rounded-2xl bg-brand-900 font-semibold text-white shadow-md transition disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-12 w-full rounded-2xl bg-brand-primary font-semibold text-white shadow-md transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           Exportar em Excel
         </Button>

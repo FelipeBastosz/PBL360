@@ -74,10 +74,14 @@ export async function logout(page: Page) {
   await page.getByRole('dialog').getByRole('button', { name: 'Sair da conta' }).click();
 }
 
-export async function openSeedProblem(page: Page) {
+export async function openSeedRoom(page: Page) {
   await page.goto('/turmas');
   await page.getByRole('heading', { level: 3, name: ROOM_NAME }).click();
   await expect(page).toHaveURL(/\/turmas\/[^/]+\/problemas/, { timeout: 10_000 });
+}
+
+export async function openSeedProblem(page: Page) {
+  await openSeedRoom(page);
   await page.getByRole('heading', { level: 3, name: PROBLEM_NAME }).click();
   await expect(page).toHaveURL(/\/turmas\/[^/]+\/problemas\/[^/]+$/, {
     timeout: 10_000,

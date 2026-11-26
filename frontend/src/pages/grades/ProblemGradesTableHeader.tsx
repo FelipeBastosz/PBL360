@@ -8,8 +8,8 @@ type ProblemGradesTableHeaderProps = {
 export function ProblemGradesTableHeader({ sessoes, hideNames }: ProblemGradesTableHeaderProps) {
   return (
     <thead>
-      <tr className="bg-brand-50 text-xs font-bold uppercase tracking-wider text-brand-900">
-        <th scope="col" className="bg-brand-50 py-3.5 pr-4 pl-4 text-left font-bold rounded-l-xl">
+      <tr className="bg-brand-soft text-xs font-bold uppercase tracking-wider text-brand-accent">
+        <th scope="col" className="bg-brand-soft py-3.5 pr-4 pl-4 text-left font-bold rounded-l-xl">
           {hideNames ? 'MATRÍCULA' : 'ALUNO'}
         </th>
         {sessoes.map((sessao) => {
@@ -25,13 +25,16 @@ export function ProblemGradesTableHeader({ sessoes, hideNames }: ProblemGradesTa
               key={sessao.id}
               scope="col"
               title={sessionName}
-              className="bg-brand-50 text-brand-900 font-bold max-w-[140px] truncate text-center px-3 py-3.5"
+              className="bg-brand-soft text-brand-accent font-bold max-w-[140px] truncate text-center px-3 py-3.5"
             >
               {sessionName}
             </th>
           );
         })}
-        <th scope="col" className="bg-brand-50 py-3.5 pr-4 pl-3 text-right font-bold rounded-r-xl">
+        <th
+          scope="col"
+          className="bg-brand-soft py-3.5 pr-4 pl-3 text-right font-bold rounded-r-xl"
+        >
           GERAL
         </th>
       </tr>

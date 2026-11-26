@@ -21,7 +21,7 @@ function ModalBody({ formulaTitle }: { formulaTitle: string }) {
   return (
     <div className="flex flex-col gap-2">
       <h2 className="text-xl font-bold text-ink">Excluir fórmula?</h2>
-      <p className="text-base font-semibold text-brand-900">{formulaTitle}</p>
+      <p className="text-base font-semibold text-brand-accent">{formulaTitle}</p>
       <div className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
         <p className="text-sm font-medium text-danger leading-relaxed">
           Atenção: esta ação é irreversível e excluirá permanentemente esta fórmula de avaliação.
@@ -46,7 +46,7 @@ function ModalActions({
         type="button"
         isLoading={isLoading}
         onClick={onConfirm}
-        className="bg-danger hover:bg-danger/90 text-white border-transparent"
+        className="bg-danger-solid hover:bg-danger-solid/90 text-white border-transparent"
       >
         Sim, excluir fórmula
       </Button>
@@ -78,7 +78,7 @@ export function DeletePerformanceTableModal({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 border-danger bg-white p-6 shadow-2xl">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 border-danger bg-elevated p-6 shadow-2xl">
         <button
           type="button"
           onClick={isLoading ? undefined : onCancel}

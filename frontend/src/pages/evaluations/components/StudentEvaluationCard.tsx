@@ -41,20 +41,20 @@ function EvaluationBadges({
         </span>
       )}
       {student.presenca === 'justificado' && (
-        <span className="inline-flex items-center rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-800">
+        <span className="inline-flex items-center rounded-md bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning">
           Falta justificada
         </span>
       )}
       {evaluated && sessionGrade && <EvaluatedBadge grade={sessionGrade} />}
 
       {!isAusente && student.status === 'PENDENTE' && !evaluated && (
-        <span className="inline-flex items-center rounded-md bg-black/5 px-2 py-0.5 text-xs font-medium text-muted">
+        <span className="inline-flex items-center rounded-md bg-subtle px-2 py-0.5 text-xs font-medium text-muted">
           Pendente
         </span>
       )}
 
       {student.status === 'RASCUNHO' && (
-        <span className="inline-flex items-center rounded-md border border-brand-200 bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-900">
+        <span className="inline-flex items-center rounded-md border border-brand-border bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-accent">
           Rascunho
         </span>
       )}
@@ -95,16 +95,16 @@ function ActionButton({
   studentName: string;
 }) {
   if (isAusente) {
-    return <DisabledActionButton label="Ausente" className="bg-black/10 text-muted" />;
+    return <DisabledActionButton label="Ausente" className="bg-subtle text-muted" />;
   }
 
   if (disabled) {
-    return <DisabledActionButton label="Avaliar" className="bg-brand-900/40 text-white" />;
+    return <DisabledActionButton label="Avaliar" className="bg-brand-primary/40 text-white" />;
   }
 
   const linkStyle = isEnviada
-    ? 'border border-brand-900 bg-white text-brand-900 hover:bg-brand-50'
-    : 'bg-brand-900 text-white hover:bg-brand-800';
+    ? 'border border-brand-accent bg-elevated text-brand-accent hover:bg-brand-soft'
+    : 'bg-brand-primary text-white hover:bg-brand-primary-hover';
 
   const label = isEnviada ? 'Editar' : isRascunho ? 'Continuar' : 'Avaliar';
 
@@ -128,11 +128,11 @@ export function StudentEvaluationCard({
   const isAusente = student.presenca === 'ausente' || student.presenca === 'justificado';
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[20px] border border-black/5 bg-white p-4 shadow-sm">
+    <div className="flex items-center justify-between gap-3 rounded-[20px] border border-border-subtle bg-elevated p-4 shadow-sm">
       <div className="flex min-w-0 items-center gap-3">
         <UserAvatar
           user={{ id: student.alunoId, nome: student.nome, possuiFoto: true }}
-          className="size-11 bg-brand-700 text-white"
+          className="size-11 bg-brand-primary-hover text-white"
         />
         <div className="flex min-w-0 flex-col">
           <h3 className="line-clamp-2 text-base font-bold break-words text-ink">{student.nome}</h3>

@@ -33,7 +33,7 @@ export function SessionGeneralEvaluationItem({
   onEdit,
 }: SessionGeneralEvaluationItemProps) {
   return (
-    <article className="flex flex-col gap-2.5 rounded-xl border border-black/5 bg-surface/40 p-4">
+    <article className="flex flex-col gap-2.5 rounded-xl border border-border-subtle bg-surface/40 p-4">
       <header className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <UserAvatar
@@ -54,7 +54,7 @@ export function SessionGeneralEvaluationItem({
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex size-9 items-center justify-center rounded-full text-ink/70 transition-[background-color,scale] duration-200 hover:bg-black/5 hover:text-brand-900 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
+              className="inline-flex size-9 items-center justify-center rounded-full text-ink/70 transition-[background-color,scale] duration-200 hover:bg-subtle hover:text-brand-accent active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent"
               aria-label="Editar feedback geral"
             >
               <PencilIcon className="size-5" />

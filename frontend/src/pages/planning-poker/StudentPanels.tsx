@@ -53,7 +53,7 @@ export function EvaluatedPanel({ round }: { round: PokerRound }) {
     <>
       <div
         role="status"
-        className="flex items-start gap-2.5 rounded-2xl border border-brand-100 bg-brand-50 p-4 text-brand-900"
+        className="flex items-start gap-2.5 rounded-2xl border border-brand-100 bg-brand-soft p-4 text-brand-accent"
       >
         <UserCircleIcon className="size-6 shrink-0" aria-hidden />
         <div className="flex flex-col gap-0.5">
@@ -72,7 +72,7 @@ export function EvaluatedPanel({ round }: { round: PokerRound }) {
 
 export function RevealNotice({ round }: { round: PokerRound }) {
   return (
-    <div className="flex items-start gap-2 rounded-[10px] border border-brand-300/40 bg-brand-50 p-3 text-sm text-brand-900">
+    <div className="flex items-start gap-2 rounded-[10px] border border-brand-300/40 bg-brand-soft p-3 text-sm text-brand-accent">
       <InformationCircleIcon className="mt-px size-5 shrink-0" aria-hidden />
       <div className="flex-1">
         Média de {round.revelacao?.totalVotos ?? 0} votos. A nota final é definida pelo tutor.

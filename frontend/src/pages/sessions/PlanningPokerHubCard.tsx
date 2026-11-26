@@ -15,10 +15,10 @@ function DisabledPokerCard({ reason }: { reason: string }) {
   return (
     <div
       aria-disabled="true"
-      className="flex cursor-not-allowed flex-col gap-3 rounded-2xl border border-dashed border-black/15 bg-white/70 p-4"
+      className="flex cursor-not-allowed flex-col gap-3 rounded-2xl border border-dashed border-border bg-elevated/70 p-4"
     >
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-500">
-        <CardsIcon className="size-[26px]" backFill="#f3f4f6" />
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-subtle text-muted">
+        <CardsIcon className="size-[26px]" backFill="var(--color-subtle)" />
       </span>
       <div className="min-w-0">
         <h3 className="text-sm font-bold break-words text-muted">Planning poker</h3>
@@ -50,9 +50,9 @@ export function PlanningPokerHubCard({
       <button
         type="button"
         onClick={entry.open}
-        className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-4 text-left text-ink shadow-sm transition hover:shadow-md"
+        className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-elevated p-4 text-left text-ink shadow-sm transition hover:shadow-md"
       >
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-900">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-accent">
           <CardsIcon className="size-[26px]" />
         </span>
         <div className="min-w-0">
@@ -61,7 +61,7 @@ export function PlanningPokerHubCard({
             {availability.pokerAbertoId ? (
               <LiveBadge />
             ) : (
-              <span className="rounded-full border border-brand-200 bg-brand-100 px-2 text-[11px] leading-[18px] font-semibold text-brand-900">
+              <span className="rounded-full border border-brand-border bg-brand-soft px-2 text-[11px] leading-[18px] font-semibold text-brand-accent">
                 Novo
               </span>
             )}

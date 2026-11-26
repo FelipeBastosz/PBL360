@@ -1,4 +1,26 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+async function mockCommonUserRoutes(page: Page) {
+  await page.route('**/api/usuarios/meu-aceite-termo', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        aceito: true,
+        versaoAceita: '1.2',
+        aceitoEm: '2026-01-01T10:00:00.000Z',
+        versaoVigente: '1.2',
+      }),
+    }),
+  );
+  await page.route('**/api/usuarios/minhas-preferencias', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ tema: 'CLARO', cor: '#000077' }),
+    }),
+  );
+}
 
 const mockRooms = [
   {
@@ -46,6 +68,8 @@ test.describe('Rooms Page', () => {
         }),
       );
     });
+
+    await mockCommonUserRoutes(page);
 
     // Mock the backend rooms API response
     await page.route('**/api/salas', async (route) => {
@@ -186,6 +210,8 @@ test.describe('Student Voluntary Room Leave flow', () => {
       );
     });
 
+    await mockCommonUserRoutes(page);
+
     await page.route('**/api/salas/minhas', async (route) => {
       await route.fulfill({
         status: 200,
@@ -309,6 +335,8 @@ test.describe('Room Deletion Flow (ManageRoomsPage)', () => {
         }),
       );
     });
+
+    await mockCommonUserRoutes(page);
 
     await page.route('**/api/salas', async (route) => {
       await route.fulfill({

@@ -26,8 +26,8 @@ export function ClassReportEmptyState({ type }: ClassReportEmptyStateProps) {
   const { title, subtitle, Icon } = CONFIG[type];
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-black/5 bg-white p-12 text-center shadow-sm">
-      <div className="flex size-16 items-center justify-center rounded-full bg-brand-50 text-brand-900">
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-border-subtle bg-elevated p-12 text-center shadow-sm">
+      <div className="flex size-16 items-center justify-center rounded-full bg-brand-soft text-brand-accent">
         <Icon className="size-8" aria-hidden="true" />
       </div>
       <h2 className="mt-4 text-base font-semibold text-ink">{title}</h2>

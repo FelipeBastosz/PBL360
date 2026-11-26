@@ -10,7 +10,7 @@ export function ClassReportErrorState({ message, onRetry }: ClassReportErrorStat
   return (
     <div
       role="alert"
-      className="flex flex-col items-center justify-center rounded-3xl border border-black/5 bg-white p-12 text-center shadow-sm"
+      className="flex flex-col items-center justify-center rounded-3xl border border-border-subtle bg-elevated p-12 text-center shadow-sm"
     >
       <div className="flex size-16 items-center justify-center rounded-full bg-danger-soft text-danger">
         <ExclamationCircleIcon className="size-8" aria-hidden="true" />

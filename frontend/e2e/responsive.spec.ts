@@ -39,6 +39,25 @@ async function mockTutorSession(page: Page) {
   await page.route('**/api/salas', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }),
   );
+  await page.route('**/api/usuarios/meu-aceite-termo', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        aceito: true,
+        versaoAceita: '1.2',
+        aceitoEm: '2026-01-01T10:00:00.000Z',
+        versaoVigente: '1.2',
+      }),
+    }),
+  );
+  await page.route('**/api/usuarios/minhas-preferencias', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ tema: 'CLARO', cor: '#000077' }),
+    }),
+  );
 }
 
 for (const viewport of VIEWPORTS) {

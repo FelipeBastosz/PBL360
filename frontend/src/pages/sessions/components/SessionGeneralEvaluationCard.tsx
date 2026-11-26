@@ -21,7 +21,7 @@ function CardHeader() {
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
-        <h3 className="text-base font-bold text-brand-900">Feedback Geral da Sessão</h3>
+        <h3 className="text-base font-bold text-brand-accent">Feedback Geral da Sessão</h3>
         <p className="mt-0.5 text-xs text-muted">
           Parecer da tutoria sobre o desempenho da turma na sessão, visível para todos os alunos.
         </p>
@@ -39,14 +39,14 @@ function CardEmptyState({
 }) {
   if (!isProfessor) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-black/5 bg-surface/50 py-4 px-4 text-center">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-border-subtle bg-surface/50 py-4 px-4 text-center">
         <p className="text-sm text-muted">O feedback geral da sessão ainda não está disponível.</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-black/10 py-6 px-4 text-center">
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-6 px-4 text-center">
       <p className="text-sm font-medium text-ink">
         Nenhum feedback geral registrado para a turma ainda.
       </p>
@@ -152,7 +152,7 @@ function CardBody({
   if (isLoading) {
     return (
       <div className="flex justify-center py-6">
-        <Spinner className="size-6 text-brand-900" />
+        <Spinner className="size-6 text-brand-accent" />
       </div>
     );
   }
@@ -228,7 +228,7 @@ export function SessionGeneralEvaluationCard({
   return (
     <div
       className={cn(
-        'relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm',
+        'relative flex flex-col gap-3 rounded-2xl border border-border-subtle bg-elevated p-5 shadow-sm',
         className,
       )}
     >

@@ -4,10 +4,13 @@ import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { FALLBACK_TERM_1_2 } from '@/content/legal';
 import { AuthProvider } from '@/contexts/AuthProvider';
+import { PreferencesProvider } from '@/contexts/PreferencesProvider';
 import { ToastProvider } from '@/contexts/ToastProvider';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { commitmentTermsService } from '@/services/commitmentTerms.service';
+import { preferencesService } from '@/services/preferences.service';
 import type { SessionResponse, UserResponse } from '@/types/auth';
+import { DEFAULT_USER_PREFERENCES } from '@/utils/themePalette';
 
 type Entry = string | { pathname: string; search?: string; state?: unknown };
 
@@ -43,15 +46,29 @@ function ensureDefaultCommitmentTermMocks() {
   }
 }
 
+function ensureDefaultPreferencesMocks() {
+  const getFn = preferencesService.getMyPreferences;
+  if (!vi.isMockFunction(getFn)) {
+    const spy = vi.spyOn(preferencesService, 'getMyPreferences');
+    defaultTermSpies.add(spy);
+    spy.mockResolvedValue(DEFAULT_USER_PREFERENCES);
+  } else if (defaultTermSpies.has(getFn) || !getFn.getMockImplementation()) {
+    getFn.mockResolvedValue(DEFAULT_USER_PREFERENCES);
+  }
+}
+
 export function renderApp(entry: Entry = '/') {
   ensureDefaultCommitmentTermMocks();
+  ensureDefaultPreferencesMocks();
   const user = userEvent.setup();
   const result = render(
     <ToastProvider>
       <AuthProvider>
-        <MemoryRouter initialEntries={[entry]}>
-          <AppRoutes />
-        </MemoryRouter>
+        <PreferencesProvider>
+          <MemoryRouter initialEntries={[entry]}>
+            <AppRoutes />
+          </MemoryRouter>
+        </PreferencesProvider>
       </AuthProvider>
     </ToastProvider>,
   );

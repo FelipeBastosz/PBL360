@@ -95,7 +95,7 @@ function SessionReportContent({
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

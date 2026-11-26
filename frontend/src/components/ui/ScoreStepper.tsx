@@ -26,7 +26,7 @@ function parseAndEmit(text: string, min: number, max: number, onChange: (v: numb
 }
 
 const INPUT_CLASS =
-  'w-14 rounded-lg border border-transparent bg-transparent py-1 text-center text-base font-bold text-ink transition-colors hover:border-black/10 focus:border-brand-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-900 disabled:opacity-50';
+  'w-14 rounded-lg border border-transparent bg-transparent py-1 text-center text-base font-bold text-ink transition-colors hover:border-border focus:border-brand-accent focus:bg-elevated focus:outline-none focus:ring-1 focus:ring-brand-accent disabled:opacity-50';
 
 function EditableScoreInput({
   value,
@@ -99,7 +99,7 @@ export function ScoreStepper({
         aria-label={`Diminuir nota de ${label}`}
         disabled={disabled || value <= min}
         onClick={() => handleStep(-step)}
-        className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-ink transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
+        className="flex size-9 items-center justify-center rounded-xl border border-border text-lg font-bold text-ink transition hover:bg-subtle active:scale-95 disabled:opacity-30 sm:size-10"
       >
         −
       </button>
@@ -116,7 +116,7 @@ export function ScoreStepper({
         aria-label={`Aumentar nota de ${label}`}
         disabled={disabled || value >= max}
         onClick={() => handleStep(step)}
-        className="flex size-9 items-center justify-center rounded-xl border border-black/10 text-lg font-bold text-brand-900 transition hover:bg-gray-50 active:scale-95 disabled:opacity-30 sm:size-10"
+        className="flex size-9 items-center justify-center rounded-xl border border-border text-lg font-bold text-brand-accent transition hover:bg-subtle active:scale-95 disabled:opacity-30 sm:size-10"
       >
         +
       </button>

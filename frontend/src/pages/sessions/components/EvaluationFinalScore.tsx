@@ -32,10 +32,10 @@ export function EvaluationFinalScore({
   });
 
   return (
-    <div className="mt-4 flex items-center justify-between border-t border-black/10 pt-4">
-      <span className="text-sm font-bold text-brand-900">Nota final da sessão</span>
+    <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+      <span className="text-sm font-bold text-brand-accent">Nota final da sessão</span>
       <div className="flex items-center gap-1.5">
-        <span className="rounded-xl bg-brand-900 px-3.5 py-1 text-base font-bold text-white shadow-xs">
+        <span className="rounded-xl bg-brand-primary px-3.5 py-1 text-base font-bold text-white shadow-xs">
           {formatGrade(finalScore)}
         </span>
         <span className="text-xs text-muted">/ 10</span>

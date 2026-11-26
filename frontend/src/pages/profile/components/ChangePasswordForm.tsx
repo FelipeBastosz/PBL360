@@ -18,7 +18,7 @@ export function ChangePasswordForm({ onSavePassword }: ChangePasswordFormProps) 
           type="button"
           variant="outline"
           onClick={() => form.setIsOpen(true)}
-          className="h-11 w-full justify-center gap-2 rounded-xl border-brand-900 px-4 text-sm font-semibold text-brand-900 sm:w-auto"
+          className="h-11 w-full justify-center gap-2 rounded-xl border-brand-accent px-4 text-sm font-semibold text-brand-accent sm:w-auto"
         >
           <KeyIcon className="size-4" aria-hidden />
           Alterar senha
