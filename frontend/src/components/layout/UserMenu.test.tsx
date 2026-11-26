@@ -18,31 +18,88 @@ const mockUser: UserResponse = {
   criadoEm: '2026-01-01',
 };
 
+function renderUserMenu() {
+  return render(
+    <AuthContext.Provider
+      value={{
+        user: mockUser,
+        isAuthenticated: true,
+        login: vi.fn(),
+        logout: vi.fn(),
+        updateUser: vi.fn(),
+      }}
+    >
+      <MemoryRouter>
+        <UserMenuButton user={mockUser} />
+      </MemoryRouter>
+    </AuthContext.Provider>,
+  );
+}
+
 describe('UserMenu', () => {
   it('renders Meu Perfil menu link pointing to /minha-conta without Em breve badge', async () => {
     const user = userEvent.setup();
-    render(
-      <AuthContext.Provider
-        value={{
-          user: mockUser,
-          isAuthenticated: true,
-          login: vi.fn(),
-          logout: vi.fn(),
-          updateUser: vi.fn(),
-        }}
-      >
-        <MemoryRouter>
-          <UserMenuButton user={mockUser} />
-        </MemoryRouter>
-      </AuthContext.Provider>,
-    );
+    renderUserMenu();
 
-    const button = screen.getByRole('button', { name: /abrir menu da conta/i });
-    await user.click(button);
+    await user.click(screen.getByRole('button', { name: /abrir menu da conta/i }));
 
     const profileLink = screen.getByRole('link', { name: /meu perfil/i });
     expect(profileLink).toBeInTheDocument();
     expect(profileLink).toHaveAttribute('href', ROUTES.myAccount);
     expect(profileLink).not.toHaveTextContent('Em breve');
+  });
+
+  it('renders Informações adicionais button and opens popup with logo and legal links', async () => {
+    const user = userEvent.setup();
+    renderUserMenu();
+
+    await user.click(screen.getByRole('button', { name: /abrir menu da conta/i }));
+
+    const infoButton = screen.getByRole('button', { name: /informações adicionais/i });
+    expect(infoButton).toBeInTheDocument();
+
+    await user.click(infoButton);
+
+    expect(screen.getByRole('heading', { name: 'Informações adicionais' })).toBeInTheDocument();
+    expect(screen.getByLabelText('PBL360')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Termos de Uso e Política de Privacidade' }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Termos de Uso e Política de Privacidade' }),
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Termos de Uso e Política de Privacidade' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText(/contato\.pbl360@gmail\.com/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /contato\.pbl360@gmail\.com/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders Aparência section between Informações adicionais and Sair da conta', async () => {
+    const user = userEvent.setup();
+    renderUserMenu();
+
+    await user.click(screen.getByRole('button', { name: /abrir menu da conta/i }));
+
+    const infoButton = screen.getByRole('button', { name: /informações adicionais/i });
+    const appearanceSection = screen.getByRole('region', { name: /aparência/i });
+    const logoutButton = screen.getByRole('button', { name: /sair da conta/i });
+
+    expect(
+      Boolean(
+        infoButton.compareDocumentPosition(appearanceSection) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
+    expect(
+      Boolean(
+        appearanceSection.compareDocumentPosition(logoutButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
+    expect(screen.getByRole('radiogroup', { name: 'Tema' })).toBeInTheDocument();
+    expect(screen.getByRole('radiogroup', { name: 'Cor do sistema' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /restaurar cor padrão/i })).toBeInTheDocument();
   });
 });

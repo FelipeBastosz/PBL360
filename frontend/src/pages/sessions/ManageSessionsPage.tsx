@@ -19,7 +19,7 @@ import { ManageSessionCard } from './components/ManageSessionCard';
 
 function ManageFooter({ onFinish }: { onFinish: () => void }) {
   return (
-    <footer className="fixed right-0 bottom-0 left-0 border-t border-black/5 bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
+    <footer className="fixed right-0 bottom-0 left-0 border-t border-border-subtle bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
       <div className="mx-auto flex max-w-md flex-col gap-2">
         <Button onClick={onFinish}>Concluir edição</Button>
         <Button variant="link" onClick={onFinish}>
@@ -41,7 +41,7 @@ function ManageSessionsContent({ isLoading, sessions, onEdit, onDelete }: Conten
   if (isLoading) {
     return (
       <div className="mt-10 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

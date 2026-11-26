@@ -10,17 +10,17 @@ import { MyFormulasHeader } from './components/MyFormulasHeader';
 
 function CriteriaListCard({ criteria }: { criteria: PerformanceTable['criterios'] }) {
   return (
-    <div className="overflow-hidden rounded-[14px] border border-black/5 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-sm font-semibold text-brand-900">
+    <div className="overflow-hidden rounded-[14px] border border-border-subtle bg-elevated shadow-sm">
+      <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3 text-sm font-semibold text-brand-accent">
         <span>Critério</span>
         <span>Peso</span>
       </div>
       <div>
         {criteria.map((item) => (
-          <div key={item.id} className="border-b border-black/5 px-4 py-3 last:border-b-0">
+          <div key={item.id} className="border-b border-border-subtle px-4 py-3 last:border-b-0">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-brand-900">{item.nome}</span>
-              <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-ink">
+              <span className="text-sm font-semibold text-brand-accent">{item.nome}</span>
+              <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-subtle px-3 py-1 text-xs font-bold text-ink">
                 {formatCriterionWeight(item.peso)}
               </span>
             </div>
@@ -51,15 +51,15 @@ export function MyFormulaDetailPage() {
       <main className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-4">
         {isLoading && (
           <div className="mt-12 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
+            <Spinner className="size-8 text-brand-accent" />
           </div>
         )}
         {error && <Alert tone="error">{error.message}</Alert>}
         {table && (
           <>
             {table.descricao && (
-              <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
-                <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
+              <div className="rounded-[14px] border border-border-subtle bg-elevated p-4 shadow-sm">
+                <h2 className="text-sm font-semibold text-brand-accent">Descrição</h2>
                 <p className="mt-1 text-sm text-muted">{table.descricao}</p>
               </div>
             )}

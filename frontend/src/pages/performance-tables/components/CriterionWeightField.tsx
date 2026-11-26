@@ -29,7 +29,7 @@ function WeightStepperButtons({ canIncrement, canDecrement, onStep }: StepperPro
         aria-label="Aumentar peso"
         disabled={!canIncrement}
         onClick={() => onStep(1)}
-        className="flex size-6 items-center justify-center text-muted transition hover:text-brand-900 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex size-6 items-center justify-center text-muted transition hover:text-brand-accent active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <ChevronUpIcon className="size-3.5 stroke-[2.5]" />
       </button>
@@ -39,7 +39,7 @@ function WeightStepperButtons({ canIncrement, canDecrement, onStep }: StepperPro
         aria-label="Diminuir peso"
         disabled={!canDecrement}
         onClick={() => onStep(-1)}
-        className="flex size-6 items-center justify-center text-muted transition hover:text-brand-900 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex size-6 items-center justify-center text-muted transition hover:text-brand-accent active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <ChevronDownIcon className="size-3.5 stroke-[2.5]" />
       </button>
@@ -71,8 +71,8 @@ function WeightInputBox(props: InputProps) {
     onKeyDown,
     children,
   } = props;
-  const disabledClass = disabled ? 'bg-black/5 opacity-60 cursor-not-allowed border-black/10' : '';
-  const borderClass = isInvalid ? 'border-danger' : 'border-black/10';
+  const disabledClass = disabled ? 'bg-subtle opacity-60 cursor-not-allowed border-border' : '';
+  const borderClass = isInvalid ? 'border-danger' : 'border-border';
 
   return (
     <div className="relative flex items-center">
@@ -118,7 +118,7 @@ export function CriterionWeightField(props: Props) {
 
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-semibold text-brand-900">
+      <label htmlFor={id} className="text-xs font-semibold text-brand-accent">
         {label}
       </label>
       <WeightInputBox

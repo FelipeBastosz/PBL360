@@ -26,9 +26,9 @@ function ManageRoomCard({
 }) {
   return (
     <div className={CARD_CLASS}>
-      <div className="h-1 w-full bg-brand-900" />
+      <div className="h-1 w-full bg-brand-primary" />
       <div className="flex flex-col gap-3 p-4">
-        <h3 className="line-clamp-2 text-base font-bold text-brand-900">{room.nome}</h3>
+        <h3 className="line-clamp-2 text-base font-bold text-brand-accent">{room.nome}</h3>
         <div className="mt-1 flex items-center justify-between">
           <span className="text-sm text-muted">
             {countLabel(room.totalAlunos ?? 0, 'aluno', 'alunos')}
@@ -37,7 +37,7 @@ function ManageRoomCard({
             <Link
               to={ROUTES.editRoom.replace(':id', room.id)}
               aria-label={`Editar ${room.nome}`}
-              className="relative p-1 text-ink/70 hover:text-brand-900 after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-brand-900"
+              className="relative p-1 text-ink/70 hover:text-brand-accent after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-brand-accent"
             >
               <PencilIcon className="size-5" />
             </Link>
@@ -58,7 +58,7 @@ function ManageRoomCard({
 
 function ManageRoomsFooter({ onFinish }: { onFinish: () => void }) {
   return (
-    <footer className="fixed right-0 bottom-0 left-0 border-t border-black/5 bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
+    <footer className="fixed right-0 bottom-0 left-0 border-t border-border-subtle bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
       <div className="mx-auto flex max-w-md flex-col gap-2">
         <Button onClick={onFinish}>Concluir edição</Button>
         <Button variant="link" onClick={onFinish}>
@@ -80,7 +80,7 @@ function ManageRoomsContent({ isLoading, rooms, error, onDeleteRequest }: Manage
   if (isLoading) {
     return (
       <div className="mt-10 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

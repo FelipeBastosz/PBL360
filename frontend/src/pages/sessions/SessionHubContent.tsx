@@ -7,6 +7,7 @@ import { PlanningPokerHubCard } from './PlanningPokerHubCard';
 import { usePlanningPokerEntry } from './usePlanningPokerEntry';
 import { StudentEvaluationCenter } from './StudentEvaluationCenter';
 import { StudentPokerNotice } from './StudentPokerNotice';
+import { SessionGeneralEvaluationCard } from './components/SessionGeneralEvaluationCard';
 
 type SessionHubContentProps = {
   isLoading: boolean;
@@ -70,6 +71,11 @@ function ProfessorHubContent(props: ProfessorHubContentProps) {
         isLoading={props.isUpdating}
       />
       <SessionAttachments sessionId={props.sessionId} canUpload />
+      <SessionGeneralEvaluationCard
+        sessionId={props.sessionId}
+        isProfessor={true}
+        className="lg:col-span-2"
+      />
     </>
   );
 }
@@ -78,7 +84,7 @@ export function SessionHubContent(props: SessionHubContentProps) {
   if (props.isLoading) {
     return (
       <div className="mt-10 flex justify-center lg:col-span-2">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

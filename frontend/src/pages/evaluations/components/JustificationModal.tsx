@@ -13,7 +13,7 @@ type Props = {
 function JustificationIntro() {
   return (
     <>
-      <h2 id="justification-modal-title" className="pr-8 text-base font-bold text-brand-900">
+      <h2 id="justification-modal-title" className="pr-8 text-base font-bold text-brand-accent">
         Justificativa da alteração
       </h2>
       <p className="text-xs leading-relaxed text-muted">
@@ -57,7 +57,9 @@ function JustificationForm({
         }}
         placeholder="Motivo da alteração das notas..."
         className={`w-full rounded-xl border p-3 text-xs text-ink placeholder:text-placeholder focus:outline-none focus:ring-1 ${
-          error ? 'border-danger' : 'border-black/10 focus:border-brand-900 focus:ring-brand-900'
+          error
+            ? 'border-danger'
+            : 'border-border focus:border-brand-accent focus:ring-brand-accent'
         }`}
       />
       {error && <span className="text-xs text-danger">Mínimo de 10 caracteres.</span>}
@@ -84,7 +86,7 @@ export function JustificationModal({ isOpen, isLoading, onConfirm, onCancel }: P
       aria-labelledby="justification-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-elevated p-6 shadow-2xl">
         <button
           type="button"
           onClick={onCancel}

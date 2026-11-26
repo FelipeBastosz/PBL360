@@ -12,9 +12,9 @@ export function ProfileOption({ to, title, description, Icon }: ProfileOptionPro
   return (
     <Link
       to={to}
-      className="group flex items-center gap-5 rounded-[10px] border border-black/20 px-6 py-5 text-brand-900 bg-white transition-colors hover:border-brand-900 hover:text-white hover:bg-brand-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900"
+      className="group flex items-center gap-5 rounded-[10px] border border-border px-6 py-5 text-brand-accent bg-elevated transition-colors hover:border-brand-accent hover:text-white hover:bg-brand-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
     >
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-black/20 group-hover:bg-white/20">
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-border group-hover:bg-white/20">
         <Icon className="size-6" aria-hidden />
       </span>
       <span className="flex flex-col gap-1">

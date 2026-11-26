@@ -29,20 +29,20 @@ function TagEditRow({
         onChange={(e) => setName(e.target.value)}
         maxLength={80}
         autoFocus
-        className="h-10 flex-1 rounded-xl border border-black/15 bg-surface px-3 text-sm text-ink focus:border-brand-900 focus:outline-none"
+        className="h-10 flex-1 rounded-xl border border-border bg-surface px-3 text-sm text-ink focus:border-brand-accent focus:outline-none"
       />
       <div className="flex items-center gap-2">
         <button
           type="submit"
           disabled={!name.trim()}
-          className="h-10 rounded-xl bg-brand-900 px-4 text-sm font-semibold text-white transition hover:bg-brand-800 active:scale-95 disabled:opacity-50"
+          className="h-10 rounded-xl bg-brand-primary px-4 text-sm font-semibold text-white transition hover:bg-brand-primary-hover active:scale-95 disabled:opacity-50"
         >
           Salvar
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="h-10 rounded-xl border border-black/15 bg-white px-3 text-sm font-semibold text-muted transition hover:bg-surface active:scale-95"
+          className="h-10 rounded-xl border border-border bg-elevated px-3 text-sm font-semibold text-muted transition hover:bg-surface active:scale-95"
         >
           Cancelar
         </button>
@@ -77,13 +77,13 @@ function TagItemRow({
 
   return (
     <div className={cn(CARD_CLASS, 'flex-row items-center justify-between p-4')}>
-      <span className="text-base font-semibold text-brand-900">{tag.nome}</span>
+      <span className="text-base font-semibold text-brand-accent">{tag.nome}</span>
       <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={() => setIsEditing(true)}
           aria-label={`Editar marcação ${tag.nome}`}
-          className="rounded-lg p-1.5 text-brand-900 transition hover:bg-brand-50 active:scale-90"
+          className="rounded-lg p-1.5 text-brand-accent transition hover:bg-brand-soft active:scale-90"
         >
           <PencilIcon className="size-5" />
         </button>
@@ -116,7 +116,7 @@ export function TagsList({
   if (isLoading) {
     return (
       <div className="mt-8 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

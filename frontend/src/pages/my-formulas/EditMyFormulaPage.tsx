@@ -18,7 +18,7 @@ function EditMyFormulaMain({ ctrl }: { ctrl: ReturnType<typeof useEditMyFormulaC
       )}
       {ctrl.data.isLoading ? (
         <div className="mt-12 flex justify-center">
-          <Spinner className="size-8 text-brand-900" />
+          <Spinner className="size-8 text-brand-accent" />
         </div>
       ) : (
         <>

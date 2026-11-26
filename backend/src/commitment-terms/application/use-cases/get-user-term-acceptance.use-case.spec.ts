@@ -19,13 +19,19 @@ describe('GetUserTermAcceptanceUseCase', () => {
 
   beforeEach(() => {
     termsRepo = { findCurrent: jest.fn(), findByVersion: jest.fn() };
-    acceptancesRepo = { findByUserId: jest.fn(), hasAccepted: jest.fn(), create: jest.fn() };
+    acceptancesRepo = {
+      findByUserId: jest.fn(),
+      findByUserIdAndTermId: jest.fn(),
+      hasAccepted: jest.fn(),
+      create: jest.fn(),
+    };
     useCase = new GetUserTermAcceptanceUseCase(termsRepo, acceptancesRepo);
   });
 
   it('returns false and null values when user has not accepted', async () => {
     termsRepo.findCurrent.mockResolvedValue(currentTerm);
     acceptancesRepo.findByUserId.mockResolvedValue(null);
+    acceptancesRepo.hasAccepted.mockResolvedValue(false);
 
     const result = await useCase.execute('user-1');
 
@@ -46,6 +52,7 @@ describe('GetUserTermAcceptanceUseCase', () => {
       acceptedAt: new Date('2026-11-16T10:00:00Z'),
     });
     acceptancesRepo.findByUserId.mockResolvedValue(acceptance);
+    acceptancesRepo.hasAccepted.mockResolvedValue(true);
 
     const result = await useCase.execute('user-1');
 
@@ -53,6 +60,27 @@ describe('GetUserTermAcceptanceUseCase', () => {
       aceito: true,
       versaoAceita: '1.0',
       aceitoEm: new Date('2026-11-16T10:00:00Z'),
+      versaoVigente: '1.0',
+    });
+  });
+
+  it('returns aceito: false when user accepted an older version', async () => {
+    termsRepo.findCurrent.mockResolvedValue(currentTerm);
+    const acceptance = UserTermAcceptance.create({
+      userId: 'user-1',
+      termId: 'term-old',
+      termVersion: '0.9',
+      acceptedAt: new Date('2026-11-01T10:00:00Z'),
+    });
+    acceptancesRepo.findByUserId.mockResolvedValue(acceptance);
+    acceptancesRepo.hasAccepted.mockResolvedValue(false);
+
+    const result = await useCase.execute('user-1');
+
+    expect(result).toEqual({
+      aceito: false,
+      versaoAceita: '0.9',
+      aceitoEm: new Date('2026-11-01T10:00:00Z'),
       versaoVigente: '1.0',
     });
   });

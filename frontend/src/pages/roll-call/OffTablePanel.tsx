@@ -21,7 +21,7 @@ type OffTablePanelProps = {
 function PanelHint({ selected }: { selected?: RollCallStudent }) {
   if (selected) {
     return (
-      <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm font-medium text-brand-900 animate-slide-down">
+      <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm font-medium text-brand-accent animate-slide-down">
         Toque em um lugar da mesa para sentar {selected.nome}.
       </p>
     );
@@ -56,7 +56,7 @@ function BatchActions({
         disabled={!canSeatEveryone}
         className={cn(
           BATCH_BUTTON,
-          'border-brand-900 text-brand-900 hover:bg-brand-50 focus-visible:outline-brand-900',
+          'border-brand-accent text-brand-accent hover:bg-brand-soft focus-visible:outline-brand-accent',
         )}
       >
         Todos presentes
@@ -110,8 +110,8 @@ export function OffTablePanel(props: OffTablePanelProps) {
       data-drop={OFF_TABLE_DROP}
       aria-labelledby="carometro-title"
       className={cn(
-        'flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-[0_8px_24px_-16px_rgb(16_33_76/0.35)] transition-shadow duration-200',
-        isDropTarget && 'shadow-[0_0_0_3px_rgb(0_0_119/0.3)]',
+        'flex flex-col gap-3 rounded-2xl border border-border-subtle bg-elevated p-4 shadow-[0_8px_24px_-16px_rgb(0_0_0/0.08)] transition-shadow duration-200',
+        isDropTarget && 'shadow-[0_0_0_3px_var(--color-brand-shadow)]',
       )}
     >
       <header className="flex items-baseline justify-between gap-2">

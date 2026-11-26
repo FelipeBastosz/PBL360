@@ -25,7 +25,7 @@ export function DeleteCriterionModal({ isOpen, criterionName, onConfirm, onCance
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 border-danger bg-white p-6 shadow-2xl">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 border-danger bg-elevated p-6 shadow-2xl">
         <button
           type="button"
           onClick={onCancel}
@@ -39,7 +39,7 @@ export function DeleteCriterionModal({ isOpen, criterionName, onConfirm, onCance
           <DeleteIcon />
           <div className="flex flex-col gap-2">
             <h2 className="text-xl font-bold text-ink">Excluir critério?</h2>
-            <p className="text-base font-semibold text-brand-900">{criterionName}</p>
+            <p className="text-base font-semibold text-brand-accent">{criterionName}</p>
             <div className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
               <p className="text-sm font-medium text-danger leading-relaxed">
                 Atenção: remover este critério irá desvinculá-lo desta fórmula ao salvar a edição.
@@ -50,7 +50,7 @@ export function DeleteCriterionModal({ isOpen, criterionName, onConfirm, onCance
             <Button
               type="button"
               onClick={onConfirm}
-              className="bg-danger hover:bg-danger/90 text-white border-transparent"
+              className="bg-danger-solid hover:bg-danger-solid/90 text-white border-transparent"
             >
               Sim, excluir critério
             </Button>

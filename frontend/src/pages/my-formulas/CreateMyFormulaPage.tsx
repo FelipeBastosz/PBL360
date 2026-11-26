@@ -22,10 +22,10 @@ function CriterionRow({
   onDelete: () => void;
 }) {
   return (
-    <div className="border-b border-black/5 px-4 py-3">
+    <div className="border-b border-border-subtle px-4 py-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-brand-900">{item.nome}</span>
-        <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-ink">
+        <span className="text-sm font-semibold text-brand-accent">{item.nome}</span>
+        <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-subtle px-3 py-1 text-xs font-bold text-ink">
           {formatCriterionWeight(item.peso)}
         </span>
       </div>
@@ -36,7 +36,7 @@ function CriterionRow({
             type="button"
             onClick={onEdit}
             aria-label={`Editar critério ${item.nome}`}
-            className="text-brand-900 hover:opacity-80"
+            className="text-brand-accent hover:opacity-80"
           >
             <PencilIcon className="size-5" />
           </button>
@@ -69,11 +69,11 @@ function CriteriaCard({
 }) {
   return (
     <div
-      className={`overflow-hidden rounded-[14px] border bg-white shadow-sm ${
-        hasError ? 'border-danger' : 'border-black/5'
+      className={`overflow-hidden rounded-[14px] border bg-elevated shadow-sm ${
+        hasError ? 'border-danger' : 'border-border-subtle'
       }`}
     >
-      <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-sm font-semibold text-brand-900">
+      <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3 text-sm font-semibold text-brand-accent">
         <span>Critério</span>
         <span>Peso</span>
       </div>
@@ -90,7 +90,7 @@ function CriteriaCard({
       <button
         type="button"
         onClick={onOpenAdd}
-        className="w-full px-4 py-3 text-left text-sm font-semibold text-brand-900 transition-colors hover:bg-brand-50"
+        className="w-full px-4 py-3 text-left text-sm font-semibold text-brand-accent transition-colors hover:bg-brand-soft"
       >
         +Adicionar critério
       </button>

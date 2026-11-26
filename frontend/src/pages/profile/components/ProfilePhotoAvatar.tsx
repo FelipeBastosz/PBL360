@@ -17,13 +17,13 @@ export function ProfilePhotoAvatar({ profile, isBusy, onPickPhoto }: ProfilePhot
 
   return (
     <div className="relative inline-block">
-      <div className="relative flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-brand-900 bg-brand-100 text-2xl font-bold text-brand-900">
+      <div className="relative flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-brand-accent bg-brand-soft text-2xl font-bold text-brand-accent">
         {photoUrl ? (
           <img src={photoUrl} alt={`Foto de ${profile.nome}`} className="size-full object-cover" />
         ) : profile.nome ? (
           <span>{getInitials(profile.nome)}</span>
         ) : (
-          <UserIcon className="size-16 text-brand-900" strokeWidth={1.4} aria-hidden />
+          <UserIcon className="size-16 text-brand-accent" strokeWidth={1.4} aria-hidden />
         )}
 
         {isBusy && (
@@ -39,7 +39,7 @@ export function ProfilePhotoAvatar({ profile, isBusy, onPickPhoto }: ProfilePhot
         disabled={isBusy}
         title={profile.possuiFoto ? 'Alterar foto de perfil' : 'Adicionar foto de perfil'}
         aria-label={profile.possuiFoto ? 'Trocar foto de perfil' : 'Adicionar foto de perfil'}
-        className="absolute right-0 bottom-0 flex size-9 items-center justify-center rounded-full bg-brand-900 text-white ring-4 ring-white transition-transform duration-200 hover:scale-110 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-900 disabled:cursor-not-allowed"
+        className="absolute right-0 bottom-0 flex size-9 items-center justify-center rounded-full bg-brand-primary text-white ring-4 ring-white transition-transform duration-200 hover:scale-110 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-accent disabled:cursor-not-allowed"
       >
         <CameraIcon className="size-5" strokeWidth={1.8} aria-hidden />
       </button>

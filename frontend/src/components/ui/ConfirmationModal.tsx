@@ -69,7 +69,7 @@ export function ConfirmationModal({
       aria-labelledby="confirmation-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-fade-in"
     >
-      <div className="relative flex max-h-full w-full max-w-md overflow-y-auto flex-col rounded-3xl bg-white p-6 shadow-2xl animate-pop-in">
+      <div className="relative flex max-h-full w-full max-w-md overflow-y-auto flex-col rounded-3xl border border-border-subtle bg-elevated p-6 shadow-2xl animate-pop-in">
         <div className="flex items-center justify-between gap-3">
           <h2 id="confirmation-modal-title" className="text-xl font-semibold text-ink text-left">
             {title}
@@ -79,7 +79,7 @@ export function ConfirmationModal({
             onClick={isLoading ? undefined : onClose}
             disabled={isLoading}
             aria-label="Fechar confirmação"
-            className="-mr-2 rounded-full p-2 text-muted transition-[background-color,scale] duration-200 hover:bg-black/5 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
+            className="-mr-2 rounded-full p-2 text-muted transition-[background-color,scale] duration-200 hover:bg-subtle active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent"
           >
             <XMarkIcon className="size-6" />
           </button>

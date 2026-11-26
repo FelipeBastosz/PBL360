@@ -40,7 +40,7 @@ function CriterionField({
 }: FieldProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-semibold text-brand-900">
+      <label htmlFor={id} className="text-xs font-semibold text-brand-accent">
         {label}
       </label>
       <input
@@ -51,8 +51,8 @@ function CriterionField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`h-10 w-full rounded-[10px] border px-3 text-sm text-ink ${
-          disabled ? 'bg-black/5 opacity-60 cursor-not-allowed border-black/10' : ''
-        } ${hasError ? 'border-danger' : 'border-black/10'}`}
+          disabled ? 'bg-subtle opacity-60 cursor-not-allowed border-border' : ''
+        } ${hasError ? 'border-danger' : 'border-border'}`}
       />
     </div>
   );
@@ -63,7 +63,7 @@ function FormSubmitButton() {
     <div className="mt-3 flex justify-center">
       <button
         type="submit"
-        className="rounded-full bg-brand-900 px-8 py-2.5 text-sm font-bold text-white shadow-md hover:bg-brand-800"
+        className="rounded-full bg-brand-primary px-8 py-2.5 text-sm font-bold text-white shadow-md hover:bg-brand-primary-hover"
       >
         Salvar Edição
       </button>
@@ -186,12 +186,12 @@ export function EditCriterionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[22px] bg-white p-6 shadow-2xl">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[22px] bg-elevated p-6 shadow-2xl">
         <button
           type="button"
           onClick={onClose}
           aria-label="Fechar"
-          className="absolute right-5 top-5 flex size-7 items-center justify-center rounded-full border border-brand-900 text-brand-900 hover:bg-brand-50"
+          className="absolute right-5 top-5 flex size-7 items-center justify-center rounded-full border border-brand-accent text-brand-accent hover:bg-brand-soft"
         >
           <XMarkIcon className="size-4 stroke-[2.5]" />
         </button>

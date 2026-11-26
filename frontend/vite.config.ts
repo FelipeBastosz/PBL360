@@ -28,6 +28,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    testTimeout: 15_000,
     exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
   },
 });

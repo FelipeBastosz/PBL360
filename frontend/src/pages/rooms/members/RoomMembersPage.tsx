@@ -88,7 +88,7 @@ function RoomMembers({ roomId }: { roomId: string }) {
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-6')}>
         <SearchField label="Buscar por nome" value={query} onChange={setQuery} />
         {error && <Alert tone="error">{error.message}</Alert>}
-        {!error && !members && <Spinner className="mx-auto mt-10 size-8 text-brand-900" />}
+        {!error && !members && <Spinner className="mx-auto mt-10 size-8 text-brand-accent" />}
         {members && (
           <>
             <StudentsSection {...{ members, query, canSeePhotoOf }} onSelect={setSelected} />

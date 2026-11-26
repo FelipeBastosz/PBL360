@@ -12,7 +12,7 @@ export function HistoryHeader({ onBack }: HistoryHeaderProps) {
   const { user } = useAuth();
 
   return (
-    <header className="sticky top-0 z-30 bg-brand-900 text-white">
+    <header className="sticky top-0 z-30 border-b border-brand-primary-border bg-brand-primary text-white">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
         <div className="flex min-w-0 items-center gap-3">
           <button

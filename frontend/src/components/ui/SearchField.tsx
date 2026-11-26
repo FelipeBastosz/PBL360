@@ -21,7 +21,7 @@ export function SearchField({ label, value, onChange, className }: SearchFieldPr
         className={cn(fieldControlClassName(false), 'peer pl-11')}
       />
       <MagnifyingGlassIcon
-        className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-placeholder transition-colors duration-200 peer-focus:text-brand-900"
+        className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-placeholder transition-colors duration-200 peer-focus:text-brand-accent"
         aria-hidden
       />
     </div>

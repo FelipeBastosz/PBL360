@@ -19,7 +19,9 @@ const BASE = '/autenticacao';
 function toRegisterFormData(payload: RegisterPayload): FormData {
   const data = new FormData();
   Object.entries(payload).forEach(([field, value]) => {
-    if (value !== undefined) data.append(field, value);
+    if (value !== undefined) {
+      data.append(field, value instanceof Blob ? value : String(value));
+    }
   });
   return data;
 }

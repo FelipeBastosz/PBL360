@@ -9,7 +9,7 @@ import { useProblemFormulaViewModel } from './hooks/useProblemFormulaViewModel';
 
 function FormulaEmptyState() {
   return (
-    <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-black/5 bg-white p-8 text-center shadow-xs">
+    <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-border-subtle bg-elevated p-8 text-center shadow-xs">
       <p className="text-base font-semibold text-ink">
         Nenhuma sessão cadastrada para este problema.
       </p>
@@ -22,12 +22,12 @@ function FormulaEmptyState() {
 
 function FormulaCalculationBadge({ isSimpleAverage }: { isSimpleAverage: boolean }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-black/5 bg-white p-4 shadow-xs">
+    <div className="flex items-center justify-between rounded-xl border border-border-subtle bg-elevated p-4 shadow-xs">
       <span className="text-sm font-bold text-ink">Tipo de cálculo:</span>
       <span
         className={cn(
           'rounded-full px-3 py-1 text-xs font-bold',
-          isSimpleAverage ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800',
+          isSimpleAverage ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning',
         )}
       >
         {isSimpleAverage ? 'Média simples' : 'Média ponderada'}
@@ -45,7 +45,7 @@ function FormulaContent({ vm }: ContentProps) {
     <>
       <FormulaCalculationBadge isSimpleAverage={vm.isSimpleAverage} />
 
-      <div className="overflow-hidden rounded-[18px] border border-black/5 bg-white shadow-xs">
+      <div className="overflow-hidden rounded-[18px] border border-border-subtle bg-elevated shadow-xs">
         {vm.sessions.map((session) => {
           const pct =
             vm.totalWeight > 0
@@ -69,7 +69,7 @@ function FormulaContent({ vm }: ContentProps) {
         disabled={vm.isRestoring || vm.isSaving}
         isLoading={vm.isRestoring}
         onClick={vm.restore}
-        className="h-12 w-full rounded-2xl border-brand-900 bg-white font-semibold text-brand-900 hover:bg-brand-50"
+        className="h-12 w-full rounded-2xl border-brand-accent bg-elevated font-semibold text-brand-accent hover:bg-brand-soft"
       >
         Restaurar padrão
       </Button>
@@ -98,7 +98,7 @@ export function ProblemFinalGradeFormulaPage() {
       <div className="flex min-h-dvh flex-col bg-surface">
         <ProblemFormulaHeader />
         <div className="mt-16 flex justify-center">
-          <Spinner className="size-8 text-brand-900" />
+          <Spinner className="size-8 text-brand-accent" />
         </div>
       </div>
     );

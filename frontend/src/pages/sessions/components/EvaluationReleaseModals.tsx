@@ -23,8 +23,8 @@ type ReleaseModalProps = {
 
 function OtherReleaseWarning({ otherName }: { otherName: string }) {
   return (
-    <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-xs text-amber-800">
-      <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+    <div className="flex items-start gap-2 rounded-xl border border-warning-line bg-warning-soft p-3 text-left text-xs text-warning">
+      <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-warning" />
       <span>
         A <strong>{otherName}</strong> está ativa no momento. Ao confirmar, ela será{' '}
         <strong>automaticamente desativada</strong>.
@@ -61,7 +61,7 @@ function CloseButton({ isLoading, onClose }: { isLoading: boolean; onClose: () =
       onClick={isLoading ? undefined : onClose}
       disabled={isLoading}
       aria-label="Fechar"
-      className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-brand-900"
+      className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-subtle focus-visible:outline-2 focus-visible:outline-brand-accent"
     >
       <XMarkIcon className="size-6" />
     </button>
@@ -104,11 +104,11 @@ export function SetDeadlineModal({
       aria-labelledby="release-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl animate-pop-in">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-elevated p-6 shadow-2xl animate-pop-in">
         <CloseButton isLoading={isLoading} onClose={onCancel} />
 
         <div className="mt-2 flex flex-col gap-3 text-center">
-          <h2 id="release-modal-title" className="px-8 text-xl font-bold text-brand-900">
+          <h2 id="release-modal-title" className="px-8 text-xl font-bold text-brand-accent">
             Liberar {currentName}
           </h2>
           <p className="text-xs text-muted">
@@ -155,8 +155,8 @@ export function ConfirmLockModal({
       aria-labelledby="lock-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 text-center shadow-2xl animate-pop-in">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-elevated p-6 text-center shadow-2xl animate-pop-in">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-warning-soft text-warning">
           <ExclamationTriangleIcon className="size-7" />
         </div>
         <h2 id="lock-modal-title" className="mt-4 text-xl font-bold text-ink">

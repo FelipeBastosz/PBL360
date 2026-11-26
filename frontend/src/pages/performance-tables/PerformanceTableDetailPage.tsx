@@ -23,7 +23,7 @@ function DetailHeader({ title }: { title: string }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   return (
-    <header className="shrink-0 bg-brand-900 text-white">
+    <header className="shrink-0 border-b border-brand-primary-border bg-brand-primary text-white">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
         <div className="flex items-center gap-3">
           <button
@@ -44,8 +44,8 @@ function DetailHeader({ title }: { title: string }) {
 
 function CriteriaListCard({ criteria }: { criteria: CriterionInput[] }) {
   return (
-    <div className="overflow-hidden rounded-[14px] border border-black/5 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-sm font-semibold text-brand-900">
+    <div className="overflow-hidden rounded-[14px] border border-border-subtle bg-elevated shadow-sm">
+      <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3 text-sm font-semibold text-brand-accent">
         <span>Critério</span>
         <span>Peso</span>
       </div>
@@ -53,11 +53,11 @@ function CriteriaListCard({ criteria }: { criteria: CriterionInput[] }) {
         {criteria.map((item, idx) => (
           <div
             key={item.id ?? `${item.nome}-${idx}`}
-            className="border-b border-black/5 px-4 py-3 last:border-b-0"
+            className="border-b border-border-subtle px-4 py-3 last:border-b-0"
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-brand-900">{item.nome}</span>
-              <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-ink">
+              <span className="text-sm font-semibold text-brand-accent">{item.nome}</span>
+              <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-subtle px-3 py-1 text-xs font-bold text-ink">
                 {formatCriterionWeight(item.peso)}
               </span>
             </div>
@@ -83,22 +83,22 @@ function DetailBanners({ isApplied, isLocked, isShared, authorName }: BannersPro
         <aside
           role="status"
           aria-live="polite"
-          className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs font-medium text-blue-900"
+          className="flex items-center gap-2 rounded-xl border border-brand-border bg-brand-soft p-3 text-xs font-medium text-brand-accent"
         >
-          <InformationCircleIcon className="size-4 shrink-0 text-blue-600" aria-hidden="true" />
+          <InformationCircleIcon className="size-4 shrink-0 text-brand-accent" aria-hidden="true" />
           <span>
             Fórmula compartilhada da turma{authorName ? ` · Criada por ${authorName}` : ''}.
           </span>
         </aside>
       )}
       {isApplied && (
-        <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
+        <div className="flex items-center justify-between rounded-xl border border-success/30 bg-success-soft p-3 text-xs font-semibold text-success">
           Esta fórmula já está aplicada a esta sessão.
         </div>
       )}
       {isLocked && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-          <LockClosedIcon className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden="true" />
+        <div className="flex items-start gap-2 rounded-xl border border-warning-line bg-warning-soft p-3 text-xs text-warning">
+          <LockClosedIcon className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
           <span>Esta sessão já possui avaliações enviadas e a tabela não pode ser alterada.</span>
         </div>
       )}
@@ -114,7 +114,7 @@ function DetailActionButtons({ apply }: { apply: ReturnType<typeof useApplyTable
         <button
           type="button"
           onClick={apply.editAppliedTable}
-          className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800"
+          className="w-full rounded-[14px] bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-primary-hover"
         >
           Editar fórmula
         </button>
@@ -127,7 +127,7 @@ function DetailActionButtons({ apply }: { apply: ReturnType<typeof useApplyTable
         type="button"
         onClick={apply.openModal}
         disabled={apply.isApplying || apply.isSessionLocked}
-        className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-[14px] bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:bg-brand-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
         Aplicar fórmula
       </button>
@@ -180,8 +180,8 @@ function DetailContent({ table, apply, currentUserId }: DetailContentProps) {
         authorName={table.autor?.nome}
       />
       {table.descricao && (
-        <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
+        <div className="rounded-[14px] border border-border-subtle bg-elevated p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-brand-accent">Descrição</h2>
           <p className="mt-1 text-sm text-muted">{table.descricao}</p>
         </div>
       )}
@@ -211,7 +211,7 @@ export function PerformanceTableDetailPage() {
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4')}>
         {isLoading && (
           <div className="mt-12 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
+            <Spinner className="size-8 text-brand-accent" />
           </div>
         )}
         {error && <Alert tone="error">{error.message}</Alert>}

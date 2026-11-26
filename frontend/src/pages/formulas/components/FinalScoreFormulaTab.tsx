@@ -9,7 +9,7 @@ import { SaveFormulaScopeModal } from './SaveFormulaScopeModal';
 import { useSessionFormulaEditor } from '../hooks/useSessionFormulaEditor';
 
 const SECONDARY_BTN =
-  'w-full rounded-2xl border border-black/5 bg-white py-3.5 text-sm font-semibold text-brand-900 shadow-xs transition-colors hover:bg-brand-50 disabled:opacity-50';
+  'w-full rounded-2xl border border-border-subtle bg-elevated py-3.5 text-sm font-semibold text-brand-accent shadow-xs transition-colors hover:bg-brand-soft disabled:opacity-50';
 
 function FormulaWeightRow({
   title,
@@ -23,9 +23,9 @@ function FormulaWeightRow({
   onChange: (val: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-black/5 p-4 last:border-b-0 sm:p-5">
+    <div className="flex items-center justify-between border-b border-border-subtle p-4 last:border-b-0 sm:p-5">
       <div className="flex flex-col pr-4">
-        <span className="text-base font-bold text-brand-900">{title}</span>
+        <span className="text-base font-bold text-brand-accent">{title}</span>
         <span className="text-xs text-muted">{subtitle}</span>
       </div>
       <ScoreStepper value={weight} onChange={onChange} label={title} min={1} max={9} step={1} />
@@ -79,7 +79,7 @@ export function FinalScoreFormulaTab({ sessionId }: { sessionId: string }) {
   if (editor.isLoading) {
     return (
       <div className="mt-12 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }
@@ -91,7 +91,7 @@ export function FinalScoreFormulaTab({ sessionId }: { sessionId: string }) {
 
   return (
     <main className={cn(PAGE_CONTAINER_CLASS, 'mt-4 flex flex-col gap-4 pb-12')}>
-      <div className="overflow-hidden rounded-[18px] border border-black/5 bg-white shadow-xs">
+      <div className="overflow-hidden rounded-[18px] border border-border-subtle bg-elevated shadow-xs">
         <FormulaWeightRow
           title="Desempenho na Sessão"
           subtitle="Critérios avaliativos"

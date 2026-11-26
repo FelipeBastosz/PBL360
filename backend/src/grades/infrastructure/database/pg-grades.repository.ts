@@ -4,12 +4,14 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { roundGrade } from '@/shared/utils/grade-precision';
 import { readProblemGradeData, readFormulaComponents } from './problem-grade-data.reads';
 import { FIND_PROBLEM_OBSERVATION_TAGS_QUERY } from './problem-observation-tags.queries';
+import { FIND_STUDENT_SESSION_DETAILS_QUERY } from './student-session-details.queries';
 import type {
   GradePersistenceData,
   GradeRow,
   GradesRepository,
   ProblemGradeData,
   ProblemObservationTagDetail,
+  StudentSessionDetails,
 } from '../../domain/repositories/grades.repository';
 
 const parseTags = (tags: unknown): string[] => {
@@ -101,5 +103,18 @@ export class PgGradesRepository implements GradesRepository {
       sessionOrderIndex: r.sessionOrderIndex,
       tags: parseTags(r.tags),
     }));
+  }
+
+  findStudentSessionDetails(
+    roomId: string,
+    studentId: string,
+    problemIds: string[],
+  ): Promise<StudentSessionDetails[]> {
+    if (problemIds.length === 0) return Promise.resolve([]);
+    return this.grades.query<StudentSessionDetails[]>(FIND_STUDENT_SESSION_DETAILS_QUERY, [
+      roomId,
+      studentId,
+      problemIds,
+    ]);
   }
 }

@@ -23,7 +23,7 @@ function ConfirmActions({ isLoading, onConfirm, onCancel }: ConfirmActionsProps)
         type="button"
         isLoading={isLoading}
         onClick={onConfirm}
-        className="border-transparent bg-danger text-white hover:bg-danger/90 focus-visible:outline-danger"
+        className="border-transparent bg-danger-solid text-white hover:bg-danger-solid/90 focus-visible:outline-danger"
       >
         Sim, sair da turma
       </Button>
@@ -43,7 +43,7 @@ function ConfirmActions({ isLoading, onConfirm, onCancel }: ConfirmActionsProps)
 function OwnerBlockedBody({ roomName, onClose }: { roomName: string; onClose: () => void }) {
   return (
     <div className="flex flex-col items-center gap-4 text-center">
-      <div className="flex size-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+      <div className="flex size-12 items-center justify-center rounded-full bg-warning-soft text-warning">
         <ExclamationTriangleIcon className="size-7" aria-hidden="true" />
       </div>
 
@@ -51,9 +51,9 @@ function OwnerBlockedBody({ roomName, onClose }: { roomName: string; onClose: ()
         <h2 id="leave-room-title" className="text-xl font-bold text-ink">
           Não é possível sair da turma
         </h2>
-        <p className="text-base font-semibold text-brand-900">{roomName}</p>
-        <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-center">
-          <p className="text-sm font-semibold leading-relaxed text-amber-900">
+        <p className="text-base font-semibold text-brand-accent">{roomName}</p>
+        <div className="mt-2 rounded-xl border border-warning-line bg-warning-soft p-3 text-center">
+          <p className="text-sm font-semibold leading-relaxed text-warning">
             O professor responsável não pode sair da turma. Transfira a responsabilidade ou exclua a
             sala.
           </p>
@@ -68,7 +68,7 @@ function OwnerBlockedBody({ roomName, onClose }: { roomName: string; onClose: ()
         <Button
           type="button"
           onClick={onClose}
-          className="w-full bg-brand-900 text-white hover:bg-brand-900/90"
+          className="w-full bg-brand-primary text-brand-on-primary hover:bg-brand-primary-hover"
         >
           Entendi
         </Button>
@@ -98,7 +98,7 @@ function StandardConfirmBody({
         <h2 id="leave-room-title" className="text-xl font-bold text-ink">
           Sair da turma?
         </h2>
-        <p className="text-base font-semibold text-brand-900">{roomName}</p>
+        <p className="text-base font-semibold text-brand-accent">{roomName}</p>
         <div className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
           <p className="text-sm font-medium leading-relaxed text-danger">
             Atenção: ao sair da turma, você perderá o acesso às{' '}
@@ -130,8 +130,8 @@ export function LeaveRoomModal({
       className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
     >
       <div
-        className={`animate-pop-in relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 bg-white p-6 shadow-2xl ${
-          isOwner ? 'border-amber-500' : 'border-danger'
+        className={`animate-pop-in relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 bg-elevated p-6 shadow-2xl ${
+          isOwner ? 'border-warning-line' : 'border-danger'
         }`}
       >
         <button
@@ -139,7 +139,7 @@ export function LeaveRoomModal({
           onClick={isLoading ? undefined : onCancel}
           disabled={isLoading}
           aria-label="Fechar confirmação"
-          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-black/5 hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-900"
+          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-subtle hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           <XMarkIcon className="size-6" />
         </button>

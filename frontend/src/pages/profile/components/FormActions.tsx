@@ -13,7 +13,7 @@ export function FormActions({ isSubmitting, onCancel }: FormActionsProps) {
         variant="outline"
         onClick={onCancel}
         disabled={isSubmitting}
-        className="h-11 w-auto rounded-xl border-brand-900 px-4 text-sm font-semibold text-brand-900"
+        className="h-11 w-auto rounded-xl border-brand-accent px-4 text-sm font-semibold text-brand-accent"
       >
         Cancelar
       </Button>
@@ -21,7 +21,7 @@ export function FormActions({ isSubmitting, onCancel }: FormActionsProps) {
         type="submit"
         variant="primary"
         isLoading={isSubmitting}
-        className="h-11 w-auto rounded-xl px-5 text-sm font-semibold shadow-[0_10px_24px_-8px_rgb(0_0_119/0.55)]"
+        className="h-11 w-auto rounded-xl px-5 text-sm font-semibold shadow-[0_10px_24px_-8px_var(--color-brand-shadow)]"
       >
         Salvar nova senha
       </Button>

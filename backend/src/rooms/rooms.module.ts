@@ -21,6 +21,7 @@ import { ListStudentRoomsUseCase } from './application/use-cases/list-student-ro
 import { ListRoomStudentsUseCase } from './application/use-cases/list-room-students.use-case';
 import { JoinRoomUseCase } from './application/use-cases/join-room.use-case';
 import { LeaveRoomUseCase } from './application/use-cases/leave-room.use-case';
+import { TransferRoomOwnershipUseCase } from './application/use-cases/transfer-room-ownership.use-case';
 
 import { RoomAccessService } from './application/services/room-access.service';
 
@@ -42,6 +43,7 @@ import { RoomAccessService } from './application/services/room-access.service';
     ListRoomStudentsUseCase,
     JoinRoomUseCase,
     LeaveRoomUseCase,
+    TransferRoomOwnershipUseCase,
     RoomAccessService,
 
     {

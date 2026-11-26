@@ -20,7 +20,7 @@ export function FormulaBalanceSummary({ totalWeight }: Props) {
         <span className={isBalanced ? 'text-ink' : 'text-danger'}>Soma dos pesos</span>
         <span
           className={`inline-flex items-center gap-1 ${
-            isBalanced ? 'text-emerald-700' : 'text-danger'
+            isBalanced ? 'text-success' : 'text-danger'
           }`}
         >
           {isBalanced && <CheckIcon className="size-4 stroke-[2.5]" aria-hidden="true" />}
@@ -28,7 +28,7 @@ export function FormulaBalanceSummary({ totalWeight }: Props) {
         </span>
       </div>
       {isBalanced ? (
-        <p className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
+        <p className="inline-flex items-center gap-1 text-xs font-semibold text-success">
           <CheckIcon className="size-3.5 stroke-[2.5]" aria-hidden="true" />
           <span>Soma correta</span>
         </p>

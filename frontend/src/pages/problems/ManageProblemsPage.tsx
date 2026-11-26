@@ -30,7 +30,7 @@ function ManageProblemCard({
           type="button"
           onClick={() => onEdit(problem)}
           aria-label={`Editar ${problem.titulo}`}
-          className="relative p-1 text-ink/70 hover:text-brand-900 after:absolute after:-inset-1.5 focus-visible:outline-2"
+          className="relative p-1 text-ink/70 hover:text-brand-accent after:absolute after:-inset-1.5 focus-visible:outline-2"
         >
           <PencilIcon className="size-5" />
         </button>
@@ -49,7 +49,7 @@ function ManageProblemCard({
 
 function ManageFooter({ onFinish }: { onFinish: () => void }) {
   return (
-    <footer className="fixed right-0 bottom-0 left-0 border-t border-black/5 bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
+    <footer className="fixed right-0 bottom-0 left-0 border-t border-border-subtle bg-surface/95 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xs">
       <div className="mx-auto flex max-w-md flex-col gap-2">
         <Button onClick={onFinish}>Concluir edição</Button>
         <Button variant="link" onClick={onFinish}>
@@ -71,7 +71,7 @@ function ManageProblemsContent({ isLoading, problems, onEdit, onDelete }: Conten
   if (isLoading) {
     return (
       <div className="mt-10 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

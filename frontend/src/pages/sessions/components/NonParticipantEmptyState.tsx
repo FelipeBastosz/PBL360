@@ -10,7 +10,7 @@ export function NonParticipantEmptyState({ className }: NonParticipantEmptyState
     <div
       role="status"
       className={cn(
-        'flex flex-col items-center justify-center rounded-2xl border border-black/5 bg-white p-6 sm:p-8 text-center shadow-sm',
+        'flex flex-col items-center justify-center rounded-2xl border border-border-subtle bg-elevated p-6 sm:p-8 text-center shadow-sm',
         className,
       )}
     >

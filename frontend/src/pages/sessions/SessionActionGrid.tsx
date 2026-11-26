@@ -41,9 +41,9 @@ function ActionCardContent({
 function ActionCard({ to, state, title, desc, color, Icon, disabled, badge }: ActionCardProps) {
   if (disabled) {
     return (
-      <div className="relative flex flex-col gap-3 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm opacity-60 cursor-not-allowed">
+      <div className="relative flex flex-col gap-3 rounded-2xl border border-border-subtle bg-elevated/70 p-4 shadow-sm opacity-60 cursor-not-allowed">
         {badge && (
-          <span className="absolute right-3 top-3 rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-bold text-muted">
+          <span className="absolute right-3 top-3 rounded-full bg-subtle px-2 py-0.5 text-[10px] font-bold text-muted">
             {badge}
           </span>
         )}
@@ -56,7 +56,7 @@ function ActionCard({ to, state, title, desc, color, Icon, disabled, badge }: Ac
     <Link
       to={to}
       state={state}
-      className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md"
+      className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-elevated p-4 shadow-sm transition hover:shadow-md"
     >
       <ActionCardContent title={title} desc={desc} color={color} Icon={Icon} />
     </Link>
@@ -78,7 +78,7 @@ function PrimaryActions({
     : isStudentEvalActive
       ? 'Avaliações ativas. Consulte e ajuste no Histórico de avaliações.'
       : 'Critérios, marcações e feedback';
-  const evalColor = isBlocked ? 'bg-gray-100 text-gray-400' : 'bg-emerald-50 text-emerald-600';
+  const evalColor = isBlocked ? 'bg-subtle text-placeholder' : 'bg-success-soft text-success';
 
   return (
     <>
@@ -86,7 +86,7 @@ function PrimaryActions({
         to={`${basePath}/chamada`}
         title="Chamada"
         desc="Mesa tutorial, papéis e horário"
-        color="bg-blue-50 text-blue-600"
+        color="bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300"
         Icon={ClipboardDocumentCheckIcon}
       />
       <ActionCard
@@ -131,21 +131,21 @@ export function SessionActionGrid({
         state={{ roomId, problemId, sessionId }}
         title="Fórmulas"
         desc="Critérios e nota final"
-        color="bg-amber-50 text-amber-600"
+        color="bg-warning-soft text-warning"
         Icon={AdjustmentsHorizontalIcon}
       />
       <ActionCard
         to={`${basePath}/historico`}
         title="Histórico de avaliações"
         desc="Comparar e ajustar com justificativa"
-        color="bg-violet-50 text-violet-600"
+        color="bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300"
         Icon={ClockIcon}
       />
       <ActionCard
         to={`${basePath}/relatorio`}
         title="Relatório da Sessão"
         desc="Visualize notas finais e exporte dados"
-        color="bg-indigo-50 text-indigo-600"
+        color="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300"
         Icon={DocumentChartBarIcon}
       />
       {children}

@@ -50,7 +50,7 @@ function FeedbackCardHeader({ autor, criadoEm, tag, nota, novo }: FeedbackCardHe
         {typeof nota === 'number' && Number.isFinite(nota) && (
           <span
             data-testid="feedback-nota"
-            className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-900 border border-brand-200"
+            className="rounded-lg bg-brand-soft px-2.5 py-1 text-xs font-bold text-brand-accent border border-brand-border"
           >
             Nota {formatGrade(nota)}
           </span>
@@ -72,7 +72,7 @@ export function FeedbackCard({
   avaliacoes,
 }: FeedbackCardProps) {
   return (
-    <article className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+    <article className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-elevated p-5 shadow-sm">
       <FeedbackCardHeader autor={autor} criadoEm={criadoEm} tag={tag} nota={nota} novo={novo} />
 
       <EvaluationComponentGrades avaliacoes={avaliacoes} />

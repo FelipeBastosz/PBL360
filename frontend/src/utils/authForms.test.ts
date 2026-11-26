@@ -17,6 +17,7 @@ const student: RegisterFormValues = {
   foto: photo,
   senha: 'senha-secreta',
   confirmacao: 'senha-secreta',
+  termosAceitos: true,
 };
 
 describe('validateLoginForm', () => {
@@ -73,34 +74,51 @@ describe('validateRegisterForm', () => {
 
     expect(Object.values(errors).filter(Boolean)).toEqual([]);
   });
+
+  it('requires accepting terms of use and privacy policy', () => {
+    const errors = validateRegisterForm({
+      ...student,
+      termosAceitos: false,
+    });
+
+    expect(errors.termosAceitos).toBe(
+      'O cadastro só pode ser realizado se você marcar que leu e concorda com os Termos de Uso e Política de Privacidade.',
+    );
+  });
 });
 
 describe('toRegisterPayload', () => {
   it('normalizes the student payload', () => {
-    expect(toRegisterPayload(student)).toEqual({
+    expect(toRegisterPayload(student, '1.2')).toEqual({
       nome: 'Ana Souza',
       email: 'ana@discente.uefs.br',
       senha: 'senha-secreta',
       tipo: 'ALUNO',
+      versaoTermo: '1.2',
+      aceitaTermos: true,
       matricula: '20240001',
       foto: photo,
     });
   });
 
   it('leaves out the optional fields a professor did not fill', () => {
-    expect(toRegisterPayload({ ...student, tipo: 'PROFESSOR', matricula: '', foto: null })).toEqual(
-      {
-        nome: 'Ana Souza',
-        email: 'ana@discente.uefs.br',
-        senha: 'senha-secreta',
-        tipo: 'PROFESSOR',
-      },
-    );
+    expect(
+      toRegisterPayload({ ...student, tipo: 'PROFESSOR', matricula: '', foto: null }, '1.2'),
+    ).toEqual({
+      nome: 'Ana Souza',
+      email: 'ana@discente.uefs.br',
+      senha: 'senha-secreta',
+      tipo: 'PROFESSOR',
+      versaoTermo: '1.2',
+      aceitaTermos: true,
+    });
   });
 
   it('keeps the optional fields a professor did fill', () => {
-    expect(toRegisterPayload({ ...student, tipo: 'PROFESSOR' })).toMatchObject({
+    expect(toRegisterPayload({ ...student, tipo: 'PROFESSOR' }, '1.2')).toMatchObject({
       tipo: 'PROFESSOR',
+      versaoTermo: '1.2',
+      aceitaTermos: true,
       matricula: '20240001',
       foto: photo,
     });

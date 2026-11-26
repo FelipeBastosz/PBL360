@@ -18,7 +18,7 @@ export function TutorsTab({ roomId, isOwner }: TutorsTabProps) {
       {isOwner ? (
         <TutorSearch existingIds={tutors.map((t) => t.id)} pendingId={pendingId} onAdd={add} />
       ) : (
-        <p className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
+        <p className="rounded-xl bg-brand-soft p-3 text-sm text-brand-accent">
           Só o professor responsável pela turma pode convidar ou remover professores.
         </p>
       )}
@@ -33,10 +33,10 @@ export function TutorsTab({ roomId, isOwner }: TutorsTabProps) {
         )}
         {isLoading && !tutors.length ? (
           <div className="flex justify-center py-6">
-            <Spinner className="size-6 text-brand-900" />
+            <Spinner className="size-6 text-brand-accent" />
           </div>
         ) : (
-          <ul className="stagger-in divide-y divide-black/5">
+          <ul className="stagger-in divide-y divide-border-subtle">
             {tutors.map((tutor) => (
               <TutorRow
                 key={tutor.id}

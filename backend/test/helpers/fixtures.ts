@@ -17,7 +17,7 @@ export interface TestUser {
 
 export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
   await dataSource.query(
-    'TRUNCATE conversation_messages, conversations, problem_grades, session_grades, criterion_grades, formula_components, formulas, grade_adjustments, evaluation_items, evaluations, session_evaluation_configs, observation_tags, observations, behavior_tags, student_session_feedback_reads, feedback_revisions, feedback, session_general_evaluations, session_attachments, attendances, session_roles, sessions, problems, performance_criteria, performance_tables, room_students, room_tutor_events, room_tutors, rooms, password_reset_codes, email_verification_codes, user_photos, users CASCADE;',
+    'TRUNCATE conversation_messages, conversations, problem_grades, session_grades, criterion_grades, formula_components, formulas, grade_adjustments, evaluation_items, evaluations, session_evaluation_configs, observation_tags, observations, behavior_tags, student_session_feedback_reads, feedback_revisions, feedback, session_general_evaluations, session_attachments, attendances, session_roles, sessions, problems, performance_criteria, performance_tables, room_students, room_ownership_transfers, room_tutor_events, room_tutors, rooms, password_reset_codes, email_verification_codes, user_preferences, user_photos, users CASCADE;',
   );
   await insertSystemPerformanceTables(dataSource);
   await resetCommitmentTerms(dataSource);
@@ -26,7 +26,7 @@ export const cleanDatabase = async (dataSource: DataSource): Promise<void> => {
 const resetCommitmentTerms = async (dataSource: DataSource): Promise<void> => {
   await dataSource.query(`DELETE FROM commitment_terms WHERE version = 'test-current';`);
   await dataSource.query(`UPDATE commitment_terms SET is_current = FALSE WHERE is_current = TRUE;`);
-  await dataSource.query(`UPDATE commitment_terms SET is_current = TRUE WHERE version = '1.1';`);
+  await dataSource.query(`UPDATE commitment_terms SET is_current = TRUE WHERE version = '1.2';`);
 };
 
 export const insertDefaultPerformanceTable = async (
@@ -66,7 +66,7 @@ export const acceptCurrentTermForAllUsers = async (dataSource: DataSource): Prom
     FROM users
     CROSS JOIN commitment_terms AS terms
     WHERE terms.is_current = TRUE
-    ON CONFLICT (user_id) DO NOTHING;
+    ON CONFLICT (user_id, term_id) DO NOTHING;
   `);
 };
 

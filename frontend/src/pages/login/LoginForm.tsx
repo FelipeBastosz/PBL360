@@ -9,7 +9,7 @@ import { ROUTES } from '@/routes/paths';
 import type { LoginFormValues } from '@/utils/authForms';
 
 // Text links get extra vertical padding so they are comfortable to tap on phones.
-const TEXT_LINK_CLASS = '-my-3 inline-block py-3 text-brand-900 hover:underline';
+const TEXT_LINK_CLASS = '-my-3 inline-block py-3 text-brand-accent hover:underline';
 
 type LoginFormProps = {
   values: LoginFormValues;

@@ -25,6 +25,7 @@ export type RegisterFormValues = {
   foto: File | null;
   senha: string;
   confirmacao: string;
+  termosAceitos: boolean;
 };
 
 export function validateLoginForm(values: LoginFormValues): Errors<LoginFormValues> {
@@ -59,16 +60,24 @@ export function validateRegisterForm(values: RegisterFormValues): Errors<Registe
         : undefined,
     foto: isStudent || values.foto ? validatePhoto(values.foto) : undefined,
     ...validateNewPasswordForm(values),
+    termosAceitos: values.termosAceitos
+      ? undefined
+      : 'O cadastro só pode ser realizado se você marcar que leu e concorda com os Termos de Uso e Política de Privacidade.',
   };
 }
 
-export function toRegisterPayload(values: RegisterFormValues): RegisterPayload {
+export function toRegisterPayload(
+  values: RegisterFormValues,
+  versaoTermo: string,
+): RegisterPayload {
   const matricula = values.matricula.trim();
   return {
     nome: values.nome.trim(),
     email: values.email.trim().toLowerCase(),
     senha: values.senha,
     tipo: values.tipo,
+    versaoTermo,
+    aceitaTermos: values.termosAceitos,
     ...(matricula && { matricula }),
     ...(values.foto && { foto: values.foto }),
   };

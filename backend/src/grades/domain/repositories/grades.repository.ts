@@ -1,3 +1,5 @@
+import type { AttendanceStatus } from '@/sessions/domain/enums/attendance-status.enum';
+
 export type GradeRow = Record<string, string | number | boolean | null | undefined>;
 
 export interface ProblemGradeData {
@@ -29,6 +31,15 @@ export interface ProblemObservationTagDetail {
   tags: string[];
 }
 
+export interface StudentSessionDetails {
+  sessionId: string;
+  attendance: AttendanceStatus | null;
+  marks: Array<{ id: string; name: string; quantity: number }>;
+  date: string;
+  problemOrderIndex: number;
+  sessionOrderIndex: number;
+}
+
 export interface GradesRepository {
   findProblem(problemId: string, roomId: string): Promise<GradeRow | null>;
 
@@ -39,6 +50,12 @@ export interface GradesRepository {
   saveGrades(problemId: string, result: GradePersistenceData): Promise<void>;
 
   findProblemObservationTags(problemId: string): Promise<ProblemObservationTagDetail[]>;
+
+  findStudentSessionDetails(
+    roomId: string,
+    studentId: string,
+    problemIds: string[],
+  ): Promise<StudentSessionDetails[]>;
 }
 
 export const GRADES_REPOSITORY = Symbol('GradesRepository');

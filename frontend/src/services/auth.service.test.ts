@@ -27,9 +27,11 @@ describe('authService.register', () => {
     email: 'ana@discente.uefs.br',
     senha: 'senha-secreta',
     tipo: 'ALUNO' as const,
+    versaoTermo: '1.2',
+    aceitaTermos: true,
   };
 
-  it('sends the registration as multipart form data with the photo file', async () => {
+  it('sends the registration as multipart form data with the photo file and terms fields', async () => {
     const adapter = respondWith({ mensagem: 'ok' });
     const foto = new File(['png'], 'ana.png', { type: 'image/png' });
 
@@ -40,6 +42,8 @@ describe('authService.register', () => {
     expect(request).toMatchObject({ method: 'post', url: '/autenticacao/registro' });
     expect(body).toBeInstanceOf(FormData);
     expect(body.get('nome')).toBe('Ana Souza');
+    expect(body.get('versaoTermo')).toBe('1.2');
+    expect(body.get('aceitaTermos')).toBe('true');
     expect(body.get('matricula')).toBe('20240001');
     expect(body.get('foto')).toBeInstanceOf(File);
     expect((body.get('foto') as File).name).toBe('ana.png');
@@ -51,6 +55,8 @@ describe('authService.register', () => {
     await authService.register({ ...base, tipo: 'PROFESSOR', email: 'carlos@uefs.br' });
     const body = sentRequest(adapter).data as FormData;
 
+    expect(body.get('versaoTermo')).toBe('1.2');
+    expect(body.get('aceitaTermos')).toBe('true');
     expect(body.has('matricula')).toBe(false);
     expect(body.has('foto')).toBe(false);
   });

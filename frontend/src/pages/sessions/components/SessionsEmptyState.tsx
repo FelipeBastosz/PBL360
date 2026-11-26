@@ -7,7 +7,7 @@ type SessionsEmptyStateProps = {
 export function SessionsEmptyState({ isProfessor }: SessionsEmptyStateProps) {
   return (
     <div className="mt-12 flex flex-col items-center justify-center px-6 text-center">
-      <div className="flex size-16 items-center justify-center rounded-full bg-brand-100 text-brand-900">
+      <div className="flex size-16 items-center justify-center rounded-full bg-brand-soft text-brand-accent">
         <CalendarDaysIcon className="size-8" aria-hidden="true" />
       </div>
 
@@ -20,7 +20,7 @@ export function SessionsEmptyState({ isProfessor }: SessionsEmptyStateProps) {
       <p className="mt-1 text-sm text-muted">
         {isProfessor ? (
           <>
-            Toque no <span className="font-bold text-brand-900">+</span> para agendar a primeira
+            Toque no <span className="font-bold text-brand-accent">+</span> para agendar a primeira
             sessão.
           </>
         ) : (
