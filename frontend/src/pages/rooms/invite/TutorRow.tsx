@@ -14,7 +14,7 @@ type TutorRowProps = {
 function RemoveControl({ tutor, isPending, onRemove }: Omit<TutorRowProps, 'canRemove'>) {
   const [isConfirming, setIsConfirming] = useState(false);
 
-  if (isPending) return <Spinner className="size-5 text-brand-900" />;
+  if (isPending) return <Spinner className="size-5 text-brand-accent" />;
 
   if (!isConfirming) {
     return (
@@ -34,14 +34,14 @@ function RemoveControl({ tutor, isPending, onRemove }: Omit<TutorRowProps, 'canR
       <button
         type="button"
         onClick={() => setIsConfirming(false)}
-        className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted hover:bg-black/5"
+        className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted hover:bg-subtle"
       >
         Cancelar
       </button>
       <button
         type="button"
         onClick={() => onRemove(tutor)}
-        className="rounded-lg bg-danger px-2.5 py-1.5 text-sm font-semibold text-white transition-[scale] active:scale-95"
+        className="rounded-lg bg-danger-solid px-2.5 py-1.5 text-sm font-semibold text-white transition-[scale] active:scale-95"
       >
         Remover
       </button>
@@ -57,7 +57,7 @@ export function TutorRow({ tutor, canRemove, isPending, onRemove }: TutorRowProp
         <p className="flex items-center gap-2 truncate font-semibold text-ink">
           <span className="truncate">{tutor.nome}</span>
           {tutor.responsavel && (
-            <span className="shrink-0 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-900">
+            <span className="shrink-0 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-accent">
               Responsável
             </span>
           )}

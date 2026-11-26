@@ -27,7 +27,7 @@ export function CopyValue({ label, value, displayValue, isCode }: CopyValueProps
   }
 
   return (
-    <div className="flex items-center justify-between gap-2 text-sm text-brand-900">
+    <div className="flex items-center justify-between gap-2 text-sm text-brand-accent">
       <p className="truncate">
         <span className="font-semibold">{label}:</span>{' '}
         <span className={isCode ? 'font-mono font-semibold' : "[font-feature-settings:'calt'_0]"}>
@@ -38,7 +38,7 @@ export function CopyValue({ label, value, displayValue, isCode }: CopyValueProps
         type="button"
         onClick={handleCopy}
         aria-label={`Copiar ${label}`}
-        className="shrink-0 rounded-md p-1 transition-[color,scale] duration-200 hover:text-brand-700 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
+        className="shrink-0 rounded-md p-1 transition-[color,scale] duration-200 hover:opacity-80 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent"
       >
         {copied ? (
           <CheckIcon

@@ -28,7 +28,7 @@ export function SelectField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-lg text-brand-900">
+      <label htmlFor={id} className="text-lg text-brand-accent">
         {label}
       </label>
       <div className="relative">
@@ -53,7 +53,7 @@ export function SelectField({
             </option>
           ))}
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-placeholder transition-transform duration-200 peer-focus:rotate-180 peer-focus:text-brand-900">
+        <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-placeholder transition-transform duration-200 peer-focus:rotate-180 peer-focus:text-brand-accent">
           <ChevronDownIcon className="size-5" aria-hidden />
         </div>
       </div>

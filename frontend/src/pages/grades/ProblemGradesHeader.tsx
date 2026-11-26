@@ -30,7 +30,7 @@ export function ProblemGradesHeader({ room, problem, backTo }: ProblemGradesHead
         : '/turmas';
 
   return (
-    <header className="sticky top-0 z-30 bg-brand-900 text-white shadow-[0_6px_18px_-12px_rgb(0_0_119/0.8)]">
+    <header className="sticky top-0 z-30 border-b border-brand-primary-border bg-brand-primary text-white shadow-[0_6px_18px_-12px_var(--color-brand-shadow)]">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
         <div className="flex items-center gap-3">
           <Link

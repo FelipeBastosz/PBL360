@@ -28,8 +28,8 @@ function FormulaSelectItem({
       className={cn(
         'w-full rounded-[18px] border p-4 text-left font-bold transition-all shadow-sm',
         isSelected
-          ? 'border-brand-900 bg-brand-50 text-brand-900 ring-2 ring-brand-900'
-          : 'border-black/5 bg-white text-brand-900 hover:bg-gray-50',
+          ? 'border-brand-accent bg-brand-soft text-brand-accent ring-2 ring-brand-accent'
+          : 'border-border-subtle bg-elevated text-brand-accent hover:bg-subtle',
       )}
     >
       {table.nome}
@@ -81,8 +81,8 @@ function ManageActions({
         onClick={onSubmit}
         disabled={!hasSelection}
         className={cn(
-          'w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform active:scale-[0.98]',
-          !hasSelection ? 'opacity-60 cursor-not-allowed' : 'hover:bg-brand-800',
+          'w-full rounded-[14px] bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg transition-transform active:scale-[0.98]',
+          !hasSelection ? 'opacity-60 cursor-not-allowed' : 'hover:bg-brand-primary-hover',
         )}
       >
         Selecionar fórmula
@@ -90,7 +90,7 @@ function ManageActions({
       <button
         type="button"
         onClick={onCancel}
-        className="text-center text-sm font-semibold text-brand-900 underline hover:opacity-80"
+        className="text-center text-sm font-semibold text-brand-accent underline hover:opacity-80"
       >
         Cancelar
       </button>
@@ -162,7 +162,7 @@ export function ManageMyFormulasPage() {
       <main className="mx-auto mt-6 flex w-full max-w-md flex-col px-4">
         {isLoading && (
           <div className="mt-12 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
+            <Spinner className="size-8 text-brand-accent" />
           </div>
         )}
         {error && <Alert tone="error">{error.message}</Alert>}

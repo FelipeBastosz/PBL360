@@ -18,7 +18,7 @@ type HeaderProps = {
 
 export function SessionHubHeader({ session, problem, userNome, user, backUrl }: HeaderProps) {
   return (
-    <header className="shrink-0 bg-brand-900 text-white">
+    <header className="shrink-0 border-b border-brand-primary-border bg-brand-primary text-white">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between gap-3')}>
         <div className="flex min-w-0 items-center gap-3">
           <Link

@@ -11,7 +11,7 @@ export function IndividualFeedbackSection({
 }) {
   return (
     <section aria-label="Feedback Individual" className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold text-brand-900 uppercase tracking-wider">
+      <h2 className="text-sm font-semibold text-brand-accent uppercase tracking-wider">
         Feedback Individual
       </h2>
       <FeedbackCard
@@ -29,7 +29,7 @@ export function IndividualFeedbackSection({
 export function GeneralFeedbackSection({ feedback }: { feedback: ReceivedFeedbackResponse }) {
   return (
     <section aria-label="Feedback da Turma" className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold text-brand-900 uppercase tracking-wider">
+      <h2 className="text-sm font-semibold text-brand-accent uppercase tracking-wider">
         Geral da Turma
       </h2>
       <FeedbackCard

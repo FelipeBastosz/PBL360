@@ -14,10 +14,10 @@ export function ChangePasswordFields({ form }: ChangePasswordFieldsProps) {
         form.submit();
       }}
       noValidate
-      className="mt-3 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 animate-fade-up sm:p-5"
+      className="mt-3 flex flex-col gap-4 rounded-xl border border-border bg-elevated p-4 animate-fade-up sm:p-5"
     >
-      <div className="border-b border-gray-200 pb-2">
-        <h3 className="text-base font-semibold text-brand-900">Alterar Senha</h3>
+      <div className="border-b border-border pb-2">
+        <h3 className="text-base font-semibold text-brand-accent">Alterar Senha</h3>
         <p className="text-xs text-brand-300">Informe sua senha atual e escolha uma nova senha.</p>
       </div>
 

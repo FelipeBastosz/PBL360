@@ -7,7 +7,7 @@ type ProblemsEmptyStateProps = {
 export function ProblemsEmptyState({ isProfessor }: ProblemsEmptyStateProps) {
   return (
     <div className="mt-12 flex flex-col items-center justify-center px-6 text-center">
-      <div className="flex size-16 items-center justify-center rounded-full bg-brand-100 text-brand-900">
+      <div className="flex size-16 items-center justify-center rounded-full bg-brand-soft text-brand-accent">
         <ClipboardDocumentListIcon className="size-8" aria-hidden="true" />
       </div>
 
@@ -20,8 +20,8 @@ export function ProblemsEmptyState({ isProfessor }: ProblemsEmptyStateProps) {
       <p className="mt-1 text-sm text-muted">
         {isProfessor ? (
           <>
-            Toque no <span className="font-bold text-brand-900">+</span> para cadastrar o primeiro
-            problema.
+            Toque no <span className="font-bold text-brand-accent">+</span> para cadastrar o
+            primeiro problema.
           </>
         ) : (
           'Aguarde o professor publicar as primeiras atividades.'

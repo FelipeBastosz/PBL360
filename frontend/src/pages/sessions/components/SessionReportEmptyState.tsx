@@ -2,8 +2,8 @@ import { UserGroupIcon } from '@heroicons/react/24/outline';
 
 export function SessionReportEmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-black/5 bg-white p-8 text-center shadow-sm sm:p-12">
-      <div className="flex size-16 items-center justify-center rounded-full bg-brand-50 text-brand-900">
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-border-subtle bg-elevated p-8 text-center shadow-sm sm:p-12">
+      <div className="flex size-16 items-center justify-center rounded-full bg-brand-soft text-brand-accent">
         <UserGroupIcon className="size-8" aria-hidden="true" />
       </div>
       <h2 className="mt-4 text-base font-semibold text-ink">

@@ -6,7 +6,7 @@ import { BrandHero } from '@/components/layout/BrandHero';
 import { ROUTES } from '@/routes/paths';
 import { ProfileOption } from './ProfileOption';
 
-const TEXT_LINK_CLASS = '-my-3 inline-block py-3 text-brand-900 hover:underline';
+const TEXT_LINK_CLASS = '-my-3 inline-block py-3 text-brand-accent hover:underline';
 
 export default function ProfileSelectionPage() {
   return (
@@ -15,7 +15,7 @@ export default function ProfileSelectionPage() {
         <BrandHero
           className="mb-8 lg:hidden"
           markClassName="size-32 text-card"
-          discClassName="fill-brand-900"
+          discClassName="fill-brand-accent"
         />
         <div className="flex flex-col">
           <h1 className="text-center text-[1.75rem] font-semibold text-ink">

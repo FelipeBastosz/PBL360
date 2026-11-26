@@ -24,7 +24,7 @@ export function EditMainContent({
   if (form.isLoading) {
     return (
       <div className="mt-12 flex justify-center">
-        <Spinner className="size-8 text-brand-900" />
+        <Spinner className="size-8 text-brand-accent" />
       </div>
     );
   }

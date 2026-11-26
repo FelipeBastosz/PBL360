@@ -26,7 +26,7 @@ export function RoomCard({
       <div className={CARD_ACCENT_CLASS} />
       <div className="flex flex-col gap-3 p-4">
         <Link to={`${ROUTES.rooms}/${room.id}/problemas`} className="focus-visible:outline-none">
-          <h3 className="line-clamp-2 text-base font-bold text-brand-900 group-hover:text-brand-900">
+          <h3 className="line-clamp-2 text-base font-bold text-brand-accent group-hover:text-brand-accent">
             {room.nome}
           </h3>
           {professorNome && <p className="text-sm text-muted">Prof. {professorNome}</p>}
@@ -35,14 +35,14 @@ export function RoomCard({
           <span className="text-sm text-muted">
             {countLabel(room.totalAlunos ?? 0, 'aluno', 'alunos')}
           </span>
-          <span className="rounded-full bg-brand-200 px-2.5 py-0.5 text-xs font-bold text-brand-900">
+          <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-brand-accent">
             {countLabel(room.totalProblemas ?? 0, 'problema', 'problemas')}
           </span>
         </div>
         {isLeaveMode && onLeaveRequest && (
-          <div className="mt-1 flex items-center justify-between border-t border-black/5 pt-2">
+          <div className="mt-1 flex items-center justify-between border-t border-border-subtle pt-2">
             {isOwner ? (
-              <span className="rounded-full bg-amber-100/70 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
+              <span className="rounded-full bg-warning-soft px-2.5 py-0.5 text-[11px] font-semibold text-warning">
                 Professor responsável
               </span>
             ) : (

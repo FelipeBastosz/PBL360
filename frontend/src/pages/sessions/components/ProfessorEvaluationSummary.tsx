@@ -17,7 +17,7 @@ export function ProfessorEvaluationSummary({
   onOpenModal,
 }: ProfessorEvaluationSummaryProps) {
   return (
-    <div className="flex flex-col gap-2.5 rounded-xl border border-black/5 bg-surface/40 p-4">
+    <div className="flex flex-col gap-2.5 rounded-xl border border-border-subtle bg-surface/40 p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <UserAvatar
@@ -38,7 +38,7 @@ export function ProfessorEvaluationSummary({
             <button
               type="button"
               onClick={onOpenModal}
-              className="inline-flex size-9 items-center justify-center rounded-full text-ink/70 transition-[background-color,scale] duration-200 hover:bg-black/5 hover:text-brand-900 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
+              className="inline-flex size-9 items-center justify-center rounded-full text-ink/70 transition-[background-color,scale] duration-200 hover:bg-subtle hover:text-brand-accent active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent"
               aria-label="Editar feedback geral"
             >
               <PencilIcon className="size-5" />

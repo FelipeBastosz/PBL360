@@ -18,7 +18,7 @@ import { cn } from '@/utils/cn';
 
 function EvaluationsHeader({ user, backUrl }: { user: UserResponse | null; backUrl: string }) {
   return (
-    <header className="shrink-0 bg-brand-900 text-white">
+    <header className="shrink-0 border-b border-brand-primary-border bg-brand-primary text-white">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between gap-3')}>
         <div className="flex min-w-0 items-center gap-3">
           <Link
@@ -33,7 +33,7 @@ function EvaluationsHeader({ user, backUrl }: { user: UserResponse | null; backU
             <span className="text-xs text-white/70">Alunos</span>
           </div>
         </div>
-        <UserMenuButton user={user} className="size-9 bg-brand-200 text-brand-900" />
+        <UserMenuButton user={user} className="size-9 ring-2 ring-white/20" />
       </div>
     </header>
   );
@@ -41,12 +41,12 @@ function EvaluationsHeader({ user, backUrl }: { user: UserResponse | null; backU
 
 function MissingCriteriaAlert({ formulasUrl }: { formulasUrl: string }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-2xl border-2 border-warning-line bg-warning-soft p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <ExclamationTriangleIcon className="mt-0.5 size-6 shrink-0 text-amber-700" />
+        <ExclamationTriangleIcon className="mt-0.5 size-6 shrink-0 text-warning" />
         <div>
-          <h3 className="text-sm font-bold text-amber-900">Problema sem tabela vinculada</h3>
-          <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
+          <h3 className="text-sm font-bold text-warning">Problema sem tabela vinculada</h3>
+          <p className="mt-0.5 text-xs leading-relaxed text-ink/80">
             Este problema ainda não possui critérios de avaliação configurados. Vincule uma tabela
             de fórmulas para liberar o lançamento de notas.
           </p>
@@ -64,12 +64,12 @@ function MissingCriteriaAlert({ formulasUrl }: { formulasUrl: string }) {
 
 function PendingRollCallAlert({ rollCallUrl }: { rollCallUrl: string }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border-2 border-blue-300 bg-blue-50 p-4 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-border bg-brand-soft p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <ClipboardDocumentCheckIcon className="mt-0.5 size-6 shrink-0 text-brand-900" />
+        <ClipboardDocumentCheckIcon className="mt-0.5 size-6 shrink-0 text-brand-accent" />
         <div>
-          <h3 className="text-sm font-bold text-brand-900">Chamada pendente</h3>
-          <p className="mt-0.5 text-xs leading-relaxed text-ink/70">
+          <h3 className="text-sm font-bold text-brand-accent">Chamada pendente</h3>
+          <p className="mt-0.5 text-xs leading-relaxed text-ink/80">
             A chamada desta sessão ainda não foi salva. Registre a presença dos alunos para liberar
             as avaliações individuais.
           </p>
@@ -77,7 +77,7 @@ function PendingRollCallAlert({ rollCallUrl }: { rollCallUrl: string }) {
       </div>
       <Link
         to={rollCallUrl}
-        className="w-full rounded-xl bg-brand-900 py-2 text-center text-xs font-semibold text-white transition hover:bg-brand-800"
+        className="w-full rounded-xl border border-brand-primary-border bg-brand-primary py-2 text-center text-xs font-semibold text-brand-on-primary transition hover:bg-brand-primary-hover"
       >
         Realizar Chamada
       </Link>
@@ -87,11 +87,11 @@ function PendingRollCallAlert({ rollCallUrl }: { rollCallUrl: string }) {
 
 function ActivePokerAlert({ pokerUrl }: { pokerUrl: string }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-300 bg-brand-50 p-4 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-2xl border-2 border-brand-300 bg-brand-soft p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <CardsIcon className="mt-0.5 size-6 shrink-0 text-brand-900" />
+        <CardsIcon className="mt-0.5 size-6 shrink-0 text-brand-accent" />
         <div>
-          <h3 className="text-sm font-bold text-brand-900">Planning poker em andamento</h3>
+          <h3 className="text-sm font-bold text-brand-accent">Planning poker em andamento</h3>
           <p className="mt-0.5 text-xs leading-relaxed text-ink/70">
             A avaliação direta do tutor está bloqueada enquanto o planning poker estiver ativo nesta
             sessão.
@@ -100,7 +100,7 @@ function ActivePokerAlert({ pokerUrl }: { pokerUrl: string }) {
       </div>
       <Link
         to={pokerUrl}
-        className="w-full rounded-xl bg-brand-900 py-2 text-center text-xs font-semibold text-white transition hover:bg-brand-800"
+        className="w-full rounded-xl bg-brand-primary py-2 text-center text-xs font-semibold text-white transition hover:bg-brand-primary-hover"
       >
         Ir para o Planning Poker
       </Link>
@@ -137,7 +137,7 @@ export default function SessionEvaluationsListPage() {
 
         {isLoading ? (
           <div className="mt-10 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
+            <Spinner className="size-8 text-brand-accent" />
           </div>
         ) : (
           <div className={CARD_GRID_CLASS}>

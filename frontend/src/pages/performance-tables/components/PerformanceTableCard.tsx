@@ -16,9 +16,9 @@ type CardProps = {
 function TableCardHeader({ name, isApplied }: { name: string; isApplied: boolean }) {
   return (
     <div className="flex items-start justify-between gap-2">
-      <h3 className="line-clamp-2 text-base font-bold text-brand-900">{name}</h3>
+      <h3 className="line-clamp-2 text-base font-bold text-brand-accent">{name}</h3>
       {isApplied && (
-        <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+        <span className="shrink-0 rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-bold text-success">
           Aplicada
         </span>
       )}
@@ -52,19 +52,19 @@ export function PerformanceTableCard({
   onDelete,
 }: CardProps) {
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-shadow hover:shadow-md">
-      <div className={cn('h-1.5 w-full', isApplied ? 'bg-emerald-600' : 'bg-brand-900')} />
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border-subtle bg-elevated shadow-sm transition-shadow hover:shadow-md">
+      <div className={cn('h-1.5 w-full', isApplied ? 'bg-emerald-600' : 'bg-brand-stripe')} />
       <Link
         to={`${ROUTES.performanceTables}/${table.id}`}
         state={target}
-        className="flex flex-col gap-2 p-4 text-left transition-colors hover:bg-gray-50/50"
+        className="flex flex-col gap-2 p-4 text-left transition-colors hover:bg-subtle/50"
       >
         <TableCardHeader name={table.nome} isApplied={isApplied} />
         {table.descricao && <p className="line-clamp-2 text-sm text-muted">{table.descricao}</p>}
         <TableCardMeta authorName={table.autor?.nome} inUseCount={table.emUso} />
       </Link>
-      <div className="mt-auto flex items-center justify-between border-t border-black/5 px-4 py-2.5 text-xs font-semibold">
-        <span className="rounded-full bg-brand-200 px-2.5 py-0.5 font-bold text-brand-900">
+      <div className="mt-auto flex items-center justify-between border-t border-border-subtle px-4 py-2.5 text-xs font-semibold">
+        <span className="rounded-full bg-brand-soft px-2.5 py-0.5 font-bold text-brand-accent">
           {table.quantidadeCriterios} {table.quantidadeCriterios === 1 ? 'critério' : 'critérios'}
         </span>
         {canDelete && onDelete && (

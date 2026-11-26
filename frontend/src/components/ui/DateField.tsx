@@ -61,7 +61,7 @@ export function DateField({ value, onChange, disabled, ...fieldProps }: DateFiel
             aria-label={isOpen ? 'Fechar calendário' : 'Abrir calendário'}
             aria-expanded={isOpen}
             aria-controls={calendarId}
-            className="rounded-md p-2 text-placeholder hover:text-brand-900 focus-visible:outline-2 focus-visible:outline-brand-900 disabled:cursor-not-allowed"
+            className="rounded-md p-2 text-placeholder hover:text-brand-accent focus-visible:outline-2 focus-visible:outline-brand-accent disabled:cursor-not-allowed"
           >
             <CalendarDaysIcon className="size-6" aria-hidden />
           </button>

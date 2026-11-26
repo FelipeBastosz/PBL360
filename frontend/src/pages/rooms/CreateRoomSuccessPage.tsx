@@ -14,7 +14,7 @@ function SuccessInfoCard({ roomCode }: { roomCode: string }) {
   const displayUrl = inviteUrl.replace(/^https?:\/\//, '');
 
   return (
-    <div className="mt-8 flex flex-col gap-4 rounded-[10px] bg-black/5 p-5 text-left">
+    <div className="mt-8 flex flex-col gap-4 rounded-[10px] bg-subtle p-5 text-left">
       <CopyValue label="Código" value={roomCode} isCode />
       <CopyValue label="Link" value={inviteUrl} displayValue={displayUrl} />
     </div>

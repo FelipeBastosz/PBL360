@@ -123,7 +123,7 @@ function TermsCheckbox({
           type="checkbox"
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
-          className="mt-0.5 size-4 rounded border-black/20 text-brand-900 focus:ring-brand-900 cursor-pointer"
+          className="mt-0.5 size-4 rounded border-border text-brand-accent focus:ring-brand-accent cursor-pointer"
         />
         <span>
           Eu li e concordo com os{' '}
@@ -134,7 +134,7 @@ function TermsCheckbox({
               e.stopPropagation();
               onOpenTerms();
             }}
-            className="font-semibold text-brand-900 underline underline-offset-2 hover:text-brand-700"
+            className="font-semibold text-brand-accent underline underline-offset-2 hover:text-brand-accent"
           >
             Termos de Uso e Política de Privacidade
           </button>

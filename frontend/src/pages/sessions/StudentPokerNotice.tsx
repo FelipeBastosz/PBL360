@@ -31,15 +31,15 @@ export function StudentPokerNotice({ sessionId, pokerPath }: StudentPokerNoticeP
   if (!state) return null;
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_14px_28px_-18px_rgb(0_0_119/0.45)]">
-      <div className="h-1 bg-brand-900" />
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-border-subtle bg-elevated shadow-[0_14px_28px_-18px_var(--color-brand-shadow)]">
+      <div className="h-1 bg-brand-primary" />
       <div className="flex flex-col gap-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <LiveBadge />
           <span className="text-[13px] text-muted">{roundLabel(state)}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-900">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-accent">
             <CardsIcon className="size-[26px]" />
           </span>
           <div className="flex min-w-0 flex-col">

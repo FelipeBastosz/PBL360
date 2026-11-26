@@ -9,10 +9,10 @@ type AuthShellProps = {
 
 function DesktopHero() {
   return (
-    <aside className="hidden flex-col items-center justify-center gap-8 p-12 text-card bg-brand-900 lg:flex">
-      <LogoMark animated className="size-64 text-brand-900" discClassName="fill-card" />
+    <aside className="hidden flex-col items-center justify-center gap-8 p-12 text-white bg-brand-primary lg:flex">
+      <LogoMark animated className="size-64 text-brand-primary" discClassName="fill-white" />
       <Wordmark className="h-14 w-auto" />
-      <p className="max-w-sm text-center text-xl text-card/80">{APP_TAGLINE}</p>
+      <p className="max-w-sm text-center text-xl text-white/80">{APP_TAGLINE}</p>
     </aside>
   );
 }

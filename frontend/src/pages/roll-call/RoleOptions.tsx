@@ -22,10 +22,10 @@ export function RoleOptions({ value, onChange }: RoleOptionsProps) {
           <label
             key={option.label}
             className={cn(
-              'flex h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 transition-[background-color,border-color] duration-200 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand-900',
+              'flex h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 transition-[background-color,border-color] duration-200 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand-accent',
               isChecked
                 ? 'border-warning-line bg-warning-soft text-warning'
-                : 'border-black/10 text-ink hover:bg-black/5',
+                : 'border-border text-ink hover:bg-subtle',
             )}
           >
             <input

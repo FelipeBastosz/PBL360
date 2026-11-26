@@ -15,7 +15,7 @@ type AdjustGradeModalProps = {
 
 const STEP = 0.1;
 const STEPPER =
-  'size-10 rounded-xl border border-black/10 bg-white text-lg font-bold disabled:opacity-30';
+  'size-10 rounded-xl border border-border bg-elevated text-lg font-bold disabled:opacity-30';
 
 function GradeStepper({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   const [raw, setRaw] = useState<string | null>(null);
@@ -42,13 +42,13 @@ function GradeStepper({ value, onChange }: { value: number; onChange: (value: nu
           if (parsed !== null) onChange(parsed);
           setRaw(null);
         }}
-        className="w-[60px] rounded-lg border border-black/10 bg-white py-1.5 text-center text-base font-bold text-ink"
+        className="w-[60px] rounded-lg border border-border bg-elevated py-1.5 text-center text-base font-bold text-ink"
       />
       <button
         type="button"
         aria-label="Aumentar nota"
         onClick={() => shift(STEP)}
-        className={cn(STEPPER, 'text-brand-900')}
+        className={cn(STEPPER, 'text-brand-accent')}
       >
         +
       </button>
@@ -81,7 +81,7 @@ function JustificationField({ value, hasError, onChange }: JustificationFieldPro
             'w-full resize-y rounded-xl border p-3 text-[13px] text-ink placeholder:text-placeholder focus:outline-none focus:ring-1',
             hasError
               ? 'border-danger'
-              : 'border-black/10 focus:border-brand-900 focus:ring-brand-900',
+              : 'border-border focus:border-brand-accent focus:ring-brand-accent',
           )}
         />
       </label>
@@ -106,7 +106,7 @@ function GradeFields({ average, grade, onGrade }: GradeFieldsProps) {
           readOnly
           aria-readonly="true"
           value={formatPokerGrade(average)}
-          className="h-12 rounded-xl border border-black/10 bg-black/5 px-4 text-base text-placeholder"
+          className="h-12 rounded-xl border border-border bg-subtle px-4 text-base text-placeholder"
         />
       </label>
       <div className="flex items-center justify-between gap-2 py-1.5">
@@ -141,7 +141,7 @@ export function AdjustGradeModal({
   return (
     <PokerModal isOpen label="Reajustar nota" onClose={onClose}>
       <div className="flex flex-col gap-3">
-        <h2 className="pr-8 text-base font-bold text-brand-900">Reajustar nota</h2>
+        <h2 className="pr-8 text-base font-bold text-brand-accent">Reajustar nota</h2>
         <p className="text-xs leading-relaxed text-muted">
           {studentName}. A nota ajustada substitui a média para este aluno e fica marcada como
           reajustada.

@@ -39,7 +39,7 @@ export function PokerTable({ seats, wide, children }: PokerTableProps) {
         >
           <polygon
             points={wide ? LANDSCAPE_HEXAGON : PORTRAIT_HEXAGON}
-            className="fill-brand-50 stroke-brand-900"
+            className="fill-brand-soft stroke-brand-accent"
             strokeWidth="0.6"
             vectorEffect="non-scaling-stroke"
           />

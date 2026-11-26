@@ -81,7 +81,7 @@ function ProblemSessionsMain({
       <SessionsSearch query={query} setQuery={setQuery} />
       {isLoading ? (
         <div className="mt-10 flex justify-center">
-          <Spinner className="size-8 text-brand-900" />
+          <Spinner className="size-8 text-brand-accent" />
         </div>
       ) : sessions.length === 0 ? (
         query ? (

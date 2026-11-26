@@ -38,10 +38,10 @@ export function SessionCard({ session, roomId, problemId }: SessionCardProps) {
   return (
     <Link
       to={`/turmas/${roomId}/problemas/${problemId}/sessoes/${session.id}`}
-      className="flex items-center justify-between gap-4 rounded-[20px] border border-black/5 bg-white p-4 shadow-sm transition hover:shadow-md focus-visible:outline-2 focus-visible:outline-brand-900"
+      className="flex items-center justify-between gap-4 rounded-[20px] border border-border-subtle bg-elevated p-4 shadow-sm transition hover:shadow-md focus-visible:outline-2 focus-visible:outline-brand-accent"
     >
       <div className="flex items-center gap-4 min-w-0">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-900">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-accent">
           <CalendarIcon className="size-6" />
         </div>
 
@@ -51,7 +51,7 @@ export function SessionCard({ session, roomId, problemId }: SessionCardProps) {
           </h3>
           <p className="truncate text-xs text-muted">{session.descricao || 'Sem descrição'}</p>
           {(session.tabelaNome || session.tabela?.nome) && (
-            <span className="mt-0.5 truncate text-[11px] font-medium text-brand-900">
+            <span className="mt-0.5 truncate text-[11px] font-medium text-brand-accent">
               Fórmula: {session.tabelaNome || session.tabela?.nome}
             </span>
           )}
