@@ -13,7 +13,7 @@ export function OffTableDropZone({ studentName, isHovered }: OffTableDropZonePro
       data-drop={OFF_TABLE_DROP}
       role="status"
       className={cn(
-        'fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 border-t-2 border-dashed px-4 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-sm font-semibold transition-colors duration-150 animate-sheet-up lg:hidden',
+        'fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 border-t-2 border-dashed px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] text-sm font-semibold transition-colors duration-150 animate-sheet-up lg:hidden [@media(max-height:560px)]:pt-1.5 [@media(max-height:560px)]:pb-[max(0.375rem,env(safe-area-inset-bottom))] [@media(max-height:560px)]:text-xs',
         isHovered
           ? 'border-danger bg-danger-soft text-danger'
           : 'border-brand-900/40 bg-white/95 text-brand-900 backdrop-blur-xs',

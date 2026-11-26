@@ -60,9 +60,9 @@ function AdjustmentList({ adjustments }: { adjustments: HistoryAdjustment[] }) {
         Ajustes anteriores
       </h3>
       <ul>
-        {adjustments.map((adjustment) => (
+        {adjustments.map((adjustment, index) => (
           <AdjustmentItem
-            key={`${adjustment.ajustadoEm}-${adjustment.valorNovo}`}
+            key={`${adjustment.ajustadoEm}-${adjustment.valorNovo}-${index}`}
             adjustment={adjustment}
           />
         ))}

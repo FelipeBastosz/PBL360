@@ -51,8 +51,9 @@ export function readApplyTarget(state: unknown): ApplyTarget | null {
 
 export function hasSessionTarget(state: unknown): boolean {
   if (typeof state !== 'object' || state === null) return false;
-  const { sessionId } = state as Record<string, unknown>;
-  return typeof sessionId === 'string' && sessionId.trim() !== '';
+  const { sessionId, target } = state as Record<string, unknown>;
+  if (typeof sessionId === 'string' && sessionId.trim() !== '') return true;
+  return target !== state && hasSessionTarget(target);
 }
 
 export function clearApplyTarget(): void {

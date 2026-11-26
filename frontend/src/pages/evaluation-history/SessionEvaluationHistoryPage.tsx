@@ -50,7 +50,7 @@ export default function SessionEvaluationHistoryPage() {
   const history = useStudentHistoryDetail(
     sessionId,
     selected?.alunoId ?? null,
-    String(selected?.notaAluno ?? selected?.notaPares ?? ''),
+    `${adjustment.openCount}:${selected?.notaAluno ?? selected?.notaPares ?? ''}`,
   );
 
   return (

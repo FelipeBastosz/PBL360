@@ -55,6 +55,8 @@ describe('hasSessionTarget', () => {
     expect(hasSessionTarget({ sessionId: 'session-1' })).toBe(true);
     expect(hasSessionTarget({ sessionId: ' ' })).toBe(false);
     expect(hasSessionTarget({ roomId: 'room-1' })).toBe(false);
+    expect(hasSessionTarget({ nome: 'Barema', target: { sessionId: 'session-1' } })).toBe(true);
+    expect(hasSessionTarget({ nome: 'Barema', target: { roomId: 'room-1' } })).toBe(false);
     expect(hasSessionTarget(null)).toBe(false);
   });
 });

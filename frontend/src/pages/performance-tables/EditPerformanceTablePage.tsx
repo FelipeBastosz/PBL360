@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
-import { readApplyTarget } from '@/utils/navigationState';
+import { readApplyTarget, type ApplyTarget } from '@/utils/navigationState';
 import { useEditPerformanceTableForm } from './hooks/useEditPerformanceTableForm';
 import { useEditModals } from './hooks/useEditModals';
 import { EditPageBody } from './components/EditPageBody';
@@ -58,6 +58,7 @@ function useEditPageDeletion(
   form: ReturnType<typeof useEditPerformanceTableForm>,
   modals: ReturnType<typeof useEditModals>,
   notify: (t: { tone: 'success'; message: string }) => void,
+  target: ApplyTarget | null,
 ) {
   const [isDeletingFormula, setIsDeletingFormula] = useState(false);
 
@@ -66,7 +67,7 @@ function useEditPageDeletion(
     try {
       await performanceTableService.remove(id);
       notify({ tone: 'success', message: 'Fórmula excluída com sucesso.' });
-      form.navigate(ROUTES.performanceTables, { replace: true });
+      form.navigate(ROUTES.performanceTables, { replace: true, state: target });
     } catch (err: unknown) {
       form.setErrorMessage(err instanceof Error ? err.message : 'Erro ao excluir a fórmula.');
     } finally {
@@ -145,7 +146,7 @@ export function EditPerformanceTablePage() {
   const form = useEditPerformanceTableForm(id, sessionId, target ?? locationState);
   const modals = useEditModals(form.setCriterios);
   const { notify } = useToast();
-  const deletion = useEditPageDeletion(id, form, modals, notify);
+  const deletion = useEditPageDeletion(id, form, modals, notify, target);
   const dialogs = useEditPageDialogs(form, modals, form.activeSessionId);
 
   const onExit = () => (form.isDirty ? dialogs.setIsDiscardOpen(true) : form.navigate(-1));

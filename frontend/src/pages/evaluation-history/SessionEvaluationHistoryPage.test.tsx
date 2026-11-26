@@ -454,5 +454,28 @@ describe('SessionEvaluationHistoryPage', () => {
       expect(within(fabio).getByText('7,5')).toBeInTheDocument();
       expect(within(fabio).getByText('9,0')).toBeInTheDocument();
     });
+
+    it('loads the detail again when the modal is reopened after a failure', async () => {
+      vi.mocked(evaluationHistoryService.detail)
+        .mockRejectedValueOnce(new ApiError(500, ['Falha']))
+        .mockResolvedValue(pokerDetail);
+      renderPage();
+
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'Ajustar nota de Fábio Prado' }),
+      );
+      expect(
+        await screen.findByText('Não foi possível carregar o histórico do aluno.'),
+      ).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+
+      await userEvent.click(screen.getByRole('button', { name: 'Ajustar nota de Fábio Prado' }));
+
+      expect(await screen.findByText('Média dos votos')).toBeInTheDocument();
+      expect(
+        screen.queryByText('Não foi possível carregar o histórico do aluno.'),
+      ).not.toBeInTheDocument();
+      expect(evaluationHistoryService.detail).toHaveBeenCalledTimes(2);
+    });
   });
 });
