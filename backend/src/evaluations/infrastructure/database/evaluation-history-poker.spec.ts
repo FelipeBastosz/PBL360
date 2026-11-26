@@ -151,8 +151,8 @@ describe('Evaluation history with planning poker', () => {
     };
     const query = mockManager([round({ currentGrade: '9.00', adjustmentCount: 1 })], {
       'FROM poker_votes pv': [
-        { voterId: 'student-2', voterName: 'Bruno Lima', score: '7.00', votedAt: decidedAt },
-        { voterId: 'student-3', voterName: 'Carla Dias', score: '8.00', votedAt: decidedAt },
+        { voterId: 'student-2', voterName: 'Bruno Lima', score: '7.00' },
+        { voterId: 'student-3', voterName: 'Carla Dias', score: '8.00' },
       ],
       'WHERE ga.poker_round_id = $1': [adjustment],
     });
@@ -191,12 +191,79 @@ describe('Evaluation history with planning poker', () => {
     expect(result!.planningPoker).toBeNull();
   });
 
-  it('hides voter identities when the poker is anonymous', () => {
+  it('hides voter identities and voting order when the poker is anonymous', () => {
     const detail = buildComparisonPlanningPoker(round({ anonymous: true }), [
-      { voterId: 'student-2', voterName: 'Bruno Lima', score: '7.00', votedAt: decidedAt },
+      { voterId: 'student-2', voterName: 'Bruno Lima', score: '9.00' },
+      { voterId: 'student-3', voterName: 'Carla Dias', score: '6.50' },
     ]);
 
-    expect(detail.votos).toEqual([{ avaliadorId: null, avaliadorNome: null, nota: 7 }]);
+    expect(detail.votos).toEqual([
+      { avaliadorId: null, avaliadorNome: null, nota: 6.5 },
+      { avaliadorId: null, avaliadorNome: null, nota: 9 },
+    ]);
+  });
+
+  it('reads anonymous votes without voter data', async () => {
+    const query = mockManager([round({ anonymous: true })]);
+
+    await buildRepository(query).getStudentComparison('session-1', 'student-1');
+
+    const votesSql = query.mock.calls
+      .map(([sql]) => sql)
+      .find((sql) => sql.includes('FROM poker_votes pv') && sql.includes('pv.round_id = $1'));
+    expect(votesSql).toContain('NULL AS "voterId"');
+    expect(votesSql).not.toContain('JOIN users');
+  });
+
+  it('uses the decided grade as reference when a round without votes is adjusted later', async () => {
+    const repository = buildRepository(
+      mockManager([
+        round({
+          average: null,
+          finalGrade: '7.00',
+          adjusted: true,
+          justification: 'Decidida sem votos',
+          currentGrade: '8.50',
+          adjustmentCount: 1,
+          voteCount: 0,
+        }),
+      ]),
+    );
+
+    const [ana] = await repository.getHistory('session-1');
+
+    expect(ana).toMatchObject({ notaAlunoOriginal: 7, notaPares: 8.5 });
+  });
+
+  it('keeps peer adjustments when the student only has a self-assessment draft', async () => {
+    const adjustment = {
+      previousValue: '7.00',
+      newValue: '8.00',
+      justification: 'Revisão da média dos pares',
+      authorId: 'tutor-1',
+      authorName: 'Carlos Mendes',
+      createdAt: decidedAt,
+    };
+    const query = mockManager([], {
+      "type = 'SELF_ASSESSMENT'": [
+        { id: 'self-1', studentId: 'student-1', status: 'DRAFT', submittedAt: null },
+      ],
+      "ga.type = 'PEER_ASSESSMENT'": [adjustment],
+    });
+
+    const result = await buildRepository(query).getStudentComparison('session-1', 'student-1');
+
+    expect(result!.ajustes).toHaveLength(1);
+    expect(result!.ajustes[0]).toMatchObject({ valorAnterior: 7, valorNovo: 8 });
+  });
+
+  it('does not read peer adjustments when the student was graded in planning poker', async () => {
+    const query = mockManager([round()]);
+
+    await buildRepository(query).getStudentComparison('session-1', 'student-1');
+
+    const sqls = query.mock.calls.map(([sql]) => sql);
+    expect(sqls.some((sql) => sql.includes("ga.type = 'PEER_ASSESSMENT'"))).toBe(false);
   });
 
   it('marks a student graded only by the tutor as evaluated by the tutor', async () => {

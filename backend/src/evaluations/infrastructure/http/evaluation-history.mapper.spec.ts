@@ -22,6 +22,7 @@ describe('evaluation-history.mapper', () => {
           notaPares: 8.5,
           avaliacoesPares: 1,
           situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
+          origem: null,
         },
         {
           alunoId: 'aluno-2',
@@ -33,6 +34,7 @@ describe('evaluation-history.mapper', () => {
           notaPares: null,
           avaliacoesPares: 0,
           situacaoAjuste: EvaluationAdjustmentSituation.SEM_AJUSTE,
+          origem: null,
         },
       ];
 
@@ -50,6 +52,7 @@ describe('evaluation-history.mapper', () => {
             notaPares: 8.5,
             avaliacoesPares: 1,
             situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
+            origem: null,
           },
           {
             alunoId: 'aluno-2',
@@ -61,6 +64,7 @@ describe('evaluation-history.mapper', () => {
             notaPares: null,
             avaliacoesPares: 0,
             situacaoAjuste: EvaluationAdjustmentSituation.SEM_AJUSTE,
+            origem: null,
           },
         ],
       });
@@ -85,6 +89,7 @@ describe('evaluation-history.mapper', () => {
             },
           ],
         },
+        planningPoker: null,
         pares: [
           {
             avaliadorId: 'aluno-2',
@@ -122,6 +127,7 @@ describe('evaluation-history.mapper', () => {
             },
           ],
         },
+        planningPoker: null,
         pares: [
           {
             avaliadorId: 'aluno-2',

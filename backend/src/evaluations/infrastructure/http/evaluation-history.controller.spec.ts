@@ -41,6 +41,7 @@ describe('EvaluationHistoryController', () => {
           notaPares: 8.5,
           avaliacoesPares: 1,
           situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
+          origem: null,
         },
       ];
 
@@ -61,6 +62,7 @@ describe('EvaluationHistoryController', () => {
             notaPares: 8.5,
             avaliacoesPares: 1,
             situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
+            origem: null,
           },
         ],
       });
@@ -85,6 +87,7 @@ describe('EvaluationHistoryController', () => {
             },
           ],
         },
+        planningPoker: null,
         pares: [
           {
             avaliadorId: 'student-2',
@@ -125,6 +128,7 @@ describe('EvaluationHistoryController', () => {
             },
           ],
         },
+        planningPoker: null,
         pares: [
           {
             avaliadorId: 'student-2',

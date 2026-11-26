@@ -1,5 +1,6 @@
 import type { EntityManager } from 'typeorm';
 import {
+  FIND_ANONYMOUS_POKER_ROUND_VOTES_QUERY,
   FIND_POKER_ADJUSTMENTS_DETAIL_QUERY,
   FIND_POKER_ROUND_VOTES_QUERY,
   FIND_SESSION_DECIDED_POKER_ROUNDS_QUERY,
@@ -35,8 +36,10 @@ export async function readStudentDecidedPokerRound(
 export function readPokerRoundVotes(
   manager: EntityManager,
   roundId: string,
+  anonymous: boolean,
 ): Promise<PokerVoteRow[]> {
-  return manager.query<PokerVoteRow[]>(FIND_POKER_ROUND_VOTES_QUERY, [roundId]);
+  const query = anonymous ? FIND_ANONYMOUS_POKER_ROUND_VOTES_QUERY : FIND_POKER_ROUND_VOTES_QUERY;
+  return manager.query<PokerVoteRow[]>(query, [roundId]);
 }
 
 export function readPokerRoundAdjustments(

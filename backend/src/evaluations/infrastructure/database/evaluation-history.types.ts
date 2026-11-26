@@ -77,8 +77,7 @@ export interface PokerRoundHistoryRow {
 }
 
 export interface PokerVoteRow {
-  voterId: string;
-  voterName: string;
+  voterId: string | null;
+  voterName: string | null;
   score: string | number;
-  votedAt: Date;
 }

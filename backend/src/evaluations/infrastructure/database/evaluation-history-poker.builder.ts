@@ -17,6 +17,12 @@ export function pokerCurrentGrade(round: PokerRoundHistoryRow): number {
   return toNumberOrNull(round.currentGrade) ?? Number(round.finalGrade);
 }
 
+function referenceGrade(round: PokerRoundHistoryRow): number | null {
+  const average = toNumberOrNull(round.average);
+  if (average !== null) return average;
+  return round.adjustmentCount > 0 ? Number(round.finalGrade) : null;
+}
+
 export function isPokerRoundAdjusted(round: PokerRoundHistoryRow): boolean {
   return round.adjusted || round.adjustmentCount > 0;
 }
@@ -36,7 +42,7 @@ export function buildPokerHistoryItem(
   return {
     ...studentIdentity(student),
     notaAluno: null,
-    notaAlunoOriginal: adjusted ? toNumberOrNull(round.average) : null,
+    notaAlunoOriginal: adjusted ? referenceGrade(round) : null,
     notaTutor,
     notaPares: pokerCurrentGrade(round),
     avaliacoesPares: round.voteCount,
@@ -52,6 +58,11 @@ const toVote = (anonymous: boolean) => (vote: PokerVoteRow) => ({
   avaliadorNome: anonymous ? null : vote.voterName,
   nota: Number(vote.score),
 });
+
+const toVotes = (votes: PokerVoteRow[], anonymous: boolean) => {
+  const mapped = votes.map(toVote(anonymous));
+  return anonymous ? mapped.sort((a, b) => a.nota - b.nota) : mapped;
+};
 
 export function buildComparisonPlanningPoker(
   round: PokerRoundHistoryRow,
@@ -70,6 +81,6 @@ export function buildComparisonPlanningPoker(
     decididaPor: round.decidedById
       ? { id: round.decidedById, nome: round.decidedByName ?? '' }
       : null,
-    votos: votes.map(toVote(round.anonymous)),
+    votos: toVotes(votes, round.anonymous),
   };
 }

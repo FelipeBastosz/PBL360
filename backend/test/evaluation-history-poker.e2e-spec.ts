@@ -47,16 +47,17 @@ describe('Evaluation history with planning poker (e2e)', () => {
   const decideRound = async (
     student: TestUser,
     voters: TestUser[],
-    vote: number,
+    vote: number | number[],
     decision: Record<string, unknown> = { acao: 'ACEITAR' },
   ) => {
     const opened = await api(app, tutor)
       .post(pokerPath('/rodadas'), { alunoId: student.id })
       .expect(201);
     const roundId = (opened.body as { rodadaId: string }).rodadaId;
-    for (const voter of voters) {
+    for (const [index, voter] of voters.entries()) {
+      const nota = Array.isArray(vote) ? vote[index] : vote;
       await api(app, voter)
-        .put(pokerPath(`/rodadas/${roundId}/voto`), { nota: vote })
+        .put(pokerPath(`/rodadas/${roundId}/voto`), { nota })
         .expect(200);
     }
     await api(app, tutor)
@@ -120,10 +121,13 @@ describe('Evaluation history with planning poker (e2e)', () => {
        VALUES ($1, $2, $5, 'PRESENT', 1), ($1, $3, $5, 'PRESENT', 2), ($1, $4, $5, 'PRESENT', 3);`,
       [sessionId, ana.id, bruno.id, carla.id, tutor.id],
     );
-    await api(app, tutor).post(pokerPath(), { anonimo: false, ordem: 'MANUAL' }).expect(201);
   });
 
+  const startPoker = (anonimo = false) =>
+    api(app, tutor).post(pokerPath(), { anonimo, ordem: 'MANUAL' }).expect(201);
+
   it('shows decided poker grades and keeps undecided students pending', async () => {
+    await startPoker();
     await decideRound(ana, [bruno, carla], 8);
     await decideRound(bruno, [ana, carla], 6, {
       acao: 'REAJUSTAR',
@@ -155,6 +159,7 @@ describe('Evaluation history with planning poker (e2e)', () => {
   });
 
   it('reflects tutor adjustments on the poker grade in the list and in the detail', async () => {
+    await startPoker();
     await decideRound(ana, [bruno, carla], 8);
     const adjust = (novaNota: number) =>
       api(app, tutor)
@@ -193,10 +198,72 @@ describe('Evaluation history with planning poker (e2e)', () => {
   });
 
   it('returns no poker detail for a student without a decided round', async () => {
+    await startPoker();
     const detail = (await api(app, tutor).get(historyPath(carla.id)).expect(200))
       .body as DetailBody;
 
     expect(detail.planningPoker).toBeNull();
     expect(detail.ajustes).toEqual([]);
+  });
+
+  it('hides who voted and the voting order in an anonymous poker', async () => {
+    await startPoker(true);
+    await decideRound(ana, [bruno, carla], [9, 6.5]);
+
+    const detail = (await api(app, tutor).get(historyPath(ana.id)).expect(200)).body as DetailBody;
+    const serialized = JSON.stringify(detail.planningPoker);
+
+    expect(detail.planningPoker).toMatchObject({
+      votos: [
+        { avaliadorId: null, nota: 6.5 },
+        { avaliadorId: null, nota: 9 },
+      ],
+    });
+    expect(serialized).not.toContain(bruno.id);
+    expect(serialized).not.toContain(carla.id);
+    expect(serialized).not.toContain('votadoEm');
+  });
+
+  it('averages distinct votes with cents precision', async () => {
+    await startPoker();
+    await decideRound(ana, [bruno, carla], [7, 8.5]);
+
+    expect((await history()).find((item) => item.alunoId === ana.id)).toMatchObject({
+      notaPares: 7.75,
+      situacaoAjuste: 'SEM_AJUSTE',
+    });
+  });
+
+  it('keeps the decided grade as reference for a round without votes adjusted later', async () => {
+    await startPoker();
+    await decideRound(ana, [], 0, {
+      acao: 'REAJUSTAR',
+      nota: 7,
+      justificativa: 'Decidida pelo tutor sem votos.',
+    });
+    await api(app, tutor)
+      .post(`/sessoes/${sessionId}/autoavaliacoes/${ana.id}/ajustes`, {
+        novaNota: 8.5,
+        justificativa: 'Nota revista após a sessão.',
+        tipo: 'PARES',
+      })
+      .expect(200);
+
+    expect((await history()).find((item) => item.alunoId === ana.id)).toMatchObject({
+      notaAlunoOriginal: 7,
+      notaPares: 8.5,
+      avaliacoesPares: 0,
+      situacaoAjuste: 'AJUSTADA',
+    });
+  });
+
+  it('forbids students and tutors outside the room from reading the history', async () => {
+    await startPoker();
+    const outsider = await insertUser(app, db, 'history-poker-outsider@uefs.br');
+
+    for (const user of [ana, outsider]) {
+      await api(app, user).get(historyPath()).expect(403);
+      await api(app, user).get(historyPath(ana.id)).expect(403);
+    }
   });
 });

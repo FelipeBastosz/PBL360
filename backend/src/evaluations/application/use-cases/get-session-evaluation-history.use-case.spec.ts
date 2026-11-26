@@ -46,6 +46,7 @@ describe('GetSessionEvaluationHistoryUseCase', () => {
         notaPares: 8.5,
         avaliacoesPares: 1,
         situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
+        origem: null,
       },
       {
         alunoId: 'student-2',
@@ -57,6 +58,7 @@ describe('GetSessionEvaluationHistoryUseCase', () => {
         notaPares: 8.5,
         avaliacoesPares: 1,
         situacaoAjuste: EvaluationAdjustmentSituation.SEM_AJUSTE,
+        origem: null,
       },
     ];
 
