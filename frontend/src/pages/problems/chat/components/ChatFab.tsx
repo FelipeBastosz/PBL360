@@ -14,7 +14,7 @@ export function ChatFab({ hasUnread, onOpen }: ChatFabProps) {
         type="button"
         onClick={onOpen}
         aria-label={hasUnread ? 'Abrir conversas, há mensagens novas' : 'Abrir conversas'}
-        className="relative flex size-14 items-center justify-center rounded-full bg-brand-900 text-white shadow-[0_12px_28px_-10px_rgb(0_0_119/0.7)] transition-[scale] duration-300 ease-out animate-pop-in [animation-delay:250ms] hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900"
+        className="relative flex size-14 items-center justify-center rounded-full border border-brand-primary-border bg-brand-primary text-brand-on-primary shadow-[0_12px_28px_-10px_var(--color-brand-shadow)] transition-[scale] duration-300 ease-out animate-pop-in [animation-delay:250ms] hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
       >
         <ChatBubbleLeftRightIcon className="size-6" aria-hidden />
         {hasUnread && (

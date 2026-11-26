@@ -24,8 +24,8 @@ const CARD =
 
 const BADGE_TONES: Record<SeatTone, string> = {
   lilac: 'border-brand-border bg-brand-soft text-brand-accent',
-  ok: 'border-success/25 bg-success-soft text-success',
-  you: 'border-brand-accent bg-brand-primary text-white',
+  ok: 'border-emerald-400 bg-emerald-50 text-emerald-800 dark:border-emerald-500/80 dark:bg-emerald-950 dark:text-emerald-300',
+  you: 'border-brand-accent bg-brand-primary text-brand-on-primary',
 };
 
 function SeatDisc({ seat }: { seat: SeatView }) {
@@ -67,7 +67,7 @@ function SeatCard({ seat }: { seat: SeatView }) {
       className={cn(
         CARD,
         isEmpty
-          ? 'border-dashed border-brand-accent/35 bg-white/60 text-placeholder'
+          ? 'border-dashed border-brand-accent/35 bg-elevated/60 text-placeholder'
           : 'border-brand-accent bg-elevated text-ink',
       )}
     >

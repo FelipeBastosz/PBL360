@@ -28,8 +28,8 @@ export function ChatContactItem({
         onClick={() => onSelect(contact.id)}
         aria-current={isSelected || undefined}
         className={cn(
-          'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-150 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-900',
-          isSelected && 'bg-brand-50',
+          'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-150 hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-brand-accent',
+          isSelected && 'bg-brand-soft hover:bg-brand-soft-hover',
         )}
       >
         <UserAvatar user={avatarUser} className="size-11" />
@@ -52,7 +52,7 @@ export function ChatContactItem({
               {lastMessage?.texto ?? contact.descricao}
             </span>
             {isUnread && (
-              <span className="size-2.5 shrink-0 rounded-full bg-brand-900">
+              <span className="size-2.5 shrink-0 rounded-full bg-brand-accent">
                 <span className="sr-only">Nova mensagem</span>
               </span>
             )}
