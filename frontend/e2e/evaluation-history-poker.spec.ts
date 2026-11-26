@@ -1,7 +1,7 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { skipIfBackendUnavailable } from './helpers/fullstack';
 
-const API = 'http://localhost:3000/api';
+const API = process.env.E2E_API_URL ?? 'http://localhost:3000/api';
 const PASSWORD = 'senha-secreta';
 const TUTOR_EMAIL = 'carlos@uefs.br';
 const STUDENT_EMAILS = [1, 2, 3, 4].map((n) => `2024000${n}@discente.uefs.br`);
@@ -18,7 +18,7 @@ type Scenario = {
 async function send<T>(
   request: APIRequestContext,
   token: string | null,
-  method: 'GET' | 'POST' | 'PUT',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   path: string,
   data?: unknown,
 ): Promise<T> {
@@ -150,12 +150,33 @@ function cardOf(page: Page, name: string) {
   return page.locator('article').filter({ has: page.getByRole('heading', { name }) });
 }
 
+async function stableBox(locator: Locator) {
+  let previous = '';
+  let box = await locator.boundingBox();
+  await expect
+    .poll(async () => {
+      box = await locator.boundingBox();
+      const current = JSON.stringify(box);
+      const settled = current === previous;
+      previous = current;
+      return settled;
+    })
+    .toBe(true);
+  return box!;
+}
+
 test.describe('E2E Full-Stack: histórico de avaliações com planning poker', () => {
   let scenario: Scenario;
 
   test.beforeAll(async ({ request }) => {
     await skipIfBackendUnavailable();
     scenario = await createScenario(request);
+  });
+
+  test.afterAll(async ({ request }) => {
+    if (!scenario) return;
+    const tutor = await signIn(request, TUTOR_EMAIL);
+    await send(request, tutor.token, 'DELETE', `/salas/${scenario.roomId}`);
   });
 
   test('mostra a nota do poker e permite ajustá-la com justificativa', async ({ page }) => {
@@ -202,7 +223,7 @@ test.describe('E2E Full-Stack: histórico de avaliações com planning poker', (
     await page.mouse.move(box.x + 40, box.y + 60, { steps: 5 });
     const dropZone = page.getByText(/Solte aqui para tirar .* da mesa/);
     await expect(dropZone).toBeVisible();
-    const zone = (await dropZone.boundingBox())!;
+    const zone = await stableBox(dropZone);
     await page.mouse.move(zone.x + zone.width / 2, zone.y + zone.height / 2, { steps: 10 });
     await page.mouse.up();
 
