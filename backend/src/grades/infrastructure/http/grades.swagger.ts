@@ -20,7 +20,7 @@ export const GetProblemGradesSwaggerDocs = applyDecorators(
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
           rotulo: 'S1',
-          data: '2026-10-02',
+          data: '02-10-2026',
         },
       ],
       alunos: [
