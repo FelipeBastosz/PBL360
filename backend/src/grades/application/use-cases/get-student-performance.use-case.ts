@@ -114,7 +114,7 @@ function mapStudentSession(
   problemTitle: string,
 ): StudentPerformanceSessionDto {
   const label = labels.get(session.sessaoId);
-  if (!label) throw new Error(`Missing session label for session ${session.sessaoId}.`);
+  if (!label) throw new NotFoundError(`Sessão ${session.sessaoId} não encontrada no cálculo.`);
   return {
     ...toStudentPerformanceSession(session, label, problemId, problemTitle),
     presenca: null,
@@ -157,7 +157,8 @@ function enrichSession(
   session: StudentPerformanceSessionDto,
   detail?: SessionDetail,
 ): OrderedSession {
-  if (!detail) throw new Error(`Missing session details for session ${session.sessaoId}.`);
+  if (!detail)
+    throw new NotFoundError(`Detalhes da sessão ${session.sessaoId} não encontrados na sala.`);
   return {
     ...session,
     presenca: detail.attendance ? DOMAIN_TO_ATTENDANCE_STATUS[detail.attendance] : null,
