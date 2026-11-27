@@ -53,7 +53,15 @@ const pokerSession = (nota: number | null): StudentSessionGrade => ({
 const gradesWithAna = (session: StudentSessionGrade): ProblemGradesResponse => ({
   sessoes: [],
   alunos: [
-    { alunoId: 'aluno-1', nome: 'Ana Souza', matricula: null, sessoes: [session], notaFinal: null },
+    {
+      alunoId: 'aluno-1',
+      nome: 'Ana Souza',
+      matricula: null,
+      sessoes: [session],
+      notaFinal: null,
+      autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+      pares: { nota: null, situacao: 'PENDENTE' },
+    },
   ],
   mediaTurma: null,
   versoesFormula: { sessao: null, problema: null },

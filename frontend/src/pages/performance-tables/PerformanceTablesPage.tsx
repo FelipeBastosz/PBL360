@@ -11,7 +11,12 @@ import { ROUTES } from '@/routes/paths';
 import type { PerformanceTableSummary } from '@/types/performanceTable';
 import type { SessionEvaluationConfig } from '@/types/session';
 import { cn } from '@/utils/cn';
-import { readApplyTarget, type ApplyTarget } from '@/utils/navigationState';
+import {
+  clearApplyTarget,
+  hasSessionTarget,
+  readApplyTarget,
+  type ApplyTarget,
+} from '@/utils/navigationState';
 import { CreateFormulaModal } from './components/CreateFormulaModal';
 import { DeletePerformanceTableModal } from './components/DeletePerformanceTableModal';
 import {
@@ -101,11 +106,16 @@ function PageModalsAndActions({ modals, deletion, target, navigate }: PageModals
   );
 }
 
-function usePageDependencies() {
+function usePageDependencies(isStandalone: boolean) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const locationState = useLocation().state as Record<string, unknown> | null;
-  const target = readApplyTarget(locationState);
+  const leftSessionFlow = isStandalone && !hasSessionTarget(locationState);
+  const target = leftSessionFlow ? null : readApplyTarget(locationState);
+
+  useEffect(() => {
+    if (leftSessionFlow) clearApplyTarget();
+  }, [leftSessionFlow]);
 
   const roomId =
     target?.roomId ||
@@ -141,7 +151,7 @@ function usePageDependencies() {
 }
 
 export function PerformanceTablesPage({ showHeader = true }: { showHeader?: boolean } = {}) {
-  const deps = usePageDependencies();
+  const deps = usePageDependencies(showHeader);
 
   return (
     <div className="min-h-dvh bg-surface pb-24">

@@ -294,6 +294,17 @@ describe('Self-assessment adjustments (e2e)', () => {
       notaOriginal: 7.6,
       notaVigente: 9.0,
     });
+
+    const listAfterSecondAdjustment = await api(app, tutor)
+      .get(`/sessoes/${sessionId}/historico-avaliacoes`)
+      .expect(200);
+    expect(
+      (
+        listAfterSecondAdjustment.body as {
+          alunos: Array<{ alunoId: string; notaAlunoOriginal: number; notaPares: number }>;
+        }
+      ).alunos.find((a) => a.alunoId === peerStudent.id),
+    ).toMatchObject({ notaAlunoOriginal: 7.6, notaPares: 9.0, origem: 'PARES' });
   });
 
   it('requires exactly one adjustment target in the database', async () => {

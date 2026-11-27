@@ -37,6 +37,13 @@ export class StudentEvaluationSummaryResponseDto {
   autoavaliacao!: StudentSelfAssessmentSummaryDto;
   @ApiProperty({ type: StudentPeerAssessmentSummaryDto }) pares!: StudentPeerAssessmentSummaryDto;
   @ApiProperty({ type: StudentFeedbackSummaryDto }) feedback!: StudentFeedbackSummaryDto;
+  @ApiProperty({
+    type: Boolean,
+    nullable: true,
+    description:
+      'Se o aluno esteve presente ou atrasado na chamada. Null enquanto a chamada não foi salva.',
+  })
+  participou!: boolean | null;
 }
 
 export class SelfAssessmentCriterionDto {
@@ -44,6 +51,7 @@ export class SelfAssessmentCriterionDto {
   @ApiProperty() nome!: string;
   @ApiProperty() peso!: number;
   @ApiProperty({ example: 10, enum: [10] }) notaMaxima!: number;
+  @ApiProperty({ example: 1, description: 'Posição do critério na fórmula.' }) ordem!: number;
 }
 
 export class SelfAssessmentItemDto {
@@ -63,4 +71,11 @@ export class SelfAssessmentResponseDto {
   @ApiProperty({ type: EvaluationFormulaDto, required: false })
   formula?: EvaluationFormulaDto;
   @ApiProperty({ required: false, example: 8.25 }) notaConsolidada?: number | null;
+  @ApiProperty({
+    type: Boolean,
+    nullable: true,
+    description:
+      'Se o aluno esteve presente ou atrasado na chamada. Null enquanto a chamada não foi salva.',
+  })
+  participou!: boolean | null;
 }

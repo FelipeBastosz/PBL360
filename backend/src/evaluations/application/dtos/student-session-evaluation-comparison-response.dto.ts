@@ -119,6 +119,57 @@ export class ComparisonAdjustmentDto {
   ajustadoEm!: Date;
 }
 
+export class ComparisonPokerVoteDto {
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'Votante; null se anônimo.',
+  })
+  avaliadorId!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Nome do votante; null se anônimo.' })
+  avaliadorNome!: string | null;
+
+  @ApiProperty({ description: 'Nota votada.' })
+  nota!: number;
+}
+
+export class ComparisonPlanningPokerDto {
+  @ApiProperty({ format: 'uuid', description: 'ID da rodada decidida.' })
+  rodadaId!: string;
+
+  @ApiProperty({ description: 'Número da rodada no planning poker.' })
+  numero!: number;
+
+  @ApiProperty({ description: 'Se o planning poker foi anônimo.' })
+  anonimo!: boolean;
+
+  @ApiProperty({ type: Number, nullable: true, description: 'Média dos votos. Null sem votos.' })
+  media!: number | null;
+
+  @ApiProperty({ description: 'Nota decidida pelo tutor ao fechar a rodada.' })
+  notaDecidida!: number;
+
+  @ApiProperty({ description: 'Nota vigente: o ajuste mais recente ou a nota decidida.' })
+  notaVigente!: number;
+
+  @ApiProperty({ description: 'Se o tutor reajustou a nota na mesa, ao decidir a rodada.' })
+  ajustadaNaMesa!: boolean;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Justificativa do reajuste na mesa.' })
+  justificativaMesa!: string | null;
+
+  @ApiProperty({ type: String, format: 'date-time', description: 'Quando a rodada foi decidida.' })
+  decididaEm!: Date;
+
+  @ApiProperty({ type: AdjustmentAuthorResponseDto, nullable: true, description: 'Quem decidiu.' })
+  decididaPor!: AdjustmentAuthorResponseDto | null;
+
+  @ApiProperty({ type: [ComparisonPokerVoteDto], description: 'Votos recebidos na rodada.' })
+  votos!: ComparisonPokerVoteDto[];
+}
+
 export class StudentSessionEvaluationComparisonResponseDto {
   @ApiProperty({ type: ComparisonStudentDto, description: 'Dados do aluno.' })
   aluno!: ComparisonStudentDto;
@@ -136,8 +187,16 @@ export class StudentSessionEvaluationComparisonResponseDto {
   pares!: ComparisonPeerEvaluationDto[];
 
   @ApiProperty({
+    type: ComparisonPlanningPokerDto,
+    nullable: true,
+    description: 'Rodada de planning poker decidida para o aluno nesta sessão. Null se não houver.',
+  })
+  planningPoker!: ComparisonPlanningPokerDto | null;
+
+  @ApiProperty({
     type: [ComparisonAdjustmentDto],
-    description: 'Histórico de ajustes da autoavaliação realizados pelo tutor.',
+    description:
+      'Histórico de ajustes do tutor sobre a nota vigente (autoavaliação, pares ou planning poker).',
   })
   ajustes!: ComparisonAdjustmentDto[];
 }

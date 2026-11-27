@@ -21,6 +21,7 @@ export function toSaveSelfAssessmentInput(
 }
 
 export function toStudentEvaluationSummaryResponse(output: {
+  participated: boolean | null;
   self: { released: boolean; deadline: Date | null; status: string };
   peers: { released: boolean; deadline: Date | null; submitted: number; total: number };
   feedback: { available: boolean; new: boolean; tutorEvaluationSubmitted: boolean };
@@ -29,6 +30,7 @@ export function toStudentEvaluationSummaryResponse(output: {
     autoavaliacao: toSelfSummaryResponse(output.self),
     pares: toPeerSummaryResponse(output.peers),
     feedback: toFeedbackSummaryResponse(output.feedback),
+    participou: output.participated,
   };
 }
 
@@ -74,6 +76,7 @@ export function toSelfAssessmentResponse(
     papel: output.papel ?? null,
     notaCargo: output.notaCargo ?? null,
     formula: output.formula ?? { criteriaWeight: 70, roleWeight: 30 },
+    participou: output.participated ?? null,
     ...(output.consolidatedScore === undefined
       ? {}
       : { notaConsolidada: output.consolidatedScore }),
@@ -86,6 +89,7 @@ const toCriteriaDto = (criteria: GetSelfAssessmentOutput['criteria']) =>
     nome: item.name,
     peso: item.weight,
     notaMaxima: item.maxScore,
+    ordem: item.order,
   }));
 
 const toItemsDto = (items: GetSelfAssessmentOutput['items']) =>

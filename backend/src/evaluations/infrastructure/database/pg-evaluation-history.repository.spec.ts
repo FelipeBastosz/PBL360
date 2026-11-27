@@ -1,6 +1,9 @@
 import type { DataSource, EntityManager } from 'typeorm';
 import { PgEvaluationHistoryRepository } from './pg-evaluation-history.repository';
-import { EvaluationAdjustmentSituation } from '../../domain/entities/evaluation-history.entity';
+import {
+  EvaluationAdjustmentSituation,
+  EvaluationHistoryOrigin,
+} from '../../domain/entities/evaluation-history.entity';
 
 describe('PgEvaluationHistoryRepository', () => {
   let repository: PgEvaluationHistoryRepository;
@@ -125,6 +128,7 @@ describe('PgEvaluationHistoryRepository', () => {
         notaPares: 8.5,
         avaliacoesPares: 2,
         situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
+        origem: EvaluationHistoryOrigin.AUTOAVALIACAO,
       });
 
       expect(result[1]).toEqual({
@@ -137,6 +141,7 @@ describe('PgEvaluationHistoryRepository', () => {
         notaPares: null,
         avaliacoesPares: 0,
         situacaoAjuste: EvaluationAdjustmentSituation.SEM_AJUSTE,
+        origem: EvaluationHistoryOrigin.AUTOAVALIACAO,
       });
 
       expect(result[2]).toEqual({
@@ -149,6 +154,7 @@ describe('PgEvaluationHistoryRepository', () => {
         notaPares: null,
         avaliacoesPares: 0,
         situacaoAjuste: EvaluationAdjustmentSituation.SEM_AJUSTE,
+        origem: null,
       });
     });
 
@@ -465,6 +471,7 @@ describe('PgEvaluationHistoryRepository', () => {
         notaPares: 9.5,
         avaliacoesPares: 1,
         situacaoAjuste: EvaluationAdjustmentSituation.AJUSTADA,
+        origem: EvaluationHistoryOrigin.PARES,
       });
     });
   });

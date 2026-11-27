@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '@/services/apiError';
 import { sessionService } from '@/services/session.service';
 import { evaluationService } from '@/services/evaluation.service';
 import type { MemberSession } from '@/types/session';
@@ -45,6 +46,7 @@ const mockSessionData: MemberSession = {
 };
 
 const mockPeersResponse: SessionPeersResponse = {
+  participou: true,
   liberada: true,
   prazo: '2026-10-20T23:59:00.000Z',
   colegas: [{ alunoId: 'peer-1', nome: 'Ana Souza', iniciais: 'AS', status: 'PENDENTE' }],
@@ -71,6 +73,7 @@ describe('StudentPeerEvaluationPage', () => {
       autoavaliacao: { liberada: true, prazo: null, status: 'PENDENTE' },
       pares: { liberada: true, prazo: null, avaliados: 0, total: 1 },
       feedback: { disponivel: false, novo: false, avaliacaoTutorEnviada: false },
+      participou: true,
     });
   });
 
@@ -150,5 +153,36 @@ describe('StudentPeerEvaluationPage', () => {
       enviar: true,
     });
     expect(mockNavigate).toHaveBeenCalledWith(-1);
+  });
+
+  it('shows the non-participant state when the API reports the student was absent', async () => {
+    vi.mocked(evaluationService.listSessionPeers).mockResolvedValue({
+      ...mockPeersResponse,
+      participou: false,
+      chamadaRealizada: true,
+      colegas: [],
+    });
+    renderPage();
+
+    expect(
+      await screen.findByText(
+        'Você não participou desta sessão, portanto não possui avaliações disponíveis.',
+      ),
+    ).toBeInTheDocument();
+    expect(evaluationService.getPeerEvaluation).not.toHaveBeenCalled();
+  });
+
+  it('does not blame the student when the error is about an absent colleague', async () => {
+    vi.mocked(evaluationService.getPeerEvaluation).mockRejectedValue(
+      new ApiError(422, ['O colega não participou da sessão.']),
+    );
+    renderPage();
+
+    expect(await screen.findByText('O colega não participou da sessão.')).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        'Você não participou desta sessão, portanto não possui avaliações disponíveis.',
+      ),
+    ).not.toBeInTheDocument();
   });
 });

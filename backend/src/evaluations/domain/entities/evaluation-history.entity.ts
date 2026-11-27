@@ -3,6 +3,13 @@ export enum EvaluationAdjustmentSituation {
   AJUSTADA = 'AJUSTADA',
 }
 
+export enum EvaluationHistoryOrigin {
+  AUTOAVALIACAO = 'AUTOAVALIACAO',
+  PARES = 'PARES',
+  PLANNING_POKER = 'PLANNING_POKER',
+  TUTOR = 'TUTOR',
+}
+
 export interface SessionEvaluationHistoryItem {
   alunoId: string;
   nome: string;
@@ -13,6 +20,7 @@ export interface SessionEvaluationHistoryItem {
   notaPares: number | null;
   avaliacoesPares: number;
   situacaoAjuste: EvaluationAdjustmentSituation;
+  origem: EvaluationHistoryOrigin | null;
 }
 
 export interface ComparisonCriterionItem {
@@ -55,6 +63,26 @@ export interface ComparisonAdjustment {
   ajustadoEm: Date;
 }
 
+export interface ComparisonPokerVote {
+  avaliadorId: string | null;
+  avaliadorNome: string | null;
+  nota: number;
+}
+
+export interface ComparisonPlanningPoker {
+  rodadaId: string;
+  numero: number;
+  anonimo: boolean;
+  media: number | null;
+  notaDecidida: number;
+  notaVigente: number;
+  ajustadaNaMesa: boolean;
+  justificativaMesa: string | null;
+  decididaEm: Date;
+  decididaPor: ComparisonAdjustmentAuthor | null;
+  votos: ComparisonPokerVote[];
+}
+
 export interface StudentSessionEvaluationComparison {
   aluno: {
     alunoId: string;
@@ -62,5 +90,6 @@ export interface StudentSessionEvaluationComparison {
   };
   autoavaliacao: ComparisonSelfAssessment;
   pares: ComparisonPeerEvaluation[];
+  planningPoker: ComparisonPlanningPoker | null;
   ajustes: ComparisonAdjustment[];
 }

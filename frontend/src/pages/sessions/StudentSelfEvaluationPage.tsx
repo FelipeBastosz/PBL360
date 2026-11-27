@@ -1,61 +1,22 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeftIcon, UserCircleIcon } from '@heroicons/react/24/outline';
-import { UserMenuButton } from '@/components/layout/UserMenu';
+import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { CARD_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/hooks/useAuth';
-import type { UserResponse } from '@/types/auth';
 import type { EvaluationFormula } from '@/types/evaluation';
 import type { SessionRole } from '@/types/session';
 import { cn } from '@/utils/cn';
-import { formatDeadline } from '@/utils/date';
 import { getRolePercentage } from '@/utils/evaluationScore';
 import { roleLabel } from '@/utils/sessionRoles';
 import { CriterionStepper } from './components/CriterionStepper';
 import { EvaluationFinalScore } from './components/EvaluationFinalScore';
 import { NonParticipantEmptyState } from './components/NonParticipantEmptyState';
+import { SelfEvaluationHeader } from './components/SelfEvaluationHeader';
 import { useStudentSelfEvaluation } from './useStudentSelfEvaluation';
-
-function SelfEvaluationHeader({
-  user,
-  subtitle,
-  deadline,
-  onBack,
-}: {
-  user: Pick<UserResponse, 'id' | 'nome' | 'possuiFoto'> | null;
-  subtitle: string;
-  deadline?: string | null;
-  onBack: () => void;
-}) {
-  return (
-    <header className="shrink-0 border-b border-brand-primary-border bg-brand-primary text-white">
-      <div className={cn(PAGE_CONTAINER_CLASS, 'flex min-h-16 items-center justify-between py-2')}>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            aria-label="Voltar"
-            className="-ml-1 rounded-full p-2 transition-[background-color,scale] duration-200 hover:bg-white/10 active:scale-90 focus-visible:outline-2 focus-visible:outline-white"
-          >
-            <ChevronLeftIcon className="size-6" />
-          </button>
-          <div className="flex flex-col">
-            <h1 className="text-base font-semibold leading-tight">Autoavaliação</h1>
-            <span className="text-xs text-white/70">{subtitle}</span>
-            {deadline && (
-              <span className="text-xs text-white/80">Prazo: {formatDeadline(deadline)}</span>
-            )}
-          </div>
-        </div>
-        <UserMenuButton user={user} className="ring-2 ring-white/20" />
-      </div>
-    </header>
-  );
-}
 
 function UserSelfCard({
   name,
@@ -193,6 +154,7 @@ function EvaluationBody({
   onOpenConfirm: () => void;
 }) {
   const isSubmitted = evalState.data?.status === 'ENVIADA';
+  const isClosed = evalState.data?.status === 'ENCERRADA';
 
   if (evalState.didNotParticipate) {
     return (
@@ -206,6 +168,12 @@ function EvaluationBody({
     <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-6')}>
       {evalState.error && <Alert tone="error">{evalState.error.message}</Alert>}
       {evalState.saveError && <Alert tone="error">{evalState.saveError.message}</Alert>}
+      {isClosed && (
+        <Alert tone="info">
+          O prazo da autoavaliação terminou e ela não foi enviada. As notas não podem mais ser
+          alteradas.
+        </Alert>
+      )}
       <UserSelfCard name={userName} papel={evalState.papel} isSubmitted={isSubmitted} />
       {evalState.isLoading ? (
         <div className="mt-10 flex justify-center">
@@ -214,7 +182,7 @@ function EvaluationBody({
       ) : (
         <EvaluationCriteriaForm
           evalState={evalState}
-          isSubmitted={isSubmitted}
+          isSubmitted={isSubmitted || isClosed}
           onOpenConfirm={onOpenConfirm}
         />
       )}

@@ -24,11 +24,25 @@ export function hasSubmitted(item: StudentEvaluationHistoryItem): boolean {
   return item.notaAluno !== null || item.notaPares !== null;
 }
 
+export function isPeerGrade(item: StudentEvaluationHistoryItem): boolean {
+  return item.notaAluno === null && item.notaPares !== null;
+}
+
+export function getScoreLabel(item: StudentEvaluationHistoryItem): string {
+  if (item.origem === 'PLANNING_POKER') return 'Poker';
+  return isPeerGrade(item) ? 'Pares' : 'Aluno';
+}
+
 export function getDisplayName(item: StudentEvaluationHistoryItem, hideNames: boolean): string {
   return hideNames ? item.matricula || 'Sem matrícula' : item.nome;
 }
 
+export function isTutorOnlyGrade(item: StudentEvaluationHistoryItem): boolean {
+  return item.origem === 'TUTOR' && !hasSubmitted(item);
+}
+
 export function getSituationLabel(item: StudentEvaluationHistoryItem): string {
+  if (isTutorOnlyGrade(item)) return 'Avaliada pelo tutor';
   if (!hasSubmitted(item)) return 'Avaliação pendente';
   return item.situacaoAjuste === 'AJUSTADA' ? 'Ajustada com justificativa' : 'Sem ajuste do tutor';
 }
@@ -43,7 +57,7 @@ export function applyAdjustment(
           ...item,
           notaAluno: item.notaAluno !== null ? response.notaVigente : null,
           notaPares: item.notaAluno === null ? response.notaVigente : item.notaPares,
-          notaAlunoOriginal: response.notaOriginal,
+          notaAlunoOriginal: item.notaAlunoOriginal ?? response.notaOriginal,
           situacaoAjuste: 'AJUSTADA',
         }
       : item,

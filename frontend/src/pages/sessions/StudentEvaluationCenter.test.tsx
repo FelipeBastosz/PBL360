@@ -8,6 +8,7 @@ import { StudentEvaluationCenter } from './StudentEvaluationCenter';
 vi.mock('@/services/evaluation.service');
 
 const mockReleasedSummary: StudentEvaluationSummaryResponse = {
+  participou: true,
   autoavaliacao: {
     liberada: true,
     prazo: null,
@@ -27,6 +28,7 @@ const mockReleasedSummary: StudentEvaluationSummaryResponse = {
 };
 
 const mockLockedSummary: StudentEvaluationSummaryResponse = {
+  participou: true,
   autoavaliacao: {
     liberada: false,
     prazo: null,
@@ -46,6 +48,7 @@ const mockLockedSummary: StudentEvaluationSummaryResponse = {
 };
 
 const mockPeersResponse: SessionPeersResponse = {
+  participou: true,
   liberada: true,
   prazo: null,
   colegas: [],
@@ -154,6 +157,7 @@ describe('StudentEvaluationCenter', () => {
   it('renders friendly empty state when student did not participate in the session after roll call', async () => {
     vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
       ...mockLockedSummary,
+      participou: false,
       autoavaliacao: {
         liberada: false,
         prazo: null,
@@ -202,5 +206,17 @@ describe('StudentEvaluationCenter', () => {
       ).not.toBeInTheDocument();
       expect(screen.getAllByText('Bloqueada')).toHaveLength(2);
     });
+  });
+
+  it('shows the self-assessment as closed and locked after the deadline', async () => {
+    vi.mocked(evaluationService.getMyEvaluationsSummary).mockResolvedValue({
+      ...mockReleasedSummary,
+      autoavaliacao: { ...mockReleasedSummary.autoavaliacao, status: 'ENCERRADA' },
+    });
+    renderComponent();
+
+    expect(await screen.findByText('Encerrada')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /autoavaliação/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /avaliar colegas/i })).toBeInTheDocument();
   });
 });

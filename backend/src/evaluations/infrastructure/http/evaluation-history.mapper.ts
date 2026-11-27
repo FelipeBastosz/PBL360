@@ -18,6 +18,7 @@ export const toSessionEvaluationHistoryResponse = (
     notaPares: item.notaPares,
     avaliacoesPares: item.avaliacoesPares,
     situacaoAjuste: item.situacaoAjuste,
+    origem: item.origem,
   })),
 });
 
@@ -59,6 +60,13 @@ const mapComparisonAdjustments = (ajustes: StudentSessionEvaluationComparison['a
     ajustadoEm: adjustment.ajustadoEm,
   }));
 
+const mapComparisonPoker = (poker: StudentSessionEvaluationComparison['planningPoker']) =>
+  poker && {
+    ...poker,
+    decididaPor: poker.decididaPor && { id: poker.decididaPor.id, nome: poker.decididaPor.nome },
+    votos: poker.votos.map((vote) => ({ ...vote })),
+  };
+
 export const toStudentSessionEvaluationComparisonResponse = (
   comparison: StudentSessionEvaluationComparison,
 ): StudentSessionEvaluationComparisonResponseDto => ({
@@ -68,5 +76,6 @@ export const toStudentSessionEvaluationComparisonResponse = (
   },
   autoavaliacao: mapComparisonSelfAssessment(comparison.autoavaliacao),
   pares: mapComparisonPeers(comparison.pares),
+  planningPoker: mapComparisonPoker(comparison.planningPoker),
   ajustes: mapComparisonAdjustments(comparison.ajustes),
 });

@@ -24,8 +24,6 @@ export interface StudentSessionGrade {
   modalidade?: SessionGradeModality;
   autoavaliacao?: EvaluationComponentGrade;
   pares?: EvaluationComponentGrade;
-  feedback?: string | null;
-  updatedAt?: string | null;
 }
 
 export interface StudentGradeRow {
@@ -34,6 +32,8 @@ export interface StudentGradeRow {
   matricula: string | null;
   sessoes: StudentSessionGrade[];
   notaFinal: number | null;
+  autoavaliacao: EvaluationComponentGrade;
+  pares: EvaluationComponentGrade;
 }
 
 export interface ProblemGradesResponse {

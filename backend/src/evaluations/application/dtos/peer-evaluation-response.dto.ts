@@ -50,6 +50,9 @@ export class PeerEvaluationCriterionResponseDto {
     description: 'Limite fixo das notas dos critérios.',
   })
   notaMaxima!: number;
+
+  @ApiProperty({ example: 1, description: 'Posição do critério na fórmula.' })
+  ordem!: number;
 }
 
 export class PeerEvaluationItemDto {

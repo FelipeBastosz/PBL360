@@ -29,6 +29,7 @@ export function toSessionPeersResponse(output: ListSessionPeersOutput): SessionP
     liberada: output.liberada,
     prazo: output.prazo,
     chamadaRealizada: output.chamadaRealizada ?? true,
+    participou: output.participou ?? null,
     formula: output.formula ?? { criteriaWeight: 70, roleWeight: 30 },
     colegas: output.colegas.map((c) => ({
       alunoId: c.alunoId,
@@ -45,6 +46,7 @@ const mapCriterion = (crit: GetPeerEvaluationOutput['criterios'][number]) => ({
   nome: crit.nome,
   peso: crit.peso,
   notaMaxima: crit.notaMaxima,
+  ordem: crit.ordem,
 });
 
 const mapItem = (item: GetPeerEvaluationOutput['itens'][number]) => ({

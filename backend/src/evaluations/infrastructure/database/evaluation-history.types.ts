@@ -58,3 +58,26 @@ export interface SessionTimingRow {
   peerEvalReleased?: boolean;
   peerEvalDeadline?: Date | null;
 }
+
+export interface PokerRoundHistoryRow {
+  id: string;
+  studentId: string;
+  roundNumber: number;
+  average: string | number | null;
+  finalGrade: string | number;
+  adjusted: boolean;
+  justification: string | null;
+  decidedAt: Date;
+  decidedById: string | null;
+  decidedByName: string | null;
+  anonymous: boolean;
+  currentGrade: string | number | null;
+  adjustmentCount: number;
+  voteCount: number;
+}
+
+export interface PokerVoteRow {
+  voterId: string | null;
+  voterName: string | null;
+  score: string | number;
+}

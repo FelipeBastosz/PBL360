@@ -223,6 +223,9 @@ test.describe('E2E Full-Stack: Registro de Chamada e Assentos', () => {
         { timeout: 10000 },
       );
 
+      await expect(page.getByRole('heading', { name: 'Anexos da Sessão' })).toBeVisible({
+        timeout: 10000,
+      });
       await page.getByRole('link', { name: /Chamada/i }).click();
       await expect(page).toHaveURL(
         /\/turmas\/[a-zA-Z0-9-]+\/problemas\/[a-zA-Z0-9-]+\/sessoes\/[a-zA-Z0-9-]+\/chamada$/,

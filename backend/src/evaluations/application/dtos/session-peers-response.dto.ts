@@ -58,6 +58,14 @@ export class SessionPeersResponseDto {
   chamadaRealizada!: boolean;
 
   @ApiProperty({
+    type: Boolean,
+    nullable: true,
+    description:
+      'Se o aluno esteve presente ou atrasado na chamada. Null enquanto a chamada não foi salva.',
+  })
+  participou!: boolean | null;
+
+  @ApiProperty({
     type: SessionPeerStudentDto,
     isArray: true,
     description: 'Lista de colegas que participaram da sessão.',

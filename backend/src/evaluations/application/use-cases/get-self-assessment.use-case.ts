@@ -3,6 +3,7 @@ import { SessionAccessService } from '@/sessions/application/services/session-ac
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import {
   EVALUATION_REPOSITORY,
+  type EvaluationContext,
   type EvaluationRepository,
 } from '../../domain/repositories/evaluation.repository';
 import {
@@ -17,12 +18,13 @@ export interface GetSelfAssessmentOutput {
   status: StudentSelfAssessmentStatus;
   deadline: Date | null;
   submittedAt: Date | null;
-  criteria: Array<{ id: string; name: string; weight: number; maxScore: number }>;
+  criteria: Array<{ id: string; name: string; weight: number; maxScore: number; order: number }>;
   items: Array<{ criterionId: string; score: number }>;
   consolidatedScore?: number;
   papel?: string | null;
   notaCargo?: number | null;
   formula?: { criteriaWeight: number; roleWeight: number };
+  participated?: boolean | null;
 }
 
 @Injectable()
@@ -48,6 +50,14 @@ export class GetSelfAssessmentUseCase {
     });
   }
 
+  private loadParticipation(context: EvaluationContext, studentId: string) {
+    return Promise.all([
+      this.evaluations.getSelfAssessment(context, studentId),
+      this.evaluations.isStudentParticipating(context.sessionId, studentId),
+      this.evaluations.isRollCallRecorded(context.sessionId),
+    ]);
+  }
+
   private async loadOutput(
     sessionId: string,
     studentId: string,
@@ -55,16 +65,14 @@ export class GetSelfAssessmentUseCase {
     now: Date,
   ): Promise<GetSelfAssessmentOutput> {
     const context = { sessionId, problemId: access.problem.id, roomId: access.roomId };
-    const [detail, participating] = await Promise.all([
-      this.evaluations.getSelfAssessment(context, studentId),
-      this.evaluations.isStudentParticipating(sessionId, studentId),
-    ]);
+    const [detail, participating, rollCallDone] = await this.loadParticipation(context, studentId);
     const status = studentSelfAssessmentStatus(
       access.session,
       participating,
       detail.evaluation?.status ?? null,
       now,
     );
-    return toSelfAssessmentOutput(status, access.session.selfEvalDeadline, detail);
+    const output = toSelfAssessmentOutput(status, access.session.selfEvalDeadline, detail);
+    return { ...output, participated: rollCallDone ? participating : null };
   }
 }

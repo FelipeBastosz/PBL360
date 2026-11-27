@@ -4,10 +4,12 @@ import { cn } from '@/utils/cn';
 import {
   formatScore,
   getDisplayName,
+  getScoreLabel,
   getSituationLabel,
   getStudentScore,
   getTutorScore,
   hasSubmitted,
+  isTutorOnlyGrade,
 } from '@/utils/evaluationHistory';
 
 type HistoryStudentCardProps = {
@@ -54,15 +56,16 @@ function PendingClock() {
 }
 
 function SituationLine({ student }: { student: StudentEvaluationHistoryItem }) {
-  const isAdjusted = hasSubmitted(student) && student.situacaoAjuste === 'AJUSTADA';
+  const isDone =
+    (hasSubmitted(student) && student.situacaoAjuste === 'AJUSTADA') || isTutorOnlyGrade(student);
   return (
     <p
       className={cn(
         'flex items-center text-[11.5px] leading-[14px]',
-        isAdjusted ? 'gap-[3.3px] text-brand-accent' : 'gap-[5.5px] text-muted',
+        isDone ? 'gap-[3.3px] text-brand-accent' : 'gap-[5.5px] text-muted',
       )}
     >
-      {isAdjusted ? <CheckMark /> : <PendingClock />}
+      {isDone ? <CheckMark /> : <PendingClock />}
       <span>{getSituationLabel(student)}</span>
     </p>
   );
@@ -152,10 +155,7 @@ export function HistoryStudentCard({ student, index, onSelect }: HistoryStudentC
         <SituationLine student={student} />
       </div>
       <div className="flex shrink-0 items-center gap-[15.5px]">
-        <ScoreColumn
-          label={student.notaPares !== null && student.notaAluno === null ? 'Pares' : 'Aluno'}
-          value={getStudentScore(student)}
-        />
+        <ScoreColumn label={getScoreLabel(student)} value={getStudentScore(student)} />
         <ScoreArrow />
         <ScoreColumn label="Tutor" value={getTutorScore(student)} isTutor />
       </div>
