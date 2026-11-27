@@ -79,7 +79,7 @@ export class SessionAttachment {
   @Column({ name: 'size_bytes', type: 'integer' })
   sizeBytes!: number;
 
-  @Column({ type: 'varchar', length: 20, default: `'${AttachmentCategory.SESSION_ATTACHMENT}'` })
+  @Column({ type: 'varchar', length: 20, default: AttachmentCategory.SESSION_ATTACHMENT })
   category!: AttachmentCategory;
 
   @Column({ type: 'bytea' })
