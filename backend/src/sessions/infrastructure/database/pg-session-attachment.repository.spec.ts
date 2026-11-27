@@ -1,4 +1,5 @@
 import { PgSessionAttachmentRepository } from './pg-session-attachment.repository';
+import { AttachmentCategory } from '../../domain/enums/attachment-category.enum';
 
 describe('PgSessionAttachmentRepository', () => {
   it('creates and lists attachment summaries with numeric sizes', async () => {
@@ -7,6 +8,7 @@ describe('PgSessionAttachmentRepository', () => {
       fileName: 'relatorio.pdf',
       mimeType: 'application/pdf',
       sizeBytes: '128',
+      category: AttachmentCategory.TABLE_REPORT,
       uploaderId: 'teacher-1',
       uploaderName: 'Docente',
       createdAt: new Date(),
@@ -19,6 +21,7 @@ describe('PgSessionAttachmentRepository', () => {
       fileName: 'relatorio.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 128,
+      category: AttachmentCategory.TABLE_REPORT,
       content: Buffer.from('pdf'),
     };
 
@@ -27,6 +30,7 @@ describe('PgSessionAttachmentRepository', () => {
       fileName: 'relatorio.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 128,
+      category: AttachmentCategory.TABLE_REPORT,
       uploader: { id: 'teacher-1', name: 'Docente' },
       createdAt: row.createdAt,
     });
@@ -39,6 +43,7 @@ describe('PgSessionAttachmentRepository', () => {
       'relatorio.pdf',
       'application/pdf',
       128,
+      AttachmentCategory.TABLE_REPORT,
       attachment.content,
     ]);
   });

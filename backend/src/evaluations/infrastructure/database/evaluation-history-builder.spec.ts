@@ -35,6 +35,7 @@ describe('evaluation-history-builder', () => {
       notaTutor: 8,
       notaPares: null,
       avaliacoesPares: 0,
+      origem: 'TUTOR',
       situacaoAjuste: EvaluationAdjustmentSituation.SEM_AJUSTE,
     });
   });

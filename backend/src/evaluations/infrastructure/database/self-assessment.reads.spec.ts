@@ -23,6 +23,7 @@ describe('self-assessment reads', () => {
       getStudentEvaluationSummary(manager as never, 'session-1', 'student-1'),
     ).resolves.toEqual({
       participating: false,
+      rollCallDone: false,
       tutorEvaluationSubmitted: false,
       peerSubmitted: 0,
       peerTotal: 0,
@@ -38,6 +39,7 @@ describe('self-assessment reads', () => {
         .mockResolvedValueOnce([
           {
             participating: true,
+            rollCallDone: true,
             tutorEvaluationSubmitted: true,
             peerSubmitted: '2',
             peerTotal: '3',
@@ -55,6 +57,7 @@ describe('self-assessment reads', () => {
       getStudentEvaluationSummary(manager as never, 'session-1', 'student-1'),
     ).resolves.toEqual({
       participating: true,
+      rollCallDone: true,
       tutorEvaluationSubmitted: true,
       peerSubmitted: 2,
       peerTotal: 3,

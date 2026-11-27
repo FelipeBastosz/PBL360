@@ -116,6 +116,9 @@ describe('environment config factories', () => {
         BCRYPT_ROUNDS: '10',
         SMTP_USER: 'mailer',
         SMTP_PASS: 'mail-secret',
+        GMAIL_CLIENT_ID: 'gmail-client',
+        GMAIL_CLIENT_SECRET: 'gmail-secret',
+        GMAIL_REFRESH_TOKEN: 'gmail-refresh',
       },
       () => {
         expect(databaseConfig().database).toBe('pbl360');
@@ -124,7 +127,13 @@ describe('environment config factories', () => {
           jwtExpiresIn: '2h',
           bcryptRounds: 10,
         });
-        expect(mailConfig()).toEqual({ smtpUser: 'mailer', smtpPass: 'mail-secret' });
+        expect(mailConfig()).toEqual({
+          smtpUser: 'mailer',
+          smtpPass: 'mail-secret',
+          gmailClientId: 'gmail-client',
+          gmailClientSecret: 'gmail-secret',
+          gmailRefreshToken: 'gmail-refresh',
+        });
       },
     );
   });
@@ -137,6 +146,9 @@ describe('environment config factories', () => {
         BCRYPT_ROUNDS: undefined,
         SMTP_USER: undefined,
         SMTP_PASS: undefined,
+        GMAIL_CLIENT_ID: undefined,
+        GMAIL_CLIENT_SECRET: undefined,
+        GMAIL_REFRESH_TOKEN: undefined,
       },
       () => {
         expect(authConfig()).toEqual({
@@ -144,7 +156,13 @@ describe('environment config factories', () => {
           jwtExpiresIn: '1d',
           bcryptRounds: 12,
         });
-        expect(mailConfig()).toEqual({ smtpUser: '', smtpPass: '' });
+        expect(mailConfig()).toEqual({
+          smtpUser: '',
+          smtpPass: '',
+          gmailClientId: '',
+          gmailClientSecret: '',
+          gmailRefreshToken: '',
+        });
       },
     );
   });

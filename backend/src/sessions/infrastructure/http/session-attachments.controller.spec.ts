@@ -1,5 +1,7 @@
 import { StreamableFile } from '@nestjs/common';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { AttachmentCategoryPayload } from '../../application/dtos/session-attachment.dto';
+import { AttachmentCategory } from '../../domain/enums/attachment-category.enum';
 import { SessionAttachmentsController } from './session-attachments.controller';
 
 describe('SessionAttachmentsController', () => {
@@ -9,6 +11,7 @@ describe('SessionAttachmentsController', () => {
     fileName: 'documento.pdf',
     mimeType: 'application/pdf',
     sizeBytes: 12,
+    category: AttachmentCategory.TABLE_REPORT,
     uploader: { id: 'u1', name: 'Tutor' },
     createdAt: new Date('2026-01-01T00:00:00Z'),
   };
@@ -23,11 +26,14 @@ describe('SessionAttachmentsController', () => {
     );
     const file = { originalname: 'documento.pdf', buffer: Buffer.from('pdf') };
 
-    await expect(controller.upload('sess1', member, file)).resolves.toEqual({
+    await expect(
+      controller.upload('sess1', member, AttachmentCategoryPayload.RELATORIO_MESA, file),
+    ).resolves.toEqual({
       id: 'a1',
       nomeArquivo: 'documento.pdf',
       tipo: 'application/pdf',
       tamanho: 12,
+      categoria: AttachmentCategoryPayload.RELATORIO_MESA,
       enviadoPor: { id: 'u1', nome: 'Tutor' },
       enviadoEm: attachment.createdAt,
     });
@@ -36,6 +42,7 @@ describe('SessionAttachmentsController', () => {
       member,
       fileName: 'documento.pdf',
       content: file.buffer,
+      category: AttachmentCategory.TABLE_REPORT,
     });
   });
 
@@ -49,7 +56,12 @@ describe('SessionAttachmentsController', () => {
     );
 
     await expect(controller.list('sess1', member)).resolves.toMatchObject([
-      { id: 'a1', nomeArquivo: 'documento.pdf', enviadoPor: { nome: 'Tutor' } },
+      {
+        id: 'a1',
+        nomeArquivo: 'documento.pdf',
+        categoria: AttachmentCategoryPayload.RELATORIO_MESA,
+        enviadoPor: { nome: 'Tutor' },
+      },
     ]);
     expect(list.execute).toHaveBeenCalledWith({ sessionId: 'sess1', member });
   });
