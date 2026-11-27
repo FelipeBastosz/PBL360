@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { FabMenu } from '@/components/ui/FabMenu';
 import { SearchField } from '@/components/ui/SearchField';
@@ -6,20 +6,17 @@ import { CARD_GRID_CLASS, PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyle
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/useToast';
-import { useAsyncAction } from '@/hooks/useAsyncAction';
-import {
-  memberRoomService,
-  type ProblemHeading,
-  type RoomHeading,
-} from '@/services/memberRoom.service';
 import { ROUTES } from '@/routes/paths';
+import type { GeneralFeedbackResponse } from '@/types/feedback';
 import type { Session } from '@/types/session';
 import { cn } from '@/utils/cn';
 import { SessionsEmptyState } from './components/SessionsEmptyState';
 import { SessionFormModal } from './components/SessionFormModal';
 import { SessionCard } from './components/SessionCard';
 import { ProblemSessionsHeader } from './components/ProblemSessionsHeader';
+import { ProblemGeneralFeedbackModal } from './components/ProblemGeneralFeedbackModal';
+import { useProblemGeneralFeedback } from './hooks/useProblemGeneralFeedback';
+import { useProblemSessions } from './hooks/useProblemSessions';
 import { ProblemTopActions } from './ProblemTopActions';
 
 function SessionsSearch({ query, setQuery }: { query: string; setQuery: (v: string) => void }) {
@@ -62,6 +59,9 @@ type MainProps = {
   sessions: Session[];
   roomId: string;
   problemId: string;
+  generalFeedback: GeneralFeedbackResponse | null;
+  isGeneralFeedbackLoading: boolean;
+  onOpenGeneralFeedback: () => void;
 };
 
 function ProblemSessionsMain({
@@ -73,11 +73,21 @@ function ProblemSessionsMain({
   sessions,
   roomId,
   problemId,
+  generalFeedback,
+  isGeneralFeedbackLoading,
+  onOpenGeneralFeedback,
 }: MainProps) {
   return (
     <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col gap-4')}>
       {error && <Alert tone="error">{error.message}</Alert>}
-      <ProblemTopActions isProfessor={isProfessor} roomId={roomId} problemId={problemId} />
+      <ProblemTopActions
+        isProfessor={isProfessor}
+        roomId={roomId}
+        problemId={problemId}
+        generalFeedback={generalFeedback}
+        isGeneralFeedbackLoading={isGeneralFeedbackLoading}
+        onOpenGeneralFeedback={onOpenGeneralFeedback}
+      />
       <SessionsSearch query={query} setQuery={setQuery} />
       {isLoading ? (
         <div className="mt-10 flex justify-center">
@@ -100,83 +110,137 @@ function ProblemSessionsMain({
   );
 }
 
-function useProblemSessions(
-  isProfessor: boolean,
-  roomId?: string,
-  problemId?: string,
-  onCreatedSuccess?: () => void,
-) {
-  const { notify } = useToast();
-  const [room, setRoom] = useState<RoomHeading | null>(null);
-  const [problem, setProblem] = useState<ProblemHeading | null>(null);
-  const [sessions, setSessions] = useState<Session[]>([]);
+type ModalsProps = {
+  isProfessor: boolean;
+  roomId: string;
+  problemId: string;
+  isCreateModalOpen: boolean;
+  onCloseCreate: () => void;
+  onSessionCreated: (session: Session) => void;
+  isGeneralFeedbackOpen: boolean;
+  onCloseGeneralFeedback: () => void;
+  generalFeedback: ReturnType<typeof useProblemGeneralFeedback>;
+};
 
-  const { run: fetchRoom } = useAsyncAction(memberRoomService.room);
-  const { run: fetchProblem } = useAsyncAction(memberRoomService.problem);
-  const { run: fetchSessions, isLoading, error } = useAsyncAction(memberRoomService.sessions);
+function ProblemSessionsModals({
+  isProfessor,
+  roomId,
+  problemId,
+  isCreateModalOpen,
+  onCloseCreate,
+  onSessionCreated,
+  isGeneralFeedbackOpen,
+  onCloseGeneralFeedback,
+  generalFeedback,
+}: ModalsProps) {
+  return (
+    <>
+      <SessionFormModal
+        isOpen={isCreateModalOpen}
+        roomId={roomId}
+        problemId={problemId}
+        initialData={null}
+        onClose={onCloseCreate}
+        onSuccess={onSessionCreated}
+      />
+      {isProfessor && (
+        <ProblemGeneralFeedbackModal
+          isOpen={isGeneralFeedbackOpen}
+          onClose={onCloseGeneralFeedback}
+          existingFeedback={generalFeedback.feedback}
+          isLoading={generalFeedback.isLoading}
+          loadError={generalFeedback.error}
+          onRetryLoad={generalFeedback.reload}
+          roomId={roomId}
+          problemId={problemId}
+          onSaved={generalFeedback.setFeedback}
+        />
+      )}
+    </>
+  );
+}
 
-  useEffect(() => {
-    if (roomId && problemId) {
-      fetchRoom(roomId, isProfessor).then((res) => res.ok && setRoom(res.data));
-      fetchProblem(roomId, problemId, isProfessor).then((res) => res.ok && setProblem(res.data));
-      fetchSessions(roomId, problemId, isProfessor).then((res) => res.ok && setSessions(res.data));
-    }
-  }, [isProfessor, roomId, problemId, fetchRoom, fetchProblem, fetchSessions]);
+function useProblemSessionsView() {
+  const {
+    roomId,
+    id,
+    problemId = '',
+  } = useParams<{
+    roomId?: string;
+    id?: string;
+    problemId: string;
+  }>();
+  const currentRoomId = roomId || id || '';
+  const { user } = useAuth();
+  const [query, setQuery] = useState('');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const isProfessor = user?.tipo === 'PROFESSOR';
+  const closeCreate = () => setIsCreateOpen(false);
+  const sessionsState = useProblemSessions(isProfessor, currentRoomId, problemId, closeCreate);
+  const generalFeedback = useProblemGeneralFeedback(currentRoomId, problemId, isProfessor);
+  const filtered = sessionsState.sessions.filter((s) =>
+    s.titulo.toLowerCase().includes(query.toLowerCase()),
+  );
 
-  function handleSessionCreated(newSession: Session) {
-    setSessions((curr) => [...curr, newSession]);
-    onCreatedSuccess?.();
-    notify({ tone: 'success', message: 'Sessão criada com sucesso!' });
-  }
-
-  return { room, problem, sessions, isLoading, error, handleSessionCreated };
+  return {
+    roomId: currentRoomId,
+    problemId,
+    user,
+    query,
+    setQuery,
+    isCreateOpen,
+    setIsCreateOpen,
+    closeCreate,
+    isFeedbackOpen,
+    setIsFeedbackOpen,
+    isProfessor,
+    sessionsState,
+    generalFeedback,
+    filtered,
+  };
 }
 
 export default function ProblemSessionsPage() {
-  const params = useParams<{ roomId?: string; id?: string; problemId: string }>();
-  const currentRoomId = params.roomId || params.id || '';
-  const problemId = params.problemId || '';
-
-  const { user } = useAuth();
-  const [query, setQuery] = useState('');
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  const isProfessor = user?.tipo === 'PROFESSOR';
-  const { room, problem, sessions, isLoading, error, handleSessionCreated } = useProblemSessions(
-    isProfessor,
-    currentRoomId,
-    problemId,
-    () => setIsCreateModalOpen(false),
-  );
-
-  const filtered = sessions.filter((s) => s.titulo.toLowerCase().includes(query.toLowerCase()));
+  const v = useProblemSessionsView();
 
   return (
     <div className="min-h-dvh bg-surface pb-24">
-      <ProblemSessionsHeader room={room} problem={problem} userNome={user?.nome} user={user} />
+      <ProblemSessionsHeader
+        room={v.sessionsState.room}
+        problem={v.sessionsState.problem}
+        userNome={v.user?.nome}
+        user={v.user}
+      />
       <ProblemSessionsMain
-        error={error}
-        isProfessor={isProfessor}
-        query={query}
-        setQuery={setQuery}
-        isLoading={isLoading}
-        sessions={filtered}
-        roomId={currentRoomId}
-        problemId={problemId}
+        error={v.sessionsState.error}
+        isProfessor={v.isProfessor}
+        query={v.query}
+        setQuery={v.setQuery}
+        isLoading={v.sessionsState.isLoading}
+        sessions={v.filtered}
+        roomId={v.roomId}
+        problemId={v.problemId}
+        generalFeedback={v.generalFeedback.feedback}
+        isGeneralFeedbackLoading={v.generalFeedback.isLoading}
+        onOpenGeneralFeedback={() => v.setIsFeedbackOpen(true)}
       />
       <SessionsFabMenu
-        isProfessor={isProfessor}
-        roomId={currentRoomId}
-        problemId={problemId}
-        onOpenCreate={() => setIsCreateModalOpen(true)}
+        isProfessor={v.isProfessor}
+        roomId={v.roomId}
+        problemId={v.problemId}
+        onOpenCreate={() => v.setIsCreateOpen(true)}
       />
-      <SessionFormModal
-        isOpen={isCreateModalOpen}
-        roomId={currentRoomId}
-        problemId={problemId}
-        initialData={null}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={handleSessionCreated}
+      <ProblemSessionsModals
+        isProfessor={v.isProfessor}
+        roomId={v.roomId}
+        problemId={v.problemId}
+        isCreateModalOpen={v.isCreateOpen}
+        onCloseCreate={v.closeCreate}
+        onSessionCreated={v.sessionsState.handleSessionCreated}
+        isGeneralFeedbackOpen={v.isFeedbackOpen}
+        onCloseGeneralFeedback={() => v.setIsFeedbackOpen(false)}
+        generalFeedback={v.generalFeedback}
       />
     </div>
   );

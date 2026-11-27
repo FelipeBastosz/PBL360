@@ -44,9 +44,6 @@ export interface SaveStudentFeedbackPayload {
 }
 
 export interface SaveGeneralFeedbackPayload {
-  escopo: 'PROBLEMA';
-  destinatario_id: null;
-  nota: null;
   texto: string;
 }
 

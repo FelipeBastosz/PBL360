@@ -127,4 +127,52 @@ describe('ProblemFeedbacksPage', () => {
       screen.queryByText('Nenhum feedback disponível para este problema ainda.'),
     ).not.toBeInTheDocument();
   });
+
+  it('hides general feedback section when unreleased and never exposes edit controls to students', async () => {
+    vi.mocked(feedbackService.getMyProblemFeedbacks).mockResolvedValueOnce({
+      notaFinal: null,
+      individual: {
+        id: 'fb-ind-only',
+        autor: { id: 'prof-1', nome: 'Prof. Silva' },
+        texto: 'Bom desempenho individual.',
+        criadoEm: '2026-04-10T10:00:00Z',
+        editadoEm: null,
+        novo: false,
+        nota: null,
+      },
+      geral: null,
+      sessoes: [],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Bom desempenho individual.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Geral da Turma' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /salvar|editar/i })).not.toBeInTheDocument();
+  });
+
+  it('displays general feedback strictly in read-only mode when released to the student', async () => {
+    vi.mocked(feedbackService.getMyProblemFeedbacks).mockResolvedValueOnce({
+      notaFinal: null,
+      individual: null,
+      geral: {
+        id: 'fb-geral-released',
+        autor: { id: 'prof-1', nome: 'Prof. Silva' },
+        texto: 'A turma demonstrou excelente organização.',
+        criadoEm: '2026-04-11T10:00:00Z',
+        editadoEm: null,
+        novo: true,
+        nota: null,
+      },
+      sessoes: [],
+    });
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Geral da Turma' })).toBeInTheDocument();
+    expect(screen.getByText('A turma demonstrou excelente organização.')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /salvar|editar/i })).not.toBeInTheDocument();
+  });
 });

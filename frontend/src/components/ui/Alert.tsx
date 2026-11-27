@@ -29,6 +29,7 @@ export function Alert({ tone, children, className }: AlertProps) {
   return (
     <div
       role={tone === 'error' ? 'alert' : 'status'}
+      aria-live={tone === 'error' ? 'assertive' : 'polite'}
       className={cn(
         'flex items-start gap-2 rounded-xl border p-3 text-sm',
         toneClassName,

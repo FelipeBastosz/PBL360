@@ -4,8 +4,8 @@ import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { ProblemGradesHeader } from './ProblemGradesHeader';
 import { ProblemGradesTable } from './ProblemGradesTable';
 import { ProblemGradesActions } from './ProblemGradesActions';
+import { ProblemGeneralFeedbackReadOnly } from './ProblemGeneralFeedbackReadOnly';
 import { StudentFeedbackModal } from './StudentFeedbackModal';
-import { GeneralFeedbackModal } from './GeneralFeedbackModal';
 import { useProblemGradesController } from './hooks/useProblemGradesController';
 import { useProblemReportExport } from './hooks/useProblemReportExport';
 import { ExportConfigModal } from './components/ExportConfigModal';
@@ -30,15 +30,6 @@ function ProblemGradesModals({
         roomId={ctrl.roomId}
         problemId={ctrl.problemId}
         onSaved={ctrl.handleStudentFeedbackSaved}
-      />
-
-      <GeneralFeedbackModal
-        isOpen={ctrl.isGeneralModalOpen}
-        onClose={() => ctrl.setIsGeneralModalOpen(false)}
-        existingFeedback={ctrl.feedbacks?.geral ?? null}
-        roomId={ctrl.roomId}
-        problemId={ctrl.problemId}
-        onSaved={ctrl.handleGeneralFeedbackSaved}
       />
 
       <ExportConfigModal
@@ -77,8 +68,10 @@ export function ProblemGradesPage() {
               onSelectEvaluation={ctrl.setSelectedEvaluation}
               feedbacks={ctrl.feedbacks}
             />
+            {ctrl.feedbacks?.geral && (
+              <ProblemGeneralFeedbackReadOnly feedback={ctrl.feedbacks.geral} />
+            )}
             <ProblemGradesActions
-              onOpenGeneralModal={() => ctrl.setIsGeneralModalOpen(true)}
               isExportingPDF={reportExport.isExportingPDF}
               isExportingExcel={reportExport.isExportingExcel}
               onExport={reportExport.handleExport}

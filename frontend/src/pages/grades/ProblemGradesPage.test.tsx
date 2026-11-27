@@ -110,7 +110,7 @@ describe('ProblemGradesPage', () => {
     vi.mocked(feedbackService.getProblemFeedbacks).mockResolvedValue(mockFeedbacks);
   });
 
-  it('loads problem data and renders problem title, grades table, and action buttons', async () => {
+  it('loads problem data and renders grades table and export actions without general feedback edit button', async () => {
     renderPage();
 
     expect(await screen.findByText('Problema 01')).toBeInTheDocument();
@@ -118,7 +118,44 @@ describe('ProblemGradesPage', () => {
     expect(screen.getByText('Ana Silva')).toBeInTheDocument();
     expect(screen.getByText('Bruno Mendes')).toBeInTheDocument();
     expect(screen.getByText('Média da turma')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Feedback geral da turma' })).toBeInTheDocument();
+    expect(screen.getByText('7,8')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Exportar em PDF' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Exportar em Excel' })).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole('button', { name: /feedback geral da turma/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it('displays existing general feedback strictly in read-only mode without altering student grades', async () => {
+    vi.mocked(feedbackService.getProblemFeedbacks).mockResolvedValue({
+      ...mockFeedbacks,
+      geral: {
+        id: 'fb-geral-1',
+        escopo: 'PROBLEMA',
+        texto: 'Turma demonstrou ótimo domínio dos conceitos.',
+        criadoEm: '2026-10-10T10:00:00Z',
+        editadoEm: '2026-10-11T14:30:00Z',
+      },
+    });
+
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Feedback Geral da Turma' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Turma demonstrou ótimo domínio dos conceitos.')).toBeInTheDocument();
+    expect(screen.getByText(/Última edição:/i)).toBeInTheDocument();
+
+    expect(screen.queryByRole('button', { name: /feedback geral/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /editar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(feedbackService.saveGeneralFeedback).not.toHaveBeenCalled();
+
+    expect(screen.getByText('8,6')).toBeInTheDocument();
+    expect(screen.getByText('7,0')).toBeInTheDocument();
+    expect(screen.getByText('7,8')).toBeInTheDocument();
   });
 
   it('downloads PDF report when clicking "Exportar em PDF"', async () => {
@@ -126,7 +163,6 @@ describe('ProblemGradesPage', () => {
     const fakeBlob = new Blob(['pdf-content'], { type: 'application/pdf' });
     vi.mocked(problemService.exportReport).mockResolvedValue(fakeBlob);
 
-    // Mock createObjectURL
     window.URL.createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
     window.URL.revokeObjectURL = vi.fn();
 
