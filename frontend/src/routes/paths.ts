@@ -11,6 +11,7 @@ export const ROUTES = {
   resetPasswordSuccess: '/recuperar-senha/concluido',
   myAccount: '/minha-conta',
   rooms: '/turmas',
+  joinRoomByLink: '/salas/:codigoSala',
   createRoom: '/turmas/nova',
   createRoomSuccess: '/turmas/nova/sucesso',
   manageRooms: '/turmas/gerenciar',
