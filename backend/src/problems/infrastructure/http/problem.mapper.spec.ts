@@ -7,8 +7,15 @@ describe('problem mapper', () => {
       grades: 0,
       feedbacks: 1,
       evaluations: 2,
+      deliveries: 4,
     });
 
-    expect(response).toEqual({ sessoes: 3, notas: 0, feedbacks: 1, avaliacoes: 2 });
+    expect(response).toEqual({
+      sessoes: 3,
+      notas: 0,
+      feedbacks: 1,
+      avaliacoes: 2,
+      entregas: 4,
+    });
   });
 });

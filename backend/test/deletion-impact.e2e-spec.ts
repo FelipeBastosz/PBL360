@@ -28,7 +28,7 @@ const EMPTY_SESSION = {
   feedbacks: 0,
   avaliacaoGeral: 0,
 };
-const EMPTY_PROBLEM = { sessoes: 0, notas: 0, feedbacks: 0, avaliacoes: 0 };
+const EMPTY_PROBLEM = { sessoes: 0, notas: 0, feedbacks: 0, avaliacoes: 0, entregas: 0 };
 
 describe('Deletion impact (e2e)', () => {
   let app: INestApplication;
@@ -86,6 +86,30 @@ describe('Deletion impact (e2e)', () => {
       [fixture.problemId],
     );
     expect(row.count).toBe(2);
+  });
+
+  it('blocks a problem with deliveries and no sessions', async () => {
+    await api(app, fixture.student)
+      .post(`${problemPath()}/entregas`, { url: 'https://github.com/uefs/pbl360-entrega' })
+      .expect(201);
+    const expected = { ...EMPTY_PROBLEM, entregas: 1 };
+    const impact = await api(app, fixture.owner)
+      .get(`${problemPath()}/impacto-exclusao`)
+      .expect(200);
+    expect(impact.body).toEqual(expected);
+    const response = await api(app, fixture.owner).delete(problemPath()).expect(409);
+    expect(response.body).toEqual({
+      statusCode: 409,
+      error: 'Conflict',
+      message: 'O problema não pode ser excluído pois possui registros vinculados.',
+      detalhes: expected,
+    });
+    await api(app, fixture.owner).get(problemPath()).expect(200);
+    const [row] = await db.query<[{ count: number }]>(
+      'SELECT COUNT(*)::int AS count FROM problem_deliveries WHERE problem_id = $1',
+      [fixture.problemId],
+    );
+    expect(row.count).toBe(1);
   });
 
   it('counts only session feedbacks, without counting revisions or sibling sessions', async () => {
@@ -154,7 +178,7 @@ describe('Deletion impact (e2e)', () => {
       feedbacks: 1,
       avaliacaoGeral: 0,
     };
-    const expectedProblem = { sessoes: 1, notas: 1, avaliacoes: 1, feedbacks: 2 };
+    const expectedProblem = { sessoes: 1, notas: 1, avaliacoes: 1, feedbacks: 2, entregas: 0 };
     const sessionImpact = await api(app, fixture.owner)
       .get(`${sessionPath(sessionId)}/impacto-exclusao`)
       .expect(200);
@@ -198,7 +222,13 @@ describe('Deletion impact (e2e)', () => {
     await insertDeletionFeedback(db, fixture);
     jest
       .spyOn(app.get<ProblemRepository>(PROBLEM_REPOSITORY), 'getDeletionImpact')
-      .mockResolvedValueOnce({ sessions: 0, grades: 0, feedbacks: 0, evaluations: 0 });
+      .mockResolvedValueOnce({
+        sessions: 0,
+        grades: 0,
+        feedbacks: 0,
+        evaluations: 0,
+        deliveries: 0,
+      });
     const response = await api(app, fixture.owner).delete(problemPath()).expect(409);
     expect(response.body).toMatchObject({ detalhes: { ...EMPTY_PROBLEM, feedbacks: 1 } });
     await api(app, fixture.owner).get(problemPath()).expect(200);
@@ -264,6 +294,9 @@ describe('Deletion impact (e2e)', () => {
     );
     expect(document.components.schemas.ProblemDeletionConflictDto!.properties).toHaveProperty(
       'detalhes',
+    );
+    expect(document.components.schemas.ProblemDeletionImpactDto!.properties).toHaveProperty(
+      'entregas',
     );
     expect(document.components.schemas.SessionDeletionConflictDto!.properties).toHaveProperty(
       'detalhes',

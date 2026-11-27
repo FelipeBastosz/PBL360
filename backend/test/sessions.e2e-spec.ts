@@ -58,6 +58,7 @@ interface ProblemDeletionImpactResponseBody {
   notas: number;
   feedbacks: number;
   avaliacoes: number;
+  entregas: number;
 }
 
 interface ErrorResponseBody {
@@ -1041,7 +1042,7 @@ describe('Sessions (e2e)', () => {
         'O problema não pode ser excluído pois possui registros vinculados.',
       );
       expect(deleteProblemRes.body).toMatchObject({
-        detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0 },
+        detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0, entregas: 0 },
       });
     });
 
