@@ -5,6 +5,7 @@ import { TermsReacceptanceModal } from '@/components/layout/TermsReacceptanceMod
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
+import { isServerUnavailableError } from '@/services/apiError';
 import {
   commitmentTermsService,
   type TermAcceptanceStatus,
@@ -15,6 +16,7 @@ type TermsCheckState =
   | { userId: string; status: 'loading' }
   | { userId: string; status: 'verified' }
   | { userId: string; status: 'pending'; acceptance: TermAcceptanceStatus }
+  | { userId: string; status: 'unavailable' }
   | { userId: string; status: 'error' };
 
 function clearLoginCheckPending(): void {
@@ -53,8 +55,13 @@ function useTermsAcceptanceCheck(isAuthenticated: boolean, currentUserId: string
         clearLoginCheckPending();
         setState({ userId: currentUserId, status: 'verified' });
       })
-      .catch(() => {
-        if (active) setState({ userId: currentUserId, status: 'error' });
+      .catch((error: unknown) => {
+        if (active) {
+          setState({
+            userId: currentUserId,
+            status: isServerUnavailableError(error) ? 'unavailable' : 'error',
+          });
+        }
       });
     return () => {
       active = false;
@@ -77,14 +84,20 @@ function useTermsAcceptanceCheck(isAuthenticated: boolean, currentUserId: string
   return { state: effectiveState, retry, markAccepted };
 }
 
-function TermsCheckErrorCard({ onRetry, onLogout }: { onRetry: () => void; onLogout: () => void }) {
+type ProtectedErrorCardProps = {
+  title: string;
+  message: string;
+  onRetry: () => void;
+  onLogout: () => void;
+};
+
+function ProtectedErrorCard({ title, message, onRetry, onLogout }: ProtectedErrorCardProps) {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-surface p-4">
       <div className="w-full max-w-md rounded-3xl border border-border-subtle bg-elevated p-6 shadow-xl">
-        <h1 className="text-lg font-semibold text-ink">Não foi possível verificar os termos</h1>
+        <h1 className="text-lg font-semibold text-ink">{title}</h1>
         <Alert tone="error" className="mt-4 text-xs">
-          Não foi possível consultar o status dos Termos de Uso e Política de Privacidade. Tente
-          novamente para continuar.
+          {message}
         </Alert>
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="outline" size="sm" onClick={onLogout}>
@@ -111,8 +124,25 @@ export function ProtectedRoute() {
   if (state.status === 'loading') {
     return <PageLoader />;
   }
+  if (state.status === 'unavailable') {
+    return (
+      <ProtectedErrorCard
+        title="Servidor indisponível"
+        message="Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente em instantes."
+        onRetry={retry}
+        onLogout={logout}
+      />
+    );
+  }
   if (state.status === 'error') {
-    return <TermsCheckErrorCard onRetry={retry} onLogout={logout} />;
+    return (
+      <ProtectedErrorCard
+        title="Não foi possível verificar os termos"
+        message="Não foi possível consultar o status dos Termos de Uso e Política de Privacidade. Tente novamente para continuar."
+        onRetry={retry}
+        onLogout={logout}
+      />
+    );
   }
   if (state.status === 'pending') {
     return (

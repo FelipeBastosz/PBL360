@@ -146,7 +146,9 @@ describe('routing and session', () => {
 
   it('blocks protected routes when term acceptance check fails and allows retrying', async () => {
     vi.spyOn(commitmentTermsService, 'getMyAcceptanceStatus')
-      .mockRejectedValueOnce(new ApiError(500, ['Erro interno']))
+      .mockRejectedValueOnce(
+        new ApiError(500, ['Erro interno'], { statusCode: 500, message: 'Erro interno' }),
+      )
       .mockResolvedValueOnce({
         aceito: true,
         versaoAceita: '1.2',
@@ -160,6 +162,40 @@ describe('routing and session', () => {
     expect(
       await screen.findByRole('heading', { name: 'Não foi possível verificar os termos' }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Você ainda não faz parte de nenhuma turma.'),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+
+    expect(
+      await screen.findByText('Você ainda não faz parte de nenhuma turma.'),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ['network error', new ApiError(0, ['Sem conexão'])],
+    ['proxy 500 without JSON body', new ApiError(500, ['Erro no servidor'], '')],
+    ['service unavailable 503', new ApiError(503, ['Indisponível'])],
+  ])('shows server unavailable screen on %s and allows retrying', async (_label, error) => {
+    vi.spyOn(commitmentTermsService, 'getMyAcceptanceStatus')
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce({
+        aceito: true,
+        versaoAceita: '1.2',
+        aceitoEm: '2026-11-17T12:00:00.000Z',
+        versaoVigente: '1.2',
+      });
+
+    sessionStore.save(sessionFor(studentUser));
+    const { user } = renderApp('/turmas');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Servidor indisponível' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Não foi possível verificar os termos' }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText('Você ainda não faz parte de nenhuma turma.'),
     ).not.toBeInTheDocument();
