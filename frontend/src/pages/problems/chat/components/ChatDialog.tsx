@@ -29,7 +29,7 @@ export function ChatDialog({ titleId, onClose, children }: ChatDialogProps) {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="absolute inset-x-0 top-10 bottom-0 flex overflow-hidden rounded-t-3xl bg-white shadow-2xl animate-sheet-up focus:outline-none lg:inset-y-0 lg:right-0 lg:left-auto lg:w-[min(56rem,100%)] lg:rounded-none lg:animate-drawer-in"
+        className="absolute inset-x-0 top-10 bottom-0 flex overflow-hidden rounded-t-3xl border-t border-border-subtle bg-elevated shadow-2xl animate-sheet-up focus:outline-none lg:inset-y-0 lg:right-0 lg:left-auto lg:w-[min(56rem,100%)] lg:rounded-none lg:border-t-0 lg:border-l lg:animate-drawer-in"
       >
         {children}
       </div>

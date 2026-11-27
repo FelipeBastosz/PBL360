@@ -22,12 +22,12 @@ function ChatThreadHeader({
   onBack,
 }: Pick<ChatThreadProps, 'contact' | 'canSeePhoto' | 'onBack'>) {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-ink/10 bg-white px-3 lg:h-18 lg:px-6">
+    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border-subtle bg-elevated px-3 lg:h-18 lg:px-6">
       <button
         type="button"
         onClick={onBack}
         aria-label="Voltar para conversas"
-        className="rounded-full p-2 text-ink transition-[background-color,scale] duration-200 hover:bg-black/5 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900 lg:hidden"
+        className="rounded-full p-2 text-ink transition-[background-color,scale] duration-200 hover:bg-subtle active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent lg:hidden"
       >
         <ChevronLeftIcon className="size-6" aria-hidden />
       </button>

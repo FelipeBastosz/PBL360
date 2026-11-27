@@ -45,7 +45,7 @@ function OccupiedSeat({
         </span>
       )}
       {roleBadge && (
-        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-warning-line bg-warning-soft px-1.5 text-[0.625rem] leading-4 font-semibold whitespace-nowrap text-warning animate-pop-in">
+        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-amber-400 bg-amber-50 px-1.5 text-[0.625rem] leading-4 font-semibold whitespace-nowrap text-amber-800 animate-pop-in dark:border-amber-500/80 dark:bg-amber-950 dark:text-amber-300">
           {roleBadge}
         </span>
       )}
