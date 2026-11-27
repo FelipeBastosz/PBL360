@@ -5,7 +5,7 @@ import { TermsReacceptanceModal } from '@/components/layout/TermsReacceptanceMod
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
-import { isServerUnavailableError } from '@/services/apiError';
+import { NETWORK_ERROR_MESSAGE, isServerUnavailableError } from '@/services/apiError';
 import {
   commitmentTermsService,
   type TermAcceptanceStatus,
@@ -128,7 +128,7 @@ export function ProtectedRoute() {
     return (
       <ProtectedErrorCard
         title="Servidor indisponível"
-        message="Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente em instantes."
+        message={NETWORK_ERROR_MESSAGE}
         onRetry={retry}
         onLogout={logout}
       />

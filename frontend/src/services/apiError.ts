@@ -32,11 +32,14 @@ function messagesFromBody(body: unknown): string[] {
   return Array.isArray(body.message) ? body.message : [body.message];
 }
 
-const UNAVAILABLE_STATUSES = new Set([0, 502, 503, 504]);
+const GATEWAY_UNAVAILABLE_STATUSES = new Set([502, 503, 504]);
+
+function isEmptyBody(body: unknown): boolean {
+  return body == null || (typeof body === 'string' && body.trim() === '');
+}
 
 function isUnavailableResponse(status: number, body: unknown): boolean {
-  if (UNAVAILABLE_STATUSES.has(status)) return true;
-  return status === 500 && !isErrorResponse(body);
+  return GATEWAY_UNAVAILABLE_STATUSES.has(status) || (status === 500 && isEmptyBody(body));
 }
 
 function messagesForStatus(status: number, body: unknown): string[] {
@@ -55,7 +58,9 @@ export function toApiError(error: unknown): ApiError {
 }
 
 export function isServerUnavailableError(error: unknown): boolean {
-  return error instanceof ApiError && isUnavailableResponse(error.status, error.body);
+  if (!(error instanceof ApiError)) return false;
+  if (error.status === 0) return error.message !== UNKNOWN_ERROR_MESSAGE;
+  return isUnavailableResponse(error.status, error.body);
 }
 
 export function getPendingVerification(error: unknown): PendingVerificationResponse | null {
