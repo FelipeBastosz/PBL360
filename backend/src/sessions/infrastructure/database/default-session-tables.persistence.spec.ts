@@ -58,4 +58,12 @@ describe('reapplyDefaultSessionTables', () => {
       expect.any(String),
     ]);
   });
+
+  it('does nothing when there are no sessions and the evaluation lookup returns no row', async () => {
+    const query = jest.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+    await reapplyDefaultSessionTables({ query } as unknown as EntityManager, 'p1');
+
+    expect(query).toHaveBeenCalledTimes(2);
+  });
 });
