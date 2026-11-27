@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
+import type { AttachmentCategory } from '../../domain/enums/attachment-category.enum';
 import { SessionAttachment } from '../../domain/entities/session-attachment.entity';
 import type {
   SessionAttachmentFile,
@@ -14,6 +15,7 @@ interface SummaryRow {
   fileName: string;
   mimeType: string;
   sizeBytes: number;
+  category: AttachmentCategory;
   uploaderId: string;
   uploaderName: string;
   createdAt: Date;
@@ -21,12 +23,12 @@ interface SummaryRow {
 
 const SUMMARY_COLUMNS = `
   a.id, a.file_name AS "fileName", a.mime_type AS "mimeType", a.size_bytes AS "sizeBytes",
-  u.id AS "uploaderId", u.name AS "uploaderName", a.created_at AS "createdAt"`;
+  a.category, u.id AS "uploaderId", u.name AS "uploaderName", a.created_at AS "createdAt"`;
 
 const INSERT_SQL = `
   WITH inserted AS (
-    INSERT INTO session_attachments (session_id, uploaded_by, file_name, mime_type, size_bytes, content)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO session_attachments (session_id, uploaded_by, file_name, mime_type, size_bytes, category, content)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING *
   )
   SELECT ${SUMMARY_COLUMNS} FROM inserted a JOIN users u ON u.id = a.uploaded_by;`;
@@ -53,6 +55,7 @@ const toSummary = (row: SummaryRow): SessionAttachmentSummary => ({
   fileName: row.fileName,
   mimeType: row.mimeType,
   sizeBytes: Number(row.sizeBytes),
+  category: row.category,
   uploader: { id: row.uploaderId, name: row.uploaderName },
   createdAt: row.createdAt,
 });
@@ -71,6 +74,7 @@ export class PgSessionAttachmentRepository implements SessionAttachmentRepositor
       attachment.fileName,
       attachment.mimeType,
       attachment.sizeBytes,
+      attachment.category,
       attachment.content,
     ]);
     return toSummary(requireFirstRow(rows, 'Failed to persist session attachment.'));

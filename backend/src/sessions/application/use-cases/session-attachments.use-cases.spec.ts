@@ -4,6 +4,7 @@ import {
   NotFoundError,
 } from '@/shared/errors/application.error';
 import { UserType } from '@/users/domain/enums/user-type.enum';
+import { AttachmentCategory } from '../../domain/enums/attachment-category.enum';
 import { InvalidAttachmentError } from '../../domain/errors/invalid-attachment.error';
 import type { SessionAttachmentRepository } from '../../domain/repositories/session-attachment.repository';
 import type { SessionAccessService } from '../services/session-access.service';
@@ -34,16 +35,20 @@ describe('Session attachment use cases', () => {
   const asAccess = () => access as unknown as SessionAccessService;
 
   describe('UploadSessionAttachmentUseCase', () => {
-    const upload = (content: Buffer | undefined) =>
+    const upload = (
+      content: Buffer | undefined,
+      category: AttachmentCategory | null = AttachmentCategory.SESSION_ATTACHMENT,
+    ) =>
       new UploadSessionAttachmentUseCase(asAccess(), attachments).execute({
         sessionId: 'session-1',
         member: student,
         fileName: 'Pesquisa.pdf',
         content,
+        category: category ?? undefined,
       });
 
-    it('stores a PDF sent by a member as its uploader', async () => {
-      await upload(pdf);
+    it('stores a PDF sent by a member as its uploader with explicit category', async () => {
+      await upload(pdf, AttachmentCategory.TABLE_REPORT);
 
       expect(access.assertMemberCanAccessSession).toHaveBeenCalledWith('session-1', student);
       expect(attachments.create).toHaveBeenCalledWith(
@@ -51,8 +56,22 @@ describe('Session attachment use cases', () => {
           sessionId: 'session-1',
           uploadedBy: 'student-1',
           fileName: 'Pesquisa.pdf',
+          category: AttachmentCategory.TABLE_REPORT,
         }),
       );
+    });
+
+    it('propagates persistence failure when saving attachment fails', async () => {
+      attachments.create.mockRejectedValue(new Error('DB write error'));
+
+      await expect(upload(pdf)).rejects.toThrow('DB write error');
+    });
+
+    it('rejects when category is missing or invalid', async () => {
+      await expect(upload(pdf, null)).rejects.toThrow(
+        new InvalidRequestError('A categoria deve ser "RELATORIO_MESA" ou "ANEXO_SESSAO".'),
+      );
+      expect(attachments.create).not.toHaveBeenCalled();
     });
 
     it('asks for the file when none was sent', async () => {
@@ -64,21 +83,35 @@ describe('Session attachment use cases', () => {
       await expect(upload(Buffer.from('não é pdf'))).rejects.toBeInstanceOf(InvalidAttachmentError);
     });
 
-    it('checks membership before reading the file', async () => {
+    it('checks membership before validating category or reading the file', async () => {
       access.assertMemberCanAccessSession.mockRejectedValue(new ForbiddenError('negado'));
 
-      await expect(upload(pdf)).rejects.toBeInstanceOf(ForbiddenError);
+      await expect(upload(pdf, null)).rejects.toBeInstanceOf(ForbiddenError);
       expect(attachments.create).not.toHaveBeenCalled();
     });
   });
 
-  it('lists the attachments of the session for a member', async () => {
-    await new ListSessionAttachmentsUseCase(asAccess(), attachments).execute({
+  it('lists the attachments of the session for a member preserving category', async () => {
+    const listed = [
+      {
+        id: 'a1',
+        fileName: 'Relatorio.pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: pdf.length,
+        category: AttachmentCategory.TABLE_REPORT,
+        uploader: { id: 'student-1', name: 'Ana Souza' },
+        createdAt: new Date('2026-10-01T12:00:00Z'),
+      },
+    ];
+    attachments.listBySession.mockResolvedValue(listed);
+
+    const result = await new ListSessionAttachmentsUseCase(asAccess(), attachments).execute({
       sessionId: 'session-1',
       member: student,
     });
 
     expect(attachments.listBySession).toHaveBeenCalledWith('session-1');
+    expect(result).toEqual(listed);
   });
 
   describe('DownloadSessionAttachmentUseCase', () => {

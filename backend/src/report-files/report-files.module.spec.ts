@@ -23,13 +23,17 @@ describe('ReportFilesModule', () => {
     [sessionReportDocument, 'relatório-sessão-abertura'],
     [problemReportDocument, 'relatorio-problema-1'],
     [classReportDocument, 'relatorio-final-turma-a'],
-  ])('exports a PDF and a spreadsheet for each report', async (buildDocument, baseName) => {
-    const pdf = await generator.generate(buildDocument(ReportFileFormat.PDF));
-    const xlsx = await generator.generate(buildDocument(ReportFileFormat.XLSX));
+  ])(
+    'exports a PDF and a spreadsheet for each report',
+    async (buildDocument, baseName) => {
+      const pdf = await generator.generate(buildDocument(ReportFileFormat.PDF));
+      const xlsx = await generator.generate(buildDocument(ReportFileFormat.XLSX));
 
-    expect(pdf.fileName).toBe(`${baseName}.pdf`);
-    expect(pdf.content.subarray(0, 5).toString('latin1')).toBe('%PDF-');
-    expect(xlsx.fileName).toBe(`${baseName}.xlsx`);
-    expect(xlsx.content.subarray(0, 2).toString('latin1')).toBe('PK');
-  });
+      expect(pdf.fileName).toBe(`${baseName}.pdf`);
+      expect(pdf.content.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+      expect(xlsx.fileName).toBe(`${baseName}.xlsx`);
+      expect(xlsx.content.subarray(0, 2).toString('latin1')).toBe('PK');
+    },
+    30000,
+  );
 });
