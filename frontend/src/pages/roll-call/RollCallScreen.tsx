@@ -28,24 +28,43 @@ type RollCallScreenProps = Omit<ReturnType<typeof useRollCall>, 'rollCall' | 'bo
   board: RollCallBoard;
 };
 
+function pendingStudentsMessage(count: number): string {
+  return count === 1
+    ? 'Defina a presença ou ausência de 1 aluno restante para salvar a chamada.'
+    : `Defina a presença ou ausência de ${count} alunos restantes para salvar a chamada.`;
+}
+
 function SaveBar({
   isDirty,
+  pendingCount,
   isSaving,
   onSave,
 }: {
   isDirty: boolean;
+  pendingCount: number;
   isSaving: boolean;
   onSave: () => void;
 }) {
+  const canSave = isDirty && pendingCount === 0;
+
   return (
     <div className="sticky bottom-0 -mx-4 bg-linear-to-t from-surface from-60% px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:static lg:mx-0 lg:bg-none lg:p-0">
-      <Button onClick={onSave} disabled={!isDirty} isLoading={isSaving}>
+      <Button onClick={onSave} disabled={!canSave} isLoading={isSaving}>
         Salvar chamada
       </Button>
-      {isDirty && (
-        <p className="mt-2 text-center text-xs text-muted animate-fade-in">
-          Há alterações não salvas.
+      {pendingCount > 0 ? (
+        <p
+          role="status"
+          className="mt-2 text-center text-xs font-medium text-amber-700 dark:text-amber-400 animate-fade-in"
+        >
+          {pendingStudentsMessage(pendingCount)}
         </p>
+      ) : (
+        isDirty && (
+          <p className="mt-2 text-center text-xs text-muted animate-fade-in">
+            Há alterações não salvas.
+          </p>
+        )
       )}
     </div>
   );
@@ -88,7 +107,6 @@ function TableSection({
 
 function CarometroSection({ board, change, table }: SectionProps) {
   const offTable = board.students.filter(isOffTable);
-  const seatable = offTable.some((s) => s.status !== 'JUSTIFICADO' && s.status !== 'AUSENTE');
 
   return (
     <OffTablePanel
@@ -96,7 +114,7 @@ function CarometroSection({ board, change, table }: SectionProps) {
       selectedId={table.selectedId}
       draggingId={table.drag?.studentId ?? null}
       isDropTarget={table.drag?.target === OFF_TABLE_DROP}
-      canSeatEveryone={freeSeats(board).length > 0 && seatable}
+      canSeatEveryone={freeSeats(board).length > 0 && offTable.length > 0}
       canMarkAbsent={offTable.some((student) => student.status === null)}
       onTap={table.tapChip}
       onLongPress={table.longPressChip}
@@ -113,6 +131,7 @@ export function RollCallScreen({
   board,
   change,
   isDirty,
+  pendingCount,
   persist,
   isSaving,
 }: RollCallScreenProps) {
@@ -134,7 +153,12 @@ export function RollCallScreen({
       <TableSection board={board} change={change} table={table} rollCall={rollCall} roles={roles} />
       <aside className="mt-4 flex flex-col gap-4 lg:sticky lg:top-28 lg:mt-0 lg:self-start">
         <CarometroSection board={board} change={change} table={table} />
-        <SaveBar isDirty={isDirty} isSaving={isSaving} onSave={() => void save()} />
+        <SaveBar
+          isDirty={isDirty}
+          pendingCount={pendingCount}
+          isSaving={isSaving}
+          onSave={() => void save()}
+        />
       </aside>
       {dragged && table.drag && dragged.lugar !== null && (
         <OffTableDropZone

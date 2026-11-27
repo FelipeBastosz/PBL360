@@ -3,6 +3,7 @@ import { sessionService } from '@/services/session.service';
 import type { RollCall } from '@/types/session';
 import {
   boardFromRollCall,
+  countTotals,
   hasChanges,
   savedBaseline,
   toAttendanceRecords,
@@ -32,7 +33,7 @@ export function useRollCall(sessionId: string) {
   }, []);
 
   const persist = useCallback(async () => {
-    if (!state) return null;
+    if (!state || countTotals(state.board).semRegistro > 0) return null;
     const result = await save(sessionId, toAttendanceRecords(state.board));
     if (result.ok) setState(fromRollCall(result.data));
     return result;
@@ -42,6 +43,7 @@ export function useRollCall(sessionId: string) {
     rollCall: state?.rollCall ?? null,
     board: state?.board ?? null,
     isDirty: state ? hasChanges(state.board, state.baseline) : false,
+    pendingCount: state ? countTotals(state.board).semRegistro : 0,
     change,
     persist,
     isLoading,

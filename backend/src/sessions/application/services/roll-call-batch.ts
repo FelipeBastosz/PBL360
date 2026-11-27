@@ -42,9 +42,19 @@ function assertSeatsUnique(entries: AttendanceEntry[]): void {
   }
 }
 
+function assertAllEnrolledCovered(entries: AttendanceEntry[], enrolled: EnrolledStudent[]): void {
+  const includedIds = new Set(entries.map((entry) => entry.studentId));
+  if (enrolled.some((student) => !includedIds.has(student.id))) {
+    throw new UnprocessableEntityError(
+      'Defina a presença ou ausência de todos os alunos da turma antes de salvar a chamada.',
+    );
+  }
+}
+
 export function assertBatchFitsRoom(entries: AttendanceEntry[], enrolled: EnrolledStudent[]): void {
   assertEachStudentOnce(entries);
   assertStudentsEnrolled(entries, enrolled);
   assertSeatsExist(entries, enrolled.length);
   assertSeatsUnique(entries);
+  assertAllEnrolledCovered(entries, enrolled);
 }

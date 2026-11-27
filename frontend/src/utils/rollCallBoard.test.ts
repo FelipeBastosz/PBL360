@@ -179,20 +179,24 @@ describe('unseatStudent', () => {
 });
 
 describe('batch actions', () => {
-  it('seats everyone off the table without status in the free seats', () => {
+  it('seats everyone off the table as present in the free seats, including absent and excused students', () => {
     const current = board(
       student('ana', { lugar: 1, status: 'PRESENTE' }),
       student('bruno'),
       student('carla', { status: 'AUSENTE' }),
-      student('diego'),
+      student('diego', { status: 'JUSTIFICADO', justificativa: 'Atestado' }),
     );
 
     const next = seatEveryone(current);
 
     expect(find(next, 'bruno')).toMatchObject({ lugar: 2, status: 'PRESENTE' });
-    expect(find(next, 'diego')).toMatchObject({ lugar: 3, status: 'PRESENTE' });
-    expect(find(next, 'carla')).toMatchObject({ lugar: null, status: 'AUSENTE' });
-    expect(freeSeats(next)).toEqual([4]);
+    expect(find(next, 'carla')).toMatchObject({ lugar: 3, status: 'PRESENTE' });
+    expect(find(next, 'diego')).toMatchObject({
+      lugar: 4,
+      status: 'PRESENTE',
+      justificativa: null,
+    });
+    expect(freeSeats(next)).toEqual([]);
   });
 
   it('marks as absent only who is off the table without status', () => {

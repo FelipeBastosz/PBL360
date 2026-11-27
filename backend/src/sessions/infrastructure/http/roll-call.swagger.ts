@@ -50,8 +50,9 @@ export const RecordRollCallSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Grava a chamada da sessão em lote',
     description:
-      'Grava presença e lugares numa única transação. Alunos fora da lista mantêm o registro ' +
-      'atual. O horário e o autor são definidos pelo servidor. Só PRESENTE e ATRASADO podem ' +
+      'Grava presença e lugares numa única transação. Todos os alunos matriculados na sala ' +
+      'devem estar incluídos no lote com situação definida (PRESENTE, ATRASADO, JUSTIFICADO ou ' +
+      'AUSENTE). O horário e o autor são definidos pelo servidor. Só PRESENTE e ATRASADO podem ' +
       'ter lugar, e a justificativa só é aceita com JUSTIFICADO.',
   }),
   ApiBody({ type: RecordRollCallDto }),
@@ -66,7 +67,8 @@ export const RecordRollCallSwaggerDocs = applyDecorators(
     type: ErrorResponseDto,
   }),
   ApiUnprocessableEntityResponse({
-    description: 'Aluno não matriculado na sala ou lugar fora da mesa.',
+    description:
+      'Aluno não matriculado na sala, lugar fora da mesa ou chamada incompleta com alunos sem situação definida.',
     type: ErrorResponseDto,
   }),
   ...COMMON,

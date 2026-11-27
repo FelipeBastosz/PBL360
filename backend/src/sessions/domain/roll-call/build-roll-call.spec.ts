@@ -157,6 +157,34 @@ describe('buildRollCall', () => {
     });
   });
 
+  it('starts empty when nobody was seated in the previous session', () => {
+    const rollCall = buildRollCall({
+      sessionId: 'session-1',
+      enrolled: [ana, bruno],
+      recorded: [],
+      previous: previous([
+        {
+          studentId: 'ana',
+          status: AttendanceStatus.ABSENT,
+          seatNumber: null,
+          justification: null,
+        },
+        {
+          studentId: 'bruno',
+          status: AttendanceStatus.EXCUSED,
+          seatNumber: null,
+          justification: 'Atestado',
+        },
+      ]),
+    });
+
+    expect(rollCall).toMatchObject({
+      origin: RollCallOrigin.EMPTY,
+      referenceSession: null,
+      totals: { present: 0, late: 0, excused: 0, absent: 0, unrecorded: 2 },
+    });
+  });
+
   it('lists students by name with their initials', () => {
     const rollCall = buildRollCall({
       sessionId: 'session-1',
