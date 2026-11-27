@@ -6,9 +6,9 @@ import type {
   SaveTutorEvaluationPayload,
   SessionFeedbackResponse,
   AdjustSelfAssessmentPayload,
+  AdjustmentTarget,
   SelfAssessmentAdjustmentResponse,
   SelfAssessmentAdjustmentHistoryResponse,
-  SessionEvaluationHistoryResponse,
   SelfAssessmentResponse,
   SaveSelfAssessmentPayload,
   SessionPeersResponse,
@@ -58,16 +58,12 @@ export const evaluationService = {
       )
       .then((r) => r.data),
 
-  getSelfAssessmentAdjustments: (sessionId: string, studentId: string) =>
+  getSelfAssessmentAdjustments: (sessionId: string, studentId: string, tipo?: AdjustmentTarget) =>
     api
       .get<SelfAssessmentAdjustmentHistoryResponse>(
         `/sessoes/${sessionId}/autoavaliacoes/${studentId}/ajustes`,
+        { params: tipo ? { tipo } : undefined },
       )
-      .then((r) => r.data),
-
-  getEvaluationHistory: (sessionId: string) =>
-    api
-      .get<SessionEvaluationHistoryResponse>(`/sessoes/${sessionId}/avaliacoes`)
       .then((r) => r.data),
 
   getMyEvaluationsSummary: (sessionId: string) =>

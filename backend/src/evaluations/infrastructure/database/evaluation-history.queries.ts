@@ -31,6 +31,9 @@ export const FIND_SESSION_PEER_ADJUSTMENTS_QUERY = `
   SELECT DISTINCT ON (ga.student_id)
          ga.student_id AS "studentId",
          ga.previous_value AS "previousValue",
+         FIRST_VALUE(ga.previous_value) OVER (
+           PARTITION BY ga.student_id ORDER BY ga.created_at ASC, ga.id ASC
+         ) AS "originalValue",
          ga.new_value AS "newValue"
     FROM grade_adjustments ga
    WHERE ga.session_id = $1 AND ga.type = 'PEER_ASSESSMENT'

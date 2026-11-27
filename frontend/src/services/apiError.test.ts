@@ -7,6 +7,7 @@ import {
   TOO_MANY_REQUESTS_MESSAGE,
   UNKNOWN_ERROR_MESSAGE,
   getPendingVerification,
+  isServerUnavailableError,
   toApiError,
 } from './apiError';
 
@@ -50,6 +51,16 @@ describe('toApiError', () => {
     expect(toApiError(axiosErrorWith(500, { message: 'stack trace' })).message).toBe(
       SERVER_ERROR_MESSAGE,
     );
+    expect(toApiError(axiosErrorWith(500, { error: 'Unexpected' })).message).toBe(
+      SERVER_ERROR_MESSAGE,
+    );
+  });
+
+  it('reports connection error for proxy 500 without JSON body and 502/503/504', () => {
+    expect(toApiError(axiosErrorWith(500, '')).message).toBe(NETWORK_ERROR_MESSAGE);
+    expect(toApiError(axiosErrorWith(502, '')).message).toBe(NETWORK_ERROR_MESSAGE);
+    expect(toApiError(axiosErrorWith(503, '')).message).toBe(NETWORK_ERROR_MESSAGE);
+    expect(toApiError(axiosErrorWith(504, '')).message).toBe(NETWORK_ERROR_MESSAGE);
   });
 
   it('reports a network failure when there is no response', () => {
@@ -87,5 +98,32 @@ describe('getPendingVerification', () => {
   it('ignores any other error', () => {
     expect(getPendingVerification(new ApiError(403, ['Acesso negado.'], {}))).toBeNull();
     expect(getPendingVerification(new Error('x'))).toBeNull();
+  });
+});
+
+describe('isServerUnavailableError', () => {
+  it('detects network errors, gateway errors, and empty 500 proxy responses', () => {
+    expect(isServerUnavailableError(new ApiError(0, [NETWORK_ERROR_MESSAGE]))).toBe(true);
+    expect(
+      isServerUnavailableError(toApiError(new AxiosError('Network Error', 'ERR_NETWORK'))),
+    ).toBe(true);
+    expect(isServerUnavailableError(new ApiError(502, [SERVER_ERROR_MESSAGE]))).toBe(true);
+    expect(isServerUnavailableError(new ApiError(503, [SERVER_ERROR_MESSAGE]))).toBe(true);
+    expect(isServerUnavailableError(new ApiError(504, [SERVER_ERROR_MESSAGE]))).toBe(true);
+    expect(isServerUnavailableError(new ApiError(500, [SERVER_ERROR_MESSAGE], ''))).toBe(true);
+  });
+
+  it('returns false for backend 500 errors, unknown client errors, and non-ApiError values', () => {
+    expect(
+      isServerUnavailableError(
+        new ApiError(500, [SERVER_ERROR_MESSAGE], { statusCode: 500, message: 'Internal error' }),
+      ),
+    ).toBe(false);
+    expect(isServerUnavailableError(toApiError(axiosErrorWith(500, { error: 'Unexpected' })))).toBe(
+      false,
+    );
+    expect(isServerUnavailableError(toApiError(new Error('boom')))).toBe(false);
+    expect(isServerUnavailableError(new ApiError(400, ['Bad request']))).toBe(false);
+    expect(isServerUnavailableError(new Error('boom'))).toBe(false);
   });
 });

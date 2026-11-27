@@ -102,8 +102,8 @@ describe('GetPeerEvaluationUseCase', () => {
       notaCargo: null,
       formula: { criteriaWeight: 70, roleWeight: 30 },
       criterios: [
-        { id: 'crit-1', nome: 'Comunicação', peso: 2, notaMaxima: 10 },
-        { id: 'crit-2', nome: 'Pontualidade', peso: 1, notaMaxima: 10 },
+        { id: 'crit-1', nome: 'Comunicação', peso: 2, notaMaxima: 10, ordem: 1 },
+        { id: 'crit-2', nome: 'Pontualidade', peso: 1, notaMaxima: 10, ordem: 2 },
       ],
       itens: [],
     });
@@ -140,7 +140,7 @@ describe('GetPeerEvaluationUseCase', () => {
       enviadaEm: null,
       notaCargo: null,
       formula: { criteriaWeight: 70, roleWeight: 30 },
-      criterios: [{ id: 'crit-1', nome: 'Comunicação', peso: 2, notaMaxima: 10 }],
+      criterios: [{ id: 'crit-1', nome: 'Comunicação', peso: 2, notaMaxima: 10, ordem: 1 }],
       itens: [{ criterioId: 'crit-1', nota: 8.5 }],
     });
   });
@@ -177,7 +177,7 @@ describe('GetPeerEvaluationUseCase', () => {
       enviadaEm: submittedAt,
       notaCargo: null,
       formula: { criteriaWeight: 70, roleWeight: 30 },
-      criterios: [{ id: 'crit-1', nome: 'Comunicação', peso: 2, notaMaxima: 10 }],
+      criterios: [{ id: 'crit-1', nome: 'Comunicação', peso: 2, notaMaxima: 10, ordem: 1 }],
       itens: [{ criterioId: 'crit-1', nota: 9 }],
     });
   });

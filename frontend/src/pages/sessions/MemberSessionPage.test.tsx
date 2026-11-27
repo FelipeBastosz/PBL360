@@ -1,6 +1,8 @@
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/services/apiError';
+import { evaluationService } from '@/services/evaluation.service';
+import { planningPokerService } from '@/services/planningPoker.service';
 import { problemService } from '@/services/problem.service';
 import { sessionService } from '@/services/session.service';
 import { sessionStore } from '@/services/sessionStore';
@@ -22,6 +24,21 @@ vi.mock('@/services/session.service', () => ({
 }));
 
 vi.mock('@/services/user.service');
+
+vi.mock('@/services/planningPoker.service', () => ({
+  planningPokerService: {
+    getState: vi.fn(),
+    getAvailability: vi.fn(),
+    start: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/evaluation.service', () => ({
+  evaluationService: {
+    getMyEvaluationsSummary: vi.fn(),
+    listSessionPeers: vi.fn(),
+  },
+}));
 
 vi.mock('@/hooks/useToast', () => ({
   useToast: () => ({ notify: vi.fn() }),
@@ -71,6 +88,11 @@ function openAs(user = studentUser, found: boolean = true) {
     criadoEm: '2026-08-12',
     atualizadoEm: '2026-08-12',
   });
+  vi.mocked(planningPokerService.getState).mockRejectedValue(new ApiError(404, ['sem poker']));
+  vi.mocked(evaluationService.getMyEvaluationsSummary).mockRejectedValue(
+    new ApiError(404, ['sem avaliações']),
+  );
+  vi.mocked(evaluationService.listSessionPeers).mockRejectedValue(new ApiError(404, ['sem pares']));
   sessionStore.save(sessionFor(user));
   return renderApp('/sessoes/s1');
 }

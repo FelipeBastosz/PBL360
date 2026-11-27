@@ -35,14 +35,16 @@ export const UploadSessionAttachmentSwaggerDocs = applyDecorators(
   ApiOperation({
     summary: 'Anexa um PDF à sessão',
     description:
-      'Recebe o arquivo no campo `arquivo` de um `multipart/form-data` e grava o conteúdo no ' +
-      'banco. Só aceita PDF (verificado pelo conteúdo) de até 10 MB.',
+      'Recebe o arquivo no campo `arquivo` e a categoria obrigatória (`RELATORIO_MESA` ou ' +
+      '`ANEXO_SESSAO`, sem inferência pelo nome do arquivo) no campo `categoria` de um ' +
+      '`multipart/form-data`, gravando o conteúdo no banco. Só aceita PDF (verificado pelo ' +
+      'conteúdo) de até 10 MB.',
   }),
   ApiConsumes('multipart/form-data'),
   ApiBody({ type: UploadSessionAttachmentDto }),
   ApiCreatedResponse({ type: SessionAttachmentResponseDto }),
   ApiBadRequestResponse({
-    description: 'Arquivo ausente ou que não é PDF.',
+    description: 'Arquivo ausente, que não é PDF, ou categoria ausente/inválida.',
     type: ErrorResponseDto,
   }),
   ApiPayloadTooLargeResponse({ description: 'Arquivo maior que 10 MB.', type: ErrorResponseDto }),

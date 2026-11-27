@@ -53,6 +53,8 @@ function resolveTargetStudent(
       matricula: null,
       sessoes: [],
       notaFinal: null,
+      autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+      pares: { nota: null, situacao: 'PENDENTE' },
     }
   );
 }

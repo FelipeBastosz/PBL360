@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '@/services/apiError';
 import { evaluationService } from '@/services/evaluation.service';
 import { sessionService } from '@/services/session.service';
 import type { SelfAssessmentResponse } from '@/types/evaluation';
@@ -26,9 +27,9 @@ vi.mock('@/hooks/useToast', () => ({
 
 const mockAssessmentData: SelfAssessmentResponse = {
   status: 'PENDENTE',
+  participou: true,
   prazo: '2026-10-15T17:00:00.000Z',
   enviadaEm: null,
-  notaSessao: null,
   criterios: [
     { id: 'crit-1', nome: 'Segmento', peso: 3.0, ordem: 1 },
     { id: 'crit-2', nome: 'Participação', peso: 3.5, ordem: 2 },
@@ -83,7 +84,10 @@ describe('StudentSelfEvaluationPage', () => {
   });
 
   it('auto-saves draft with debounce (enviar: false) when score changes', async () => {
-    vi.mocked(evaluationService.getSelfAssessment).mockResolvedValue(mockAssessmentData);
+    vi.mocked(evaluationService.getSelfAssessment).mockResolvedValue({
+      ...mockAssessmentData,
+      prazo: '2099-10-15T17:00:00.000Z',
+    });
     vi.mocked(evaluationService.saveSelfAssessment).mockResolvedValue({
       ...mockAssessmentData,
       status: 'RASCUNHO',
@@ -164,6 +168,7 @@ describe('StudentSelfEvaluationPage', () => {
     vi.mocked(evaluationService.getSelfAssessment).mockResolvedValue({
       ...mockAssessmentData,
       status: 'NAO_PARTICIPOU',
+      participou: false,
     });
 
     renderComponent();
@@ -176,5 +181,59 @@ describe('StudentSelfEvaluationPage', () => {
       ).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Enviar avaliação' })).not.toBeInTheDocument();
     });
+  });
+
+  it('locks the form when the deadline passed without submission', async () => {
+    vi.mocked(evaluationService.getSelfAssessment).mockResolvedValue({
+      ...mockAssessmentData,
+      status: 'ENCERRADA',
+    });
+
+    renderComponent();
+
+    expect(
+      await screen.findByText(/O prazo da autoavaliação terminou e ela não foi enviada/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Enviar avaliação' })).not.toBeInTheDocument();
+    expect(evaluationService.saveSelfAssessment).not.toHaveBeenCalled();
+  });
+
+  it('reloads and locks the form instead of saving when the deadline passes on screen', async () => {
+    vi.mocked(evaluationService.getSelfAssessment)
+      .mockResolvedValueOnce({ ...mockAssessmentData, prazo: '2020-01-01T00:00:00.000Z' })
+      .mockResolvedValue({ ...mockAssessmentData, status: 'ENCERRADA' });
+
+    renderComponent();
+
+    const segmentoGroup = await screen.findByRole('group', { name: 'Segmento' });
+    await userEvent.click(within(segmentoGroup).getByRole('button', { name: '+' }));
+
+    expect(
+      await screen.findByText(/O prazo da autoavaliação terminou e ela não foi enviada/),
+    ).toBeInTheDocument();
+    expect(evaluationService.saveSelfAssessment).not.toHaveBeenCalled();
+  });
+
+  it('reloads the assessment when a draft is rejected because the deadline passed', async () => {
+    vi.mocked(evaluationService.getSelfAssessment)
+      .mockResolvedValueOnce({ ...mockAssessmentData, prazo: '2099-10-15T17:00:00.000Z' })
+      .mockResolvedValue({ ...mockAssessmentData, status: 'ENCERRADA' });
+    vi.mocked(evaluationService.saveSelfAssessment).mockRejectedValue(
+      new ApiError(423, ['O prazo para a autoavaliação expirou.']),
+    );
+
+    renderComponent();
+
+    const segmentoGroup = await screen.findByRole('group', { name: 'Segmento' });
+    await userEvent.click(within(segmentoGroup).getByRole('button', { name: '+' }));
+
+    expect(
+      await screen.findByText(
+        /O prazo da autoavaliação terminou e ela não foi enviada/,
+        {},
+        { timeout: 2000 },
+      ),
+    ).toBeInTheDocument();
+    expect(evaluationService.getSelfAssessment).toHaveBeenCalledTimes(2);
   });
 });

@@ -41,4 +41,7 @@ export const authConfig = registerAs('auth', () => ({
 export const mailConfig = registerAs('mail', () => ({
   smtpUser: process.env.SMTP_USER ?? '',
   smtpPass: process.env.SMTP_PASS ?? '',
+  gmailClientId: process.env.GMAIL_CLIENT_ID ?? '',
+  gmailClientSecret: process.env.GMAIL_CLIENT_SECRET ?? '',
+  gmailRefreshToken: process.env.GMAIL_REFRESH_TOKEN ?? '',
 }));

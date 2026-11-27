@@ -23,6 +23,8 @@ const mockStudent: StudentGradeRow = {
   matricula: '26121190',
   sessoes: [],
   notaFinal: 8.5,
+  autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+  pares: { nota: null, situacao: 'PENDENTE' },
 };
 
 describe('StudentFeedbackModal', () => {

@@ -58,7 +58,7 @@ export function useCreatePerformanceTableForm() {
         roomId: state.target?.roomId || undefined,
       });
       notify({ tone: 'success', message: 'Fórmula criada com sucesso.' });
-      navigate(ROUTES.performanceTables, { replace: true, state: location.state });
+      navigate(ROUTES.performanceTables, { replace: true, state: state.target ?? location.state });
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Ocorreu um erro ao salvar a fórmula.');
     }

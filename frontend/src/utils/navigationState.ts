@@ -49,4 +49,17 @@ export function readApplyTarget(state: unknown): ApplyTarget | null {
   return null;
 }
 
-export function clearApplyTarget(): void {}
+export function hasSessionTarget(state: unknown): boolean {
+  if (typeof state !== 'object' || state === null) return false;
+  const { sessionId, target } = state as Record<string, unknown>;
+  if (typeof sessionId === 'string' && sessionId.trim() !== '') return true;
+  return target !== state && hasSessionTarget(target);
+}
+
+export function clearApplyTarget(): void {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    return;
+  }
+}

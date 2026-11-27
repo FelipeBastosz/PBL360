@@ -18,6 +18,7 @@ export interface ListSessionPeersOutput {
   liberada: boolean;
   prazo: Date | null;
   chamadaRealizada: boolean;
+  participou: boolean | null;
   formula?: { criteriaWeight: number; roleWeight: number };
   colegas: Array<{
     alunoId: string;
@@ -48,10 +49,10 @@ export class ListSessionPeersUseCase {
     ]);
 
     if (rollCall.length === 0) {
-      return this.toOutput(session, false, [], formula);
+      return this.toOutput(session, null, [], formula);
     }
     if (!this.isStudentPresent(rollCall, studentId)) {
-      return this.toOutput(session, true, [], formula);
+      return this.toOutput(session, false, [], formula);
     }
 
     const colegas = await this.fetchEligiblePeers(sessionId, roomId, studentId, rollCall);
@@ -100,14 +101,15 @@ export class ListSessionPeersUseCase {
 
   private toOutput(
     session: { peerEvalReleased: boolean; peerEvalDeadline?: Date | null },
-    chamadaRealizada: boolean,
+    participou: boolean | null,
     colegas: ListSessionPeersOutput['colegas'],
     formula?: { criteriaWeight: number; roleWeight: number },
   ): ListSessionPeersOutput {
     return {
       liberada: session.peerEvalReleased,
       prazo: session.peerEvalDeadline ?? null,
-      chamadaRealizada,
+      chamadaRealizada: participou !== null,
+      participou,
       formula,
       colegas,
     };

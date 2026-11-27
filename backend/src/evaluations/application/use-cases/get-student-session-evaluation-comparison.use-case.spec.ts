@@ -41,6 +41,7 @@ describe('GetStudentSessionEvaluationComparisonUseCase', () => {
         notaConsolidada: 8.5,
         itens: [{ criterioId: 'crit-1', nome: 'Participação', notaAluno: 8.5, notaTutor: 9.0 }],
       },
+      planningPoker: null,
       pares: [
         {
           avaliadorId: 'student-2',

@@ -56,19 +56,10 @@ async function fetchPeerCards(
 }
 
 async function loadPeersData(sessionId: string): Promise<LoadedPeersResult> {
-  const [response, summary] = await Promise.all([
-    evaluationService.listSessionPeers(sessionId),
-    Promise.resolve(evaluationService.getMyEvaluationsSummary(sessionId)).catch(() => null),
-  ]);
+  const response = await evaluationService.listSessionPeers(sessionId);
 
   const chamadaRealizada = response.chamadaRealizada ?? true;
-  const isRollCallDone = Boolean(chamadaRealizada);
-
-  const didNotParticipate =
-    isRollCallDone &&
-    (response.participou === false ||
-      summary?.participou === false ||
-      summary?.autoavaliacao.status === 'NAO_PARTICIPOU');
+  const didNotParticipate = response.participou === false;
 
   if (
     !chamadaRealizada ||
@@ -230,8 +221,7 @@ export function useStudentPeerEvaluation(sessionId: string) {
     }
   };
 
-  const isNonParticipant =
-    data.didNotParticipate || Boolean(data.error && /não participou/i.test(data.error.message));
+  const isNonParticipant = data.didNotParticipate;
 
   return {
     peers: data.peers,

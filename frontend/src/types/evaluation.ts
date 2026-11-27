@@ -80,9 +80,12 @@ export type SelfAssessmentAdjustment = {
   ajustadoEm: string;
 };
 
+export type AdjustmentTarget = 'AUTOAVALIACAO' | 'PARES';
+
 export type AdjustSelfAssessmentPayload = {
   novaNota: number;
   justificativa: string;
+  tipo?: AdjustmentTarget;
 };
 
 export type SelfAssessmentAdjustmentResponse = {
@@ -98,34 +101,15 @@ export type SelfAssessmentAdjustmentHistoryResponse = {
   ajustes: SelfAssessmentAdjustment[];
 };
 
-export type EvaluationAdjustmentSituation = 'SEM_AJUSTE' | 'AJUSTADA';
-
-export type StudentEvaluationHistoryItem = {
-  alunoId: string;
-  nome: string;
-  matricula: string | null;
-  notaAluno: number | null;
-  notaAlunoOriginal: number | null;
-  notaTutor: number | null;
-  notaPares: number | null;
-  avaliacoesPares: number;
-  situacaoAjuste: EvaluationAdjustmentSituation;
-};
-
-export type SessionEvaluationHistoryResponse = {
-  alunos: StudentEvaluationHistoryItem[];
-};
-
 export type SelfAssessmentResponse = {
   status: EvaluationStatus | 'NAO_PARTICIPOU' | 'INDISPONIVEL' | 'ENCERRADA';
   prazo?: string | null;
   enviadaEm: string | null;
   itens: CriterionScore[];
   criterios: EvaluationCriterion[];
-  notaSessao?: number | null;
   notaConsolidada?: number | null;
   notaCargo?: number | null;
-  participou?: boolean;
+  participou: boolean | null;
   papel?: string | null;
   formula?: EvaluationFormula;
 };
@@ -149,7 +133,7 @@ export type SessionPeersResponse = {
   prazo: string | null;
   chamadaRealizada?: boolean;
   colegas: SessionPeerStudent[];
-  participou?: boolean;
+  participou: boolean | null;
   formula?: EvaluationFormula;
 };
 
@@ -192,5 +176,5 @@ export type StudentEvaluationSummaryResponse = {
   autoavaliacao: StudentSelfAssessmentSummary;
   pares: StudentPeerAssessmentSummary;
   feedback: StudentFeedbackSummary;
-  participou?: boolean;
+  participou: boolean | null;
 };

@@ -1,3 +1,4 @@
+import type { AttachmentCategory } from '../enums/attachment-category.enum';
 import type { SessionAttachment } from '../entities/session-attachment.entity';
 
 export const SESSION_ATTACHMENT_REPOSITORY = Symbol('SESSION_ATTACHMENT_REPOSITORY');
@@ -7,6 +8,7 @@ export interface SessionAttachmentSummary {
   fileName: string;
   mimeType: string;
   sizeBytes: number;
+  category: AttachmentCategory;
   uploader: { id: string; name: string };
   createdAt: Date;
 }

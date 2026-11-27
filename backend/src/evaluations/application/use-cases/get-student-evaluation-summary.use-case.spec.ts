@@ -113,4 +113,25 @@ describe('GetStudentEvaluationSummaryUseCase', () => {
       },
     });
   });
+
+  it.each([
+    { rollCallDone: true, participating: true, participated: true },
+    { rollCallDone: true, participating: false, participated: false },
+    { rollCallDone: false, participating: false, participated: null },
+  ])(
+    'reports participation $participated when roll call done is $rollCallDone',
+    async ({ rollCallDone, participating, participated }) => {
+      evaluations.getStudentEvaluationSummary.mockResolvedValue({
+        participating,
+        rollCallDone,
+        tutorEvaluationSubmitted: false,
+        peerSubmitted: 0,
+        peerTotal: 0,
+      });
+
+      await expect(useCase.execute('session-1', 'student-1')).resolves.toMatchObject({
+        participated,
+      });
+    },
+  );
 });

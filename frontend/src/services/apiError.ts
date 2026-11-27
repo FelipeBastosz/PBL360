@@ -32,8 +32,19 @@ function messagesFromBody(body: unknown): string[] {
   return Array.isArray(body.message) ? body.message : [body.message];
 }
 
+const GATEWAY_UNAVAILABLE_STATUSES = new Set([502, 503, 504]);
+
+function isEmptyBody(body: unknown): boolean {
+  return body == null || (typeof body === 'string' && body.trim() === '');
+}
+
+function isUnavailableResponse(status: number, body: unknown): boolean {
+  return GATEWAY_UNAVAILABLE_STATUSES.has(status) || (status === 500 && isEmptyBody(body));
+}
+
 function messagesForStatus(status: number, body: unknown): string[] {
   if (status === 429) return [TOO_MANY_REQUESTS_MESSAGE];
+  if (isUnavailableResponse(status, body)) return [NETWORK_ERROR_MESSAGE];
   if (status >= 500) return [SERVER_ERROR_MESSAGE];
   return messagesFromBody(body);
 }
@@ -44,6 +55,12 @@ export function toApiError(error: unknown): ApiError {
   if (!error.response) return new ApiError(0, [NETWORK_ERROR_MESSAGE]);
   const { status, data } = error.response;
   return new ApiError(status, messagesForStatus(status, data), data);
+}
+
+export function isServerUnavailableError(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false;
+  if (error.status === 0) return error.message !== UNKNOWN_ERROR_MESSAGE;
+  return isUnavailableResponse(error.status, error.body);
 }
 
 export function getPendingVerification(error: unknown): PendingVerificationResponse | null {

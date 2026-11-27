@@ -130,4 +130,24 @@ describe('PerformanceTablesPage (Room Context)', () => {
 
     expect(performanceTableService.remove).toHaveBeenCalledWith('t-pessoal-1');
   });
+
+  it('lists every table and ignores a session left behind when opened outside a session', async () => {
+    sessionStorage.setItem(
+      'pbl360_apply_target',
+      JSON.stringify({ sessionId: 'old-session', roomId: 'room-123', problemId: 'p-1' }),
+    );
+    vi.mocked(performanceTableService.list).mockResolvedValue(mockRoomTables);
+
+    render(
+      <MemoryRouter>
+        <PerformanceTablesPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Tabela Oficial Padrão')).toBeInTheDocument();
+    expect(screen.getByText('Meu Barema Exclusivo')).toBeInTheDocument();
+    expect(screen.queryByText(/Fórmula em uso nesta sessão/)).not.toBeInTheDocument();
+    expect(performanceTableService.listByRoom).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem('pbl360_apply_target')).toBeNull();
+  });
 });

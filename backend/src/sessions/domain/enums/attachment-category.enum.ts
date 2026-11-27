@@ -1,0 +1,4 @@
+export enum AttachmentCategory {
+  TABLE_REPORT = 'TABLE_REPORT',
+  SESSION_ATTACHMENT = 'SESSION_ATTACHMENT',
+}

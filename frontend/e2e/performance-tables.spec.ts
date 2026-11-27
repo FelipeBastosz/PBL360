@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { mockAuthenticatedShell } from './helpers/terms';
 
 const mockSharedTable = {
   id: 'table-shared-1',
@@ -343,6 +344,7 @@ test.describe('Performance Tables - Edition Flow and Scope', () => {
   test('saves edited table with warning modal and confirms update', async ({ page }) => {
     let capturedPut: unknown = null;
 
+    await mockAuthenticatedShell(page);
     await page.route('**/api/tabelas-desempenho/table-shared-1', async (route) => {
       if (route.request().method() === 'PUT') {
         capturedPut = route.request().postDataJSON();
