@@ -53,13 +53,13 @@ describe('Session attachments (e2e)', () => {
     content: Buffer,
     fileName = 'Relatório Parcial.pdf',
     field = 'arquivo',
-    categoria: string | undefined = 'ANEXO_SESSAO',
+    categoria: string | null = 'ANEXO_SESSAO',
   ) => {
     const req = multipart(user).attach(field, content, {
       filename: fileName,
       contentType: 'application/pdf',
     });
-    return categoria === undefined ? req : req.field('categoria', categoria);
+    return categoria === null ? req : req.field('categoria', categoria);
   };
 
   beforeAll(async () => {
@@ -192,9 +192,7 @@ describe('Session attachments (e2e)', () => {
     });
 
     it('rejects missing or invalid category', async () => {
-      const missing = await upload(student, pdf(), 'Relatório.pdf', 'arquivo', undefined).expect(
-        400,
-      );
+      const missing = await upload(student, pdf(), 'Relatório.pdf', 'arquivo', null).expect(400);
       expect((missing.body as ErrorBody).message).toBe(
         'A categoria deve ser "RELATORIO_MESA" ou "ANEXO_SESSAO".',
       );
