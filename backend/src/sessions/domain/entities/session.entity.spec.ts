@@ -71,5 +71,43 @@ describe('Session Entity', () => {
 
       expect(session.isReleaseOpen('self', now)).toBe(false);
     });
+
+    it('creates and updates session data with trimmed text and null descriptions', () => {
+      const session = Session.create({
+        problemId: 'prob-1',
+        createdBy: 'tutor-1',
+        title: '  Abertura  ',
+        description: '  Descrição inicial  ',
+        date: '2026-10-07',
+      });
+
+      expect(session.title).toBe('Abertura');
+      expect(session.description).toBe('Descrição inicial');
+      expect(session.createdBy).toBe('tutor-1');
+      expect(session.performanceTableId).toBe('');
+      expect(session.orderIndex).toBe(1);
+      expect(session.status).toBe('agendada');
+
+      session.update('  Revisão  ', '   ', '2026-10-08');
+
+      expect(session.title).toBe('Revisão');
+      expect(session.description).toBeNull();
+      expect(session.date).toBe('2026-10-08');
+    });
+
+    it('rejects a deadline equal to the current time', () => {
+      const session = newSession();
+
+      expect(() =>
+        session.changeRelease('self', { released: true, deadline: now }, 'tutor-1', now),
+      ).toThrow(InvalidSessionError);
+    });
+
+    it('opens a released evaluation with no deadline', () => {
+      const session = newSession();
+      session.changeRelease('peer', { released: true, deadline: null }, 'tutor-1', now);
+
+      expect(session.isReleaseOpen('peer', now)).toBe(true);
+    });
   });
 });
