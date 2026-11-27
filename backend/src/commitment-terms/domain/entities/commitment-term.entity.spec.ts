@@ -1,3 +1,4 @@
+import { getMetadataArgsStorage } from 'typeorm';
 import { CommitmentTerm } from './commitment-term.entity';
 
 describe('CommitmentTerm', () => {
@@ -14,5 +15,16 @@ describe('CommitmentTerm', () => {
     expect(term.content).toBe('Conteúdo do termo');
     expect(term.isCurrent).toBe(true);
     expect(term.createdAt).toBeInstanceOf(Date);
+  });
+
+  it('declares a database generated timestamp default', () => {
+    const createdAt = getMetadataArgsStorage().columns.find(
+      ({ target, propertyName }) => target === CommitmentTerm && propertyName === 'createdAt',
+    );
+
+    expect(typeof createdAt?.options.default).toBe('function');
+    expect(
+      Reflect.apply(createdAt!.options.default as (...args: never[]) => unknown, undefined, []),
+    ).toBe('now()');
   });
 });
