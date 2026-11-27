@@ -110,4 +110,34 @@ describe('GetProblemFormulaUseCase', () => {
     expect(problems.findById).not.toHaveBeenCalled();
     expect(formulas.findActiveByProblemAndScope).not.toHaveBeenCalled();
   });
+
+  it('rejects non-PROBLEMA scopes and missing problems', async () => {
+    const problems = { findById: jest.fn().mockResolvedValue(null) };
+    const formulas = { findActiveByProblemAndScope: jest.fn() };
+    const roomAccess = { assertTutorCanAccessRoom: jest.fn().mockResolvedValue(undefined) };
+    const useCase = new GetProblemFormulaUseCase(
+      problems as never,
+      formulas as never,
+      roomAccess as never,
+    );
+
+    await expect(
+      useCase.execute({
+        roomId: 'room-1',
+        problemId: 'problem-1',
+        tutorId: 'tutor-1',
+        scope: FormulaScope.SESSAO,
+      }),
+    ).rejects.toThrow(
+      'A fórmula da sessão deve ser consultada pela configuração da própria sessão.',
+    );
+
+    await expect(
+      useCase.execute({
+        roomId: 'room-1',
+        problemId: 'problem-1',
+        tutorId: 'tutor-1',
+      }),
+    ).rejects.toThrow('Problema não encontrado na sala informada.');
+  });
 });

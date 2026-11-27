@@ -1,5 +1,7 @@
+import { getMetadataArgsStorage } from 'typeorm';
 import { InvalidUserError } from '../errors/invalid-user.error';
 import { pngPhotoBytes } from '../../testing/photo-fixtures';
+import { User } from './user.entity';
 import { MAX_PHOTO_BYTES, UserPhoto } from './user-photo.entity';
 
 describe('UserPhoto (Domain)', () => {
@@ -47,5 +49,15 @@ describe('UserPhoto (Domain)', () => {
     const limit = padTo(pngPhotoBytes(), MAX_PHOTO_BYTES);
 
     expect(UserPhoto.fromBytes(limit).content).toHaveLength(MAX_PHOTO_BYTES);
+  });
+
+  it('maps the one-to-one user relationship', () => {
+    const targets = getMetadataArgsStorage()
+      .relations.filter((relation) => relation.target === UserPhoto)
+      .map((relation) =>
+        typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+      );
+
+    expect(targets).toEqual([User]);
   });
 });

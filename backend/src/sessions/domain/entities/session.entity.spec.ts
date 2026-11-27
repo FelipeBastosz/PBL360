@@ -1,7 +1,26 @@
+import { getMetadataArgsStorage } from 'typeorm';
+import { PerformanceTable } from '@/performance-tables/domain/entities/performance-table.entity';
+import { Problem } from '@/problems/domain/entities/problem.entity';
+import { User } from '@/users/domain/entities/user.entity';
 import { InvalidSessionError } from '../errors/invalid-session.error';
 import { Session } from './session.entity';
 
 describe('Session Entity', () => {
+  it('resolves its TypeORM relation targets', () => {
+    const relations = getMetadataArgsStorage()
+      .relations.filter((relation) => relation.target === Session)
+      .map(({ propertyName, type }) => {
+        const target: unknown = typeof type === 'function' ? type() : type;
+        return [propertyName, target] as const;
+      });
+
+    expect(relations).toEqual([
+      ['problem', Problem],
+      ['performanceTable', PerformanceTable],
+      ['releaser', User],
+    ]);
+  });
+
   describe('evaluation releases', () => {
     const now = new Date('2026-10-07T12:00:00Z');
     const tomorrow = new Date('2026-10-08T12:00:00Z');
@@ -108,6 +127,15 @@ describe('Session Entity', () => {
       session.changeRelease('peer', { released: true, deadline: null }, 'tutor-1', now);
 
       expect(session.isReleaseOpen('peer', now)).toBe(true);
+    });
+
+    it('uses the current time when release methods omit the optional timestamp', () => {
+      const session = newSession();
+
+      session.changeRelease('self', { released: true, deadline: null }, 'tutor-1');
+
+      expect(session.releasedAt).toBeInstanceOf(Date);
+      expect(session.isReleaseOpen('self')).toBe(true);
     });
   });
 });

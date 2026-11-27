@@ -334,4 +334,42 @@ describe('GetStudentPerformanceUseCase', () => {
 
     await expect(useCase.execute({ roomId, studentId, tutorId })).rejects.toThrow(NotFoundError);
   });
+
+  it('throws NotFoundError when session details are missing for a calculated session', async () => {
+    const { details, grades, useCase } = makeDeps();
+    grades.execute.mockResolvedValue(
+      makeGradeResponse([
+        { id: 'session-1', rotulo: 'Sessão 1', data: '01-10-2026', nota: 8, situacao: 'AVALIADA' },
+      ]),
+    );
+    details.findStudentSessionDetails.mockResolvedValue([]);
+
+    await expect(useCase.execute({ roomId, studentId, tutorId })).rejects.toThrow(
+      'Detalhes da sessão session-1 não encontrados na sala.',
+    );
+  });
+
+  it('throws NotFoundError when a calculated session has no matching label', async () => {
+    const { details, grades, useCase } = makeDeps();
+    grades.execute.mockResolvedValue({
+      ...makeGradeResponse([
+        { id: 'session-1', rotulo: 'Sessão 1', data: '01-10-2026', nota: 8, situacao: 'AVALIADA' },
+      ]),
+      sessoes: [],
+    });
+    details.findStudentSessionDetails.mockResolvedValue([
+      {
+        sessionId: 'session-1',
+        attendance: null,
+        marks: [],
+        date: '2026-10-01',
+        problemOrderIndex: 1,
+        sessionOrderIndex: 1,
+      },
+    ]);
+
+    await expect(useCase.execute({ roomId, studentId, tutorId })).rejects.toThrow(
+      'Sessão session-1 não encontrada no cálculo.',
+    );
+  });
 });

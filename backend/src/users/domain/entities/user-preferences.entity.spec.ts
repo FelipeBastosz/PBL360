@@ -1,8 +1,10 @@
+import { getMetadataArgsStorage } from 'typeorm';
 import {
   DEFAULT_SYSTEM_COLOR,
   DEFAULT_USER_THEME,
   UserPreferences,
 } from './user-preferences.entity';
+import { User } from './user.entity';
 import { UserTheme } from '../enums/user-theme.enum';
 import { InvalidUserError } from '../errors/invalid-user.error';
 
@@ -75,5 +77,15 @@ describe('UserPreferences', () => {
     123456,
   ])('rejects invalid color value %p', (invalidColor) => {
     expect(() => UserPreferences.normalizeColor(invalidColor)).toThrow(InvalidUserError);
+  });
+
+  it('maps the one-to-one user relationship', () => {
+    const targets = getMetadataArgsStorage()
+      .relations.filter((relation) => relation.target === UserPreferences)
+      .map((relation) =>
+        typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+      );
+
+    expect(targets).toEqual([User]);
   });
 });

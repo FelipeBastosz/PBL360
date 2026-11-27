@@ -159,4 +159,14 @@ describe('EditSessionTableUseCase', () => {
     context.session.canAccess = false;
     await expect(useCase.execute(tableEditInput('SESSAO'))).rejects.toBeInstanceOf(ForbiddenError);
   });
+
+  it('rejects an empty or overly long table name', async () => {
+    const { useCase } = setup();
+    await expect(
+      useCase.execute({ ...tableEditInput('TODAS'), name: '   ' }),
+    ).rejects.toBeInstanceOf(UnprocessableEntityError);
+    await expect(
+      useCase.execute({ ...tableEditInput('TODAS'), name: 'A'.repeat(121) }),
+    ).rejects.toBeInstanceOf(UnprocessableEntityError);
+  });
 });

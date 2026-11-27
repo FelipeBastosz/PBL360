@@ -1,5 +1,7 @@
+import { getMetadataArgsStorage } from 'typeorm';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import { PerformanceCriterion } from './performance-criterion.entity';
+import { PerformanceTable } from './performance-table.entity';
 
 describe('PerformanceCriterion', () => {
   it('creates a criterion with defaults and trims optional text', () => {
@@ -48,4 +50,19 @@ describe('PerformanceCriterion', () => {
       );
     },
   );
+
+  it('maps the source criterion and performance table relationships', () => {
+    const relations = getMetadataArgsStorage().relations.filter(
+      (relation) => relation.target === PerformanceCriterion,
+    );
+    const targets = relations.map((relation) =>
+      typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+    );
+    const tableRel = relations.find((relation) => relation.propertyName === 'performanceTable');
+    const inverse = tableRel?.inverseSideProperty as
+      ((table: { criteria: string[] }) => string[]) | undefined;
+
+    expect(targets).toEqual([PerformanceCriterion, PerformanceTable]);
+    expect(inverse?.({ criteria: ['c-1'] })).toEqual(['c-1']);
+  });
 });

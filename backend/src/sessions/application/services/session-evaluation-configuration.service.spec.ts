@@ -239,6 +239,20 @@ describe('SessionEvaluationConfigurationService', () => {
       'tutor-1',
     );
   });
+
+  it('reads the current session formula for an authorized tutor', async () => {
+    const { service, manager } = createService();
+    await expect(service.getFormula('session-1', 'tutor-1')).resolves.toEqual({
+      padrao: true,
+      versao: null,
+      componentes: [
+        { tipo: SessionFormulaComponentType.CRITERIOS, peso: 70 },
+        { tipo: SessionFormulaComponentType.PAPEL, peso: 30 },
+      ],
+    });
+    expect(access.assertTutorCanAccessSession).toHaveBeenCalledWith('session-1', 'tutor-1');
+    expect(readSessionFormula).toHaveBeenCalledWith(manager, 'session-1');
+  });
 });
 
 describe('toSessionFormula', () => {

@@ -1,3 +1,5 @@
+import { getMetadataArgsStorage } from 'typeorm';
+import { Room } from '@/rooms/domain/entities/room.entity';
 import { UserType } from '../enums/user-type.enum';
 import { InvalidUserError } from '../errors/invalid-user.error';
 import { User } from './user.entity';
@@ -212,6 +214,21 @@ describe('User (Domain)', () => {
 
         expect(user.tokenVersion).toBe(1);
       });
+    });
+
+    it('maps the many-to-many rooms relationship', () => {
+      const relations = getMetadataArgsStorage().relations.filter(
+        (relation) => relation.target === User,
+      );
+      const targets = relations.map((relation) =>
+        typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+      );
+      const rooms = relations.find((relation) => relation.propertyName === 'rooms');
+      const inverse = rooms?.inverseSideProperty as
+        ((room: { tutors: string[] }) => string[]) | undefined;
+
+      expect(targets).toEqual([Room]);
+      expect(inverse?.({ tutors: ['tutor-1'] })).toEqual(['tutor-1']);
     });
   });
 });

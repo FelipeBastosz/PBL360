@@ -1,5 +1,9 @@
+import { getMetadataArgsStorage } from 'typeorm';
+import { Session } from '@/sessions/domain/entities/session.entity';
+import { User } from '@/users/domain/entities/user.entity';
 import { Formula, FormulaScope } from './formula.entity';
-import { FormulaComponentType } from './formula-component.entity';
+import { FormulaComponent, FormulaComponentType } from './formula-component.entity';
+import { Problem } from './problem.entity';
 import { InvalidProblemError } from '../errors/invalid-problem.error';
 
 describe('Formula', () => {
@@ -165,5 +169,59 @@ describe('Formula', () => {
         }),
       ).toThrow('A fórmula da sessão deve conter exatamente um componente CRITERIOS e um PAPEL.');
     });
+  });
+
+  it('rejects missing problemId/sessionId, empty components, and missing MEDIA_SESSOES', () => {
+    expect(() =>
+      Formula.create({
+        scope: FormulaScope.PROBLEMA,
+        createdBy: 'tutor-1',
+        components: [{ type: FormulaComponentType.MEDIA_SESSOES, weight: 100 }],
+      }),
+    ).toThrow('A fórmula precisa estar vinculada a um problema.');
+
+    expect(() =>
+      Formula.create({
+        scope: FormulaScope.SESSAO,
+        createdBy: 'tutor-1',
+        components: [
+          { type: FormulaComponentType.CRITERIOS, weight: 70 },
+          { type: FormulaComponentType.PAPEL, weight: 30 },
+        ],
+      }),
+    ).toThrow('A fórmula precisa estar vinculada a uma sessão.');
+
+    expect(() =>
+      Formula.create({
+        problemId: 'problem-1',
+        scope: FormulaScope.PROBLEMA,
+        createdBy: 'tutor-1',
+        components: [],
+      }),
+    ).toThrow('A fórmula precisa ter ao menos um componente.');
+
+    expect(() =>
+      Formula.create({
+        problemId: 'problem-1',
+        scope: FormulaScope.PROBLEMA,
+        createdBy: 'tutor-1',
+        components: [{ type: FormulaComponentType.SESSAO, referenceId: 's-1', weight: 1 }],
+      }),
+    ).toThrow('A fórmula do problema deve conter exatamente um componente MEDIA_SESSOES.');
+  });
+
+  it('maps problem, session, components and creator relationships', () => {
+    const relations = getMetadataArgsStorage().relations.filter(
+      (relation) => relation.target === Formula,
+    );
+    const targets = relations.map((relation) =>
+      typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+    );
+    const componentsRel = relations.find((relation) => relation.propertyName === 'components');
+    const inverse = componentsRel?.inverseSideProperty as
+      ((component: { formula: string }) => string) | undefined;
+
+    expect(targets).toEqual([Problem, Session, FormulaComponent, User]);
+    expect(inverse?.({ formula: 'f-1' })).toBe('f-1');
   });
 });

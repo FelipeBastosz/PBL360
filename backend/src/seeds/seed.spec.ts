@@ -99,6 +99,20 @@ describe('seed.ts', () => {
       expect(result).toBe(false);
       expect(mockUserRepo.save).not.toHaveBeenCalled();
     });
+
+    it('skips creation when registrationNumber is already registered', async () => {
+      mockUserRepo.findOneBy.mockResolvedValueOnce(null).mockResolvedValueOnce(new User());
+
+      const data = SEED_USERS[2]!;
+      const result = await seedUser(
+        data,
+        'hashed-password',
+        mockDataSource as unknown as DataSource,
+      );
+
+      expect(result).toBe(false);
+      expect(mockUserRepo.save).not.toHaveBeenCalled();
+    });
   });
 
   describe('seedCommitmentTermAcceptances', () => {

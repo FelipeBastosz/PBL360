@@ -146,4 +146,17 @@ describe('SaveSessionFeedbackUseCase', () => {
       }),
     ).rejects.toThrow(NotFoundError);
   });
+
+  it('rejects with NotFoundError if problem does not exist', async () => {
+    problemRepository.findById.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute({
+        sessionId: 'session-1',
+        studentId: 'student-1',
+        tutorId: 'tutor-1',
+        text: 'Texto.',
+      }),
+    ).rejects.toThrow(NotFoundError);
+  });
 });

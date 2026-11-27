@@ -1,4 +1,7 @@
+import { getMetadataArgsStorage } from 'typeorm';
+import { User } from '@/users/domain/entities/user.entity';
 import { InvalidAttachmentError } from '../errors/invalid-attachment.error';
+import { Session } from './session.entity';
 import {
   MAX_ATTACHMENT_BYTES,
   normalizeFileName,
@@ -16,6 +19,20 @@ const upload = (content: Buffer, fileName = 'Relatório Final.pdf') =>
   });
 
 describe('SessionAttachment (Domain)', () => {
+  it('resolves its TypeORM relation targets', () => {
+    const relations = getMetadataArgsStorage()
+      .relations.filter((relation) => relation.target === SessionAttachment)
+      .map(({ propertyName, type }) => {
+        const target: unknown = typeof type === 'function' ? type() : type;
+        return [propertyName, target] as const;
+      });
+
+    expect(relations).toEqual([
+      ['session', Session],
+      ['uploader', User],
+    ]);
+  });
+
   it('accepts a PDF and keeps its size and type', () => {
     const attachment = upload(pdf());
 

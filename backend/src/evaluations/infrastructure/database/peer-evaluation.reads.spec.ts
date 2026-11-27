@@ -106,4 +106,40 @@ describe('peer evaluation reads', () => {
     );
     expect(readSessionTableConfig).toHaveBeenCalledWith(manager, 'session-1');
   });
+
+  it('loads an existing peer evaluation and its items when present', async () => {
+    const config = { tableId: 'table-1', tableName: 'Atual', criteria: [], frozen: true };
+    const manager = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce([{ id: 'peer-1', name: 'Ana', papel: null }])
+        .mockResolvedValueOnce([
+          {
+            id: 'eval-1',
+            authorId: 'student-1',
+            studentId: 'peer-1',
+            problemId: 'problem-1',
+            sessionId: 'session-1',
+            type: 'PEER_ASSESSMENT',
+            status: EvaluationStatus.DRAFT,
+            performanceTableId: 'table-1',
+            sessionScore: null,
+            appliedBonus: null,
+            submittedAt: null,
+            updatedAt: new Date('2026-01-01T00:00:00Z'),
+          },
+        ])
+        .mockResolvedValueOnce([]),
+    } as unknown as EntityManager;
+    jest.mocked(readSessionConfig).mockResolvedValue(config);
+    jest.mocked(readSubmittedConfig).mockResolvedValue(config);
+
+    const result = await getPeerEvaluation(
+      manager,
+      { roomId: 'room-1', problemId: 'problem-1', sessionId: 'session-1' },
+      'student-1',
+      'peer-1',
+    );
+    expect(result.evaluation?.id).toBe('eval-1');
+  });
 });

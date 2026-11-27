@@ -603,5 +603,46 @@ describe('PgEvaluationHistoryRepository', () => {
         },
       ]);
     });
+
+    it('loads peer adjustments when the student has no self-evaluation', async () => {
+      manager.query.mockImplementation((sql: string) => {
+        if (sql.includes('SELECT u.id AS "alunoId"') && sql.includes('a.student_id = $2')) {
+          return Promise.resolve([
+            { alunoId: studentId, nome: 'Ana Souza', matricula: '20240001' },
+          ]);
+        }
+        if (sql.includes('SELECT self_eval_released')) {
+          return Promise.resolve([{ selfEvalReleased: false, selfEvalDeadline: null }]);
+        }
+        if (sql.includes('FROM session_evaluation_configs')) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes('FROM sessions s') && sql.includes('JOIN performance_tables pt')) {
+          return Promise.resolve([{ id: 'table-1', name: 'Barema PBL' }]);
+        }
+        if (sql.includes('FROM performance_criteria')) {
+          return Promise.resolve([{ id: 'crit-1', name: 'Critério 1', weight: 1, orderIndex: 1 }]);
+        }
+        if (sql.includes('FROM formulas f')) {
+          return Promise.resolve([
+            { type: 'CRITERIOS', weight: 100 },
+            { type: 'PAPEL', weight: 0 },
+          ]);
+        }
+        if (sql.includes("type = 'SELF_ASSESSMENT'") && sql.includes('session_score')) {
+          return Promise.resolve([]);
+        }
+        if (sql.includes('FROM grade_adjustments ga')) {
+          return Promise.resolve([]);
+        }
+        return Promise.resolve([]);
+      });
+
+      const result = await repository.getStudentComparison(sessionId, studentId);
+
+      expect(result?.autoavaliacao.status).toBe('INDISPONIVEL');
+      expect(result?.autoavaliacao.notaConsolidada).toBeNull();
+      expect(result?.ajustes).toEqual([]);
+    });
   });
 });

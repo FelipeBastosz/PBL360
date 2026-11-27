@@ -1,3 +1,5 @@
+import { getMetadataArgsStorage } from 'typeorm';
+import { User } from '@/users/domain/entities/user.entity';
 import { BehaviorTag } from './behavior-tag.entity';
 
 describe('BehaviorTag (Domain)', () => {
@@ -53,5 +55,15 @@ describe('BehaviorTag (Domain)', () => {
     it('is false for a predefined tag', () => {
       expect(BehaviorTag.create({ name: 'Atraso' }).isOwnedBy('tutor-1')).toBe(false);
     });
+  });
+
+  it('maps the optional tutor relationship', () => {
+    const targets = getMetadataArgsStorage()
+      .relations.filter((relation) => relation.target === BehaviorTag)
+      .map((relation) =>
+        typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+      );
+
+    expect(targets).toEqual([User]);
   });
 });

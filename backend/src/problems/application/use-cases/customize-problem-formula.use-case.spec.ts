@@ -1,4 +1,5 @@
 import { Formula, FormulaScope } from '../../domain/entities/formula.entity';
+import { InvalidProblemError } from '../../domain/errors/invalid-problem.error';
 import { NotFoundError, UnprocessableEntityError } from '@/shared/errors/application.error';
 import { CustomizeProblemFormulaUseCase } from './customize-problem-formula.use-case';
 
@@ -87,5 +88,46 @@ describe('CustomizeProblemFormulaUseCase', () => {
     await expect(missing.useCase.execute(input)).rejects.toThrow(
       new NotFoundError('Problema não encontrado na sala informada.'),
     );
+
+    const absent = setup();
+    absent.problems.findById.mockResolvedValue(null);
+    await expect(absent.useCase.execute(input)).rejects.toThrow(
+      new NotFoundError('Problema não encontrado na sala informada.'),
+    );
+
+    const invalidFormula = setup();
+    await expect(
+      invalidFormula.useCase.execute({
+        roomId: 'r1',
+        problemId: 'p1',
+        tutorId: 't1',
+        scope: 'SESSAO' as never,
+        components: [{ type: 'CRITERIOS', weight: 50 }],
+      }),
+    ).rejects.toThrow(UnprocessableEntityError);
+
+    const persistenceError = setup();
+    persistenceError.formulas.saveNewVersion.mockRejectedValue(new Error('DB failure'));
+    await expect(
+      persistenceError.useCase.execute({
+        roomId: 'r1',
+        problemId: 'p1',
+        tutorId: 't1',
+        scope: FormulaScope.PROBLEMA,
+        components: [{ type: 'MEDIA_SESSOES', weight: 100 }],
+      }),
+    ).rejects.toThrow('DB failure');
+  });
+
+  it('converts formula domain validation errors into an unprocessable response', async () => {
+    const { useCase } = setup();
+    const createFormula = jest.spyOn(Formula, 'create').mockImplementationOnce(() => {
+      throw new InvalidProblemError('Formula is invalid.');
+    });
+
+    await expect(useCase.execute(input)).rejects.toThrow(
+      new UnprocessableEntityError('Formula is invalid.'),
+    );
+    createFormula.mockRestore();
   });
 });

@@ -152,4 +152,27 @@ describe('recordEvaluation', () => {
       expect.anything(),
     );
   });
+
+  it('uses the role bonus for draft evaluations when notaCargo is omitted', async () => {
+    const draft = { ...evaluation, status: EvaluationStatus.DRAFT, appliedBonus: null };
+    const manager = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce([{ id: 'problem-1' }])
+        .mockResolvedValueOnce([{ student_id: 'student-1' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ bonus: '9' }])
+        .mockResolvedValueOnce([]),
+    };
+    const transaction = jest.fn((work: (tx: typeof manager) => unknown) => work(manager));
+    jest.mocked(freezeSessionConfig).mockResolvedValue(config);
+    jest.mocked(readEvaluation).mockResolvedValue(draft as never);
+    jest.mocked(readEvaluationDetail).mockResolvedValue({} as never);
+
+    await recordEvaluation({ transaction, query: manager.query } as never, {
+      ...input,
+      notaCargo: undefined,
+    });
+    expect(draft.revise).toHaveBeenCalledWith(expect.objectContaining({ bonus: 9 }), config);
+  });
 });

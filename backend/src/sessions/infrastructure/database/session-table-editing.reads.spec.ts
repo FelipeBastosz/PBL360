@@ -80,6 +80,12 @@ describe('readTableEditContext', () => {
     {
       current: [{ tableId: 'table-1' }],
       detailRows: [detail],
+      usage: [],
+      message: 'Sessão não encontrada.',
+    },
+    {
+      current: [{ tableId: 'table-1' }],
+      detailRows: [detail],
       usage: [
         {
           sessionId: 'session-1',

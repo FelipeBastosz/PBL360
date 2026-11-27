@@ -1,5 +1,9 @@
+import { getMetadataArgsStorage } from 'typeorm';
+import { Room } from '@/rooms/domain/entities/room.entity';
+import { User } from '@/users/domain/entities/user.entity';
 import { InvalidPerformanceTableError } from '../errors/invalid-performance-table.error';
 import type { NewPerformanceTable } from './new-performance-table';
+import { PerformanceCriterion } from './performance-criterion.entity';
 import { PerformanceTable } from './performance-table.entity';
 
 function validTableData(): NewPerformanceTable {
@@ -368,5 +372,55 @@ describe('PerformanceTable', () => {
     ).toThrow('A soma dos pesos dos critérios deve ser igual a 10.');
     expect(table.name).toBe('Avaliação tutorial');
     expect(table.criteria).toBe(criteria);
+  });
+
+  it('rejects blank tutorId, overly long name, and changing criterion count after past sessions', () => {
+    expect(() => PerformanceTable.create({ ...validTableData(), tutorId: '   ' })).toThrow(
+      'O professor responsável é obrigatório.',
+    );
+    expect(() => PerformanceTable.create({ ...validTableData(), name: 'A'.repeat(121) })).toThrow(
+      'O nome da tabela de desempenho deve ter no máximo 120 caracteres.',
+    );
+
+    const table = PerformanceTable.create({
+      tutorId: 'tutor-123',
+      name: 'Barema',
+      criteria: [
+        { name: 'Participação', orderIndex: 1, weight: 5 },
+        { name: 'Postura', orderIndex: 2, weight: 5 },
+      ],
+    });
+    table.criteria[0]!.id = 'criterion-1';
+    expect(() =>
+      table.update(
+        { name: 'Barema', criteria: [{ id: 'criterion-1', name: 'Participação', weight: 10 }] },
+        true,
+      ),
+    ).toThrow('Somente os pesos podem ser alterados.');
+  });
+
+  it('rejects deleting an already deleted table or a session copy', () => {
+    const deleted = PerformanceTable.create(validTableData());
+    deleted.delete();
+    expect(() => deleted.delete()).toThrow('A tabela de desempenho já foi excluída.');
+
+    const copy = PerformanceTable.create(validTableData());
+    copy.isSessionCopy = true;
+    expect(() => copy.delete()).toThrow('As tabelas aplicadas às sessões não podem ser excluídas.');
+  });
+
+  it('maps tutor, sourceTable, room and criteria relationships', () => {
+    const relations = getMetadataArgsStorage().relations.filter(
+      (relation) => relation.target === PerformanceTable,
+    );
+    const targets = relations.map((relation) =>
+      typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+    );
+    const criteriaRel = relations.find((relation) => relation.propertyName === 'criteria');
+    const inverse = criteriaRel?.inverseSideProperty as
+      ((criterion: { performanceTable: string }) => string) | undefined;
+
+    expect(targets).toEqual([User, PerformanceTable, Room, PerformanceCriterion]);
+    expect(inverse?.({ performanceTable: 'table-1' })).toBe('table-1');
   });
 });

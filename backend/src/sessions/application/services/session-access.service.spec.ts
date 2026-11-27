@@ -68,6 +68,21 @@ describe('SessionAccessService', () => {
     expect(assertRoomAccess).toHaveBeenCalledWith('room-1', 'co-tutor-1');
   });
 
+  it.each([
+    ['session is missing', null, { id: 'problem-1', roomId: 'room-1' }],
+    ['problem is missing', session, null],
+  ])(
+    'returns not found when %s for tutor session access',
+    async (_label, foundSession, problem) => {
+      findSession.mockResolvedValue(foundSession);
+      findProblem.mockResolvedValue(problem);
+
+      await expect(service.assertTutorCanAccessSession('session-1', 'tutor-1')).rejects.toThrow(
+        NotFoundError,
+      );
+    },
+  );
+
   it('rejects access via sessionId when tutor is not authorized in room', async () => {
     findSession.mockResolvedValue(session);
     findProblem.mockResolvedValue({ id: 'problem-1', roomId: 'room-1' });
@@ -76,5 +91,63 @@ describe('SessionAccessService', () => {
     await expect(service.assertTutorCanAccessSession('session-1', 'other-tutor')).rejects.toThrow(
       'Forbidden',
     );
+  });
+
+  it('allows a room member to access the session, problem and room', async () => {
+    const member = { id: 'student-1', role: 'STUDENT' };
+    const problem = { id: 'problem-1', roomId: 'room-1' };
+    findSession.mockResolvedValue(session);
+    findProblem.mockResolvedValue(problem);
+    const assertMemberCanAccessRoom = jest.fn().mockResolvedValue(undefined);
+    service = new SessionAccessService(
+      { findById: findSession } as unknown as SessionRepository,
+      { findById: findProblem } as unknown as ProblemRepository,
+      {
+        assertTutorCanAccessRoom: assertRoomAccess,
+        assertMemberCanAccessRoom,
+      } as unknown as RoomAccessService,
+    );
+
+    await expect(
+      service.assertMemberCanAccessSession('session-1', member as never),
+    ).resolves.toEqual({
+      session,
+      problem,
+      roomId: 'room-1',
+    });
+    expect(assertMemberCanAccessRoom).toHaveBeenCalledWith('room-1', member);
+  });
+
+  it.each([
+    ['session is missing', null, { id: 'problem-1', roomId: 'room-1' }],
+    ['problem is missing', session, null],
+  ])('hides access when %s', async (_description, foundSession, foundProblem) => {
+    findSession.mockResolvedValue(foundSession);
+    findProblem.mockResolvedValue(foundProblem);
+    const assertMemberCanAccessRoom = jest.fn();
+    service = new SessionAccessService(
+      { findById: findSession } as unknown as SessionRepository,
+      { findById: findProblem } as unknown as ProblemRepository,
+      {
+        assertTutorCanAccessRoom: assertRoomAccess,
+        assertMemberCanAccessRoom,
+      } as unknown as RoomAccessService,
+    );
+
+    await expect(service.assertMemberCanAccessSession('session-1', {} as never)).rejects.toThrow(
+      NotFoundError,
+    );
+    expect(assertMemberCanAccessRoom).not.toHaveBeenCalled();
+  });
+
+  it('verifies room access and problem ownership in assertTutorCanAccessProblem', async () => {
+    assertRoomAccess.mockResolvedValue(undefined);
+    findProblem.mockResolvedValue({ id: 'problem-1', roomId: 'room-1' });
+
+    await expect(
+      service.assertTutorCanAccessProblem('room-1', 'problem-1', 'tutor-1'),
+    ).resolves.toBeUndefined();
+    expect(assertRoomAccess).toHaveBeenCalledWith('room-1', 'tutor-1');
+    expect(findProblem).toHaveBeenCalledWith('problem-1');
   });
 });

@@ -1,3 +1,5 @@
+import { getMetadataArgsStorage } from 'typeorm';
+import { User } from '@/users/domain/entities/user.entity';
 import { InvalidRoomError } from '../errors/invalid-room.error';
 import type { NewRoom } from './new-room';
 import { Room } from './room.entity';
@@ -119,5 +121,24 @@ describe('Room', () => {
   it('accepts an access token with 64 characters', () => {
     const room = Room.create({ ...validRoomData(), roomCode: 'A'.repeat(64) });
     expect(room.roomCode).toHaveLength(64);
+  });
+
+  it('marks the room as deleted and rejects deleting it twice', () => {
+    const room = Room.create(validRoomData());
+    room.delete();
+
+    expect(room.isDeleted()).toBe(true);
+    expect(room.active).toBe(false);
+    expect(() => room.delete()).toThrow(InvalidRoomError);
+  });
+
+  it('maps the owner and tutors relationships', () => {
+    const targets = getMetadataArgsStorage()
+      .relations.filter((relation) => relation.target === Room)
+      .map((relation) =>
+        typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+      );
+
+    expect(targets).toEqual([User, User]);
   });
 });

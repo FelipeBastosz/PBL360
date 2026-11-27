@@ -1,5 +1,6 @@
+import { getMetadataArgsStorage } from 'typeorm';
 import { InvalidProblemError } from '../errors/invalid-problem.error';
-import { FormulaScope } from './formula.entity';
+import { Formula, FormulaScope } from './formula.entity';
 import { FormulaComponent, FormulaComponentType } from './formula-component.entity';
 
 const component = (
@@ -73,5 +74,19 @@ describe('FormulaComponent.assertIsValid', () => {
         FormulaScope.PROBLEMA,
       ),
     ).toThrow('Componentes da nota final do problema não utilizam referência de critério.');
+  });
+
+  it('maps the parent formula relationship', () => {
+    const relations = getMetadataArgsStorage().relations.filter(
+      (relation) => relation.target === FormulaComponent,
+    );
+    const targets = relations.map((relation) =>
+      typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+    );
+    const inverse = relations[0]?.inverseSideProperty as
+      ((formula: { components: string[] }) => string[]) | undefined;
+
+    expect(targets).toEqual([Formula]);
+    expect(inverse?.({ components: ['c-1'] })).toEqual(['c-1']);
   });
 });

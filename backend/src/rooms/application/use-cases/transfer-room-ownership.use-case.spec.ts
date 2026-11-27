@@ -171,5 +171,14 @@ describe('TransferRoomOwnershipUseCase', () => {
         newOwnerId: NEW_OWNER_ID,
       }),
     ).rejects.toThrow(NotFoundError);
+
+    rooms.transferOwnership.mockResolvedValueOnce({ status: 'same_owner' });
+    await expect(
+      useCase.execute({
+        roomId: ROOM_ID,
+        authenticatedTutorId: OWNER_ID,
+        newOwnerId: NEW_OWNER_ID,
+      }),
+    ).rejects.toThrow(InvalidRequestError);
   });
 });
