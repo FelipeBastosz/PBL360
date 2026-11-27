@@ -1,0 +1,4 @@
+export enum AttachmentCategory {
+  BOARD_REPORT = 'BOARD_REPORT',
+  SESSION_ATTACHMENT = 'SESSION_ATTACHMENT',
+}

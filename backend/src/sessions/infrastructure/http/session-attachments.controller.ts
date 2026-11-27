@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -16,6 +17,7 @@ import {
 } from '@/shared/decorators/authenticated-user.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
+import { InvalidRequestError } from '@/shared/errors/application.error';
 import { contentDisposition } from '@/shared/http/content-disposition';
 import { FileUpload, type UploadedFileBuffer } from '@/shared/http/file-upload';
 import { UserType } from '@/users/domain/enums/user-type.enum';
@@ -28,6 +30,7 @@ import {
   type UploadSessionAttachmentInput,
 } from '../../application/use-cases/upload-session-attachment.use-case';
 import { MAX_ATTACHMENT_BYTES } from '../../domain/entities/session-attachment.entity';
+import { AttachmentCategory } from '../../domain/enums/attachment-category.enum';
 import type { SessionAttachmentSummary } from '../../domain/repositories/session-attachment.repository';
 import {
   DeleteSessionAttachmentSwaggerDocs,
@@ -36,24 +39,45 @@ import {
   UploadSessionAttachmentSwaggerDocs,
 } from './session-attachments.swagger';
 
-const toResponse = (attachment: SessionAttachmentSummary): SessionAttachmentResponseDto => ({
-  id: attachment.id,
-  nomeArquivo: attachment.fileName,
-  tipo: attachment.mimeType,
-  tamanho: attachment.sizeBytes,
-  enviadoPor: { id: attachment.uploader.id, nome: attachment.uploader.name },
-  enviadoEm: attachment.createdAt,
+const CATEGORY_TO_API: Record<AttachmentCategory, string> = {
+  [AttachmentCategory.BOARD_REPORT]: 'RELATORIO_MESA',
+  [AttachmentCategory.SESSION_ATTACHMENT]: 'ANEXO_SESSAO',
+};
+
+const API_TO_CATEGORY: Record<string, AttachmentCategory> = {
+  RELATORIO_MESA: AttachmentCategory.BOARD_REPORT,
+  ANEXO_SESSAO: AttachmentCategory.SESSION_ATTACHMENT,
+};
+
+const toResponse = (a: SessionAttachmentSummary): SessionAttachmentResponseDto => ({
+  id: a.id,
+  nomeArquivo: a.fileName,
+  tipo: a.mimeType,
+  tamanho: a.sizeBytes,
+  categoria: CATEGORY_TO_API[a.category],
+  enviadoPor: { id: a.uploader.id, nome: a.uploader.name },
+  enviadoEm: a.createdAt,
 });
+
+function parseCategory(raw: unknown): AttachmentCategory {
+  const category = typeof raw === 'string' ? API_TO_CATEGORY[raw] : undefined;
+  if (!category) {
+    throw new InvalidRequestError('A categoria deve ser "RELATORIO_MESA" ou "ANEXO_SESSAO".');
+  }
+  return category;
+}
 
 const toUploadInput = (
   sessionId: string,
   member: AuthenticatedUserRef,
+  category: AttachmentCategory,
   file?: UploadedFileBuffer,
 ): UploadSessionAttachmentInput => ({
   sessionId,
   member,
   fileName: file?.originalname,
   content: file?.buffer,
+  category,
 });
 
 @ApiTags('Anexos da sessão')
@@ -78,9 +102,12 @@ export class SessionAttachmentsController {
   async upload(
     @UuidParam('sessaoId') sessionId: string,
     @AuthenticatedUser() member: AuthenticatedUserRef,
+    @Body('categoria') rawCategory: unknown,
     @UploadedFile() file?: UploadedFileBuffer,
   ): Promise<SessionAttachmentResponseDto> {
-    return toResponse(await this.uploadAttachment.execute(toUploadInput(sessionId, member, file)));
+    const category = parseCategory(rawCategory);
+    const input = toUploadInput(sessionId, member, category, file);
+    return toResponse(await this.uploadAttachment.execute(input));
   }
 
   @Get()

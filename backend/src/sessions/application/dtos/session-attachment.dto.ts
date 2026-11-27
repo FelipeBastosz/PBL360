@@ -10,6 +10,12 @@ export class SessionAttachmentResponseDto {
   @ApiProperty({ example: 'Relatório_Parcial_Fase1.pdf' }) nomeArquivo: string;
   @ApiProperty({ example: 'application/pdf' }) tipo: string;
   @ApiProperty({ description: 'Tamanho em bytes.', example: 245_812 }) tamanho: number;
+  @ApiProperty({
+    description: 'Categoria do anexo.',
+    enum: ['RELATORIO_MESA', 'ANEXO_SESSAO'],
+    example: 'ANEXO_SESSAO',
+  })
+  categoria: string;
   @ApiProperty({ type: AttachmentUploaderDto }) enviadoPor: AttachmentUploaderDto;
   @ApiProperty({ format: 'date-time' }) enviadoEm: Date;
 }
@@ -17,4 +23,11 @@ export class SessionAttachmentResponseDto {
 export class UploadSessionAttachmentDto {
   @ApiProperty({ type: 'string', format: 'binary', description: 'PDF de até 10 MB.' })
   arquivo: unknown;
+
+  @ApiProperty({
+    description: 'Categoria do anexo.',
+    enum: ['RELATORIO_MESA', 'ANEXO_SESSAO'],
+    example: 'ANEXO_SESSAO',
+  })
+  categoria: string;
 }

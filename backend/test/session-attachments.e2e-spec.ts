@@ -17,6 +17,7 @@ interface AttachmentBody {
   nomeArquivo: string;
   tipo: string;
   tamanho: number;
+  categoria: string;
   enviadoPor: { id: string; nome: string };
   enviadoEm: string;
 }
@@ -52,8 +53,14 @@ describe('Session attachments (e2e)', () => {
     content: Buffer,
     fileName = 'Relatório Parcial.pdf',
     field = 'arquivo',
-  ) =>
-    multipart(user).attach(field, content, { filename: fileName, contentType: 'application/pdf' });
+    categoria: string | undefined = 'ANEXO_SESSAO',
+  ) => {
+    const req = multipart(user).attach(field, content, {
+      filename: fileName,
+      contentType: 'application/pdf',
+    });
+    return categoria === undefined ? req : req.field('categoria', categoria);
+  };
 
   beforeAll(async () => {
     const testApp = await createTestApp();
@@ -130,22 +137,78 @@ describe('Session attachments (e2e)', () => {
   });
 
   describe('uploading and listing', () => {
-    it('stores a PDF sent by an enrolled student and by the tutor, newest first', async () => {
-      const fromStudent = (await upload(student, pdf()).expect(201)).body as AttachmentBody;
-      await upload(tutor, pdf(64), 'Roteiro.pdf').expect(201);
+    it('stores a PDF sent by an enrolled student and by the tutor with explicit categories, newest first', async () => {
+      const fromStudent = (
+        await upload(student, pdf(), 'Relatório Parcial.pdf', 'arquivo', 'ANEXO_SESSAO').expect(201)
+      ).body as AttachmentBody;
+      const fromTutor = (
+        await upload(tutor, pdf(64), 'Roteiro.pdf', 'arquivo', 'RELATORIO_MESA').expect(201)
+      ).body as AttachmentBody;
 
       expect(fromStudent).toMatchObject({
         nomeArquivo: 'Relatório Parcial.pdf',
         tipo: 'application/pdf',
         tamanho: pdf().length,
+        categoria: 'ANEXO_SESSAO',
         enviadoPor: { id: student.id, nome: 'Ana Souza' },
       });
+      expect(fromTutor).toMatchObject({
+        nomeArquivo: 'Roteiro.pdf',
+        categoria: 'RELATORIO_MESA',
+      });
+
       const list = (await api(app, student).get(attachmentsPath()).expect(200))
         .body as AttachmentBody[];
-      expect(list.map((item) => item.nomeArquivo)).toEqual([
-        'Roteiro.pdf',
-        'Relatório Parcial.pdf',
+      expect(list.map((item) => ({ nome: item.nomeArquivo, categoria: item.categoria }))).toEqual([
+        { nome: 'Roteiro.pdf', categoria: 'RELATORIO_MESA' },
+        { nome: 'Relatório Parcial.pdf', categoria: 'ANEXO_SESSAO' },
       ]);
+    });
+
+    it('does not infer category from the file name', async () => {
+      const uploaded = (
+        await upload(tutor, pdf(), 'Relatorio_Mesa_Final.pdf', 'arquivo', 'ANEXO_SESSAO').expect(
+          201,
+        )
+      ).body as AttachmentBody;
+
+      expect(uploaded.categoria).toBe('ANEXO_SESSAO');
+    });
+
+    it('returns ANEXO_SESSAO for legacy rows inserted without an explicit category', async () => {
+      await dataSource.query(
+        `INSERT INTO session_attachments (session_id, uploaded_by, file_name, mime_type, size_bytes, content)
+         VALUES ($1, $2, 'Legado.pdf', 'application/pdf', $3, $4);`,
+        [sessionId, tutor.id, pdf().length, pdf()],
+      );
+
+      const list = (await api(app, student).get(attachmentsPath()).expect(200))
+        .body as AttachmentBody[];
+      expect(list).toHaveLength(1);
+      expect(list[0]).toMatchObject({
+        nomeArquivo: 'Legado.pdf',
+        categoria: 'ANEXO_SESSAO',
+      });
+    });
+
+    it('rejects missing or invalid category', async () => {
+      const missing = await upload(student, pdf(), 'Relatório.pdf', 'arquivo', undefined).expect(
+        400,
+      );
+      expect((missing.body as ErrorBody).message).toBe(
+        'A categoria deve ser "RELATORIO_MESA" ou "ANEXO_SESSAO".',
+      );
+
+      const invalid = await upload(
+        student,
+        pdf(),
+        'Relatório.pdf',
+        'arquivo',
+        'OUTRA_CATEGORIA',
+      ).expect(400);
+      expect((invalid.body as ErrorBody).message).toBe(
+        'A categoria deve ser "RELATORIO_MESA" ou "ANEXO_SESSAO".',
+      );
     });
 
     it('rejects a file that is not a PDF', async () => {
@@ -165,7 +228,7 @@ describe('Session attachments (e2e)', () => {
     });
 
     it('asks for the file when the form has none', async () => {
-      const response = await multipart(student).field('nome', 'x').expect(400);
+      const response = await multipart(student).field('categoria', 'ANEXO_SESSAO').expect(400);
 
       expect((response.body as ErrorBody).message).toBe('Envie um arquivo PDF no campo "arquivo".');
     });
@@ -202,6 +265,26 @@ describe('Session attachments (e2e)', () => {
       expect((response.body as Buffer).equals(content)).toBe(true);
     });
 
+    it('downloads a RELATORIO_MESA attachment', async () => {
+      const content = pdf(96);
+      const { id } = (
+        await upload(tutor, content, 'Relatório Mesa.pdf', 'arquivo', 'RELATORIO_MESA').expect(201)
+      ).body as AttachmentBody;
+
+      const response = await api(app, student)
+        .get(`${attachmentsPath()}/${id}`)
+        .buffer(true)
+        .parse((res, done) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk: Buffer) => chunks.push(chunk));
+          res.on('end', () => done(null, Buffer.concat(chunks)));
+        })
+        .expect(200);
+
+      expect(response.headers['content-type']).toBe('application/pdf');
+      expect((response.body as Buffer).equals(content)).toBe(true);
+    });
+
     it('answers 404 for an attachment that does not exist', async () => {
       await api(app, student)
         .get(`${attachmentsPath()}/00000000-0000-4000-8000-000000000000`)
@@ -234,6 +317,15 @@ describe('Session attachments (e2e)', () => {
 
     it('lets the tutor delete an attachment sent by a student', async () => {
       const id = await sendAs(student);
+
+      await api(app, tutor).delete(`${attachmentsPath()}/${id}`).expect(204);
+      await api(app, tutor).get(`${attachmentsPath()}/${id}`).expect(404);
+    });
+
+    it('lets the tutor delete a RELATORIO_MESA attachment', async () => {
+      const { id } = (
+        await upload(tutor, pdf(), 'Relatório Mesa.pdf', 'arquivo', 'RELATORIO_MESA').expect(201)
+      ).body as AttachmentBody;
 
       await api(app, tutor).delete(`${attachmentsPath()}/${id}`).expect(204);
       await api(app, tutor).get(`${attachmentsPath()}/${id}`).expect(404);

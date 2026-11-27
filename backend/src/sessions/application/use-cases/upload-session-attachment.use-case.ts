@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { RoomMember } from '@/rooms/application/services/room-access.service';
 import { InvalidRequestError } from '@/shared/errors/application.error';
 import { SessionAttachment } from '../../domain/entities/session-attachment.entity';
+import type { AttachmentCategory } from '../../domain/enums/attachment-category.enum';
 import {
   SESSION_ATTACHMENT_REPOSITORY,
   type SessionAttachmentRepository,
@@ -14,6 +15,7 @@ export interface UploadSessionAttachmentInput {
   member: RoomMember;
   fileName: string | undefined;
   content: Buffer | undefined;
+  category: AttachmentCategory;
 }
 
 @Injectable()
@@ -32,6 +34,7 @@ export class UploadSessionAttachmentUseCase {
       uploadedBy: input.member.id,
       fileName: input.fileName,
       content: input.content,
+      category: input.category,
     });
     return this.attachments.create(attachment);
   }
