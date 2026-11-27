@@ -88,4 +88,16 @@ describe('GetProblemFeedbacksUseCase', () => {
     expect(result.students[0]?.feedback).toBe(studentFeedback);
     expect(result.students[1]?.feedback).toBeNull();
   });
+
+  it('rejects with NotFoundError when problem is missing or belongs to another room', async () => {
+    problemRepository.findById.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute({
+        roomId: 'room-1',
+        problemId: 'missing-problem',
+        tutorId: 'tutor-1',
+      }),
+    ).rejects.toThrow('Problema não encontrado.');
+  });
 });

@@ -1,3 +1,6 @@
+import { getMetadataArgsStorage } from 'typeorm';
+import { Session } from '@/sessions/domain/entities/session.entity';
+import { User } from '@/users/domain/entities/user.entity';
 import { InvalidObservationError } from '../errors/invalid-observation.error';
 import { Observation, type NewObservation } from './observation.entity';
 
@@ -51,5 +54,15 @@ describe('Observation (Domain)', () => {
 
     expect(observation.isAuthoredBy('tutor-1')).toBe(true);
     expect(observation.isAuthoredBy('tutor-2')).toBe(false);
+  });
+
+  it('maps session, student and author relationships', () => {
+    const targets = getMetadataArgsStorage()
+      .relations.filter((relation) => relation.target === Observation)
+      .map((relation) =>
+        typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+      );
+
+    expect(targets).toEqual([Session, User, User]);
   });
 });

@@ -25,6 +25,12 @@ describe('OneTimeCode', () => {
     expect(code.matches('042138')).toBe(false);
   });
 
+  it('rejects a stored hash with an unexpected length', () => {
+    const code = Object.assign(issue(), { codeHash: 'not-a-sha256-hash' });
+
+    expect(code.matches('042137')).toBe(false);
+  });
+
   it('is usable while pending, unexpired and with attempts left', () => {
     const code = issue();
 

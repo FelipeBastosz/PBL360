@@ -103,4 +103,24 @@ describe('GetSessionFeedbackUseCase', () => {
 
     expect(result).toBeNull();
   });
+
+  it('rejects access when the session does not exist', async () => {
+    sessionRepository.findById.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute({ sessionId: 'missing', studentId: 'student-1', tutorId: 'tutor-1' }),
+    ).rejects.toThrow('Sessão não encontrada.');
+    expect(problemRepository.findById).not.toHaveBeenCalled();
+    expect(feedbackRepository.findStudentSessionFeedback).not.toHaveBeenCalled();
+  });
+
+  it('rejects access when the problem associated with the session does not exist', async () => {
+    problemRepository.findById.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute({ sessionId: 'session-1', studentId: 'student-1', tutorId: 'tutor-1' }),
+    ).rejects.toThrow('Problema não encontrado.');
+    expect(roomAccessService.assertTutorCanAccessRoom).not.toHaveBeenCalled();
+    expect(feedbackRepository.findStudentSessionFeedback).not.toHaveBeenCalled();
+  });
 });

@@ -81,6 +81,23 @@ describe('evaluation-history-scores', () => {
       // criteria: 10 (weight 6 out of 6 present) -> 10.0; cargo: 5 * 0.3 = 1.5; 10*0.7 = 7.0; total = 8.5
       expect(calculateTutorScore(items, { criteria, formula }, 5)).toBe(8.5);
     });
+
+    it('falls back gracefully when formula validation fails or weights sum to zero', () => {
+      const items = [{ criterionId: 'crit-1', score: 10 }];
+      expect(
+        calculateTutorScore(items, { criteria: [{ id: 'crit-1', weight: 0 }], formula }, 5),
+      ).toBeNull();
+      expect(
+        calculateTutorScore(items, { criteria, formula: { criteriaWeight: 0, roleWeight: 0 } }, 5),
+      ).toBe(10);
+      expect(
+        calculateTutorScore(
+          items,
+          { criteria, formula: { criteriaWeight: 60, roleWeight: 20 } },
+          6,
+        ),
+      ).toBe(9);
+    });
   });
 
   describe('calculatePeerAverage', () => {

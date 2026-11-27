@@ -70,6 +70,12 @@ describe('DeletePerformanceTableUseCase', () => {
 
     await expect(useCase.execute({ tableId, tutorId })).rejects.toBeInstanceOf(NotFoundError);
     expect(repository.softDelete).not.toHaveBeenCalled();
+
+    const table = Object.assign(new PerformanceTable(), { id: tableId, tutorId, deletedAt: null });
+    repository.findById.mockResolvedValue(table);
+    repository.softDelete.mockResolvedValue(false);
+
+    await expect(useCase.execute({ tableId, tutorId })).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('propagates persistence failures', async () => {

@@ -67,6 +67,35 @@ describe('grade calculator', () => {
     ).toEqual({ grade: 6.2, situation: 'AVALIADA' });
   });
 
+  it('returns no average when the configured denominator is zero', () => {
+    expect(
+      calculateSessionGrade({
+        attendance: 'PRESENT',
+        criteria: [{ id: 'a', score: 8 }],
+        components: [
+          { type: 'CRITERIO', referenceId: 'a', weight: 10 },
+          { type: 'PAPEL', weight: -10 },
+        ],
+        bonus: null,
+        defaultFormula: true,
+      }),
+    ).toEqual({ grade: null, situation: 'PENDENTE' });
+  });
+
+  it('returns pending when a configured formula has no scored criteria', () => {
+    expect(
+      calculateSessionGrade({
+        attendance: 'PRESENT',
+        criteria: [{ id: 'a', score: null }],
+        components: [
+          { type: 'CRITERIOS', weight: 70 },
+          { type: 'PAPEL', weight: 30 },
+        ],
+        bonus: null,
+      }),
+    ).toEqual({ grade: null, situation: 'PENDENTE' });
+  });
+
   it.each([
     [
       'present weighted average',
@@ -299,6 +328,28 @@ describe('grade calculator', () => {
           modalityScore: null,
         }),
       ).toEqual({ grade: null, situation: 'PENDENTE' });
+
+      expect(
+        calculateSessionGrade({
+          attendance: 'PRESENT',
+          criteria: [],
+          components: criteria,
+          bonus: null,
+          modality: 'AUTOAVALIACAO',
+        }),
+      ).toEqual({ grade: null, situation: 'PENDENTE' });
+    });
+
+    it('uses criterion grades when modality is tutor', () => {
+      expect(
+        calculateSessionGrade({
+          attendance: 'PRESENT',
+          criteria: [{ id: 'a', score: 7 }],
+          components: criteria,
+          bonus: null,
+          modality: 'TUTOR',
+        }),
+      ).toEqual({ grade: 7, situation: 'AVALIADA' });
     });
 
     it('still applies attendance rules even when modality score is available', () => {

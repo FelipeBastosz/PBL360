@@ -70,6 +70,20 @@ describe('ReportFileService', () => {
     logError.mockRestore();
   });
 
+  it('logs a non-Error rendering failure safely', async () => {
+    const logError = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+    pdfRenderer.render.mockRejectedValue('renderer unavailable');
+
+    await expect(service.generate(buildReportDocument())).rejects.toBeInstanceOf(
+      ReportGenerationError,
+    );
+    expect(logError).toHaveBeenCalledWith(
+      'Report "Relatório" failed to render',
+      'renderer unavailable',
+    );
+    logError.mockRestore();
+  });
+
   it('refuses to deliver an empty file', async () => {
     xlsxRenderer.render.mockResolvedValue(Buffer.alloc(0));
 

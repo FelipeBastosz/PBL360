@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+import type * as PdfMake from 'pdfmake';
 import { ReportColumnType, ReportFileFormat } from '../../domain/report-document';
 import {
   buildReportDocument,
@@ -6,6 +8,8 @@ import {
   sessionReportDocument,
 } from '../../testing/report-document-fixtures';
 import { PdfmakeReportRenderer } from './pdfmake-report-renderer';
+
+const pdfmake = createRequire(__filename)('pdfmake') as typeof PdfMake;
 
 const renderer = new PdfmakeReportRenderer();
 
@@ -67,5 +71,15 @@ describe('PdfmakeReportRenderer', () => {
     );
 
     expectCompletePdf(pdf);
+  });
+
+  it('disables URL access in the PDF engine', () => {
+    const setUrlAccessPolicy = jest.spyOn(pdfmake, 'setUrlAccessPolicy');
+
+    new PdfmakeReportRenderer();
+
+    const policy = setUrlAccessPolicy.mock.calls.at(-1)?.[0];
+    expect(policy?.('https://example.com/report.pdf')).toBe(false);
+    setUrlAccessPolicy.mockRestore();
   });
 });

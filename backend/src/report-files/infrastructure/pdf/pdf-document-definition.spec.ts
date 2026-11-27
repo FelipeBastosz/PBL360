@@ -275,6 +275,30 @@ describe('buildPdfDefinition', () => {
     expect(tableAt(contentOf(definitionOf(document)), 1).table.widths).toEqual(['*', '*']);
   });
 
+  it('uses flexible identification columns when the combined values are long', () => {
+    const document = buildReportDocument({
+      identification: [{ label: 'Observação', value: 'a'.repeat(81) }],
+    });
+
+    expect(contentOf(definitionOf(document))[0]).toMatchObject({ columns: [{ width: '*' }] });
+  });
+
+  it('starts a report section on a new page when requested', () => {
+    const document = buildReportDocument({
+      sections: [
+        {
+          kind: 'table',
+          title: 'Notas',
+          startOnNewPage: true,
+          columns: [{ header: 'Aluno', type: ReportColumnType.TEXT }],
+          rows: [['Ana']],
+        },
+      ],
+    });
+
+    expect(contentOf(definitionOf(document))[0]).toMatchObject({ pageBreak: 'before' });
+  });
+
   it('explains empty sections and empty documents', () => {
     const emptySections = buildReportDocument({
       sections: [

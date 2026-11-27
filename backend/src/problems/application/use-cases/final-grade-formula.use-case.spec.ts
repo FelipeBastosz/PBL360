@@ -126,4 +126,12 @@ describe('FinalGradeFormulaUseCase', () => {
     expect(result).toMatchObject({ padrao: true, versao: null });
     expect(formulas.deactivate).toHaveBeenCalledWith(previous);
   });
+
+  it('rejects when the problem is not found in the room', async () => {
+    problems.findById.mockResolvedValue(null);
+
+    await expect(useCase.get('room-1', 'missing-problem', 'tutor-1')).rejects.toThrow(
+      'Problema não encontrado na sala informada.',
+    );
+  });
 });

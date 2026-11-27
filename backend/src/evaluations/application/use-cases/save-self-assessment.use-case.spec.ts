@@ -80,6 +80,23 @@ describe('SaveSelfAssessmentUseCase', () => {
     });
   });
 
+  it('uses default time and draft status when saving without a supplied timestamp', async () => {
+    sessionAccess.assertMemberCanAccessSession.mockResolvedValue({
+      ...access,
+      session: { ...access.session, selfEvalDeadline: null },
+    });
+    evaluations.recordSelfAssessment.mockResolvedValue({ ...detail, evaluation: null });
+
+    await expect(
+      useCase.execute({
+        sessionId: 'session-1',
+        studentId: 'student-1',
+        items: [{ criterionId: 'criterion-1', score: 8 }],
+        submit: false,
+      }),
+    ).resolves.toMatchObject({ status: 'RASCUNHO', submittedAt: null, items: [] });
+  });
+
   it('submits and returns the consolidated score persisted by the repository', async () => {
     const result = await useCase.execute({
       sessionId: 'session-1',

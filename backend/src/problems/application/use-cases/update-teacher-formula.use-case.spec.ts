@@ -139,4 +139,51 @@ describe('UpdateTeacherFormulaUseCase', () => {
 
     expect(formulaRepository.saveNewVersion).not.toHaveBeenCalled();
   });
+
+  it('translates invalid formula component weights into an unprocessable error', async () => {
+    await expect(
+      useCase.execute({
+        tutorId: 'tutor-1',
+        components: [
+          { type: 'CRITERIOS', weight: 120 },
+          { type: 'PAPEL', weight: -20 },
+        ],
+      }),
+    ).rejects.toThrow(UnprocessableEntityError);
+
+    expect(formulaRepository.saveNewVersion).not.toHaveBeenCalled();
+  });
+
+  it('rethrows unexpected errors raised while building a formula', async () => {
+    const createFormula = jest.spyOn(Formula, 'create').mockImplementationOnce(() => {
+      throw new Error('unexpected formula error');
+    });
+
+    await expect(
+      useCase.execute({
+        tutorId: 'tutor-1',
+        components: [
+          { type: 'CRITERIOS', weight: 60 },
+          { type: 'PAPEL', weight: 40 },
+        ],
+      }),
+    ).rejects.toThrow('unexpected formula error');
+    expect(formulaRepository.saveNewVersion).not.toHaveBeenCalled();
+    createFormula.mockRestore();
+  });
+
+  it('rethrows unexpected errors during persistence', async () => {
+    formulaRepository.findActiveByTutor.mockResolvedValue(null);
+    formulaRepository.saveNewVersion.mockRejectedValue(new Error('DB down'));
+
+    await expect(
+      useCase.execute({
+        tutorId: 'tutor-1',
+        components: [
+          { type: 'CRITERIOS', weight: 60 },
+          { type: 'PAPEL', weight: 40 },
+        ],
+      }),
+    ).rejects.toThrow('DB down');
+  });
 });

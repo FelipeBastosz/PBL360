@@ -1,5 +1,8 @@
+import { getMetadataArgsStorage } from 'typeorm';
+import { User } from '@/users/domain/entities/user.entity';
 import { AttachmentCategory } from '../enums/attachment-category.enum';
 import { InvalidAttachmentError } from '../errors/invalid-attachment.error';
+import { Session } from './session.entity';
 import {
   MAX_ATTACHMENT_BYTES,
   normalizeFileName,
@@ -22,6 +25,20 @@ const upload = (
   });
 
 describe('SessionAttachment (Domain)', () => {
+  it('resolves its TypeORM relation targets', () => {
+    const relations = getMetadataArgsStorage()
+      .relations.filter((relation) => relation.target === SessionAttachment)
+      .map(({ propertyName, type }) => {
+        const target: unknown = typeof type === 'function' ? type() : type;
+        return [propertyName, target] as const;
+      });
+
+    expect(relations).toEqual([
+      ['session', Session],
+      ['uploader', User],
+    ]);
+  });
+
   it('accepts a PDF and keeps its size, type and category', () => {
     const attachment = upload(pdf(), 'Relatório Final.pdf', AttachmentCategory.TABLE_REPORT);
 
@@ -35,19 +52,19 @@ describe('SessionAttachment (Domain)', () => {
     });
   });
 
-  it.each(['INVALID_CATEGORY', '', undefined])('rejects invalid category %j', (invalidCategory) => {
+  it.each(['INVALID_CATEGORY', '', undefined])('rejects invalid category %j', (category) => {
     expect(() =>
       SessionAttachment.fromUpload({
         sessionId: 'session-1',
         uploadedBy: 'student-1',
         fileName: 'Relatório Final.pdf',
         content: pdf(),
-        category: invalidCategory as unknown as AttachmentCategory,
+        category: category as unknown as AttachmentCategory,
       }),
     ).toThrow(new InvalidAttachmentError('Categoria de anexo inválida.'));
   });
 
-  it('does not infer category from file name', () => {
+  it('does not infer the category from the file name', () => {
     const attachment = upload(
       pdf(),
       'Relatorio_Mesa_Final.pdf',

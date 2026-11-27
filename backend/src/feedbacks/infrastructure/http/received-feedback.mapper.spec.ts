@@ -64,4 +64,35 @@ describe('Received feedback responses', () => {
       sessoes: [],
     });
   });
+
+  it('maps optional component grades for feedback and sessions, including null scores', () => {
+    const components = {
+      modalidade: 'PARES' as const,
+      autoavaliacao: { nota: 7, situacao: 'AVALIADA' },
+      pares: { nota: null, situacao: 'PENDENTE', origem: 'PLANNING_POKER' as const },
+    };
+    const result = toReceivedProblemResponse({
+      finalScore: 7,
+      individual: { ...feedback, components },
+      general: null,
+      sessions: [
+        {
+          sessionId: 'session-2',
+          label: 'Sessão 2',
+          date: '2026-10-02',
+          feedback: null,
+          score: null,
+          components,
+        },
+      ],
+    });
+
+    expect(result.individual).toMatchObject({ avaliacoes: components });
+    expect(result.sessoes[0]).toMatchObject({
+      feedback: null,
+      nota: null,
+      avaliacoes: components,
+    });
+    expect(result.feedbacks).toMatchObject([{ tipo: 'INDIVIDUAL', avaliacoes: components }]);
+  });
 });

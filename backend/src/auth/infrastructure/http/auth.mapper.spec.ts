@@ -8,6 +8,8 @@ import {
   toRegisterResponse,
   toRegisterUserInput,
   toSessionResponse,
+  toPasswordResetTokenResponse,
+  toValidatePasswordResetCodeInput,
   toUserResponse,
   toVerifyEmailCodeInput,
 } from './auth.mapper';
@@ -79,6 +81,18 @@ describe('auth.mapper', () => {
       userId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
       email: 'ana@discente.uefs.br',
       code: '123456',
+    });
+  });
+
+  it('maps password reset payloads and token expiry to the API contract', () => {
+    const expiresAt = new Date('2026-10-01T10:00:00.000Z');
+
+    expect(
+      toValidatePasswordResetCodeInput({ email: 'ana@example.com', codigo: '123456' }),
+    ).toEqual({ email: 'ana@example.com', code: '123456' });
+    expect(toPasswordResetTokenResponse({ value: 'reset-token', expiresAt })).toEqual({
+      token: 'reset-token',
+      expiraEm: expiresAt,
     });
   });
 

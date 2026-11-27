@@ -127,6 +127,12 @@ describe('planning poker rounds', () => {
       await expect(vote('bruno')).rejects.toThrow(ConflictError);
       expect(events.publish).not.toHaveBeenCalled();
     });
+
+    it('rejects a vote when the round does not exist', async () => {
+      rounds.findById.mockResolvedValue(null);
+
+      await expect(vote('bruno')).rejects.toThrow('Rodada não encontrada.');
+    });
   });
 
   describe('RevealPokerRoundUseCase', () => {
@@ -144,6 +150,14 @@ describe('planning poker rounds', () => {
         'session-1',
         expect.objectContaining({ type: 'REVEALED' }),
       );
+    });
+
+    it('rejects revealing a round that was already revealed', async () => {
+      rounds.findVotes.mockResolvedValue([]);
+      rounds.reveal.mockResolvedValue(false);
+      const useCase = new RevealPokerRoundUseCase(asContext(), asState(), rounds, events);
+
+      await expect(useCase.execute(ROUND_REF)).rejects.toThrow(ConflictError);
     });
   });
 
@@ -186,6 +200,15 @@ describe('planning poker rounds', () => {
     });
 
     it('refuses to decide a round that was not revealed', async () => {
+      await expect(useCase().execute({ ...ROUND_REF, action: { type: 'ACCEPT' } })).rejects.toThrow(
+        ConflictError,
+      );
+    });
+
+    it('refuses to decide when concurrent decision already persisted', async () => {
+      context.roundForTutor.mockResolvedValue(revealed(8));
+      rounds.decide.mockResolvedValue(false);
+
       await expect(useCase().execute({ ...ROUND_REF, action: { type: 'ACCEPT' } })).rejects.toThrow(
         ConflictError,
       );

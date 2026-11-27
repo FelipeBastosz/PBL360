@@ -46,7 +46,7 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
 
       const persistedCriteria = await this.insertCriteria(manager, persistedTable.id, table);
 
-      this.assignPersistedCriteriaIds(table, persistedCriteria);
+      this.assignPersistedCriteriaIds(table, persistedTable.id, persistedCriteria);
 
       return Object.assign(new PerformanceTable(), persistedTable, {
         criteria: table.criteria,
@@ -112,11 +112,12 @@ export class PgPerformanceTableRepository implements PerformanceTableRepository 
 
   private assignPersistedCriteriaIds(
     table: PerformanceTable,
+    tableId: string,
     persistedCriteria: Array<{ id: string }>,
   ): void {
     table.criteria.forEach((criterion, index) => {
       criterion.id = persistedCriteria[index]!.id;
-      criterion.performanceTableId = table.id;
+      criterion.performanceTableId = tableId;
     });
   }
 

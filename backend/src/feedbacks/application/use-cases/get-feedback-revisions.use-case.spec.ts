@@ -91,4 +91,24 @@ describe('GetFeedbackRevisionsUseCase', () => {
       }),
     ).rejects.toThrow(NotFoundError);
   });
+
+  it('rejects if the feedback problem no longer exists', async () => {
+    const feedback = Feedback.create({
+      authorId: 'tutor-1',
+      problemId: 'missing-problem',
+      recipientId: 'student-1',
+      scope: FeedbackScope.STUDENT,
+      score: 8.5,
+      text: 'Texto.',
+    });
+    feedbackRepository.findById.mockResolvedValue(feedback);
+    problemRepository.findById.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute({
+        feedbackId: 'feedback-uuid',
+        tutorId: 'tutor-1',
+      }),
+    ).rejects.toThrow(NotFoundError);
+  });
 });

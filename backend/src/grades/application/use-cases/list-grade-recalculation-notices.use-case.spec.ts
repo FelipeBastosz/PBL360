@@ -30,4 +30,31 @@ describe('ListGradeRecalculationNoticesUseCase', () => {
     ]);
     expect(notices.findNoticesByStudentId).toHaveBeenCalledWith('student-1');
   });
+
+  it('maps unknown reason codes to the general message and preserves an empty result', async () => {
+    const notices: jest.Mocked<GradeRecalculationRepository> = {
+      findNoticesByStudentId: jest.fn().mockResolvedValue([
+        {
+          id: 'notice-2',
+          sessionId: 'session-2',
+          sessionTitle: 'Sessão 3',
+          previousScore: 7,
+          newScore: 7.5,
+          reasonCode: 'OTHER_CHANGE',
+          createdAt: new Date('2026-10-13T12:00:00Z'),
+        },
+      ]),
+    };
+    const useCase = new ListGradeRecalculationNoticesUseCase(notices);
+
+    await expect(useCase.execute('student-2')).resolves.toMatchObject([
+      {
+        motivo: 'Nota recalculada por uma alteração na avaliação.',
+        criadoEm: new Date('2026-10-13T12:00:00Z'),
+      },
+    ]);
+
+    notices.findNoticesByStudentId.mockResolvedValueOnce([]);
+    await expect(useCase.execute('student-2')).resolves.toEqual([]);
+  });
 });

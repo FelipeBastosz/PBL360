@@ -175,5 +175,18 @@ describe('SessionGradeCalculator', () => {
       expect(selfResult).toBe(peerResult);
       expect(tutorResult).toBe(7.95);
     });
+
+    it('rejects negative or out-of-range criterion weights and invalid formula sums', () => {
+      expect(() =>
+        SessionGradeCalculator.calculate(items, [criterion('a', -1), criterion('b', 1)], 5, true),
+      ).toThrow('Os pesos dos critérios devem estar entre 0 e 10.');
+
+      expect(() =>
+        SessionGradeCalculator.calculate(items, criteria, 5, true, {
+          criteriaWeight: 60,
+          roleWeight: 20,
+        }),
+      ).toThrow('A fórmula da sessão deve somar 100% ou 10.');
+    });
   });
 });

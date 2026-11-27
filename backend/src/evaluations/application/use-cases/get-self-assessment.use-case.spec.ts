@@ -69,4 +69,18 @@ describe('GetSelfAssessmentUseCase', () => {
       participated: null,
     });
   });
+
+  it('handles a missing evaluation and uses the current time by default', async () => {
+    evaluations.getSelfAssessment.mockResolvedValue({
+      config: { criteria: [] },
+      evaluation: null,
+      adjustments: [],
+    });
+
+    await expect(useCase.execute('session-1', 'student-1')).resolves.toMatchObject({
+      status: 'PENDENTE',
+      submittedAt: null,
+      items: [],
+    });
+  });
 });

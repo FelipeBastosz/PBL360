@@ -136,6 +136,31 @@ describe('SaveStudentProblemFeedbackUseCase', () => {
     expect(result.text).toBe('Novo texto apenas.');
   });
 
+  it('moves an existing problem feedback to the supplied session', async () => {
+    const existing = Feedback.create({
+      authorId: 'tutor-1',
+      problemId: 'problem-1',
+      recipientId: 'student-1',
+      scope: FeedbackScope.STUDENT,
+      score: 7,
+      text: 'Texto anterior.',
+    });
+    feedbackRepository.findStudentProblemFeedback.mockResolvedValue(existing);
+
+    await useCase.execute({
+      roomId: 'room-1',
+      problemId: 'problem-1',
+      studentId: 'student-1',
+      sessionId: 'session-1',
+      tutorId: 'tutor-2',
+      score: 7,
+      text: 'Texto atualizado.',
+    });
+
+    expect(existing.sessionId).toBe('session-1');
+    expect(feedbackRepository.saveWithRevision).toHaveBeenCalledWith(existing, expect.any(Object));
+  });
+
   it('allows assigning score for the first time when previous score was null without justification', async () => {
     const existing = Feedback.create({
       authorId: 'tutor-1',
@@ -204,6 +229,30 @@ describe('SaveStudentProblemFeedbackUseCase', () => {
         justification: 'Curto',
       }),
     ).rejects.toThrow(UnprocessableEntityError);
+  });
+
+  it('rejects grade change if justification exceeds 500 characters', async () => {
+    const existing = Feedback.create({
+      authorId: 'tutor-1',
+      problemId: 'problem-1',
+      recipientId: 'student-1',
+      scope: FeedbackScope.STUDENT,
+      score: 6.0,
+      text: 'Texto.',
+    });
+    feedbackRepository.findStudentProblemFeedback.mockResolvedValue(existing);
+
+    await expect(
+      useCase.execute({
+        roomId: 'room-1',
+        problemId: 'problem-1',
+        studentId: 'student-1',
+        tutorId: 'tutor-1',
+        score: 8.0,
+        text: 'Nova nota.',
+        justification: 'a'.repeat(501),
+      }),
+    ).rejects.toThrow('A justificativa deve ter no máximo 500 caracteres.');
   });
 
   it('rejects with UnprocessableEntityError if student is not enrolled', async () => {

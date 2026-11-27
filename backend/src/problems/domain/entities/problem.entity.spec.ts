@@ -1,3 +1,6 @@
+import { getMetadataArgsStorage } from 'typeorm';
+import { Room } from '@/rooms/domain/entities/room.entity';
+import { User } from '@/users/domain/entities/user.entity';
 import { Problem } from './problem.entity';
 import { InvalidProblemError } from '../errors/invalid-problem.error';
 
@@ -151,5 +154,15 @@ describe('Problem Entity', () => {
     });
 
     expect(problem.endDate).toBe('2026-03-01');
+  });
+
+  it('maps room, creator and updater relationships', () => {
+    const targets = getMetadataArgsStorage()
+      .relations.filter((relation) => relation.target === Problem)
+      .map((relation) =>
+        typeof relation.type === 'function' ? (relation.type() as unknown) : relation.type,
+      );
+
+    expect(targets).toEqual([Room, User, User]);
   });
 });

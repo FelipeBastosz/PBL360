@@ -410,4 +410,24 @@ describe('UpdatePerformanceTableUseCase', () => {
     ).rejects.toBeInstanceOf(ForbiddenError);
     expect(repository.update).not.toHaveBeenCalled();
   });
+
+  it('rejects updating a system default table', async () => {
+    const table = PerformanceTable.create({
+      tutorId,
+      name: 'Padrão',
+      isDefault: true,
+      criteria: [{ name: 'Participação', weight: 10 }],
+    });
+    table.id = tableId;
+    repository.findById.mockResolvedValue(table);
+
+    await expect(
+      useCase.execute({
+        tableId,
+        tutorId,
+        changes: { name: 'Outro', criteria: [{ name: 'Participação', weight: 10 }] },
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect(repository.update).not.toHaveBeenCalled();
+  });
 });
