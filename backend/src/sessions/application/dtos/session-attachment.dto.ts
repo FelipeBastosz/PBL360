@@ -1,5 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export enum AttachmentCategoryPayload {
+  RELATORIO_MESA = 'RELATORIO_MESA',
+  ANEXO_SESSAO = 'ANEXO_SESSAO',
+}
+
 export class AttachmentUploaderDto {
   @ApiProperty({ format: 'uuid' }) id: string;
   @ApiProperty({ example: 'Ana Souza' }) nome: string;
@@ -12,10 +17,10 @@ export class SessionAttachmentResponseDto {
   @ApiProperty({ description: 'Tamanho em bytes.', example: 245_812 }) tamanho: number;
   @ApiProperty({
     description: 'Categoria do anexo.',
-    enum: ['RELATORIO_MESA', 'ANEXO_SESSAO'],
-    example: 'ANEXO_SESSAO',
+    enum: AttachmentCategoryPayload,
+    example: AttachmentCategoryPayload.ANEXO_SESSAO,
   })
-  categoria: string;
+  categoria: AttachmentCategoryPayload;
   @ApiProperty({ type: AttachmentUploaderDto }) enviadoPor: AttachmentUploaderDto;
   @ApiProperty({ format: 'date-time' }) enviadoEm: Date;
 }
@@ -26,8 +31,8 @@ export class UploadSessionAttachmentDto {
 
   @ApiProperty({
     description: 'Categoria do anexo.',
-    enum: ['RELATORIO_MESA', 'ANEXO_SESSAO'],
-    example: 'ANEXO_SESSAO',
+    enum: AttachmentCategoryPayload,
+    example: AttachmentCategoryPayload.ANEXO_SESSAO,
   })
-  categoria: string;
+  categoria: AttachmentCategoryPayload;
 }

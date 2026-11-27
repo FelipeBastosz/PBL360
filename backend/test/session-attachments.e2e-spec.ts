@@ -2,6 +2,7 @@ import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
+import { AddAttachmentCategory1793600000000 } from '@/migrations/1793600000000-AddAttachmentCategory';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { createTestApp } from './helpers/create-test-app';
 import {
@@ -175,12 +176,20 @@ describe('Session attachments (e2e)', () => {
       expect(uploaded.categoria).toBe('ANEXO_SESSAO');
     });
 
-    it('returns ANEXO_SESSAO for legacy rows inserted without an explicit category', async () => {
-      await dataSource.query(
-        `INSERT INTO session_attachments (session_id, uploaded_by, file_name, mime_type, size_bytes, content)
-         VALUES ($1, $2, 'Legado.pdf', 'application/pdf', $3, $4);`,
-        [sessionId, tutor.id, pdf().length, pdf()],
-      );
+    it('backfills legacy rows as ANEXO_SESSAO during migration and rejects inserts without category afterwards', async () => {
+      const migration = new AddAttachmentCategory1793600000000();
+      const queryRunner = dataSource.createQueryRunner();
+      try {
+        await migration.down(queryRunner);
+        await queryRunner.query(
+          `INSERT INTO session_attachments (session_id, uploaded_by, file_name, mime_type, size_bytes, content)
+           VALUES ($1, $2, 'Legado.pdf', 'application/pdf', $3, $4);`,
+          [sessionId, tutor.id, pdf().length, pdf()],
+        );
+        await migration.up(queryRunner);
+      } finally {
+        await queryRunner.release();
+      }
 
       const list = (await api(app, student).get(attachmentsPath()).expect(200))
         .body as AttachmentBody[];
@@ -189,25 +198,40 @@ describe('Session attachments (e2e)', () => {
         nomeArquivo: 'Legado.pdf',
         categoria: 'ANEXO_SESSAO',
       });
+
+      await expect(
+        dataSource.query(
+          `INSERT INTO session_attachments (session_id, uploaded_by, file_name, mime_type, size_bytes, content)
+           VALUES ($1, $2, 'SemCategoria.pdf', 'application/pdf', $3, $4);`,
+          [sessionId, tutor.id, pdf().length, pdf()],
+        ),
+      ).rejects.toThrow();
     });
 
-    it('rejects missing or invalid category', async () => {
-      const missing = await upload(student, pdf(), 'Relatório.pdf', 'arquivo', null).expect(400);
+    it('rejects missing category even when file name suggests a board report', async () => {
+      const missing = await upload(student, pdf(), 'relatorio_mesa.pdf', 'arquivo', null).expect(
+        400,
+      );
       expect((missing.body as ErrorBody).message).toBe(
         'A categoria deve ser "RELATORIO_MESA" ou "ANEXO_SESSAO".',
       );
-
-      const invalid = await upload(
-        student,
-        pdf(),
-        'Relatório.pdf',
-        'arquivo',
-        'OUTRA_CATEGORIA',
-      ).expect(400);
-      expect((invalid.body as ErrorBody).message).toBe(
-        'A categoria deve ser "RELATORIO_MESA" ou "ANEXO_SESSAO".',
-      );
     });
+
+    it.each(['', ' ', 'relatorio_mesa', 'anexo_sessao', 'OUTRA_CATEGORIA', 'toString'])(
+      'rejects invalid category %j',
+      async (invalidCategory) => {
+        const invalid = await upload(
+          student,
+          pdf(),
+          'relatorio_mesa.pdf',
+          'arquivo',
+          invalidCategory,
+        ).expect(400);
+        expect((invalid.body as ErrorBody).message).toBe(
+          'A categoria deve ser "RELATORIO_MESA" ou "ANEXO_SESSAO".',
+        );
+      },
+    );
 
     it('rejects a file that is not a PDF', async () => {
       const response = await upload(
@@ -237,6 +261,7 @@ describe('Session attachments (e2e)', () => {
 
     it('keeps a student who is not enrolled from uploading or listing', async () => {
       await upload(stranger, pdf()).expect(403);
+      await upload(stranger, pdf(), 'Relatório.pdf', 'arquivo', null).expect(403);
       await api(app, stranger).get(attachmentsPath()).expect(403);
     });
   });
@@ -281,6 +306,12 @@ describe('Session attachments (e2e)', () => {
 
       expect(response.headers['content-type']).toBe('application/pdf');
       expect((response.body as Buffer).equals(content)).toBe(true);
+    });
+
+    it('keeps a student who is not enrolled from downloading', async () => {
+      const { id } = (await upload(student, pdf()).expect(201)).body as AttachmentBody;
+
+      await api(app, stranger).get(`${attachmentsPath()}/${id}`).expect(403);
     });
 
     it('answers 404 for an attachment that does not exist', async () => {

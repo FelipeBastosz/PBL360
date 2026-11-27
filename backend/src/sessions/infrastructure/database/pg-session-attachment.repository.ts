@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
-import { AttachmentCategory } from '../../domain/enums/attachment-category.enum';
+import type { AttachmentCategory } from '../../domain/enums/attachment-category.enum';
 import { SessionAttachment } from '../../domain/entities/session-attachment.entity';
 import type {
   SessionAttachmentFile,

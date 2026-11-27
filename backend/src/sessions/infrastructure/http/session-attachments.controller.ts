@@ -17,11 +17,13 @@ import {
 } from '@/shared/decorators/authenticated-user.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
-import { InvalidRequestError } from '@/shared/errors/application.error';
 import { contentDisposition } from '@/shared/http/content-disposition';
 import { FileUpload, type UploadedFileBuffer } from '@/shared/http/file-upload';
 import { UserType } from '@/users/domain/enums/user-type.enum';
-import type { SessionAttachmentResponseDto } from '../../application/dtos/session-attachment.dto';
+import {
+  AttachmentCategoryPayload,
+  type SessionAttachmentResponseDto,
+} from '../../application/dtos/session-attachment.dto';
 import { DeleteSessionAttachmentUseCase } from '../../application/use-cases/delete-session-attachment.use-case';
 import { DownloadSessionAttachmentUseCase } from '../../application/use-cases/download-session-attachment.use-case';
 import { ListSessionAttachmentsUseCase } from '../../application/use-cases/list-session-attachments.use-case';
@@ -39,15 +41,15 @@ import {
   UploadSessionAttachmentSwaggerDocs,
 } from './session-attachments.swagger';
 
-const CATEGORY_TO_API: Record<AttachmentCategory, string> = {
-  [AttachmentCategory.TABLE_REPORT]: 'RELATORIO_MESA',
-  [AttachmentCategory.SESSION_ATTACHMENT]: 'ANEXO_SESSAO',
+const CATEGORY_TO_API: Record<AttachmentCategory, AttachmentCategoryPayload> = {
+  [AttachmentCategory.TABLE_REPORT]: AttachmentCategoryPayload.RELATORIO_MESA,
+  [AttachmentCategory.SESSION_ATTACHMENT]: AttachmentCategoryPayload.ANEXO_SESSAO,
 };
 
-const API_TO_CATEGORY: Record<string, AttachmentCategory> = {
-  RELATORIO_MESA: AttachmentCategory.TABLE_REPORT,
-  ANEXO_SESSAO: AttachmentCategory.SESSION_ATTACHMENT,
-};
+const API_TO_CATEGORY = new Map<string, AttachmentCategory>([
+  [AttachmentCategoryPayload.RELATORIO_MESA, AttachmentCategory.TABLE_REPORT],
+  [AttachmentCategoryPayload.ANEXO_SESSAO, AttachmentCategory.SESSION_ATTACHMENT],
+]);
 
 const toResponse = (a: SessionAttachmentSummary): SessionAttachmentResponseDto => ({
   id: a.id,
@@ -59,18 +61,14 @@ const toResponse = (a: SessionAttachmentSummary): SessionAttachmentResponseDto =
   enviadoEm: a.createdAt,
 });
 
-function parseCategory(raw: unknown): AttachmentCategory {
-  const category = typeof raw === 'string' ? API_TO_CATEGORY[raw] : undefined;
-  if (!category) {
-    throw new InvalidRequestError('A categoria deve ser "RELATORIO_MESA" ou "ANEXO_SESSAO".');
-  }
-  return category;
+function parseCategory(raw: unknown): AttachmentCategory | undefined {
+  return typeof raw === 'string' ? API_TO_CATEGORY.get(raw) : undefined;
 }
 
 const toUploadInput = (
   sessionId: string,
   member: AuthenticatedUserRef,
-  category: AttachmentCategory,
+  category: AttachmentCategory | undefined,
   file?: UploadedFileBuffer,
 ): UploadSessionAttachmentInput => ({
   sessionId,

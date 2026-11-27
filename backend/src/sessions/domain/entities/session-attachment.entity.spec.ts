@@ -35,9 +35,15 @@ describe('SessionAttachment (Domain)', () => {
     });
   });
 
-  it('rejects an invalid category', () => {
+  it.each(['INVALID_CATEGORY', '', undefined])('rejects invalid category %j', (invalidCategory) => {
     expect(() =>
-      upload(pdf(), 'Relatório Final.pdf', 'INVALID_CATEGORY' as AttachmentCategory),
+      SessionAttachment.fromUpload({
+        sessionId: 'session-1',
+        uploadedBy: 'student-1',
+        fileName: 'Relatório Final.pdf',
+        content: pdf(),
+        category: invalidCategory as unknown as AttachmentCategory,
+      }),
     ).toThrow(new InvalidAttachmentError('Categoria de anexo inválida.'));
   });
 

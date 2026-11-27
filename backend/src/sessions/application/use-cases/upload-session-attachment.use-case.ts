@@ -15,7 +15,7 @@ export interface UploadSessionAttachmentInput {
   member: RoomMember;
   fileName: string | undefined;
   content: Buffer | undefined;
-  category: AttachmentCategory;
+  category: AttachmentCategory | undefined;
 }
 
 @Injectable()
@@ -28,6 +28,9 @@ export class UploadSessionAttachmentUseCase {
 
   async execute(input: UploadSessionAttachmentInput): Promise<SessionAttachmentSummary> {
     await this.access.assertMemberCanAccessSession(input.sessionId, input.member);
+    if (!input.category) {
+      throw new InvalidRequestError('A categoria deve ser "RELATORIO_MESA" ou "ANEXO_SESSAO".');
+    }
     if (!input.content) throw new InvalidRequestError('Envie um arquivo PDF no campo "arquivo".');
     const attachment = SessionAttachment.fromUpload({
       sessionId: input.sessionId,

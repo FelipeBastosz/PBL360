@@ -1,10 +1,13 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddAttachmentCategory1793600000000 implements MigrationInterface {
+  name = 'AddAttachmentCategory1793600000000';
+
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE session_attachments ADD COLUMN category VARCHAR(20) NOT NULL DEFAULT 'SESSION_ATTACHMENT';`,
+      `ALTER TABLE session_attachments ADD COLUMN category VARCHAR(30) NOT NULL DEFAULT 'SESSION_ATTACHMENT';`,
     );
+    await queryRunner.query(`ALTER TABLE session_attachments ALTER COLUMN category DROP DEFAULT;`);
     await queryRunner.query(
       `ALTER TABLE session_attachments ADD CONSTRAINT ck_session_attachments_category CHECK (category IN ('TABLE_REPORT', 'SESSION_ATTACHMENT'));`,
     );
