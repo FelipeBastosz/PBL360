@@ -13,6 +13,14 @@ describe('BcryptPasswordHasher', () => {
     await expect(hasher.hash('senhaSegura123')).resolves.toMatch(/^\$2[aby]\$04\$/);
   });
 
+  it('falls back to the standard cost when no cost is configured', async () => {
+    const defaultHasher = new BcryptPasswordHasher({
+      get: () => undefined,
+    } as unknown as ConfigService);
+
+    await expect(defaultHasher.hash('senhaSegura123')).resolves.toMatch(/^\$2[aby]\$12\$/);
+  });
+
   it('salts every hash', async () => {
     const [first, second] = await Promise.all([hasher.hash('igual'), hasher.hash('igual')]);
 
@@ -27,6 +35,8 @@ describe('BcryptPasswordHasher', () => {
   });
 
   it('compares against a decoy without failing', async () => {
-    await expect(hasher.compareWithDecoy('qualquer')).resolves.toBeUndefined();
+    const decoyHasher = new BcryptPasswordHasher(configWithRounds(4));
+    await expect(decoyHasher.compareWithDecoy('qualquer')).resolves.toBeUndefined();
+    await expect(decoyHasher.compareWithDecoy('outra senha')).resolves.toBeUndefined();
   });
 });
