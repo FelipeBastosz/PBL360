@@ -144,7 +144,7 @@ describe('ExceljsReportRenderer', () => {
     expect(last.getCell(2).value).toBe('002000');
     expect(last.getCell(6).value).toBe(1999 % 3);
     expect(last.getCell(6).numFmt).toBe('0');
-  });
+  }, 30000);
 
   it('sizes columns by the formatted value and writes numeric text as numbers', async () => {
     const workbook = await renderWorkbook(

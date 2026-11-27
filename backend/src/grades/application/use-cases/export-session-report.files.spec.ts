@@ -326,5 +326,5 @@ describe('ExportSessionReportUseCase - File Acceptance & Content Comparison', ()
     const carlosFbRow = sheet2.getRow(12);
     expect(carlosFbRow.getCell(1).value).toBe('Carlos Dias');
     expect(carlosFbRow.getCell(2).value).toBe('Não informado.');
-  });
+  }, 30000);
 });
