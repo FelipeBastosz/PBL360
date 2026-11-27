@@ -44,3 +44,6 @@ playwright-report/
 blob-report/
 .playwright/
 
+
+# Vercel CLI
+.vercel
