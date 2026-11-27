@@ -598,6 +598,7 @@ describe('Problems (e2e)', () => {
         notas: 0,
         feedbacks: 0,
         avaliacoes: 0,
+        entregas: 0,
       });
     });
 
@@ -647,6 +648,7 @@ describe('Problems (e2e)', () => {
         notas: 1,
         feedbacks: 1,
         avaliacoes: 1,
+        entregas: 0,
       });
     });
   });
@@ -711,7 +713,7 @@ describe('Problems (e2e)', () => {
         'O problema não pode ser excluído pois possui registros vinculados.',
       );
       expect(response.body).toMatchObject({
-        detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0 },
+        detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0, entregas: 0 },
       });
 
       await getProblemById(roomId, created.id, tutor1Token).expect(200);
@@ -733,7 +735,7 @@ describe('Problems (e2e)', () => {
 
       const response = await deleteProblem(roomId, created.id, tutor1Token).expect(409);
       expect(response.body).toMatchObject({
-        detalhes: { sessoes: 0, notas: 0, feedbacks: 1, avaliacoes: 0 },
+        detalhes: { sessoes: 0, notas: 0, feedbacks: 1, avaliacoes: 0, entregas: 0 },
       });
       await getProblemById(roomId, created.id, tutor1Token).expect(200);
 

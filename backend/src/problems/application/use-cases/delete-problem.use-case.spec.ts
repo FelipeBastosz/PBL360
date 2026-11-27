@@ -21,6 +21,7 @@ describe('DeleteProblemUseCase', () => {
       grades: 0,
       feedbacks: 0,
       evaluations: 0,
+      deliveries: 0,
     });
     deleteMock = jest.fn();
     assertTutorIsRoomOwnerMock = jest.fn();
@@ -151,13 +152,14 @@ describe('DeleteProblemUseCase', () => {
       grades: 0,
       feedbacks: 0,
       evaluations: 0,
+      deliveries: 0,
     });
 
     await expect(
       useCase.execute({ roomId: 'room-1', problemId: problem.id, tutorId: 'tutor-owner' }),
     ).rejects.toMatchObject({
       name: 'ConflictError',
-      details: { detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0 } },
+      details: { detalhes: { sessoes: 1, notas: 0, feedbacks: 0, avaliacoes: 0, entregas: 0 } },
     });
     expect(deleteMock).not.toHaveBeenCalled();
   });
@@ -169,6 +171,7 @@ describe('DeleteProblemUseCase', () => {
       grades: 0,
       feedbacks: 3,
       evaluations: 0,
+      deliveries: 0,
     });
 
     await expect(
@@ -176,7 +179,27 @@ describe('DeleteProblemUseCase', () => {
     ).rejects.toMatchObject({
       name: 'ConflictError',
       message: 'O problema não pode ser excluído pois possui registros vinculados.',
-      details: { detalhes: { sessoes: 0, notas: 0, feedbacks: 3, avaliacoes: 0 } },
+      details: { detalhes: { sessoes: 0, notas: 0, feedbacks: 3, avaliacoes: 0, entregas: 0 } },
+    });
+    expect(deleteMock).not.toHaveBeenCalled();
+  });
+
+  it('blocks a problem with deliveries even when it has no sessions', async () => {
+    findByIdMock.mockResolvedValueOnce({ id: 'prob-1', roomId: 'room-1' });
+    getDeletionImpactMock.mockResolvedValueOnce({
+      sessions: 0,
+      grades: 0,
+      feedbacks: 0,
+      evaluations: 0,
+      deliveries: 2,
+    });
+
+    await expect(
+      useCase.execute({ roomId: 'room-1', problemId: 'prob-1', tutorId: 'tutor-owner' }),
+    ).rejects.toMatchObject({
+      name: 'ConflictError',
+      message: 'O problema não pode ser excluído pois possui registros vinculados.',
+      details: { detalhes: { sessoes: 0, notas: 0, feedbacks: 0, avaliacoes: 0, entregas: 2 } },
     });
     expect(deleteMock).not.toHaveBeenCalled();
   });

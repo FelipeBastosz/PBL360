@@ -9,6 +9,7 @@ export function assertProblemCanBeDeleted(impact: ProblemDeletionImpact): void {
       notas: impact.grades,
       feedbacks: impact.feedbacks,
       avaliacoes: impact.evaluations,
+      entregas: impact.deliveries,
     },
   });
 }

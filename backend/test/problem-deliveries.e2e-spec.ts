@@ -142,8 +142,12 @@ describe('Problem deliveries (e2e)', () => {
       expect((response.body as DeliveryBody).url).toBe(url);
     });
 
-    it('rejects empty, invalid, non-HTTPS URLs and unexpected payload fields with 400', async () => {
-      await api(app, studentA).post(deliveriesPath(), {}).expect(400);
+    it('rejects empty, invalid, non-HTTPS URLs, credentials, IP hosts and unexpected payload fields with 400', async () => {
+      const emptyBody = await api(app, studentA).post(deliveriesPath(), {}).expect(400);
+      expect((emptyBody.body as { message: string[] }).message).toEqual([
+        'A URL da entrega é obrigatória e deve ser um texto.',
+      ]);
+
       await api(app, studentA).post(deliveriesPath(), { url: '' }).expect(400);
       await api(app, studentA).post(deliveriesPath(), { url: '   ' }).expect(400);
       await api(app, studentA)
@@ -153,6 +157,13 @@ describe('Problem deliveries (e2e)', () => {
         .post(deliveriesPath(), { url: 'ftp://files.example.com/entrega.zip' })
         .expect(400);
       await api(app, studentA).post(deliveriesPath(), { url: 'not-a-valid-url' }).expect(400);
+      await api(app, studentA)
+        .post(deliveriesPath(), { url: 'https://user:senha@github.com/uefs/pbl360' })
+        .expect(400);
+      await api(app, studentA)
+        .post(deliveriesPath(), { url: 'https://10.0.0.1/admin' })
+        .expect(400);
+      await api(app, studentA).post(deliveriesPath(), { url: 'https://[::1]/admin' }).expect(400);
       await api(app, studentA)
         .post(deliveriesPath(), {
           url: 'https://github.com/uefs/pbl360',
@@ -297,6 +308,74 @@ describe('Problem deliveries (e2e)', () => {
         minhaEntregaId: null,
         entregas: [second, first],
       });
+    });
+
+    it('hides deliveries of students removed from the room while preserving database history', async () => {
+      const deliveryA = (
+        await api(app, studentA)
+          .post(deliveriesPath(), { url: 'https://drive.google.com/drive/folders/student-a' })
+          .expect(201)
+      ).body as DeliveryBody;
+      await api(app, studentB)
+        .post(deliveriesPath(), { url: 'https://github.com/uefs/student-b' })
+        .expect(201);
+
+      await dataSource.query('DELETE FROM room_students WHERE room_id = $1 AND student_id = $2;', [
+        roomId,
+        studentB.id,
+      ]);
+
+      const tutorResponse = (await api(app, ownerTutor).get(deliveriesPath()).expect(200))
+        .body as DeliveriesListBody;
+      expect(tutorResponse).toEqual({
+        minhaEntregaId: null,
+        entregas: [deliveryA],
+      });
+
+      const [stored] = await dataSource.query<[{ count: number }]>(
+        'SELECT COUNT(*)::int AS count FROM problem_deliveries WHERE problem_id = $1;',
+        [problemId],
+      );
+      expect(stored.count).toBe(2);
+    });
+
+    it('includes deliveries in problem deletion impact and blocks problem deletion with 409', async () => {
+      await api(app, studentA)
+        .post(deliveriesPath(), { url: 'https://github.com/uefs/student-a' })
+        .expect(201);
+
+      const impact = await api(app, ownerTutor)
+        .get(`/salas/${roomId}/problemas/${problemId}/impacto-exclusao`)
+        .expect(200);
+      expect(impact.body).toEqual({
+        sessoes: 0,
+        notas: 0,
+        feedbacks: 0,
+        avaliacoes: 0,
+        entregas: 1,
+      });
+
+      const conflict = await api(app, ownerTutor)
+        .delete(`/salas/${roomId}/problemas/${problemId}`)
+        .expect(409);
+      expect(conflict.body).toEqual({
+        statusCode: 409,
+        error: 'Conflict',
+        message: 'O problema não pode ser excluído pois possui registros vinculados.',
+        detalhes: {
+          sessoes: 0,
+          notas: 0,
+          feedbacks: 0,
+          avaliacoes: 0,
+          entregas: 1,
+        },
+      });
+
+      const [stored] = await dataSource.query<[{ count: number }]>(
+        'SELECT COUNT(*)::int AS count FROM problem_deliveries WHERE problem_id = $1;',
+        [problemId],
+      );
+      expect(stored.count).toBe(1);
     });
 
     it('lets an enrolled student see only their own active delivery and hides classmates links', async () => {

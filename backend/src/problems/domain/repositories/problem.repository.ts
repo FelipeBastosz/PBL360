@@ -7,6 +7,7 @@ export interface ProblemDeletionImpact {
   grades: number;
   feedbacks: number;
   evaluations: number;
+  deliveries: number;
 }
 
 export interface ProblemRepository {

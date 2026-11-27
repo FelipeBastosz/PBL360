@@ -28,6 +28,13 @@ describe('ProblemDelivery entity', () => {
     expect(delivery.url).toBe('https://github.com/uefs/pbl360-entrega');
   });
 
+  it('accepts a valid HTTPS link with @ in the path', () => {
+    const url = 'https://medium.com/@equipe-pbl/entrega-problema-1';
+    const delivery = ProblemDelivery.create({ ...BASE_PROPS, url });
+
+    expect(delivery.url).toBe(url);
+  });
+
   it.each([
     '',
     '   ',
@@ -39,6 +46,14 @@ describe('ProblemDelivery entity', () => {
     'https://localhost',
     'https://invalid-host',
     'https://example.com/with space',
+    'https://user:senha@github.com/uefs/pbl360',
+    'https://user@github.com/uefs/pbl360',
+    'https://:@github.com/uefs/pbl360',
+    'https://10.0.0.1/admin',
+    'https://127.0.0.1/entrega',
+    'https://2130706433/entrega',
+    'https://[::1]/admin',
+    'https://[2001:db8::1]/entrega',
     `https://example.com/${'a'.repeat(MAX_DELIVERY_URL_LENGTH)}`,
   ])('rejects invalid or non-HTTPS URL: %s', (url) => {
     expect(isValidHttpsDeliveryUrl(url)).toBe(false);

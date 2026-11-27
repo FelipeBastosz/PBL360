@@ -20,6 +20,7 @@ describe('GetProblemDeletionImpactUseCase', () => {
       grades: 0,
       feedbacks: 0,
       evaluations: 0,
+      deliveries: 0,
     });
     assertTutorCanAccessRoomMock = jest.fn();
 
@@ -129,6 +130,7 @@ describe('GetProblemDeletionImpactUseCase', () => {
       grades: 0,
       feedbacks: 0,
       evaluations: 0,
+      deliveries: 0,
     });
     expect(assertTutorCanAccessRoomMock).toHaveBeenCalledWith('room-1', 'tutor-1');
     expect(findByIdMock).toHaveBeenCalledWith(problem.id);
@@ -151,6 +153,7 @@ describe('GetProblemDeletionImpactUseCase', () => {
       grades: 12,
       feedbacks: 6,
       evaluations: 24,
+      deliveries: 5,
     });
 
     const impact = await useCase.execute({
@@ -164,12 +167,13 @@ describe('GetProblemDeletionImpactUseCase', () => {
       grades: 12,
       feedbacks: 6,
       evaluations: 24,
+      deliveries: 5,
     });
     expect(getDeletionImpactMock).toHaveBeenCalledWith(problem.id);
   });
 
   it('returns actual counts from the repository', async () => {
-    const impact = { sessions: 2, grades: 1, feedbacks: 4, evaluations: 3 };
+    const impact = { sessions: 2, grades: 1, feedbacks: 4, evaluations: 3, deliveries: 2 };
     findByIdMock.mockResolvedValueOnce({ id: 'prob-1', roomId: 'room-1' });
     getDeletionImpactMock.mockResolvedValueOnce(impact);
 

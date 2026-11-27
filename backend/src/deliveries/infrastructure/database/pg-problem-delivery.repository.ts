@@ -47,6 +47,7 @@ const INSERT_DELIVERY_SQL = `
 const LIST_ACTIVE_BY_PROBLEM_SQL = `
   SELECT ${SUMMARY_COLUMNS}
   FROM problem_deliveries d
+  JOIN room_students rs ON rs.room_id = d.room_id AND rs.student_id = d.submitted_by
   JOIN users u ON u.id = d.submitted_by
   WHERE d.problem_id = $1 AND d.replaced_at IS NULL
   ORDER BY d.created_at DESC, d.id DESC;`;
