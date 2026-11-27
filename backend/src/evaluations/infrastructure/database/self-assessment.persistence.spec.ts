@@ -3,6 +3,9 @@ import { validateEvaluationRules } from '../../application/services/evaluation-r
 import { EvaluationStatus } from '../../domain/enums/evaluation-status.enum';
 import { freezeSessionConfig } from './session-evaluation-config.persistence';
 import { readSelfAssessmentDetail } from './self-assessment.reads';
+import { FIND_SELF_EVALUATION } from './evaluation.queries';
+import { UPDATE_SELF_SUBMISSION } from './self-assessment.queries';
+import { SESSION_CALCULATION_VERSION } from '../../domain/services/session-grade-calculator';
 import { recordSelfAssessment } from './self-assessment.persistence';
 
 jest.mock('@/sessions/infrastructure/database/session-table-lock.persistence', () => ({
@@ -132,5 +135,137 @@ describe('recordSelfAssessment', () => {
     await expect(
       recordSelfAssessment({ transaction } as never, { ...input, submit: true }),
     ).rejects.toThrow('A nota de cargo é obrigatória para estudantes com papel atribuído.');
+  });
+
+  it('reuses a concurrently created evaluation and updates its draft', async () => {
+    const tx = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce([{ released: true, deadline: null }])
+        .mockResolvedValueOnce([{ studentId: 'student-1' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 'concurrent-evaluation' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]),
+    };
+    const transaction = jest.fn((work: (manager: typeof tx) => unknown) => work(tx));
+    jest.mocked(freezeSessionConfig).mockResolvedValue(config);
+    const detail = { config, evaluation: null, adjustments: [], papel: null, roleScore: null };
+    jest.mocked(readSelfAssessmentDetail).mockResolvedValue(detail);
+
+    await expect(recordSelfAssessment({ transaction } as never, input as never)).resolves.toBe(
+      detail,
+    );
+    expect(tx.query).toHaveBeenCalledWith(FIND_SELF_EVALUATION, ['session-1', 'student-1']);
+    expect(tx.query).toHaveBeenCalledWith(expect.stringContaining('UPDATE evaluations'), [
+      null,
+      'student-1',
+      expect.any(Date),
+      'concurrent-evaluation',
+    ]);
+  });
+
+  it('submits a self assessment using the default formula when the student has no role', async () => {
+    const tx = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce([{ released: true, deadline: null }])
+        .mockResolvedValueOnce([{ studentId: 'student-1' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 'evaluation-3' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]),
+    };
+    const transaction = jest.fn((work: (manager: typeof tx) => unknown) => work(tx));
+    jest.mocked(freezeSessionConfig).mockResolvedValue(config);
+    jest.mocked(readSelfAssessmentDetail).mockResolvedValue({
+      config,
+      evaluation: null,
+      adjustments: [],
+      papel: null,
+      roleScore: null,
+    });
+
+    await recordSelfAssessment({ transaction } as never, { ...input, submit: true });
+
+    expect(tx.query).toHaveBeenCalledWith(UPDATE_SELF_SUBMISSION, [
+      expect.any(Date),
+      expect.any(Number),
+      null,
+      SESSION_CALCULATION_VERSION,
+      'student-1',
+      'evaluation-3',
+    ]);
+  });
+
+  it('submits with a provided cargo score when the assigned role has weight', async () => {
+    const tx = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce([{ released: true, deadline: null }])
+        .mockResolvedValueOnce([{ studentId: 'student-1' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 'evaluation-4' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]),
+    };
+    const transaction = jest.fn((work: (manager: typeof tx) => unknown) => work(tx));
+    jest.mocked(freezeSessionConfig).mockResolvedValue(config);
+    jest.mocked(readSelfAssessmentDetail).mockResolvedValue({
+      config: { ...config, formula: { criteriaWeight: 70, roleWeight: 30 } },
+      evaluation: null,
+      adjustments: [],
+      papel: 'Coordenador',
+      roleScore: null,
+    });
+
+    await recordSelfAssessment({ transaction } as never, { ...input, submit: true, notaCargo: 9 });
+
+    expect(tx.query).toHaveBeenCalledWith(UPDATE_SELF_SUBMISSION, [
+      expect.any(Date),
+      expect.any(Number),
+      9,
+      SESSION_CALCULATION_VERSION,
+      'student-1',
+      'evaluation-4',
+    ]);
+  });
+
+  it('allows submitting without a cargo score when the role has no weight', async () => {
+    const tx = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce([{ released: true, deadline: null }])
+        .mockResolvedValueOnce([{ studentId: 'student-1' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 'evaluation-5' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]),
+    };
+    const transaction = jest.fn((work: (manager: typeof tx) => unknown) => work(tx));
+    jest.mocked(freezeSessionConfig).mockResolvedValue(config);
+    jest.mocked(readSelfAssessmentDetail).mockResolvedValue({
+      config: { ...config, formula: { criteriaWeight: 100, roleWeight: 0 } },
+      evaluation: null,
+      adjustments: [],
+      papel: 'Coordenador',
+      roleScore: null,
+    });
+
+    await recordSelfAssessment({ transaction } as never, { ...input, submit: true });
+
+    expect(tx.query).toHaveBeenCalledWith(UPDATE_SELF_SUBMISSION, [
+      expect.any(Date),
+      expect.any(Number),
+      null,
+      SESSION_CALCULATION_VERSION,
+      'student-1',
+      'evaluation-5',
+    ]);
   });
 });
