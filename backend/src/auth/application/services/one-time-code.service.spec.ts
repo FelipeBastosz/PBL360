@@ -74,6 +74,20 @@ describe('OneTimeCodeService', () => {
       );
       logError.mockRestore();
     });
+
+    it('logs non-Error e-mail failures without rejecting code issuance', async () => {
+      const logError = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+      sender.sendCode.mockRejectedValue('smtp unavailable');
+
+      await expect(service.issueFor(buildStudent())).resolves.toBe(true);
+      await flushPromises();
+
+      expect(logError).toHaveBeenCalledWith(
+        'Could not send a code to user user-1.',
+        'smtp unavailable',
+      );
+      logError.mockRestore();
+    });
   });
 
   describe('redeem', () => {

@@ -1,4 +1,8 @@
-import { ConflictError } from '@/shared/errors/application.error';
+import {
+  ConflictError,
+  InvalidRequestError,
+  NotFoundError,
+} from '@/shared/errors/application.error';
 import { InvalidUserError } from '@/users/domain/errors/invalid-user.error';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import type { User } from '@/users/domain/entities/user.entity';
@@ -32,6 +36,7 @@ const studentInput = {
 describe('RegisterUserUseCase', () => {
   let users: ReturnType<typeof userRepositoryStub>;
   let codes: ReturnType<typeof codeServiceStub>;
+  let findCurrentTerm: jest.Mock;
   let useCase: RegisterUserUseCase;
 
   beforeEach(() => {
@@ -47,8 +52,9 @@ describe('RegisterUserUseCase', () => {
       compareWithDecoy: jest.fn(),
     };
     const currentTerm = Object.assign(new CommitmentTerm(), { id: 'term-1', version: '1.2' });
+    findCurrentTerm = jest.fn().mockResolvedValue(currentTerm);
     const commitmentTerms = {
-      findCurrent: jest.fn().mockResolvedValue(currentTerm),
+      findCurrent: findCurrentTerm,
       findByVersion: jest.fn(),
     } as unknown as CommitmentTermRepository;
     useCase = new RegisterUserUseCase(
@@ -65,6 +71,28 @@ describe('RegisterUserUseCase', () => {
     expect(user).toMatchObject({ email: 'carlos@uefs.br', passwordHash: 'hashed', active: false });
     expect(user.isPendingVerification()).toBe(true);
     expect(codes.issueFor).toHaveBeenCalledWith(user);
+  });
+
+  it('requires explicit acceptance before looking up or creating an account', async () => {
+    await expect(useCase.execute({ ...tutorInput, acceptsTerms: false })).rejects.toBeInstanceOf(
+      InvalidRequestError,
+    );
+    expect(users.findByEmail).not.toHaveBeenCalled();
+    expect(users.saveWithTermAcceptance).not.toHaveBeenCalled();
+  });
+
+  it('rejects registration when no commitment term is current', async () => {
+    findCurrentTerm.mockResolvedValue(null);
+
+    await expect(useCase.execute(tutorInput)).rejects.toBeInstanceOf(NotFoundError);
+    expect(users.saveWithTermAcceptance).not.toHaveBeenCalled();
+  });
+
+  it('rejects acceptance of a stale term version', async () => {
+    await expect(
+      useCase.execute({ ...tutorInput, acceptedTermVersion: '1.1' }),
+    ).rejects.toBeInstanceOf(ConflictError);
+    expect(users.saveWithTermAcceptance).not.toHaveBeenCalled();
   });
 
   it('rejects an e-mail already registered', async () => {
