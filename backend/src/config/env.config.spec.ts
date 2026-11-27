@@ -110,6 +110,7 @@ describe('environment config factories', () => {
   it('provides database, authentication and mail config namespaces', () => {
     withEnvironment(
       {
+        DB_NAME: undefined,
         JWT_SECRET: 'test-secret',
         JWT_EXPIRES_IN: '2h',
         BCRYPT_ROUNDS: '10',
