@@ -23,7 +23,7 @@ const upload = (
 
 describe('SessionAttachment (Domain)', () => {
   it('accepts a PDF and keeps its size, type and category', () => {
-    const attachment = upload(pdf(), 'Relatório Final.pdf', AttachmentCategory.BOARD_REPORT);
+    const attachment = upload(pdf(), 'Relatório Final.pdf', AttachmentCategory.TABLE_REPORT);
 
     expect(attachment).toMatchObject({
       sessionId: 'session-1',
@@ -31,7 +31,7 @@ describe('SessionAttachment (Domain)', () => {
       fileName: 'Relatório Final.pdf',
       mimeType: 'application/pdf',
       sizeBytes: pdf().length,
-      category: AttachmentCategory.BOARD_REPORT,
+      category: AttachmentCategory.TABLE_REPORT,
     });
   });
 

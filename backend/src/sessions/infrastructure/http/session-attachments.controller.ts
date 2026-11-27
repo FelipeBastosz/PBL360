@@ -40,12 +40,12 @@ import {
 } from './session-attachments.swagger';
 
 const CATEGORY_TO_API: Record<AttachmentCategory, string> = {
-  [AttachmentCategory.BOARD_REPORT]: 'RELATORIO_MESA',
+  [AttachmentCategory.TABLE_REPORT]: 'RELATORIO_MESA',
   [AttachmentCategory.SESSION_ATTACHMENT]: 'ANEXO_SESSAO',
 };
 
 const API_TO_CATEGORY: Record<string, AttachmentCategory> = {
-  RELATORIO_MESA: AttachmentCategory.BOARD_REPORT,
+  RELATORIO_MESA: AttachmentCategory.TABLE_REPORT,
   ANEXO_SESSAO: AttachmentCategory.SESSION_ATTACHMENT,
 };
 

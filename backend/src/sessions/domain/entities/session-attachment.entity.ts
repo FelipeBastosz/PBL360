@@ -59,7 +59,7 @@ function assertValidUpload(input: NewSessionAttachment): void {
 @Index('idx_session_attachments_session_category', ['sessionId', 'category', 'createdAt'])
 @Check('ck_session_attachments_mime_type', `mime_type = 'application/pdf'`)
 @Check('ck_session_attachments_size', 'octet_length(content) BETWEEN 1 AND 10485760')
-@Check('ck_session_attachments_category', `category IN ('BOARD_REPORT', 'SESSION_ATTACHMENT')`)
+@Check('ck_session_attachments_category', `category IN ('TABLE_REPORT', 'SESSION_ATTACHMENT')`)
 export class SessionAttachment {
   @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'pk_session_attachments' })
   id!: string;

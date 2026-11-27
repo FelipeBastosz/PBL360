@@ -48,7 +48,7 @@ describe('Session attachment use cases', () => {
       });
 
     it('stores a PDF sent by a member as its uploader with explicit category', async () => {
-      await upload(pdf, AttachmentCategory.BOARD_REPORT);
+      await upload(pdf, AttachmentCategory.TABLE_REPORT);
 
       expect(access.assertMemberCanAccessSession).toHaveBeenCalledWith('session-1', student);
       expect(attachments.create).toHaveBeenCalledWith(
@@ -56,7 +56,7 @@ describe('Session attachment use cases', () => {
           sessionId: 'session-1',
           uploadedBy: 'student-1',
           fileName: 'Pesquisa.pdf',
-          category: AttachmentCategory.BOARD_REPORT,
+          category: AttachmentCategory.TABLE_REPORT,
         }),
       );
     });
