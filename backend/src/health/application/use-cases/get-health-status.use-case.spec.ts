@@ -26,6 +26,24 @@ describe('GetHealthStatusUseCase', () => {
     expect(typeof result.versao).toBe('string');
   });
 
+  it('uses the default version when the package version is not available', async () => {
+    const originalVersion = process.env.npm_package_version;
+    delete process.env.npm_package_version;
+
+    try {
+      await jest.isolateModulesAsync(async () => {
+        const { GetHealthStatusUseCase: IsolatedUseCase } =
+          await import('./get-health-status.use-case');
+        const isolated = new IsolatedUseCase({ query: jest.fn().mockResolvedValue([]) } as never);
+
+        await expect(isolated.execute()).resolves.toMatchObject({ versao: '0.1.0' });
+      });
+    } finally {
+      if (originalVersion === undefined) delete process.env.npm_package_version;
+      else process.env.npm_package_version = originalVersion;
+    }
+  });
+
   it('throws ServiceUnavailableException when database query fails', async () => {
     dataSourceMock.query.mockRejectedValueOnce(new Error('Connection lost'));
 
