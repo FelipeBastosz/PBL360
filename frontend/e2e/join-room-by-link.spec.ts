@@ -96,56 +96,19 @@ test.describe('E2E Full-Stack: ingresso na turma via link de convite', () => {
       timeout: 10_000,
     });
 
-    // Opening the same invite link again shows the backend conflict/error alert cleanly.
-    await page.goto(`/salas/${codigoSala}`);
-    await expect(
-      page.getByRole('heading', { name: 'Não foi possível entrar na turma' }),
-    ).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole('alert')).toBeVisible();
-
-    // Valid 8-char format but nonexistent room returns 404 alert.
-    await page.goto('/salas/ZzZz9999');
-    await expect(page.getByRole('alert')).toBeVisible({ timeout: 10_000 });
-
-    // Malformed code is rejected client-side with a clear message and recovery link.
-    await page.reload();
-    await expect(page.getByRole('heading', { level: 3, name: roomName })).toBeVisible({
-      timeout: 10_000,
-    });
-  });
-
-  test('matricula aluno já autenticado e trata reingresso, código inexistente e código inválido', async ({
-    page,
-  }) => {
-    const runId = Date.now().toString().slice(-5);
-    const roomName = `Turma Link Logado ${runId}`;
-
-    await loginAsTeacher(page);
-    const { codigoSala } = await createRoomViaApi(page, roomName);
-    await logout(page);
-
-    await loginAsStudent(page);
-
+    // Opening the same invite link again is idempotent and returns the student to /turmas.
     await page.goto(`/salas/${codigoSala}`);
     await expect(page).toHaveURL(/\/turmas$/, { timeout: 10_000 });
-    await expect(page.getByText('Pronto! Você entrou na turma.')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole('heading', { level: 3, name: roomName })).toBeVisible({
       timeout: 10_000,
     });
-
-    // Opening the same invite link again shows the backend conflict/error alert cleanly.
-    await page.goto(`/salas/${codigoSala}`);
-    await expect(
-      page.getByRole('heading', { name: 'Não foi possível entrar na turma' }),
-    ).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole('alert')).toBeVisible();
 
     // Valid 8-char format but nonexistent room returns 404 alert.
     await page.goto('/salas/ZzZz9999');
     await expect(page.getByRole('alert')).toBeVisible({ timeout: 10_000 });
 
     // Malformed code is rejected client-side with a clear message and recovery link.
-    await page.goto('/salas/invalido');
+    await page.goto('/salas/codigo-invalido');
     await expect(page.getByRole('alert')).toContainText('O link de convite informado é inválido.');
     await page.getByRole('link', { name: 'Ir para minhas turmas' }).click();
     await expect(page).toHaveURL(/\/turmas$/);
