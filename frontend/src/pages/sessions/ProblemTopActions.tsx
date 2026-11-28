@@ -1,6 +1,10 @@
 import type { ComponentType, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AdjustmentsHorizontalIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import {
+  AdjustmentsHorizontalIcon,
+  ClipboardDocumentListIcon,
+  DocumentTextIcon,
+} from '@heroicons/react/24/outline';
 import { ROUTES } from '@/routes/paths';
 import { INTERACTIVE_CARD_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
@@ -29,33 +33,42 @@ function ActionContent({ Icon, title, description }: ActionContentProps) {
 
 type ProblemTopActionsProps = { isProfessor: boolean; roomId: string; problemId: string };
 
+const fillParams = (template: string, roomId: string, problemId: string) =>
+  template.replace(':roomId', roomId).replace(':problemId', problemId);
+
 export function ProblemTopActions({ isProfessor, roomId, problemId }: ProblemTopActionsProps) {
   const navigate = useNavigate();
-  if (!isProfessor) return null;
-
-  const gradesPath = ROUTES.problemGrades
-    .replace(':roomId', roomId)
-    .replace(':problemId', problemId);
-
-  const formulaPath = ROUTES.problemFormula
-    .replace(':roomId', roomId)
-    .replace(':problemId', problemId);
+  const gradesPath = fillParams(ROUTES.problemGrades, roomId, problemId);
+  const formulaPath = fillParams(ROUTES.problemFormula, roomId, problemId);
+  const tableReportsPath = fillParams(ROUTES.problemTableReports, roomId, problemId);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <button type="button" onClick={() => navigate(gradesPath)} className={ACTION_CLASS}>
-        <ActionContent
-          Icon={DocumentTextIcon}
-          title="Relatório Final"
-          description="Nota final do problema"
-        />
-      </button>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {isProfessor && (
+        <button type="button" onClick={() => navigate(gradesPath)} className={ACTION_CLASS}>
+          <ActionContent
+            Icon={DocumentTextIcon}
+            title="Relatório Final"
+            description="Nota final do problema"
+          />
+        </button>
+      )}
 
-      <button type="button" onClick={() => navigate(formulaPath)} className={ACTION_CLASS}>
+      {isProfessor && (
+        <button type="button" onClick={() => navigate(formulaPath)} className={ACTION_CLASS}>
+          <ActionContent
+            Icon={AdjustmentsHorizontalIcon}
+            title="Fórmulas"
+            description="Pesos da nota final"
+          />
+        </button>
+      )}
+
+      <button type="button" onClick={() => navigate(tableReportsPath)} className={ACTION_CLASS}>
         <ActionContent
-          Icon={AdjustmentsHorizontalIcon}
-          title="Fórmulas"
-          description="Pesos da nota final"
+          Icon={ClipboardDocumentListIcon}
+          title="Relatórios de Mesa"
+          description="Relatórios das sessões"
         />
       </button>
     </div>

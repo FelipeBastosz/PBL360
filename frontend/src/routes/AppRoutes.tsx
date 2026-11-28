@@ -75,6 +75,7 @@ const SessionReportPage = lazy(() => import('@/pages/sessions/SessionReportPage'
 const ProblemFinalGradeFormulaPage = lazy(
   () => import('@/pages/formulas/ProblemFinalGradeFormulaPage'),
 );
+const ProblemTableReportsPage = lazy(() => import('@/pages/sessions/ProblemTableReportsPage'));
 
 const publicRoutes = (
   <Route element={<PublicOnlyRoute />}>
@@ -135,6 +136,7 @@ const protectedRoutes = (
     <Route path={ROUTES.sessionFeedback} element={<SessionFeedbackPage />} />
     <Route path={ROUTES.problemFeedbacks} element={<ProblemFeedbacksPage />} />
     <Route path={ROUTES.problemFormula} element={<ProblemFinalGradeFormulaPage />} />
+    <Route path={ROUTES.problemTableReports} element={<ProblemTableReportsPage />} />
   </Route>
 );
 

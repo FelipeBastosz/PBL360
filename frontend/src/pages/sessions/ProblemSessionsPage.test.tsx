@@ -123,6 +123,7 @@ describe('ProblemSessionsPage', () => {
       expect(screen.getByText('TP02')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /relatório final/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /fórmulas/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /relatórios de mesa/i })).toBeInTheDocument();
       expect(screen.getByText('Nenhuma sessão cadastrada neste problema.')).toBeInTheDocument();
 
       const fab = screen.getByRole('button', { name: /ações da sessão/i });
@@ -151,10 +152,11 @@ describe('ProblemSessionsPage', () => {
       vi.mocked(sessionService.listForRoom).mockResolvedValue([]);
     });
 
-    it('does not render Relatório Final nor fab menu', async () => {
+    it('renders Relatórios de Mesa and hides professor-only actions for student', async () => {
       renderPage(mockStudent);
 
       expect(await screen.findByText('Problema 01')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /relatórios de mesa/i })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /relatório final/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /fórmulas/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /ações da sessão/i })).not.toBeInTheDocument();

@@ -90,11 +90,14 @@ export type RoleConflictResponse = {
   ocupadoPor?: { studentId: string; name: string };
 };
 
+export type AttachmentCategory = 'RELATORIO_MESA' | 'ANEXO_SESSAO';
+
 export type SessionAttachment = {
   id: string;
   nomeArquivo: string;
   tipo: string;
   tamanho: number;
+  categoria?: AttachmentCategory;
   enviadoPor: { id: string; nome: string };
   enviadoEm: string;
 };
