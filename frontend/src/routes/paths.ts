@@ -18,6 +18,8 @@ export const ROUTES = {
   editRoom: '/turmas/:id/editar',
   roomProblems: '/turmas/:id/problemas',
   roomMembers: '/turmas/:id/participantes',
+  studentPerformance: '/turmas/:roomId/participantes/:studentId/evolucao',
+  myPerformance: '/turmas/:roomId/minha-evolucao',
   roomFinalReport: '/turmas/:id/relatorio-final',
   problemDetail: '/turmas/:roomId/problemas/:problemId',
   manageProblems: '/turmas/:id/problemas/gerenciar',
