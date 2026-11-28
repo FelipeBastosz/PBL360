@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/utils/cn';
 import { SessionTableReportsSection } from './components/SessionTableReportsSection';
 import { useProblemTableReports, type SessionTableReportsGroup } from './useProblemTableReports';
-import type { SessionAttachment } from '@/types/session';
+import type { ProblemTableReport } from '@/types/session';
 
 type ContentProps = {
   isLoading: boolean;
@@ -15,7 +15,7 @@ type ContentProps = {
   groups: SessionTableReportsGroup[];
   roomId: string;
   problemId: string;
-  onDownload: (sessionId: string, attachment: SessionAttachment) => void;
+  onDownload: (report: ProblemTableReport) => void;
 };
 
 function TableReportsContent({
@@ -81,7 +81,7 @@ export default function ProblemTableReportsPage() {
           groups={groups}
           roomId={roomId}
           problemId={problemId}
-          onDownload={(sessionId, attachment) => void downloadReport(sessionId, attachment)}
+          onDownload={(report) => void downloadReport(report)}
         />
       </main>
     </div>

@@ -9,7 +9,7 @@ import { sessionService } from '@/services/session.service';
 import type { UserResponse } from '@/types/auth';
 import type { Problem } from '@/types/problem';
 import type { Room } from '@/types/room';
-import type { Session, SessionAttachment } from '@/types/session';
+import type { ProblemTableReport, Session } from '@/types/session';
 import { triggerBlobDownload } from '@/utils/download';
 import ProblemTableReportsPage from './ProblemTableReportsPage';
 
@@ -24,6 +24,7 @@ vi.mock('@/services/session.service', () => ({
     list: vi.fn(),
     listForRoom: vi.fn(),
     listAttachments: vi.fn(),
+    listProblemTableReports: vi.fn(),
     downloadAttachment: vi.fn(),
   },
 }));
@@ -103,7 +104,7 @@ const sessionOne: Session = {
   status: 'agendada',
 };
 
-const tableReport: SessionAttachment = {
+const tableReport: ProblemTableReport = {
   id: 'att-1',
   nomeArquivo: 'Relatorio_Mesa_S1.pdf',
   tipo: 'application/pdf',
@@ -111,16 +112,14 @@ const tableReport: SessionAttachment = {
   categoria: 'RELATORIO_MESA',
   enviadoPor: { id: '2', nome: 'Ana Souza' },
   enviadoEm: '2026-08-12T10:00:00.000Z',
-};
-
-const regularAttachment: SessionAttachment = {
-  id: 'att-2',
-  nomeArquivo: 'Roteiro_Geral.pdf',
-  tipo: 'application/pdf',
-  tamanho: 2048,
-  categoria: 'ANEXO_SESSAO',
-  enviadoPor: { id: '1', nome: 'Professor Silva' },
-  enviadoEm: '2026-08-12T11:00:00.000Z',
+  sessaoId: 'sess-1',
+  sessao: {
+    id: 'sess-1',
+    titulo: 'Primeira sessão',
+    data: '12-08-2026',
+    ordem: 1,
+  },
+  urlDownload: '/sessoes/sess-1/anexos/att-1',
 };
 
 function renderPage(user: UserResponse = mockTeacher) {
@@ -148,13 +147,10 @@ describe('ProblemTableReportsPage', () => {
     vi.mocked(roomService.getById).mockResolvedValue(mockRoom);
     vi.mocked(problemService.getById).mockResolvedValue(mockProblem);
     vi.mocked(sessionService.list).mockResolvedValue([sessionTwo, sessionOne]);
-    vi.mocked(sessionService.listAttachments).mockImplementation(async (sessionId) => {
-      if (sessionId === 'sess-1') return [tableReport, regularAttachment];
-      return [];
-    });
+    vi.mocked(sessionService.listProblemTableReports).mockResolvedValue([tableReport]);
   });
 
-  it('orders sessions by ordem, filters only RELATORIO_MESA, and shows empty state', async () => {
+  it('fetches consolidated table reports from backend, groups by session chronologically, and shows empty state', async () => {
     renderPage(mockTeacher);
 
     const headings = await screen.findAllByRole('heading', { level: 2 });
@@ -163,8 +159,9 @@ describe('ProblemTableReportsPage', () => {
       'Segunda sessão · 19 ago',
     ]);
 
+    expect(sessionService.listProblemTableReports).toHaveBeenCalledWith('room-1', 'prob-1');
+    expect(sessionService.listAttachments).not.toHaveBeenCalled();
     expect(screen.getByText('Relatorio_Mesa_S1.pdf')).toBeInTheDocument();
-    expect(screen.queryByText('Roteiro_Geral.pdf')).not.toBeInTheDocument();
     expect(screen.getByText('Nenhum relatório de mesa anexado nesta sessão.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /excluir/i })).not.toBeInTheDocument();
   });
@@ -192,7 +189,7 @@ describe('ProblemTableReportsPage', () => {
     expect(await screen.findByText('Hub da Sessão')).toBeInTheDocument();
   });
 
-  it('works for students using student routes and orders sessions by ordem', async () => {
+  it('works for students using student routes and consolidated table reports endpoint', async () => {
     vi.mocked(roomService.listMyRooms).mockResolvedValue([
       { salaId: 'room-1', nome: 'MI - Algoritmos - TP02', semestre: '2026.2', totalAlunos: 3 },
     ]);
@@ -218,6 +215,18 @@ describe('ProblemTableReportsPage', () => {
       'Segunda sessão · 19 ago',
     ]);
     expect(screen.getByText('Relatorio_Mesa_S1.pdf')).toBeInTheDocument();
+    expect(sessionService.listProblemTableReports).toHaveBeenCalledWith('room-1', 'prob-1');
     expect(sessionService.list).not.toHaveBeenCalled();
+    expect(sessionService.listAttachments).not.toHaveBeenCalled();
+  });
+
+  it('shows an error alert when loading consolidated table reports fails', async () => {
+    vi.mocked(sessionService.listProblemTableReports).mockRejectedValue(
+      new Error('Falha ao consultar relatórios'),
+    );
+
+    renderPage(mockTeacher);
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 });

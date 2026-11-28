@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRightIcon, CalendarIcon } from '@heroicons/react/24/outline';
-import type { SessionAttachment } from '@/types/session';
+import type { ProblemTableReport } from '@/types/session';
 import { formatDayShortMonth } from '@/utils/date';
 import { SessionAttachmentRow } from '../SessionAttachmentRow';
 import type { SessionTableReportsGroup } from '../useProblemTableReports';
@@ -8,7 +8,7 @@ import type { SessionTableReportsGroup } from '../useProblemTableReports';
 type SessionTableReportsSectionProps = {
   group: SessionTableReportsGroup;
   sessionPath: string;
-  onDownload: (sessionId: string, attachment: SessionAttachment) => void;
+  onDownload: (report: ProblemTableReport) => void;
 };
 
 const noopDelete = async () => undefined;
@@ -17,13 +17,6 @@ function SectionBody({
   group,
   onDownload,
 }: Pick<SessionTableReportsSectionProps, 'group' | 'onDownload'>) {
-  if (group.hasError) {
-    return (
-      <p className="py-2 text-center text-sm text-danger">
-        Não foi possível carregar os relatórios desta sessão.
-      </p>
-    );
-  }
   if (group.reports.length === 0) {
     return (
       <p className="py-2 text-center text-sm text-muted">
@@ -38,7 +31,7 @@ function SectionBody({
           key={report.id}
           attachment={report}
           canDelete={false}
-          onDownload={() => onDownload(group.session.id, report)}
+          onDownload={() => onDownload(report)}
           onDelete={noopDelete}
         />
       ))}

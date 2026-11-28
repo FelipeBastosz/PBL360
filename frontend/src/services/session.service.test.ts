@@ -164,6 +164,19 @@ describe('sessionService', () => {
     expect(sent(download)).toMatchObject({ url: '/sessoes/s1/anexos/a1', responseType: 'blob' });
   });
 
+  it('lists consolidated table reports of a problem', async () => {
+    const reports = [{ id: 'att-1', sessaoId: 'sess-1', categoria: 'RELATORIO_MESA' }];
+    const adapter = respondWith(reports);
+
+    await expect(sessionService.listProblemTableReports('room-1', 'prob-1')).resolves.toEqual(
+      reports,
+    );
+    expect(sent(adapter)).toMatchObject({
+      method: 'get',
+      url: '/salas/room-1/problemas/prob-1/relatorios-mesa',
+    });
+  });
+
   it('exports session report in PDF and XLSX formats with responseType blob', async () => {
     const download = respondWith(new Blob(['%PDF']));
     await sessionService.exportSessionReport('s1', 'PDF');

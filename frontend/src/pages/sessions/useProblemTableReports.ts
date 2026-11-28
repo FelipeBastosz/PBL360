@@ -7,37 +7,52 @@ import {
   type RoomHeading,
 } from '@/services/memberRoom.service';
 import { sessionService } from '@/services/session.service';
-import type { Session, SessionAttachment } from '@/types/session';
+import type { ProblemTableReport, Session } from '@/types/session';
+import { parseApiDate } from '@/utils/date';
 import { triggerBlobDownload } from '@/utils/download';
 
 export type SessionTableReportsGroup = {
   session: Session;
-  reports: SessionAttachment[];
-  hasError: boolean;
+  reports: ProblemTableReport[];
 };
 
-const isTableReport = (attachment: SessionAttachment) => attachment.categoria === 'RELATORIO_MESA';
+const dateSortKey = (value: string): number | null => {
+  const parts = parseApiDate(value);
+  if (!parts) return null;
+  return parts.year * 10000 + parts.month * 100 + parts.day;
+};
 
-const sortBySessionOrder = (sessions: Session[]) => [...sessions].sort((a, b) => a.ordem - b.ordem);
+const compareSessions = (a: Session, b: Session): number => {
+  const dateA = dateSortKey(a.data);
+  const dateB = dateSortKey(b.data);
+  if (dateA !== null && dateB !== null && dateA !== dateB) return dateA - dateB;
+  return a.ordem - b.ordem;
+};
 
-async function fetchSessionReports(session: Session): Promise<SessionTableReportsGroup> {
-  try {
-    const attachments = await sessionService.listAttachments(session.id);
-    return { session, reports: attachments.filter(isTableReport), hasError: false };
-  } catch {
-    return { session, reports: [], hasError: true };
+function groupReportsBySession(
+  sessions: Session[],
+  reports: ProblemTableReport[],
+): SessionTableReportsGroup[] {
+  const reportsBySession = new Map<string, ProblemTableReport[]>();
+  for (const report of reports) {
+    const list = reportsBySession.get(report.sessaoId) ?? [];
+    list.push(report);
+    reportsBySession.set(report.sessaoId, list);
   }
+  return [...sessions].sort(compareSessions).map((session) => ({
+    session,
+    reports: reportsBySession.get(session.id) ?? [],
+  }));
 }
 
 async function loadProblemData(roomId: string, problemId: string, isProfessor: boolean) {
-  const [room, problem, sessions] = await Promise.all([
+  const [room, problem, sessions, reports] = await Promise.all([
     memberRoomService.room(roomId, isProfessor),
     memberRoomService.problem(roomId, problemId, isProfessor),
     memberRoomService.sessions(roomId, problemId, isProfessor),
+    sessionService.listProblemTableReports(roomId, problemId),
   ]);
-  const ordered = sortBySessionOrder(sessions);
-  const groups = await Promise.all(ordered.map(fetchSessionReports));
-  return { room, problem, groups };
+  return { room, problem, groups: groupReportsBySession(sessions, reports) };
 }
 
 type TableReportsState = {
@@ -78,10 +93,10 @@ export function useProblemTableReports(roomId: string, problemId: string, isProf
   }, [roomId, problemId, isProfessor, requestKey]);
 
   const downloadReport = useCallback(
-    async (sessionId: string, attachment: SessionAttachment) => {
+    async (report: ProblemTableReport) => {
       try {
-        const blob = await sessionService.downloadAttachment(sessionId, attachment.id);
-        triggerBlobDownload(blob, attachment.nomeArquivo);
+        const blob = await sessionService.downloadAttachment(report.sessaoId, report.id);
+        triggerBlobDownload(blob, report.nomeArquivo);
       } catch {
         notify({ tone: 'error', message: 'Não foi possível baixar o relatório de mesa.' });
       }

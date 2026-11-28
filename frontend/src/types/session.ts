@@ -102,6 +102,20 @@ export type SessionAttachment = {
   enviadoEm: string;
 };
 
+export type ProblemTableReportSession = {
+  id: string;
+  titulo: string;
+  data: string;
+  ordem: number;
+};
+
+export type ProblemTableReport = SessionAttachment & {
+  categoria: 'RELATORIO_MESA';
+  sessaoId: string;
+  sessao: ProblemTableReportSession;
+  urlDownload: string;
+};
+
 export type MemberSession = Session & {
   problemaId: string;
   salaId: string;

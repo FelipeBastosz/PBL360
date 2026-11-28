@@ -4,6 +4,7 @@ import type {
   AttendanceRecordPayload,
   CreateSessionPayload,
   MemberSession,
+  ProblemTableReport,
   RoomSession,
   SessionAttachment,
   RollCall,
@@ -75,6 +76,11 @@ export const sessionService = {
 
   listAttachments: (sessionId: string) =>
     api.get<SessionAttachment[]>(`${BASE}/${sessionId}/anexos`).then((r) => r.data),
+
+  listProblemTableReports: (roomId: string, problemId: string) =>
+    api
+      .get<ProblemTableReport[]>(`/salas/${roomId}/problemas/${problemId}/relatorios-mesa`)
+      .then((r) => r.data),
 
   uploadAttachment: (sessionId: string, file: File) => {
     const form = new FormData();
