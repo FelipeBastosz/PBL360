@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRightIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import type { SessionAttachment } from '@/types/session';
-import { countLabel } from '@/utils/countLabel';
 import { formatDayShortMonth } from '@/utils/date';
 import { SessionAttachmentRow } from '../SessionAttachmentRow';
 import type { SessionTableReportsGroup } from '../useProblemTableReports';
@@ -52,7 +51,7 @@ export function SessionTableReportsSection({
   sessionPath,
   onDownload,
 }: SessionTableReportsSectionProps) {
-  const { session, reports } = group;
+  const { session } = group;
 
   return (
     <section
@@ -64,17 +63,12 @@ export function SessionTableReportsSection({
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-accent">
             <CalendarIcon className="size-5" aria-hidden />
           </div>
-          <div className="min-w-0">
-            <h2
-              id={`table-reports-session-${session.id}`}
-              className="truncate text-base font-bold text-ink"
-            >
-              {session.titulo} · {formatDayShortMonth(session.data)}
-            </h2>
-            <p className="text-xs text-muted">
-              {countLabel(reports.length, 'relatório de mesa', 'relatórios de mesa')}
-            </p>
-          </div>
+          <h2
+            id={`table-reports-session-${session.id}`}
+            className="min-w-0 truncate text-base font-bold text-ink"
+          >
+            {session.titulo} · {formatDayShortMonth(session.data)}
+          </h2>
         </div>
         <Link
           to={sessionPath}
