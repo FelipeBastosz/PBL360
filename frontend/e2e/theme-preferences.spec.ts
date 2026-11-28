@@ -258,8 +258,9 @@ for (const viewport of [
       await page.goto('/turmas');
 
       await page.getByRole('button', { name: 'Abrir menu da conta' }).click();
+      await page.getByRole('button', { name: 'Personalização' }).click();
       await page.getByRole('radio', { name: 'Escuro', exact: true }).click();
-      await page.getByRole('radio', { name: 'Verde Petróleo', exact: true }).click();
+      await page.getByLabel('Código hexadecimal da cor').fill('#0F766E');
 
       await expect
         .poll(() => readDomTheme(page))
@@ -269,6 +270,8 @@ for (const viewport of [
           brandPrimary: '#0F766E',
           metaThemeColor: '#0F766E',
         });
+
+      await page.getByRole('button', { name: 'Fechar personalização' }).click();
 
       // Open modal inside drawer and confirm theme remains applied
       await page.getByRole('button', { name: 'Informações adicionais' }).click();
@@ -332,8 +335,9 @@ test.describe('Theme and color persistence, error handling, isolation, and keybo
     await expect(page).toHaveURL(/\/turmas/);
 
     await page.getByRole('button', { name: 'Abrir menu da conta' }).click();
+    await page.getByRole('button', { name: 'Personalização' }).click();
     await page.getByRole('radio', { name: 'Escuro', exact: true }).click();
-    await page.getByRole('radio', { name: 'Roxo', exact: true }).click();
+    await page.getByLabel('Código hexadecimal da cor').fill('#4C1D95');
 
     await expect
       .poll(() => readDomTheme(page))
@@ -353,6 +357,7 @@ test.describe('Theme and color persistence, error handling, isolation, and keybo
 
     // Restore default color
     await page.getByRole('button', { name: 'Abrir menu da conta' }).click();
+    await page.getByRole('button', { name: 'Personalização' }).click();
     const restoreBtn = page.getByRole('button', { name: 'Restaurar cor padrão' });
     await expect(restoreBtn).toBeEnabled();
     await restoreBtn.click();
@@ -364,6 +369,7 @@ test.describe('Theme and color persistence, error handling, isolation, and keybo
         brandPrimary: '#000077',
       });
     await expect(restoreBtn).toBeDisabled();
+    await page.getByRole('button', { name: 'Fechar personalização' }).click();
 
     // Logout resets DOM to light + #000077; re-login restores saved dark + #000077 from API
     await page.getByRole('button', { name: 'Sair da conta' }).click();
@@ -410,6 +416,7 @@ test.describe('Theme and color persistence, error handling, isolation, and keybo
 
     shouldFail = true;
     await page.getByRole('button', { name: 'Abrir menu da conta' }).click();
+    await page.getByRole('button', { name: 'Personalização' }).click();
     await page.getByRole('radio', { name: 'Escuro', exact: true }).click();
 
     await expect(page.getByRole('alert')).toContainText(
@@ -441,14 +448,16 @@ test.describe('Theme and color persistence, error handling, isolation, and keybo
     await expect(page).toHaveURL(/\/turmas/);
 
     await page.getByRole('button', { name: 'Abrir menu da conta' }).click();
+    await page.getByRole('button', { name: 'Personalização' }).click();
     await page.getByRole('radio', { name: 'Escuro', exact: true }).click();
-    await page.getByRole('radio', { name: 'Lilás', exact: true }).click();
+    await page.getByLabel('Código hexadecimal da cor').fill('#9333EA');
     await expect
       .poll(() => readDomTheme(page))
       .toMatchObject({
         dataTheme: 'dark',
         brandPrimary: '#9333EA',
       });
+    await page.getByRole('button', { name: 'Fechar personalização' }).click();
 
     // Logout Account A
     await page.getByRole('button', { name: 'Sair da conta' }).click();
@@ -484,6 +493,10 @@ test.describe('Theme and color persistence, error handling, isolation, and keybo
     await menuButton.focus();
     await page.keyboard.press('Enter');
 
+    const appearanceButton = page.getByRole('button', { name: 'Personalização' });
+    await appearanceButton.focus();
+    await page.keyboard.press('Enter');
+
     const lightRadio = page.getByRole('radio', { name: 'Claro', exact: true });
     const darkRadio = page.getByRole('radio', { name: 'Escuro', exact: true });
     await lightRadio.focus();
@@ -497,12 +510,9 @@ test.describe('Theme and color persistence, error handling, isolation, and keybo
         dataTheme: 'dark',
       });
 
-    const firstSwatch = page.getByRole('radio', { name: 'Vermelho Vinho', exact: true });
-    const secondSwatch = page.getByRole('radio', { name: 'Vermelho', exact: true });
-    await firstSwatch.focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(secondSwatch).toBeFocused();
-    await page.keyboard.press('Space');
+    const hexInput = page.getByLabel('Código hexadecimal da cor');
+    await hexInput.focus();
+    await hexInput.fill('#B91C1C');
 
     await expect
       .poll(() => readDomTheme(page))

@@ -78,28 +78,31 @@ describe('UserMenu', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('renders Aparência section between Informações adicionais and Sair da conta', async () => {
+  it('renders Personalização button in the drawer and opens customization popup', async () => {
     const user = userEvent.setup();
     renderUserMenu();
 
     await user.click(screen.getByRole('button', { name: /abrir menu da conta/i }));
 
-    const infoButton = screen.getByRole('button', { name: /informações adicionais/i });
-    const appearanceSection = screen.getByRole('region', { name: /aparência/i });
-    const logoutButton = screen.getByRole('button', { name: /sair da conta/i });
+    expect(screen.queryByRole('radiogroup', { name: 'Tema' })).not.toBeInTheDocument();
 
+    const appearanceButton = screen.getByRole('button', { name: /personalização/i });
+    const infoButton = screen.getByRole('button', { name: /informações adicionais/i });
+    expect(appearanceButton).toBeInTheDocument();
     expect(
       Boolean(
-        infoButton.compareDocumentPosition(appearanceSection) & Node.DOCUMENT_POSITION_FOLLOWING,
+        appearanceButton.compareDocumentPosition(infoButton) & Node.DOCUMENT_POSITION_FOLLOWING,
       ),
     ).toBe(true);
-    expect(
-      Boolean(
-        appearanceSection.compareDocumentPosition(logoutButton) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ),
-    ).toBe(true);
+
+    await user.click(appearanceButton);
+
+    expect(screen.getByRole('heading', { name: 'Personalização' })).toBeInTheDocument();
     expect(screen.getByRole('radiogroup', { name: 'Tema' })).toBeInTheDocument();
-    expect(screen.getByRole('radiogroup', { name: 'Cor do sistema' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Código hexadecimal da cor')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /restaurar cor padrão/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Fechar personalização' }));
+    expect(screen.queryByRole('heading', { name: 'Personalização' })).not.toBeInTheDocument();
   });
 });

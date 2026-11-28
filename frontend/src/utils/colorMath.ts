@@ -10,6 +10,12 @@ export interface HslColor {
   l: number;
 }
 
+export interface HsvColor {
+  h: number;
+  s: number;
+  v: number;
+}
+
 const HEX_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 
 export function isValidHexColor(value: string): boolean {
@@ -117,4 +123,46 @@ export function getContrastRatio(hexA: string, hexB: string): number {
   const lighter = Math.max(lumA, lumB);
   const darker = Math.min(lumA, lumB);
   return (lighter + 0.05) / (darker + 0.05);
+}
+
+export function rgbToHsv({ r, g, b }: RgbColor): HsvColor {
+  const rn = r / 255;
+  const gn = g / 255;
+  const bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  const delta = max - min;
+  const s = max === 0 ? 0 : delta / max;
+  const h = delta === 0 ? 0 : computeHue(rn, gn, bn, max, delta);
+  return { h, s, v: max };
+}
+
+function hsvSectorRgb(sector: number, c: number, x: number): [number, number, number] {
+  if (sector === 0) return [c, x, 0];
+  if (sector === 1) return [x, c, 0];
+  if (sector === 2) return [0, c, x];
+  if (sector === 3) return [0, x, c];
+  if (sector === 4) return [x, 0, c];
+  return [c, 0, x];
+}
+
+export function hsvToRgb({ h, s, v }: HsvColor): RgbColor {
+  const hue = ((h % 360) + 360) % 360;
+  const c = clamp(v, 0, 1) * clamp(s, 0, 1);
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = clamp(v, 0, 1) - c;
+  const [rn, gn, bn] = hsvSectorRgb(Math.floor(hue / 60) % 6, c, x);
+  return {
+    r: Math.round((rn + m) * 255),
+    g: Math.round((gn + m) * 255),
+    b: Math.round((bn + m) * 255),
+  };
+}
+
+export function hexToHsv(hex: string): HsvColor {
+  return rgbToHsv(hexToRgb(hex));
+}
+
+export function hsvToHex(hsv: HsvColor): string {
+  return rgbToHex(hsvToRgb(hsv));
 }

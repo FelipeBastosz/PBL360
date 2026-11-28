@@ -1,4 +1,4 @@
-import { type ComponentType, type KeyboardEvent, type SVGProps, useRef } from 'react';
+import { type ComponentType, type KeyboardEvent, type SVGProps, useCallback, useRef } from 'react';
 import { ArrowPathIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
@@ -6,7 +6,9 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import type { ThemePreference } from '@/types/preferences';
 import { cn } from '@/utils/cn';
 import { getNextGridIndex } from '@/utils/gridNavigation';
+import { applyPreferencesToDom } from '@/utils/themeDom';
 import { DEFAULT_SYSTEM_COLOR } from '@/utils/themePalette';
+import { ColorPicker } from './ColorPicker';
 import { ColorSwatchGrid } from './ColorSwatchGrid';
 
 type ThemeOption = {
@@ -72,7 +74,7 @@ function ThemeSelector({
   }
 
   return (
-    <div className="mt-3">
+    <div>
       <p id="appearance-theme-label" className="text-xs font-semibold text-muted">
         Tema
       </p>
@@ -100,7 +102,7 @@ function ThemeSelector({
 
 function AppearanceHeader({ isSaving }: { isSaving: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-2">
+    <div className="mb-3 flex items-center justify-between gap-2">
       <p
         id="appearance-section-title"
         className="text-xs font-bold tracking-widest text-brand-300 uppercase"
@@ -122,33 +124,52 @@ function AppearanceHeader({ isSaving }: { isSaving: boolean }) {
   );
 }
 
-export function AppearanceSection() {
+function ResetColorButton({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-border px-3 py-2.5 text-xs font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent',
+        disabled
+          ? 'cursor-not-allowed text-placeholder opacity-60'
+          : 'text-brand-accent hover:bg-brand-soft',
+      )}
+    >
+      <ArrowPathIcon className="size-3.5 shrink-0" aria-hidden />
+      <span>Restaurar cor padrão</span>
+    </button>
+  );
+}
+
+export function AppearanceSection({ showHeader = true }: { showHeader?: boolean }) {
   const { preferences, isSaving, errorMessage, setTheme, setColor, resetColor } =
     useUserPreferences();
   const isDefaultColor = preferences.cor === DEFAULT_SYSTEM_COLOR;
 
+  const handlePreviewColor = useCallback(
+    (hex: string) => {
+      applyPreferencesToDom({ tema: preferences.tema, cor: hex });
+    },
+    [preferences.tema],
+  );
+
   return (
     <section
-      aria-labelledby="appearance-section-title"
-      className="mt-4 border-t border-border-subtle px-3 pt-4 pb-3"
+      aria-labelledby={showHeader ? 'appearance-section-title' : undefined}
+      aria-label={showHeader ? undefined : 'Aparência'}
+      className={cn(showHeader && 'mt-4 border-t border-border-subtle px-3 pt-4 pb-3')}
     >
-      <AppearanceHeader isSaving={isSaving} />
+      {showHeader && <AppearanceHeader isSaving={isSaving} />}
       <ThemeSelector theme={preferences.tema} onSelect={(next) => void setTheme(next)} />
+      <ColorPicker
+        selectedHex={preferences.cor}
+        onPreview={handlePreviewColor}
+        onCommit={(hex) => void setColor(hex)}
+      />
       <ColorSwatchGrid selectedHex={preferences.cor} onSelect={(hex) => void setColor(hex)} />
-      <button
-        type="button"
-        disabled={isDefaultColor}
-        onClick={() => void resetColor()}
-        className={cn(
-          'mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent',
-          isDefaultColor
-            ? 'cursor-not-allowed text-placeholder opacity-60'
-            : 'text-brand-accent hover:bg-brand-soft',
-        )}
-      >
-        <ArrowPathIcon className="size-3.5 shrink-0" aria-hidden />
-        <span>Restaurar cor padrão</span>
-      </button>
+      <ResetColorButton disabled={isDefaultColor} onClick={() => void resetColor()} />
       {errorMessage && (
         <Alert tone="error" className="mt-3 py-2 text-xs">
           {errorMessage}
