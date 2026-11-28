@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { firstRowOrNull, requireFirstRow } from '@/shared/database/rows';
-import type { AttachmentCategory } from '../../domain/enums/attachment-category.enum';
+import { AttachmentCategory } from '../../domain/enums/attachment-category.enum';
 import { SessionAttachment } from '../../domain/entities/session-attachment.entity';
 import type {
+  ProblemTableReportSummary,
   SessionAttachmentFile,
   SessionAttachmentRepository,
   SessionAttachmentSummary,
@@ -19,6 +20,13 @@ interface SummaryRow {
   uploaderId: string;
   uploaderName: string;
   createdAt: Date;
+}
+
+interface ProblemTableReportRow extends SummaryRow {
+  sessionId: string;
+  sessionTitle: string;
+  sessionDate: string;
+  sessionOrderIndex: number;
 }
 
 const SUMMARY_COLUMNS = `
@@ -40,6 +48,21 @@ const LIST_SQL = `
   WHERE a.session_id = $1
   ORDER BY a.created_at DESC;`;
 
+const LIST_TABLE_REPORTS_BY_PROBLEM_SQL = `
+  SELECT ${SUMMARY_COLUMNS},
+         s.id AS "sessionId", s.title AS "sessionTitle",
+         to_char(s.date, 'YYYY-MM-DD') AS "sessionDate", s.order_index AS "sessionOrderIndex"
+  FROM sessions s
+  JOIN problems p ON p.id = s.problem_id
+  JOIN rooms r ON r.id = p.room_id
+  JOIN session_attachments a ON a.session_id = s.id
+  JOIN users u ON u.id = a.uploaded_by
+  WHERE s.problem_id = $1
+    AND p.room_id = $2
+    AND r.deleted_at IS NULL
+    AND a.category = $3
+  ORDER BY s.date ASC, s.order_index ASC, a.created_at DESC, a.id DESC;`;
+
 const FILE_SQL = `
   SELECT file_name AS "fileName", mime_type AS "mimeType", content
   FROM session_attachments WHERE session_id = $1 AND id = $2;`;
@@ -58,6 +81,16 @@ const toSummary = (row: SummaryRow): SessionAttachmentSummary => ({
   category: row.category,
   uploader: { id: row.uploaderId, name: row.uploaderName },
   createdAt: row.createdAt,
+});
+
+const toProblemTableReport = (row: ProblemTableReportRow): ProblemTableReportSummary => ({
+  ...toSummary(row),
+  session: {
+    id: row.sessionId,
+    title: row.sessionTitle,
+    date: row.sessionDate,
+    orderIndex: Number(row.sessionOrderIndex),
+  },
 });
 
 @Injectable()
@@ -83,6 +116,17 @@ export class PgSessionAttachmentRepository implements SessionAttachmentRepositor
   async listBySession(sessionId: string): Promise<SessionAttachmentSummary[]> {
     const rows = await this.attachments.query<SummaryRow[]>(LIST_SQL, [sessionId]);
     return rows.map(toSummary);
+  }
+
+  async listTableReportsByProblem(
+    roomId: string,
+    problemId: string,
+  ): Promise<ProblemTableReportSummary[]> {
+    const rows = await this.attachments.query<ProblemTableReportRow[]>(
+      LIST_TABLE_REPORTS_BY_PROBLEM_SQL,
+      [problemId, roomId, AttachmentCategory.TABLE_REPORT],
+    );
+    return rows.map(toProblemTableReport);
   }
 
   async findFile(sessionId: string, attachmentId: string): Promise<SessionAttachmentFile | null> {

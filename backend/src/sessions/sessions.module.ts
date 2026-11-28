@@ -33,8 +33,10 @@ import { GetMemberSessionUseCase } from './application/use-cases/get-member-sess
 import { ROOM_SESSION_REPOSITORY } from './domain/repositories/room-session.repository';
 import { PgRoomSessionRepository } from './infrastructure/database/pg-room-session.repository';
 import { SessionAttachmentsController } from './infrastructure/http/session-attachments.controller';
+import { ProblemTableReportsController } from './infrastructure/http/problem-table-reports.controller';
 import { UploadSessionAttachmentUseCase } from './application/use-cases/upload-session-attachment.use-case';
 import { ListSessionAttachmentsUseCase } from './application/use-cases/list-session-attachments.use-case';
+import { ListProblemTableReportsUseCase } from './application/use-cases/list-problem-table-reports.use-case';
 import { DeleteSessionAttachmentUseCase } from './application/use-cases/delete-session-attachment.use-case';
 import { DownloadSessionAttachmentUseCase } from './application/use-cases/download-session-attachment.use-case';
 import { GetEvaluationReleasesUseCase } from './application/use-cases/get-evaluation-releases.use-case';
@@ -77,6 +79,7 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     RollCallController,
     MemberSessionsController,
     SessionAttachmentsController,
+    ProblemTableReportsController,
     EvaluationReleasesController,
     SessionEvaluationConfigurationController,
     SessionGeneralEvaluationsController,
@@ -100,6 +103,7 @@ import { PgSessionReportRepository } from './infrastructure/database/pg-session-
     GetMemberSessionUseCase,
     UploadSessionAttachmentUseCase,
     ListSessionAttachmentsUseCase,
+    ListProblemTableReportsUseCase,
     DownloadSessionAttachmentUseCase,
     DeleteSessionAttachmentUseCase,
     GetEvaluationReleasesUseCase,
