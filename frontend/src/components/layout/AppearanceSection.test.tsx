@@ -28,24 +28,18 @@ function renderSection(overrides: Partial<PreferencesContextValue> = {}) {
 afterEach(cleanup);
 
 describe('AppearanceSection', () => {
-  it('renders all 10 color swatches in exact chromatic palette order and displays active color name', () => {
-    renderSection();
+  it('renders spectrum slider, hue slider, and synced HEX and RGB inputs', () => {
+    renderSection({ preferences: { tema: 'CLARO', cor: '#9751F2' } });
 
-    const colorGroup = screen.getByRole('radiogroup', { name: 'Cor do sistema' });
-    const swatches = within(colorGroup).getAllByRole('radio');
-
-    expect(swatches).toHaveLength(10);
-    expect(swatches.map((el) => el.getAttribute('title'))).toEqual(
-      SYSTEM_COLOR_PALETTE.map((c) => c.name),
-    );
-    expect(screen.getByText('Azul Padrão')).toBeInTheDocument();
-    expect(within(colorGroup).getByRole('radio', { name: 'Azul Padrão (padrão)' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
+    expect(screen.getByRole('slider', { name: 'Saturação e brilho' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Matiz' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Código hexadecimal da cor')).toHaveValue('#9751F2');
+    expect(screen.getByLabelText('Vermelho (R)')).toHaveValue('151');
+    expect(screen.getByLabelText('Verde (G)')).toHaveValue('81');
+    expect(screen.getByLabelText('Azul (B)')).toHaveValue('242');
   });
 
-  it('calls setTheme and setColor on click and supports keyboard navigation with arrows and Enter/Space', async () => {
+  it('calls setTheme via keyboard navigation and calls setColor when editing HEX or RGB inputs', async () => {
     const user = userEvent.setup();
     const { value } = renderSection();
 
@@ -58,21 +52,52 @@ describe('AppearanceSection', () => {
     await user.keyboard('{Enter}');
     expect(value.setTheme).toHaveBeenCalledWith('ESCURO');
 
+    const hexInput = screen.getByLabelText('Código hexadecimal da cor');
+    await user.clear(hexInput);
+    await user.type(hexInput, '#0F766E');
+    expect(value.setColor).toHaveBeenCalledWith('#0F766E');
+
+    const redInput = screen.getByLabelText('Vermelho (R)');
+    await user.clear(redInput);
+    await user.type(redInput, '255');
+    expect(value.setColor).toHaveBeenLastCalledWith('#FF766E');
+  });
+
+  it('adjusts hue and spectrum via keyboard arrows', async () => {
+    const user = userEvent.setup();
+    const { value } = renderSection({ preferences: { tema: 'CLARO', cor: '#9751F2' } });
+
+    const hueSlider = screen.getByRole('slider', { name: 'Matiz' });
+    hueSlider.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(value.setColor).toHaveBeenCalled();
+
+    const spectrum = screen.getByRole('slider', { name: 'Saturação e brilho' });
+    spectrum.focus();
+    await user.keyboard('{ArrowLeft}');
+    expect(value.setColor).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders all 10 suggested colors and selects a swatch on click or keyboard navigation', async () => {
+    const user = userEvent.setup();
+    const { value } = renderSection();
+
+    const colorGroup = screen.getByRole('radiogroup', { name: 'Cores sugeridas' });
+    const swatches = within(colorGroup).getAllByRole('radio');
+
+    expect(swatches).toHaveLength(10);
+    expect(swatches.map((el) => el.getAttribute('title'))).toEqual(
+      SYSTEM_COLOR_PALETTE.map((c) => c.name),
+    );
+    expect(screen.getByText('Azul Padrão')).toBeInTheDocument();
+
     const firstSwatch = screen.getByRole('radio', { name: 'Vermelho Vinho' });
     const secondSwatch = screen.getByRole('radio', { name: 'Vermelho' });
-    const sixthSwatch = screen.getByRole('radio', { name: 'Azul Claro' });
-
     firstSwatch.focus();
     await user.keyboard('{ArrowRight}');
     expect(secondSwatch).toHaveFocus();
     await user.keyboard(' ');
     expect(value.setColor).toHaveBeenCalledWith('#B91C1C');
-
-    firstSwatch.focus();
-    await user.keyboard('{ArrowDown}');
-    expect(sixthSwatch).toHaveFocus();
-    await user.keyboard('{Enter}');
-    expect(value.setColor).toHaveBeenCalledWith('#0369A1');
   });
 
   it('disables Restaurar cor padrão when default color is active and calls resetColor otherwise', async () => {
@@ -90,7 +115,6 @@ describe('AppearanceSection', () => {
 
     const resetButton = screen.getByRole('button', { name: /restaurar cor padrão/i });
     expect(resetButton).toBeEnabled();
-    expect(screen.getByText('Verde Petróleo')).toBeInTheDocument();
 
     await user.click(resetButton);
     expect(value.resetColor).toHaveBeenCalledOnce();

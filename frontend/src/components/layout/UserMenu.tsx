@@ -14,16 +14,18 @@ import {
   ArrowRightStartOnRectangleIcon,
   BookOpenIcon,
   InformationCircleIcon,
+  SwatchIcon,
   TagIcon,
   UserIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { AdditionalInfoModal } from '@/components/layout/AdditionalInfoModal';
-import { AppearanceSection } from '@/components/layout/AppearanceSection';
+import { AppearanceModal } from '@/components/layout/AppearanceModal';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { AuthContext } from '@/contexts/authContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { ROUTES } from '@/routes/paths';
 import type { UserResponse } from '@/types/auth';
 import { cn } from '@/utils/cn';
@@ -122,10 +124,12 @@ function DrawerHeader({ titleId, onClose }: { titleId: string; onClose: () => vo
 type DrawerNavProps = {
   onClose: () => void;
   onOpenAdditionalInfo: () => void;
+  onOpenAppearance: () => void;
 };
 
-function DrawerNav({ onClose, onOpenAdditionalInfo }: DrawerNavProps) {
+function DrawerNav({ onClose, onOpenAdditionalInfo, onOpenAppearance }: DrawerNavProps) {
   const { user } = useAuth();
+  const { preferences } = useUserPreferences();
 
   return (
     <nav aria-label="Minha conta" className="flex-1 overflow-y-auto px-3 pt-6 pb-2">
@@ -135,7 +139,23 @@ function DrawerNav({ onClose, onOpenAdditionalInfo }: DrawerNavProps) {
           <MenuEntry key={item.label} item={item} onNavigate={onClose} />
         ))}
       </div>
-      <div className="mt-4 border-t border-border-subtle pt-4">
+      <div className="mt-4 flex flex-col gap-1 border-t border-border-subtle pt-4">
+        <button
+          type="button"
+          onClick={onOpenAppearance}
+          className={cn(
+            ITEM_CLASS,
+            'transition-colors duration-200 hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-brand-accent',
+          )}
+        >
+          <SwatchIcon className="size-6 shrink-0" aria-hidden />
+          <span className="flex-1 text-left">Personalização</span>
+          <span
+            aria-hidden
+            style={{ backgroundColor: preferences.cor }}
+            className="size-4 shrink-0 rounded-full border border-black/15 shadow-xs dark:border-white/25"
+          />
+        </button>
         <button
           type="button"
           onClick={onOpenAdditionalInfo}
@@ -148,7 +168,6 @@ function DrawerNav({ onClose, onOpenAdditionalInfo }: DrawerNavProps) {
           <span className="flex-1 text-left">Informações adicionais</span>
         </button>
       </div>
-      <AppearanceSection />
     </nav>
   );
 }
@@ -182,9 +201,10 @@ function DrawerFooter({ onClose }: { onClose: () => void }) {
 
 function UserMenuDrawer({ onClose }: { onClose: () => void }) {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  useEscapeKey(true, onClose, isInfoOpen);
+  useEscapeKey(true, onClose, isInfoOpen || isAppearanceOpen);
 
   useEffect(() => panelRef.current?.focus(), []);
 
@@ -207,10 +227,15 @@ function UserMenuDrawer({ onClose }: { onClose: () => void }) {
           className="relative flex h-full w-[300px] max-w-[85vw] flex-col bg-elevated shadow-2xl animate-drawer-in focus:outline-none"
         >
           <DrawerHeader titleId={titleId} onClose={onClose} />
-          <DrawerNav onClose={onClose} onOpenAdditionalInfo={() => setIsInfoOpen(true)} />
+          <DrawerNav
+            onClose={onClose}
+            onOpenAppearance={() => setIsAppearanceOpen(true)}
+            onOpenAdditionalInfo={() => setIsInfoOpen(true)}
+          />
           <DrawerFooter onClose={onClose} />
         </div>
       </div>
+      <AppearanceModal isOpen={isAppearanceOpen} onClose={() => setIsAppearanceOpen(false)} />
       <AdditionalInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
     </>,
     document.body,

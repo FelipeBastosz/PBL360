@@ -33,13 +33,13 @@ function ColorSwatchButton({
       onClick={onSelect}
       onKeyDown={onKeyDown}
       className={cn(
-        'flex aspect-square w-full items-center justify-center rounded-lg border border-black/15 transition-transform duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent dark:border-white/25',
+        'flex h-7 w-full items-center justify-center rounded-lg border border-black/15 transition-transform duration-150 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent dark:border-white/25',
         isSelected && 'ring-2 ring-brand-accent ring-offset-2 ring-offset-elevated',
       )}
     >
       {isSelected && (
         <CheckIcon
-          className="size-4 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]"
+          className="size-3.5 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]"
           strokeWidth={2.75}
           aria-hidden
         />
@@ -73,14 +73,14 @@ export function ColorSwatchGrid({
   return (
     <div className="mt-4">
       <div className="flex items-baseline justify-between gap-2">
-        <p id="appearance-color-label" className="text-xs font-semibold text-muted">
-          Cor do sistema
+        <p id="appearance-suggested-colors-label" className="text-xs font-semibold text-muted">
+          Cores sugeridas
         </p>
         <span className="truncate text-xs font-semibold text-brand-accent">{activeName}</span>
       </div>
       <div
         role="radiogroup"
-        aria-labelledby="appearance-color-label"
+        aria-labelledby="appearance-suggested-colors-label"
         className="mt-2 grid grid-cols-5 gap-2"
       >
         {SYSTEM_COLOR_PALETTE.map((preset, index) => (
