@@ -90,13 +90,30 @@ export type RoleConflictResponse = {
   ocupadoPor?: { studentId: string; name: string };
 };
 
+export type AttachmentCategory = 'RELATORIO_MESA' | 'ANEXO_SESSAO';
+
 export type SessionAttachment = {
   id: string;
   nomeArquivo: string;
   tipo: string;
   tamanho: number;
+  categoria?: AttachmentCategory;
   enviadoPor: { id: string; nome: string };
   enviadoEm: string;
+};
+
+export type ProblemTableReportSession = {
+  id: string;
+  titulo: string;
+  data: string;
+  ordem: number;
+};
+
+export type ProblemTableReport = SessionAttachment & {
+  categoria: 'RELATORIO_MESA';
+  sessaoId: string;
+  sessao: ProblemTableReportSession;
+  urlDownload: string;
 };
 
 export type MemberSession = Session & {

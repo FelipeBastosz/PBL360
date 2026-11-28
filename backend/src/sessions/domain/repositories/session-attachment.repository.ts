@@ -13,6 +13,17 @@ export interface SessionAttachmentSummary {
   createdAt: Date;
 }
 
+export interface ProblemTableReportSession {
+  id: string;
+  title: string;
+  date: string;
+  orderIndex: number;
+}
+
+export interface ProblemTableReportSummary extends SessionAttachmentSummary {
+  session: ProblemTableReportSession;
+}
+
 export interface SessionAttachmentFile {
   fileName: string;
   mimeType: string;
@@ -22,6 +33,10 @@ export interface SessionAttachmentFile {
 export interface SessionAttachmentRepository {
   create(attachment: SessionAttachment): Promise<SessionAttachmentSummary>;
   listBySession(sessionId: string): Promise<SessionAttachmentSummary[]>;
+  listTableReportsByProblem(
+    roomId: string,
+    problemId: string,
+  ): Promise<ProblemTableReportSummary[]>;
   findFile(sessionId: string, attachmentId: string): Promise<SessionAttachmentFile | null>;
   findUploader(sessionId: string, attachmentId: string): Promise<string | null>;
   delete(attachmentId: string): Promise<void>;

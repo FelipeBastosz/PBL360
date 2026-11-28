@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { ProblemTopActions } from './ProblemTopActions';
 
 describe('ProblemTopActions', () => {
-  it('renders both Relatório Final and Fórmulas when user is professor', () => {
+  it('renders Relatório Final, Fórmulas, and Relatórios de Mesa when user is professor', () => {
     render(
       <MemoryRouter>
         <ProblemTopActions isProfessor={true} roomId="room-123" problemId="prob-1" />
@@ -14,16 +14,41 @@ describe('ProblemTopActions', () => {
 
     expect(screen.getByRole('button', { name: /relatório final/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /fórmulas/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /relatórios de mesa/i })).toBeInTheDocument();
   });
 
-  it('renders nothing when user is not professor', () => {
-    const { container } = render(
+  it('renders only Relatórios de Mesa when user is not professor', () => {
+    render(
       <MemoryRouter>
         <ProblemTopActions isProfessor={false} roomId="room-123" problemId="prob-1" />
       </MemoryRouter>,
     );
 
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByRole('button', { name: /relatório final/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /fórmulas/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /relatórios de mesa/i })).toBeInTheDocument();
+  });
+
+  it('navigates to table reports when clicking Relatórios de Mesa', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/turmas/room-123/problemas/prob-1']}>
+        <Routes>
+          <Route
+            path="/turmas/:roomId/problemas/:problemId"
+            element={<ProblemTopActions isProfessor={false} roomId="room-123" problemId="prob-1" />}
+          />
+          <Route
+            path="/turmas/:roomId/problemas/:problemId/relatorios-mesa"
+            element={<p>Tela de Relatórios de Mesa</p>}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /relatórios de mesa/i }));
+
+    expect(await screen.findByText('Tela de Relatórios de Mesa')).toBeInTheDocument();
   });
 
   it('navigates to problem formula when clicking Fórmulas', async () => {

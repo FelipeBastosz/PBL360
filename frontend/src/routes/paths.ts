@@ -57,4 +57,5 @@ export const ROUTES = {
   sessionFeedback: '/turmas/:roomId/problemas/:problemId/sessoes/:sessionId/feedback',
   problemFeedbacks: '/turmas/:roomId/problemas/:problemId/feedbacks',
   problemFormula: '/turmas/:roomId/problemas/:problemId/formula',
+  problemTableReports: '/turmas/:roomId/problemas/:problemId/relatorios-mesa',
 } as const;
