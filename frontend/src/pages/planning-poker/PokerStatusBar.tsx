@@ -1,5 +1,7 @@
 import { ArrowPathIcon, ArrowsRightLeftIcon, SignalSlashIcon } from '@heroicons/react/24/outline';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import type { PokerConnection } from '@/types/planningPoker';
+import { cn } from '@/utils/cn';
 
 type PokerStatusBarProps = {
   connection: PokerConnection;
@@ -33,7 +35,12 @@ export function PokerStatusBar({
   onOpenProgress,
 }: PokerStatusBarProps) {
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 pt-3 whitespace-nowrap lg:px-6 lg:pt-4">
+    <div
+      className={cn(
+        PAGE_CONTAINER_CLASS,
+        'flex shrink-0 flex-wrap items-center gap-2 pt-3 whitespace-nowrap lg:pt-4',
+      )}
+    >
       {connection === 'live' ? <LiveBadge /> : <ReconnectingBadge />}
       <span className="rounded-full border border-brand-border bg-brand-soft px-2.5 py-0.5 text-xs font-semibold text-brand-accent">
         {anonymous ? 'Anônimo' : 'Com nomes'}
@@ -54,7 +61,12 @@ export function PokerStatusBar({
 
 export function ShuffleNotice() {
   return (
-    <div className="flex shrink-0 items-center gap-1.5 px-4 pt-2 text-xs text-muted lg:px-6">
+    <div
+      className={cn(
+        PAGE_CONTAINER_CLASS,
+        'flex shrink-0 items-center gap-1.5 pt-2 text-xs text-muted',
+      )}
+    >
       <ArrowsRightLeftIcon className="size-3.5 text-brand-accent" strokeWidth={2} aria-hidden />
       Posições embaralhadas nesta rodada
     </div>
