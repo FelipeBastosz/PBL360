@@ -33,6 +33,15 @@ export class SessionAccessService {
     await this.assertProblemBelongsToRoom(problemId, roomId);
   }
 
+  async assertMemberCanAccessProblem(
+    roomId: string,
+    problemId: string,
+    member: RoomMember,
+  ): Promise<void> {
+    await this.roomAccess.assertMemberCanAccessRoom(roomId, member);
+    await this.assertProblemBelongsToRoom(problemId, roomId);
+  }
+
   async assertTutorCanAccessSession(sessionId: string, tutorId: string): Promise<Session>;
   async assertTutorCanAccessSession(
     roomId: string,

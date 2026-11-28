@@ -17,6 +17,7 @@ import type { EvaluationReleaseChange, EvaluationReleaseKind } from './evaluatio
 
 @Entity('sessions')
 @Unique('uq_sessions_problem_order', ['problemId', 'orderIndex'])
+@Index('idx_sessions_problem_date', ['problemId', 'date', 'orderIndex'])
 export class Session {
   @PrimaryGeneratedColumn('uuid')
   id: string;
