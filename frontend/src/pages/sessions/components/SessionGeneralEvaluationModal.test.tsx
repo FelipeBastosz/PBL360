@@ -67,22 +67,36 @@ describe('SessionGeneralEvaluationModal', () => {
     expect(screen.queryByRole('button', { name: /Excluir/i })).not.toBeInTheDocument();
   });
 
-  it('validates empty submission', async () => {
+  it('allows clearing existing evaluation to 0 characters and calls onSaved with null', async () => {
     const user = userEvent.setup();
+    const onSaved = vi.fn();
+    const onClose = vi.fn();
+    vi.mocked(sessionService.saveGeneralEvaluation).mockResolvedValueOnce(null);
+
     render(
       <SessionGeneralEvaluationModal
         isOpen={true}
-        onClose={vi.fn()}
+        onClose={onClose}
         sessionId="sess-1"
-        existingEvaluation={null}
-        onSaved={vi.fn()}
+        existingEvaluation={mockEvaluation}
+        onSaved={onSaved}
       />,
     );
 
+    const textarea = screen.getByLabelText(/Comentário Geral/);
+    await user.clear(textarea);
+    expect(screen.getByText('0 / 2000')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
-    expect(await screen.findByText('O comentário geral é obrigatório.')).toBeInTheDocument();
-    expect(sessionService.saveGeneralEvaluation).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(sessionService.saveGeneralEvaluation).toHaveBeenCalledWith('sess-1', { texto: '' });
+      expect(onSaved).toHaveBeenCalledWith(null);
+      expect(onClose).toHaveBeenCalled();
+    });
+    expect(mockNotify).toHaveBeenCalledWith({
+      tone: 'success',
+      message: 'Feedback geral removido com sucesso!',
+    });
   });
 
   it('submits valid text and calls onSaved and onClose', async () => {

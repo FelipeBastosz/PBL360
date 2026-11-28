@@ -36,13 +36,13 @@ export const feedbackService = {
     roomId: string,
     problemId: string,
     payload: SaveGeneralFeedbackPayload,
-  ): Promise<GeneralFeedbackResponse> =>
+  ): Promise<GeneralFeedbackResponse | null> =>
     api
-      .put<GeneralFeedbackResponse>(
+      .put<GeneralFeedbackResponse | null>(
         `/salas/${roomId}/problemas/${problemId}/feedbacks/geral`,
         payload,
       )
-      .then((r) => r.data),
+      .then((r) => r.data ?? null),
 
   getMySessionFeedback: (sessionId: string): Promise<ReceivedFeedbackResponse | null> =>
     api

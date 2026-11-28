@@ -29,13 +29,19 @@ export class SaveGeneralProblemFeedbackUseCase {
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(input: SaveGeneralProblemFeedbackInput): Promise<Feedback> {
+  async execute(input: SaveGeneralProblemFeedbackInput): Promise<Feedback | null> {
     await this.validateRoomAndProblem(input.roomId, input.problemId, input.tutorId);
 
     const existing = await this.feedbackRepository.findGeneralProblemFeedback(input.problemId);
+    const trimmedText = input.text.trim();
+
+    if (trimmedText === '') {
+      if (existing) await this.feedbackRepository.deleteById(existing.id);
+      return null;
+    }
 
     if (existing) {
-      const revision = existing.update(null, input.text, input.tutorId);
+      const revision = existing.update(null, trimmedText, input.tutorId);
       return this.feedbackRepository.saveWithRevision(existing, revision);
     }
 
@@ -43,7 +49,7 @@ export class SaveGeneralProblemFeedbackUseCase {
       authorId: input.tutorId,
       problemId: input.problemId,
       scope: FeedbackScope.PROBLEM,
-      text: input.text,
+      text: trimmedText,
     });
 
     return this.feedbackRepository.saveWithRevision(feedback, null);

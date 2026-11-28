@@ -22,7 +22,7 @@ export function ProblemGeneralFeedbackTextarea({
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
         <label htmlFor="problem-general-feedback-text" className="text-sm font-semibold text-ink">
-          Comentário Geral <span className="text-danger">*</span>
+          Comentário Geral
         </label>
         <span id={counterId} aria-live="polite" className="text-xs text-muted">
           {value.length} / {MAX_GENERAL_FEEDBACK_LENGTH}

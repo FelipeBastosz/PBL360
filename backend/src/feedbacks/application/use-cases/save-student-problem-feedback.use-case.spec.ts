@@ -23,6 +23,7 @@ describe('SaveStudentProblemFeedbackUseCase', () => {
       findStudentSessionFeedbackReadAt: jest.fn(),
       markStudentSessionFeedbackRead: jest.fn(),
       saveWithRevision: jest.fn().mockImplementation((f) => Promise.resolve(f)),
+      deleteById: jest.fn(),
       findRevisionsByFeedbackId: jest.fn(),
       isStudentEnrolledInRoom: jest.fn().mockResolvedValue(true),
       listStudentsWithProblemFeedbacks: jest.fn(),

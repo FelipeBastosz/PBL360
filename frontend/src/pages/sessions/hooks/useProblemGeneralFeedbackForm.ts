@@ -10,13 +10,12 @@ export type UseProblemGeneralFeedbackFormParams = {
   existingFeedback: GeneralFeedbackResponse | null;
   roomId: string;
   problemId: string;
-  onSaved: (feedback: GeneralFeedbackResponse) => void;
+  onSaved: (feedback: GeneralFeedbackResponse | null) => void;
   onClose: () => void;
 };
 
 export function validateGeneralFeedbackText(text: string): string | null {
   const trimmed = text.trim();
-  if (!trimmed) return 'O comentário de feedback geral é obrigatório.';
   if (trimmed.length > MAX_GENERAL_FEEDBACK_LENGTH) {
     return `O comentário de feedback geral deve ter no máximo ${MAX_GENERAL_FEEDBACK_LENGTH} caracteres.`;
   }
@@ -27,6 +26,15 @@ function resolveSaveError(err: unknown): string {
   return (
     (err as { message?: string })?.message || 'Não foi possível salvar o feedback geral da turma.'
   );
+}
+
+function resolveSaveSuccessMessage(
+  saved: GeneralFeedbackResponse | null,
+  existingFeedback: GeneralFeedbackResponse | null,
+): string {
+  return saved === null && existingFeedback !== null
+    ? 'Feedback geral removido com sucesso!'
+    : 'Feedback geral salvo com sucesso!';
 }
 
 function resolveEffectiveDate(feedback: GeneralFeedbackResponse | null): string | null {
@@ -58,7 +66,7 @@ export function useProblemGeneralFeedbackForm({
       const saved = await feedbackService.saveGeneralFeedback(roomId, problemId, {
         texto: texto.trim(),
       });
-      notify({ tone: 'success', message: 'Feedback geral salvo com sucesso!' });
+      notify({ tone: 'success', message: resolveSaveSuccessMessage(saved, existingFeedback) });
       onSaved(saved);
       onClose();
     } catch (err: unknown) {

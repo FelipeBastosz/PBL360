@@ -49,6 +49,7 @@ export interface FeedbackRepository {
     readAt: Date,
   ): Promise<void>;
   saveWithRevision(feedback: Feedback, revision: FeedbackRevision | null): Promise<Feedback>;
+  deleteById(id: string): Promise<void>;
   findRevisionsByFeedbackId(feedbackId: string): Promise<FeedbackRevisionItem[]>;
   isStudentEnrolledInRoom(roomId: string, studentId: string): Promise<boolean>;
   listStudentsWithProblemFeedbacks(

@@ -7,7 +7,7 @@ import { useSessionGeneralEvaluationForm } from './hooks/useSessionGeneralEvalua
 export type SessionGeneralEvaluationFormProps = {
   sessionId: string;
   existingEvaluation: SessionGeneralEvaluation | null;
-  onSaved: (saved: SessionGeneralEvaluation) => void;
+  onSaved: (saved: SessionGeneralEvaluation | null) => void;
   onClose: () => void;
 };
 

@@ -20,10 +20,14 @@ describe('SaveGeneralProblemFeedbackUseCase', () => {
       findStudentProblemFeedback: jest.fn(),
       findGeneralProblemFeedback: jest.fn(),
       findStudentSessionFeedback: jest.fn(),
+      findStudentSessionFeedbackReadAt: jest.fn(),
+      markStudentSessionFeedbackRead: jest.fn(),
       saveWithRevision: jest.fn().mockImplementation((f) => Promise.resolve(f)),
+      deleteById: jest.fn().mockResolvedValue(undefined),
       findRevisionsByFeedbackId: jest.fn(),
       isStudentEnrolledInRoom: jest.fn(),
       listStudentsWithProblemFeedbacks: jest.fn(),
+      findProblemFeedbacksWithDetails: jest.fn(),
     };
 
     const mockProblem = new Problem();
@@ -65,9 +69,9 @@ describe('SaveGeneralProblemFeedbackUseCase', () => {
       text: 'Turma engajada.',
     });
 
-    expect(result.scope).toBe(FeedbackScope.PROBLEM);
-    expect(result.text).toBe('Turma engajada.');
-    expect(result.recipientId).toBeNull();
+    expect(result?.scope).toBe(FeedbackScope.PROBLEM);
+    expect(result?.text).toBe('Turma engajada.');
+    expect(result?.recipientId).toBeNull();
     expect(feedbackRepository.saveWithRevision).toHaveBeenCalledWith(expect.any(Feedback), null);
   });
 
@@ -88,8 +92,8 @@ describe('SaveGeneralProblemFeedbackUseCase', () => {
       text: 'Texto atualizado.',
     });
 
-    expect(result.text).toBe('Texto atualizado.');
-    expect(result.editedAt).toBeInstanceOf(Date);
+    expect(result?.text).toBe('Texto atualizado.');
+    expect(result?.editedAt).toBeInstanceOf(Date);
     expect(feedbackRepository.saveWithRevision).toHaveBeenCalledWith(
       existing,
       expect.objectContaining({
@@ -98,6 +102,43 @@ describe('SaveGeneralProblemFeedbackUseCase', () => {
         editedBy: 'tutor-2',
       }),
     );
+  });
+
+  it.each(['', '   '])('deletes existing general feedback when text is "%s"', async (emptyText) => {
+    const existing = Feedback.create({
+      authorId: 'tutor-1',
+      problemId: 'problem-1',
+      scope: FeedbackScope.PROBLEM,
+      text: 'Texto anterior.',
+    });
+    existing.id = 'feedback-uuid';
+    feedbackRepository.findGeneralProblemFeedback.mockResolvedValue(existing);
+
+    const result = await useCase.execute({
+      roomId: 'room-1',
+      problemId: 'problem-1',
+      tutorId: 'tutor-1',
+      text: emptyText,
+    });
+
+    expect(result).toBeNull();
+    expect(feedbackRepository.deleteById).toHaveBeenCalledWith('feedback-uuid');
+    expect(feedbackRepository.saveWithRevision).not.toHaveBeenCalled();
+  });
+
+  it('is idempotent and returns null when clearing non-existent general feedback', async () => {
+    feedbackRepository.findGeneralProblemFeedback.mockResolvedValue(null);
+
+    const result = await useCase.execute({
+      roomId: 'room-1',
+      problemId: 'problem-1',
+      tutorId: 'tutor-1',
+      text: '',
+    });
+
+    expect(result).toBeNull();
+    expect(feedbackRepository.deleteById).not.toHaveBeenCalled();
+    expect(feedbackRepository.saveWithRevision).not.toHaveBeenCalled();
   });
 
   it('rejects if problem does not belong to room', async () => {

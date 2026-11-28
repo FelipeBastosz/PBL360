@@ -46,8 +46,11 @@ export const GetSessionGeneralEvaluationSwaggerDocs = applyDecorators(
 
 export const SaveSessionGeneralEvaluationSwaggerDocs = applyDecorators(
   secured,
-  ApiOperation({ summary: 'Registra ou atualiza a avaliação geral da sessão' }),
-  ApiOkResponse({ description: 'Avaliação salva.', type: SessionGeneralEvaluationResponseDto }),
+  ApiOperation({ summary: 'Registra, atualiza ou remove a avaliação geral da sessão' }),
+  ApiOkResponse({
+    description: 'Avaliação salva ou null quando removida por texto vazio.',
+    type: SessionGeneralEvaluationResponseDto,
+  }),
   ApiBadRequestResponse({
     description: 'Identificador ou texto inválido.',
     type: ErrorResponseDto,

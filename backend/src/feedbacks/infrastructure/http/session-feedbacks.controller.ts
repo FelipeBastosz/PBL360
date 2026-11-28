@@ -1,11 +1,11 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Put } from '@nestjs/common';
+import type { Response } from 'express';
+import { Body, Controller, Get, HttpCode, HttpStatus, Put, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UuidParam } from '@/shared/decorators/uuid-param.decorator';
 import { UserType } from '@/users/domain/enums/user-type.enum';
 import { SaveSessionFeedbackDto } from '../../application/dtos/save-session-feedback.dto';
-import type { SessionFeedbackResponseDto } from '../../application/dtos/session-feedback-response.dto';
 import { SaveSessionFeedbackUseCase } from '../../application/use-cases/save-session-feedback.use-case';
 import { GetSessionFeedbackUseCase } from '../../application/use-cases/get-session-feedback.use-case';
 import { toSessionFeedbackResponse } from './feedback.mapper';
@@ -28,14 +28,15 @@ export class SessionFeedbacksController {
     @UuidParam('alunoId') studentId: string,
     @Body() dto: SaveSessionFeedbackDto,
     @AuthenticatedUserId() tutorId: string,
-  ): Promise<SessionFeedbackResponseDto> {
+    @Res() response: Response,
+  ): Promise<void> {
     const feedback = await this.saveSessionFeedback.execute({
       sessionId,
       studentId,
       tutorId,
       text: dto.texto,
     });
-    return toSessionFeedbackResponse(feedback);
+    response.status(HttpStatus.OK).json(feedback ? toSessionFeedbackResponse(feedback) : null);
   }
 
   @Get()
@@ -45,12 +46,13 @@ export class SessionFeedbacksController {
     @UuidParam('sessaoId') sessionId: string,
     @UuidParam('alunoId') studentId: string,
     @AuthenticatedUserId() tutorId: string,
-  ): Promise<SessionFeedbackResponseDto | null> {
+    @Res() response: Response,
+  ): Promise<void> {
     const feedback = await this.getSessionFeedback.execute({
       sessionId,
       studentId,
       tutorId,
     });
-    return feedback ? toSessionFeedbackResponse(feedback) : null;
+    response.status(HttpStatus.OK).json(feedback ? toSessionFeedbackResponse(feedback) : null);
   }
 }

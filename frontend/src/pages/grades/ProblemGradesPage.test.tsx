@@ -158,6 +158,18 @@ describe('ProblemGradesPage', () => {
     expect(screen.getByText('7,8')).toBeInTheDocument();
   });
 
+  it('hides read-only general feedback block when general feedback is null while preserving grades', async () => {
+    renderPage();
+
+    expect(await screen.findByText('Ana Silva')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Feedback Geral da Turma' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('8,6')).toBeInTheDocument();
+    expect(screen.getByText('7,0')).toBeInTheDocument();
+    expect(screen.getByText('7,8')).toBeInTheDocument();
+  });
+
   it('downloads PDF report when clicking "Exportar em PDF"', async () => {
     const user = userEvent.setup();
     const fakeBlob = new Blob(['pdf-content'], { type: 'application/pdf' });

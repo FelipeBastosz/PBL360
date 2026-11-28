@@ -188,6 +188,7 @@ function CardBody({
 
 function useEvaluationModalState(
   setEvaluations: React.Dispatch<React.SetStateAction<SessionGeneralEvaluation[]>>,
+  currentUserId?: string,
 ) {
   const [selectedEvaluation, setSelectedEvaluation] = useState<SessionGeneralEvaluation | null>(
     null,
@@ -204,8 +205,12 @@ function useEvaluationModalState(
   };
   const closeModal = () => setIsModalOpen(false);
 
-  const handleSaved = (saved: SessionGeneralEvaluation) => {
+  const handleSaved = (saved: SessionGeneralEvaluation | null) => {
     setEvaluations((prev) => {
+      if (!saved) {
+        if (selectedEvaluation) return prev.filter((e) => e.id !== selectedEvaluation.id);
+        return currentUserId ? prev.filter((e) => e.autor.id !== currentUserId) : prev;
+      }
       const idx = prev.findIndex((e) => e.id === saved.id);
       return idx >= 0 ? prev.map((e, i) => (i === idx ? saved : e)) : [saved, ...prev];
     });
@@ -222,7 +227,7 @@ export function SessionGeneralEvaluationCard({
   const { user } = useAuth();
   const { evaluations, setEvaluations, isLoading, error, reload } =
     useSessionGeneralEvaluations(sessionId);
-  const modal = useEvaluationModalState(setEvaluations);
+  const modal = useEvaluationModalState(setEvaluations, user?.id);
   const myEvaluation = evaluations.find((e) => e.autor.id === user?.id) ?? null;
 
   return (

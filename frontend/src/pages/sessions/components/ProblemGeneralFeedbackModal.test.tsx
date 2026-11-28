@@ -39,6 +39,7 @@ describe('ProblemGeneralFeedbackModal', () => {
 
     expect(screen.getByRole('dialog', { name: 'Feedback Geral da Turma' })).toBeInTheDocument();
     const textarea = screen.getByLabelText(/comentário geral/i);
+    expect(screen.getByText('Comentário Geral').textContent?.trim()).toBe('Comentário Geral');
     expect(textarea).toHaveAttribute('maxLength', String(MAX_GENERAL_FEEDBACK_LENGTH));
     expect(textarea).toHaveAttribute('aria-describedby', 'problem-general-feedback-counter');
     expect(screen.getByText(`0 / ${MAX_GENERAL_FEEDBACK_LENGTH}`)).toBeInTheDocument();
@@ -46,35 +47,51 @@ describe('ProblemGeneralFeedbackModal', () => {
     expect(screen.queryByLabelText(/aluno/i)).not.toBeInTheDocument();
   });
 
-  it('validates empty or whitespace-only comment and updates aria attributes', async () => {
+  it('allows clearing existing feedback to 0 characters and calls onSaved with null', async () => {
     const user = userEvent.setup();
+    const handleSaved = vi.fn();
+    const handleClose = vi.fn();
+    const existingFeedback: GeneralFeedbackResponse = {
+      id: 'fb-gen-1',
+      escopo: 'PROBLEMA',
+      texto: 'Parecer anterior da turma.',
+      criadoEm: '2026-10-01T10:00:00Z',
+      editadoEm: null,
+    };
+    vi.mocked(feedbackService.saveGeneralFeedback).mockResolvedValueOnce(null);
 
     render(
       <ProblemGeneralFeedbackModal
         isOpen={true}
-        onClose={vi.fn()}
-        existingFeedback={null}
+        onClose={handleClose}
+        existingFeedback={existingFeedback}
         roomId="room-1"
         problemId="prob-1"
-        onSaved={vi.fn()}
+        onSaved={handleSaved}
       />,
     );
 
     const textarea = screen.getByLabelText(/comentário geral/i);
-    await user.type(textarea, '   ');
+    await user.clear(textarea);
+    expect(screen.getByText(`0 / ${MAX_GENERAL_FEEDBACK_LENGTH}`)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
-    const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent('O comentário de feedback geral é obrigatório.');
-    expect(textarea).toHaveAttribute('aria-invalid', 'true');
-    expect(textarea).toHaveAttribute(
-      'aria-describedby',
-      'problem-general-feedback-error problem-general-feedback-counter',
-    );
-    expect(feedbackService.saveGeneralFeedback).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(handleSaved).toHaveBeenCalledWith(null);
+    });
+    expect(feedbackService.saveGeneralFeedback).toHaveBeenCalledWith('room-1', 'prob-1', {
+      texto: '',
+    });
+    expect(mockNotify).toHaveBeenCalledWith({
+      tone: 'success',
+      message: 'Feedback geral removido com sucesso!',
+    });
+    expect(handleClose).toHaveBeenCalledOnce();
   });
 
-  it('validates maximum character limit aligned with backend (2000 chars)', () => {
+  it('validates maximum character limit aligned with backend (2000 chars) and accepts empty text', () => {
+    expect(validateGeneralFeedbackText('')).toBeNull();
+    expect(validateGeneralFeedbackText('   ')).toBeNull();
     expect(validateGeneralFeedbackText('a'.repeat(MAX_GENERAL_FEEDBACK_LENGTH))).toBeNull();
     expect(validateGeneralFeedbackText('a'.repeat(MAX_GENERAL_FEEDBACK_LENGTH + 1))).toBe(
       `O comentário de feedback geral deve ter no máximo ${MAX_GENERAL_FEEDBACK_LENGTH} caracteres.`,

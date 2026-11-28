@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Put } from '@nestjs/common';
+import type { Response } from 'express';
+import { Body, Controller, Get, HttpCode, HttpStatus, Put, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUserId } from '@/shared/decorators/authenticated-user-id.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
@@ -7,7 +8,6 @@ import { UserType } from '@/users/domain/enums/user-type.enum';
 import { SaveStudentProblemFeedbackDto } from '../../application/dtos/save-student-problem-feedback.dto';
 import { SaveGeneralFeedbackDto } from '../../application/dtos/save-general-feedback.dto';
 import type { StudentProblemFeedbackResponseDto } from '../../application/dtos/student-problem-feedback-response.dto';
-import type { GeneralFeedbackResponseDto } from '../../application/dtos/general-feedback-response.dto';
 import type { ProblemFeedbacksResponseDto } from '../../application/dtos/problem-feedbacks-response.dto';
 import {
   SaveStudentProblemFeedbackUseCase,
@@ -77,14 +77,15 @@ export class RoomFeedbacksController {
     @UuidParam('problemaId') problemId: string,
     @Body() dto: SaveGeneralFeedbackDto,
     @AuthenticatedUserId() tutorId: string,
-  ): Promise<GeneralFeedbackResponseDto> {
+    @Res() response: Response,
+  ): Promise<void> {
     const feedback = await this.saveGeneralFeedback.execute({
       roomId,
       problemId,
       tutorId,
       text: dto.texto,
     });
-    return toGeneralFeedbackResponse(feedback);
+    response.status(HttpStatus.OK).json(feedback ? toGeneralFeedbackResponse(feedback) : null);
   }
 
   @Get()

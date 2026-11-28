@@ -19,10 +19,14 @@ describe('GetProblemFeedbacksUseCase', () => {
       findStudentProblemFeedback: jest.fn(),
       findGeneralProblemFeedback: jest.fn(),
       findStudentSessionFeedback: jest.fn(),
+      findStudentSessionFeedbackReadAt: jest.fn(),
+      markStudentSessionFeedbackRead: jest.fn(),
       saveWithRevision: jest.fn(),
+      deleteById: jest.fn(),
       findRevisionsByFeedbackId: jest.fn(),
       isStudentEnrolledInRoom: jest.fn(),
       listStudentsWithProblemFeedbacks: jest.fn(),
+      findProblemFeedbacksWithDetails: jest.fn(),
     };
 
     const mockProblem = new Problem();

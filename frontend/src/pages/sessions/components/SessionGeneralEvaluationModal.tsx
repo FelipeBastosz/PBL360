@@ -7,7 +7,7 @@ export type SessionGeneralEvaluationModalProps = {
   onClose: () => void;
   sessionId: string;
   existingEvaluation: SessionGeneralEvaluation | null;
-  onSaved: (saved: SessionGeneralEvaluation) => void;
+  onSaved: (saved: SessionGeneralEvaluation | null) => void;
 };
 
 export function SessionGeneralEvaluationModal({

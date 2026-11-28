@@ -23,10 +23,14 @@ describe('SaveSessionFeedbackUseCase', () => {
       findStudentProblemFeedback: jest.fn(),
       findGeneralProblemFeedback: jest.fn(),
       findStudentSessionFeedback: jest.fn(),
+      findStudentSessionFeedbackReadAt: jest.fn(),
+      markStudentSessionFeedbackRead: jest.fn(),
       saveWithRevision: jest.fn().mockImplementation((f) => Promise.resolve(f)),
+      deleteById: jest.fn().mockResolvedValue(undefined),
       findRevisionsByFeedbackId: jest.fn(),
       isStudentEnrolledInRoom: jest.fn().mockResolvedValue(true),
       listStudentsWithProblemFeedbacks: jest.fn(),
+      findProblemFeedbacksWithDetails: jest.fn(),
     };
 
     const mockSession = new Session();
@@ -83,10 +87,10 @@ describe('SaveSessionFeedbackUseCase', () => {
       text: 'Boa participação na sessão.',
     });
 
-    expect(result.scope).toBe(FeedbackScope.SESSION);
-    expect(result.sessionId).toBe('session-1');
-    expect(result.recipientId).toBe('student-1');
-    expect(result.text).toBe('Boa participação na sessão.');
+    expect(result?.scope).toBe(FeedbackScope.SESSION);
+    expect(result?.sessionId).toBe('session-1');
+    expect(result?.recipientId).toBe('student-1');
+    expect(result?.text).toBe('Boa participação na sessão.');
     expect(feedbackRepository.saveWithRevision).toHaveBeenCalledWith(expect.any(Feedback), null);
   });
 
@@ -109,8 +113,8 @@ describe('SaveSessionFeedbackUseCase', () => {
       text: 'Texto atualizado.',
     });
 
-    expect(result.text).toBe('Texto atualizado.');
-    expect(result.editedAt).toBeInstanceOf(Date);
+    expect(result?.text).toBe('Texto atualizado.');
+    expect(result?.editedAt).toBeInstanceOf(Date);
     expect(feedbackRepository.saveWithRevision).toHaveBeenCalledWith(
       existing,
       expect.objectContaining({
@@ -119,6 +123,45 @@ describe('SaveSessionFeedbackUseCase', () => {
         editedBy: 'tutor-2',
       }),
     );
+  });
+
+  it.each(['', '   '])('deletes existing session feedback when text is "%s"', async (emptyText) => {
+    const existing = Feedback.create({
+      authorId: 'tutor-1',
+      problemId: 'problem-1',
+      sessionId: 'session-1',
+      recipientId: 'student-1',
+      scope: FeedbackScope.SESSION,
+      text: 'Texto anterior.',
+    });
+    existing.id = 'feedback-uuid';
+    feedbackRepository.findStudentSessionFeedback.mockResolvedValue(existing);
+
+    const result = await useCase.execute({
+      sessionId: 'session-1',
+      studentId: 'student-1',
+      tutorId: 'tutor-1',
+      text: emptyText,
+    });
+
+    expect(result).toBeNull();
+    expect(feedbackRepository.deleteById).toHaveBeenCalledWith('feedback-uuid');
+    expect(feedbackRepository.saveWithRevision).not.toHaveBeenCalled();
+  });
+
+  it('is idempotent and returns null when clearing non-existent session feedback', async () => {
+    feedbackRepository.findStudentSessionFeedback.mockResolvedValue(null);
+
+    const result = await useCase.execute({
+      sessionId: 'session-1',
+      studentId: 'student-1',
+      tutorId: 'tutor-1',
+      text: '',
+    });
+
+    expect(result).toBeNull();
+    expect(feedbackRepository.deleteById).not.toHaveBeenCalled();
+    expect(feedbackRepository.saveWithRevision).not.toHaveBeenCalled();
   });
 
   it('rejects with UnprocessableEntityError (422) if student is not enrolled in the room', async () => {

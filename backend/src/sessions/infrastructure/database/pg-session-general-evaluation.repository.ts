@@ -35,6 +35,10 @@ const SAVE_EVALUATION = `
     saved.created_by AS "authorId", users.name AS "authorName"
   FROM saved JOIN users ON users.id = saved.created_by;`;
 
+const DELETE_EVALUATION = `
+  DELETE FROM session_general_evaluations
+  WHERE session_id = $1 AND created_by = $2;`;
+
 @Injectable()
 export class PgSessionGeneralEvaluationRepository implements SessionGeneralEvaluationRepository {
   constructor(
@@ -61,6 +65,10 @@ export class PgSessionGeneralEvaluationRepository implements SessionGeneralEvalu
       tutorId,
     ]);
     return this.toRecord(requireFirstRow(rows, 'Failed to save session general evaluation.'));
+  }
+
+  async deleteBySessionAndTutor(sessionId: string, tutorId: string): Promise<void> {
+    await this.evaluations.query(DELETE_EVALUATION, [sessionId, tutorId]);
   }
 
   private toRecord(row: SessionGeneralEvaluationRow): SessionGeneralEvaluationRecord {

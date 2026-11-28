@@ -14,7 +14,7 @@ export type ProblemGeneralFeedbackModalProps = {
   onRetryLoad?: () => void;
   roomId: string;
   problemId: string;
-  onSaved: (feedback: GeneralFeedbackResponse) => void;
+  onSaved: (feedback: GeneralFeedbackResponse | null) => void;
 };
 
 type ModalContentProps = Omit<ProblemGeneralFeedbackModalProps, 'isOpen'>;

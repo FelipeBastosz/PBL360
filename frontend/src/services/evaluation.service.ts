@@ -39,12 +39,14 @@ export const evaluationService = {
   getFeedback: (sessionId: string, studentId: string) =>
     api
       .get<SessionFeedbackResponse | null>(`/sessoes/${sessionId}/alunos/${studentId}/feedback`)
-      .then((r) => r.data),
+      .then((r) => r.data || null),
 
   saveFeedback: (sessionId: string, studentId: string, texto: string) =>
     api
-      .put<SessionFeedbackResponse>(`/sessoes/${sessionId}/alunos/${studentId}/feedback`, { texto })
-      .then((r) => r.data),
+      .put<SessionFeedbackResponse | null>(`/sessoes/${sessionId}/alunos/${studentId}/feedback`, {
+        texto,
+      })
+      .then((r) => r.data ?? null),
 
   adjustSelfAssessment: (
     sessionId: string,

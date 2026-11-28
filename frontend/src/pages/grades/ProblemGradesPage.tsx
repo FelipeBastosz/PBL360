@@ -68,7 +68,7 @@ export function ProblemGradesPage() {
               onSelectEvaluation={ctrl.setSelectedEvaluation}
               feedbacks={ctrl.feedbacks}
             />
-            {ctrl.feedbacks?.geral && (
+            {ctrl.feedbacks?.geral?.texto?.trim() && (
               <ProblemGeneralFeedbackReadOnly feedback={ctrl.feedbacks.geral} />
             )}
             <ProblemGradesActions

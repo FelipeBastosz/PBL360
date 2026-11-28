@@ -183,6 +183,53 @@ describe('Feedbacks (e2e)', () => {
       expect(listBody.alunos).toHaveLength(1);
     });
 
+    it('clears general problem feedback with empty or whitespace text, is idempotent, and rejects over 2000 chars', async () => {
+      await server()
+        .put(`/api/salas/${roomId}/problemas/${problemId}/feedbacks/geral`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ texto: 'Feedback inicial da turma.' })
+        .expect(200);
+
+      await server()
+        .put(`/api/salas/${roomId}/problemas/${problemId}/feedbacks/geral`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ texto: 'Feedback editado da turma.' })
+        .expect(200);
+
+      const cleared = await server()
+        .put(`/api/salas/${roomId}/problemas/${problemId}/feedbacks/geral`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ texto: '' })
+        .expect(200);
+      expect(cleared.text).toBe('null');
+
+      const listRes = await server()
+        .get(`/api/salas/${roomId}/problemas/${problemId}/feedbacks`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(200);
+      expect((listRes.body as ProblemFeedbacksResponse).geral).toBeNull();
+
+      const studentView = await server()
+        .get(`/api/salas/${roomId}/problemas/${problemId}/meus-feedbacks`)
+        .set('Authorization', `Bearer ${student1Token}`)
+        .expect(200);
+      expect((studentView.body as { geral: unknown }).geral).toBeNull();
+
+      // Idempotent when clearing again with spaces
+      const idempotent = await server()
+        .put(`/api/salas/${roomId}/problemas/${problemId}/feedbacks/geral`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ texto: '   ' })
+        .expect(200);
+      expect(idempotent.text).toBe('null');
+
+      await server()
+        .put(`/api/salas/${roomId}/problemas/${problemId}/feedbacks/geral`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ texto: 'a'.repeat(2001) })
+        .expect(400);
+    });
+
     it('allows co-tutor to update student feedback and creates a revision history', async () => {
       const initial = await server()
         .put(`/api/salas/${roomId}/problemas/${problemId}/feedbacks/alunos/${student1Id}`)
@@ -284,6 +331,47 @@ describe('Feedbacks (e2e)', () => {
       expect(getRes.body).toMatchObject({
         texto: 'Participação ativa na primeira sessão.',
       });
+    });
+
+    it('clears student session feedback with empty or whitespace text without altering grades and is idempotent', async () => {
+      await server()
+        .put(`/api/sessoes/${sessionId}/alunos/${student1Id}/feedback`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ texto: 'Primeiro feedback da sessão.' })
+        .expect(200);
+
+      await server()
+        .put(`/api/sessoes/${sessionId}/alunos/${student1Id}/feedback`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ texto: 'Feedback atualizado da sessão.' })
+        .expect(200);
+
+      const cleared = await server()
+        .put(`/api/sessoes/${sessionId}/alunos/${student1Id}/feedback`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ texto: '' })
+        .expect(200);
+      expect(cleared.text).toBe('null');
+
+      const afterGet = await server()
+        .get(`/api/sessoes/${sessionId}/alunos/${student1Id}/feedback`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(200);
+      expect(afterGet.text).toBe('null');
+
+      // Idempotent clear with whitespace
+      const idempotent = await server()
+        .put(`/api/sessoes/${sessionId}/alunos/${student1Id}/feedback`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ texto: '   ' })
+        .expect(200);
+      expect(idempotent.text).toBe('null');
+
+      await server()
+        .put(`/api/sessoes/${sessionId}/alunos/${student1Id}/feedback`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ texto: 'a'.repeat(2001) })
+        .expect(400);
     });
 
     it('rejects session feedback by other tutor and student (403)', async () => {

@@ -109,4 +109,15 @@ describe('feedbackService', () => {
     });
     expect(result).toEqual(mockSaved);
   });
+
+  it('returns null when clearing general problem feedback with empty texto', async () => {
+    vi.mocked(api.put).mockResolvedValueOnce({ data: null });
+
+    const result = await feedbackService.saveGeneralFeedback('room-1', 'prob-1', { texto: '' });
+
+    expect(api.put).toHaveBeenCalledWith('/salas/room-1/problemas/prob-1/feedbacks/geral', {
+      texto: '',
+    });
+    expect(result).toBeNull();
+  });
 });

@@ -8,7 +8,7 @@ export type ProblemGeneralFeedbackFormProps = {
   existingFeedback: GeneralFeedbackResponse | null;
   roomId: string;
   problemId: string;
-  onSaved: (feedback: GeneralFeedbackResponse) => void;
+  onSaved: (feedback: GeneralFeedbackResponse | null) => void;
   onClose: () => void;
 };
 

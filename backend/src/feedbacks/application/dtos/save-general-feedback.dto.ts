@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class SaveGeneralFeedbackDto {
   @ApiPropertyOptional({ example: 'PROBLEMA' })
@@ -20,13 +20,13 @@ export class SaveGeneralFeedbackDto {
   nota?: number | null;
 
   @ApiProperty({
-    description: 'Texto do feedback geral sobre o problema (1 a 2000 caracteres).',
+    description:
+      'Texto do feedback geral sobre o problema (0 a 2000 caracteres; vazio remove o feedback existente).',
     example: 'A turma como um todo evoluiu bem na formulação das hipóteses.',
-    minLength: 1,
+    minLength: 0,
     maxLength: 2000,
   })
-  @IsNotEmpty({ message: 'O texto do feedback é obrigatório.' })
   @IsString({ message: 'O texto do feedback deve ser uma cadeia de caracteres.' })
-  @Length(1, 2000, { message: 'O texto do feedback deve ter entre 1 e 2000 caracteres.' })
+  @MaxLength(2000, { message: 'O texto do feedback deve ter no máximo 2000 caracteres.' })
   texto!: string;
 }

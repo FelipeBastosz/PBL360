@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SessionGeneralEvaluationTextarea } from './SessionGeneralEvaluationTextarea';
 
 describe('SessionGeneralEvaluationTextarea', () => {
-  it('renders label with asterisk, placeholder and counter', () => {
+  it('renders optional label without asterisk, placeholder and counter', () => {
     render(
       <SessionGeneralEvaluationTextarea
         value="Texto de exemplo"
@@ -15,6 +15,7 @@ describe('SessionGeneralEvaluationTextarea', () => {
     );
 
     expect(screen.getByLabelText(/Comentário Geral/)).toBeInTheDocument();
+    expect(screen.getByText('Comentário Geral').textContent?.trim()).toBe('Comentário Geral');
     expect(screen.getByText('16 / 2000')).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText(

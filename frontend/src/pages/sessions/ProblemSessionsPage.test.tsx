@@ -245,6 +245,46 @@ describe('ProblemSessionsPage', () => {
       );
     });
 
+    it('clears existing general feedback to 0 characters and restores default card subtitle', async () => {
+      const user = userEvent.setup();
+      vi.mocked(feedbackService.getProblemFeedbacks).mockResolvedValue({
+        geral: {
+          id: 'fb-gen-1',
+          escopo: 'PROBLEMA',
+          texto: 'Parecer salvo da turma.',
+          criadoEm: '2026-10-01T10:00:00Z',
+          editadoEm: null,
+        },
+        alunos: [],
+      });
+      vi.mocked(feedbackService.saveGeneralFeedback).mockResolvedValue(null);
+
+      renderPage(mockTeacher);
+
+      expect(await screen.findByText('Feedback registrado')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: /feedback geral/i }));
+      const textarea = screen.getByLabelText(/comentário geral/i);
+      await user.clear(textarea);
+      await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+      await waitFor(() => {
+        expect(
+          screen.queryByRole('dialog', { name: 'Feedback Geral da Turma' }),
+        ).not.toBeInTheDocument();
+      });
+
+      expect(feedbackService.saveGeneralFeedback).toHaveBeenCalledWith('room-1', 'prob-1', {
+        texto: '',
+      });
+      expect(gradesService.getProblemGrades).not.toHaveBeenCalled();
+      expect(screen.getByText('Parecer geral da turma')).toBeInTheDocument();
+      expect(screen.queryByText('Feedback registrado')).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: /feedback geral/i }));
+      expect(screen.getByLabelText(/comentário geral/i)).toHaveValue('');
+    });
+
     it('preserves typed text on save error in ProblemSessionsPage', async () => {
       const user = userEvent.setup();
       vi.mocked(feedbackService.saveGeneralFeedback).mockRejectedValue(
