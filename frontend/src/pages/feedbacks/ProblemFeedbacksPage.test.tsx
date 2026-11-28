@@ -175,4 +175,45 @@ describe('ProblemFeedbacksPage', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /salvar|editar/i })).not.toBeInTheDocument();
   });
+
+  it('displays session score and discreet notice when session has grade without textual feedback', async () => {
+    vi.mocked(feedbackService.getMyProblemFeedbacks).mockResolvedValueOnce({
+      notaFinal: 8.5,
+      individual: null,
+      geral: null,
+      sessoes: [
+        {
+          sessaoId: 'sess-1',
+          rotulo: 'Sessão 1',
+          data: '01-04-2026',
+          feedback: {
+            id: null,
+            autor: { id: 'prof-1', nome: 'Prof. Silva' },
+            texto: null,
+            criadoEm: '2026-04-02T10:00:00Z',
+            editadoEm: null,
+            novo: false,
+            nota: 8.5,
+          },
+        },
+        {
+          sessaoId: 'sess-2',
+          rotulo: 'Sessão 2',
+          data: '08-04-2026',
+          feedback: null,
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByTestId('feedback-nota-final')).toHaveTextContent('Nota final 8,5');
+    expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 8,5');
+    expect(screen.getByText('Sessão 1')).toBeInTheDocument();
+    expect(
+      screen.getByText('Nenhum feedback textual registrado para esta sessão.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Sessão 2')).toBeInTheDocument();
+    expect(screen.getByText('Feedback ainda não disponível para esta sessão.')).toBeInTheDocument();
+  });
 });

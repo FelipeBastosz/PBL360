@@ -26,6 +26,15 @@ export interface ReceivedSessionRow {
   date: string;
 }
 
+export interface SubmittedSessionEvaluationRow {
+  sessionId: string;
+  authorId: string;
+  authorName: string;
+  createdAt: Date;
+  problemId: string;
+  roomId: string;
+}
+
 export function toReceivedFeedback(
   row: ReceivedFeedbackRow,
   newlyRead: Set<string>,
@@ -44,11 +53,29 @@ export function toReceivedFeedback(
   };
 }
 
+export function toGradeOnlySessionFeedback(
+  row: SubmittedSessionEvaluationRow,
+  score: number,
+  components?: ReceivedSessionComponents,
+): ReceivedFeedback {
+  return {
+    id: null,
+    author: { id: row.authorId, name: row.authorName },
+    text: null,
+    createdAt: row.createdAt,
+    editedAt: null,
+    isNew: false,
+    score,
+    ...(components ? { components } : {}),
+  };
+}
+
 export function toReceivedProblem(
   rows: ReceivedFeedbackRow[],
   sessions: ReceivedSessionRow[],
   newlyRead: Set<string>,
   grades: ReceivedFeedbackGrades,
+  evaluations: SubmittedSessionEvaluationRow[] = [],
 ): ReceivedProblemFeedbacks {
   const individual = rows.find((row) => row.scope === 'ALUNO');
   const general = rows.find((row) => row.scope === 'PROBLEMA');
@@ -56,7 +83,9 @@ export function toReceivedProblem(
     finalScore: grades.finalScore,
     individual: individual ? toIndividualFeedback(individual, newlyRead, grades.released) : null,
     general: general ? toReceivedFeedback(general, newlyRead, grades.finalScore) : null,
-    sessions: sessions.map((session) => toSessionFeedback(session, rows, newlyRead, grades)),
+    sessions: sessions.map((session) =>
+      toSessionFeedback(session, rows, newlyRead, grades, evaluations),
+    ),
   };
 }
 
@@ -69,18 +98,33 @@ function toIndividualFeedback(
   return toReceivedFeedback(row, newlyRead, score);
 }
 
+function resolveSessionFeedback(
+  row: ReceivedFeedbackRow | undefined,
+  evaluation: SubmittedSessionEvaluationRow | undefined,
+  newlyRead: Set<string>,
+  score: number | null,
+  components?: ReceivedSessionComponents,
+): ReceivedFeedback | null {
+  if (row) return toReceivedFeedback(row, newlyRead, score, components);
+  if (evaluation && score !== null)
+    return toGradeOnlySessionFeedback(evaluation, score, components);
+  return null;
+}
+
 function toSessionFeedback(
   session: ReceivedSessionRow,
   rows: ReceivedFeedbackRow[],
   newlyRead: Set<string>,
   grades: ReceivedFeedbackGrades,
+  evaluations: SubmittedSessionEvaluationRow[],
 ) {
   const row = rows.find((item) => item.scope === 'SESSAO' && item.sessionId === session.sessionId);
+  const evaluation = evaluations.find((item) => item.sessionId === session.sessionId);
   const score = grades.sessions.get(session.sessionId) ?? null;
   const components = grades.components?.get(session.sessionId);
   return {
     ...session,
-    feedback: row ? toReceivedFeedback(row, newlyRead, score, components) : null,
+    feedback: resolveSessionFeedback(row, evaluation, newlyRead, score, components),
     ...(components ? { score, components } : {}),
   };
 }

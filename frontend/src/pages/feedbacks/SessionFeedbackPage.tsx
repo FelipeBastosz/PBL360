@@ -35,6 +35,7 @@ function IndividualFeedbackSection({ feedback, sessionGrades }: IndividualFeedba
           novo={feedback.novo}
           nota={feedback.nota}
           avaliacoes={feedback.avaliacoes}
+          emptyTextMessage="Nenhum feedback textual registrado para esta sessão."
         />
       </section>
     );

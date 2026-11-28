@@ -11,10 +11,14 @@ import {
   READ_PROBLEM_FEEDBACKS,
   READ_PROBLEM_SESSIONS,
   READ_SESSION_FEEDBACK,
+  READ_SUBMITTED_PROBLEM_EVALUATIONS,
+  READ_SUBMITTED_SESSION_EVALUATION,
 } from './received-feedback.queries';
 import {
   type ReceivedFeedbackRow,
   type ReceivedSessionRow,
+  type SubmittedSessionEvaluationRow,
+  toGradeOnlySessionFeedback,
   toReceivedFeedback,
   toReceivedProblem,
 } from './received-feedback-row.mapper';
@@ -29,7 +33,7 @@ export class PgReceivedFeedbackRepository implements ReceivedFeedbackRepository 
         sessionId,
         studentId,
       ]);
-      if (!row) return null;
+      if (!row) return this.readGradeOnlySession(manager, sessionId, studentId);
       const { roomId, problemId } = row;
       const grades = await readReceivedFeedbackGrades(manager, roomId, problemId, studentId);
       const newlyRead = await this.recordViews(manager, [row.id], studentId);
@@ -47,10 +51,31 @@ export class PgReceivedFeedbackRepository implements ReceivedFeedbackRepository 
         problemId,
         studentId,
       ]);
+      const evaluations = await manager.query<SubmittedSessionEvaluationRow[]>(
+        READ_SUBMITTED_PROBLEM_EVALUATIONS,
+        [problemId, studentId],
+      );
       const grades = await readReceivedFeedbackGrades(manager, roomId, problemId, studentId);
-      const result = toReceivedProblem(rows, sessions, new Set(), grades);
+      const result = toReceivedProblem(rows, sessions, new Set(), grades, evaluations);
       return this.recordProblemViews(manager, result, studentId);
     });
+  }
+
+  private async readGradeOnlySession(manager: EntityManager, sessionId: string, studentId: string) {
+    const [evaluation] = await manager.query<SubmittedSessionEvaluationRow[]>(
+      READ_SUBMITTED_SESSION_EVALUATION,
+      [sessionId, studentId],
+    );
+    if (!evaluation) return null;
+    const grades = await readReceivedFeedbackGrades(
+      manager,
+      evaluation.roomId,
+      evaluation.problemId,
+      studentId,
+    );
+    const score = grades.sessions.get(sessionId) ?? null;
+    if (score === null) return null;
+    return toGradeOnlySessionFeedback(evaluation, score, grades.components?.get(sessionId));
   }
 
   private async recordProblemViews(
@@ -63,10 +88,10 @@ export class PgReceivedFeedbackRepository implements ReceivedFeedbackRepository 
       result.general,
       ...result.sessions.map((item) => item.feedback),
     ];
-    const ids = visible.flatMap((feedback) => (feedback ? [feedback.id] : []));
+    const ids = visible.flatMap((feedback) => (feedback?.id ? [feedback.id] : []));
     const newlyRead = await this.recordViews(manager, ids, studentId);
     for (const feedback of visible) {
-      if (feedback) feedback.isNew = newlyRead.has(feedback.id);
+      if (feedback?.id) feedback.isNew = newlyRead.has(feedback.id);
     }
     return result;
   }

@@ -65,9 +65,9 @@ export interface ReceivedSessionComponents {
 }
 
 export interface ReceivedFeedbackResponse {
-  id: string;
+  id: string | null;
   autor: FeedbackAuthor;
-  texto: string;
+  texto: string | null;
   criadoEm: string;
   editadoEm: string | null;
   novo: boolean;

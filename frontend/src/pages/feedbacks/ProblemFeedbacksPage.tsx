@@ -43,6 +43,7 @@ function SessionItem({ item }: { item: ReceivedSessionFeedback }) {
       nota={item.feedback.nota}
       tag={item.rotulo}
       avaliacoes={item.feedback.avaliacoes}
+      emptyTextMessage="Nenhum feedback textual registrado para esta sessão."
     />
   );
 }

@@ -15,11 +15,14 @@ describe('SaveSessionGeneralEvaluationUseCase', () => {
     evaluations = { save: jest.fn(), deleteBySessionAndTutor: jest.fn() };
   });
 
-  it('saves a tutor evaluation using that tutor as the owner of the record', async () => {
-    const useCase = new SaveSessionGeneralEvaluationUseCase(
-      access as SessionAccessService,
-      evaluations as SessionGeneralEvaluationRepository,
+  const createUseCase = () =>
+    new SaveSessionGeneralEvaluationUseCase(
+      access as unknown as SessionAccessService,
+      evaluations as unknown as SessionGeneralEvaluationRepository,
     );
+
+  it('saves a tutor evaluation using that tutor as the owner of the record', async () => {
+    const useCase = createUseCase();
     await useCase.execute('session-id', '  Relato do professor.  ', 'tutor-id', UserType.TUTOR);
 
     expect(access.assertMemberCanAccessSession).toHaveBeenCalledWith('session-id', {
@@ -32,10 +35,7 @@ describe('SaveSessionGeneralEvaluationUseCase', () => {
   it.each(['', '   '])(
     'deletes tutor evaluation and returns null when text is "%s"',
     async (emptyText) => {
-      const useCase = new SaveSessionGeneralEvaluationUseCase(
-        access as SessionAccessService,
-        evaluations as SessionGeneralEvaluationRepository,
-      );
+      const useCase = createUseCase();
 
       const result = await useCase.execute('session-id', emptyText, 'tutor-id', UserType.TUTOR);
 
@@ -46,10 +46,7 @@ describe('SaveSessionGeneralEvaluationUseCase', () => {
   );
 
   it('rejects student writes and does not persist them', async () => {
-    const useCase = new SaveSessionGeneralEvaluationUseCase(
-      access as SessionAccessService,
-      evaluations as SessionGeneralEvaluationRepository,
-    );
+    const useCase = createUseCase();
 
     await expect(
       useCase.execute('session-id', 'Relato do aluno.', 'student-id', UserType.STUDENT),
@@ -63,10 +60,7 @@ describe('SaveSessionGeneralEvaluationUseCase', () => {
 
   it('does not save when the tutor has no room access', async () => {
     access.assertMemberCanAccessSession.mockRejectedValue(new Error('Access denied'));
-    const useCase = new SaveSessionGeneralEvaluationUseCase(
-      access as SessionAccessService,
-      evaluations as SessionGeneralEvaluationRepository,
-    );
+    const useCase = createUseCase();
 
     await expect(
       useCase.execute('session-id', 'Relato.', 'outsider-id', UserType.TUTOR),

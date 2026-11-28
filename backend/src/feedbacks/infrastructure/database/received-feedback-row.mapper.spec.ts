@@ -70,4 +70,58 @@ describe('Received feedback grade mapping', () => {
     expect(result.general).toBeNull();
     expect(result.sessions[0]?.feedback?.score).toBeNull();
   });
+
+  it('returns grade-only session entry with null text when submitted evaluation has no textual feedback', () => {
+    const submittedAt = new Date('2026-10-02T12:00:00Z');
+    const result = toReceivedProblem([], sessions, new Set(), grades, [
+      {
+        sessionId: 'session',
+        authorId: 'tutor-1',
+        authorName: 'Prof. Silva',
+        createdAt: submittedAt,
+        problemId: 'problem',
+        roomId: 'room',
+      },
+    ]);
+
+    expect(result.sessions[0]?.feedback).toEqual({
+      id: null,
+      author: { id: 'tutor-1', name: 'Prof. Silva' },
+      text: null,
+      createdAt: submittedAt,
+      editedAt: null,
+      isNew: false,
+      score: 8.5,
+    });
+  });
+
+  it('preserves score zero and omits grade-only entry when session grade is not released', () => {
+    const submittedAt = new Date('2026-10-02T12:00:00Z');
+    const evaluation = {
+      sessionId: 'session',
+      authorId: 'tutor-1',
+      authorName: 'Prof. Silva',
+      createdAt: submittedAt,
+      problemId: 'problem',
+      roomId: 'room',
+    };
+
+    const withZero = toReceivedProblem(
+      [],
+      sessions,
+      new Set(),
+      { released: true, finalScore: 0, sessions: new Map([['session', 0]]) },
+      [evaluation],
+    );
+    expect(withZero.sessions[0]?.feedback).toMatchObject({ id: null, text: null, score: 0 });
+
+    const unreleased = toReceivedProblem(
+      [],
+      sessions,
+      new Set(),
+      { released: false, finalScore: null, sessions: new Map() },
+      [evaluation],
+    );
+    expect(unreleased.sessions[0]?.feedback).toBeNull();
+  });
 });

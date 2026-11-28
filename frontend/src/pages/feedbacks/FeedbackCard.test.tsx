@@ -101,4 +101,24 @@ describe('FeedbackCard', () => {
       screen.getByText('Feedback individual aguardando liberação da nota.'),
     ).toBeInTheDocument();
   });
+
+  it('renders score badge and discreet empty-text notice when texto is null', () => {
+    render(
+      <FeedbackCard
+        autor={baseAuthor}
+        texto={null}
+        criadoEm="2026-04-10T14:30:00Z"
+        nota={8.5}
+        tag="Sessão 1"
+        emptyTextMessage="Nenhum feedback textual registrado para esta sessão."
+      />,
+    );
+
+    expect(screen.getByText('Prof. Ana Martins')).toBeInTheDocument();
+    expect(screen.getByText('Sessão 1')).toBeInTheDocument();
+    expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 8,5');
+    expect(
+      screen.getByText('Nenhum feedback textual registrado para esta sessão.'),
+    ).toBeInTheDocument();
+  });
 });

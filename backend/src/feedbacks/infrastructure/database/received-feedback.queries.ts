@@ -32,6 +32,34 @@ export const READ_PROBLEM_SESSIONS = `
   WHERE problem_id = $1 ORDER BY date ASC, order_index ASC, id ASC;
 `;
 
+const SUBMITTED_EVALUATION_COLUMNS = `
+  e.session_id AS "sessionId",
+  COALESCE(e.updated_by, e.evaluator_id) AS "authorId",
+  u.name AS "authorName",
+  COALESCE(e.submitted_at, e.updated_at, e.created_at) AS "createdAt",
+  e.problem_id AS "problemId",
+  p.room_id AS "roomId"
+`;
+
+export const READ_SUBMITTED_SESSION_EVALUATION = `
+  SELECT ${SUBMITTED_EVALUATION_COLUMNS}
+  FROM evaluations e
+  JOIN users u ON u.id = COALESCE(e.updated_by, e.evaluator_id)
+  JOIN problems p ON p.id = e.problem_id
+  WHERE e.session_id = $1 AND e.student_id = $2
+    AND e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED'
+  LIMIT 1;
+`;
+
+export const READ_SUBMITTED_PROBLEM_EVALUATIONS = `
+  SELECT ${SUBMITTED_EVALUATION_COLUMNS}
+  FROM evaluations e
+  JOIN users u ON u.id = COALESCE(e.updated_by, e.evaluator_id)
+  JOIN problems p ON p.id = e.problem_id
+  WHERE e.problem_id = $1 AND e.student_id = $2
+    AND e.type = 'TUTOR_SESSION' AND e.status = 'SUBMITTED';
+`;
+
 // RETURNING identifies the request that first read each feedback, even under concurrency.
 export const INSERT_FIRST_VIEWS = `
   INSERT INTO feedback_views (feedback_id, student_id)

@@ -212,4 +212,100 @@ test.describe('Problem feedback scores', () => {
     await expect(page.getByRole('heading', { name: 'Geral da Turma' })).toHaveCount(0);
     await expect(page.getByRole('textbox')).toHaveCount(0);
   });
+
+  test('shows session score with discreet empty-text notice when tutor submits grade without textual feedback', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'pbl360.session',
+        JSON.stringify({
+          token: 'mock-auth-token',
+          expiraEm: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          usuario: {
+            id: 'student-1',
+            nome: 'Aluno Teste',
+            email: 'aluno@discente.edu.br',
+            tipo: 'ALUNO',
+            ativo: true,
+          },
+        }),
+      );
+    });
+    await mockAuthenticatedShell(page);
+
+    await page.route('**/api/sessoes/session-1/meu-feedback', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: null,
+          autor: { id: 'prof-1', nome: 'Prof. Silva' },
+          texto: null,
+          criadoEm: '2026-04-10T10:00:00Z',
+          editadoEm: null,
+          novo: false,
+          nota: 8.5,
+        }),
+      });
+    });
+
+    await page.route('**/api/sessoes/session-1/avaliacao-geral', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+
+    await page.route('**/api/salas/sala-1/problemas/prob-1/meus-feedbacks', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          notaFinal: 8.5,
+          feedbacks: [],
+          individual: null,
+          geral: null,
+          sessoes: [
+            {
+              sessaoId: 'session-1',
+              rotulo: 'Sessão 1',
+              data: '10-04-2026',
+              feedback: {
+                id: null,
+                autor: { id: 'prof-1', nome: 'Prof. Silva' },
+                texto: null,
+                criadoEm: '2026-04-10T10:00:00Z',
+                editadoEm: null,
+                novo: false,
+                nota: 8.5,
+              },
+            },
+            {
+              sessaoId: 'session-2',
+              rotulo: 'Sessão 2',
+              data: '17-04-2026',
+              feedback: null,
+            },
+          ],
+        }),
+      });
+    });
+
+    // 1. Session Feedback page shows grade + discreet empty-text notice
+    await page.goto('/turmas/sala-1/problemas/prob-1/sessoes/session-1/feedback');
+    await expect(page.getByRole('heading', { name: 'INDIVIDUAL' })).toBeVisible();
+    await expect(page.getByTestId('feedback-nota')).toHaveText('Nota 8,5');
+    await expect(
+      page.getByText('Nenhum feedback textual registrado para esta sessão.'),
+    ).toBeVisible();
+
+    // 2. Problem Feedbacks page shows grade + notice for evaluated session and empty state for unevaluated session
+    await page.goto('/turmas/sala-1/problemas/prob-1/feedbacks');
+    await expect(page.getByTestId('feedback-nota-final')).toHaveText('Nota final 8,5');
+    await expect(page.getByTestId('feedback-nota')).toHaveText('Nota 8,5');
+    await expect(page.getByText('Sessão 1')).toBeVisible();
+    await expect(
+      page.getByText('Nenhum feedback textual registrado para esta sessão.'),
+    ).toBeVisible();
+    await expect(page.getByText('Sessão 2')).toBeVisible();
+    await expect(page.getByText('Feedback ainda não disponível para esta sessão.')).toBeVisible();
+  });
 });
