@@ -288,6 +288,12 @@ test.describe('E2E Full-Stack: Registro de Chamada e Assentos', () => {
       ).toBeVisible();
       await expect(page.getByRole('button', { name: 'Ana Souza, fora da mesa' })).toHaveCount(0);
       await expect(carometroSection.getByText('2 alunos')).toBeVisible();
+      await expect(saveButton).toBeDisabled();
+      await expect(
+        page.getByText(
+          'Defina a presença ou ausência de 2 alunos restantes para salvar a chamada.',
+        ),
+      ).toBeVisible();
 
       const beatrizSheet = await openPresenceSheetByLongPress(
         page,
@@ -299,6 +305,10 @@ test.describe('E2E Full-Stack: Registro de Chamada e Assentos', () => {
       await expect(beatrizSheet).not.toBeVisible();
       await expect(
         page.getByRole('button', { name: 'Beatriz Oliveira, fora da mesa, Ausente' }),
+      ).toBeVisible();
+      await expect(saveButton).toBeDisabled();
+      await expect(
+        page.getByText('Defina a presença ou ausência de 1 aluno restante para salvar a chamada.'),
       ).toBeVisible();
 
       const joaoSheet = await openPresenceSheetByLongPress(
@@ -376,5 +386,190 @@ test.describe('E2E Full-Stack: Registro de Chamada e Assentos', () => {
       await persistedJoaoSheet.getByRole('button', { name: 'Fechar' }).click();
       await expect(persistedJoaoSheet).not.toBeVisible();
     });
+  });
+
+  test('bloqueia salvamento com alunos pendentes (UI e API 422) e libera com Restantes ausentes', async ({
+    page,
+  }) => {
+    test.setTimeout(60000);
+
+    const runId = Date.now().toString().slice(-4);
+    const roomName = `Turma Chamada Completa ${runId}`;
+    const problemTitle = `Problema Chamada Completa ${runId}`;
+    const sessionTitle = `Sessão Chamada Completa ${runId}`;
+
+    await page.goto('/entrar');
+    await page.getByLabel('Email Institucional').fill(TEACHER_CREDENTIALS.email);
+    await page.getByPlaceholder('Informe sua senha').fill(TEACHER_CREDENTIALS.password);
+    await page.getByRole('button', { name: 'Entrar' }).click();
+    await expect(page).toHaveURL(/\/turmas/, { timeout: 10000 });
+
+    await setupIsolatedRoomWithStudents(page, roomName);
+    await page.reload();
+
+    await page.getByPlaceholder('Pesquisar turma').fill(roomName);
+    await page.getByRole('heading', { level: 3, name: roomName }).click();
+    await page.getByRole('button', { name: 'Ações de problema' }).click();
+    await page.getByRole('button', { name: 'Criar novo problema' }).click();
+    await page.getByLabel('Título do Problema').fill(problemTitle);
+    await page.getByRole('dialog').getByRole('button', { name: 'Criar Problema' }).click();
+    await page.getByRole('heading', { level: 3, name: problemTitle }).click();
+
+    await page.getByRole('button', { name: 'Ações da sessão' }).click();
+    await page.getByRole('button', { name: 'Criar nova sessão' }).click();
+    await page.getByLabel('Título da Sessão').fill(sessionTitle);
+    await page.getByLabel('Descrição da Sessão').fill(`Sessão MEL56.1 (${runId}).`);
+    await page.getByLabel('Data da Sessão').fill('26/11/2026');
+    await page.getByRole('dialog').getByRole('button', { name: 'Criar sessão' }).click();
+    await page.getByRole('heading', { level: 3, name: new RegExp(sessionTitle) }).click();
+    await expect(page).toHaveURL(
+      /\/turmas\/[a-zA-Z0-9-]+\/problemas\/[a-zA-Z0-9-]+\/sessoes\/[a-zA-Z0-9-]+$/,
+      { timeout: 10000 },
+    );
+    await page.getByRole('link', { name: /Chamada Mesa tutorial/i }).click();
+    await expect(page).toHaveURL(/\/chamada$/, { timeout: 10000 });
+
+    const saveButton = page.getByRole('button', { name: 'Salvar chamada' });
+    await expect(saveButton).toBeDisabled();
+    await expect(
+      page.getByText('Defina a presença ou ausência de 3 alunos restantes para salvar a chamada.'),
+    ).toBeVisible();
+
+    const sessionId = new URL(page.url()).pathname.split('/').at(-2)!;
+    const incompleteStatus = await page.evaluate(async (id) => {
+      const token = (JSON.parse(localStorage.getItem('pbl360.session')!) as { token: string })
+        .token;
+      const getRes = await fetch(`/api/sessoes/${id}/chamada`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = (await getRes.json()) as { alunos: Array<{ alunoId: string }> };
+      const putRes = await fetch(`/api/sessoes/${id}/chamada`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          registros: [{ alunoId: data.alunos[0]!.alunoId, status: 'PRESENTE', lugar: 1 }],
+        }),
+      });
+      return { status: putRes.status, body: (await putRes.json()) as { message?: string } };
+    }, sessionId);
+
+    expect(incompleteStatus.status).toBe(422);
+    expect(incompleteStatus.body.message).toBe(
+      'Defina a presença ou ausência de todos os alunos da turma antes de salvar a chamada.',
+    );
+
+    await page.getByRole('button', { name: 'Ana Souza, fora da mesa' }).click();
+    await page.getByRole('button', { name: 'Lugar 1, livre' }).click();
+    await expect(saveButton).toBeDisabled();
+    await expect(
+      page.getByText('Defina a presença ou ausência de 2 alunos restantes para salvar a chamada.'),
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Restantes ausentes' }).click();
+    await expect(saveButton).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Restantes ausentes' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Todos presentes' })).toBeEnabled();
+
+    await page.getByRole('button', { name: 'Todos presentes' }).click();
+    await expect(page.getByText('Todos os alunos estão na mesa.')).toBeVisible();
+    await expect(saveButton).toBeEnabled();
+
+    await saveButton.click();
+    await expect(page.getByText('Chamada salva.')).toBeVisible();
+
+    await page.reload();
+    const tableSection = page.getByRole('region', { name: 'Chamada na mesa' });
+    await expect(tableSection.getByRole('definition')).toHaveText(['3', '0', '0', '0']);
+  });
+
+  test('não infere presença na sessão seguinte pré-preenchida, libera com Todos presentes e persiste Atrasado', async ({
+    page,
+  }) => {
+    test.setTimeout(60000);
+
+    const runId = Date.now().toString().slice(-4);
+    const roomName = `Turma Prefill E2E ${runId}`;
+    const problemTitle = `Problema Prefill E2E ${runId}`;
+    const firstSessionTitle = `Sessão 1 Prefill ${runId}`;
+    const secondSessionTitle = `Sessão 2 Prefill ${runId}`;
+
+    await page.goto('/entrar');
+    await page.getByLabel('Email Institucional').fill(TEACHER_CREDENTIALS.email);
+    await page.getByPlaceholder('Informe sua senha').fill(TEACHER_CREDENTIALS.password);
+    await page.getByRole('button', { name: 'Entrar' }).click();
+    await expect(page).toHaveURL(/\/turmas/, { timeout: 10000 });
+
+    await setupIsolatedRoomWithStudents(page, roomName);
+    await page.reload();
+
+    await page.getByPlaceholder('Pesquisar turma').fill(roomName);
+    await page.getByRole('heading', { level: 3, name: roomName }).click();
+    await page.getByRole('button', { name: 'Ações de problema' }).click();
+    await page.getByRole('button', { name: 'Criar novo problema' }).click();
+    await page.getByLabel('Título do Problema').fill(problemTitle);
+    await page.getByRole('dialog').getByRole('button', { name: 'Criar Problema' }).click();
+    await page.getByRole('heading', { level: 3, name: problemTitle }).click();
+    await expect(page).toHaveURL(/\/problemas\/[a-zA-Z0-9-]+$/, { timeout: 10000 });
+    const problemUrl = page.url();
+
+    // Session 1: only Ana is seated (Presente); Beatriz and João are marked Ausente.
+    await page.getByRole('button', { name: 'Ações da sessão' }).click();
+    await page.getByRole('button', { name: 'Criar nova sessão' }).click();
+    await page.getByLabel('Título da Sessão').fill(firstSessionTitle);
+    await page.getByLabel('Descrição da Sessão').fill(`Sessão 1 (${runId}).`);
+    await page.getByLabel('Data da Sessão').fill('25/11/2026');
+    await page.getByRole('dialog').getByRole('button', { name: 'Criar sessão' }).click();
+    await page.getByRole('heading', { level: 3, name: new RegExp(firstSessionTitle) }).click();
+    await expect(page).toHaveURL(/\/sessoes\/[a-zA-Z0-9-]+$/, { timeout: 10000 });
+    await page.getByRole('link', { name: /Chamada Mesa tutorial/i }).click();
+    await expect(page).toHaveURL(/\/chamada$/, { timeout: 10000 });
+
+    await page.getByRole('button', { name: 'Ana Souza, fora da mesa' }).click();
+    await page.getByRole('button', { name: 'Lugar 1, livre' }).click();
+    await page.getByRole('button', { name: 'Restantes ausentes' }).click();
+    await page.getByRole('button', { name: 'Salvar chamada' }).click();
+    await expect(page.getByText('Chamada salva.')).toBeVisible();
+
+    // Session 2: Ana comes prefilled as Presente, while Beatriz and João stay unmarked.
+    await page.goto(problemUrl);
+    await page.getByRole('button', { name: 'Ações da sessão' }).click();
+    await page.getByRole('button', { name: 'Criar nova sessão' }).click();
+    await page.getByLabel('Título da Sessão').fill(secondSessionTitle);
+    await page.getByLabel('Descrição da Sessão').fill(`Sessão 2 (${runId}).`);
+    await page.getByLabel('Data da Sessão').fill('28/11/2026');
+    await page.getByRole('dialog').getByRole('button', { name: 'Criar sessão' }).click();
+    await page.getByRole('heading', { level: 3, name: new RegExp(secondSessionTitle) }).click();
+    await expect(page).toHaveURL(/\/sessoes\/[a-zA-Z0-9-]+$/, { timeout: 10000 });
+    await page.getByRole('link', { name: /Chamada Mesa tutorial/i }).click();
+    await expect(page).toHaveURL(/\/chamada$/, { timeout: 10000 });
+
+    await expect(page.getByText('Mesa preenchida conforme a sessão de 25/11')).toBeVisible();
+    const saveButton = page.getByRole('button', { name: 'Salvar chamada' });
+    await expect(saveButton).toBeDisabled();
+    await expect(
+      page.getByText('Defina a presença ou ausência de 2 alunos restantes para salvar a chamada.'),
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Todos presentes' }).click();
+    await expect(saveButton).toBeEnabled();
+
+    await page.getByRole('button', { name: 'Lugar 1: Ana Souza, Presente' }).click();
+    const anaSheet = page.getByRole('dialog', { name: 'Ana Souza' });
+    await expect(anaSheet).toBeVisible();
+    await anaSheet.getByRole('radio', { name: 'Atrasado' }).click();
+    await expect(anaSheet.getByRole('radio', { name: 'Atrasado' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await anaSheet.getByRole('button', { name: 'Fechar' }).click();
+    await expect(anaSheet).not.toBeVisible();
+
+    await saveButton.click();
+    await expect(page.getByText('Chamada salva.')).toBeVisible();
+
+    await page.reload();
+    const tableSection = page.getByRole('region', { name: 'Chamada na mesa' });
+    await expect(tableSection.getByRole('definition')).toHaveText(['2', '1', '0', '0']);
+    await expect(page.getByRole('button', { name: 'Lugar 1: Ana Souza, Atrasado' })).toBeVisible();
   });
 });
