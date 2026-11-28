@@ -65,13 +65,3 @@ export class ReceivedFeedbackResponseDto {
   })
   avaliacoes?: ReceivedSessionComponentsDto;
 }
-
-export class ReceivedIndividualFeedbackResponseDto extends ReceivedFeedbackResponseDto {
-  @ApiProperty({
-    type: Number,
-    nullable: true,
-    description:
-      'Nota opcional do feedback individual. Nula enquanto não houver avaliação do tutor enviada para o aluno no problema.',
-  })
-  override nota!: number | null;
-}

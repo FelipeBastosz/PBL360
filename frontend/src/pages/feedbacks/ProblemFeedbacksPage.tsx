@@ -7,7 +7,7 @@ import { formatGrade } from '@/utils/formatGrade';
 import { EvaluationComponentGrades } from './EvaluationComponentGrades';
 import { FeedbackCard } from './FeedbackCard';
 import { FeedbackEmptyState } from './FeedbackEmptyState';
-import { GeneralFeedbackSection, IndividualFeedbackSection } from './ProblemFeedbackSections';
+import { GeneralFeedbackSection } from './ProblemFeedbackSections';
 import { useProblemFeedbacks } from './useProblemFeedbacks';
 import type { ReceivedProblemFeedbacksResponse, ReceivedSessionFeedback } from '@/types/feedback';
 import { cn } from '@/utils/cn';
@@ -60,7 +60,6 @@ function FeedbacksList({ data }: { data: ReceivedProblemFeedbacksResponse }) {
           </span>
         </section>
       )}
-      {data.individual && <IndividualFeedbackSection feedback={data.individual} />}
       {data.geral && <GeneralFeedbackSection feedback={data.geral} />}
       {data.sessoes.length > 0 && (
         <section aria-label="Feedbacks por Sessão" className="flex flex-col gap-3">
@@ -83,7 +82,6 @@ export default function ProblemFeedbacksPage() {
   const navigate = useNavigate();
   const { data, isLoading, error } = useProblemFeedbacks(roomId, problemId);
   const isEmpty =
-    !data?.individual &&
     !data?.geral &&
     (!data?.sessoes || data.sessoes.length === 0) &&
     (typeof data?.notaFinal !== 'number' || !Number.isFinite(data.notaFinal));

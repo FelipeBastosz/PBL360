@@ -58,11 +58,7 @@ export class PgReceivedFeedbackRepository implements ReceivedFeedbackRepository 
     result: ReceivedProblemFeedbacks,
     studentId: string,
   ): Promise<ReceivedProblemFeedbacks> {
-    const visible = [
-      result.individual,
-      result.general,
-      ...result.sessions.map((item) => item.feedback),
-    ];
+    const visible = [result.general, ...result.sessions.map((item) => item.feedback)];
     const ids = visible.flatMap((feedback) => (feedback ? [feedback.id] : []));
     const newlyRead = await this.recordViews(manager, ids, studentId);
     for (const feedback of visible) {

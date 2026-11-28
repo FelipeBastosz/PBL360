@@ -34,25 +34,16 @@ describe('ProblemFeedbacksPage', () => {
     vi.clearAllMocks();
   });
 
-  it('renders individual feedback at the top with score, general feedback, and sessions in order', async () => {
+  it('renders general feedback and sessions in order without general individual feedback', async () => {
     vi.mocked(feedbackService.getMyProblemFeedbacks).mockResolvedValueOnce({
       notaFinal: 8.7,
-      individual: {
-        id: 'fb-ind',
-        autor: { id: 'prof-1', nome: 'Prof. Silva' },
-        texto: 'Desempenho individual excelente.',
-        criadoEm: '2026-04-10T10:00:00Z',
-        editadoEm: null,
-        novo: true,
-        nota: 9.0,
-      },
       geral: {
         id: 'fb-geral',
         autor: { id: 'prof-1', nome: 'Prof. Silva' },
         texto: 'A turma desenvolveu ótimas hipóteses.',
         criadoEm: '2026-04-09T10:00:00Z',
         editadoEm: null,
-        novo: false,
+        novo: true,
         nota: null,
       },
       sessoes: [
@@ -81,14 +72,10 @@ describe('ProblemFeedbacksPage', () => {
 
     renderPage();
 
-    // Verify sections and ordering
-    expect(await screen.findByRole('heading', { name: 'Feedback Individual' })).toBeInTheDocument();
-    expect(screen.getByText('Desempenho individual excelente.')).toBeInTheDocument();
-    expect(screen.getByText('Nota 9,0')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Geral da Turma' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Feedback Individual' })).not.toBeInTheDocument();
     expect(screen.getByTestId('feedback-nota-final')).toHaveTextContent('Nota final 8,7');
     expect(screen.getByTestId('badge-novo')).toBeInTheDocument();
-
-    expect(screen.getByRole('heading', { name: 'Geral da Turma' })).toBeInTheDocument();
     expect(screen.getByText('A turma desenvolveu ótimas hipóteses.')).toBeInTheDocument();
 
     expect(screen.getByRole('heading', { name: 'Por Sessão' })).toBeInTheDocument();
@@ -97,10 +84,35 @@ describe('ProblemFeedbacksPage', () => {
     expect(screen.getByText('Feedback ainda não disponível para esta sessão.')).toBeInTheDocument();
   });
 
+  it('ignores legacy individual feedback fields without error', async () => {
+    const legacyResponse = {
+      notaFinal: null,
+      individual: {
+        id: 'fb-ind',
+        autor: { id: 'prof-1', nome: 'Prof. Silva' },
+        texto: 'Feedback individual legado.',
+        criadoEm: '2026-04-10T10:00:00Z',
+        editadoEm: null,
+        novo: false,
+        nota: 9.0,
+      },
+      geral: null,
+      sessoes: [],
+    };
+    vi.mocked(feedbackService.getMyProblemFeedbacks).mockResolvedValueOnce(legacyResponse as never);
+
+    renderPage();
+
+    expect(
+      await screen.findByText('Nenhum feedback disponível para este problema ainda.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Feedback individual legado.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Feedback Individual' })).not.toBeInTheDocument();
+  });
+
   it('renders empty state when there are no feedbacks', async () => {
     vi.mocked(feedbackService.getMyProblemFeedbacks).mockResolvedValueOnce({
       notaFinal: null,
-      individual: null,
       geral: null,
       sessoes: [],
     });
@@ -115,7 +127,6 @@ describe('ProblemFeedbacksPage', () => {
   it('renders the final score even when no feedbacks are available', async () => {
     vi.mocked(feedbackService.getMyProblemFeedbacks).mockResolvedValueOnce({
       notaFinal: 8.75,
-      individual: null,
       geral: null,
       sessoes: [],
     });

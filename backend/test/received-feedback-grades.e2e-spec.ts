@@ -74,12 +74,11 @@ describe('Associated grades in received feedbacks (e2e)', () => {
     const result = await readProblem();
     expect(result).toMatchObject({
       notaFinal: null,
-      individual: { nota: null },
       geral: { nota: null },
     });
+    expect(result).not.toHaveProperty('individual');
     expect(result.feedbacks.every((feedback) => feedback.nota === null)).toBe(true);
     expect(result.sessoes.every((session) => session.feedback === null)).toBe(true);
-    expect(result.individual?.texto).toBe('Feedback individual do aluno.');
     const session = await api(app, fixture.student).get(sessionFeedbackPath()).expect(200);
     expect(session.body).toBeNull();
   });
@@ -89,9 +88,9 @@ describe('Associated grades in received feedbacks (e2e)', () => {
     const result = await readProblem();
     expect(result).toMatchObject({
       notaFinal: 8.5,
-      individual: { nota: 9.5 },
       geral: { nota: 8.5 },
     });
+    expect(result).not.toHaveProperty('individual');
     expect(result.feedbacks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ tipo: 'SESSAO', sessaoId: fixture.sessionId, nota: 8.5 }),
@@ -200,7 +199,7 @@ describe('Associated grades in received feedbacks (e2e)', () => {
     expect(body.feedbacks.every((feedback) => feedback.nota === null)).toBe(true);
     const colleague = await readProblem(fixture.colleague);
     expect(colleague.notaFinal).toBe(10);
-    expect(colleague.individual).toBeNull();
+    expect(colleague).not.toHaveProperty('individual');
   });
 
   it('keeps all feedback grade routes private', async () => {

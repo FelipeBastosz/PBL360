@@ -17,7 +17,6 @@ interface FeedbackBody {
   nota?: number | null;
 }
 interface ProblemBody {
-  individual: FeedbackBody | null;
   geral: FeedbackBody | null;
   sessoes: { sessaoId: string; rotulo: string; data: string; feedback: FeedbackBody | null }[];
 }
@@ -186,18 +185,13 @@ describe('Received feedbacks (e2e)', () => {
     expect(await views()).toEqual(originalViews);
   });
 
-  it('shows individual and general feedback immediately and marks only visible feedbacks', async () => {
-    const individualId = await feedback('ALUNO', student, 0);
+  it('shows general feedback immediately, excludes individual problem feedback, and marks only visible feedbacks', async () => {
+    await feedback('ALUNO', student, 0);
     const generalId = await feedback('PROBLEMA');
     await feedback('SESSAO');
     const response = await api(app, student).get(problemPath()).expect(200);
     const body = response.body as ProblemBody;
-    expect(body.individual).toMatchObject({
-      id: individualId,
-      nota: null,
-      novo: true,
-      autor: { id: tutor.id },
-    });
+    expect(body).not.toHaveProperty('individual');
     expect(body.geral).toMatchObject({ id: generalId, novo: true });
     expect(body.geral?.nota).toBeNull();
     expect(body.sessoes.map((item) => item.sessaoId)).toEqual([sessionId, laterSessionId]);
@@ -206,10 +200,10 @@ describe('Received feedbacks (e2e)', () => {
       data: '10-10-2099',
       feedback: null,
     });
-    expect(await views()).toHaveLength(2);
+    expect(await views()).toHaveLength(1);
     await createEvaluation();
     const visible = await api(app, student).get(problemPath()).expect(200);
-    expect((visible.body as ProblemBody).individual?.nota).toBe(0);
+    expect(visible.body).not.toHaveProperty('individual');
     expect((visible.body as ProblemBody).sessoes[0]?.feedback?.novo).toBe(true);
     const direct = await api(app, student).get(sessionPath()).expect(200);
     expect((direct.body as FeedbackBody).novo).toBe(false);
@@ -244,7 +238,7 @@ describe('Received feedbacks (e2e)', () => {
     await feedback('SESSAO', colleague);
     await createEvaluation(colleague);
     const all = await api(app, student).get(`${problemPath()}?alunoId=${colleague.id}`).expect(200);
-    expect((all.body as ProblemBody).individual).toBeNull();
+    expect(all.body).not.toHaveProperty('individual');
     expect((all.body as ProblemBody).sessoes.every((item) => item.feedback === null)).toBe(true);
     const single = await api(app, student)
       .get(`${sessionPath()}?alunoId=${colleague.id}`)
@@ -288,8 +282,7 @@ describe('Received feedbacks (e2e)', () => {
   });
 
   it('keeps the first read after editing while showing the current author and text', async () => {
-    const id = await feedback('ALUNO', student, 8);
-    await createEvaluation();
+    const id = await feedback('PROBLEMA');
     await api(app, student).get(problemPath()).expect(200);
     const originalViews = await views();
     const editor = await insertUser(app, db, 'editor@uefs.br');
@@ -298,21 +291,18 @@ describe('Received feedbacks (e2e)', () => {
       editor.id,
     ]);
     await api(app, editor)
-      .put(`/salas/${roomId}/problemas/${problemId}/feedbacks/alunos/${student.id}`, {
+      .put(`/salas/${roomId}/problemas/${problemId}/feedbacks/geral`, {
         texto: 'Texto atualizado pelo professor.',
-        nota: 9,
-        justificativa: 'Correção da nota do aluno pelo professor editor.',
       })
       .expect(200);
     const response = await api(app, student).get(problemPath()).expect(200);
-    expect((response.body as ProblemBody).individual).toMatchObject({
+    expect((response.body as ProblemBody).geral).toMatchObject({
       id,
       texto: 'Texto atualizado pelo professor.',
-      nota: 9,
       novo: false,
       autor: { id: editor.id },
     });
-    expect((response.body as ProblemBody).individual?.editadoEm).not.toBeNull();
+    expect((response.body as ProblemBody).geral?.editadoEm).not.toBeNull();
     expect(await views()).toEqual(originalViews);
   });
 
@@ -349,17 +339,10 @@ describe('Received feedbacks (e2e)', () => {
     expect(response.body as ProblemBody).toEqual({
       notaFinal: null,
       feedbacks: [],
-      individual: null,
       geral: null,
       sessoes: [],
     });
     expect(await views()).toHaveLength(0);
-  });
-
-  it('preserves an optional null individual score', async () => {
-    await feedback('ALUNO');
-    const response = await api(app, student).get(problemPath()).expect(200);
-    expect((response.body as ProblemBody).individual?.nota).toBeNull();
   });
 
   it('documents both student routes and their response schemas', async () => {
