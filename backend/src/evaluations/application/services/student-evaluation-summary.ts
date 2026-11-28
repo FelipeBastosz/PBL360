@@ -15,6 +15,7 @@ export function toStudentEvaluationSummary(
   now: Date,
 ) {
   return {
+    participated: counts.rollCallDone === false ? null : counts.participating,
     self: toSelfSummary(session, counts, detail, now),
     peers: toPeerSummary(session, counts),
     feedback: {

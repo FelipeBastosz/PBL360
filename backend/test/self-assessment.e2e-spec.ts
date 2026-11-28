@@ -116,9 +116,10 @@ describe('Student self-assessment (e2e)', () => {
     expect(formBody.status).toBe('PENDENTE');
     expect(formBody.criterios).toEqual(
       expect.arrayContaining([
-        { id: firstCriterionId, nome: 'Participação', peso: 1, notaMaxima: 10 },
+        { id: firstCriterionId, nome: 'Participação', peso: 1, notaMaxima: 10, ordem: 1 },
       ]),
     );
+    expect(formBody).toMatchObject({ participou: true });
     expect(formBody.itens).toEqual([]);
 
     const draft = await api(app, student)

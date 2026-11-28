@@ -6,19 +6,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
-import { readApplyTarget } from '@/utils/navigationState';
+import { readApplyTarget, type ApplyTarget } from '@/utils/navigationState';
 import { useEditPerformanceTableForm } from './hooks/useEditPerformanceTableForm';
 import { useEditModals } from './hooks/useEditModals';
 import { EditPageBody } from './components/EditPageBody';
 import { EditModalsSection } from './components/EditModalsSection';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
+import { sumCriterionWeights } from '@/utils/criterionWeight';
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {
   const { user } = useAuth();
 
   return (
-    <header className="shrink-0 bg-brand-900 text-white">
+    <header className="shrink-0 border-b border-brand-primary-border bg-brand-primary text-white">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
         <div className="flex items-center gap-3">
           <button
@@ -58,6 +59,7 @@ function useEditPageDeletion(
   form: ReturnType<typeof useEditPerformanceTableForm>,
   modals: ReturnType<typeof useEditModals>,
   notify: (t: { tone: 'success'; message: string }) => void,
+  target: ApplyTarget | null,
 ) {
   const [isDeletingFormula, setIsDeletingFormula] = useState(false);
 
@@ -66,7 +68,7 @@ function useEditPageDeletion(
     try {
       await performanceTableService.remove(id);
       notify({ tone: 'success', message: 'Fórmula excluída com sucesso.' });
-      form.navigate(ROUTES.performanceTables, { replace: true });
+      form.navigate(ROUTES.performanceTables, { replace: true, state: target });
     } catch (err: unknown) {
       form.setErrorMessage(err instanceof Error ? err.message : 'Erro ao excluir a fórmula.');
     } finally {
@@ -94,27 +96,20 @@ function usePageSessionState() {
   return { id: id!, sessionId, target, locationState };
 }
 
-function computeDialogMetrics(
-  form: ReturnType<typeof useEditPerformanceTableForm>,
-  modals: ReturnType<typeof useEditModals>,
-) {
+function computeDialogMetrics(form: ReturnType<typeof useEditPerformanceTableForm>) {
   const canEditCriteria = form.permissions ? form.permissions.podeEditarCriterios : true;
-  const totalWeight = form.criterios.reduce((sum, c) => sum + c.peso, 0);
-  const otherWeightsSum = modals.editingCriterion
-    ? totalWeight - modals.editingCriterion.peso
-    : totalWeight;
-  return { canEditCriteria, totalWeight, otherWeightsSum };
+  const totalWeight = sumCriterionWeights(form.criterios);
+  return { canEditCriteria, totalWeight };
 }
 
 function useEditPageDialogs(
   form: ReturnType<typeof useEditPerformanceTableForm>,
-  modals: ReturnType<typeof useEditModals>,
   sessionId?: string,
 ) {
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
   const [isSaveWarningOpen, setIsSaveWarningOpen] = useState(false);
   const [isScopeModalOpen, setIsScopeModalOpen] = useState(false);
-  const metrics = computeDialogMetrics(form, modals);
+  const metrics = computeDialogMetrics(form);
 
   const handleRequestSave = () => {
     if (!form.prepareSave()) return;
@@ -145,8 +140,8 @@ export function EditPerformanceTablePage() {
   const form = useEditPerformanceTableForm(id, sessionId, target ?? locationState);
   const modals = useEditModals(form.setCriterios);
   const { notify } = useToast();
-  const deletion = useEditPageDeletion(id, form, modals, notify);
-  const dialogs = useEditPageDialogs(form, modals, form.activeSessionId);
+  const deletion = useEditPageDeletion(id, form, modals, notify, target);
+  const dialogs = useEditPageDialogs(form, form.activeSessionId);
 
   const onExit = () => (form.isDirty ? dialogs.setIsDiscardOpen(true) : form.navigate(-1));
 
@@ -158,14 +153,13 @@ export function EditPerformanceTablePage() {
         modals={modals}
         canEditCriteria={dialogs.canEditCriteria}
         isSessionContext={Boolean(form.activeSessionId)}
+        totalWeight={dialogs.totalWeight}
         onRequestSave={dialogs.handleRequestSave}
         onExit={onExit}
       />
       <EditModalsSection
         form={form}
         modals={modals}
-        totalWeight={dialogs.totalWeight}
-        otherWeightsSum={dialogs.otherWeightsSum}
         canEditCriteria={dialogs.canEditCriteria}
         onConfirmDeleteCriterion={deletion.handleConfirmDeleteCriterion}
         isDeletingFormula={deletion.isDeletingFormula}

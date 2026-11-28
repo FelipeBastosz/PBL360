@@ -6,8 +6,8 @@ import { CardsIcon } from './CardsIcon';
 export function WaitingCenter({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
-      <CardsIcon className="size-9 text-brand-900" />
-      <span className="text-sm leading-tight font-semibold text-balance text-brand-900">
+      <CardsIcon className="size-9 text-brand-accent" />
+      <span className="text-sm leading-tight font-semibold text-balance text-brand-accent">
         {title}
       </span>
       {subtitle && <span className="text-xs text-muted">{subtitle}</span>}
@@ -17,8 +17,8 @@ export function WaitingCenter({ title, subtitle }: { title: string; subtitle?: s
 
 export function EvaluatedCenter({ student }: { student: PokerStudent }) {
   return (
-    <div className="flex w-full flex-col overflow-hidden rounded-[14px] border border-black/5 bg-white shadow-[0_14px_28px_-14px_rgb(0_0_119/0.45)] animate-pop-in">
-      <div className="h-1 bg-brand-900" />
+    <div className="flex w-full flex-col overflow-hidden rounded-[14px] border border-border-subtle bg-elevated shadow-[0_14px_28px_-14px_var(--color-brand-shadow)] animate-pop-in">
+      <div className="h-1 bg-brand-primary" />
       <div className="flex flex-col items-center gap-1.5 px-2 py-3">
         <StudentAvatar
           student={student}
@@ -35,7 +35,7 @@ export function AverageCenter({ average, name }: { average: number | null; name:
   return (
     <div className="flex flex-col items-center gap-0.5 animate-pop-in">
       <span className="text-xs font-semibold text-muted">Média</span>
-      <span className="text-[42px] leading-none font-bold tracking-tight text-brand-900 max-[359px]:text-[34px] lg:text-[60px]">
+      <span className="text-[42px] leading-none font-bold tracking-tight text-brand-accent max-[359px]:text-[34px] lg:text-[60px]">
         {formatPokerGrade(average)}
       </span>
       <span className="mt-1.5 text-xs font-semibold text-ink">{name}</span>

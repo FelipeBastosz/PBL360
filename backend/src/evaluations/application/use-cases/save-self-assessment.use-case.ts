@@ -99,5 +99,8 @@ function buildSelfAssessmentResponse(
     saved.evaluation?.status ?? EvaluationStatus.DRAFT,
     input.now ?? new Date(),
   );
-  return toSelfAssessmentOutput(status, access.session.selfEvalDeadline, saved);
+  return {
+    ...toSelfAssessmentOutput(status, access.session.selfEvalDeadline, saved),
+    participated: participating,
+  };
 }

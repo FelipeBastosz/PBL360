@@ -9,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '@/users/domain/entities/user.entity';
+import { AttachmentCategory } from '../enums/attachment-category.enum';
 import { InvalidAttachmentError } from '../errors/invalid-attachment.error';
 import { Session } from './session.entity';
 
@@ -20,11 +21,14 @@ const PDF_SIGNATURE = Buffer.from('%PDF-', 'latin1');
 
 const MAX_FILE_NAME = 255;
 
+const VALID_CATEGORIES = new Set(Object.values(AttachmentCategory));
+
 export interface NewSessionAttachment {
   sessionId: string;
   uploadedBy: string;
   fileName: string | undefined;
   content: Buffer;
+  category: AttachmentCategory;
 }
 
 export function normalizeFileName(raw: string | undefined): string {
@@ -37,10 +41,25 @@ export function normalizeFileName(raw: string | undefined): string {
   return `${stem}.pdf`;
 }
 
+function assertValidUpload(input: NewSessionAttachment): void {
+  if (input.content.length === 0) throw new InvalidAttachmentError('O arquivo enviado está vazio.');
+  if (input.content.length > MAX_ATTACHMENT_BYTES) {
+    throw new InvalidAttachmentError('O arquivo deve ter no máximo 10 MB.');
+  }
+  if (!input.content.subarray(0, PDF_SIGNATURE.length).equals(PDF_SIGNATURE)) {
+    throw new InvalidAttachmentError('Envie um arquivo PDF.');
+  }
+  if (!VALID_CATEGORIES.has(input.category)) {
+    throw new InvalidAttachmentError('Categoria de anexo inválida.');
+  }
+}
+
 @Entity('session_attachments')
 @Index('idx_session_attachments_session', ['sessionId', 'createdAt'])
+@Index('idx_session_attachments_session_category', ['sessionId', 'category', 'createdAt'])
 @Check('ck_session_attachments_mime_type', `mime_type = 'application/pdf'`)
 @Check('ck_session_attachments_size', 'octet_length(content) BETWEEN 1 AND 10485760')
+@Check('ck_session_attachments_category', `category IN ('TABLE_REPORT', 'SESSION_ATTACHMENT')`)
 export class SessionAttachment {
   @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'pk_session_attachments' })
   id!: string;
@@ -60,6 +79,9 @@ export class SessionAttachment {
   @Column({ name: 'size_bytes', type: 'integer' })
   sizeBytes!: number;
 
+  @Column({ type: 'varchar', length: 30 })
+  category!: AttachmentCategory;
+
   @Column({ type: 'bytea' })
   content!: Buffer;
 
@@ -75,14 +97,7 @@ export class SessionAttachment {
   uploader?: User;
 
   static fromUpload(input: NewSessionAttachment): SessionAttachment {
-    if (input.content.length === 0)
-      throw new InvalidAttachmentError('O arquivo enviado está vazio.');
-    if (input.content.length > MAX_ATTACHMENT_BYTES) {
-      throw new InvalidAttachmentError('O arquivo deve ter no máximo 10 MB.');
-    }
-    if (!input.content.subarray(0, PDF_SIGNATURE.length).equals(PDF_SIGNATURE)) {
-      throw new InvalidAttachmentError('Envie um arquivo PDF.');
-    }
+    assertValidUpload(input);
     const attachment = new SessionAttachment();
     attachment.sessionId = input.sessionId;
     attachment.uploadedBy = input.uploadedBy;
@@ -90,6 +105,7 @@ export class SessionAttachment {
     attachment.mimeType = PDF_MIME_TYPE;
     attachment.sizeBytes = input.content.length;
     attachment.content = input.content;
+    attachment.category = input.category;
     return attachment;
   }
 }

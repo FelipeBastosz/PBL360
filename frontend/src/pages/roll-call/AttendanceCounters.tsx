@@ -13,7 +13,12 @@ type Counter = {
 const COUNTERS: Counter[] = [
   { key: 'presentes', label: 'Presentes', Icon: CheckIcon, className: 'text-success' },
   { key: 'atrasados', label: 'Atrasados', Icon: ClockIcon, className: 'text-warning' },
-  { key: 'justificados', label: 'Justificados', Icon: LockClosedIcon, className: 'text-brand-900' },
+  {
+    key: 'justificados',
+    label: 'Justificados',
+    Icon: LockClosedIcon,
+    className: 'text-brand-accent',
+  },
   { key: 'ausentes', label: 'Ausentes', Icon: XMarkIcon, className: 'text-danger' },
 ];
 
@@ -23,7 +28,7 @@ export function AttendanceCounters({ totals }: { totals: RollCallTotals }) {
       {COUNTERS.map(({ key, label, Icon, className }) => (
         <div
           key={key}
-          className="flex flex-col items-center rounded-xl border border-black/10 bg-white px-1 py-2 shadow-[0_1px_2px_rgb(16_33_76/0.06)]"
+          className="flex flex-col items-center rounded-xl border border-border bg-elevated px-1 py-2 shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
         >
           <dd
             key={totals[key]}

@@ -26,6 +26,27 @@ const present = (studentId: string, seatNumber: number | null): AttendanceEntry 
   justification: null,
 });
 
+const absent = (studentId: string): AttendanceEntry => ({
+  studentId,
+  status: AttendanceStatus.ABSENT,
+  seatNumber: null,
+  justification: null,
+});
+
+const late = (studentId: string, seatNumber: number | null): AttendanceEntry => ({
+  studentId,
+  status: AttendanceStatus.LATE,
+  seatNumber,
+  justification: null,
+});
+
+const excused = (studentId: string, justification: string): AttendanceEntry => ({
+  studentId,
+  status: AttendanceStatus.EXCUSED,
+  seatNumber: null,
+  justification,
+});
+
 describe('Roll call use cases', () => {
   let attendances: jest.Mocked<AttendanceRepository>;
   let access: jest.Mocked<SessionAccessService>;
@@ -109,21 +130,50 @@ describe('Roll call use cases', () => {
     it('saves the batch as the authenticated tutor and answers the recorded roll call', async () => {
       attendances.findBySession.mockResolvedValue([
         { ...present('ana', 2), recordedAt: new Date('2026-10-08T12:00:00Z') },
+        { ...absent('bruno'), recordedAt: new Date('2026-10-08T12:00:00Z') },
       ]);
 
-      const rollCall = await record([present('ana', 2)]);
+      const rollCall = await record([present('ana', 2), absent('bruno')]);
 
       expect(attendances.saveBatch).toHaveBeenCalledWith('session-2', 'tutor-1', [
         present('ana', 2),
+        absent('bruno'),
       ]);
       expect(rollCall.origin).toBe(RollCallOrigin.RECORDED);
       expect(rollCall.students[0]).toMatchObject({ studentId: 'ana', seatNumber: 2 });
     });
 
-    it('releases the session roles of the students taken off the table', async () => {
-      const absent = { ...present('bruno', null), status: AttendanceStatus.ABSENT };
+    it('accepts any complete combination of PRESENT, LATE, ABSENT and EXCUSED', async () => {
+      attendances.findEnrolledStudents.mockResolvedValue([
+        { id: 'ana', name: 'Ana Souza' },
+        { id: 'bruno', name: 'Bruno Lima' },
+        { id: 'carla', name: 'Carla Dias' },
+        { id: 'diego', name: 'Diego Alves' },
+      ]);
+      const batch = [
+        present('ana', 1),
+        late('bruno', 2),
+        absent('carla'),
+        excused('diego', 'Atestado médico.'),
+      ];
 
-      await record([present('ana', 1), absent]);
+      await record(batch);
+
+      expect(attendances.saveBatch).toHaveBeenCalledWith('session-2', 'tutor-1', batch);
+    });
+
+    it('rejects an incomplete batch when any enrolled student is missing', async () => {
+      await expect(record([present('ana', 1)])).rejects.toThrow(
+        new UnprocessableEntityError(
+          'Defina a presença ou ausência de todos os alunos da turma antes de salvar a chamada.',
+        ),
+      );
+      expect(attendances.saveBatch).not.toHaveBeenCalled();
+      expect(roles.removeForStudents).not.toHaveBeenCalled();
+    });
+
+    it('releases the session roles of the students taken off the table', async () => {
+      await record([present('ana', 1), absent('bruno')]);
 
       expect(roles.removeForStudents).toHaveBeenCalledWith('session-2', ['bruno']);
     });
@@ -131,7 +181,9 @@ describe('Roll call use cases', () => {
     it('rejects a seat for an absent student before touching the database', async () => {
       const absentSeated = { ...present('ana', 1), status: AttendanceStatus.ABSENT };
 
-      await expect(record([absentSeated])).rejects.toBeInstanceOf(InvalidAttendanceError);
+      await expect(record([absentSeated, absent('bruno')])).rejects.toBeInstanceOf(
+        InvalidAttendanceError,
+      );
       expect(attendances.saveBatch).not.toHaveBeenCalled();
       expect(roles.removeForStudents).not.toHaveBeenCalled();
     });
@@ -149,7 +201,7 @@ describe('Roll call use cases', () => {
     });
 
     it('rejects a seat beyond the table size', async () => {
-      await expect(record([present('ana', 3)])).rejects.toThrow(
+      await expect(record([present('ana', 3), absent('bruno')])).rejects.toThrow(
         new UnprocessableEntityError('O lugar 3 não existe na mesa, que tem 2 lugares.'),
       );
     });
@@ -161,10 +213,12 @@ describe('Roll call use cases', () => {
       expect(attendances.saveBatch).not.toHaveBeenCalled();
     });
 
-    it('propagates a seat already taken by a student left out of the batch', async () => {
+    it('propagates a seat conflict raised during persistence', async () => {
       attendances.saveBatch.mockRejectedValue(new ConflictError('ocupado'));
 
-      await expect(record([present('ana', 1)])).rejects.toBeInstanceOf(ConflictError);
+      await expect(record([present('ana', 1), absent('bruno')])).rejects.toBeInstanceOf(
+        ConflictError,
+      );
     });
   });
 });

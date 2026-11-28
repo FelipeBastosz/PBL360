@@ -79,7 +79,7 @@ function ModalActions({
         <Button
           type="button"
           onClick={onCancel}
-          className="h-12 w-full rounded-xl bg-brand-900 text-white hover:bg-brand-700"
+          className="h-12 w-full rounded-xl bg-brand-primary text-white hover:bg-brand-primary-hover"
         >
           Entendi
         </Button>
@@ -93,7 +93,7 @@ function ModalActions({
         type="button"
         isLoading={isLoading}
         onClick={onConfirm}
-        className="bg-danger hover:bg-danger/90 focus-visible:outline-danger text-white border-transparent"
+        className="bg-danger-solid hover:bg-danger-solid/90 focus-visible:outline-danger text-white border-transparent"
       >
         Sim, excluir problema
       </Button>
@@ -128,7 +128,7 @@ function ProblemModalContent({
       <h2 id="delete-problem-title" className="text-xl font-bold text-ink">
         {title}
       </h2>
-      <p className="text-base font-semibold break-words text-brand-900">{problemTitle}</p>
+      <p className="text-base font-semibold break-words text-brand-accent">{problemTitle}</p>
       {errorMessage ? (
         <div role="alert" className="mt-2 rounded-xl bg-danger/10 p-3 text-center">
           <p className="text-sm font-medium text-danger leading-relaxed">{errorMessage}</p>
@@ -161,13 +161,13 @@ export function DeleteProblemModal({
       aria-labelledby="delete-problem-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in"
     >
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 border-danger bg-white p-6 shadow-2xl animate-pop-in">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] border-2 border-danger bg-elevated p-6 shadow-2xl animate-pop-in">
         <button
           type="button"
           onClick={isLoading ? undefined : onCancel}
           disabled={isLoading}
           aria-label="Fechar confirmação"
-          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-black/5 hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-900"
+          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-subtle hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           <XMarkIcon className="size-6" />
         </button>

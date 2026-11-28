@@ -67,6 +67,14 @@ export class PgEvaluationRepository implements EvaluationRepository {
     return this.dataSource.transaction((manager) => recordEvaluation(manager, input));
   }
 
+  async isRollCallRecorded(sessionId: string): Promise<boolean> {
+    const [row] = await this.dataSource.query<Array<{ recorded: boolean }>>(
+      'SELECT EXISTS (SELECT 1 FROM attendances WHERE session_id = $1) AS recorded;',
+      [sessionId],
+    );
+    return row?.recorded ?? false;
+  }
+
   isStudentParticipating(sessionId: string, studentId: string): Promise<boolean> {
     return isStudentParticipating(this.dataSource.manager, sessionId, studentId);
   }

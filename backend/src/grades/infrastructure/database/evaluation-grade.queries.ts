@@ -52,7 +52,8 @@ export const POKER_PEER_SCORES_QUERY = `
        ORDER BY ga.created_at DESC, ga.id DESC LIMIT 1
     ) latest ON TRUE
    WHERE s.problem_id = $1 AND pr.status = 'DECIDED'
-   ORDER BY ps.session_id, pr.student_id, pr.decided_at DESC;
+   ORDER BY ps.session_id, pr.student_id,
+            pr.decided_at DESC, ps.created_at DESC, pr.round_number DESC, pr.id DESC;
 `;
 
 export const PEER_RECEIVED_SCORES_QUERY = `

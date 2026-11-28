@@ -36,8 +36,8 @@ function HideNamesToggle({ checked, onToggle }: HideNamesToggleProps) {
           aria-label="Ocultar nomes"
           onClick={onToggle}
           className={cn(
-            'relative inline-flex h-6 w-11 shrink-0 after:absolute after:inset-x-0 after:-inset-y-2.5 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-brand-900',
-            checked ? 'bg-brand-900' : 'bg-black/20',
+            'relative inline-flex h-6 w-11 shrink-0 after:absolute after:inset-x-0 after:-inset-y-2.5 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-brand-accent',
+            checked ? 'bg-brand-primary' : 'bg-border',
           )}
         >
           <span
@@ -55,7 +55,7 @@ function HideNamesToggle({ checked, onToggle }: HideNamesToggleProps) {
 function TableFooter({ average }: { average: number | null }) {
   return (
     <tfoot>
-      <tr className="border-t border-black/10 text-sm font-bold text-ink">
+      <tr className="border-t border-border text-sm font-bold text-ink">
         <td className="px-4 py-4 text-left font-bold">Média da turma</td>
         <td className="px-4 py-4 text-right font-bold text-ink">{formatGrade(average)}</td>
       </tr>
@@ -77,8 +77,8 @@ function StudentRow({
   const gradeColorClass = !hasGrade
     ? 'text-ink'
     : (student.notaFinal ?? 0) >= 7.0
-      ? 'text-green-600'
-      : 'text-red-600';
+      ? 'text-success'
+      : 'text-danger';
 
   return (
     <tr className="transition-colors hover:bg-black/[0.02]">
@@ -97,13 +97,13 @@ export function SessionReportTable({ students }: SessionReportTableProps) {
   const classAverage = calculateAverage(students);
 
   return (
-    <div className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm sm:p-6">
+    <div className="rounded-2xl border border-border-subtle bg-elevated p-4 shadow-sm sm:p-6">
       <HideNamesToggle checked={isNamesHidden} onToggle={() => setIsNamesHidden((prev) => !prev)} />
 
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <table className="w-full border-collapse text-left text-sm">
           <thead>
-            <tr className="bg-brand-50 text-xs font-bold uppercase tracking-wider text-brand-900">
+            <tr className="bg-brand-soft text-xs font-bold uppercase tracking-wider text-brand-accent">
               <th scope="col" className="rounded-l-xl px-4 py-3.5 text-left font-bold">
                 {isNamesHidden ? 'MATRÍCULA' : 'ALUNO'}
               </th>
@@ -112,7 +112,7 @@ export function SessionReportTable({ students }: SessionReportTableProps) {
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-black/5 text-sm">
+          <tbody className="divide-y divide-border-subtle text-sm">
             {students.length === 0 ? (
               <tr>
                 <td colSpan={2} className="px-4 py-8 text-center text-sm text-muted">

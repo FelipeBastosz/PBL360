@@ -58,6 +58,7 @@ export interface PeerEvaluationWrite {
 }
 export interface StudentEvaluationSummary {
   participating: boolean;
+  rollCallDone?: boolean;
   tutorEvaluationSubmitted: boolean;
   peerSubmitted: number;
   peerTotal: number;
@@ -77,6 +78,7 @@ export interface EvaluationRepository {
   get(context: EvaluationContext, studentId: string): Promise<EvaluationDetail>;
   recordEvaluation(input: EvaluationWrite): Promise<EvaluationDetail>;
   isStudentParticipating(sessionId: string, studentId: string): Promise<boolean>;
+  isRollCallRecorded(sessionId: string): Promise<boolean>;
   getSessionFormula(sessionId: string): Promise<{ criteriaWeight: number; roleWeight: number }>;
   listSessionPeers(sessionId: string, evaluatorId: string): Promise<PeerEvaluationSummary[]>;
   getPeerEvaluation(

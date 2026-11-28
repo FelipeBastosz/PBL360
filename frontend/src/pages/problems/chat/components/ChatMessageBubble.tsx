@@ -12,10 +12,10 @@ export function ChatMessageBubble({ message, isMine }: ChatMessageBubbleProps) {
     <li className={cn('flex flex-col', isMine ? 'items-end' : 'items-start')}>
       <p
         className={cn(
-          'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words whitespace-pre-wrap shadow-[0_1px_2px_rgb(16_33_76/0.06)] lg:max-w-[70%]',
+          'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words whitespace-pre-wrap shadow-[0_1px_2px_rgb(0_0_0/0.06)] lg:max-w-[70%]',
           isMine
-            ? 'rounded-br-md bg-brand-900 text-white'
-            : 'rounded-bl-md border border-ink/10 bg-white text-ink',
+            ? 'rounded-br-md border border-brand-primary-border bg-brand-primary text-brand-on-primary'
+            : 'rounded-bl-md border border-border-subtle bg-elevated text-ink',
         )}
       >
         <span className="sr-only">{isMine ? 'Você' : message.remetente.nome}: </span>

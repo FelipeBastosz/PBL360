@@ -34,18 +34,11 @@ const POKER_ROUND_SCORE = `
     FROM poker_rounds pr
     JOIN poker_sessions ps ON ps.id = pr.poker_id
    WHERE ps.session_id = $1 AND pr.student_id = $2
-   ORDER BY pr.decided_at DESC NULLS LAST, pr.round_number DESC
+   ORDER BY pr.decided_at DESC NULLS LAST, ps.created_at DESC, pr.round_number DESC, pr.id DESC
    LIMIT 1
 `;
 export const FIND_POKER_ROUND_SCORE = `${POKER_ROUND_SCORE};`;
-export const LOCK_POKER_ROUND_SCORE = `
-  SELECT id, status, final_grade AS "sessionScore"
-    FROM poker_rounds
-   WHERE poker_id IN (SELECT id FROM poker_sessions WHERE session_id = $1)
-     AND student_id = $2
-   ORDER BY decided_at DESC NULLS LAST, round_number DESC
-   LIMIT 1 FOR UPDATE;
-`;
+export const LOCK_POKER_ROUND_SCORE = `${POKER_ROUND_SCORE} FOR UPDATE OF pr;`;
 
 export const FIND_POKER_ADJUSTMENTS = `
   SELECT ga.previous_value AS "previousValue", ga.new_value AS "newValue", ga.justification,

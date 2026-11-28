@@ -39,7 +39,7 @@ function ContactsBody({
   if (!contacts) {
     return (
       <div className="mt-10 flex justify-center">
-        <Spinner className="size-7 text-brand-900" label="Carregando participantes" />
+        <Spinner className="size-7 text-brand-accent" label="Carregando participantes" />
       </div>
     );
   }
@@ -76,7 +76,7 @@ export function ChatContactsPane(props: ChatContactsPaneProps) {
   return (
     <section
       className={cn(
-        'min-h-0 w-full flex-col lg:w-80 lg:shrink-0 lg:border-r lg:border-ink/10',
+        'min-h-0 w-full flex-col bg-elevated lg:w-80 lg:shrink-0 lg:border-r lg:border-border-subtle',
         className,
       )}
     >
@@ -93,7 +93,7 @@ export function ChatContactsPane(props: ChatContactsPaneProps) {
           type="button"
           onClick={onClose}
           aria-label="Fechar conversas"
-          className="-mr-2 rounded-full p-2 text-muted transition-[background-color,scale] duration-200 hover:bg-black/5 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
+          className="-mr-2 rounded-full p-2 text-muted transition-[background-color,scale] duration-200 hover:bg-subtle hover:text-ink active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent"
         >
           <XMarkIcon className="size-6" aria-hidden />
         </button>

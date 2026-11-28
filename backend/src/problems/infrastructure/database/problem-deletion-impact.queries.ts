@@ -11,7 +11,8 @@ export async function readProblemDeletionImpact(
        (SELECT COUNT(*)::int FROM sessions WHERE problem_id = $1) AS sessions,
        (SELECT COUNT(*)::int FROM problem_grades WHERE problem_id = $1) AS grades,
        (SELECT COUNT(*)::int FROM feedback WHERE problema_id = $1) AS feedbacks,
-       (SELECT COUNT(*)::int FROM evaluations WHERE problem_id = $1) AS evaluations;`,
+       (SELECT COUNT(*)::int FROM evaluations WHERE problem_id = $1) AS evaluations,
+       (SELECT COUNT(*)::int FROM problem_deliveries WHERE problem_id = $1) AS deliveries;`,
     [problemId],
   );
   return requireFirstRow(rows, 'Failed to read problem deletion impact.');

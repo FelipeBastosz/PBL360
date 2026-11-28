@@ -40,7 +40,7 @@ function EvaluationCard({ title, badge, reason, deadline, Icon, path }: Evaluati
       <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
         <span className="text-lg font-semibold text-ink">{title}</span>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-md bg-black/5 px-2 py-0.5 text-xs font-semibold text-muted">
+          <span className="rounded-md bg-subtle px-2 py-0.5 text-xs font-semibold text-muted">
             {badge}
           </span>
           {deadline && (
@@ -57,7 +57,7 @@ function EvaluationCard({ title, badge, reason, deadline, Icon, path }: Evaluati
     return (
       <li
         aria-disabled="true"
-        className="flex cursor-not-allowed items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm opacity-70"
+        className="flex cursor-not-allowed items-center gap-4 rounded-2xl border border-border-subtle bg-elevated p-4 shadow-sm opacity-70"
       >
         {content}
       </li>
@@ -68,7 +68,7 @@ function EvaluationCard({ title, badge, reason, deadline, Icon, path }: Evaluati
     <li>
       <Link
         to={path}
-        className="flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition-colors hover:bg-surface-50 active:bg-surface-100"
+        className="flex items-center gap-4 rounded-2xl border border-border-subtle bg-elevated p-4 shadow-sm transition-colors hover:bg-subtle active:bg-subtle"
       >
         {content}
       </Link>
@@ -88,6 +88,7 @@ function resolveSelfBadge(summary?: StudentEvaluationSummaryResponse, isRollCall
 
   if (summary.autoavaliacao.status === 'NAO_PARTICIPOU') return 'Não participou';
   if (summary.autoavaliacao.status === 'ENVIADA') return 'Enviada';
+  if (summary.autoavaliacao.status === 'ENCERRADA') return 'Encerrada';
   if (summary.autoavaliacao.status === 'RASCUNHO') return 'Rascunho';
   return 'Pendente';
 }
@@ -176,7 +177,10 @@ function getEvaluationPaths(
   didNotParticipate: boolean,
 ) {
   const selfPath =
-    !didNotParticipate && summary?.autoavaliacao.liberada && sessionId
+    !didNotParticipate &&
+    summary?.autoavaliacao.liberada &&
+    summary.autoavaliacao.status !== 'ENCERRADA' &&
+    sessionId
       ? ROUTES.studentSelfEvaluation.replace(':sessionId', sessionId)
       : undefined;
 
@@ -197,15 +201,13 @@ export function StudentEvaluationCenter({ children, feedbackHref }: StudentEvalu
   const { sessionId = '' } = useParams<{ sessionId: string }>();
   const { summary, isRollCallDone } = useStudentEvaluationCenterData(sessionId);
 
-  const didNotParticipate =
-    isRollCallDone &&
-    (summary?.participou === false || summary?.autoavaliacao.status === 'NAO_PARTICIPOU');
+  const didNotParticipate = isRollCallDone && summary?.participou === false;
 
   const { selfPath, peerPath } = getEvaluationPaths(sessionId, summary, didNotParticipate);
 
   return (
     <section aria-labelledby="student-evaluations-title" className="flex flex-col gap-3">
-      <h2 id="student-evaluations-title" className="text-lg font-semibold text-brand-900">
+      <h2 id="student-evaluations-title" className="text-lg font-semibold text-brand-accent">
         Central de Avaliações
       </h2>
       {children}

@@ -112,3 +112,34 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  deploy:
+    name: Deploy (Railway + Vercel)
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Railway and Vercel CLIs
+        run: npm install --global @railway/cli vercel
+
+      - name: Deploy API (Railway)
+        run: >-
+          railway up backend --path-as-root --ci
+          --project 8251cb98-4314-4802-91d6-09a708e7df76 --environment production --service api
+        env:
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+
+      - name: Deploy front (Vercel)
+        working-directory: frontend
+        run: vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: team_dI9UTeTOsBhAqFvQYKNDrwUj
+          VERCEL_PROJECT_ID: prj_tm73OF39fZjmK5sniUBYf3u9R2I3

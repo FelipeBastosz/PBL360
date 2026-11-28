@@ -5,16 +5,18 @@ import { Alert } from '@/components/ui/Alert';
 import { useAuth } from '@/hooks/useAuth';
 import type { CriterionInput } from '@/types/performanceTable';
 import { TitleCard, FormActions } from './components/CreatePerformanceTableCards';
+import { FormulaBalanceSummary } from './components/FormulaBalanceSummary';
 import { CreatePerformanceTableModals } from './components/CreatePerformanceTableModals';
 import { useCreatePerformanceTableForm } from './hooks/useCreatePerformanceTableForm';
 import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
 import { cn } from '@/utils/cn';
+import { formatCriterionWeight } from '@/utils/criterionWeight';
 
 function Header({ title, onBack }: { title: string; onBack: () => void }) {
   const { user } = useAuth();
 
   return (
-    <header className="shrink-0 bg-brand-900 text-white">
+    <header className="shrink-0 border-b border-brand-primary-border bg-brand-primary text-white">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
         <div className="flex items-center gap-3">
           <button
@@ -42,11 +44,11 @@ function CriterionRow({
   onDelete: () => void;
 }) {
   return (
-    <div className="border-b border-black/5 px-4 py-3">
+    <div className="border-b border-border-subtle px-4 py-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-brand-900">{item.nome}</span>
-        <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-ink">
-          {item.peso}
+        <span className="text-sm font-semibold text-brand-accent">{item.nome}</span>
+        <span className="inline-flex min-w-9 items-center justify-center rounded-full bg-subtle px-3 py-1 text-xs font-bold text-ink">
+          {formatCriterionWeight(item.peso)}
         </span>
       </div>
       <div className="mt-1 flex items-center justify-between">
@@ -56,7 +58,7 @@ function CriterionRow({
             type="button"
             onClick={onEdit}
             aria-label={`Editar critério ${item.nome}`}
-            className="relative p-1 text-brand-900 hover:opacity-80 after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-brand-900"
+            className="relative p-1 text-brand-accent hover:opacity-80 after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-brand-accent"
           >
             <PencilIcon className="size-5" />
           </button>
@@ -89,11 +91,11 @@ function CriteriaCard({
 }) {
   return (
     <div
-      className={`overflow-hidden rounded-[14px] border bg-white shadow-sm ${
-        hasError ? 'border-danger' : 'border-black/5'
+      className={`overflow-hidden rounded-[14px] border bg-elevated shadow-sm ${
+        hasError ? 'border-danger' : 'border-border-subtle'
       }`}
     >
-      <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-sm font-semibold text-brand-900">
+      <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3 text-sm font-semibold text-brand-accent">
         <span>Critério</span>
         <span>Peso</span>
       </div>
@@ -110,7 +112,7 @@ function CriteriaCard({
       <button
         type="button"
         onClick={onOpenAdd}
-        className="w-full px-4 py-3 text-left text-sm font-semibold text-brand-900 transition-colors hover:bg-brand-50"
+        className="w-full px-4 py-3 text-left text-sm font-semibold text-brand-accent transition-colors hover:bg-brand-soft"
       >
         +Adicionar critério
       </button>
@@ -120,12 +122,9 @@ function CriteriaCard({
 
 function useCreateCriteriaModals(
   setCriterios: React.Dispatch<React.SetStateAction<CriterionInput[]>>,
-  totalWeight: number,
 ) {
   const [editingCriterion, setEditingCriterion] = useState<CriterionInput | null>(null);
   const [criterionToDelete, setCriterionToDelete] = useState<CriterionInput | null>(null);
-
-  const otherWeightsSum = editingCriterion ? totalWeight - editingCriterion.peso : totalWeight;
 
   function handleSaveCriterion(upd: CriterionInput) {
     setCriterios((prev) => prev.map((c) => (c.ordem === upd.ordem ? upd : c)));
@@ -142,7 +141,6 @@ function useCreateCriteriaModals(
     setEditingCriterion,
     criterionToDelete,
     setCriterionToDelete,
-    otherWeightsSum,
     handleSaveCriterion,
     handleDeleteCriterion,
   };
@@ -163,11 +161,9 @@ function CreateModalsSection({ form, modals }: ModalsSectionProps) {
         form.setFieldErrors((prev) => ({ ...prev, criterios: false }));
       }}
       nextOrder={form.criterios.length + 1}
-      totalWeight={form.totalWeight}
       editingCriterion={modals.editingCriterion}
       onCloseEditModal={() => modals.setEditingCriterion(null)}
       onSaveCriterion={modals.handleSaveCriterion}
-      otherWeightsSum={modals.otherWeightsSum}
       criterionToDelete={modals.criterionToDelete}
       onCloseDeleteCriterion={() => modals.setCriterionToDelete(null)}
       onConfirmDeleteCriterion={modals.handleDeleteCriterion}
@@ -177,7 +173,7 @@ function CreateModalsSection({ form, modals }: ModalsSectionProps) {
 
 export function CreatePerformanceTablePage() {
   const form = useCreatePerformanceTableForm();
-  const modals = useCreateCriteriaModals(form.setCriterios, form.totalWeight);
+  const modals = useCreateCriteriaModals(form.setCriterios);
 
   return (
     <div className="min-h-dvh bg-surface pb-12">
@@ -199,7 +195,12 @@ export function CreatePerformanceTablePage() {
           onOpenDelete={modals.setCriterionToDelete}
           hasError={Boolean(form.fieldErrors.criterios)}
         />
-        <FormActions onSave={form.handleSave} onCancel={() => form.navigate(-1)} />
+        <FormulaBalanceSummary totalWeight={form.totalWeight} />
+        <FormActions
+          onSave={form.handleSave}
+          onCancel={() => form.navigate(-1)}
+          disabled={form.totalWeight !== 10}
+        />
       </main>
       <CreateModalsSection form={form} modals={modals} />
     </div>

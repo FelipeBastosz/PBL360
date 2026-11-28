@@ -22,7 +22,7 @@ function OlderMessagesLoader() {
     <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center">
       <span
         role="status"
-        className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 shadow-[0_4px_12px_-6px_rgb(16_33_76/0.4)]"
+        className="flex items-center gap-2 rounded-full border border-border-subtle bg-elevated px-3 py-1.5 text-xs font-semibold text-brand-accent shadow-[0_4px_12px_-6px_var(--color-brand-shadow)]"
       >
         <Spinner className="size-3.5" />
         Carregando mensagens anteriores
@@ -66,7 +66,7 @@ function NewMessagesButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-brand-900 px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_-8px_rgb(0_0_119/0.6)] animate-pop-in hover:bg-brand-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900"
+      className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-brand-primary-border bg-brand-primary px-4 py-2 text-xs font-semibold text-brand-on-primary shadow-[0_8px_20px_-8px_var(--color-brand-shadow)] animate-pop-in hover:bg-brand-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
     >
       <ArrowDownIcon className="size-4" aria-hidden />
       Novas mensagens
@@ -114,7 +114,7 @@ export function ChatMessageList({ isLoading, error, ...scroller }: ChatMessageLi
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <Spinner className="size-7 text-brand-900" label="Carregando mensagens" />
+        <Spinner className="size-7 text-brand-accent" label="Carregando mensagens" />
       </div>
     );
   }

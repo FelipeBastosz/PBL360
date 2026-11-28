@@ -21,6 +21,8 @@ const mockGradesData: ProblemGradesResponse = {
         { sessaoId: 'sess-3', nota: 8.2, situacao: 'AVALIADA' },
       ],
       notaFinal: 8.6,
+      autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+      pares: { nota: null, situacao: 'PENDENTE' },
     },
     {
       alunoId: 'aluno-2',
@@ -32,6 +34,8 @@ const mockGradesData: ProblemGradesResponse = {
         { sessaoId: 'sess-3', nota: 0.0, situacao: 'AUSENTE' },
       ],
       notaFinal: 6.0,
+      autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+      pares: { nota: null, situacao: 'PENDENTE' },
     },
   ],
   mediaTurma: 7.3,
@@ -255,13 +259,13 @@ describe('ProblemGradesTable', () => {
       const th = screen.getByRole('columnheader', { name: headerName });
       expect(th).toBeInTheDocument();
       expect(th).toHaveAttribute('title', headerName);
-      expect(th).toHaveClass('bg-brand-50');
+      expect(th).toHaveClass('bg-brand-soft');
       expect(th).toHaveClass('truncate');
     });
 
     const alunoHeader = screen.getByRole('columnheader', { name: 'ALUNO' });
     const geralHeader = screen.getByRole('columnheader', { name: 'GERAL' });
-    expect(alunoHeader).toHaveClass('bg-brand-50');
-    expect(geralHeader).toHaveClass('bg-brand-50');
+    expect(alunoHeader).toHaveClass('bg-brand-soft');
+    expect(geralHeader).toHaveClass('bg-brand-soft');
   });
 });

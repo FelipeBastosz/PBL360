@@ -12,7 +12,7 @@ interface ProfilePhotoSectionProps {
 function PhotoHelpText({ hasPhoto }: { hasPhoto: boolean }) {
   return (
     <>
-      <p className="text-sm font-medium text-brand-900">
+      <p className="text-sm font-medium text-brand-accent">
         Clique no ícone de câmera para {hasPhoto ? 'alterar' : 'adicionar'} sua foto.
       </p>
       <p className="text-xs text-brand-300">Formatos aceitos: JPG, PNG ou WebP (máx. 2 MB).</p>

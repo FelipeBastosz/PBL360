@@ -3,10 +3,12 @@ import { Alert } from '@/components/ui/Alert';
 import { Spinner } from '@/components/ui/Spinner';
 import { AdjustEvaluationGradeModal } from '@/pages/evaluations/components/AdjustEvaluationGradeModal';
 import type { StudentEvaluationHistoryItem } from '@/types/evaluationHistory';
+import { HistoryDetailPanel } from './components/HistoryDetailPanel';
 import { HistoryHeader } from './components/HistoryHeader';
 import { HistoryStudentCard } from './components/HistoryStudentCard';
 import { useEvaluationHistory } from './hooks/useEvaluationHistory';
 import { useGradeAdjustment } from './hooks/useGradeAdjustment';
+import { useStudentHistoryDetail } from './hooks/useStudentHistoryDetail';
 
 type HistoryListProps = {
   students: StudentEvaluationHistoryItem[];
@@ -44,6 +46,12 @@ export default function SessionEvaluationHistoryPage() {
   const navigate = useNavigate();
   const { students, isLoading, error, handleAdjusted } = useEvaluationHistory(sessionId);
   const adjustment = useGradeAdjustment(sessionId, handleAdjusted);
+  const selected = adjustment.selected;
+  const history = useStudentHistoryDetail(
+    sessionId,
+    selected?.alunoId ?? null,
+    `${adjustment.openCount}:${selected?.notaAluno ?? selected?.notaPares ?? ''}`,
+  );
 
   return (
     <div className="min-h-dvh bg-surface">
@@ -52,7 +60,7 @@ export default function SessionEvaluationHistoryPage() {
         {error && <Alert tone="error">{error.message}</Alert>}
         {isLoading ? (
           <div className="mt-10 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
+            <Spinner className="size-8 text-brand-accent" />
           </div>
         ) : (
           !error && <HistoryList students={students} onSelect={adjustment.setSelected} />
@@ -65,6 +73,7 @@ export default function SessionEvaluationHistoryPage() {
         onClose={() => adjustment.setSelected(null)}
         onSubmit={adjustment.save}
         isLoading={adjustment.isSaving}
+        details={<HistoryDetailPanel {...history} />}
       />
     </div>
   );

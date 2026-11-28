@@ -37,9 +37,9 @@ function ActiveSessionFormulaBanner({
 }) {
   if (!config?.tabela) return null;
   return (
-    <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-900 shadow-xs">
+    <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-success/30 bg-success-soft p-3.5 text-xs text-success shadow-xs">
       <div className="flex items-center gap-2">
-        <CheckCircleIcon className="size-5 shrink-0 text-emerald-600" />
+        <CheckCircleIcon className="size-5 shrink-0 text-success" />
         <span>
           Fórmula em uso nesta sessão: <strong>{config.tabela.nome}</strong>
         </span>
@@ -48,11 +48,11 @@ function ActiveSessionFormulaBanner({
         <Link
           to={`${ROUTES.performanceTables}/${config.tabela.id}/editar`}
           state={target}
-          className="rounded-full border border-emerald-700 bg-white px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100"
+          className="rounded-full border border-success bg-elevated px-2.5 py-0.5 text-[11px] font-bold text-success hover:bg-success-soft"
         >
           Editar
         </Link>
-        <span className="shrink-0 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-bold text-white">
+        <span className="shrink-0 rounded-full bg-emerald-700 px-2.5 py-0.5 text-[11px] font-bold text-white">
           Aplicada
         </span>
       </div>
@@ -61,7 +61,18 @@ function ActiveSessionFormulaBanner({
 }
 
 function SectionsRenderer(props: Props) {
-  if (!props.sections) return null;
+  if (!props.sections) {
+    return (
+      <PerformanceTableSection
+        title="Fórmulas"
+        tables={props.filtered}
+        currentUserId={props.currentUserId}
+        target={props.target}
+        checkIsApplied={props.checkApplied}
+        onOpenDelete={props.onDeleteTable}
+      />
+    );
+  }
   return (
     <>
       <PerformanceTableSection
@@ -101,7 +112,7 @@ export function PerformanceTablesContent(props: Props) {
       {props.error && <Alert tone="error">{props.error.message}</Alert>}
       {props.isLoading && (
         <div className="mt-10 flex justify-center">
-          <Spinner className="size-8 text-brand-900" />
+          <Spinner className="size-8 text-brand-accent" />
         </div>
       )}
       {!props.isLoading && props.filtered.length === 0 && (

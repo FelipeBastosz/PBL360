@@ -14,7 +14,7 @@ function SuccessInfoCard({ roomCode }: { roomCode: string }) {
   const displayUrl = inviteUrl.replace(/^https?:\/\//, '');
 
   return (
-    <div className="mt-8 flex flex-col gap-4 rounded-[10px] bg-black/5 p-5 text-left">
+    <div className="mt-8 flex flex-col gap-4 rounded-[10px] bg-subtle p-5 text-left">
       <CopyValue label="Código" value={roomCode} isCode />
       <CopyValue label="Link" value={inviteUrl} displayValue={displayUrl} />
     </div>
@@ -50,7 +50,11 @@ export default function CreateRoomSuccessPage() {
   const roomName = room.nome || room.name;
 
   return (
-    <FlowShell title="Turma criada" backTo={ROUTES.rooms} trailing={<UserMenuButton user={user} />}>
+    <FlowShell
+      title="Turma criada"
+      backTo={ROUTES.rooms}
+      trailing={<UserMenuButton user={user} className="ring-2 ring-white/20" />}
+    >
       <SuccessState
         title="Turma criada com sucesso!"
         description={`Você criou a turma: ${roomName}`}

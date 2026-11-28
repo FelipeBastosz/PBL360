@@ -111,12 +111,9 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
       expect(screen.getByText('Minha Fórmula de Algoritmos')).toBeInTheDocument();
       expect(screen.getByText('Minha Fórmula Especial de Apresentação')).toBeInTheDocument();
 
-      // Sem nome do professor nos cards
       expect(screen.queryByText('Professor Carlos')).not.toBeInTheDocument();
-      // Sem ícone de lixeira nos cards
       expect(screen.queryByRole('button', { name: /excluir fórmula/i })).not.toBeInTheDocument();
 
-      // Exclusão de outras origens
       expect(screen.queryByText('Fórmula Padrão Oficial')).not.toBeInTheDocument();
       expect(screen.queryByText('Fórmula da Turma XYZ')).not.toBeInTheDocument();
       expect(screen.queryByText('Fórmula de Outro Professor')).not.toBeInTheDocument();
@@ -158,7 +155,6 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
       expect(screen.getByText('Lógica')).toBeInTheDocument();
       expect(screen.getByText('Clareza')).toBeInTheDocument();
 
-      // Sem botão de editar na tela de visualização
       expect(screen.queryByRole('button', { name: /editar fórmula/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Aplicar fórmula' })).not.toBeInTheDocument();
     });
@@ -215,15 +211,19 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
       );
 
       expect(await screen.findByDisplayValue('Fórmula Inédita')).toBeInTheDocument();
+      expect(screen.getByText('Soma dos pesos')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /salvar fórmula/i })).toBeDisabled();
 
       await userEvent.click(screen.getByRole('button', { name: '+Adicionar critério' }));
       await userEvent.type(screen.getByLabelText('Nome do critério'), 'Pontualidade');
-      const weightInput = screen.getByLabelText('Peso (1 a 10)');
+      const weightInput = screen.getByLabelText('Peso (0 a 10)');
       await userEvent.clear(weightInput);
       await userEvent.type(weightInput, '10');
       await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
 
-      await userEvent.click(screen.getByRole('button', { name: /salvar fórmula/i }));
+      const saveButton = screen.getByRole('button', { name: /salvar fórmula/i });
+      expect(saveButton).toBeEnabled();
+      await userEvent.click(saveButton);
 
       expect(performanceTableService.create).toHaveBeenCalledWith({
         nome: 'Fórmula Inédita',
@@ -240,6 +240,84 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
       });
 
       expect(await screen.findByText('Lista de Minhas Fórmulas')).toBeInTheDocument();
+    });
+
+    it('allows adding criteria exceeding 10, displays warning and keeps save button disabled until equal to 10', async () => {
+      render(
+        <MemoryRouter
+          initialEntries={[
+            { pathname: '/minhas-formulas/nova', state: { nome: 'Fórmula Pessoal' } },
+          ]}
+        >
+          <Routes>
+            <Route path="/minhas-formulas/nova" element={<CreateMyFormulaPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await screen.findByDisplayValue('Fórmula Pessoal');
+      const saveBtn = screen.getByRole('button', { name: /salvar fórmula/i });
+      expect(saveBtn).toBeDisabled();
+
+      await userEvent.click(screen.getByRole('button', { name: '+Adicionar critério' }));
+      await userEvent.type(screen.getByLabelText('Nome do critério'), 'Critério 1');
+      const weightInput = screen.getByLabelText('Peso (0 a 10)');
+      await userEvent.clear(weightInput);
+      await userEvent.type(weightInput, '7');
+      await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+      expect(screen.getByText('Critério 1')).toBeInTheDocument();
+      expect(screen.getByText('7 / 10')).toBeInTheDocument();
+      expect(screen.getByText(/A soma dos pesos deve ser exatamente 10/i)).toBeInTheDocument();
+      expect(saveBtn).toBeDisabled();
+
+      await userEvent.click(screen.getByRole('button', { name: '+Adicionar critério' }));
+      await userEvent.type(screen.getByLabelText('Nome do critério'), 'Critério 2');
+      const weightInput2 = screen.getByLabelText('Peso (0 a 10)');
+      await userEvent.clear(weightInput2);
+      await userEvent.type(weightInput2, '5');
+      await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+      expect(screen.getByText('Critério 2')).toBeInTheDocument();
+      expect(screen.getByText('12 / 10')).toBeInTheDocument();
+      expect(screen.getByText(/A soma dos pesos ultrapassou 10/i)).toBeInTheDocument();
+      expect(saveBtn).toBeDisabled();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Editar critério Critério 2' }));
+      const editWeight = screen.getByLabelText('Peso');
+      await userEvent.clear(editWeight);
+      await userEvent.type(editWeight, '3');
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar Edição' }));
+
+      expect(screen.getByText('10 / 10')).toBeInTheDocument();
+      expect(screen.queryByText(/A soma dos pesos (ultrapassou|deve)/i)).not.toBeInTheDocument();
+      expect(saveBtn).toBeEnabled();
+    });
+
+    it('formats decimal weights with comma and at most one decimal place', async () => {
+      render(
+        <MemoryRouter
+          initialEntries={[
+            { pathname: '/minhas-formulas/nova', state: { nome: 'Fórmula Pessoal' } },
+          ]}
+        >
+          <Routes>
+            <Route path="/minhas-formulas/nova" element={<CreateMyFormulaPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await screen.findByDisplayValue('Fórmula Pessoal');
+      await userEvent.click(screen.getByRole('button', { name: '+Adicionar critério' }));
+      await userEvent.type(screen.getByLabelText('Nome do critério'), 'Critério Decimal');
+      const weightInput = screen.getByLabelText('Peso (0 a 10)');
+      await userEvent.clear(weightInput);
+      await userEvent.type(weightInput, '5.55');
+      expect(weightInput).toHaveValue('5,5');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+      expect(screen.getByText('5,5')).toBeInTheDocument();
+      expect(screen.getByText('5,5 / 10')).toBeInTheDocument();
     });
   });
 
@@ -303,6 +381,31 @@ describe('MyFormulas - Módulo Desvinculado de Minhas Fórmulas', () => {
 
       expect(performanceTableService.remove).toHaveBeenCalledWith('f-original-1');
       expect(await screen.findByText('Lista de Minhas Fórmulas')).toBeInTheDocument();
+    });
+
+    it('disables save button and displays warning when criterion deletion makes weight sum different from 10', async () => {
+      vi.mocked(performanceTableService.getById).mockResolvedValue(mockDetail);
+
+      render(
+        <MemoryRouter initialEntries={['/minhas-formulas/f-original-1/editar']}>
+          <Routes>
+            <Route path="/minhas-formulas/:id/editar" element={<EditMyFormulaPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await screen.findByText('Lógica');
+      const concludeBtn = screen.getByRole('button', { name: 'Concluir edição' });
+      expect(concludeBtn).toBeEnabled();
+      expect(screen.getByText('10 / 10')).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Excluir critério Clareza' }));
+      expect(screen.getByRole('heading', { name: 'Excluir critério?' })).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Sim, excluir critério' }));
+
+      expect(concludeBtn).toBeDisabled();
+      expect(screen.getByText('6 / 10')).toBeInTheDocument();
+      expect(screen.getByText(/A soma dos pesos deve ser exatamente 10/i)).toBeInTheDocument();
     });
   });
 });

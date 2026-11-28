@@ -8,8 +8,6 @@ import { EditScopeModal } from './EditScopeModal';
 type ModalsProps = {
   form: ReturnType<typeof useEditPerformanceTableForm>;
   modals: ReturnType<typeof useEditModals>;
-  totalWeight: number;
-  otherWeightsSum: number;
   canEditCriteria: boolean;
   onConfirmDeleteCriterion: () => void;
   isDeletingFormula: boolean;
@@ -64,11 +62,9 @@ export function EditModalsSection(props: ModalsProps) {
         onCloseAddModal={() => props.modals.setIsAddModalOpen(false)}
         onAddCriterion={(c) => props.form.setCriterios((prev) => [...prev, c])}
         nextOrder={props.form.criterios.length + 1}
-        totalWeight={props.totalWeight}
         editingCriterion={props.modals.editingCriterion}
         onCloseEditModal={() => props.modals.setEditingCriterion(null)}
         onSaveCriterion={props.modals.handleSaveCriterion}
-        otherWeightsSum={props.otherWeightsSum}
         criterionToDelete={props.modals.criterionToDelete}
         onCloseDeleteCriterion={() => props.modals.setCriterionToDelete(null)}
         onConfirmDeleteCriterion={props.onConfirmDeleteCriterion}

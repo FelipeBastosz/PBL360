@@ -28,4 +28,5 @@ export const toProblemDeletionImpactResponse = (
   notas: impact.grades,
   feedbacks: impact.feedbacks,
   avaliacoes: impact.evaluations,
+  entregas: impact.deliveries,
 });

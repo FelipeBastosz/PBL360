@@ -27,6 +27,7 @@ describe('peer-evaluations.mapper', () => {
       liberada: true,
       prazo: new Date('2026-10-15T23:59:59Z'),
       chamadaRealizada: true,
+      participou: true,
       formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [
         {
@@ -44,6 +45,7 @@ describe('peer-evaluations.mapper', () => {
       liberada: true,
       prazo: output.prazo,
       chamadaRealizada: true,
+      participou: true,
       formula: { criteriaWeight: 70, roleWeight: 30 },
       colegas: [
         {
@@ -64,7 +66,7 @@ describe('peer-evaluations.mapper', () => {
       enviadaEm: new Date('2026-10-10T12:00:00Z'),
       notaCargo: null,
       formula: { criteriaWeight: 70, roleWeight: 30 },
-      criterios: [{ id: 'crit-1', nome: 'Critério', peso: 2, notaMaxima: 10 }],
+      criterios: [{ id: 'crit-1', nome: 'Critério', peso: 2, notaMaxima: 10, ordem: 1 }],
       itens: [{ criterioId: 'crit-1', nota: 9 }],
     };
 
@@ -75,7 +77,7 @@ describe('peer-evaluations.mapper', () => {
       enviadaEm: output.enviadaEm,
       notaCargo: null,
       formula: { criteriaWeight: 70, roleWeight: 30 },
-      criterios: [{ id: 'crit-1', nome: 'Critério', peso: 2, notaMaxima: 10 }],
+      criterios: [{ id: 'crit-1', nome: 'Critério', peso: 2, notaMaxima: 10, ordem: 1 }],
       itens: [{ criterioId: 'crit-1', nota: 9 }],
     });
   });

@@ -33,7 +33,7 @@ function ScopeSelector({
           name="scope"
           checked={!applyToFollowing}
           onChange={() => onChange(false)}
-          className="accent-brand-900"
+          className="accent-brand-primary"
         />
         Aplicar só nesta sessão
       </label>
@@ -43,7 +43,7 @@ function ScopeSelector({
           name="scope"
           checked={applyToFollowing}
           onChange={() => onChange(true)}
-          className="accent-brand-900"
+          className="accent-brand-primary"
         />
         Nesta e nas seguintes
       </label>
@@ -64,19 +64,19 @@ export function ApplyScopeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-elevated p-6 shadow-2xl">
         <button
           type="button"
           onClick={isLoading ? undefined : onClose}
           disabled={isLoading}
-          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-black/5"
+          className="absolute right-4 top-4 rounded-full p-1 text-ink/60 hover:bg-subtle"
         >
           <XMarkIcon className="size-6" />
         </button>
-        <h2 className="text-lg font-bold text-brand-900">Substituir tabela</h2>
+        <h2 className="text-lg font-bold text-brand-accent">Substituir tabela</h2>
         {currentTableName && (
-          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-xs text-amber-900">
-            <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-warning-line bg-warning-soft p-3 text-left text-xs text-warning">
+            <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-warning" />
             <span>
               Esta sessão já possui a tabela <strong>{currentTableName}</strong> vinculada. Deseja
               substituí-la por esta?
@@ -115,15 +115,15 @@ export function IgnoredSessionsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl">
-        <div className="flex items-center gap-2 text-amber-600">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[24px] bg-elevated p-6 shadow-2xl">
+        <div className="flex items-center gap-2 text-warning">
           <ExclamationCircleIcon className="size-6 shrink-0" />
           <h2 className="text-base font-bold text-ink">Aviso sobre sessões seguintes</h2>
         </div>
         <p className="mt-2 text-xs text-muted">
           A fórmula foi aplicada, mas algumas sessões foram ignoradas:
         </p>
-        <ul className="mt-3 flex max-h-40 flex-col gap-2 overflow-y-auto rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs">
+        <ul className="mt-3 flex max-h-40 flex-col gap-2 overflow-y-auto rounded-xl border border-warning-line bg-warning-soft p-3 text-xs">
           {ignored.map((item) => (
             <li key={item.sessaoId} className="flex flex-col text-ink">
               <span className="font-semibold">{item.rotulo}</span>

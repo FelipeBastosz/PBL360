@@ -182,9 +182,12 @@ describe('Roll call (e2e)', () => {
     it('does not use a later session as the previous one', async () => {
       const early = await createSession(problemId, '01-10-2026');
       const late = await createSession(problemId, '20-10-2026');
-      await putRollCall(late, [{ alunoId: students[0]!.id, status: 'PRESENTE', lugar: 1 }]).expect(
-        200,
-      );
+      const [ana, bruno, carla] = students as [TestUser, TestUser, TestUser];
+      await putRollCall(late, [
+        { alunoId: ana.id, status: 'PRESENTE', lugar: 1 },
+        { alunoId: bruno.id, status: 'AUSENTE', lugar: null },
+        { alunoId: carla.id, status: 'AUSENTE', lugar: null },
+      ]).expect(200);
 
       expect((await getRollCall(early)).origem).toBe('VAZIA');
     });
@@ -234,28 +237,54 @@ describe('Roll call (e2e)', () => {
       expect(await getRollCall(sessionId)).toEqual(body);
     });
 
-    it('keeps the record of students left out of the batch', async () => {
+    it('rejects an incomplete batch with 422 and saves nothing when students are missing', async () => {
       const [ana, bruno] = students as [TestUser, TestUser];
+
+      const response = await putRollCall(sessionId, [
+        { alunoId: ana.id, status: 'PRESENTE', lugar: 1 },
+        { alunoId: bruno.id, status: 'ATRASADO', lugar: 2 },
+      ]).expect(422);
+
+      expect((response.body as ErrorBody).message).toBe(
+        'Defina a presença ou ausência de todos os alunos da turma antes de salvar a chamada.',
+      );
+      const [{ total }] = await dataSource.query<[{ total: number }]>(
+        'SELECT COUNT(*)::int AS total FROM attendances WHERE session_id = $1;',
+        [sessionId],
+      );
+      expect(total).toBe(0);
+    });
+
+    it('updates a complete roll call preserving valid combinations of all statuses', async () => {
+      const [ana, bruno, carla] = students as [TestUser, TestUser, TestUser];
       await putRollCall(sessionId, [
         { alunoId: ana.id, status: 'PRESENTE', lugar: 1 },
         { alunoId: bruno.id, status: 'PRESENTE', lugar: 2 },
+        { alunoId: carla.id, status: 'AUSENTE', lugar: null },
       ]).expect(200);
 
       const body = (
-        await putRollCall(sessionId, [{ alunoId: ana.id, status: 'ATRASADO', lugar: 1 }]).expect(
-          200,
-        )
+        await putRollCall(sessionId, [
+          { alunoId: ana.id, status: 'ATRASADO', lugar: 1 },
+          { alunoId: bruno.id, status: 'PRESENTE', lugar: 2 },
+          { alunoId: carla.id, status: 'JUSTIFICADO', justificativa: 'Atestado médico.' },
+        ]).expect(200)
       ).body as RollCallBody;
 
       expect(studentOf(body, ana)).toMatchObject({ status: 'ATRASADO', lugar: 1 });
       expect(studentOf(body, bruno)).toMatchObject({ status: 'PRESENTE', lugar: 2 });
+      expect(studentOf(body, carla)).toMatchObject({
+        status: 'JUSTIFICADO',
+        justificativa: 'Atestado médico.',
+      });
     });
 
     it('releases the session role of a student taken off the table', async () => {
-      const [ana, bruno] = students as [TestUser, TestUser];
+      const [ana, bruno, carla] = students as [TestUser, TestUser, TestUser];
       await putRollCall(sessionId, [
         { alunoId: ana.id, status: 'PRESENTE', lugar: 1 },
         { alunoId: bruno.id, status: 'PRESENTE', lugar: 2 },
+        { alunoId: carla.id, status: 'AUSENTE', lugar: null },
       ]).expect(200);
       await api(app, tutor)
         .put(`/sessoes/${sessionId}/papeis/${ana.id}`, { papel: 'COORDENADOR' })
@@ -265,9 +294,11 @@ describe('Roll call (e2e)', () => {
         .expect(200);
 
       const body = (
-        await putRollCall(sessionId, [{ alunoId: ana.id, status: 'AUSENTE', lugar: null }]).expect(
-          200,
-        )
+        await putRollCall(sessionId, [
+          { alunoId: ana.id, status: 'AUSENTE', lugar: null },
+          { alunoId: bruno.id, status: 'PRESENTE', lugar: 2 },
+          { alunoId: carla.id, status: 'AUSENTE', lugar: null },
+        ]).expect(200)
       ).body as RollCallBody;
 
       expect(studentOf(body, ana)).toMatchObject({ status: 'AUSENTE', lugar: null });
@@ -279,16 +310,18 @@ describe('Roll call (e2e)', () => {
     });
 
     it('swaps two students between seats in one batch', async () => {
-      const [ana, bruno] = students as [TestUser, TestUser];
+      const [ana, bruno, carla] = students as [TestUser, TestUser, TestUser];
       await putRollCall(sessionId, [
         { alunoId: ana.id, status: 'PRESENTE', lugar: 1 },
         { alunoId: bruno.id, status: 'PRESENTE', lugar: 2 },
+        { alunoId: carla.id, status: 'AUSENTE', lugar: null },
       ]).expect(200);
 
       const body = (
         await putRollCall(sessionId, [
           { alunoId: ana.id, status: 'PRESENTE', lugar: 2 },
           { alunoId: bruno.id, status: 'PRESENTE', lugar: 1 },
+          { alunoId: carla.id, status: 'AUSENTE', lugar: null },
         ]).expect(200)
       ).body as RollCallBody;
 
@@ -328,18 +361,24 @@ describe('Roll call (e2e)', () => {
       ]).expect(409);
     });
 
-    it('answers 409 when the seat belongs to a student kept from a previous save', async () => {
+    it('answers 422 when updating an existing roll call with a missing student and preserves saved data', async () => {
+      const [ana, bruno, carla] = students as [TestUser, TestUser, TestUser];
       await putRollCall(sessionId, [
-        { alunoId: students[0]!.id, status: 'PRESENTE', lugar: 1 },
+        { alunoId: ana.id, status: 'PRESENTE', lugar: 1 },
+        { alunoId: bruno.id, status: 'PRESENTE', lugar: 2 },
+        { alunoId: carla.id, status: 'AUSENTE', lugar: null },
       ]).expect(200);
 
       const response = await putRollCall(sessionId, [
-        { alunoId: students[1]!.id, status: 'PRESENTE', lugar: 1 },
-      ]).expect(409);
+        { alunoId: ana.id, status: 'ATRASADO', lugar: 1 },
+      ]).expect(422);
 
       expect((response.body as ErrorBody).message).toBe(
-        'Dois alunos não podem ocupar o mesmo lugar na mesa.',
+        'Defina a presença ou ausência de todos os alunos da turma antes de salvar a chamada.',
       );
+      const current = await getRollCall(sessionId);
+      expect(studentOf(current, ana)).toMatchObject({ status: 'PRESENTE', lugar: 1 });
+      expect(studentOf(current, bruno)).toMatchObject({ status: 'PRESENTE', lugar: 2 });
     });
 
     it('answers 422 for a student who is not enrolled in the room', async () => {

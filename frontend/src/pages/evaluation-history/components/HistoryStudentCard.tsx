@@ -4,10 +4,12 @@ import { cn } from '@/utils/cn';
 import {
   formatScore,
   getDisplayName,
+  getScoreLabel,
   getSituationLabel,
   getStudentScore,
   getTutorScore,
   hasSubmitted,
+  isTutorOnlyGrade,
 } from '@/utils/evaluationHistory';
 
 type HistoryStudentCardProps = {
@@ -54,15 +56,16 @@ function PendingClock() {
 }
 
 function SituationLine({ student }: { student: StudentEvaluationHistoryItem }) {
-  const isAdjusted = hasSubmitted(student) && student.situacaoAjuste === 'AJUSTADA';
+  const isDone =
+    (hasSubmitted(student) && student.situacaoAjuste === 'AJUSTADA') || isTutorOnlyGrade(student);
   return (
     <p
       className={cn(
         'flex items-center text-[11.5px] leading-[14px]',
-        isAdjusted ? 'gap-[3.3px] text-[#1E2BAA]' : 'gap-[5.5px] text-[#5C6072]',
+        isDone ? 'gap-[3.3px] text-brand-accent' : 'gap-[5.5px] text-muted',
       )}
     >
-      {isAdjusted ? <CheckMark /> : <PendingClock />}
+      {isDone ? <CheckMark /> : <PendingClock />}
       <span>{getSituationLabel(student)}</span>
     </p>
   );
@@ -73,18 +76,18 @@ type ScoreColumnProps = { label: string; value: number | null; isTutor?: boolean
 function ScoreColumn({ label, value, isTutor }: ScoreColumnProps) {
   return (
     <div className="flex w-[35px] flex-col items-center">
-      <span className="text-[9.5px] leading-3 font-medium tracking-[0.05em] text-[#5C6072] uppercase">
+      <span className="text-[9.5px] leading-3 font-medium tracking-[0.05em] text-muted uppercase">
         {label}
       </span>
       {value === null ? (
         <span className="flex h-[18px] items-center" aria-label="Sem nota">
-          <span className="h-[1.7px] w-4 bg-[#CBCFDC]" />
+          <span className="h-[1.7px] w-4 bg-border" />
         </span>
       ) : (
         <span
           className={cn(
             'text-[16px] leading-[18px] font-semibold tabular-nums',
-            isTutor ? 'text-[#1E2BAA]' : 'text-[#5C6072]',
+            isTutor ? 'text-brand-accent' : 'text-muted',
           )}
         >
           {formatScore(value)}
@@ -96,10 +99,15 @@ function ScoreColumn({ label, value, isTutor }: ScoreColumnProps) {
 
 function ScoreArrow() {
   return (
-    <svg viewBox="0 0 10 7" className="h-[7px] w-[10px] shrink-0" fill="none" aria-hidden>
+    <svg
+      viewBox="0 0 10 7"
+      className="h-[7px] w-[10px] shrink-0 text-border"
+      fill="none"
+      aria-hidden
+    >
       <path
         d="M1 3.5h8M6.33 6.17 9 3.5 6.33.83"
-        stroke="#CBCFDC"
+        stroke="currentColor"
         strokeWidth={1.33}
         strokeLinecap="round"
       />
@@ -126,9 +134,9 @@ export function HistoryStudentCard({ student, index, onSelect }: HistoryStudentC
   return (
     <article
       className={cn(
-        'relative flex items-center gap-3 rounded-xl border border-[#E2E4EC] bg-white p-[13.8px] shadow-[0_2px_8px_rgb(26_29_41/0.08)] transition-colors',
+        'relative flex items-center gap-3 rounded-xl border border-border-subtle bg-elevated p-[13.8px] shadow-[0_2px_8px_rgb(0_0_0/0.08)] transition-colors',
         canAdjust &&
-          'focus-within:ring-2 focus-within:ring-brand-900 focus-within:ring-offset-2 hover:bg-surface-50',
+          'focus-within:ring-2 focus-within:ring-brand-accent focus-within:ring-offset-2 hover:bg-subtle',
       )}
     >
       {canAdjust && (
@@ -141,16 +149,13 @@ export function HistoryStudentCard({ student, index, onSelect }: HistoryStudentC
       )}
       <StudentPhoto student={student} index={index} />
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-        <h2 className="truncate text-[15px] leading-[18px] font-semibold text-brand-900">
+        <h2 className="truncate text-[15px] leading-[18px] font-semibold text-brand-accent">
           {displayName}
         </h2>
         <SituationLine student={student} />
       </div>
       <div className="flex shrink-0 items-center gap-[15.5px]">
-        <ScoreColumn
-          label={student.notaPares !== null && student.notaAluno === null ? 'Pares' : 'Aluno'}
-          value={getStudentScore(student)}
-        />
+        <ScoreColumn label={getScoreLabel(student)} value={getStudentScore(student)} />
         <ScoreArrow />
         <ScoreColumn label="Tutor" value={getTutorScore(student)} isTutor />
       </div>

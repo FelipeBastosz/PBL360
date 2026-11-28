@@ -19,7 +19,7 @@ function ManageHeader() {
   const navigate = useNavigate();
 
   return (
-    <header className="shrink-0 bg-brand-900 text-white">
+    <header className="shrink-0 border-b border-brand-primary-border bg-brand-primary text-white">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
         <div className="flex items-center gap-3">
           <button
@@ -61,8 +61,8 @@ function FormulaSelectItem({
       className={cn(
         'w-full rounded-[18px] border p-4 text-left font-bold transition-all shadow-sm',
         isSelected
-          ? 'border-brand-900 bg-brand-50 text-brand-900 ring-2 ring-brand-900'
-          : 'border-black/5 bg-white text-brand-900 hover:bg-gray-50',
+          ? 'border-brand-accent bg-brand-soft text-brand-accent ring-2 ring-brand-accent'
+          : 'border-border-subtle bg-elevated text-brand-accent hover:bg-subtle',
       )}
     >
       {table.nome}
@@ -114,8 +114,8 @@ function ManageActions({
         onClick={onSubmit}
         disabled={!hasSelection}
         className={cn(
-          'w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg transition-transform active:scale-[0.98]',
-          !hasSelection ? 'opacity-60 cursor-not-allowed' : 'hover:bg-brand-800',
+          'w-full rounded-[14px] bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg transition-transform active:scale-[0.98]',
+          !hasSelection ? 'opacity-60 cursor-not-allowed' : 'hover:bg-brand-primary-hover',
         )}
       >
         Selecionar fórmula
@@ -123,7 +123,7 @@ function ManageActions({
       <button
         type="button"
         onClick={onCancel}
-        className="relative text-center text-sm font-semibold text-brand-900 underline after:absolute after:inset-x-0 after:-inset-y-2 hover:opacity-80"
+        className="relative text-center text-sm font-semibold text-brand-accent underline after:absolute after:inset-x-0 after:-inset-y-2 hover:opacity-80"
       >
         Cancelar
       </button>
@@ -168,7 +168,7 @@ export function ManagePerformanceTablesPage() {
       <main className={cn(PAGE_CONTAINER_CLASS, 'mt-6 flex flex-col')}>
         {isLoading && (
           <div className="mt-12 flex justify-center">
-            <Spinner className="size-8 text-brand-900" />
+            <Spinner className="size-8 text-brand-accent" />
           </div>
         )}
         {error && <Alert tone="error">{error.message}</Alert>}

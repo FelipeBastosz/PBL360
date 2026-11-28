@@ -21,6 +21,7 @@ const RollCallPage = lazy(() => import('@/pages/roll-call/RollCallPage'));
 const MemberSessionPage = lazy(() => import('@/pages/sessions/MemberSessionPage'));
 const NotFoundPage = lazy(() => import('@/pages/not-found/NotFoundPage'));
 const RoomsPage = lazy(() => import('@/pages/rooms/RoomsPage'));
+const JoinRoomByLinkPage = lazy(() => import('@/pages/rooms/JoinRoomByLinkPage'));
 const CreateRoomPage = lazy(() => import('@/pages/rooms/CreateRoomPage'));
 const CreateRoomSuccessPage = lazy(() => import('@/pages/rooms/CreateRoomSuccessPage'));
 const ManageRoomsPage = lazy(() => import('@/pages/rooms/ManageRoomsPage'));
@@ -94,6 +95,7 @@ const protectedRoutes = (
   <Route element={<ProtectedRoute />}>
     <Route path={ROUTES.myAccount} element={<ProfilePage />} />
     <Route path={ROUTES.rooms} element={<RoomsPage />} />
+    <Route path={ROUTES.joinRoomByLink} element={<JoinRoomByLinkPage />} />
     <Route path={ROUTES.createRoom} element={<CreateRoomPage />} />
     <Route path={ROUTES.createRoomSuccess} element={<CreateRoomSuccessPage />} />
     <Route path={ROUTES.manageRooms} element={<ManageRoomsPage />} />

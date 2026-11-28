@@ -13,7 +13,7 @@ export function PerformanceTablesHeader() {
   const navigate = useNavigate();
 
   return (
-    <header className="shrink-0 bg-brand-900 text-white">
+    <header className="shrink-0 border-b border-brand-primary-border bg-brand-primary text-white">
       <div className={cn(PAGE_CONTAINER_CLASS, 'flex h-16 items-center justify-between')}>
         <div className="flex items-center gap-3">
           <button
@@ -52,7 +52,7 @@ export function PerformanceTablesFabMenu({
               setIsOpen(false);
               navigate(ROUTES.managePerformanceTables, { state: target });
             }}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+            className="rounded-full border border-brand-accent bg-elevated px-5 py-2 text-sm font-semibold text-brand-accent shadow-sm hover:bg-brand-soft"
           >
             Editar uma fórmula
           </button>
@@ -62,7 +62,7 @@ export function PerformanceTablesFabMenu({
               setIsOpen(false);
               onOpenCreateModal();
             }}
-            className="rounded-full border border-brand-900 bg-white px-5 py-2 text-sm font-semibold text-brand-900 shadow-sm hover:bg-brand-50"
+            className="rounded-full border border-brand-accent bg-elevated px-5 py-2 text-sm font-semibold text-brand-accent shadow-sm hover:bg-brand-soft"
           >
             Criar nova fórmula
           </button>
@@ -72,8 +72,8 @@ export function PerformanceTablesFabMenu({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex size-14 items-center justify-center rounded-full bg-brand-900 text-white shadow-lg transition-transform',
-          isOpen ? 'rotate-45 bg-danger' : '',
+          'flex size-14 items-center justify-center rounded-full bg-brand-primary text-white shadow-lg transition-transform',
+          isOpen ? 'rotate-45 bg-danger-solid' : '',
         )}
         aria-label="Ações de fórmula"
       >

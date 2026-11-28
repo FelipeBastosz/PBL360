@@ -110,7 +110,7 @@ describe('RollCallPage', () => {
     expect(within(counter('Presentes')).getByText('1')).toBeInTheDocument();
   });
 
-  it('seats a student by tapping the photo and then a free seat, marking them present', async () => {
+  it('seats a student by tapping the photo and then a free seat, keeping save blocked until all students are defined', async () => {
     const { user } = openRollCall(rollCall([ana, bruno]));
 
     await user.click(await screen.findByRole('button', { name: 'Ana Souza, fora da mesa' }));
@@ -123,7 +123,58 @@ describe('RollCallPage', () => {
       screen.getByRole('button', { name: 'Lugar 2: Ana Souza, Presente' }),
     ).toBeInTheDocument();
     expect(within(counter('Presentes')).getByText('1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Salvar chamada' })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Defina a presença ou ausência de 1 aluno restante para salvar a chamada.',
+    );
+  });
+
+  it('blocks saving while students are unmarked and enables it once all are defined via quick actions', async () => {
+    const { user } = openRollCall(rollCall([ana, bruno, carla]));
+
+    expect(await screen.findByRole('button', { name: 'Salvar chamada' })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Defina a presença ou ausência de 3 alunos restantes para salvar a chamada.',
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Ana Souza, fora da mesa' }));
+    await user.click(screen.getByRole('button', { name: 'Lugar 1, livre' }));
+    expect(screen.getByRole('button', { name: 'Salvar chamada' })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Defina a presença ou ausência de 2 alunos restantes para salvar a chamada.',
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Restantes ausentes' }));
     expect(screen.getByRole('button', { name: 'Salvar chamada' })).toBeEnabled();
+    expect(screen.getByText('Há alterações não salvas.')).toBeInTheDocument();
+  });
+
+  it('enables saving after seating everyone with Todos presentes', async () => {
+    const { user } = openRollCall(rollCall([ana, bruno]));
+
+    expect(await screen.findByRole('button', { name: 'Salvar chamada' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Todos presentes' }));
+
+    expect(screen.getByRole('button', { name: 'Salvar chamada' })).toBeEnabled();
+  });
+
+  it('keeps Todos presentes enabled when off-table students are marked absent and seats them as present', async () => {
+    const { user } = openRollCall(
+      rollCall([
+        student('ana', 'Ana Souza', { status: 'AUSENTE' }),
+        student('bruno', 'Bruno Martins', { status: 'AUSENTE' }),
+      ]),
+    );
+
+    const seatAllButton = await screen.findByRole('button', { name: 'Todos presentes' });
+    expect(seatAllButton).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Restantes ausentes' })).toBeDisabled();
+
+    await user.click(seatAllButton);
+
+    expect(screen.getByText('Todos os alunos estão na mesa.')).toBeInTheDocument();
+    expect(within(counter('Presentes')).getByText('2')).toBeInTheDocument();
+    expect(within(counter('Ausentes')).getByText('0')).toBeInTheDocument();
   });
 
   it('swaps two seated students by dragging one onto the other', async () => {
@@ -224,9 +275,15 @@ describe('RollCallPage', () => {
       ])
       .mockResolvedValueOnce([]);
     vi.mocked(sessionService.saveRollCall).mockResolvedValue(
-      rollCall([student('ana', 'Ana Souza', { status: 'AUSENTE' }), bruno], {
-        origem: 'REGISTRADA',
-      }),
+      rollCall(
+        [
+          student('ana', 'Ana Souza', { status: 'AUSENTE' }),
+          student('bruno', 'Bruno Martins', { status: 'AUSENTE' }),
+        ],
+        {
+          origem: 'REGISTRADA',
+        },
+      ),
     );
     const { user } = openRollCall(
       rollCall([student('ana', 'Ana Souza', { lugar: 1, status: 'PRESENTE' }), bruno], {
@@ -243,9 +300,13 @@ describe('RollCallPage', () => {
     ).toBeInTheDocument();
     expect(within(counter('Presentes')).getByText('0')).toBeInTheDocument();
     expect(within(counter('Ausentes')).getByText('1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Salvar chamada' })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Restantes ausentes' }));
     await user.click(screen.getByRole('button', { name: 'Salvar chamada' }));
     expect(sessionService.saveRollCall).toHaveBeenCalledWith('s1', [
       { alunoId: 'ana', status: 'AUSENTE', lugar: null, justificativa: null },
+      { alunoId: 'bruno', status: 'AUSENTE', lugar: null, justificativa: null },
     ]);
     expect(await screen.findByText('Chamada salva.')).toBeInTheDocument();
     expect(sessionService.listRoles).toHaveBeenCalledTimes(2);

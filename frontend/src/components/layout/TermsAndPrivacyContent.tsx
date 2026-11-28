@@ -20,7 +20,7 @@ function cleanMailtoSyntax(text: string): string {
 function renderToken(token: string, key: number): ReactNode {
   if (token.startsWith('**') && token.endsWith('**')) {
     return (
-      <strong key={key} className="text-brand-900 font-semibold">
+      <strong key={key} className="text-brand-accent font-semibold">
         {token.slice(2, -2)}
       </strong>
     );
@@ -39,7 +39,7 @@ function renderToken(token: string, key: number): ReactNode {
         href={token}
         target="_blank"
         rel="noopener noreferrer"
-        className="font-medium text-brand-900 underline underline-offset-2 hover:text-brand-700"
+        className="font-medium text-brand-accent underline underline-offset-2 hover:opacity-80"
       >
         {token}
       </a>
@@ -75,7 +75,7 @@ function renderBlock(block: string, index: number): ReactNode {
   if (!trimmed || trimmed.startsWith('# ')) return null;
 
   if (trimmed === '---') {
-    return <hr key={index} className="border-black/5 my-1" />;
+    return <hr key={index} className="border-border-subtle my-1" />;
   }
 
   if (trimmed.startsWith('>')) {
@@ -91,12 +91,12 @@ function renderBlock(block: string, index: number): ReactNode {
     return (
       <section
         key={index}
-        className="flex flex-col gap-1.5 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs"
+        className="flex flex-col gap-1.5 rounded-xl border border-warning-line bg-warning-soft p-3 text-xs"
       >
         {title ? (
-          <h3 className="font-semibold uppercase tracking-wide text-amber-950">{title}</h3>
+          <h3 className="font-semibold uppercase tracking-wide text-warning">{title}</h3>
         ) : null}
-        <p className="font-medium leading-relaxed text-amber-900">{renderInlineText(body)}</p>
+        <p className="font-medium leading-relaxed text-ink">{renderInlineText(body)}</p>
       </section>
     );
   }
@@ -108,7 +108,7 @@ function renderBlock(block: string, index: number): ReactNode {
 
     return (
       <section key={index} className="flex flex-col gap-1.5 text-left">
-        <h3 className="text-sm font-semibold text-brand-900">{header}</h3>
+        <h3 className="text-sm font-semibold text-brand-accent">{header}</h3>
         {rest ? renderSectionBody(rest) : null}
       </section>
     );
@@ -196,7 +196,7 @@ export function TermsAndPrivacyContent({
     return <TermLoadError message={activeError} onRetry={activeRetry} />;
   }
   if (activeLoading && !activeTerm) {
-    return <span className="text-xs text-brand-700 animate-pulse">Carregando termos...</span>;
+    return <span className="text-xs text-brand-accent animate-pulse">Carregando termos...</span>;
   }
   if (!activeTerm) {
     return <TermLoadError message={LIVE_TERM_LOAD_ERROR} onRetry={activeRetry} />;
@@ -207,8 +207,8 @@ export function TermsAndPrivacyContent({
   return (
     <div className="flex flex-col gap-4 text-left">
       {activeLoading && (
-        <div className="flex justify-end border-b border-black/5 pb-1">
-          <span className="text-[10px] text-brand-700 animate-pulse">Atualizando termos...</span>
+        <div className="flex justify-end border-b border-border-subtle pb-1">
+          <span className="text-[10px] text-brand-accent animate-pulse">Atualizando termos...</span>
         </div>
       )}
       {blocks.map((block, index) => renderBlock(block, index))}

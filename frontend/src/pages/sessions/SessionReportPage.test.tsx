@@ -205,15 +205,15 @@ describe('SessionReportPage', () => {
 
       expect(await screen.findByText('Sessão 1 - Abertura')).toBeInTheDocument();
       const lowGradeCell = screen.getByText('6,5');
-      expect(lowGradeCell).toHaveClass('text-red-600');
+      expect(lowGradeCell).toHaveClass('text-danger');
 
       const highGradeCell = screen.getByText('8,0');
-      expect(highGradeCell).toHaveClass('text-green-600');
+      expect(highGradeCell).toHaveClass('text-success');
 
       const nullGradeCell = screen.getByText('—');
       expect(nullGradeCell).toHaveClass('text-ink');
-      expect(nullGradeCell).not.toHaveClass('text-red-600');
-      expect(nullGradeCell).not.toHaveClass('text-green-600');
+      expect(nullGradeCell).not.toHaveClass('text-danger');
+      expect(nullGradeCell).not.toHaveClass('text-success');
     });
 
     it('calculates and renders the mathematically correct class average in table footer, ignoring null grades', async () => {
@@ -225,8 +225,8 @@ describe('SessionReportPage', () => {
       const avgCell = screen.getByText('7,3');
       expect(avgCell).toBeInTheDocument();
       expect(avgCell).toHaveClass('text-ink', 'font-bold');
-      expect(avgCell).not.toHaveClass('text-green-600');
-      expect(avgCell).not.toHaveClass('text-red-600');
+      expect(avgCell).not.toHaveClass('text-success');
+      expect(avgCell).not.toHaveClass('text-danger');
     });
 
     it('fetches and maps real session students from the API when students prop is not provided', async () => {
@@ -239,6 +239,8 @@ describe('SessionReportPage', () => {
             matricula: '20241010',
             sessoes: [{ sessaoId: 'sess-1', nota: 8.5, situacao: 'AVALIADA' }],
             notaFinal: 8.5,
+            autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+            pares: { nota: null, situacao: 'PENDENTE' },
           },
           {
             alunoId: 'aluno-real-2',
@@ -246,6 +248,8 @@ describe('SessionReportPage', () => {
             matricula: '20241020',
             sessoes: [{ sessaoId: 'sess-1', nota: null, situacao: 'PENDENTE' }],
             notaFinal: null,
+            autoavaliacao: { nota: null, situacao: 'PENDENTE' },
+            pares: { nota: null, situacao: 'PENDENTE' },
           },
         ],
         mediaTurma: 8.5,
@@ -257,7 +261,7 @@ describe('SessionReportPage', () => {
       expect(await screen.findByText('Beatriz Santos')).toBeInTheDocument();
       const gradeCells = screen.getAllByText('8,5');
       expect(gradeCells).toHaveLength(2);
-      expect(gradeCells[0]).toHaveClass('text-green-600');
+      expect(gradeCells[0]).toHaveClass('text-success');
       expect(gradeCells[1]).toHaveClass('text-ink');
       expect(screen.getByText('—')).toBeInTheDocument();
     });

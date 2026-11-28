@@ -35,7 +35,7 @@ export function ChatComposer({ recipientName, isSending, onSend }: ChatComposerP
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex shrink-0 items-end gap-2 border-t border-ink/10 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      className="flex shrink-0 items-end gap-2 border-t border-border-subtle bg-elevated px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
     >
       <label htmlFor={inputId} className="sr-only">
         Mensagem para {recipientName}
@@ -48,13 +48,13 @@ export function ChatComposer({ recipientName, isSending, onSend }: ChatComposerP
         onChange={(event) => setText(event.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Escreva uma mensagem…"
-        className="max-h-32 min-h-11 flex-1 resize-none rounded-xl border border-ink/15 bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-placeholder focus:border-brand-900 focus:outline-none"
+        className="max-h-32 min-h-11 flex-1 resize-none rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-placeholder focus:border-brand-accent focus:outline-none"
       />
       <button
         type="submit"
         disabled={!canSend}
         aria-label="Enviar mensagem"
-        className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-900 text-white transition-[background-color,scale,opacity] duration-200 hover:bg-brand-700 active:scale-95 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900"
+        className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-brand-primary-border bg-brand-primary text-brand-on-primary transition-[background-color,scale,opacity] duration-200 hover:bg-brand-primary-hover active:scale-95 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
       >
         {isSending ? (
           <Spinner className="size-5" />

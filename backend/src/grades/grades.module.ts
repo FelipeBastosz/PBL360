@@ -17,6 +17,8 @@ import { GradesController } from './infrastructure/http/grades.controller';
 import { ClassReportController } from './infrastructure/http/class-report.controller';
 import { PgGradesRepository } from './infrastructure/database/pg-grades.repository';
 import { GradeRecalculationNoticesController } from './infrastructure/http/grade-recalculation-notices.controller';
+import { StudentPerformanceController } from './infrastructure/http/student-performance.controller';
+import { GetStudentPerformanceUseCase } from './application/use-cases/get-student-performance.use-case';
 import { ListGradeRecalculationNoticesUseCase } from './application/use-cases/list-grade-recalculation-notices.use-case';
 import { GRADE_RECALCULATION_REPOSITORY } from './domain/repositories/grade-recalculation.repository';
 import { PgGradeRecalculationRepository } from './infrastructure/database/pg-grade-recalculation.repository';
@@ -30,6 +32,7 @@ import { PgGradeRecalculationRepository } from './infrastructure/database/pg-gra
     ClassReportExportController,
     ProblemReportController,
     SessionReportController,
+    StudentPerformanceController,
   ],
   providers: [
     GetProblemGradesUseCase,
@@ -39,6 +42,7 @@ import { PgGradeRecalculationRepository } from './infrastructure/database/pg-gra
     ExportSessionReportUseCase,
     { provide: GRADES_REPOSITORY, useClass: PgGradesRepository },
     ListGradeRecalculationNoticesUseCase,
+    GetStudentPerformanceUseCase,
     { provide: GRADE_RECALCULATION_REPOSITORY, useClass: PgGradeRecalculationRepository },
   ],
   exports: [GetProblemGradesUseCase, GetClassFinalReportUseCase],

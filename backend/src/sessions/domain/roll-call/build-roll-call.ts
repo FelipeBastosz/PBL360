@@ -71,12 +71,15 @@ function pickEntries(input: BuildRollCallInput, seats: number) {
     return { origin: RollCallOrigin.RECORDED, entries: input.recorded, reference: null };
   }
   if (input.previous) {
-    const { sessionId, date } = input.previous;
-    return {
-      origin: RollCallOrigin.PREVIOUS_SESSION,
-      entries: suggestFromPrevious(input.previous, seats),
-      reference: { id: sessionId, date },
-    };
+    const entries = suggestFromPrevious(input.previous, seats);
+    if (entries.length) {
+      const { sessionId, date } = input.previous;
+      return {
+        origin: RollCallOrigin.PREVIOUS_SESSION,
+        entries,
+        reference: { id: sessionId, date },
+      };
+    }
   }
   return { origin: RollCallOrigin.EMPTY, entries: [], reference: null };
 }

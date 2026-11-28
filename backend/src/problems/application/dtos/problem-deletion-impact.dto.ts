@@ -24,4 +24,10 @@ export class ProblemDeletionImpactDto {
     description: 'Quantidade de avaliações vinculadas ao problema.',
   })
   avaliacoes: number;
+
+  @ApiProperty({
+    example: 0,
+    description: 'Quantidade de entregas vinculadas ao problema.',
+  })
+  entregas: number;
 }

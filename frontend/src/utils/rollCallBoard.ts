@@ -105,14 +105,10 @@ export function isOffTable(student: RollCallStudent): boolean {
   return student.lugar === null;
 }
 
-function canBeSeated(student: RollCallStudent): boolean {
-  return isOffTable(student) && (student.status === null || SEATED.includes(student.status));
-}
-
 export function seatEveryone(board: RollCallBoard): RollCallBoard {
   const seats = freeSeats(board);
   return board.students
-    .filter(canBeSeated)
+    .filter(isOffTable)
     .slice(0, seats.length)
     .reduce(
       (current, student, index) => seatStudent(current, student.alunoId, seats[index]!),

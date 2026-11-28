@@ -10,15 +10,15 @@ export function DescriptionCard({
   onOpenEdit: () => void;
 }) {
   return (
-    <div className="rounded-[14px] border border-black/5 bg-white p-4 shadow-sm">
+    <div className="rounded-[14px] border border-border-subtle bg-elevated p-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-brand-900">Descrição</h2>
+        <h2 className="text-sm font-semibold text-brand-accent">Descrição</h2>
         {canEditInfo && (
           <button
             type="button"
             onClick={onOpenEdit}
             aria-label="Editar descrição e título"
-            className="relative text-brand-900 after:absolute after:-inset-3"
+            className="relative text-brand-accent after:absolute after:-inset-3"
           >
             <PencilIcon className="size-5" />
           </button>
@@ -34,11 +34,13 @@ export function EditActions({
   onCancel,
   onDeleteFormula,
   canDeleteFormula = true,
+  disabled = false,
 }: {
   onSave: () => void;
   onCancel: () => void;
   onDeleteFormula: () => void;
   canDeleteFormula?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className="mt-8 flex flex-col gap-3">
@@ -46,22 +48,23 @@ export function EditActions({
         <button
           type="button"
           onClick={onDeleteFormula}
-          className="w-full rounded-[14px] bg-danger py-3.5 text-base font-bold text-white shadow-lg hover:bg-danger/90"
+          className="w-full rounded-[14px] bg-danger-solid py-3.5 text-base font-bold text-white shadow-lg hover:bg-danger-solid/90"
         >
           Excluir essa fórmula
         </button>
       )}
       <button
         type="button"
+        disabled={disabled}
         onClick={onSave}
-        className="w-full rounded-[14px] bg-brand-900 py-3.5 text-base font-bold text-white shadow-lg hover:bg-brand-800"
+        className="w-full rounded-[14px] bg-brand-primary py-3.5 text-base font-bold text-white shadow-lg hover:bg-brand-primary-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-brand-primary"
       >
         Concluir edição
       </button>
       <button
         type="button"
         onClick={onCancel}
-        className="relative text-center text-sm font-semibold text-brand-900 underline after:absolute after:inset-x-0 after:-inset-y-2"
+        className="relative text-center text-sm font-semibold text-brand-accent underline after:absolute after:inset-x-0 after:-inset-y-2"
       >
         Cancelar
       </button>

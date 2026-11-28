@@ -15,11 +15,11 @@ type Props = {
   onCloseAddModal: () => void;
   onAddCriterion: (c: CriterionInput) => void;
   nextOrder: number;
-  totalWeight: number;
+  totalWeight?: number;
   editingCriterion: CriterionInput | null;
   onCloseEditModal: () => void;
   onSaveCriterion: (c: CriterionInput) => void;
-  otherWeightsSum: number;
+  otherWeightsSum?: number;
   criterionToDelete: CriterionInput | null;
   onCloseDeleteCriterion: () => void;
   onConfirmDeleteCriterion: () => void;
@@ -45,14 +45,12 @@ function ConfigModals(props: Props) {
         onClose={props.onCloseAddModal}
         onAdd={props.onAddCriterion}
         nextOrder={props.nextOrder}
-        currentTotalWeight={props.totalWeight}
       />
       <EditCriterionModal
         isOpen={Boolean(props.editingCriterion)}
         onClose={props.onCloseEditModal}
         criterion={props.editingCriterion}
         onSave={props.onSaveCriterion}
-        otherWeightsSum={props.otherWeightsSum}
         canEditFields={props.canEditCriteria}
       />
     </>

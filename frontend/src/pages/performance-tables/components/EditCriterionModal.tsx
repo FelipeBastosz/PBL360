@@ -1,13 +1,19 @@
 import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { CriterionInput } from '@/types/performanceTable';
+import {
+  formatCriterionWeight,
+  parseCriterionWeight,
+  validateCriterion,
+} from '@/utils/criterionWeight';
+import { useCriterionWeightInput } from '../hooks/useCriterionWeightInput';
+import { CriterionWeightField } from './CriterionWeightField';
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
   criterion: CriterionInput | null;
   onSave: (updated: CriterionInput) => void;
-  otherWeightsSum: number;
   canEditFields?: boolean;
 };
 
@@ -34,7 +40,7 @@ function CriterionField({
 }: FieldProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-semibold text-brand-900">
+      <label htmlFor={id} className="text-xs font-semibold text-brand-accent">
         {label}
       </label>
       <input
@@ -45,21 +51,11 @@ function CriterionField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`h-10 w-full rounded-[10px] border px-3 text-sm text-ink ${
-          disabled ? 'bg-black/5 opacity-60 cursor-not-allowed border-black/10' : ''
-        } ${hasError ? 'border-danger' : 'border-black/10'}`}
+          disabled ? 'bg-subtle opacity-60 cursor-not-allowed border-border' : ''
+        } ${hasError ? 'border-danger' : 'border-border'}`}
       />
     </div>
   );
-}
-
-function validateCriterion(nome: string, peso: string, otherWeightsSum: number) {
-  if (!nome.trim()) return 'O nome do critério é obrigatório.';
-  const parsed = Number(peso);
-  if (Number.isNaN(parsed) || parsed < 1 || parsed > 10)
-    return 'O peso do critério deve estar entre 1 e 10.';
-  if (otherWeightsSum + parsed > 10)
-    return `A soma total dos pesos não pode ultrapassar 10. Restante: ${10 - otherWeightsSum}.`;
-  return null;
 }
 
 function FormSubmitButton() {
@@ -67,7 +63,7 @@ function FormSubmitButton() {
     <div className="mt-3 flex justify-center">
       <button
         type="submit"
-        className="rounded-full bg-brand-900 px-8 py-2.5 text-sm font-bold text-white shadow-md hover:bg-brand-800"
+        className="rounded-full bg-brand-primary px-8 py-2.5 text-sm font-bold text-white shadow-md hover:bg-brand-primary-hover"
       >
         Salvar Edição
       </button>
@@ -77,25 +73,27 @@ function FormSubmitButton() {
 
 function useEditCriterionForm(
   criterion: CriterionInput,
-  otherWeightsSum: number,
   onSave: (updated: CriterionInput) => void,
   onClose: () => void,
 ) {
   const [nome, setNome] = useState(criterion.nome);
   const [descricao, setDescricao] = useState(criterion.descricao || '');
-  const [peso, setPeso] = useState(String(criterion.peso));
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const weightInput = useCriterionWeightInput(formatCriterionWeight(criterion.peso), () =>
+    setErrorMsg(null),
+  );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const error = validateCriterion(nome, peso, otherWeightsSum);
+    const error = validateCriterion(nome, weightInput.peso);
     if (error) return setErrorMsg(error);
 
+    const weight = parseCriterionWeight(weightInput.peso)!;
     onSave({
       ...criterion,
       nome: nome.trim(),
       descricao: descricao.trim() || undefined,
-      peso: Number(peso),
+      peso: weight,
     });
     onClose();
   }
@@ -105,11 +103,10 @@ function useEditCriterionForm(
     setNome,
     descricao,
     setDescricao,
-    peso,
-    setPeso,
     errorMsg,
     setErrorMsg,
     handleSubmit,
+    ...weightInput,
   };
 }
 
@@ -142,16 +139,14 @@ function CriterionInputs({
         disabled={!canEditFields}
         onChange={form.setDescricao}
       />
-      <CriterionField
+      <CriterionWeightField
         id="edit-criterion-weight"
         label="Peso"
         placeholder="0 - 10"
-        type="number"
         value={form.peso}
-        onChange={(v) => {
-          form.setPeso(v);
-          form.setErrorMsg(null);
-        }}
+        onChange={form.handleWeightChange}
+        onStep={form.handleWeightStep}
+        onKeyDown={form.handleWeightKeyDown}
         hasError={Boolean(form.errorMsg)}
       />
     </>
@@ -160,18 +155,16 @@ function CriterionInputs({
 
 function EditCriterionForm({
   criterion,
-  otherWeightsSum,
   canEditFields = true,
   onSave,
   onClose,
 }: {
   criterion: CriterionInput;
-  otherWeightsSum: number;
   canEditFields?: boolean;
   onSave: (updated: CriterionInput) => void;
   onClose: () => void;
 }) {
-  const form = useEditCriterionForm(criterion, otherWeightsSum, onSave, onClose);
+  const form = useEditCriterionForm(criterion, onSave, onClose);
 
   return (
     <form noValidate onSubmit={form.handleSubmit} className="flex flex-col gap-3 pt-2">
@@ -187,26 +180,24 @@ export function EditCriterionModal({
   onClose,
   criterion,
   onSave,
-  otherWeightsSum,
   canEditFields = true,
 }: Props) {
   if (!isOpen || !criterion) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[22px] bg-white p-6 shadow-2xl">
+      <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-[22px] bg-elevated p-6 shadow-2xl">
         <button
           type="button"
           onClick={onClose}
           aria-label="Fechar"
-          className="absolute right-5 top-5 flex size-7 items-center justify-center rounded-full border border-brand-900 text-brand-900 hover:bg-brand-50"
+          className="absolute right-5 top-5 flex size-7 items-center justify-center rounded-full border border-brand-accent text-brand-accent hover:bg-brand-soft"
         >
           <XMarkIcon className="size-4 stroke-[2.5]" />
         </button>
         <EditCriterionForm
           key={criterion.id ?? criterion.ordem}
           criterion={criterion}
-          otherWeightsSum={otherWeightsSum}
           canEditFields={canEditFields}
           onSave={onSave}
           onClose={onClose}

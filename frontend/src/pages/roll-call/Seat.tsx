@@ -45,7 +45,7 @@ function OccupiedSeat({
         </span>
       )}
       {roleBadge && (
-        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-warning-line bg-warning-soft px-1.5 text-[0.625rem] leading-4 font-semibold whitespace-nowrap text-warning animate-pop-in">
+        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-amber-400 bg-amber-50 px-1.5 text-[0.625rem] leading-4 font-semibold whitespace-nowrap text-amber-800 animate-pop-in dark:border-amber-500/80 dark:bg-amber-950 dark:text-amber-300">
           {roleBadge}
         </span>
       )}
@@ -81,12 +81,12 @@ export function Seat({
         onClick={() => onTap(position.seat)}
         {...(student ? gesture : {})}
         className={cn(
-          'relative flex size-14 touch-none items-center justify-center rounded-full transition-[scale,box-shadow,background-color,opacity] duration-200 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-900 sm:size-16',
+          'relative flex size-14 touch-none items-center justify-center rounded-full transition-[scale,box-shadow,background-color,opacity] duration-200 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent sm:size-16',
           student
-            ? 'shadow-[0_6px_16px_-8px_rgb(0_0_119/0.6)]'
-            : 'border-2 border-brand-900/70 bg-brand-50 text-placeholder hover:bg-brand-100',
+            ? 'shadow-[0_6px_16px_-8px_var(--color-brand-shadow)]'
+            : 'border-2 border-brand-accent/70 bg-brand-soft text-placeholder hover:bg-brand-soft',
           isTarget && !student && 'shadow-[0_0_0_5px_rgb(158_158_255/0.45)]',
-          isHovered && 'scale-110 shadow-[0_0_0_5px_rgb(0_0_119/0.25)]',
+          isHovered && 'scale-110 shadow-[0_0_0_5px_var(--color-brand-shadow)]',
           isDragging && 'opacity-30',
         )}
       >

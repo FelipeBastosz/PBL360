@@ -5,6 +5,7 @@ import { performanceTableService } from '@/services/performance-table.service';
 import { ROUTES } from '@/routes/paths';
 import type { CriterionInput } from '@/types/performanceTable';
 import type { ApplyTarget } from '@/utils/navigationState';
+import { isBalancedWeight, sumCriterionWeights } from '@/utils/criterionWeight';
 
 function validateFormula(nome: string, count: number, totalWeight: number) {
   if (!nome.trim()) {
@@ -16,7 +17,7 @@ function validateFormula(nome: string, count: number, totalWeight: number) {
       fields: { criterios: true },
     };
   }
-  if (totalWeight !== 10) {
+  if (!isBalancedWeight(totalWeight)) {
     return {
       error: 'A soma dos pesos dos critérios deve ser exatamente 10.',
       fields: { criterios: true },
@@ -39,7 +40,7 @@ export function useCreatePerformanceTableForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ nome?: boolean; criterios?: boolean }>({});
 
-  const totalWeight = criterios.reduce((acc, c) => acc + c.peso, 0);
+  const totalWeight = sumCriterionWeights(criterios);
 
   async function handleSave() {
     setErrorMessage(null);
@@ -57,7 +58,7 @@ export function useCreatePerformanceTableForm() {
         roomId: state.target?.roomId || undefined,
       });
       notify({ tone: 'success', message: 'Fórmula criada com sucesso.' });
-      navigate(ROUTES.performanceTables, { replace: true, state: location.state });
+      navigate(ROUTES.performanceTables, { replace: true, state: state.target ?? location.state });
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Ocorreu um erro ao salvar a fórmula.');
     }

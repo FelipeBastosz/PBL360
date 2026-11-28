@@ -55,8 +55,8 @@ export function StudentChip({
         onClick={() => onTap(student.alunoId)}
         {...gesture}
         className={cn(
-          'flex w-full touch-none flex-col items-center gap-1 rounded-2xl p-1.5 transition-[scale,background-color,opacity] duration-200 select-none [-webkit-touch-callout:none] active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-900',
-          isSelected && 'scale-105 bg-brand-50',
+          'flex w-full touch-none flex-col items-center gap-1 rounded-2xl p-1.5 transition-[scale,background-color,opacity] duration-200 select-none [-webkit-touch-callout:none] active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-accent',
+          isSelected && 'scale-105 bg-brand-soft',
           isDragging && 'opacity-30',
         )}
       >
@@ -64,7 +64,7 @@ export function StudentChip({
           student={student}
           className={cn(
             'size-14 text-base transition-shadow duration-200',
-            isSelected && 'shadow-[0_0_0_4px_rgb(0_0_119/0.35)]',
+            isSelected && 'shadow-[0_0_0_4px_var(--color-brand-shadow)]',
             (student.status === 'JUSTIFICADO' || student.status === 'AUSENTE') &&
               'opacity-60 grayscale',
           )}

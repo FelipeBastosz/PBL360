@@ -24,7 +24,7 @@ export function HorizontalLogo({ className }: BrandLogoHorizontalProps) {
             d={path}
             fillRule="evenodd"
             clipRule="evenodd"
-            className="fill-brand-900"
+            className="fill-brand-primary"
           />
         ))}
       </svg>

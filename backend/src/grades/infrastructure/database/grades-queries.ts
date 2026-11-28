@@ -56,7 +56,8 @@ function criteriaQueries(problemId: string): GradeQuery[] {
 function baseQueries(roomId: string, problemId: string): GradeQuery[] {
   return [
     {
-      sql: `SELECT id, title, date, order_index, self_eval_released, peer_eval_released,
+      sql: `SELECT id, title, to_char(date, 'YYYY-MM-DD') AS date, order_index,
+                   self_eval_released, peer_eval_released,
                    (EXTRACT(EPOCH FROM self_eval_deadline) * 1000)::float8 AS self_eval_deadline_ms,
                    (EXTRACT(EPOCH FROM peer_eval_deadline) * 1000)::float8 AS peer_eval_deadline_ms,
                    EXISTS (SELECT 1 FROM poker_sessions ps WHERE ps.session_id = sessions.id)

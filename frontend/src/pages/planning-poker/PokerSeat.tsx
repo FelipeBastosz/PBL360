@@ -8,23 +8,24 @@ const DISC =
   'relative flex size-[50px] items-center justify-center rounded-full text-base font-semibold text-white select-none max-[359px]:size-[42px] max-[359px]:text-[13px] lg:size-14';
 
 const DISC_VARIANTS: Partial<Record<SeatVariant, string>> = {
-  student: 'border-[3px] border-white shadow-[0_6px_16px_-8px_rgb(0_0_119/0.6)]',
-  done: 'border-[3px] border-white opacity-55 shadow-[0_6px_16px_-8px_rgb(0_0_119/0.6)]',
+  student: 'border-[3px] border-white shadow-[0_6px_16px_-8px_var(--color-brand-shadow)]',
+  done: 'border-[3px] border-white opacity-55 shadow-[0_6px_16px_-8px_var(--color-brand-shadow)]',
   choosable: 'cursor-pointer border-[3px] border-white shadow-[0_0_0_4px_rgb(158_158_255/0.6)]',
-  evaluated: 'border-2 border-dashed border-brand-900 shadow-[0_0_0_3px_var(--color-surface)]',
-  voted: 'border-[3px] border-brand-200 shadow-[0_0_0_5px_rgb(158_158_255/0.35)]',
+  evaluated: 'border-2 border-dashed border-brand-accent shadow-[0_0_0_3px_var(--color-surface)]',
+  voted: 'border-[3px] border-brand-border shadow-[0_0_0_5px_rgb(158_158_255/0.35)]',
   waitingVote: 'border-[3px] border-white opacity-40',
-  anonVoted: 'border-[3px] border-brand-200 bg-brand-900 shadow-[0_0_0_5px_rgb(158_158_255/0.35)]',
-  anonWaiting: 'border-2 border-dashed border-brand-900/35 bg-brand-50',
+  anonVoted:
+    'border-[3px] border-brand-border bg-brand-primary shadow-[0_0_0_5px_rgb(158_158_255/0.35)]',
+  anonWaiting: 'border-2 border-dashed border-brand-accent/35 bg-brand-soft',
 };
 
 const CARD =
-  'flex h-12 w-9 items-center justify-center rounded-lg border-[1.5px] border-t-4 text-sm font-bold shadow-[0_6px_16px_-10px_rgb(0_0_119/0.6)] max-[359px]:h-[42px] max-[359px]:w-[30px] max-[359px]:text-xs lg:h-14 lg:w-[42px] lg:text-base';
+  'flex h-12 w-9 items-center justify-center rounded-lg border-[1.5px] border-t-4 text-sm font-bold shadow-[0_6px_16px_-10px_var(--color-brand-shadow)] max-[359px]:h-[42px] max-[359px]:w-[30px] max-[359px]:text-xs lg:h-14 lg:w-[42px] lg:text-base';
 
 const BADGE_TONES: Record<SeatTone, string> = {
-  lilac: 'border-brand-200 bg-brand-100 text-brand-900',
-  ok: 'border-success/25 bg-success-soft text-success',
-  you: 'border-brand-900 bg-brand-900 text-white',
+  lilac: 'border-brand-border bg-brand-soft text-brand-accent',
+  ok: 'border-emerald-400 bg-emerald-50 text-emerald-800 dark:border-emerald-500/80 dark:bg-emerald-950 dark:text-emerald-300',
+  you: 'border-brand-accent bg-brand-primary text-brand-on-primary',
 };
 
 function SeatDisc({ seat }: { seat: SeatView }) {
@@ -66,8 +67,8 @@ function SeatCard({ seat }: { seat: SeatView }) {
       className={cn(
         CARD,
         isEmpty
-          ? 'border-dashed border-brand-900/35 bg-white/60 text-placeholder'
-          : 'border-brand-900 bg-white text-ink',
+          ? 'border-dashed border-brand-accent/35 bg-elevated/60 text-placeholder'
+          : 'border-brand-accent bg-elevated text-ink',
       )}
     >
       {seat.cardText}

@@ -3,6 +3,7 @@ export const STUDENT_EVALUATION_COUNTS = `
     EXISTS (SELECT 1 FROM attendances
              WHERE session_id = $1 AND student_id = $2 AND status IN ('PRESENT', 'LATE'))
       AS participating,
+    EXISTS (SELECT 1 FROM attendances WHERE session_id = $1) AS "rollCallDone",
     EXISTS (SELECT 1 FROM evaluations
              WHERE session_id = $1 AND student_id = $2
                AND type = 'TUTOR_SESSION' AND status = 'SUBMITTED')

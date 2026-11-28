@@ -11,10 +11,10 @@ export function ClassReportTableHeader({
 }: ClassReportTableHeaderProps) {
   return (
     <thead>
-      <tr className="bg-brand-50 text-xs font-bold uppercase tracking-wider text-brand-900">
+      <tr className="bg-brand-soft text-xs font-bold uppercase tracking-wider text-brand-accent">
         <th
           scope="col"
-          className="sticky left-0 z-20 w-[200px] min-w-[160px] max-w-[240px] rounded-l-xl border-r border-black/5 bg-brand-50 py-3.5 pr-4 pl-4 text-left font-bold"
+          className="sticky left-0 z-20 w-[200px] min-w-[160px] max-w-[240px] rounded-l-xl border-r border-border-subtle bg-brand-soft py-3.5 pr-4 pl-4 text-left font-bold"
         >
           {hideNames ? 'MATRÍCULA' : 'ALUNO'}
         </th>
@@ -30,7 +30,7 @@ export function ClassReportTableHeader({
         ))}
         <th
           scope="col"
-          className="min-w-[130px] rounded-r-xl bg-brand-50 py-3.5 pr-4 pl-3 text-right font-bold"
+          className="min-w-[130px] rounded-r-xl bg-brand-soft py-3.5 pr-4 pl-3 text-right font-bold"
         >
           Média Geral
         </th>

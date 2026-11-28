@@ -19,17 +19,17 @@ type ButtonProps = {
 const STYLES: Record<ButtonSize, Record<ButtonVariant, string>> = {
   default: {
     primary:
-      'h-14 w-full rounded-xl px-4 text-lg font-semibold text-white bg-brand-900 shadow-[0_10px_24px_-8px_rgb(0_0_119/0.55)] transition-[background-color,box-shadow,scale] duration-200 ease-out hover:bg-brand-700 hover:shadow-[0_14px_28px_-8px_rgb(0_0_119/0.6)] active:scale-[0.98] active:shadow-[0_6px_14px_-6px_rgb(0_0_119/0.5)] focus-visible:outline-brand-900',
+      'h-14 w-full rounded-xl border border-brand-primary-border px-4 text-lg font-semibold text-brand-on-primary bg-brand-primary shadow-[0_10px_24px_-8px_var(--color-brand-shadow)] transition-[background-color,box-shadow,scale] duration-200 ease-out hover:bg-brand-primary-hover hover:shadow-[0_14px_28px_-8px_var(--color-brand-shadow)] active:scale-[0.98] active:shadow-[0_6px_14px_-6px_var(--color-brand-shadow)] focus-visible:outline-brand-accent',
     outline:
-      'h-12 w-full rounded-xl border border-brand-900 px-4 text-base font-semibold text-brand-900 bg-white transition-[background-color,scale] duration-200 hover:bg-brand-50 active:scale-[0.98] focus-visible:outline-brand-900',
-    link: 'relative text-sm font-medium after:absolute after:inset-x-0 after:-inset-y-2 text-brand-900 underline-offset-4 transition-colors hover:underline focus-visible:outline-brand-900',
+      'h-12 w-full rounded-xl border border-brand-accent px-4 text-base font-semibold text-brand-accent bg-elevated transition-[background-color,scale] duration-200 hover:bg-brand-soft active:scale-[0.98] focus-visible:outline-brand-accent',
+    link: 'relative text-sm font-medium after:absolute after:inset-x-0 after:-inset-y-2 text-brand-accent underline-offset-4 transition-colors hover:underline focus-visible:outline-brand-accent',
   },
   sm: {
     primary:
-      'h-10 rounded-xl px-4 text-sm font-semibold text-white bg-brand-900 shadow-sm transition-[background-color,scale] duration-200 hover:bg-brand-700 active:scale-[0.98] focus-visible:outline-brand-900',
+      'h-10 rounded-xl border border-brand-primary-border px-4 text-sm font-semibold text-brand-on-primary bg-brand-primary shadow-sm transition-[background-color,scale] duration-200 hover:bg-brand-primary-hover active:scale-[0.98] focus-visible:outline-brand-accent',
     outline:
-      'h-10 rounded-xl border border-brand-900 px-4 text-sm font-semibold text-brand-900 bg-white transition-[background-color,scale] duration-200 hover:bg-brand-50 active:scale-[0.98] focus-visible:outline-brand-900',
-    link: 'relative text-xs font-medium after:absolute after:inset-x-0 after:-inset-y-1 text-brand-900 underline-offset-4 transition-colors hover:underline focus-visible:outline-brand-900',
+      'h-10 rounded-xl border border-brand-accent px-4 text-sm font-semibold text-brand-accent bg-elevated transition-[background-color,scale] duration-200 hover:bg-brand-soft active:scale-[0.98] focus-visible:outline-brand-accent',
+    link: 'relative text-xs font-medium after:absolute after:inset-x-0 after:-inset-y-1 text-brand-accent underline-offset-4 transition-colors hover:underline focus-visible:outline-brand-accent',
   },
 };
 

@@ -15,6 +15,8 @@ import { sessionStore } from '@/services/sessionStore';
 import type { LoginPayload, SessionResponse, UserResponse } from '@/types/auth';
 import { AuthContext, SESSION_EXPIRED_MESSAGE, SESSION_SWITCHED_MESSAGE } from './authContext';
 import { clearUserPhotoCache } from '@/hooks/useUserPhoto';
+import { preferencesStore } from '@/services/preferencesStore';
+import { resetPreferencesDom } from '@/utils/themeDom';
 
 function markLoginTermsCheck(): void {
   try {
@@ -27,6 +29,8 @@ function markLoginTermsCheck(): void {
 function clearSessionData(): void {
   sessionStore.clear();
   clearUserPhotoCache();
+  preferencesStore.clear();
+  resetPreferencesDom();
   try {
     sessionStorage.removeItem('pbl360.checkTermsOnLogin');
   } catch {
@@ -60,6 +64,7 @@ function useAuthActions(setSession: Dispatch<SetStateAction<SessionResponse | nu
     async (payload: LoginPayload) => {
       const nextSession = await authService.login(payload);
       clearUserPhotoCache();
+      preferencesStore.clear();
       sessionStore.save(nextSession);
       markLoginTermsCheck();
       setSession(nextSession);
@@ -92,7 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncWithOtherTabs = useCallback(
     (stored: SessionResponse | null) => {
       const switched = stored?.usuario.id !== session?.usuario.id;
-      if (!stored || switched) clearUserPhotoCache();
+      if (!stored || switched) {
+        clearUserPhotoCache();
+        preferencesStore.clear();
+        if (!stored) resetPreferencesDom();
+      }
       setSession(stored);
       if (stored && switched) {
         markLoginTermsCheck();

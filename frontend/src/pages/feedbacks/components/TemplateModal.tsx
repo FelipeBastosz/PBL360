@@ -104,11 +104,11 @@ function TemplateItem({
         'group flex flex-col items-start gap-1 rounded-2xl border p-4 text-left transition focus-visible:outline-none',
         wouldExceedLimit
           ? 'border-danger/30 bg-danger/5 opacity-70 cursor-not-allowed'
-          : 'border-black/10 hover:border-brand-900/40 hover:bg-brand-50/50 focus-visible:border-brand-900 focus-visible:bg-brand-50/50',
+          : 'border-border hover:border-brand-accent/40 hover:bg-brand-soft/50 focus-visible:border-brand-accent focus-visible:bg-brand-soft/50',
       )}
     >
       <div className="flex w-full items-center justify-between gap-2">
-        <span className="text-sm font-bold text-ink group-hover:text-brand-900">
+        <span className="text-sm font-bold text-ink group-hover:text-brand-accent">
           {template.titulo}
         </span>
         {wouldExceedLimit && (
@@ -135,7 +135,7 @@ function TemplateListBody({
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 py-10">
-        <Spinner className="size-6 text-brand-900" />
+        <Spinner className="size-6 text-brand-accent" />
         <span className="text-xs text-muted">Carregando modelos...</span>
       </div>
     );
@@ -149,7 +149,7 @@ function TemplateListBody({
           <button
             type="button"
             onClick={onRetry}
-            className="rounded-xl border border-brand-900/20 bg-brand-50 px-4 py-2 text-xs font-semibold text-brand-900 transition hover:bg-brand-100 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-900"
+            className="rounded-xl border border-brand-accent/20 bg-brand-soft px-4 py-2 text-xs font-semibold text-brand-accent transition hover:bg-brand-soft active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-accent"
           >
             Tentar novamente
           </button>
@@ -191,7 +191,7 @@ function TemplateModalHeader({ titleId, onClose }: { titleId: string; onClose: (
         type="button"
         onClick={onClose}
         aria-label="Fechar"
-        className="rounded-full p-1.5 text-muted hover:bg-black/5 active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-900"
+        className="rounded-full p-1.5 text-muted hover:bg-subtle active:scale-90 focus-visible:outline-2 focus-visible:outline-brand-accent"
       >
         <XMarkIcon className="size-5" aria-hidden />
       </button>
@@ -205,7 +205,7 @@ function TemplateModalFooter({ onClose }: { onClose: () => void }) {
       <button
         type="button"
         onClick={onClose}
-        className="rounded-xl border border-black/15 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-black/5 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-900"
+        className="rounded-xl border border-border bg-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:bg-subtle active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-accent"
       >
         Cancelar
       </button>
@@ -246,7 +246,7 @@ export function TemplateModal({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-3xl bg-white shadow-2xl focus:outline-none animate-pop-in"
+        className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-3xl bg-elevated shadow-2xl focus:outline-none animate-pop-in"
       >
         <TemplateModalHeader titleId={titleId} onClose={onClose} />
         <TemplateListBody

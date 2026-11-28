@@ -37,7 +37,7 @@ export function TextField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-lg text-brand-900">
+      <label htmlFor={id} className="text-lg text-brand-accent">
         {label}
         {optional && <span className="text-brand-300"> (opcional)</span>}
       </label>
