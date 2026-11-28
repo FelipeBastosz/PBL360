@@ -1,9 +1,11 @@
 import { SignalSlashIcon, UserMinusIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
+import { PAGE_CONTAINER_CLASS } from '@/components/ui/cardStyles';
+import { cn } from '@/utils/cn';
 
 export function AbsentState({ onBack }: { onBack: () => void }) {
   return (
-    <div className="flex flex-1 items-center justify-center px-6 py-8">
+    <div className={cn(PAGE_CONTAINER_CLASS, 'flex flex-1 items-center justify-center py-8')}>
       <div className="flex max-w-[340px] flex-col items-center gap-3 text-center">
         <span className="flex size-16 items-center justify-center rounded-full bg-brand-soft text-brand-accent">
           <UserMinusIcon className="size-8" aria-hidden />
@@ -32,7 +34,7 @@ export function ConnectionErrorState({
   onBack: () => void;
 }) {
   return (
-    <div className="flex flex-1 items-center justify-center px-6 py-8">
+    <div className={cn(PAGE_CONTAINER_CLASS, 'flex flex-1 items-center justify-center py-8')}>
       <div className="flex max-w-[340px] flex-col items-center gap-3 text-center">
         <span className="flex size-16 items-center justify-center rounded-full bg-danger-soft text-danger">
           <SignalSlashIcon className="size-8" aria-hidden />
