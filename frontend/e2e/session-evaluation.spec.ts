@@ -401,4 +401,83 @@ test.describe('Session Student Evaluation - Feedback Templates (#509)', () => {
     const feedbackField = page.getByPlaceholder(/Escreva aqui um feedback para o\(a\) aluno\(a\)/i);
     await expect(feedbackField).toHaveValue('Bom desempenho.');
   });
+
+  test('clears previously saved individual session feedback to 0 chars, preserves grades, and stays empty after reload', async ({
+    page,
+  }) => {
+    const tracker = await setupEvaluationMocks(page);
+    let storedFeedback: { id: string; alunoId: string; sessaoId: string; texto: string } | null = {
+      id: 'fb-sess-1',
+      alunoId: 'aluno-1',
+      sessaoId: 'sess-1',
+      texto: 'Feedback individual anterior da sessão.',
+    };
+
+    await page.route('**/api/modelos-feedback', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockTemplates),
+      });
+    });
+
+    await page.route('**/api/sessoes/sess-1/alunos/aluno-1/feedback', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(storedFeedback),
+        });
+        return;
+      }
+
+      if (route.request().method() === 'PUT') {
+        const payload = route.request().postDataJSON() as { texto: string };
+        tracker.capturedFeedbackPayloads.push(payload);
+        storedFeedback = payload.texto.trim()
+          ? { id: 'fb-sess-1', alunoId: 'aluno-1', sessaoId: 'sess-1', texto: payload.texto }
+          : null;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(storedFeedback),
+        });
+      }
+    });
+
+    await page.goto('/');
+    await page.goto(EVALUATION_URL);
+
+    const feedbackField = page.getByPlaceholder(/Escreva aqui um feedback para o\(a\) aluno\(a\)/i);
+    await expect(feedbackField).toHaveValue('Feedback individual anterior da sessão.');
+
+    await feedbackField.fill('');
+    await expect(page.getByText('0/2000')).toBeVisible();
+
+    const evalSavePromise = page.waitForResponse(
+      (res) =>
+        res.url().includes('/api/sessoes/sess-1/avaliacoes/aluno-1') &&
+        res.request().method() === 'PUT',
+    );
+    const feedbackSavePromise = page.waitForResponse(
+      (res) =>
+        res.url().includes('/api/sessoes/sess-1/alunos/aluno-1/feedback') &&
+        res.request().method() === 'PUT',
+    );
+
+    await page.getByRole('button', { name: 'Salvar rascunho' }).click();
+    await Promise.all([evalSavePromise, feedbackSavePromise]);
+
+    expect(tracker.capturedFeedbackPayloads).toEqual([{ texto: '' }]);
+    expect(tracker.capturedEvalPayloads[0]?.itens).toEqual([
+      { criterioId: 'crit-1', nota: 6 },
+      { criterioId: 'crit-2', nota: 7 },
+    ]);
+
+    await expect(page).not.toHaveURL(new RegExp(EVALUATION_URL));
+    await page.goto(EVALUATION_URL);
+    await expect(feedbackField).toHaveValue('');
+    await expect(page.getByRole('textbox', { name: 'Nota de Domínio do tema' })).toHaveValue('6,0');
+    await expect(page.getByRole('textbox', { name: 'Nota de Uso de fontes' })).toHaveValue('7,0');
+  });
 });

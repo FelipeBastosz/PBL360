@@ -7,13 +7,12 @@ import { formatLastEdited } from '@/utils/gradeFormatters';
 export type UseSessionGeneralEvaluationFormParams = {
   sessionId: string;
   existingEvaluation: SessionGeneralEvaluation | null;
-  onSaved: (saved: SessionGeneralEvaluation) => void;
+  onSaved: (saved: SessionGeneralEvaluation | null) => void;
   onClose: () => void;
 };
 
 function validateEvaluationText(text: string): string | null {
   const trimmed = text.trim();
-  if (!trimmed) return 'O comentário geral é obrigatório.';
   if (trimmed.length > 2000) return 'O comentário geral deve ter no máximo 2000 caracteres.';
   return null;
 }
@@ -47,7 +46,13 @@ export function useSessionGeneralEvaluationForm({
     setApiError(null);
     try {
       const saved = await sessionService.saveGeneralEvaluation(sessionId, { texto: texto.trim() });
-      notify({ tone: 'success', message: 'Feedback geral salvo com sucesso!' });
+      const isCleared = saved === null && existingEvaluation !== null;
+      notify({
+        tone: 'success',
+        message: isCleared
+          ? 'Feedback geral removido com sucesso!'
+          : 'Feedback geral salvo com sucesso!',
+      });
       onSaved(saved);
       onClose();
     } catch (err: unknown) {

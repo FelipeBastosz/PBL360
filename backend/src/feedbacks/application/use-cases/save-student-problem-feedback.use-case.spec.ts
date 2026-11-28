@@ -23,6 +23,7 @@ describe('SaveStudentProblemFeedbackUseCase', () => {
       findStudentSessionFeedbackReadAt: jest.fn(),
       markStudentSessionFeedbackRead: jest.fn(),
       saveWithRevision: jest.fn().mockImplementation((f) => Promise.resolve(f)),
+      deleteById: jest.fn(),
       findRevisionsByFeedbackId: jest.fn(),
       isStudentEnrolledInRoom: jest.fn().mockResolvedValue(true),
       listStudentsWithProblemFeedbacks: jest.fn(),
@@ -34,12 +35,11 @@ describe('SaveStudentProblemFeedbackUseCase', () => {
     mockProblem.roomId = 'room-1';
 
     problemRepository = {
-      hasEvaluations: jest.fn(),
+      listSessions: jest.fn(),
       updateDetails: jest.fn(),
       findById: jest.fn().mockResolvedValue(mockProblem),
       findByRoomId: jest.fn(),
       create: jest.fn(),
-      save: jest.fn(),
       hasSessions: jest.fn(),
       countSessions: jest.fn(),
       getDeletionImpact: jest.fn(),

@@ -22,10 +22,14 @@ describe('GetSessionFeedbackUseCase', () => {
       findStudentProblemFeedback: jest.fn(),
       findGeneralProblemFeedback: jest.fn(),
       findStudentSessionFeedback: jest.fn(),
+      findStudentSessionFeedbackReadAt: jest.fn(),
+      markStudentSessionFeedbackRead: jest.fn(),
       saveWithRevision: jest.fn(),
+      deleteById: jest.fn(),
       findRevisionsByFeedbackId: jest.fn(),
       isStudentEnrolledInRoom: jest.fn(),
       listStudentsWithProblemFeedbacks: jest.fn(),
+      findProblemFeedbacksWithDetails: jest.fn(),
     };
 
     const mockSession = new Session();
@@ -47,12 +51,11 @@ describe('GetSessionFeedbackUseCase', () => {
     mockProblem.roomId = 'room-1';
 
     problemRepository = {
-      hasEvaluations: jest.fn(),
+      listSessions: jest.fn(),
       updateDetails: jest.fn(),
       findById: jest.fn().mockResolvedValue(mockProblem),
       findByRoomId: jest.fn(),
       create: jest.fn(),
-      save: jest.fn(),
       hasSessions: jest.fn(),
       countSessions: jest.fn(),
       getDeletionImpact: jest.fn(),

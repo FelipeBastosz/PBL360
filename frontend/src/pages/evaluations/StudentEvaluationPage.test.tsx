@@ -136,12 +136,12 @@ describe('StudentEvaluationPage', () => {
       justificativa: undefined,
       notaCargo: null,
     });
-    expect(evaluationService.saveFeedback).not.toHaveBeenCalled();
+    expect(evaluationService.saveFeedback).toHaveBeenCalledWith('sess-1', 'st-1', '');
   });
 
-  it('does not save empty or whitespace-only feedback, but saves trimmed non-empty feedback', async () => {
+  it('sends explicit empty feedback when whitespace-only or cleared, and saves trimmed non-empty feedback', async () => {
     vi.mocked(evaluationService.saveEvaluation).mockResolvedValue(mockEvalData);
-    vi.mocked(evaluationService.saveFeedback).mockResolvedValue({} as never);
+    vi.mocked(evaluationService.saveFeedback).mockResolvedValue(null);
     renderPage();
 
     const textarea = await screen.findByPlaceholderText(
@@ -152,8 +152,8 @@ describe('StudentEvaluationPage', () => {
 
     await waitFor(() => {
       expect(evaluationService.saveEvaluation).toHaveBeenCalledTimes(1);
+      expect(evaluationService.saveFeedback).toHaveBeenCalledWith('sess-1', 'st-1', '');
     });
-    expect(evaluationService.saveFeedback).not.toHaveBeenCalled();
 
     await userEvent.clear(textarea);
     await userEvent.type(textarea, '  Boa participação.  ');
@@ -166,6 +166,63 @@ describe('StudentEvaluationPage', () => {
         'Boa participação.',
       );
     });
+  });
+
+  it('clears previously saved session feedback on save, preserves grades, and stays empty on reopen', async () => {
+    vi.mocked(evaluationService.getFeedback).mockResolvedValueOnce({
+      id: 'fb-1',
+      texto: 'Feedback anterior que será apagado.',
+      criadoEm: '2026-10-10T10:00:00Z',
+    });
+    vi.mocked(evaluationService.saveEvaluation).mockResolvedValue(mockEvalData);
+    vi.mocked(evaluationService.saveFeedback).mockResolvedValue(null);
+
+    const { unmount } = render(
+      <MemoryRouter
+        initialEntries={[
+          { pathname: '/sessoes/sess-1/avaliacao/st-1', state: { studentName: 'Ana Souza' } },
+        ]}
+      >
+        <Routes>
+          <Route
+            path="/sessoes/:sessionId/avaliacao/:studentId"
+            element={<StudentEvaluationPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const textarea = await screen.findByPlaceholderText(
+      'Escreva aqui um feedback para o(a) aluno(a)...',
+    );
+    expect(textarea).toHaveValue('Feedback anterior que será apagado.');
+
+    await userEvent.clear(textarea);
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
+
+    await waitFor(() => {
+      expect(evaluationService.saveEvaluation).toHaveBeenCalledWith('sess-1', 'st-1', {
+        itens: [
+          { criterioId: 'crit-1', nota: 8 },
+          { criterioId: 'crit-2', nota: 6 },
+        ],
+        enviar: false,
+        justificativa: undefined,
+        notaCargo: null,
+      });
+      expect(evaluationService.saveFeedback).toHaveBeenCalledWith('sess-1', 'st-1', '');
+    });
+
+    unmount();
+    vi.mocked(evaluationService.getFeedback).mockResolvedValueOnce(null);
+    renderPage();
+
+    const reopenedTextarea = await screen.findByPlaceholderText(
+      'Escreva aqui um feedback para o(a) aluno(a)...',
+    );
+    expect(reopenedTextarea).toHaveValue('');
+    expect(screen.getByLabelText('Nota de Seguimento')).toHaveValue('8,0');
+    expect(screen.getByLabelText('Nota de Participação')).toHaveValue('6,0');
   });
 
   it('blocks saving and disables action buttons when feedback exceeds 2000 characters', async () => {

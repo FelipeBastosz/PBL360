@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import { RoomFeedbacksController } from './room-feedbacks.controller';
 import type { SaveStudentProblemFeedbackUseCase } from '../../application/use-cases/save-student-problem-feedback.use-case';
 import type { SaveGeneralProblemFeedbackUseCase } from '../../application/use-cases/save-general-problem-feedback.use-case';
@@ -75,22 +76,36 @@ describe('RoomFeedbacksController', () => {
     });
     feedback.id = 'fb-general';
     saveGeneralUseCase.execute.mockResolvedValue(feedback);
+    const json = jest.fn();
+    const response = { status: jest.fn().mockReturnValue({ json }) } as unknown as Response;
 
-    const result = await controller.saveGeneral(
+    await controller.saveGeneral(
       'room-1',
       'problem-1',
       { texto: 'Feedback coletivo.' },
       'tutor-1',
+      response,
     );
 
-    expect(result.id).toBe('fb-general');
-    expect(result.texto).toBe('Feedback coletivo.');
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'fb-general', texto: 'Feedback coletivo.' }),
+    );
     expect(saveGeneralUseCase.execute).toHaveBeenCalledWith({
       roomId: 'room-1',
       problemId: 'problem-1',
       tutorId: 'tutor-1',
       text: 'Feedback coletivo.',
     });
+  });
+
+  it('sends JSON null from saveGeneral when feedback is cleared', async () => {
+    saveGeneralUseCase.execute.mockResolvedValue(null);
+    const json = jest.fn();
+    const response = { status: jest.fn().mockReturnValue({ json }) } as unknown as Response;
+
+    await controller.saveGeneral('room-1', 'problem-1', { texto: '' }, 'tutor-1', response);
+
+    expect(json).toHaveBeenCalledWith(null);
   });
 
   it('handles getFeedbacks endpoint', async () => {

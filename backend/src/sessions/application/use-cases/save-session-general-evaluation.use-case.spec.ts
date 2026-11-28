@@ -6,18 +6,23 @@ import { SaveSessionGeneralEvaluationUseCase } from './save-session-general-eval
 
 describe('SaveSessionGeneralEvaluationUseCase', () => {
   let access: jest.Mocked<Pick<SessionAccessService, 'assertMemberCanAccessSession'>>;
-  let evaluations: jest.Mocked<Pick<SessionGeneralEvaluationRepository, 'save'>>;
+  let evaluations: jest.Mocked<
+    Pick<SessionGeneralEvaluationRepository, 'save' | 'deleteBySessionAndTutor'>
+  >;
 
   beforeEach(() => {
     access = { assertMemberCanAccessSession: jest.fn() };
-    evaluations = { save: jest.fn() };
+    evaluations = { save: jest.fn(), deleteBySessionAndTutor: jest.fn() };
   });
 
-  it('saves a tutor evaluation using that tutor as the owner of the record', async () => {
-    const useCase = new SaveSessionGeneralEvaluationUseCase(
-      access as SessionAccessService,
-      evaluations as SessionGeneralEvaluationRepository,
+  const createUseCase = () =>
+    new SaveSessionGeneralEvaluationUseCase(
+      access as unknown as SessionAccessService,
+      evaluations as unknown as SessionGeneralEvaluationRepository,
     );
+
+  it('saves a tutor evaluation using that tutor as the owner of the record', async () => {
+    const useCase = createUseCase();
     await useCase.execute('session-id', '  Relato do professor.  ', 'tutor-id', UserType.TUTOR);
 
     expect(access.assertMemberCanAccessSession).toHaveBeenCalledWith('session-id', {
@@ -27,24 +32,35 @@ describe('SaveSessionGeneralEvaluationUseCase', () => {
     expect(evaluations.save).toHaveBeenCalledWith('session-id', 'Relato do professor.', 'tutor-id');
   });
 
+  it.each(['', '   '])(
+    'deletes tutor evaluation and returns null when text is "%s"',
+    async (emptyText) => {
+      const useCase = createUseCase();
+
+      const result = await useCase.execute('session-id', emptyText, 'tutor-id', UserType.TUTOR);
+
+      expect(result).toBeNull();
+      expect(evaluations.deleteBySessionAndTutor).toHaveBeenCalledWith('session-id', 'tutor-id');
+      expect(evaluations.save).not.toHaveBeenCalled();
+    },
+  );
+
   it('rejects student writes and does not persist them', async () => {
-    const useCase = new SaveSessionGeneralEvaluationUseCase(
-      access as SessionAccessService,
-      evaluations as SessionGeneralEvaluationRepository,
-    );
+    const useCase = createUseCase();
 
     await expect(
       useCase.execute('session-id', 'Relato do aluno.', 'student-id', UserType.STUDENT),
     ).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(
+      useCase.execute('session-id', '', 'student-id', UserType.STUDENT),
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(evaluations.save).not.toHaveBeenCalled();
+    expect(evaluations.deleteBySessionAndTutor).not.toHaveBeenCalled();
   });
 
   it('does not save when the tutor has no room access', async () => {
     access.assertMemberCanAccessSession.mockRejectedValue(new Error('Access denied'));
-    const useCase = new SaveSessionGeneralEvaluationUseCase(
-      access as SessionAccessService,
-      evaluations as SessionGeneralEvaluationRepository,
-    );
+    const useCase = createUseCase();
 
     await expect(
       useCase.execute('session-id', 'Relato.', 'outsider-id', UserType.TUTOR),

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mockAuthenticatedShell } from './helpers/terms';
 
 const mockRoom = {
   id: 'sala-1',
@@ -195,6 +196,8 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
       );
     });
 
+    await mockAuthenticatedShell(page);
+
     await page.route('**/api/salas/sala-1', async (route) => {
       await route.fulfill({
         status: 200,
@@ -277,50 +280,153 @@ test.describe('Professor Flows - Problem Grades & Reports', () => {
     await expect(page.getByRole('columnheader', { name: 'ALUNO' })).toBeVisible();
   });
 
-  test('should allow professor to submit general feedback for the problem', async ({ page }) => {
-    let putCalled = false;
-    let putBody: unknown = null;
+  test('should allow professor to create, edit, cancel and persist general feedback on problem page without editable controls on final report', async ({
+    page,
+  }) => {
+    let currentGeneralFeedback: {
+      id: string;
+      escopo: 'PROBLEMA';
+      texto: string;
+      criadoEm: string;
+      editadoEm: string | null;
+    } | null = null;
+    const putPayloads: unknown[] = [];
+
+    await page.route('**/api/salas/sala-1/problemas/prob-1/feedbacks', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...mockFeedbacks,
+          geral: currentGeneralFeedback,
+        }),
+      });
+    });
 
     await page.route('**/api/salas/sala-1/problemas/prob-1/feedbacks/geral', async (route) => {
       if (route.request().method() === 'PUT') {
-        putCalled = true;
-        putBody = JSON.parse(route.request().postData() ?? '{}');
+        const body = route.request().postDataJSON() as { texto: string };
+        putPayloads.push(body);
+        if (!body.texto.trim()) {
+          currentGeneralFeedback = null;
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: 'null',
+          });
+          return;
+        }
+        const now = new Date().toISOString();
+        currentGeneralFeedback = {
+          id: 'fb-geral-1',
+          escopo: 'PROBLEMA',
+          texto: body.texto,
+          criadoEm: currentGeneralFeedback?.criadoEm ?? now,
+          editadoEm: currentGeneralFeedback ? now : null,
+        };
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({
-            id: 'fb-geral-1',
-            escopo: 'PROBLEMA',
-            texto: 'Excelente raciocínio clínico demonstrado por toda a turma.',
-            autorId: 'user-tutor-1',
-          }),
+          body: JSON.stringify(currentGeneralFeedback),
         });
       }
     });
 
-    await page.goto('/turmas/sala-1/problemas/prob-1/notas');
+    await page.goto('/turmas/sala-1/problemas/prob-1');
 
-    const generalFeedbackBtn = page.getByRole('button', { name: 'Feedback geral da turma' });
-    await expect(generalFeedbackBtn).toBeVisible();
-    await generalFeedbackBtn.click();
+    // 1. Create first general feedback from the Problem page
+    const feedbackCard = page.getByRole('button', { name: /Feedback Geral/i });
+    await expect(feedbackCard).toBeVisible();
+    await feedbackCard.click();
 
     const dialog = page.getByRole('dialog', { name: 'Feedback Geral da Turma' });
     await expect(dialog).toBeVisible();
 
-    const textarea = dialog.getByPlaceholder(/Digite o parecer e considerações gerais/i);
+    const textarea = dialog.getByLabel(/Comentário Geral/i);
     await textarea.fill('Excelente raciocínio clínico demonstrado por toda a turma.');
-
-    const saveBtn = dialog.getByRole('button', { name: 'Salvar' });
-    await saveBtn.click();
+    await expect(dialog.getByText('58 / 2000')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Salvar' }).click();
 
     await expect(dialog).not.toBeVisible();
-    expect(putCalled).toBe(true);
-    expect(putBody).toEqual({
-      destinatario_id: null,
-      escopo: 'PROBLEMA',
-      nota: null,
-      texto: 'Excelente raciocínio clínico demonstrado por toda a turma.',
+    await expect(page.getByText('Feedback geral salvo com sucesso!')).toBeVisible();
+    expect(putPayloads).toEqual([
+      { texto: 'Excelente raciocínio clínico demonstrado por toda a turma.' },
+    ]);
+
+    // 2. Test Cancelar discarding unsaved changes without sending PUT
+    await feedbackCard.click();
+    await expect(dialog).toBeVisible();
+    await expect(textarea).toHaveValue(
+      'Excelente raciocínio clínico demonstrado por toda a turma.',
+    );
+    await textarea.fill('Alteração que será descartada ao cancelar.');
+    await dialog.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(dialog).not.toBeVisible();
+    expect(putPayloads).toHaveLength(1);
+
+    // 3. Reopen and edit existing feedback
+    await feedbackCard.click();
+    await expect(textarea).toHaveValue(
+      'Excelente raciocínio clínico demonstrado por toda a turma.',
+    );
+    await textarea.fill('Evolução consistente da turma no fechamento do problema.');
+    await dialog.getByRole('button', { name: 'Salvar' }).click();
+    await expect(dialog).not.toBeVisible();
+    expect(putPayloads).toHaveLength(2);
+    expect(putPayloads[1]).toEqual({
+      texto: 'Evolução consistente da turma no fechamento do problema.',
     });
+
+    // 4. Reload Problem page and confirm persisted feedback
+    await page.reload();
+    await expect(page.getByText('Feedback registrado')).toBeVisible();
+    await page.getByRole('button', { name: /Feedback Geral/i }).click();
+    await expect(page.getByLabel(/Comentário Geral/i)).toHaveValue(
+      'Evolução consistente da turma no fechamento do problema.',
+    );
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+
+    // 5. Navigate to Final Report and confirm no editable general feedback controls exist and grades remain intact
+    await page.getByRole('button', { name: /Relatório Final/i }).click();
+    await expect(page).toHaveURL(/\/turmas\/sala-1\/problemas\/prob-1\/notas/);
+    await expect(page.getByRole('button', { name: /Feedback geral da turma/i })).toHaveCount(0);
+    await expect(page.getByRole('textbox')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Feedback Geral da Turma' })).toBeVisible();
+    await expect(
+      page.getByText('Evolução consistente da turma no fechamento do problema.'),
+    ).toBeVisible();
+
+    const gradesTable = page.getByRole('table');
+    await expect(gradesTable.getByText('Ana Silva')).toBeVisible();
+    await expect(gradesTable.getByText('8,8')).toBeVisible();
+    await expect(gradesTable.getByText('Bruno Mendes')).toBeVisible();
+    await expect(gradesTable.getByText('7,9')).toBeVisible();
+
+    // 6. Return to Problem page, clear general feedback to 0 chars, reload, and verify removal on both pages
+    await page.goto('/turmas/sala-1/problemas/prob-1');
+    await page.getByRole('button', { name: /Feedback Geral/i }).click();
+    await expect(dialog).toBeVisible();
+    await textarea.fill('');
+    await expect(dialog.getByText('0 / 2000')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Salvar' }).click();
+
+    await expect(dialog).not.toBeVisible();
+    await expect(page.getByText('Feedback geral removido com sucesso!')).toBeVisible();
+    await expect(page.getByText('Parecer geral da turma')).toBeVisible();
+    expect(putPayloads[2]).toEqual({ texto: '' });
+
+    await page.reload();
+    await expect(page.getByText('Parecer geral da turma')).toBeVisible();
+    await page.getByRole('button', { name: /Feedback Geral/i }).click();
+    await expect(page.getByLabel(/Comentário Geral/i)).toHaveValue('');
+    await page.keyboard.press('Escape');
+
+    await page.getByRole('button', { name: /Relatório Final/i }).click();
+    await expect(page).toHaveURL(/\/turmas\/sala-1\/problemas\/prob-1\/notas/);
+    await expect(page.getByRole('heading', { name: 'Feedback Geral da Turma' })).toHaveCount(0);
+    await expect(page.getByRole('table').getByText('Ana Silva')).toBeVisible();
+    await expect(page.getByRole('table').getByText('8,8')).toBeVisible();
   });
 
   test('should allow professor to open student feedback modal, view evaluation and submit comment', async ({

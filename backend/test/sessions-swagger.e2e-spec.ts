@@ -287,7 +287,7 @@ describe('Sessions Swagger Documentation (e2e)', () => {
         'Consulta a avaliação geral da sessão',
       );
       expect(document.paths[generalEvaluationPath]?.put?.summary).toBe(
-        'Registra ou atualiza a avaliação geral da sessão',
+        'Registra, atualiza ou remove a avaliação geral da sessão',
       );
       expect(document.paths[generalEvaluationPath]?.get?.security).toEqual(
         expect.arrayContaining([{ jwt: [] }]),

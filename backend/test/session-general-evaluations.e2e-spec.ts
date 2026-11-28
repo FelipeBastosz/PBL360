@@ -125,8 +125,35 @@ describe('Session general evaluations (e2e)', () => {
     expect(counts).toEqual({ feedbacks: 1, evaluations: 0, grades: 0 });
   });
 
+  it('clears only the current tutor evaluation when empty or whitespace text is sent and is idempotent', async () => {
+    await insertDeletionFeedback(db, fixture, sessionId);
+    await api(app, fixture.owner).put(path(), { texto: 'Relato inicial do tutor.' }).expect(200);
+    const coTutorSaved = await api(app, coTutor)
+      .put(path(), { texto: 'Relato da co-tutora.' })
+      .expect(200);
+
+    const cleared = await api(app, fixture.owner).put(path(), { texto: '' }).expect(200);
+    expect(cleared.text).toBe('null');
+
+    await api(app, fixture.student).get(path()).expect(200, [coTutorSaved.body]);
+
+    // Idempotent when clearing again with spaces only
+    const idempotent = await api(app, fixture.owner).put(path(), { texto: '   ' }).expect(200);
+    expect(idempotent.text).toBe('null');
+
+    const clearedCoTutor = await api(app, coTutor).put(path(), { texto: '   ' }).expect(200);
+    expect(clearedCoTutor.text).toBe('null');
+    await api(app, fixture.student).get(path()).expect(200, []);
+
+    const [counts] = await db.query<[{ feedbacks: number }]>(
+      'SELECT COUNT(*)::int AS feedbacks FROM feedback WHERE sessao_id = $1;',
+      [sessionId],
+    );
+    expect(counts.feedbacks).toBe(1);
+  });
+
   it('rejects invalid text and session identifiers', async () => {
-    for (const texto of ['', '   ', 'x'.repeat(2001), 123]) {
+    for (const texto of ['x'.repeat(2001), 123]) {
       await api(app, fixture.owner).put(path(), { texto }).expect(400);
     }
     await api(app, fixture.owner).put(path(), { texto: null }).expect(400);

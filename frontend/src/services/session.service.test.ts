@@ -379,4 +379,15 @@ describe('sessionService', () => {
       data: JSON.stringify({ texto: 'Novo relato da sessão.' }),
     });
   });
+
+  it('returns null when clearing session general evaluation with empty texto', async () => {
+    const adapter = respondWith(null);
+
+    await expect(sessionService.saveGeneralEvaluation('sess-1', { texto: '' })).resolves.toBeNull();
+    expect(adapter.mock.calls[0][0]).toMatchObject({
+      method: 'put',
+      url: '/sessoes/sess-1/avaliacao-geral',
+      data: JSON.stringify({ texto: '' }),
+    });
+  });
 });

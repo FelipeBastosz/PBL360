@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { mockAuthenticatedShell } from './helpers/terms';
 
 const mockTeacher = {
   id: 'user-tutor-1',
@@ -64,11 +65,36 @@ async function setupUserSession(page: Page, user: unknown) {
 }
 
 async function setupCommonRoutes(page: Page) {
+  await mockAuthenticatedShell(page);
   await page.route('**/api/termos-compromisso/**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ versao: '1.0', aceitou: true }),
+    });
+  });
+
+  await page.route('**/api/salas/sala-1', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'sala-1',
+        nome: 'Turma PBL',
+        semestre: '2026.1',
+        codigoDisciplina: 'EXA101',
+        codigoSala: 'SALA01',
+        professorResponsavelId: 'user-tutor-1',
+        ativo: true,
+      }),
+    });
+  });
+
+  await page.route('**/api/sessoes/sess-1/chamada', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ sessaoId: 'sess-1', registros: [], origem: 'REGISTRADA' }),
     });
   });
 
@@ -154,12 +180,22 @@ test.describe('Session General Evaluations Flow', () => {
           body: JSON.stringify(evaluationsDb),
         });
       } else if (route.request().method() === 'PUT') {
-        const body = JSON.parse(route.request().postData() || '{}');
+        const body = JSON.parse(route.request().postData() || '{}') as { texto?: string };
+        const trimmed = (body.texto ?? '').trim();
+        if (!trimmed) {
+          evaluationsDb = evaluationsDb.filter((e) => e.autor.id !== mockTeacher.id);
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: 'null',
+          });
+          return;
+        }
         const now = new Date().toISOString();
         const existing = evaluationsDb.find((e) => e.autor.id === mockTeacher.id);
         const record = {
           id: existing?.id || 'eval-1',
-          texto: body.texto,
+          texto: trimmed,
           autor: { id: mockTeacher.id, nome: mockTeacher.nome },
           criadoEm: existing?.criadoEm || now,
           editadoEm: existing ? now : null,
@@ -216,6 +252,21 @@ test.describe('Session General Evaluations Flow', () => {
 
     await expect(
       page.getByText('A turma demonstrou excelente argumentação e planejamento na sessão.'),
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Editar feedback geral' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByLabel(/Comentário Geral/i).fill('');
+    await expect(page.getByText('0 / 2000')).toBeVisible();
+    await page.getByRole('button', { name: 'Salvar' }).click();
+
+    await expect(
+      page.getByText('Nenhum feedback geral registrado para a turma ainda.'),
+    ).toBeVisible();
+
+    await page.reload();
+    await expect(
+      page.getByText('Nenhum feedback geral registrado para a turma ainda.'),
     ).toBeVisible();
   });
 

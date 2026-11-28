@@ -70,10 +70,7 @@ async function sendEvaluation(
   const itens = criteria.map((c) => ({ criterioId: c.id, nota: scores[c.id] ?? 0 }));
   const result = await runSave(sessionId, studentId, { itens, enviar, justificativa, notaCargo });
   if (result.ok) {
-    const trimmedFeedback = feedback.trim();
-    if (trimmedFeedback) {
-      await evaluationService.saveFeedback(sessionId, studentId, trimmedFeedback);
-    }
+    await evaluationService.saveFeedback(sessionId, studentId, feedback.trim());
     clearStoredDraft(sessionId, studentId);
     notify({
       tone: enviar ? 'success' : 'info',
@@ -195,10 +192,9 @@ async function saveDraftAndNavigateHelper(
       enviar: false,
       notaCargo: evalData.notaCargo,
     }).catch(() => null);
-    const trimmedFeedback = evalData.feedback.trim();
-    if (trimmedFeedback) {
-      await evaluationService.saveFeedback(sessionId, studentId, trimmedFeedback).catch(() => null);
-    }
+    await evaluationService
+      .saveFeedback(sessionId, studentId, evalData.feedback.trim())
+      .catch(() => null);
   }
 
   navigate(targetUrl, { state: stateData });

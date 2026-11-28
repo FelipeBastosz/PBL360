@@ -158,6 +158,6 @@ export const sessionService = {
 
   saveGeneralEvaluation: (sessionId: string, payload: SaveSessionGeneralEvaluationPayload) =>
     api
-      .put<SessionGeneralEvaluation>(`${BASE}/${sessionId}/avaliacao-geral`, payload)
-      .then((r) => r.data),
+      .put<SessionGeneralEvaluation | null>(`${BASE}/${sessionId}/avaliacao-geral`, payload)
+      .then((r) => r.data ?? null),
 };

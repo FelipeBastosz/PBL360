@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Put } from '@nestjs/common';
+import type { Response } from 'express';
+import { Body, Controller, Get, HttpCode, HttpStatus, Put, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
   AuthenticatedUser,
@@ -42,9 +43,10 @@ export class SessionGeneralEvaluationsController {
     @UuidParam('sessaoId') sessionId: string,
     @Body() dto: SaveSessionGeneralEvaluationDto,
     @AuthenticatedUser() member: AuthenticatedUserRef,
-  ): Promise<SessionGeneralEvaluationResponseDto> {
+    @Res() response: Response,
+  ): Promise<void> {
     const record = await this.saveEvaluation.execute(sessionId, dto.texto, member.id, member.type);
-    return this.toResponse(record);
+    response.status(HttpStatus.OK).json(record ? this.toResponse(record) : null);
   }
 
   private toResponse(record: {

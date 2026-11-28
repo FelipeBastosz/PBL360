@@ -58,13 +58,17 @@ describe('useSessionGeneralEvaluationForm', () => {
     expect(result.current.lastEditedText).toMatch(/12\/04\/2026/);
   });
 
-  it('sets error when text is empty or whitespace only', async () => {
+  it('allows clearing existing evaluation with empty or whitespace-only text', async () => {
+    const onSaved = vi.fn();
+    const onClose = vi.fn();
+    vi.mocked(sessionService.saveGeneralEvaluation).mockResolvedValueOnce(null);
+
     const { result } = renderHook(() =>
       useSessionGeneralEvaluationForm({
         sessionId: 'sess-1',
-        existingEvaluation: null,
-        onSaved: vi.fn(),
-        onClose: vi.fn(),
+        existingEvaluation: mockEvaluation,
+        onSaved,
+        onClose,
       }),
     );
 
@@ -76,8 +80,13 @@ describe('useSessionGeneralEvaluationForm', () => {
       await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as React.FormEvent);
     });
 
-    expect(result.current.error).toBe('O comentário geral é obrigatório.');
-    expect(sessionService.saveGeneralEvaluation).not.toHaveBeenCalled();
+    expect(result.current.error).toBeNull();
+    expect(sessionService.saveGeneralEvaluation).toHaveBeenCalledWith('sess-1', { texto: '' });
+    expect(mockNotify).toHaveBeenCalledWith(
+      expect.objectContaining({ tone: 'success', message: 'Feedback geral removido com sucesso!' }),
+    );
+    expect(onSaved).toHaveBeenCalledWith(null);
+    expect(onClose).toHaveBeenCalled();
   });
 
   it('sets error when text exceeds 2000 characters', async () => {

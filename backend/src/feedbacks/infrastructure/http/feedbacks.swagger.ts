@@ -40,11 +40,12 @@ export const SaveStudentProblemFeedbackSwaggerDocs = applyDecorators(
 export const SaveGeneralProblemFeedbackSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
-    summary: 'Registra ou atualiza o feedback geral do problema (RF20)',
-    description: 'Atua como upsert gerando revisão se o feedback for atualizado.',
+    summary: 'Registra, atualiza ou remove o feedback geral do problema (RF20)',
+    description:
+      'Atua como upsert gerando revisão se atualizado; texto vazio remove o feedback existente e retorna null.',
   }),
   ApiOkResponse({
-    description: 'Feedback geral salvo com sucesso.',
+    description: 'Feedback geral salvo com sucesso ou null quando removido.',
     type: GeneralFeedbackResponseDto,
   }),
   ApiBadRequestResponse({ description: 'Dados de entrada inválidos.', type: ErrorResponseDto }),
@@ -71,11 +72,12 @@ export const GetProblemFeedbacksSwaggerDocs = applyDecorators(
 export const SaveSessionFeedbackSwaggerDocs = applyDecorators(
   ApiBearerAuth(JWT_SECURITY_SCHEME),
   ApiOperation({
-    summary: 'Registra ou atualiza o feedback do aluno na sessão (RF19)',
-    description: 'Atua como upsert gerando revisão se for atualizado.',
+    summary: 'Registra, atualiza ou remove o feedback do aluno na sessão (RF19)',
+    description:
+      'Atua como upsert gerando revisão se atualizado; texto vazio remove o feedback existente e retorna null.',
   }),
   ApiOkResponse({
-    description: 'Feedback de sessão salvo com sucesso.',
+    description: 'Feedback de sessão salvo com sucesso ou null quando removido.',
     type: SessionFeedbackResponseDto,
   }),
   ApiBadRequestResponse({ description: 'Dados de entrada inválidos.', type: ErrorResponseDto }),

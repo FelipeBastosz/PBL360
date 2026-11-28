@@ -11,4 +11,5 @@ export interface SessionGeneralEvaluationRecord extends SessionGeneralEvaluation
 export interface SessionGeneralEvaluationRepository {
   findBySessionId(sessionId: string): Promise<SessionGeneralEvaluationRecord[]>;
   save(sessionId: string, text: string, tutorId: string): Promise<SessionGeneralEvaluationRecord>;
+  deleteBySessionAndTutor(sessionId: string, tutorId: string): Promise<void>;
 }

@@ -156,4 +156,27 @@ describe('SessionGeneralEvaluationCard', () => {
       await screen.findByText('Excelente dinâmica e participação coletiva.'),
     ).toBeInTheDocument();
   });
+
+  it('restores empty state when author clears existing session general feedback to 0 characters', async () => {
+    const user = userEvent.setup();
+    vi.mocked(sessionService.getGeneralEvaluations).mockResolvedValueOnce([mockEvaluation]);
+    vi.mocked(sessionService.saveGeneralEvaluation).mockResolvedValueOnce(null);
+
+    render(<SessionGeneralEvaluationCard sessionId="sess-1" isProfessor={true} />);
+
+    expect(
+      await screen.findByText('Excelente dinâmica e participação coletiva.'),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Editar feedback geral' }));
+    const textarea = await screen.findByLabelText(/Comentário Geral/);
+    await user.clear(textarea);
+    await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    expect(
+      await screen.findByText('Nenhum feedback geral registrado para a turma ainda.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Registrar feedback' })).toBeInTheDocument();
+    expect(sessionService.saveGeneralEvaluation).toHaveBeenCalledWith('sess-1', { texto: '' });
+  });
 });

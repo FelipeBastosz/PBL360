@@ -2,11 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import type { ProblemGradesResponse, StudentGradeRow } from '@/types/grades';
-import type {
-  ProblemFeedbacksResponse,
-  StudentProblemFeedbackResponse,
-  GeneralFeedbackResponse,
-} from '@/types/feedback';
+import type { ProblemFeedbacksResponse, StudentProblemFeedbackResponse } from '@/types/feedback';
 import { useProblemGradesData } from './useProblemGradesData';
 import type { EvaluationContext } from '../StudentGradeField';
 
@@ -104,7 +100,6 @@ export function useProblemGradesController() {
   const [hideNames, setHideNames] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationContext | null>(null);
   const [selectedStudentState, setSelectedStudentState] = useState<StudentGradeRow | null>(null);
-  const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
 
   const selectedStudent = resolveSelectedStudent(
     selectedStudentState,
@@ -143,11 +138,7 @@ export function useProblemGradesController() {
     selectedStudent,
     setSelectedStudent: setSelectedStudentState,
     handleClose,
-    isGeneralModalOpen,
-    setIsGeneralModalOpen,
     currentStudentFeedback,
     handleStudentFeedbackSaved,
-    handleGeneralFeedbackSaved: (saved: GeneralFeedbackResponse) =>
-      data.setFeedbacks((prev) => (prev ? { ...prev, geral: saved } : prev)),
   };
 }

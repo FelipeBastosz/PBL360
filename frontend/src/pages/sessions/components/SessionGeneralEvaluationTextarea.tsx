@@ -12,7 +12,7 @@ export function SessionGeneralEvaluationTextarea({ value, onChange, error, disab
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <label htmlFor="session-general-evaluation-text" className="text-sm font-semibold text-ink">
-          Comentário Geral <span className="text-danger">*</span>
+          Comentário Geral
         </label>
         <span className="text-xs text-muted">{value.length} / 2000</span>
       </div>

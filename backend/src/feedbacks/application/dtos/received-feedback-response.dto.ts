@@ -31,14 +31,14 @@ export class ReceivedSessionComponentsDto {
 }
 
 export class ReceivedFeedbackResponseDto {
-  @ApiProperty({ format: 'uuid' })
-  id!: string;
+  @ApiProperty({ format: 'uuid', nullable: true })
+  id!: string | null;
 
   @ApiProperty({ type: FeedbackAuthorDto })
   autor!: FeedbackAuthorDto;
 
-  @ApiProperty()
-  texto!: string;
+  @ApiProperty({ type: String, nullable: true })
+  texto!: string | null;
 
   @ApiProperty({ type: String, format: 'date-time' })
   criadoEm!: Date;

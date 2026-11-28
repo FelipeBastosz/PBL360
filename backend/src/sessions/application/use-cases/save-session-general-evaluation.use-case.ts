@@ -21,6 +21,11 @@ export class SaveSessionGeneralEvaluationUseCase {
     if (memberType !== UserType.TUTOR) {
       throw new ForbiddenError('Apenas professores podem registrar a avaliação geral da sessão.');
     }
-    return this.evaluations.save(sessionId, text.trim(), memberId);
+    const trimmed = text.trim();
+    if (!trimmed) {
+      await this.evaluations.deleteBySessionAndTutor(sessionId, memberId);
+      return null;
+    }
+    return this.evaluations.save(sessionId, trimmed, memberId);
   }
 }

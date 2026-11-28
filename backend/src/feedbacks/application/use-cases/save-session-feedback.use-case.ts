@@ -36,28 +36,40 @@ export class SaveSessionFeedbackUseCase {
     private readonly roomAccessService: RoomAccessService,
   ) {}
 
-  async execute(input: SaveSessionFeedbackInput): Promise<Feedback> {
+  async execute(input: SaveSessionFeedbackInput): Promise<Feedback | null> {
     const session = await this.validateSessionAndAccess(input);
-
     const existing = await this.feedbackRepository.findStudentSessionFeedback(
       input.sessionId,
       input.studentId,
     );
+    const trimmedText = input.text.trim();
+
+    if (trimmedText === '') {
+      if (existing) await this.feedbackRepository.deleteById(existing.id);
+      return null;
+    }
 
     if (existing) {
-      const revision = existing.update(null, input.text, input.tutorId);
+      const revision = existing.update(null, trimmedText, input.tutorId);
       return this.feedbackRepository.saveWithRevision(existing, revision);
     }
 
+    return this.createFeedback(session.problemId, input, trimmedText);
+  }
+
+  private createFeedback(
+    problemId: string,
+    input: SaveSessionFeedbackInput,
+    text: string,
+  ): Promise<Feedback> {
     const feedback = Feedback.create({
       authorId: input.tutorId,
-      problemId: session.problemId,
+      problemId,
       sessionId: input.sessionId,
       recipientId: input.studentId,
       scope: FeedbackScope.SESSION,
-      text: input.text,
+      text,
     });
-
     return this.feedbackRepository.saveWithRevision(feedback, null);
   }
 

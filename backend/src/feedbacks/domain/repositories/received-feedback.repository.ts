@@ -13,9 +13,9 @@ export interface ReceivedSessionComponents {
 }
 
 export interface ReceivedFeedback {
-  id: string;
+  id: string | null;
   author: { id: string; name: string };
-  text: string;
+  text: string | null;
   createdAt: Date;
   editedAt: Date | null;
   isNew: boolean;

@@ -115,6 +115,76 @@ describe('Associated grades in received feedbacks (e2e)', () => {
     expect(await db.query<unknown[]>('SELECT * FROM problem_grades')).toEqual([]);
   });
 
+  it('returns session grade with null text when tutor submits evaluation without textual feedback or clears previous text', async () => {
+    await save(true, 7, 9, fixture.otherSessionId, fixture.student.id);
+
+    const otherSessionRes = await api(app, fixture.student)
+      .get(`/sessoes/${fixture.otherSessionId}/meu-feedback`)
+      .expect(200);
+    expect(otherSessionRes.body as ReceivedFeedbackResponseDto).toMatchObject({
+      id: null,
+      texto: null,
+      nota: 8.5,
+      novo: false,
+      editadoEm: null,
+      autor: { id: fixture.tutor.id },
+    });
+
+    const problemBeforeClear = await readProblem();
+    const otherSessionEntry = problemBeforeClear.sessoes.find(
+      (s) => s.sessaoId === fixture.otherSessionId,
+    );
+    expect(otherSessionEntry?.feedback).toMatchObject({
+      id: null,
+      texto: null,
+      nota: 8.5,
+      novo: false,
+    });
+
+    // Now submit first session (which has textual feedback) and then clear the text
+    await save(true, 8, 10, fixture.sessionId, fixture.student.id);
+    await api(app, fixture.tutor)
+      .put(`/sessoes/${fixture.sessionId}/alunos/${fixture.student.id}/feedback`, { texto: '' })
+      .expect(200);
+
+    const clearedSessionRes = await api(app, fixture.student)
+      .get(`/sessoes/${fixture.sessionId}/meu-feedback`)
+      .expect(200);
+    expect(clearedSessionRes.body as ReceivedFeedbackResponseDto).toMatchObject({
+      id: null,
+      texto: null,
+      nota: 9.5,
+      novo: false,
+      autor: { id: fixture.tutor.id },
+    });
+
+    const problemAfterClear = await readProblem();
+    const clearedProblemEntry = problemAfterClear.sessoes.find(
+      (s) => s.sessaoId === fixture.sessionId,
+    );
+    expect(clearedProblemEntry?.feedback).toMatchObject({
+      id: null,
+      texto: null,
+      nota: 9.5,
+      novo: false,
+    });
+
+    // Unsubmitted colleague still receives null
+    await save(false, 8, 8, fixture.otherSessionId, fixture.colleague.id);
+    const draftRes = await api(app, fixture.colleague)
+      .get(`/sessoes/${fixture.otherSessionId}/meu-feedback`)
+      .expect(200);
+    expect(draftRes.body).toBeNull();
+
+    // Grade-only reads must never insert null rows into feedback_views or reads
+    const sessionViews = await db.query<unknown[]>(
+      `SELECT fv.* FROM feedback_views fv
+       JOIN feedback f ON f.id = fv.feedback_id
+       WHERE f.escopo = 'SESSAO';`,
+    );
+    expect(sessionViews).toEqual([]);
+  });
+
   it('excludes draft sessions and their absence grades from the released final grade', async () => {
     await save(true);
     await save(false, 0, 0, fixture.otherSessionId);

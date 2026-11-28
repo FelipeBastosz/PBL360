@@ -11,6 +11,8 @@ import type {
 } from '../../domain/repositories/feedback.repository';
 import {
   CHECK_STUDENT_ENROLLED_QUERY,
+  DELETE_FEEDBACK_QUERY,
+  DELETE_FEEDBACK_REVISIONS_QUERY,
   FIND_FEEDBACK_BY_ID_QUERY,
   FIND_GENERAL_PROBLEM_FEEDBACK_QUERY,
   FIND_PROBLEM_FEEDBACKS_WITH_DETAILS_QUERY,
@@ -148,6 +150,13 @@ export class PgFeedbackRepository implements FeedbackRepository {
     }
     await this.updateFeedbackWithRevision(feedback, revision);
     return feedback;
+  }
+
+  async deleteById(id: string): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      await manager.query(DELETE_FEEDBACK_REVISIONS_QUERY, [id]);
+      await manager.query(DELETE_FEEDBACK_QUERY, [id]);
+    });
   }
 
   private async insertFeedback(feedback: Feedback): Promise<Feedback> {

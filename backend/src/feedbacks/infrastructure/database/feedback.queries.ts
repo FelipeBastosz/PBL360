@@ -158,6 +158,11 @@ export const UPDATE_FEEDBACK_QUERY = `
   WHERE id = $1;
 `;
 
+export const DELETE_FEEDBACK_REVISIONS_QUERY =
+  'DELETE FROM feedback_revisions WHERE feedback_id = $1;';
+
+export const DELETE_FEEDBACK_QUERY = 'DELETE FROM feedback WHERE id = $1;';
+
 export const toFeedbackParams = (feedback: Feedback): unknown[] => [
   feedback.authorId,
   feedback.problemId,

@@ -8,13 +8,14 @@ import { FeedbackBadge } from './FeedbackBadge';
 
 export type FeedbackCardProps = {
   autor: FeedbackAuthor;
-  texto: string;
+  texto: string | null;
   criadoEm: string;
   editadoEm?: string | null;
   novo?: boolean;
   nota?: number | null;
   tag?: string;
   avaliacoes?: ReceivedSessionComponents;
+  emptyTextMessage?: string;
 };
 
 type FeedbackCardHeaderProps = {
@@ -70,14 +71,23 @@ export function FeedbackCard({
   nota,
   tag,
   avaliacoes,
+  emptyTextMessage,
 }: FeedbackCardProps) {
+  const hasText = Boolean(texto?.trim());
+
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-elevated p-5 shadow-sm">
       <FeedbackCardHeader autor={autor} criadoEm={criadoEm} tag={tag} nota={nota} novo={novo} />
 
       <EvaluationComponentGrades avaliacoes={avaliacoes} />
 
-      <p className="whitespace-pre-line text-sm leading-relaxed text-ink/90">{texto}</p>
+      {hasText ? (
+        <p className="whitespace-pre-line text-sm leading-relaxed text-ink/90">{texto}</p>
+      ) : (
+        <p className="text-sm italic text-muted">
+          {emptyTextMessage ?? 'Nenhum feedback textual registrado.'}
+        </p>
+      )}
 
       {editadoEm && (
         <footer className="text-right text-[11px] text-muted/80">

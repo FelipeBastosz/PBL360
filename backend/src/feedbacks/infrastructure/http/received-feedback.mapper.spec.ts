@@ -64,4 +64,26 @@ describe('Received feedback responses', () => {
       sessoes: [],
     });
   });
+
+  it('maps grade-only session feedback with null id and null texto', () => {
+    const gradeOnly = {
+      id: null,
+      author: { id: 'tutor', name: 'Tutor' },
+      text: null,
+      createdAt: feedback.createdAt,
+      editedAt: null,
+      isNew: false,
+      score: 8.5,
+    };
+
+    expect(toReceivedFeedbackResponse(gradeOnly)).toEqual({
+      id: null,
+      autor: { id: 'tutor', nome: 'Tutor' },
+      texto: null,
+      criadoEm: feedback.createdAt,
+      editadoEm: null,
+      novo: false,
+      nota: 8.5,
+    });
+  });
 });

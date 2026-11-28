@@ -44,9 +44,6 @@ export interface SaveStudentFeedbackPayload {
 }
 
 export interface SaveGeneralFeedbackPayload {
-  escopo: 'PROBLEMA';
-  destinatario_id: null;
-  nota: null;
   texto: string;
 }
 
@@ -68,9 +65,9 @@ export interface ReceivedSessionComponents {
 }
 
 export interface ReceivedFeedbackResponse {
-  id: string;
+  id: string | null;
   autor: FeedbackAuthor;
-  texto: string;
+  texto: string | null;
   criadoEm: string;
   editadoEm: string | null;
   novo: boolean;

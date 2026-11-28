@@ -138,4 +138,29 @@ describe('SessionFeedbackPage', () => {
     expect(screen.getByText(/editado em 12\/04\/2026/i)).toBeInTheDocument();
     expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 9,0');
   });
+
+  it('renders session score with discreet notice when tutor submitted grade without textual feedback', async () => {
+    vi.mocked(feedbackService.getMySessionFeedback).mockResolvedValueOnce({
+      id: null,
+      autor: { id: 'prof-1', nome: 'Prof. Carlos' },
+      texto: null,
+      criadoEm: '2026-04-12T10:00:00Z',
+      editadoEm: null,
+      novo: false,
+      nota: 8.5,
+    });
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'INDIVIDUAL' })).toBeInTheDocument();
+    expect(screen.getByTestId('feedback-nota')).toHaveTextContent('Nota 8,5');
+    expect(screen.getByText('Prof. Carlos')).toBeInTheDocument();
+    expect(
+      screen.getByText('Nenhum feedback textual registrado para esta sessão.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('badge-novo')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Seu tutor ainda não enviou feedback para esta sessão'),
+    ).not.toBeInTheDocument();
+  });
 });
