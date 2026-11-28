@@ -8,10 +8,11 @@ import { useRoomTutors } from './useRoomTutors';
 type TutorsTabProps = {
   roomId: string;
   isOwner: boolean;
+  onTutorAdded?: () => void;
 };
 
-export function TutorsTab({ roomId, isOwner }: TutorsTabProps) {
-  const { tutors, isLoading, error, pendingId, add, remove } = useRoomTutors(roomId);
+export function TutorsTab({ roomId, isOwner, onTutorAdded }: TutorsTabProps) {
+  const { tutors, isLoading, error, pendingId, add, remove } = useRoomTutors(roomId, onTutorAdded);
 
   return (
     <div className="flex flex-col gap-5">

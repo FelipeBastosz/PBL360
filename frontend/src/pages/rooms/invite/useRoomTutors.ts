@@ -5,7 +5,7 @@ import { toApiError } from '@/services/apiError';
 import { roomService } from '@/services/room.service';
 import type { RoomTutor, TutorSummary } from '@/types/room';
 
-export function useRoomTutors(roomId: string) {
+export function useRoomTutors(roomId: string, onTutorAdded?: () => void) {
   const { notify } = useToast();
   const [tutors, setTutors] = useState<RoomTutor[]>([]);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -38,12 +38,15 @@ export function useRoomTutors(roomId: string) {
     [notify, reload],
   );
 
-  const add = (tutor: TutorSummary) =>
-    runChange(
+  const add = async (tutor: TutorSummary) => {
+    const ok = await runChange(
       tutor.id,
       () => roomService.addTutor(roomId, { professorId: tutor.id }),
       `${tutor.nome} agora também é professor desta turma.`,
     );
+    if (ok) onTutorAdded?.();
+    return ok;
+  };
 
   const remove = (tutor: RoomTutor) =>
     runChange(

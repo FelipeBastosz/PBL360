@@ -150,4 +150,17 @@ describe('roomService', () => {
     await expect(roomService.listStudents('room-1')).resolves.toEqual(students);
     expect(sentRequest(adapter)).toMatchObject({ method: 'get', url: '/salas/room-1/alunos' });
   });
+
+  it('transfers room ownership to another tutor', async () => {
+    const response = { id: 'room-1', professorResponsavelId: 'tutor-2' };
+    const adapter = respondWith(response);
+    const payload = { professorId: 'tutor-2' };
+
+    await expect(roomService.transferOwnership('room-1', payload)).resolves.toEqual(response);
+    expect(sentRequest(adapter)).toMatchObject({
+      method: 'patch',
+      url: '/salas/room-1/proprietario',
+    });
+    expect(JSON.parse(sentRequest(adapter).data as string)).toEqual(payload);
+  });
 });
